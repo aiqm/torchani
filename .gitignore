@@ -1,0 +1,16 @@
+*.txt
+*.prof
+__pycache__
+/data
+*.cpp
+a.out
+/test.py
+/.vscode
+/build
+/.eggs
+/torchani.egg-info
+/*.h5
+/*.hdf5
+.ipynb_checkpoints
+benchmark_xyz
+*.pyc
