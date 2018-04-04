@@ -6,8 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-adl = pyanitools.anidataloader("ani_gdb_s02.h5")
-ani = torchani.ani('train_ens/rHCNO-4.6R_16-3.1A_a4-8_3.params', 'train_ens/sae_linfit.dat')
+ani = torchani.ani('data/rHCNO-4.6R_16-3.1A_a4-8_3.params', 'data/sae_linfit.dat')
 
 class Net(nn.Module):
 
@@ -33,7 +32,7 @@ class Net(nn.Module):
         per_atom_energies = []
         for i in range(atoms):
             s = species[i]
-            y = x[i]
+            y = x[:,i,:]
             y = getattr(self, s + '0')(y)
             y = torch.exp(-y**2)
             y = getattr(self, s + '1')(y)
@@ -44,34 +43,65 @@ class Net(nn.Module):
             per_atom_energies.append(y)
         per_atom_energies = torch.stack(per_atom_energies)
         molecule_energies = torch.sum(per_atom_energies, dim=0)
-        return molecule_energies
+        return torch.squeeze(molecule_energies)
 
 
 net = Net()
 print(net)
 
-optimizer = optim.RMSprop(net.parameters())
+optimizer = optim.Adam(net.parameters())
+conformations_per_batch = 100000
 
-def print_parameters(net):
-    for s in ani.species:
-        for i in ['0', '1', '2', '3']:
-            print('parameter sum:', torch.sum(getattr(net, s + i).weight.data[0]))
+def step(batch_squared_error, batch_size, training):
+    mse = batch_squared_error  / batch_size
+    rmse_kcalmol = 627.509 * torch.sqrt(mse)
+    print('rmse:', rmse_kcalmol.data[0], 'kcal/mol')
+    if training:
+        loss = 0.5 * torch.exp(2 * mse)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
-for epoch in range(100000):
-    print('epoch', epoch)
+def visit_file(filename, training):
+    batch_squared_error = None
+    batch_size = 0
+    print('file:', filename)
+    adl = pyanitools.anidataloader(filename)
     for data in adl:
         coordinates = torch.from_numpy(data['coordinates']).cuda()
         conformations = coordinates.shape[0]
         species = data['species']
-        smiles = ''.join(data['smiles'])
         label = Variable(torch.from_numpy(ani.shift_energy(data['energies'], species)).float().cuda(), requires_grad=False)
-        radial_aev, angular_aev = Variable(ani.compute_aev(coordinates, species), requires_grad=False)
+        radial_aev, angular_aev = ani.compute_aev(coordinates, species)
+        aev = Variable(torch.cat([radial_aev, angular_aev], dim=2))
 
-        # print_parameters(net)
-        optimizer.zero_grad()
         pred = net(aev, species)
-        mse = torch.sum((label - pred) ** 2)  / conformations
-        print('rmse on {} conformations: {} kcal/mol'.format(conformations, 627.509 * torch.sqrt(mse).data[0]))
-        loss = mse # 0.5 * torch.exp(2 * mse)
-        loss.backward()
-        optimizer.step()
+        squared_error = torch.sum((label - pred) ** 2)
+
+        # accumulate errors cross molecules
+        if batch_size + conformations < conformations_per_batch:
+            if batch_squared_error is None:
+                batch_squared_error = squared_error
+            else:
+                batch_squared_error += squared_error
+            batch_size += conformations
+        else:
+            step(batch_squared_error, batch_size, training)
+            batch_squared_error = None
+            batch_size = 0
+    if batch_squared_error is not None:
+        step(batch_squared_error, batch_size, training)
+
+for epoch in range(100000):
+    print('epoch:', epoch)
+    print('training')
+    for filename in ['data/ani_gdb_s0{}.h5'.format(i) for i in range(1, 7)]:
+        visit_file(filename, True)
+    print('test')
+    for filename in ['data/ani_gdb_s0{}.h5'.format(i) for i in range(7, 8)]:
+        visit_file(filename, False)
+        
+            
+
+       
+        
