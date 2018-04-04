@@ -60,7 +60,7 @@ class ani:
 
     def compute_radial_term(self, distances):
         fc = ani.cutoff_cosine(distances, self.constants['Rcr'])
-        tensors = [ torch.exp(-eta * (distances - radius_shift)**2) * fc for eta, radius_shift in self.radial_iter()]
+        tensors = [ 0.25 * torch.exp(-eta * (distances - radius_shift)**2) * fc for eta, radius_shift in self.radial_iter()]
         return torch.stack(tensors, dim=1)
 
     def compute_angular_term(self, angle, Rij, Rik):
@@ -86,7 +86,8 @@ class ani:
     def compute_aev(self, coordinates, species):
         conformations = coordinates.shape[0]
         atoms = coordinates.shape[1]
-        full_aevs = []
+        radial_aevs = []
+        angular_aevs = []
         for i in range(atoms):
             xyz_i = coordinates[:,i,:]  # shape (conformations, 3)
             radial_sum_by_species = self.radial_zeros_by_species(conformations)
@@ -96,24 +97,26 @@ class ani:
                     continue
                 xyz_j = coordinates[:,j,:]  # shape (conformations, 3)
                 Rij_vec = xyz_j - xyz_i  # shape (conformations, 3)
-                Rij_distance = torch.sqrt(torch.sum(Rij_vec * Rij_vec, dim=1))  # shape (conformations,)
+                Rij_distance = torch.sqrt(torch.sum(Rij_vec ** 2, dim=1))  # shape (conformations,)
                 radial_term = self.compute_radial_term(Rij_distance)  # shape (conformations, torchani.radial.length)
-                radial_sum_by_species[species[i]] += radial_term
+                radial_sum_by_species[species[j]] += radial_term
                 for k in range(j+1,atoms):
                     if k == i:
                         continue
                     xyz_k = coordinates[:,k,:]
                     Rik_vec = xyz_k - xyz_i  # shape (conformations, 3)
-                    Rik_distance = torch.sqrt(torch.sum(Rik_vec * Rik_vec, dim=1))  # shape (conformations,)
-                    cos_angle = torch.sum(Rij_vec * Rik_vec, dim=1) / (Rik_distance * Rij_distance)  # shape (conformations,)
+                    Rik_distance = torch.sqrt(torch.sum(Rik_vec ** 2, dim=1))  # shape (conformations,)
+                    cos_angle = 0.95 * torch.sum(Rij_vec * Rik_vec, dim=1) / (Rik_distance * Rij_distance)  # shape (conformations,)
                     angle = torch.acos(cos_angle)  # shape (conformations,)
                     angular_term = self.compute_angular_term(angle, Rij_distance, Rik_distance)  # shape (conformations, torchani.angular.length)
                     angular_sum_by_species[frozenset(species[j]+species[k])] += angular_term
             radial_aev = torch.cat(list(radial_sum_by_species.values()), dim=1)  # shape (conformations, torchani.radial.length)
             angular_aev = torch.cat(list(angular_sum_by_species.values()), dim=1)  # shape (conformations, torchani.angular.length)
-            full_aev = torch.cat([radial_aev, angular_aev], dim=1)  # shape (conformations, torchani.radial.length + torchani.angular.length)
-            full_aevs.append(full_aev)
-        return torch.stack(full_aevs)  # shape (atoms, conformations, torchani.radial.length + torchani.angular.length)
+            radial_aevs.append(radial_aev)
+            angular_aevs.append(angular_aev)
+        radial_aevs = torch.stack(radial_aevs, dim=1)  # shape (conformations, atoms, torchani.radial.length)
+        angular_aevs = torch.stack(angular_aevs, dim=1)  # shape (conformations, atoms, torchani.angular.length)
+        return radial_aevs, angular_aevs
 
     
     def shift_energy(self, energies, species):

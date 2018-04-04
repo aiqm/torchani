@@ -65,7 +65,7 @@ for epoch in range(100000):
         species = data['species']
         smiles = ''.join(data['smiles'])
         label = Variable(torch.from_numpy(ani.shift_energy(data['energies'], species)).float().cuda(), requires_grad=False)
-        aev = Variable(ani.compute_aev(coordinates, species), requires_grad=False)
+        radial_aev, angular_aev = Variable(ani.compute_aev(coordinates, species), requires_grad=False)
 
         # print_parameters(net)
         optimizer.zero_grad()
