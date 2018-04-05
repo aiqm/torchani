@@ -1,4 +1,6 @@
 *.h5
+*.txt
+*.prof
 train_ens
 __pycache__
 data
