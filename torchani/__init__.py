@@ -50,17 +50,18 @@ class ani:
     def cutoff_cosine(distances, cutoff):
         return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
 
-    def compute_radial_term(self, distances):
+    def compute_radial_terms(self, distances):
         # use broadcasting semantics to combine constants
-        # shape convension (conformations, eta, radius_shift)
-        distances = distances.reshape(-1, 1, 1)
+        # shape convension (conformations, atoms, atoms, eta, radius_shift)
+        atoms = distances.shape[1]
+        distances = distances.view(-1, atoms, atoms, 1, 1)
         fc = ani.cutoff_cosine(distances, self.constants['Rcr'])
-        eta = torch.Tensor(self.constants['EtaR']).type(self.dtype).view(1,-1,1)
-        radius_shift = torch.Tensor(self.constants['ShfR']).type(self.dtype).view(1,1,-1)
+        eta = torch.Tensor(self.constants['EtaR']).type(self.dtype).view(1,1,1,-1,1)
+        radius_shift = torch.Tensor(self.constants['ShfR']).type(self.dtype).view(1,1,1,1,-1)
         ret = 0.25 * torch.exp(-eta * (distances - radius_shift)**2) * fc
         # end of shape convension
-        # reshape to (conformations, ?)
-        return ret.view(-1, self.radial_length())
+        # reshape to (conformations, atoms, atoms, ?)
+        return ret.view(-1, atoms, atoms, self.radial_length())
 
     def compute_angular_term(self, angle, Rij, Rik):
         # use broadcasting semantics to combine constants
@@ -97,6 +98,7 @@ class ani:
         angular_aevs = []
         R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)  # shape (conformations, atoms, atoms, 3)
         R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))  # shape (conformations, atoms, atoms)
+        radial_terms = self.compute_radial_terms(R_distances)
         for i in range(atoms):
             xyz_i = coordinates[:,i,:]
             radial_sum_by_species = {}
@@ -106,7 +108,7 @@ class ani:
                     continue
                 Rij_vec = R_vecs[:,i,j,:]
                 Rij_distance = R_distances[:,i,j]
-                radial_term = self.compute_radial_term(Rij_distance)
+                radial_term = radial_terms[:,i,j,:]
                 if species[j] in radial_sum_by_species:
                     radial_sum_by_species[species[j]] += radial_term
                 else:
