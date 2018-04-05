@@ -63,14 +63,21 @@ class ani:
         return ret.view(-1, self.radial_length())
 
     def compute_angular_term(self, angle, Rij, Rik):
-        # start = time.time()
-        fcj = ani.cutoff_cosine(Rij, self.constants['Rca']).unsqueeze(1)
-        fck = ani.cutoff_cosine(Rik, self.constants['Rca']).unsqueeze(1)
-        tensors = [ ((1 + torch.cos(angle - angle_shift)) / 2) ** zeta * torch.exp(-eta * ((Rij + Rik)/2 - radius_shift)**2) for eta, zeta, radius_shift, angle_shift in self.angular_iter() ]
-        stacked_tensors = torch.stack(tensors, dim=1)
-        # end = time.time()
-        # print('radial aev computation time:', end - start)
-        return 2 * stacked_tensors * fcj * fck
+        # use broadcasting semantics to combine constants
+        # shape convension (conformations, eta, zeta, radius_shift, angle_shift)
+        angle = angle.view(-1, 1, 1, 1, 1)
+        Rij = Rij.view(-1, 1, 1, 1, 1)
+        Rik = Rik.view(-1, 1, 1, 1, 1)
+        fcj = ani.cutoff_cosine(Rij, self.constants['Rca'])
+        fck = ani.cutoff_cosine(Rik, self.constants['Rca'])
+        eta = torch.Tensor(self.constants['EtaA']).type(self.dtype).view(1, -1, 1, 1, 1)
+        zeta = torch.Tensor(self.constants['Zeta']).type(self.dtype).view(1, 1, -1, 1, 1)
+        radius_shift = torch.Tensor(self.constants['ShfA']).type(self.dtype).view(1, 1, 1, -1, 1)
+        angle_shift = torch.Tensor(self.constants['ShfZ']).type(self.dtype).view(1, 1, 1, 1, -1)
+        ret = 2 * ((1 + torch.cos(angle - angle_shift)) / 2) ** zeta * torch.exp(-eta * ((Rij + Rik) / 2 - radius_shift) ** 2) * fcj * fck
+        # end of shape convension
+        # reshape to (conformations, ?)
+        return ret.view(-1, self.angular_length())
 
     def fill_radial_sum_by_zero(self, radial_sum_by_species, conformations):
         complementary = set(self.species) - set(radial_sum_by_species.keys())
