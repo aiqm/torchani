@@ -1,6 +1,7 @@
 import torch
 import numpy
 import itertools
+import time
 
 class ani:
 
@@ -38,9 +39,6 @@ class ani:
 
     def radial_length(self):
         return len(self.constants['EtaR']) * len(self.constants['ShfR'])
-
-    def radial_iter(self):
-        return itertools.product(self.constants['EtaR'], self.constants['ShfR'])
     
     def angular_length(self):
         return len(self.constants['EtaA']) * len(self.constants['Zeta']) * len(self.constants['ShfA']) * len(self.constants['ShfZ'])
@@ -53,15 +51,25 @@ class ani:
         return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
 
     def compute_radial_term(self, distances):
-        fc = ani.cutoff_cosine(distances, self.constants['Rcr']).unsqueeze(1)
-        tensors = [ torch.exp(-eta * (distances - radius_shift)**2) for eta, radius_shift in self.radial_iter()]
-        return 0.25 * torch.stack(tensors, dim=1) * fc
+        # use broadcasting semantics to combine constants
+        # shape convension (conformations, eta, radius_shift)
+        distances = distances.reshape(-1, 1, 1)
+        fc = ani.cutoff_cosine(distances, self.constants['Rcr'])
+        eta = torch.Tensor(self.constants['EtaR']).type(self.dtype).view(1,-1,1)
+        radius_shift = torch.Tensor(self.constants['ShfR']).type(self.dtype).view(1,1,-1)
+        ret = 0.25 * torch.exp(-eta * (distances - radius_shift)**2) * fc
+        # end of shape convension
+        # reshape to (conformations, ?)
+        return ret.view(-1, self.radial_length())
 
     def compute_angular_term(self, angle, Rij, Rik):
+        # start = time.time()
         fcj = ani.cutoff_cosine(Rij, self.constants['Rca']).unsqueeze(1)
         fck = ani.cutoff_cosine(Rik, self.constants['Rca']).unsqueeze(1)
         tensors = [ ((1 + torch.cos(angle - angle_shift)) / 2) ** zeta * torch.exp(-eta * ((Rij + Rik)/2 - radius_shift)**2) for eta, zeta, radius_shift, angle_shift in self.angular_iter() ]
         stacked_tensors = torch.stack(tensors, dim=1)
+        # end = time.time()
+        # print('radial aev computation time:', end - start)
         return 2 * stacked_tensors * fcj * fck
 
     def fill_radial_sum_by_zero(self, radial_sum_by_species, conformations):
