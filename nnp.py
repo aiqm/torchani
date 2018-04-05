@@ -1,7 +1,6 @@
 import torchani
 import pyanitools
 import torch
-from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -55,7 +54,7 @@ conformations_per_batch = 100000
 def step(batch_squared_error, batch_size, training):
     mse = batch_squared_error  / batch_size
     rmse_kcalmol = 627.509 * torch.sqrt(mse)
-    print('rmse:', rmse_kcalmol.data[0], 'kcal/mol')
+    print('rmse:', rmse_kcalmol.data.item(), 'kcal/mol')
     if training:
         loss = 0.5 * torch.exp(2 * mse)
         optimizer.zero_grad()
@@ -71,9 +70,9 @@ def visit_file(filename, training):
         coordinates = torch.from_numpy(data['coordinates']).cuda()
         conformations = coordinates.shape[0]
         species = data['species']
-        label = Variable(torch.from_numpy(ani.shift_energy(data['energies'], species)).float().cuda(), requires_grad=False)
+        label = torch.from_numpy(ani.shift_energy(data['energies'], species)).float().cuda()
         radial_aev, angular_aev = ani.compute_aev(coordinates, species)
-        aev = Variable(torch.cat([radial_aev, angular_aev], dim=2))
+        aev = torch.cat([radial_aev, angular_aev], dim=2)
 
         pred = net(aev, species)
         squared_error = torch.sum((label - pred) ** 2)
