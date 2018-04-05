@@ -53,15 +53,16 @@ class ani:
         return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
 
     def compute_radial_term(self, distances):
-        fc = ani.cutoff_cosine(distances, self.constants['Rcr'])
-        tensors = [ 0.25 * torch.exp(-eta * (distances - radius_shift)**2) * fc for eta, radius_shift in self.radial_iter()]
-        return torch.stack(tensors, dim=1)
+        fc = ani.cutoff_cosine(distances, self.constants['Rcr']).unsqueeze(1)
+        tensors = [ torch.exp(-eta * (distances - radius_shift)**2) for eta, radius_shift in self.radial_iter()]
+        return 0.25 * torch.stack(tensors, dim=1) * fc
 
     def compute_angular_term(self, angle, Rij, Rik):
-        fcj = ani.cutoff_cosine(Rij, self.constants['Rca'])
-        fck = ani.cutoff_cosine(Rik, self.constants['Rca'])
-        tensors = [ 2 * ((1 + torch.cos(angle - angle_shift)) / 2) ** zeta * torch.exp(-eta * ((Rij + Rik)/2 - radius_shift)**2) * fcj * fck for eta, zeta, radius_shift, angle_shift in self.angular_iter() ]
-        return torch.stack(tensors, dim=1)
+        fcj = ani.cutoff_cosine(Rij, self.constants['Rca']).unsqueeze(1)
+        fck = ani.cutoff_cosine(Rik, self.constants['Rca']).unsqueeze(1)
+        tensors = [ ((1 + torch.cos(angle - angle_shift)) / 2) ** zeta * torch.exp(-eta * ((Rij + Rik)/2 - radius_shift)**2) for eta, zeta, radius_shift, angle_shift in self.angular_iter() ]
+        stacked_tensors = torch.stack(tensors, dim=1)
+        return 2 * stacked_tensors * fcj * fck
 
     def fill_radial_sum_by_zero(self, radial_sum_by_species, conformations):
         complementary = set(self.species) - set(radial_sum_by_species.keys())
