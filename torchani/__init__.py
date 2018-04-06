@@ -91,22 +91,33 @@ class ani:
         for i in complementary:
             angular_sum_by_species[i] = torch.zeros(conformations, self.angular_length(), dtype=self.dtype)
 
+    @staticmethod
+    def atom_pair_index(atoms, i, j):
+        return 1
+
+    @staticmethod
+    def pairs(atoms):
+        return atoms * (atoms - 1) / 2
+
     def compute_aev(self, coordinates, species):
         conformations = coordinates.shape[0]
         atoms = coordinates.shape[1]
         radial_aevs = []
         angular_aevs = []
         R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)  # shape (conformations, atoms, atoms, 3)
+        pair_idx_mask = (torch.ones(atoms,atoms).triu() == 1).unsqueeze(0).unsqueeze(-1).expand(conformations,-1,-1,3)
         R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))  # shape (conformations, atoms, atoms)
-        radial_terms = self.compute_radial_terms(R_distances)
+        radial_terms = self.compute_radial_terms(R_distances)  # shape (conformations, atoms, atoms, self.radial_length())
+        Rijk_distance_prods = R_distances.unsqueeze(2) * R_distances.unsqueeze(3)  # shape (conformations, atoms, atoms, atoms)
+        Rijk_inner_prods = torch.sum(R_vecs.unsqueeze(2) * R_vecs.unsqueeze(3), dim=-1)  # shape (conformations, atoms, atoms, atoms)
+        cos_angles = 0.95 * Rijk_inner_prods / Rijk_distance_prods  # shape (conformations, atoms, atoms, atoms)
+        angles = torch.acos(cos_angles)
         for i in range(atoms):
-            xyz_i = coordinates[:,i,:]
             radial_sum_by_species = {}
             angular_sum_by_species = {}
             for j in range(atoms):
                 if j == i:
                     continue
-                Rij_vec = R_vecs[:,i,j,:]
                 Rij_distance = R_distances[:,i,j]
                 radial_term = radial_terms[:,i,j,:]
                 if species[j] in radial_sum_by_species:
@@ -116,10 +127,8 @@ class ani:
                 for k in range(j+1,atoms):
                     if k == i:
                         continue
-                    Rik_vec = R_vecs[:,i,k,:]
                     Rik_distance = R_distances[:,i,k]
-                    cos_angle = 0.95 * torch.sum(Rij_vec * Rik_vec, dim=1) / (Rik_distance * Rij_distance)
-                    angle = torch.acos(cos_angle)
+                    angle = angles[:,i,j,k]
                     angular_term = self.compute_angular_term(angle, Rij_distance, Rik_distance)
                     key = frozenset(species[j]+species[k])
                     if key in angular_sum_by_species:
