@@ -48,22 +48,19 @@ class Net(nn.Module):
 net = Net()
 print(net)
 
-optimizer = optim.Adam(net.parameters())
-conformations_per_batch = 100000
+optimizer = optim.Adam(net.parameters(), amsgrad=True)
 
-def step(batch_squared_error, batch_size, training):
+def step(batch_squared_error, batch_size, training, epoch):
     mse = batch_squared_error  / batch_size
     rmse_kcalmol = 627.509 * torch.sqrt(mse)
-    print('rmse:', rmse_kcalmol.data.item(), 'kcal/mol')
+    print('rmse:', rmse_kcalmol.item(), 'kcal/mol')
     if training:
-        loss = 0.5 * torch.exp(2 * mse)
+        loss = 0.5 * torch.exp(2 * mse) if epoch > 10 else mse
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-def visit_file(filename, training):
-    batch_squared_error = None
-    batch_size = 0
+def visit_file(filename, training, epoch):
     print('file:', filename)
     adl = pyanitools.anidataloader(filename)
     for data in adl:
@@ -77,28 +74,16 @@ def visit_file(filename, training):
         pred = net(aev, species)
         squared_error = torch.sum((label - pred) ** 2)
 
-        # accumulate errors cross molecules
-        if batch_size + conformations < conformations_per_batch:
-            if batch_squared_error is None:
-                batch_squared_error = squared_error
-            else:
-                batch_squared_error += squared_error
-            batch_size += conformations
-        else:
-            step(batch_squared_error, batch_size, training)
-            batch_squared_error = None
-            batch_size = 0
-    if batch_squared_error is not None:
-        step(batch_squared_error, batch_size, training)
+        step(squared_error, conformations, training, epoch)
 
-for epoch in range(100000):
+for epoch in range(10000):
     print('epoch:', epoch)
     print('training')
     for filename in ['data/ani_gdb_s0{}.h5'.format(i) for i in range(1, 7)]:
-        visit_file(filename, True)
-    print('test')
+        visit_file(filename, True, epoch)
+    print('testing')
     for filename in ['data/ani_gdb_s0{}.h5'.format(i) for i in range(7, 8)]:
-        visit_file(filename, False)
+        visit_file(filename, False, epoch)
         
             
 
