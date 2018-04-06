@@ -50,7 +50,7 @@ class Net(nn.Module):
 net = Net()
 print(net)
 
-optimizer = optim.Adam(net.parameters())
+optimizer = optim.Adam(net.parameters(), amsgrad=True)
 conformations_per_batch = -1
 
 def step(batch_squared_error, batch_size, training):
@@ -67,8 +67,6 @@ def step(batch_squared_error, batch_size, training):
     # print('time backwards:', end - start)
 
 def visit_file(filename, training):
-    batch_squared_error = None
-    batch_size = 0
     print('file:', filename)
     adl = pyanitools.anidataloader(filename)
     for data in adl:
@@ -92,22 +90,8 @@ def visit_file(filename, training):
         end = time.time()
         # print('time forward:', end - start)
 
-        # accumulate errors cross molecules
-        if conformations_per_batch == -1:
-            step(squared_error, conformations, training)
-        else:
-            if batch_size + conformations < conformations_per_batch:
-                if batch_squared_error is None:
-                    batch_squared_error = squared_error
-                else:
-                    batch_squared_error += squared_error
-                batch_size += conformations
-            else:
-                step(batch_squared_error, batch_size, training)
-                batch_squared_error = None
-                batch_size = 0
-    if batch_squared_error is not None:
-        step(batch_squared_error, batch_size, training)
+        step(squared_error, conformations, training)
+
 
 mint = 9999999999
 for i in range(10):
