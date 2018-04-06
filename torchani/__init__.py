@@ -42,11 +42,6 @@ class ani:
         for i in self.species:
             self.species_indices[i] = index
             index += 1
-        self.species_pair_indices = {}
-        index = 0
-        for i in itertools.combinations_with_replacement(self.species, 2):
-            self.species_pair_indices[frozenset(i)] = index
-            index += 1
 
     def radial_length(self):
         return len(self.constants['EtaR']) * len(self.constants['ShfR'])
@@ -90,7 +85,7 @@ class ani:
         return ret.view(-1, atoms, atoms, atoms, self.angular_length())
     
     def fill_angular_sum_by_zero(self, angular_sum_by_species, conformations):
-        possible_keys = set([frozenset([i,j]) for i,j in itertools.combinations(self.species, 2)] + [frozenset([i]) for i in self.species])
+        possible_keys = set([frozenset([i,j]) for i,j in itertools.combinations_with_replacement(self.species, 2)])
         complementary = possible_keys - set(angular_sum_by_species.keys())
         for i in complementary:
             angular_sum_by_species[i] = torch.zeros(conformations, self.angular_length(), dtype=self.dtype)
@@ -106,22 +101,6 @@ class ani:
                     continue
                 key = species[j]
                 ret[0,i,j,0,self.species_indices[key]] = 1
-        return ret
-    
-    def angular_sum_indices(self, species):
-        # returns a tensor of shape (1, atoms, atoms, atoms, 1, len(self.species_pair_indices))
-        # which selects where the sum goes
-        atoms = len(species)
-        ret = torch.zeros(1, atoms, atoms, atoms, 1, len(self.species_pair_indices), dtype=self.dtype)
-        for i in range(len(species)):
-            for j in range(len(species)):
-                if j == i:
-                    continue
-                for k in range(j+1, len(species)):
-                    if k == i:
-                        continue
-                    key = frozenset([species[j],species[k]])
-                    ret[0,i,j,k,0,self.species_pair_indices[key]] = 1
         return ret
 
     def compute_aev(self, coordinates, species):
@@ -156,10 +135,10 @@ class ani:
                     else:
                         angular_sum_by_species[key] = angular_term
             self.fill_angular_sum_by_zero(angular_sum_by_species, conformations)
-            angular_aev = torch.cat(list(angular_sum_by_species.values()), dim=1)  # shape (conformations, torchani.angular.length)
+            angular_aev = torch.cat(list(angular_sum_by_species.values()), dim=1)
             angular_aevs.append(angular_aev)
-        angular_aevs = torch.stack(angular_aevs, dim=1)  # shape (conformations, atoms, torchani.angular.length)
-        
+        angular_aevs = torch.stack(angular_aevs, dim=1)
+
         return radial_aevs, angular_aevs
 
     
