@@ -43,38 +43,38 @@ class ani:
             self.species_indices[i] = index
             index += 1
 
-    def radial_length(self):
+    def _radial_length(self):
         return len(self.constants['EtaR']) * len(self.constants['ShfR'])
     
-    def angular_length(self):
+    def _angular_length(self):
         return len(self.constants['EtaA']) * len(self.constants['Zeta']) * len(self.constants['ShfA']) * len(self.constants['ShfZ'])
 
     @staticmethod
-    def cutoff_cosine(distances, cutoff):
+    def _cutoff_cosine(distances, cutoff):
         return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
 
-    def compute_radial_terms(self, distances):
+    def _compute_radial_terms(self, distances):
         # use broadcasting semantics to combine constants
         # shape convension (conformations, atoms, atoms, eta, radius_shift)
         atoms = distances.shape[1]
         distances = distances.view(-1, atoms, atoms, 1, 1)
-        fc = ani.cutoff_cosine(distances, self.constants['Rcr'])
+        fc = ani._cutoff_cosine(distances, self.constants['Rcr'])
         eta = torch.Tensor(self.constants['EtaR']).type(self.dtype).view(1,1,1,-1,1)
         radius_shift = torch.Tensor(self.constants['ShfR']).type(self.dtype).view(1,1,1,1,-1)
         ret = 0.25 * torch.exp(-eta * (distances - radius_shift)**2) * fc
         # end of shape convension
         # reshape to (conformations, atoms, atoms, ?)
-        return ret.view(-1, atoms, atoms, self.radial_length())
+        return ret.view(-1, atoms, atoms, self._radial_length())
 
-    def compute_angular_terms(self, angles, R_distances):
+    def _compute_angular_terms(self, angles, R_distances):
         # use broadcasting semantics to combine constants
         # shape convension (conformations, atoms, atoms, atoms, eta, zeta, radius_shift, angle_shift)
         atoms = angles.shape[1]
         angles = angles.view(-1, atoms, atoms, atoms, 1, 1, 1, 1)
         Rij = R_distances.view(-1, atoms, atoms, 1, 1, 1, 1, 1)
         Rik = R_distances.view(-1, atoms, 1, atoms, 1, 1, 1, 1)
-        fcj = ani.cutoff_cosine(Rij, self.constants['Rca'])
-        fck = ani.cutoff_cosine(Rik, self.constants['Rca'])
+        fcj = ani._cutoff_cosine(Rij, self.constants['Rca'])
+        fck = ani._cutoff_cosine(Rik, self.constants['Rca'])
         eta = torch.Tensor(self.constants['EtaA']).type(self.dtype).view(1, 1, 1, 1, -1, 1, 1, 1)
         zeta = torch.Tensor(self.constants['Zeta']).type(self.dtype).view(1, 1, 1, 1, 1, -1, 1, 1)
         radius_shifts = torch.Tensor(self.constants['ShfA']).type(self.dtype).view(1, 1, 1, 1, 1, 1, -1, 1)
@@ -82,15 +82,15 @@ class ani:
         ret = 2 * ((1 + torch.cos(angles - angle_shifts)) / 2) ** zeta * torch.exp(-eta * ((Rij + Rik) / 2 - radius_shifts) ** 2) * fcj * fck
         # end of shape convension
         # reshape to (conformations, ?)
-        return ret.view(-1, atoms, atoms, atoms, self.angular_length())
+        return ret.view(-1, atoms, atoms, atoms, self._angular_length())
     
-    def fill_angular_sum_by_zero(self, angular_sum_by_species, conformations):
+    def _fill_angular_sum_by_zero(self, angular_sum_by_species, conformations):
         possible_keys = set([frozenset([i,j]) for i,j in itertools.combinations_with_replacement(self.species, 2)])
         complementary = possible_keys - set(angular_sum_by_species.keys())
         for i in complementary:
-            angular_sum_by_species[i] = torch.zeros(conformations, self.angular_length(), dtype=self.dtype)
+            angular_sum_by_species[i] = torch.zeros(conformations, self._angular_length(), dtype=self.dtype)
 
-    def radial_sum_indices(self, species):
+    def _radial_sum_indices(self, species):
         # returns a tensor of shape (1, atoms, atoms, 1, len(self.species))
         # which selects where the sum goes
         atoms = len(species)
@@ -109,8 +109,8 @@ class ani:
 
         R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)  # shape (conformations, atoms, atoms, 3)
         R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))  # shape (conformations, atoms, atoms)
-        radial_terms = self.compute_radial_terms(R_distances)  # shape (conformations, atoms, atoms, self.radial_length())
-        radial_sum_indices = self.radial_sum_indices(species)
+        radial_terms = self._compute_radial_terms(R_distances)  # shape (conformations, atoms, atoms, self._radial_length())
+        radial_sum_indices = self._radial_sum_indices(species)
         radial_aevs = radial_terms.unsqueeze(-1) * radial_sum_indices
         radial_aevs = torch.sum(radial_aevs, dim=2).view(conformations, atoms, -1)
 
@@ -118,7 +118,7 @@ class ani:
         Rijk_inner_prods = torch.sum(R_vecs.unsqueeze(2) * R_vecs.unsqueeze(3), dim=-1)  # shape (conformations, atoms, atoms, atoms)
         cos_angles = 0.95 * Rijk_inner_prods / Rijk_distance_prods  # shape (conformations, atoms, atoms, atoms)
         angles = torch.acos(cos_angles)   # shape (conformations, atoms, atoms, atoms)
-        angular_terms = self.compute_angular_terms(angles, R_distances)  # shape (conformations, atoms, atoms, atoms, self.angular_length())
+        angular_terms = self._compute_angular_terms(angles, R_distances)  # shape (conformations, atoms, atoms, atoms, self._angular_length())
         angular_aevs = []
         for i in range(atoms):
             angular_sum_by_species = {}
@@ -134,7 +134,7 @@ class ani:
                         angular_sum_by_species[key] += angular_term
                     else:
                         angular_sum_by_species[key] = angular_term
-            self.fill_angular_sum_by_zero(angular_sum_by_species, conformations)
+            self._fill_angular_sum_by_zero(angular_sum_by_species, conformations)
             angular_aev = torch.cat(list(angular_sum_by_species.values()), dim=1)
             angular_aevs.append(angular_aev)
         angular_aevs = torch.stack(angular_aevs, dim=1)

@@ -36,11 +36,11 @@ class TestAgainstNeuroChem(unittest.TestCase):
         return self._get_radial_part(aevs), self._get_angular_part(aevs)
 
     def _get_radial_part(self, fullaev):
-        radial_size = self.ani.radial_length() * len(self.ani.species)
+        radial_size = self.ani._radial_length() * len(self.ani.species)
         return fullaev[:,:,:radial_size]
 
     def _get_angular_part(self, fullaev):
-        radial_size = self.ani.radial_length() * len(self.ani.species)
+        radial_size = self.ani._radial_length() * len(self.ani.species)
         return fullaev[:,:,radial_size:]
 
     def _test_molecule(self, coordinates, species):
