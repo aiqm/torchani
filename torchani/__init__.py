@@ -63,22 +63,23 @@ class ani:
         # reshape to (conformations, atoms, atoms, ?)
         return ret.view(-1, atoms, atoms, self.radial_length())
 
-    def compute_angular_term(self, angle, Rij, Rik):
+    def compute_angular_terms(self, angles, R_distances):
         # use broadcasting semantics to combine constants
-        # shape convension (conformations, eta, zeta, radius_shift, angle_shift)
-        angle = angle.view(-1, 1, 1, 1, 1)
-        Rij = Rij.view(-1, 1, 1, 1, 1)
-        Rik = Rik.view(-1, 1, 1, 1, 1)
+        # shape convension (conformations, atoms, atoms, atoms, eta, zeta, radius_shift, angle_shift)
+        atoms = angles.shape[1]
+        angles = angles.view(-1, atoms, atoms, atoms, 1, 1, 1, 1)
+        Rij = R_distances.view(-1, atoms, atoms, 1, 1, 1, 1, 1)
+        Rik = R_distances.view(-1, atoms, 1, atoms, 1, 1, 1, 1)
         fcj = ani.cutoff_cosine(Rij, self.constants['Rca'])
         fck = ani.cutoff_cosine(Rik, self.constants['Rca'])
-        eta = torch.Tensor(self.constants['EtaA']).type(self.dtype).view(1, -1, 1, 1, 1)
-        zeta = torch.Tensor(self.constants['Zeta']).type(self.dtype).view(1, 1, -1, 1, 1)
-        radius_shift = torch.Tensor(self.constants['ShfA']).type(self.dtype).view(1, 1, 1, -1, 1)
-        angle_shift = torch.Tensor(self.constants['ShfZ']).type(self.dtype).view(1, 1, 1, 1, -1)
-        ret = 2 * ((1 + torch.cos(angle - angle_shift)) / 2) ** zeta * torch.exp(-eta * ((Rij + Rik) / 2 - radius_shift) ** 2) * fcj * fck
+        eta = torch.Tensor(self.constants['EtaA']).type(self.dtype).view(1, 1, 1, 1, -1, 1, 1, 1)
+        zeta = torch.Tensor(self.constants['Zeta']).type(self.dtype).view(1, 1, 1, 1, 1, -1, 1, 1)
+        radius_shifts = torch.Tensor(self.constants['ShfA']).type(self.dtype).view(1, 1, 1, 1, 1, 1, -1, 1)
+        angle_shifts = torch.Tensor(self.constants['ShfZ']).type(self.dtype).view(1, 1, 1, 1, 1, 1, 1, -1)
+        ret = 2 * ((1 + torch.cos(angles - angle_shifts)) / 2) ** zeta * torch.exp(-eta * ((Rij + Rik) / 2 - radius_shifts) ** 2) * fcj * fck
         # end of shape convension
         # reshape to (conformations, ?)
-        return ret.view(-1, self.angular_length())
+        return ret.view(-1, atoms, atoms, atoms, self.angular_length())
 
     def fill_radial_sum_by_zero(self, radial_sum_by_species, conformations):
         complementary = set(self.species) - set(radial_sum_by_species.keys())
@@ -105,20 +106,19 @@ class ani:
         radial_aevs = []
         angular_aevs = []
         R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)  # shape (conformations, atoms, atoms, 3)
-        pair_idx_mask = (torch.ones(atoms,atoms).triu() == 1).unsqueeze(0).unsqueeze(-1).expand(conformations,-1,-1,3)
         R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))  # shape (conformations, atoms, atoms)
         radial_terms = self.compute_radial_terms(R_distances)  # shape (conformations, atoms, atoms, self.radial_length())
         Rijk_distance_prods = R_distances.unsqueeze(2) * R_distances.unsqueeze(3)  # shape (conformations, atoms, atoms, atoms)
         Rijk_inner_prods = torch.sum(R_vecs.unsqueeze(2) * R_vecs.unsqueeze(3), dim=-1)  # shape (conformations, atoms, atoms, atoms)
         cos_angles = 0.95 * Rijk_inner_prods / Rijk_distance_prods  # shape (conformations, atoms, atoms, atoms)
-        angles = torch.acos(cos_angles)
+        angles = torch.acos(cos_angles)   # shape (conformations, atoms, atoms, atoms)
+        angular_terms = self.compute_angular_terms(angles, R_distances)  # shape (conformations, atoms, atoms, atoms, self.angular_length())
         for i in range(atoms):
             radial_sum_by_species = {}
             angular_sum_by_species = {}
             for j in range(atoms):
                 if j == i:
                     continue
-                Rij_distance = R_distances[:,i,j]
                 radial_term = radial_terms[:,i,j,:]
                 if species[j] in radial_sum_by_species:
                     radial_sum_by_species[species[j]] += radial_term
@@ -127,9 +127,7 @@ class ani:
                 for k in range(j+1,atoms):
                     if k == i:
                         continue
-                    Rik_distance = R_distances[:,i,k]
-                    angle = angles[:,i,j,k]
-                    angular_term = self.compute_angular_term(angle, Rij_distance, Rik_distance)
+                    angular_term = angular_terms[:,i,j,k,:]
                     key = frozenset(species[j]+species[k])
                     if key in angular_sum_by_species:
                         angular_sum_by_species[key] += angular_term
