@@ -36,15 +36,23 @@ class ani:
                     self.self_energies[name] = value
                 except:
                     pass  # ignore unrecognizable line
+        # assign supported species indices
+        self.species_indices = {}
+        index = 0
+        for i in self.species:
+            self.species_indices[i] = index
+            index += 1
+        self.species_pair_indices = {}
+        index = 0
+        for i in itertools.combinations_with_replacement(self.species, 2):
+            self.species_pair_indices[frozenset(i)] = index
+            index += 1
 
     def radial_length(self):
         return len(self.constants['EtaR']) * len(self.constants['ShfR'])
     
     def angular_length(self):
         return len(self.constants['EtaA']) * len(self.constants['Zeta']) * len(self.constants['ShfA']) * len(self.constants['ShfZ'])
-
-    def angular_iter(self):
-        return itertools.product(self.constants['EtaA'], self.constants['Zeta'], self.constants['ShfA'], self.constants['ShfZ'])
 
     @staticmethod
     def cutoff_cosine(distances, cutoff):
@@ -80,11 +88,6 @@ class ani:
         # end of shape convension
         # reshape to (conformations, ?)
         return ret.view(-1, atoms, atoms, atoms, self.angular_length())
-
-    def fill_radial_sum_by_zero(self, radial_sum_by_species, conformations):
-        complementary = set(self.species) - set(radial_sum_by_species.keys())
-        for i in complementary:
-            radial_sum_by_species[i] = torch.zeros(conformations, self.radial_length(), dtype=self.dtype)
     
     def fill_angular_sum_by_zero(self, angular_sum_by_species, conformations):
         possible_keys = set([frozenset([i,j]) for i,j in itertools.combinations(self.species, 2)] + [frozenset([i]) for i in self.species])
@@ -92,38 +95,57 @@ class ani:
         for i in complementary:
             angular_sum_by_species[i] = torch.zeros(conformations, self.angular_length(), dtype=self.dtype)
 
-    @staticmethod
-    def atom_pair_index(atoms, i, j):
-        return 1
-
-    @staticmethod
-    def pairs(atoms):
-        return atoms * (atoms - 1) / 2
+    def radial_sum_indices(self, species):
+        # returns a tensor of shape (1, atoms, atoms, 1, len(self.species))
+        # which selects where the sum goes
+        atoms = len(species)
+        ret = torch.zeros(1, atoms, atoms, 1, len(self.species), dtype=self.dtype)
+        for i in range(len(species)):
+            for j in range(len(species)):
+                if j == i:
+                    continue
+                key = species[j]
+                ret[0,i,j,0,self.species_indices[key]] = 1
+        return ret
+    
+    def angular_sum_indices(self, species):
+        # returns a tensor of shape (1, atoms, atoms, atoms, 1, len(self.species_pair_indices))
+        # which selects where the sum goes
+        atoms = len(species)
+        ret = torch.zeros(1, atoms, atoms, atoms, 1, len(self.species_pair_indices), dtype=self.dtype)
+        for i in range(len(species)):
+            for j in range(len(species)):
+                if j == i:
+                    continue
+                for k in range(j+1, len(species)):
+                    if k == i:
+                        continue
+                    key = frozenset([species[j],species[k]])
+                    ret[0,i,j,k,0,self.species_pair_indices[key]] = 1
+        return ret
 
     def compute_aev(self, coordinates, species):
         conformations = coordinates.shape[0]
         atoms = coordinates.shape[1]
-        radial_aevs = []
-        angular_aevs = []
+
         R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)  # shape (conformations, atoms, atoms, 3)
         R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))  # shape (conformations, atoms, atoms)
         radial_terms = self.compute_radial_terms(R_distances)  # shape (conformations, atoms, atoms, self.radial_length())
+        radial_sum_indices = self.radial_sum_indices(species)
+        radial_aevs = radial_terms.unsqueeze(-1) * radial_sum_indices
+        radial_aevs = torch.sum(radial_aevs, dim=2).view(conformations, atoms, -1)
+
         Rijk_distance_prods = R_distances.unsqueeze(2) * R_distances.unsqueeze(3)  # shape (conformations, atoms, atoms, atoms)
         Rijk_inner_prods = torch.sum(R_vecs.unsqueeze(2) * R_vecs.unsqueeze(3), dim=-1)  # shape (conformations, atoms, atoms, atoms)
         cos_angles = 0.95 * Rijk_inner_prods / Rijk_distance_prods  # shape (conformations, atoms, atoms, atoms)
         angles = torch.acos(cos_angles)   # shape (conformations, atoms, atoms, atoms)
         angular_terms = self.compute_angular_terms(angles, R_distances)  # shape (conformations, atoms, atoms, atoms, self.angular_length())
+        angular_aevs = []
         for i in range(atoms):
-            radial_sum_by_species = {}
             angular_sum_by_species = {}
             for j in range(atoms):
                 if j == i:
                     continue
-                radial_term = radial_terms[:,i,j,:]
-                if species[j] in radial_sum_by_species:
-                    radial_sum_by_species[species[j]] += radial_term
-                else:
-                    radial_sum_by_species[species[j]] = radial_term
                 for k in range(j+1,atoms):
                     if k == i:
                         continue
@@ -133,14 +155,11 @@ class ani:
                         angular_sum_by_species[key] += angular_term
                     else:
                         angular_sum_by_species[key] = angular_term
-            self.fill_radial_sum_by_zero(radial_sum_by_species, conformations)
             self.fill_angular_sum_by_zero(angular_sum_by_species, conformations)
-            radial_aev = torch.cat(list(radial_sum_by_species.values()), dim=1)  # shape (conformations, torchani.radial.length)
             angular_aev = torch.cat(list(angular_sum_by_species.values()), dim=1)  # shape (conformations, torchani.angular.length)
-            radial_aevs.append(radial_aev)
             angular_aevs.append(angular_aev)
-        radial_aevs = torch.stack(radial_aevs, dim=1)  # shape (conformations, atoms, torchani.radial.length)
         angular_aevs = torch.stack(angular_aevs, dim=1)  # shape (conformations, atoms, torchani.angular.length)
+        
         return radial_aevs, angular_aevs
 
     
