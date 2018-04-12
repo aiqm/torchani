@@ -3,4 +3,4 @@
 *.prof
 train_ens
 __pycache__
-data
+./data
