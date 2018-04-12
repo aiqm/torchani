@@ -11,4 +11,6 @@ setup(name='torchani',
       install_requires=[
           'pytorch',
       ],
+      test_suite='nose.collector',
+      tests_require=['nose'],
       zip_safe=False)
