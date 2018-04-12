@@ -72,7 +72,7 @@ class AEV(AEVComputer):
                 ret[0,i,j,0,self.species_indices[key]] = 1
         return ret
 
-    def __apply__(self, coordinates, species):
+    def __call__(self, coordinates, species):
         conformations = coordinates.shape[0]
         atoms = coordinates.shape[1]
 

@@ -17,7 +17,7 @@ class EnergyShifter:
                 except:
                     pass  # ignore unrecognizable line
 
-    def __apply__(self, energies, species):
+    def __call__(self, energies, species):
         s = 0
         for i in species:
             s += self.self_energies[i]

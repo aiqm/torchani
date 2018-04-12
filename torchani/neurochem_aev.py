@@ -33,7 +33,7 @@ class NeuroChemAEV (AEVComputer):
         aevs = numpy.stack(aevs)
         return aevs
 
-    def __apply__(self, coordinates, species):
+    def __call__(self, coordinates, species):
         conformations = coordinates.shape[0]
         aevs = [self._compute_neurochem_aevs_per_conformation(coordinates[i], species) for i in range(conformations)]
         aevs = torch.from_numpy(numpy.stack(aevs)).type(self.dtype)

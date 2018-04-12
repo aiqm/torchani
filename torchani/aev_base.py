@@ -39,5 +39,5 @@ class AEVComputer:
     def angular_length(self):
         return len(self.species) * self.per_species_angular_length()
 
-    def __apply__(self, coordinates, species):
+    def __call__(self, coordinates, species):
         raise NotImplementedError('subclass must override this method')
