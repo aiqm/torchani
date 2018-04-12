@@ -10,45 +10,9 @@ import sys
 aev = torchani.AEV()
 shift_energy = torchani.EnergyShifter()
 
-class Net(nn.Module):
 
-    def __init__(self):
-        super(Net, self).__init__()
-        self.by_species = {}
-        for i in aev.species:
-            linear = nn.Linear(384, 128).cuda()
-            linear.reset_parameters()
-            setattr(self, i + '0', linear)
-            linear = nn.Linear(128, 128).cuda()
-            linear.reset_parameters()
-            setattr(self, i + '1', linear)
-            linear = nn.Linear(128, 64).cuda()
-            linear.reset_parameters()
-            setattr(self, i + '2', linear)
-            linear = nn.Linear(64, 1).cuda()
-            linear.reset_parameters()
-            setattr(self, i + '3', linear)
-
-    def forward(self, x, species):
-        atoms = len(species)
-        per_atom_energies = []
-        for i in range(atoms):
-            s = species[i]
-            y = x[:,i,:]
-            y = getattr(self, s + '0')(y)
-            y = torch.exp(-y**2)
-            y = getattr(self, s + '1')(y)
-            y = torch.exp(-y**2)
-            y = getattr(self, s + '2')(y)
-            y = torch.exp(-y**2)
-            y = getattr(self, s + '3')(y)
-            per_atom_energies.append(y)
-        per_atom_energies = torch.stack(per_atom_energies)
-        molecule_energies = torch.sum(per_atom_energies, dim=0)
-        return torch.squeeze(molecule_energies)
-
-
-net = Net()
+net = torchani.NeuralNetworkOnAEV(aev, [128,128,1], lambda x: torch.exp(-x**2))
+net.reset_parameters()
 print(net)
 
 optimizer = optim.Adam(net.parameters(), amsgrad=True)
@@ -57,10 +21,8 @@ global_steps = 0
 
 def step(energies, species, coordinates, batch_size, training, epoch, do_print, fileindex):
     label = torch.from_numpy(shift_energy(energies, species)).type(aev.dtype)
-    radial_aev, angular_aev = aev(coordinates, species)
-    fullaev = torch.cat([radial_aev, angular_aev], dim=2)
 
-    pred = net(fullaev, species)
+    pred = net(coordinates, species)
     squared_error = torch.sum((label - pred) ** 2)
     mse = squared_error  / batch_size
     rmse_kcalmol = 627.509 * torch.sqrt(mse)
