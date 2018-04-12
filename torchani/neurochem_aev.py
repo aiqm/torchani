@@ -3,6 +3,7 @@ import ase
 import pyNeuroChem
 import ase_interface
 import pkg_resources
+import numpy
 from .aev_base import AEVComputer
 
 default_const_file = pkg_resources.resource_filename(__name__, 'data/rHCNO-4.6R_16-3.1A_a4-8_3.params')

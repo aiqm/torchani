@@ -53,23 +53,29 @@ class AEV(AEVComputer):
         # reshape to (conformations, ?)
         return ret.view(-1, atoms, atoms, atoms, self.per_species_angular_length())
     
-    def _fill_angular_sum_by_zero(self, angular_sum_by_species, conformations):
+    def _fill_angular_sums_by_zero(self, angular_sum_by_species, conformations):
         possible_keys = set([frozenset([i,j]) for i,j in itertools.combinations_with_replacement(self.species, 2)])
         complementary = possible_keys - set(angular_sum_by_species.keys())
         for i in complementary:
             angular_sum_by_species[i] = torch.zeros(conformations, self.per_species_angular_length(), dtype=self.dtype)
 
+    def _angular_sums_to_list(self, angular_sum_by_species):
+        ret = []
+        for i,j in itertools.combinations_with_replacement(self.species, 2):
+            ret.append(angular_sum_by_species[frozenset([i,j])])
+        return ret
+
     def _radial_sum_indices(self, species):
-        # returns a tensor of shape (1, atoms, atoms, 1, len(self.species))
+        # returns a tensor of shape (1, atoms, len(self.species), atoms, 1)
         # which selects where the sum goes
         atoms = len(species)
-        ret = torch.zeros(1, atoms, atoms, 1, len(self.species), dtype=self.dtype)
+        ret = torch.zeros(1, atoms, len(self.species), atoms, 1, dtype=self.dtype)
         for i in range(len(species)):
             for j in range(len(species)):
                 if j == i:
                     continue
                 key = species[j]
-                ret[0,i,j,0,self.species_indices[key]] = 1
+                ret[0,i,self.species_indices[key],j,0] = 1
         return ret
 
     def __call__(self, coordinates, species):
@@ -80,8 +86,8 @@ class AEV(AEVComputer):
         R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))  # shape (conformations, atoms, atoms)
         radial_terms = self._compute_radial_terms(R_distances)  # shape (conformations, atoms, atoms, self.per_species_radial_length())
         radial_sum_indices = self._radial_sum_indices(species)
-        radial_aevs = radial_terms.unsqueeze(-1) * radial_sum_indices
-        radial_aevs = torch.sum(radial_aevs, dim=2).view(conformations, atoms, -1)
+        radial_aevs = radial_terms.unsqueeze(2) * radial_sum_indices
+        radial_aevs = torch.sum(radial_aevs, dim=3).view(conformations, atoms, -1)
 
         Rijk_distance_prods = R_distances.unsqueeze(2) * R_distances.unsqueeze(3)  # shape (conformations, atoms, atoms, atoms)
         Rijk_inner_prods = torch.sum(R_vecs.unsqueeze(2) * R_vecs.unsqueeze(3), dim=-1)  # shape (conformations, atoms, atoms, atoms)
@@ -103,8 +109,8 @@ class AEV(AEVComputer):
                         angular_sum_by_species[key] += angular_term
                     else:
                         angular_sum_by_species[key] = angular_term
-            self._fill_angular_sum_by_zero(angular_sum_by_species, conformations)
-            angular_aev = torch.cat(list(angular_sum_by_species.values()), dim=1)
+            self._fill_angular_sums_by_zero(angular_sum_by_species, conformations)
+            angular_aev = torch.cat(self._angular_sums_to_list(angular_sum_by_species), dim=1)
             angular_aevs.append(angular_aev)
         angular_aevs = torch.stack(angular_aevs, dim=1)
 
