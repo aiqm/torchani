@@ -10,6 +10,7 @@ setup(name='torchani',
       packages=['torchani'],
       install_requires=[
           'pytorch',
+          'lark-parser',
       ],
       test_suite='nose.collector',
       tests_require=['nose'],
