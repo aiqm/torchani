@@ -11,7 +11,7 @@ aev = torchani.AEV()
 shift_energy = torchani.EnergyShifter()
 
 
-net = torchani.NeuralNetworkOnAEV(aev, [128,128,1], lambda x: torch.exp(-x**2))
+net = torchani.NeuralNetworkOnAEV(aev, [128,128,1])
 net.reset_parameters()
 print(net)
 

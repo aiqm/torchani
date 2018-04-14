@@ -30,9 +30,11 @@ class NeuralNetworkOnAEV(nn.Module):
         fw = open(wfn, 'rb')
         float_w = struct.unpack('{}f'.format(wsize), fw.read())
         linear.weight = torch.nn.parameter.Parameter(torch.FloatTensor(float_w).type(self.aev_computer.dtype).view(in_size, out_size).permute(1,0))
+        fw.close()
         fb = open(bfn, 'rb')
         float_b = struct.unpack('{}f'.format(out_size), fb.read())
         linear.bias = torch.nn.parameter.Parameter(torch.FloatTensor(float_b).type(self.aev_computer.dtype).view(out_size))
+        fb.close()
 
     def _construct_layers_from_neurochem_cfgfile(self, species, setups, dirname):
         # activation defined in file https://github.com/Jussmith01/NeuroChem/blob/master/src-atomicnnplib/cunetwork/cuannlayer_t.cu#L868
@@ -71,11 +73,13 @@ class NeuralNetworkOnAEV(nn.Module):
     def _read_nnf_file(self, species, filename):
 
         # decompress nnf file
-        f = open(filename, 'rb').read()
-        while f[0] != b'='[0]:
-            f = f[1:]
-        f = f[2:]
-        d = bz2.decompress(f)[:-1].decode('ascii').strip()
+        f = open(filename, 'rb')
+        d = f.read()
+        f.close()
+        while d[0] != b'='[0]:
+            d = d[1:]
+        d = d[2:]
+        d = bz2.decompress(d)[:-1].decode('ascii').strip()
 
         # parse input size
         parser = lark.Lark(r'''

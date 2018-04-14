@@ -1,7 +1,7 @@
 from .torchaev import AEV
 from .energyshifter import EnergyShifter
 from .neurochem_aev import NeuroChemAEV
-from .nnp import NeuralNetworkOnAEV
+from .nn import NeuralNetworkOnAEV
 
 # TODO list
 # 4. allow loading from and saving to Justin's data format

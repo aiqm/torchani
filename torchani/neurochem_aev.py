@@ -14,6 +14,9 @@ class NeuroChemAEV (AEVComputer):
     
     def __init__(self, dtype=torch.cuda.float32, const_file=default_const_file, sae_file=default_sae_file, network_dir=default_network_dir):
         super(NeuroChemAEV, self).__init__(dtype, const_file)
+        self.const_file = const_file
+        self.sae_file = sae_file
+        self.network_dir = network_dir
         self.nc = pyNeuroChem.molecule(const_file, sae_file, network_dir, 0)
 
     def _get_radial_part(self, fullaev):
@@ -29,7 +32,7 @@ class NeuroChemAEV (AEVComputer):
         mol = ase.Atoms(''.join(species), positions=coordinates)
         mol.set_calculator(ase_interface.ANI(False))
         mol.calc.setnc(self.nc)
-        ei = mol.get_potential_energy()
+        _ = mol.get_potential_energy()
         aevs = [ self.nc.atomicenvironments(j) for j in range(atoms) ]
         aevs = numpy.stack(aevs)
         return aevs
