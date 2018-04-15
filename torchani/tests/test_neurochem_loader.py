@@ -16,8 +16,7 @@ class TestNeuroChemLoader(unittest.TestCase):
         for i in range(len(self.ncaev.species)):
             s = self.ncaev.species[i]
             self.logger.info(s)
-            print(s)
-            for j in range(nn.layers):
+            for j in range(nn.layers[s]):
                 linear = getattr(nn, '{}{}'.format(s, j))
                 ncparams = self.ncaev.nc.getntwkparams(i,j)
                 ncw = numpy.transpose(ncparams['weights'])
@@ -26,9 +25,6 @@ class TestNeuroChemLoader(unittest.TestCase):
                 ncb = torch.from_numpy(ncb).type(self.ncaev.dtype)
                 max_wdiff = torch.max(torch.abs(ncw - linear.weight.data)).item()
                 max_bdiff = torch.max(torch.abs(ncb - linear.bias.data)).item()
-                print(ncw)
-                print(linear.weight.data)
-                print(ncw-linear.weight)
                 self.assertEqual(max_bdiff, 0.0)
                 self.assertEqual(max_wdiff, 0.0)
 
