@@ -5,6 +5,8 @@ import bz2
 import os
 import lark
 import struct
+import copy
+import math
 
 class NeuralNetworkOnAEV(nn.Module):
 
@@ -19,6 +21,11 @@ class NeuralNetworkOnAEV(nn.Module):
             self._from_pync(kwargs['from_pync'])
         elif 'sizes' in kwargs:
             sizes = kwargs['sizes']
+            if isinstance(sizes, list):
+                sz = sizes
+                sizes = {}
+                for i in aev_computer.species:
+                    sizes[i] = copy.copy(sz)
             activation = kwargs['activation'] if 'activation' in kwargs else lambda x: torch.exp(-x**2)
             reducer = kwargs['reducer'] if 'reducer' in kwargs else torch.sum
             self._from_config(sizes, activation, reducer)
@@ -40,16 +47,15 @@ class NeuralNetworkOnAEV(nn.Module):
         # activation defined in file https://github.com/Jussmith01/NeuroChem/blob/master/src-atomicnnplib/cunetwork/cuannlayer_t.cu#L868
         self.activation_index = None
         self.activation = None
-        self.reducer = torch.sum
-        self.layers = len(setups)
-        for i in range(self.layers):
+        self.layers[species] = len(setups)
+        for i in range(self.layers[species]):
             s = setups[i]
             in_size = s['blocksize']
             out_size = s['nodes']
             activation = s['activation']
             wfn, wsz = s['weights']
             bfn, bsz = s['biases']
-            if i == self.layers-1:
+            if i == self.layers[species]-1:
                 if activation != 6:  # no activation
                     raise ValueError('activation in the last layer must be 6')
             else:
@@ -71,7 +77,6 @@ class NeuralNetworkOnAEV(nn.Module):
             self._load_params_from_param_file(linear, in_size, out_size, wfn, bfn)
         
     def _read_nnf_file(self, species, filename):
-
         # decompress nnf file
         f = open(filename, 'rb')
         d = f.read()
@@ -167,21 +172,30 @@ class NeuralNetworkOnAEV(nn.Module):
         self._construct_layers_from_neurochem_cfgfile(species, layer_setups, os.path.dirname(filename))
 
     def _from_pync(self, network_dir):
+        self.reducer = torch.sum
+        self.layers = {}
         for i in self.aev_computer.species:
             filename = os.path.join(network_dir, 'ANN-{}.nnf'.format(i))
             self._read_nnf_file(i, filename)
 
     def _from_config(self, sizes, activation, reducer):
-        self.layers = len(sizes)
         self.activation = activation
         self.reducer = reducer
-        sizes = [self.aev_length] + sizes
         for i in self.aev_computer.species:
-            for j in range(self.layers):
+            sizes[i] = [self.aev_length] + sizes[i]
+            self.layers[i] = len(sizes[i])
+            for j in range(self.layers[i]):
                 linear = nn.Linear(sizes[j], sizes[j+1]).type(self.aev_computer.dtype)
                 setattr(self, '{}{}'.format(i,j), linear)
 
     def forward(self, coordinates, species):
+        per_atom_outputs = self.get_activations(coordinates, species, math.inf)
+        per_atom_outputs = torch.stack(per_atom_outputs)
+        molecule_output = self.reducer(per_atom_outputs, dim=0)
+        return torch.squeeze(molecule_output)
+
+    def get_activations(self, coordinates, species, layer):
+        # layer == 0 means aev
         radial_aev, angular_aev = self.aev_computer(coordinates, species)
         fullaev = torch.cat([radial_aev, angular_aev], dim=2)
         atoms = len(species)
@@ -189,18 +203,19 @@ class NeuralNetworkOnAEV(nn.Module):
         for i in range(atoms):
             s = species[i]
             y = fullaev[:,i,:]
-            for j in range(self.layers-1):
+            for j in range(self.layers[s]-1):
                 linear = getattr(self, '{}{}'.format(s,j))
                 y = linear(y)
                 y = self.activation(y)
-            linear = getattr(self, '{}{}'.format(s,self.layers-1))
-            y = linear(y)
+                if j == layer:
+                    break
+            if layer >= self.layers[s]-1:
+                linear = getattr(self, '{}{}'.format(s,self.layers[s]-1))
+                y = linear(y)
             per_atom_outputs.append(y)
-        per_atom_outputs = torch.stack(per_atom_outputs)
-        molecule_output = self.reducer(per_atom_outputs, dim=0)
-        return torch.squeeze(molecule_output)
+        return per_atom_outputs
 
     def reset_parameters(self):
         for s in self.aev_computer.species:
-            for j in range(self.layers):
+            for j in range(self.layers[s]):
                 getattr(self, '{}{}'.format(s,j)).reset_parameters()
