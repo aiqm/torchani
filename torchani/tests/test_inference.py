@@ -35,10 +35,9 @@ class TestInference(unittest.TestCase):
         energies = self._get_neurochem_energies(coordinates, species)
         coordinates = torch.from_numpy(coordinates).type(self.ncaev.dtype)
         pred_energies = self.nn(coordinates, species)
+        print(torch.stack([pred_energies, energies], dim=1))
         maxdiff = torch.max(torch.abs(pred_energies - energies)).item()
         self.assertLess(maxdiff, self.tolerance)
-        # print(pred_energies, energies)
-        # TODO
 
     def _test_activations(self, coordinates, species):
         conformations = coordinates.shape[0]
@@ -55,10 +54,9 @@ class TestInference(unittest.TestCase):
                     _ = mol.get_potential_energy()
                     nca = self.ncaev.nc.activations(j, layer, 0)
                     nca = torch.from_numpy(nca).type(self.ncaev.dtype)
-                    # get activatio from NeuralNetworkOnAEV
+                    # get activation from NeuralNetworkOnAEV
                     a = self.nn.get_activations(c.reshape(1,-1,3), species, layer)[j].view(-1)
                     # compute diff
-                    print(torch.stack([nca,a], dim=1))
                     maxdiff = torch.max(torch.abs(nca - a)).item()
                     self.assertLess(maxdiff, self.tolerance)
 
@@ -71,8 +69,8 @@ class TestInference(unittest.TestCase):
             species = data['species']
             smiles = ''.join(data['smiles'])
             print(smiles)
-            self._test_molecule_energy(coordinates, species)
             self._test_activations(coordinates, species)
+            self._test_molecule_energy(coordinates, species)
             self.logger.info('Test pass: ' + smiles)
 
     def testGDB01(self):

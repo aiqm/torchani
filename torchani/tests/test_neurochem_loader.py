@@ -19,7 +19,7 @@ class TestNeuroChemLoader(unittest.TestCase):
             for j in range(nn.layers[s]):
                 linear = getattr(nn, '{}{}'.format(s, j))
                 ncparams = self.ncaev.nc.getntwkparams(i,j)
-                ncw = numpy.transpose(ncparams['weights'])
+                ncw = ncparams['weights']
                 ncw = torch.from_numpy(ncw).type(self.ncaev.dtype)
                 ncb = numpy.transpose(ncparams['biases'])
                 ncb = torch.from_numpy(ncb).type(self.ncaev.dtype)

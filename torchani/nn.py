@@ -36,7 +36,7 @@ class NeuralNetworkOnAEV(nn.Module):
         wsize = in_size * out_size
         fw = open(wfn, 'rb')
         float_w = struct.unpack('{}f'.format(wsize), fw.read())
-        linear.weight = torch.nn.parameter.Parameter(torch.FloatTensor(float_w).type(self.aev_computer.dtype).view(in_size, out_size).permute(1,0))
+        linear.weight = torch.nn.parameter.Parameter(torch.FloatTensor(float_w).type(self.aev_computer.dtype).view(out_size, in_size))
         fw.close()
         fb = open(bfn, 'rb')
         float_b = struct.unpack('{}f'.format(out_size), fb.read())
@@ -195,7 +195,6 @@ class NeuralNetworkOnAEV(nn.Module):
         return torch.squeeze(molecule_output)
 
     def get_activations(self, coordinates, species, layer):
-        # layer == 0 means aev
         radial_aev, angular_aev = self.aev_computer(coordinates, species)
         fullaev = torch.cat([radial_aev, angular_aev], dim=2)
         atoms = len(species)
