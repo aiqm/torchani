@@ -16,6 +16,7 @@ class TestInference(unittest.TestCase):
         self.ncaev = torchani.NeuroChemAEV()
         self.nn = torchani.NeuralNetworkOnAEV(self.ncaev, from_pync=self.ncaev.network_dir)
         self.logger = logging.getLogger('smiles')
+        self.shift_energy = torchani.EnergyShifter(self.ncaev.sae_file)
     
     def _get_neurochem_energies(self, coordinates, species):
         conformations = coordinates.shape[0]
@@ -25,19 +26,20 @@ class TestInference(unittest.TestCase):
             mol = ase.Atoms(''.join(species), positions=c)
             mol.set_calculator(ase_interface.ANI(False))
             mol.calc.setnc(self.ncaev.nc)
-            e = mol.get_potential_energy()
+            _ = mol.get_potential_energy()
+            e = self.ncaev.nc.energy()[0]
             nc_energies.append(e)
         nc_energies = torch.DoubleTensor(nc_energies)
-        nc_energies /= 627.509
         return nc_energies.type(self.ncaev.dtype)
 
     def _test_molecule_energy(self, coordinates, species):
         energies = self._get_neurochem_energies(coordinates, species)
+        energies = self.shift_energy(energies, species)
         coordinates = torch.from_numpy(coordinates).type(self.ncaev.dtype)
         pred_energies = self.nn(coordinates, species)
-        print(torch.stack([pred_energies, energies], dim=1))
         maxdiff = torch.max(torch.abs(pred_energies - energies)).item()
-        self.assertLess(maxdiff, self.tolerance)
+        maxdiff_per_atom = maxdiff / len(species)
+        self.assertLess(maxdiff_per_atom, self.tolerance)
 
     def _test_activations(self, coordinates, species):
         conformations = coordinates.shape[0]
@@ -68,7 +70,6 @@ class TestInference(unittest.TestCase):
             coordinates = data['coordinates'][:10,:]
             species = data['species']
             smiles = ''.join(data['smiles'])
-            print(smiles)
             self._test_activations(coordinates, species)
             self._test_molecule_energy(coordinates, species)
             self.logger.info('Test pass: ' + smiles)
@@ -76,14 +77,14 @@ class TestInference(unittest.TestCase):
     def testGDB01(self):
         self._test_by_file(1)
 
-    # def testGDB02(self):
-    #     self._test_by_file(2)
+    def testGDB02(self):
+        self._test_by_file(2)
 
-    # def testGDB03(self):
-    #     self._test_by_file(3)
+    def testGDB03(self):
+        self._test_by_file(3)
     
-    # def testGDB04(self):
-    #     self._test_by_file(4)
+    def testGDB04(self):
+        self._test_by_file(4)
 
 if __name__ == '__main__':
     unittest.main()
