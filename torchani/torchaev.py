@@ -147,19 +147,37 @@ class AEV(AEVComputer):
             ret.append(angular_sum_by_species[frozenset([i, j])])
         return ret
 
-    def _radial_sum_indices(self, species):
-        # returns a tensor of shape (1, atoms, len(self.species), atoms, 1)
-        # which selects where the sum goes
+    def _sum_radial_terms(self, radial_terms, species):
+        """Sum up the computed radial subAEV terms"""
+        conformations = radial_terms.shape[0]
         atoms = len(species)
-        ret = torch.zeros(1, atoms, len(self.species),
+
+        # Here we need to group radial subAEV terms by their species, and sum up each group.
+        # Instead of using a for loop to do the sum, we first unsqueeze `radial_terms` from 
+        # shape (conformations, atoms, atoms, `per_species_radial_length()`) into
+        # shape (conformations, atoms, 1, atoms, `per_species_radial_length()`), where
+        # the extra dimension will becomes the group index. The unsqueeze `radial_terms` will
+        # then be multilied to the tensor `radial_sum_indices` which specifies which term goes
+        # which group of which atom. Then follows a sum operation on the specified axes to compute
+        # the sum.
+
+        radial_sum_indices = torch.zeros(1, atoms, len(self.species),
                           atoms, 1, dtype=self.dtype)
+        """pytorch tensor of `dtype`: The tensor that specifies which atom goes which group.
+        This tensor has shape (1, atoms, `len(self.species)`, atoms, 1), where the value at
+        index (0, i, j, k, 0) == 1 means in the sum of atom i's radial subAEV of species j
+        the term k is included . Otherwise the value should be 0.
+        """
+        # compute `radial_sum_indices`` below
         for i in range(len(species)):
             for j in range(len(species)):
                 if j == i:
                     continue
                 key = species[j]
-                ret[0, i, self._species_indices[key], j, 0] = 1
-        return ret
+                radial_sum_indices[0, i, self._species_indices[key], j, 0] = 1
+
+        radial_aevs = radial_terms.unsqueeze(2) * radial_sum_indices
+        return torch.sum(radial_aevs, dim=3).view(conformations, atoms, -1)
 
     def __call__(self, coordinates, species):
         conformations = coordinates.shape[0]
@@ -171,10 +189,7 @@ class AEV(AEVComputer):
         R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))
         # shape (conformations, atoms, atoms, self.per_species_radial_length())
         radial_terms = self._compute_radial_terms(R_distances)
-        radial_sum_indices = self._radial_sum_indices(species)
-        radial_aevs = radial_terms.unsqueeze(2) * radial_sum_indices
-        radial_aevs = torch.sum(radial_aevs, dim=3).view(
-            conformations, atoms, -1)
+        radial_aevs = self._sum_radial_terms(radial_terms, species)
 
         # shape (conformations, atoms, atoms, atoms, self.per_species_angular_length())
         angular_terms = self._compute_angular_terms(R_vecs, R_distances)
