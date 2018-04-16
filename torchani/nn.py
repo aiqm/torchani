@@ -8,12 +8,14 @@ import struct
 import copy
 import math
 
+
 class NeuralNetworkOnAEV(nn.Module):
 
     def __init__(self, aev_computer, **kwargs):
         super(NeuralNetworkOnAEV, self).__init__()
         if not isinstance(aev_computer, AEVComputer):
-            raise TypeError("NeuralNetworkPotential: aev_computer must be a subclass of AEVComputer")
+            raise TypeError(
+                "NeuralNetworkPotential: aev_computer must be a subclass of AEVComputer")
         self.aev_computer = aev_computer
         self.aev_length = aev_computer.radial_length() + aev_computer.angular_length()
 
@@ -26,21 +28,25 @@ class NeuralNetworkOnAEV(nn.Module):
                 sizes = {}
                 for i in aev_computer.species:
                     sizes[i] = copy.copy(sz)
-            activation = kwargs['activation'] if 'activation' in kwargs else lambda x: torch.exp(-x**2)
+            activation = kwargs['activation'] if 'activation' in kwargs else lambda x: torch.exp(
+                -x**2)
             reducer = kwargs['reducer'] if 'reducer' in kwargs else torch.sum
             self._from_config(sizes, activation, reducer)
         else:
-            raise ValueError('bad arguments when initializing NeuralNetworkOnAEV')
+            raise ValueError(
+                'bad arguments when initializing NeuralNetworkOnAEV')
 
     def _load_params_from_param_file(self, linear, in_size, out_size, wfn, bfn):
         wsize = in_size * out_size
         fw = open(wfn, 'rb')
         float_w = struct.unpack('{}f'.format(wsize), fw.read())
-        linear.weight = torch.nn.parameter.Parameter(torch.FloatTensor(float_w).type(self.aev_computer.dtype).view(out_size, in_size))
+        linear.weight = torch.nn.parameter.Parameter(torch.FloatTensor(
+            float_w).type(self.aev_computer.dtype).view(out_size, in_size))
         fw.close()
         fb = open(bfn, 'rb')
         float_b = struct.unpack('{}f'.format(out_size), fb.read())
-        linear.bias = torch.nn.parameter.Parameter(torch.FloatTensor(float_b).type(self.aev_computer.dtype).view(out_size))
+        linear.bias = torch.nn.parameter.Parameter(torch.FloatTensor(
+            float_b).type(self.aev_computer.dtype).view(out_size))
         fb.close()
 
     def _construct_layers_from_neurochem_cfgfile(self, species, setups, dirname):
@@ -66,16 +72,18 @@ class NeuralNetworkOnAEV(nn.Module):
                         self.activation_index = activation
                         self.activation = lambda x: torch.exp(-x**2)
                 elif self.activation_index != activation:
-                    raise NotImplementedError('different activation on different layers are not supported')
+                    raise NotImplementedError(
+                        'different activation on different layers are not supported')
             linear = nn.Linear(in_size, out_size).type(self.aev_computer.dtype)
-            name = '{}{}'.format(species,i)
+            name = '{}{}'.format(species, i)
             setattr(self, name, linear)
             if in_size * out_size != wsz or out_size != bsz:
                 raise ValueError('bad parameter shape')
             wfn = os.path.join(dirname, wfn)
             bfn = os.path.join(dirname, bfn)
-            self._load_params_from_param_file(linear, in_size, out_size, wfn, bfn)
-        
+            self._load_params_from_param_file(
+                linear, in_size, out_size, wfn, bfn)
+
     def _read_nnf_file(self, species, filename):
         # decompress nnf file
         f = open(filename, 'rb')
@@ -127,7 +135,8 @@ class NeuralNetworkOnAEV(nn.Module):
             def inputsize(self, v):
                 v = int(v[0])
                 if self.outerself.aev_length != v:
-                    raise ValueError('aev size of network file ({}) mismatch aev computer ({})'.format(v, self.outerself.aev_length))
+                    raise ValueError('aev size of network file ({}) mismatch aev computer ({})'.format(
+                        v, self.outerself.aev_length))
 
             def identifier(self, v):
                 v = v[0].value
@@ -153,7 +162,7 @@ class NeuralNetworkOnAEV(nn.Module):
             def assign(self, v):
                 name = v[0]
                 value = v[1]
-                return name,value
+                return name, value
 
             def layer(self, v):
                 return dict(v)
@@ -162,14 +171,16 @@ class NeuralNetworkOnAEV(nn.Module):
                 s = v[0].value
                 layers = v[1:]
                 if self.species != s:
-                    raise ValueError('network file does not store expected species')
+                    raise ValueError(
+                        'network file does not store expected species')
                 return layers
 
             def start(self, v):
                 return v[1]
 
         layer_setups = TreeExec(self, species).transform(tree)
-        self._construct_layers_from_neurochem_cfgfile(species, layer_setups, os.path.dirname(filename))
+        self._construct_layers_from_neurochem_cfgfile(
+            species, layer_setups, os.path.dirname(filename))
 
     def _from_pync(self, network_dir):
         self.reducer = torch.sum
@@ -185,8 +196,9 @@ class NeuralNetworkOnAEV(nn.Module):
             sizes[i] = [self.aev_length] + sizes[i]
             self.layers[i] = len(sizes[i])
             for j in range(self.layers[i]):
-                linear = nn.Linear(sizes[j], sizes[j+1]).type(self.aev_computer.dtype)
-                setattr(self, '{}{}'.format(i,j), linear)
+                linear = nn.Linear(sizes[j], sizes[j+1]
+                                   ).type(self.aev_computer.dtype)
+                setattr(self, '{}{}'.format(i, j), linear)
 
     def forward(self, coordinates, species):
         per_atom_outputs = self.get_activations(coordinates, species, math.inf)
@@ -201,15 +213,15 @@ class NeuralNetworkOnAEV(nn.Module):
         per_atom_outputs = []
         for i in range(atoms):
             s = species[i]
-            y = fullaev[:,i,:]
+            y = fullaev[:, i, :]
             for j in range(self.layers[s]-1):
-                linear = getattr(self, '{}{}'.format(s,j))
+                linear = getattr(self, '{}{}'.format(s, j))
                 y = linear(y)
                 y = self.activation(y)
                 if j == layer:
                     break
             if layer >= self.layers[s]-1:
-                linear = getattr(self, '{}{}'.format(s,self.layers[s]-1))
+                linear = getattr(self, '{}{}'.format(s, self.layers[s]-1))
                 y = linear(y)
             per_atom_outputs.append(y)
         return per_atom_outputs
@@ -217,4 +229,4 @@ class NeuralNetworkOnAEV(nn.Module):
     def reset_parameters(self):
         for s in self.aev_computer.species:
             for j in range(self.layers[s]):
-                getattr(self, '{}{}'.format(s,j)).reset_parameters()
+                getattr(self, '{}{}'.format(s, j)).reset_parameters()

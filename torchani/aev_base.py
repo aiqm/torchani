@@ -1,7 +1,9 @@
 import torch
 import pkg_resources
 
-default_const_file = pkg_resources.resource_filename(__name__, 'data/rHCNO-4.6R_16-3.1A_a4-8_3.params')
+default_const_file = pkg_resources.resource_filename(
+    __name__, 'data/rHCNO-4.6R_16-3.1A_a4-8_3.params')
+
 
 class AEVComputer:
 
@@ -19,10 +21,12 @@ class AEVComputer:
                     if name == 'Rcr' or name == 'Rca':
                         self.constants[name] = float(value)
                     elif name in ['EtaR', 'ShfR', 'Zeta', 'ShfZ', 'EtaA', 'ShfA']:
-                        value = [ float(x.strip()) for x in value.replace('[','').replace(']','').split(',')]
+                        value = [float(x.strip()) for x in value.replace(
+                            '[', '').replace(']', '').split(',')]
                         self.constants[name] = value
                     elif name == 'Atyp':
-                        value = [ x.strip() for x in value.replace('[','').replace(']','').split(',')]
+                        value = [x.strip() for x in value.replace(
+                            '[', '').replace(']', '').split(',')]
                         self.species = value
                 except:
                     pass  # ignore unrecognizable line
@@ -32,7 +36,7 @@ class AEVComputer:
 
     def radial_length(self):
         return len(self.species) * self.per_species_radial_length()
-    
+
     def per_species_angular_length(self):
         return len(self.constants['EtaA']) * len(self.constants['Zeta']) * len(self.constants['ShfA']) * len(self.constants['ShfZ'])
 

@@ -11,4 +11,4 @@ from .nn import NeuralNetworkOnAEV
 # 7. implement a subclass of `torch.nn.Linear` to do parameter regularization and initialization the same way as in the paper
 # 8. implement checkpoint & learning rate annealing
 
-__all__ = [ 'AEV', 'EnergyShifter', 'NeuroChemAEV', 'NeuralNetworkOnAEV' ]
+__all__ = ['AEV', 'EnergyShifter', 'NeuroChemAEV', 'NeuralNetworkOnAEV']

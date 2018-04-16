@@ -1,6 +1,8 @@
 import pkg_resources
 
-default_sae_file = pkg_resources.resource_filename(__name__, 'data/sae_linfit.dat')
+default_sae_file = pkg_resources.resource_filename(
+    __name__, 'data/sae_linfit.dat')
+
 
 class EnergyShifter:
 
