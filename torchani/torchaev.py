@@ -4,6 +4,7 @@ import itertools
 from .aev_base import AEVComputer
 from . import buildin_const_file
 
+
 class AEV(AEVComputer):
     """The AEV computer fully implemented using pytorch"""
 
@@ -19,11 +20,45 @@ class AEV(AEVComputer):
 
     @staticmethod
     def _cutoff_cosine(distances, cutoff):
+        """Compute the elementwise cutoff cosine function
+
+        The cutoff cosine function is define in https://arxiv.org/pdf/1610.08935.pdf equation 2
+
+        Parameters
+        ----------
+        distances : pytorch tensor of `dtype`
+            The pytorch tensor that stores Rij values. This tensor can have any shape since the cutoff
+            cosine function is computed elementwise.
+        cutoff : float
+            The cutoff radius, i.e. the Rc in the equation. For any Rij > Rc, the function value is defined to be zero.
+
+        Returns
+        -------
+        pytorch tensor of `dtype`
+            The tensor of the same shape as `distances` that stores the computed function values.
+        """
         return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
 
     def _compute_radial_terms(self, distances):
-        # use broadcasting semantics to combine constants
-        # shape convension (conformations, atoms, atoms, eta, radius_shift)
+        """Compute the single terms of per atom radial AEV
+
+        The radial AEV is define in https://arxiv.org/pdf/1610.08935.pdf equation 3. This function does
+        not compute the sum, but compute each individual term in the sum instead.
+
+        Parameters
+        ----------
+        distances : pytorch tensor of `dtype`
+            The pytorch tensor that stores |Rij| values. This tensor must have shape (conformations, atoms, atoms),
+            where (N,i,j) stores the of |Rij| of conformation N.
+
+        Returns
+        -------
+        pytorch tensor of `dtype`
+            The returned tensor have a shape (conformations, atoms, atoms, `per_species_radial_length()`).
+            The vector at (N,i,j,:) storing the per atom radial subAEV of Rij of conformation N.
+        """
+        # use broadcasting semantics to do Cartesian product on constants
+        # shape convension (conformations, atoms, atoms, EtaR, ShfR)
         atoms = distances.shape[1]
         distances = distances.view(-1, atoms, atoms, 1, 1)
         fc = AEV._cutoff_cosine(distances, self.constants['Rcr'])
@@ -31,15 +66,53 @@ class AEV(AEVComputer):
             self.dtype).view(1, 1, 1, -1, 1)
         radius_shift = torch.Tensor(self.constants['ShfR']).type(
             self.dtype).view(1, 1, 1, 1, -1)
+        # Note that in the equation in the paper there is no 0.25 coefficient, but in NeuroChem there is such a coefficient. We choose to be consistent with NeuroChem instead of the paper here.
         ret = 0.25 * torch.exp(-eta * (distances - radius_shift)**2) * fc
         # end of shape convension
-        # reshape to (conformations, atoms, atoms, ?)
+        # flat the last two dimensions to view the subAEV as one dimension vector
         return ret.view(-1, atoms, atoms, self.per_species_radial_length())
 
-    def _compute_angular_terms(self, angles, R_distances):
+    def _compute_angular_terms(self, R_vecs, R_distances):
+        """Compute the single terms of per atom pair angular AEV
+
+        The angular AEV is define in https://arxiv.org/pdf/1610.08935.pdf equation 4. This function does
+        not compute the sum, but compute each individual term in the sum instead.
+
+        Parameters
+        ----------
+        R_vecs : pytorch tensor of `dtype`
+            The pytorch tensor that stores Rij vectors. This tensor must have shape (conformations, atoms, atoms, 3),
+            where (N,i,j,:) stores the vector Rij of conformation N.
+        R_distances : pytorch tensor of `dtype`
+            The pytorch tensor that stores |Rij| values. This tensor must have shape (conformations, atoms, atoms),
+            where (N,i,j) stores the |Rij| value of conformation N.
+
+        Returns
+        -------
+        pytorch tensor of `dtype`
+            The returned tensor have a shape (conformations, atoms, atoms, atoms, `per_species_angular_length()`).
+            The vector at (N,i,j,k,:) storing the per atom pair angular subAEV of Rij and Rik of conformation N.
+        """
+        atoms = R_distances.shape[1]
+
+        # Compute the product of two distances |Rij| * |Rik|, the result tensor would have
+        # shape (conformations, atoms, atoms, atoms)
+        Rijk_distance_prods = R_distances.unsqueeze(
+            2) * R_distances.unsqueeze(3)
+
+        # Compute the inner product Rij (dot) Rik, the result tensor would have
+        # shape (conformations, atoms, atoms, atoms)
+        Rijk_inner_prods = torch.sum(
+            R_vecs.unsqueeze(2) * R_vecs.unsqueeze(3), dim=-1)
+
+        # Compute the angles jik with i in the center, the result tensor would have
+        # shape (conformations, atoms, atoms, atoms)
+        # 0.95 is multiplied to the cos values to prevent acos from returning NaN.
+        cos_angles = 0.95 * Rijk_inner_prods / Rijk_distance_prods
+        angles = torch.acos(cos_angles)
+
         # use broadcasting semantics to combine constants
-        # shape convension (conformations, atoms, atoms, atoms, eta, zeta, radius_shift, angle_shift)
-        atoms = angles.shape[1]
+        # shape convension (conformations, atoms, atoms, atoms, EtaA, Zeta, ShfA, ShfZ)
         angles = angles.view(-1, atoms, atoms, atoms, 1, 1, 1, 1)
         Rij = R_distances.view(-1, atoms, atoms, 1, 1, 1, 1, 1)
         Rik = R_distances.view(-1, atoms, 1, atoms, 1, 1, 1, 1)
@@ -57,7 +130,7 @@ class AEV(AEVComputer):
             torch.exp(-eta * ((Rij + Rik) / 2 - radius_shifts)
                       ** 2) * fcj * fck
         # end of shape convension
-        # reshape to (conformations, ?)
+        # flat the last 4 dimensions to view the subAEV as one dimension vector
         return ret.view(-1, atoms, atoms, atoms, self.per_species_angular_length())
 
     def _fill_angular_sums_by_zero(self, angular_sum_by_species, conformations):
@@ -103,18 +176,8 @@ class AEV(AEVComputer):
         radial_aevs = torch.sum(radial_aevs, dim=3).view(
             conformations, atoms, -1)
 
-        # shape (conformations, atoms, atoms, atoms)
-        Rijk_distance_prods = R_distances.unsqueeze(
-            2) * R_distances.unsqueeze(3)
-        # shape (conformations, atoms, atoms, atoms)
-        Rijk_inner_prods = torch.sum(
-            R_vecs.unsqueeze(2) * R_vecs.unsqueeze(3), dim=-1)
-        # shape (conformations, atoms, atoms, atoms)
-        cos_angles = 0.95 * Rijk_inner_prods / Rijk_distance_prods
-        # shape (conformations, atoms, atoms, atoms)
-        angles = torch.acos(cos_angles)
         # shape (conformations, atoms, atoms, atoms, self.per_species_angular_length())
-        angular_terms = self._compute_angular_terms(angles, R_distances)
+        angular_terms = self._compute_angular_terms(R_vecs, R_distances)
         angular_aevs = []
         for i in range(atoms):
             angular_sum_by_species = {}
