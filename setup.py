@@ -9,7 +9,7 @@ setup(name='torchani',
       license='MIT',
       packages=['torchani'],
       install_requires=[
-          'pytorch',
+          'pytorch>=0.4',
           'lark-parser',
       ],
       test_suite='nose.collector',
