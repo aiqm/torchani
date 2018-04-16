@@ -58,7 +58,7 @@ class AEVComputer:
 
     def __call__(self, coordinates, species):
         """Compute AEV from coordinates and species
-        
+
         Parameters
         ----------
         coordinates : pytorch tensor of `dtype`

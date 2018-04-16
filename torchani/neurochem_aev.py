@@ -6,6 +6,7 @@ import numpy
 from .aev_base import AEVComputer
 from . import buildin_const_file, buildin_sae_file, buildin_network_dir
 
+
 class NeuroChemAEV (AEVComputer):
 
     def __init__(self, dtype=torch.cuda.float32, const_file=buildin_const_file, sae_file=buildin_sae_file, network_dir=buildin_network_dir):

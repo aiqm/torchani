@@ -13,10 +13,12 @@ buildin_sae_file = pkg_resources.resource_filename(
 buildin_network_dir = pkg_resources.resource_filename(
     __name__, 'data/networks/')
 
-__all__ = ['AEV', 'EnergyShifter', 'NeuralNetworkOnAEV', 'buildin_const_file', 'buildin_sae_file', 'buildin_network_dir']
+__all__ = ['AEV', 'EnergyShifter', 'NeuralNetworkOnAEV',
+           'buildin_const_file', 'buildin_sae_file', 'buildin_network_dir']
 
 try:
     from .neurochem_aev import NeuroChemAEV
     __all__.append('NeuroChemAEV')
 except ImportError:
-    logging.log(logging.WARNING, 'Unable to import NeuroChemAEV, please check your pyNeuroChem installation.')
+    logging.log(logging.WARNING,
+                'Unable to import NeuroChemAEV, please check your pyNeuroChem installation.')

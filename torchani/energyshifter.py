@@ -1,5 +1,6 @@
 from . import buildin_sae_file
 
+
 class EnergyShifter:
 
     def __init__(self, self_energy_file=buildin_sae_file):
