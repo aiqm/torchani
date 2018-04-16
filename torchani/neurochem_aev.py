@@ -2,21 +2,13 @@ import torch
 import ase
 import pyNeuroChem
 import ase_interface
-import pkg_resources
 import numpy
 from .aev_base import AEVComputer
-
-default_const_file = pkg_resources.resource_filename(
-    __name__, 'data/rHCNO-4.6R_16-3.1A_a4-8_3.params')
-default_sae_file = pkg_resources.resource_filename(
-    __name__, 'data/sae_linfit.dat')
-default_network_dir = pkg_resources.resource_filename(
-    __name__, 'data/networks/')
-
+from . import buildin_const_file, buildin_sae_file, buildin_network_dir
 
 class NeuroChemAEV (AEVComputer):
 
-    def __init__(self, dtype=torch.cuda.float32, const_file=default_const_file, sae_file=default_sae_file, network_dir=default_network_dir):
+    def __init__(self, dtype=torch.cuda.float32, const_file=buildin_const_file, sae_file=buildin_sae_file, network_dir=buildin_network_dir):
         super(NeuroChemAEV, self).__init__(dtype, const_file)
         self.const_file = const_file
         self.sae_file = sae_file

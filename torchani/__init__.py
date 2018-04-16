@@ -1,14 +1,22 @@
 from .torchaev import AEV
 from .energyshifter import EnergyShifter
-from .neurochem_aev import NeuroChemAEV
 from .nn import NeuralNetworkOnAEV
+import pkg_resources
+import logging
 
-# TODO list
-# 4. allow loading from and saving to Justin's data format
-# 5. do inference using Justin's pretrained model, make it work
-# 4.5 handle import error when pyNeuroChem is not present
-# 6. implement a subclass of `torch.utils.data.Dataset` to allow taking subsets
-# 7. implement a subclass of `torch.nn.Linear` to do parameter regularization and initialization the same way as in the paper
-# 8. implement checkpoint & learning rate annealing
+buildin_const_file = pkg_resources.resource_filename(
+    __name__, 'data/rHCNO-4.6R_16-3.1A_a4-8_3.params')
 
-__all__ = ['AEV', 'EnergyShifter', 'NeuroChemAEV', 'NeuralNetworkOnAEV']
+buildin_sae_file = pkg_resources.resource_filename(
+    __name__, 'data/sae_linfit.dat')
+
+buildin_network_dir = pkg_resources.resource_filename(
+    __name__, 'data/networks/')
+
+__all__ = ['AEV', 'EnergyShifter', 'NeuralNetworkOnAEV', 'buildin_const_file', 'buildin_sae_file', 'buildin_network_dir']
+
+try:
+    from .neurochem_aev import NeuroChemAEV
+    __all__.append('NeuroChemAEV')
+except ImportError:
+    logging.log(logging.WARNING, 'Unable to import NeuroChemAEV, please check your pyNeuroChem installation.')

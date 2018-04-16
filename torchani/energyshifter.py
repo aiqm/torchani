@@ -1,12 +1,8 @@
-import pkg_resources
-
-default_sae_file = pkg_resources.resource_filename(
-    __name__, 'data/sae_linfit.dat')
-
+from . import buildin_sae_file
 
 class EnergyShifter:
 
-    def __init__(self, self_energy_file=default_sae_file):
+    def __init__(self, self_energy_file=buildin_sae_file):
         # load self energies
         self.self_energies = {}
         with open(self_energy_file) as f:

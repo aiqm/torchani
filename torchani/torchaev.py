@@ -1,23 +1,20 @@
 import torch
 import numpy
 import itertools
-import pkg_resources
 from .aev_base import AEVComputer
-
-default_const_file = pkg_resources.resource_filename(
-    __name__, 'data/rHCNO-4.6R_16-3.1A_a4-8_3.params')
-
+from . import buildin_const_file
 
 class AEV(AEVComputer):
+    """The AEV computer fully implemented using pytorch"""
 
-    def __init__(self, dtype=torch.cuda.float32, const_file=default_const_file):
+    def __init__(self, dtype=torch.cuda.float32, const_file=buildin_const_file):
         super(AEV, self).__init__(dtype, const_file)
 
         # assign supported species indices
-        self.species_indices = {}
+        self._species_indices = {}
         index = 0
         for i in self.species:
-            self.species_indices[i] = index
+            self._species_indices[i] = index
             index += 1
 
     @staticmethod
@@ -88,7 +85,7 @@ class AEV(AEVComputer):
                 if j == i:
                     continue
                 key = species[j]
-                ret[0, i, self.species_indices[key], j, 0] = 1
+                ret[0, i, self._species_indices[key], j, 0] = 1
         return ret
 
     def __call__(self, coordinates, species):
