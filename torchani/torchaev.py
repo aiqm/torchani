@@ -133,27 +133,13 @@ class AEV(AEVComputer):
         # flat the last 4 dimensions to view the subAEV as one dimension vector
         return ret.view(-1, atoms, atoms, atoms, self.per_species_angular_length())
 
-    def _fill_angular_sums_by_zero(self, angular_sum_by_species, conformations):
-        possible_keys = set([frozenset(
-            [i, j]) for i, j in itertools.combinations_with_replacement(self.species, 2)])
-        complementary = possible_keys - set(angular_sum_by_species.keys())
-        for i in complementary:
-            angular_sum_by_species[i] = torch.zeros(
-                conformations, self.per_species_angular_length(), dtype=self.dtype)
-
-    def _angular_sums_to_list(self, angular_sum_by_species):
-        ret = []
-        for i, j in itertools.combinations_with_replacement(self.species, 2):
-            ret.append(angular_sum_by_species[frozenset([i, j])])
-        return ret
-
     def _sum_radial_terms(self, radial_terms, species):
         """Sum up the computed radial subAEV terms"""
         conformations = radial_terms.shape[0]
         atoms = len(species)
 
         # Here we need to group radial subAEV terms by their species, and sum up each group.
-        # Instead of using a for loop to do the sum, we first unsqueeze `radial_terms` from 
+        # Instead of using a for loop to do the sum, we first unsqueeze `radial_terms` from
         # shape (conformations, atoms, atoms, `per_species_radial_length()`) into
         # shape (conformations, atoms, 1, atoms, `per_species_radial_length()`), where
         # the extra dimension will becomes the group index. The unsqueeze `radial_terms` will
@@ -162,7 +148,7 @@ class AEV(AEVComputer):
         # the sum.
 
         radial_sum_indices = torch.zeros(1, atoms, len(self.species),
-                          atoms, 1, dtype=self.dtype)
+                                         atoms, 1, dtype=self.dtype)
         """pytorch tensor of `dtype`: The tensor that specifies which atom goes which group.
         This tensor has shape (1, atoms, `len(self.species)`, atoms, 1), where the value at
         index (0, i, j, k, 0) == 1 means in the sum of atom i's radial subAEV of species j
@@ -179,23 +165,23 @@ class AEV(AEVComputer):
         radial_aevs = radial_terms.unsqueeze(2) * radial_sum_indices
         return torch.sum(radial_aevs, dim=3).view(conformations, atoms, -1)
 
-    def __call__(self, coordinates, species):
-        conformations = coordinates.shape[0]
-        atoms = coordinates.shape[1]
+    def _sum_angular_terms(self, angular_terms, species):
+        """Sum up the computed angular subAEV terms"""
 
-        # shape (conformations, atoms, atoms, 3)
-        R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)
-        # shape (conformations, atoms, atoms)
-        R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))
-        # shape (conformations, atoms, atoms, self.per_species_radial_length())
-        radial_terms = self._compute_radial_terms(R_distances)
-        radial_aevs = self._sum_radial_terms(radial_terms, species)
+        # Since broadcasting semantics based approaches like `_sum_radial_terms` takes
+        # too much memory for the angular case, we use python `for` loops to sum up the
+        # radial terms.
 
-        # shape (conformations, atoms, atoms, atoms, self.per_species_angular_length())
-        angular_terms = self._compute_angular_terms(R_vecs, R_distances)
+        conformations = angular_terms.shape[0]
+        atoms = angular_terms.shape[1]
+
         angular_aevs = []
+        """list: The list whose element is the angular AEV of each atom"""
         for i in range(atoms):
             angular_sum_by_species = {}
+            """dict: The dictionary that stores the angular sum of this atom of each species"""
+
+            # compute the sums
             for j in range(atoms):
                 if j == i:
                     continue
@@ -208,11 +194,41 @@ class AEV(AEVComputer):
                         angular_sum_by_species[key] += angular_term
                     else:
                         angular_sum_by_species[key] = angular_term
-            self._fill_angular_sums_by_zero(
-                angular_sum_by_species, conformations)
-            angular_aev = torch.cat(self._angular_sums_to_list(
-                angular_sum_by_species), dim=1)
-            angular_aevs.append(angular_aev)
-        angular_aevs = torch.stack(angular_aevs, dim=1)
+
+            # convert `angular_sum_by_species` into a list with fixed species order
+            angular_aev = []
+            per_species_angular_length = self.per_species_angular_length()
+            for k, l in itertools.combinations_with_replacement(self.species, 2):
+                key = frozenset([k, l])
+                if key in angular_sum_by_species:
+                    angular_aev.append(angular_sum_by_species[key])
+                else:
+                    angular_aev.append(torch.zeros(
+                        conformations, per_species_angular_length, dtype=self.dtype))
+
+            # append angular_aev of this atom to `angular_aevs`
+            angular_aevs.append(torch.cat(angular_aev, dim=1))
+        return torch.stack(angular_aevs, dim=1)
+
+    def __call__(self, coordinates, species):
+        # For the docstring of this method, refer to the base class
+
+        R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)
+        """pytorch tensor of `dtype`: A tensor of shape (conformations, atoms, atoms, 3)
+        that stores Rij vectors. The 3 dimensional vector at (N, i, j, :) is the Rij vector
+        of conformation N.
+        """
+
+        R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))
+        """pytorch tensor of `dtype`: A tensor of shape (conformations, atoms, atoms)
+        that stores |Rij|, i.e. the length of Rij vectors. The value at (N, i, j) is
+        the |Rij| of conformation N.
+        """
+
+        radial_terms = self._compute_radial_terms(R_distances)
+        radial_aevs = self._sum_radial_terms(radial_terms, species)
+
+        angular_terms = self._compute_angular_terms(R_vecs, R_distances)
+        angular_aevs = self._sum_angular_terms(angular_terms, species)
 
         return radial_aevs, angular_aevs
