@@ -10,6 +10,8 @@ class AEVComputer:
     dtype : torch.dtype
         Data type of pytorch tensors for all the computations. This is also used
         to specify whether to use CPU or GPU.
+    const_file : str
+        The name of the original file that stores constant.
     constants : dict
         A dictionary that uses `str` as keys and `float` or `list` of `float`s as
         values to store constants.
@@ -17,6 +19,7 @@ class AEVComputer:
 
     def __init__(self, dtype=torch.cuda.float32, const_file=buildin_const_file):
         self.dtype = dtype
+        self.const_file = const_file
 
         # load constants from const file
         self.constants = {}
