@@ -160,15 +160,14 @@ class NeighborAEV(AEVComputer):
         in_Rca = in_Rca * (1 - torch.eye(atoms, dtype=in_Rca.dtype))
 
         # Compute species selectors for all supported species.
-        # A species selector is a tensor of shape (`len(self.species)`,)
+        # A species selector is a tensor of shape (atoms,)
         # where the value == 1 means the atom with that index is the species
         # of the selector otherwise value should be 0.
         species_selectors = {}
-        for i in len(species):
+        for i in range(atoms):
             s = species[i]
             if s not in species_selectors:
-                species_selectors[s] = torch.zeros(
-                    len(self.species), dtype=self.dtype)
+                species_selectors[s] = torch.zeros(atoms, dtype=in_Rcr.dtype)
             species_selectors[s][i] = 1
 
         # Compute the list of neighbors of various species
@@ -187,12 +186,18 @@ class NeighborAEV(AEVComputer):
             radial_aev = []
             """The list whose elements are atom i's per species subAEV of each species"""
             for s in self.species:
+                is_zero = False
                 if s in species_neighbors:
-                    indices = species_neighbors[s][i, :].nonzero()
-                    neighbors = coordinates.index_select(indices, dim=1)
-                    radial_aev.append(self.radial_subaev(
-                        coordinates[:, i, :], neighbors))
+                    indices = species_neighbors[s][0][i, :].nonzero().view(-1)
+                    if indices.shape[0] > 0:
+                        neighbors = coordinates.index_select(1, indices)
+                        radial_aev.append(self.radial_subaev(
+                            coordinates[:, i, :], neighbors))
+                    else:
+                        is_zero = True
                 else:
+                    is_zero = True
+                if is_zero:
                     radial_aev.append(torch.zeros(
                         conformations, self.per_species_radial_length(), dtype=self.dtype))
             radial_aev = torch.cat(radial_aev, dim=1)
@@ -206,22 +211,32 @@ class NeighborAEV(AEVComputer):
             angular_aev = []
             """The list whose elements are atom i's per species subAEV of each species"""
             for j, k in itertools.combinations_with_replacement(self.species, 2):
+                is_zero = False
                 if j in species_neighbors and k in species_neighbors:
-                    indices_j = species_neighbors[j][i, :].nonzero()
-                    neighbors_j = coordinates.index_select(indices_j, dim=1)
-                    if j != k:
-                        indices_k = species_neighbors[j][i, :].nonzero()
-                        neighbors_k = coordinates.index_select(
-                            indices_k, dim=1)
-                        neighbors = _utils.cartesian_prod(
-                            neighbors_j, neighbors_k, dim=1, newdim=2)
-                    else:
+                    indices_j = species_neighbors[j][1][i, :].nonzero(
+                    ).view(-1)
+                    neighbors_j = coordinates.index_select(1, indices_j)
+                    if j != k and indices_j.shape[0] > 0:
+                        indices_k = species_neighbors[k][1][i, :].nonzero(
+                        ).view(-1)
+                        neighbors_k = coordinates.index_select(1, indices_k)
+                        if indices_k.shape[0] > 0:
+                            neighbors = _utils.cartesian_prod(
+                                neighbors_j, neighbors_k, dim=1, newdim=2)
+                        else:
+                            is_zero = True
+                    elif indices_j.shape[0] > 1:
                         neighbors = _utils.combinations(
                             neighbors_j, 2, dim=1, newdim=2)
-                    angular_aevs.append(self.angular_subaev(
-                        coordinates[:, i, :], neighbors))
+                    else:
+                        is_zero = True
+                    if not is_zero:
+                        angular_aev.append(self.angular_subaev(
+                            coordinates[:, i, :], neighbors))
                 else:
-                    angular_aevs.append(torch.zeros(
+                    is_zero = True
+                if is_zero:
+                    angular_aev.append(torch.zeros(
                         conformations, self.per_species_angular_length(), dtype=self.dtype))
             angular_aev = torch.cat(angular_aev, dim=1)
             angular_aevs.append(angular_aev)

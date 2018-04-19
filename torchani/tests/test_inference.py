@@ -36,7 +36,7 @@ class TestInference(unittest.TestCase):
 
     def _test_molecule_energy(self, coordinates, species):
         energies = self._get_neurochem_energies(coordinates, species)
-        energies = self.shift_energy(energies, species)
+        energies = self.shift_energy.subtract_sae(energies, species)
         coordinates = torch.from_numpy(coordinates).type(self.ncaev.dtype)
         pred_energies = self.nn(coordinates, species)
         maxdiff = torch.max(torch.abs(pred_energies - energies)).item()
