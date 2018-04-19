@@ -1,20 +1,16 @@
 import torch
-import numpy
 import itertools
 from .aev_base import AEVComputer
 from . import buildin_const_file
 from .torchaev import AEV
+from . import _utils
 
 
-class SubAEV(AEVComputer):
-    """The subAEV computer fully implemented using pytorch
-
-    Note that this AEV computer only computes the subAEV of a given species
-    of a single atom.  The `__call__` method is intentionally left unimplemented.
-    """
+class NeighborAEV(AEVComputer):
+    """The AEV computer fully implemented using pytorch, making use of neighbor list"""
 
     def __init__(self, dtype=torch.cuda.float32, const_file=buildin_const_file):
-        super(SubAEV, self).__init__(dtype, const_file)
+        super(NeighborAEV, self).__init__(dtype, const_file)
 
     def radial_subaev(self, center, neighbors):
         """Compute the radial subAEV of the center atom given neighbors
@@ -133,6 +129,102 @@ class SubAEV(AEVComputer):
         # flat the last 4 dimensions to view the subAEV as one dimension vector
         return ret.view(-1, self.per_species_angular_length())
 
+    def __call__(self, coordinates, species):
+        # For the docstring of this method, refer to the base class
+        conformations = coordinates.shape[0]
+        atoms = coordinates.shape[1]
 
-class AEVFromSubAEV(AEVComputer):
-    pass
+        R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)
+        """pytorch tensor of `dtype`: A tensor of shape (conformations, atoms, atoms, 3)
+        that stores Rij vectors. The 3 dimensional vector at (N, i, j, :) is the Rij vector
+        of conformation N.
+        """
+
+        R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))
+        """pytorch tensor of `dtype`: A tensor of shape (conformations, atoms, atoms)
+        that stores |Rij|, i.e. the length of Rij vectors. The value at (N, i, j) is
+        the |Rij| of conformation N.
+        """
+
+        # Compute the list of atoms inside cutoff radius
+        # The list is stored as a tensor of shape (atoms, atoms)
+        # where the value at (i,j) == 1 means j is a neighbor of i, otherwise
+        # the value should be 0
+        in_Rcr = R_distances <= self.constants['Rcr']
+        in_Rcr = torch.sum(in_Rcr, dim=0) > 0
+        # set diagnoal elements to 0
+        in_Rcr = in_Rcr * (1 - torch.eye(atoms, dtype=in_Rcr.dtype))
+        in_Rca = R_distances <= self.constants['Rca']
+        in_Rca = torch.sum(in_Rca, dim=0) > 0
+        # set diagnoal elements to 0
+        in_Rca = in_Rca * (1 - torch.eye(atoms, dtype=in_Rca.dtype))
+
+        # Compute species selectors for all supported species.
+        # A species selector is a tensor of shape (`len(self.species)`,)
+        # where the value == 1 means the atom with that index is the species
+        # of the selector otherwise value should be 0.
+        species_selectors = {}
+        for i in len(species):
+            s = species[i]
+            if s not in species_selectors:
+                species_selectors[s] = torch.zeros(
+                    len(self.species), dtype=self.dtype)
+            species_selectors[s][i] = 1
+
+        # Compute the list of neighbors of various species
+        # The list is stored as a tensor of shape (atoms, atoms)
+        # where the value at (i,j) == 1 means j is a neighbor of i and j has the
+        # specified species, otherwise the value should be 0
+        species_neighbors = {}
+        for s in species_selectors:
+            selector = species_selectors[s].unsqueeze(0)
+            species_neighbors[s] = (in_Rcr * selector, in_Rca * selector)
+
+        # compute radial AEV
+        radial_aevs = []
+        """The list whose elements are full radial AEV of each atom"""
+        for i in range(atoms):
+            radial_aev = []
+            """The list whose elements are atom i's per species subAEV of each species"""
+            for s in self.species:
+                if s in species_neighbors:
+                    indices = species_neighbors[s][i, :].nonzero()
+                    neighbors = coordinates.index_select(indices, dim=1)
+                    radial_aev.append(self.radial_subaev(
+                        coordinates[:, i, :], neighbors))
+                else:
+                    radial_aev.append(torch.zeros(
+                        conformations, self.per_species_radial_length(), dtype=self.dtype))
+            radial_aev = torch.cat(radial_aev, dim=1)
+            radial_aevs.append(radial_aev)
+        radial_aevs = torch.stack(radial_aevs, dim=1)
+
+        # compute angular AEV
+        angular_aevs = []
+        """The list whose elements are full angular AEV of each atom"""
+        for i in range(atoms):
+            angular_aev = []
+            """The list whose elements are atom i's per species subAEV of each species"""
+            for j, k in itertools.combinations_with_replacement(self.species, 2):
+                if j in species_neighbors and k in species_neighbors:
+                    indices_j = species_neighbors[j][i, :].nonzero()
+                    neighbors_j = coordinates.index_select(indices_j, dim=1)
+                    if j != k:
+                        indices_k = species_neighbors[j][i, :].nonzero()
+                        neighbors_k = coordinates.index_select(
+                            indices_k, dim=1)
+                        neighbors = _utils.cartesian_prod(
+                            neighbors_j, neighbors_k, dim=1, newdim=2)
+                    else:
+                        neighbors = _utils.combinations(
+                            neighbors_j, 2, dim=1, newdim=2)
+                    angular_aevs.append(self.angular_subaev(
+                        coordinates[:, i, :], neighbors))
+                else:
+                    angular_aevs.append(torch.zeros(
+                        conformations, self.per_species_angular_length(), dtype=self.dtype))
+            angular_aev = torch.cat(angular_aev, dim=1)
+            angular_aevs.append(angular_aev)
+        angular_aevs = torch.stack(angular_aevs, dim=1)
+
+        return radial_aevs, angular_aevs
