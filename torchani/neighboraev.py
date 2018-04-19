@@ -186,18 +186,24 @@ class NeighborAEV(AEVComputer):
             radial_aev = []
             """The list whose elements are atom i's per species subAEV of each species"""
             for s in self.species:
-                is_zero = False
-                if s in species_neighbors:
+                is_zero = True
+                # Slightly abuse for to simulate a single in multiple out code block structure
+                for _ in range(1):
+                    if s not in species_neighbors:
+                        break
                     indices = species_neighbors[s][0][i, :].nonzero().view(-1)
-                    if indices.shape[0] > 0:
-                        neighbors = coordinates.index_select(1, indices)
-                        radial_aev.append(self.radial_subaev(
-                            coordinates[:, i, :], neighbors))
-                    else:
-                        is_zero = True
-                else:
-                    is_zero = True
+                    """Indices of atoms that have species s and position inside cutoff radius"""
+                    if indices.shape[0] <= 0:
+                        break
+                    neighbors = coordinates.index_select(1, indices)
+                    """pytroch tensor of shape (conformations, N, 3) storing coordinates of
+                    neighbor atoms that have desired species, where N is the number of neighbors.
+                    """
+                    radial_aev.append(self.radial_subaev(
+                        coordinates[:, i, :], neighbors))
+                    is_zero = False
                 if is_zero:
+                    # If no neighbor atoms have desired species, fill the subAEV with zeros
                     radial_aev.append(torch.zeros(
                         conformations, self.per_species_radial_length(), dtype=self.dtype))
             radial_aev = torch.cat(radial_aev, dim=1)
@@ -211,31 +217,44 @@ class NeighborAEV(AEVComputer):
             angular_aev = []
             """The list whose elements are atom i's per species subAEV of each species"""
             for j, k in itertools.combinations_with_replacement(self.species, 2):
-                is_zero = False
-                if j in species_neighbors and k in species_neighbors:
+                is_zero = True
+                # Slightly abuse for to simulate a single in multiple out code block structure
+                for _ in range(1):
+                    if j not in species_neighbors or k not in species_neighbors:
+                        break
                     indices_j = species_neighbors[j][1][i, :].nonzero(
                     ).view(-1)
+                    if indices_j.shape[0] < 1:
+                        break
+                    """Indices of atoms that have species j and position inside cutoff radius"""
                     neighbors_j = coordinates.index_select(1, indices_j)
-                    if j != k and indices_j.shape[0] > 0:
+                    """pytroch tensor of shape (conformations, N, 3) storing coordinates of
+                    neighbors atoms that have desired species j, where N is the number of neighbors.
+                    """
+                    if j != k:
+                        # the two atoms in the pair have different species
                         indices_k = species_neighbors[k][1][i, :].nonzero(
                         ).view(-1)
+                        """Indices of atoms that have species k and position inside cutoff radius"""
+                        if indices_k.shape[0] < 1:
+                            break
                         neighbors_k = coordinates.index_select(1, indices_k)
-                        if indices_k.shape[0] > 0:
-                            neighbors = _utils.cartesian_prod(
-                                neighbors_j, neighbors_k, dim=1, newdim=2)
-                        else:
-                            is_zero = True
-                    elif indices_j.shape[0] > 1:
+                        """pytroch tensor of shape (conformations, N, 3) storing coordinates of
+                        neighbors atoms that have desired species k, where N is the number of neighbors.
+                        """
+                        neighbors = _utils.cartesian_prod(
+                            neighbors_j, neighbors_k, dim=1, newdim=2)
+                    else:
+                        # the two atoms in the pair have the same species j
+                        if indices_j.shape[0] < 2:
+                            break
                         neighbors = _utils.combinations(
                             neighbors_j, 2, dim=1, newdim=2)
-                    else:
-                        is_zero = True
-                    if not is_zero:
-                        angular_aev.append(self.angular_subaev(
-                            coordinates[:, i, :], neighbors))
-                else:
-                    is_zero = True
+                    angular_aev.append(self.angular_subaev(
+                        coordinates[:, i, :], neighbors))
+                    is_zero = False
                 if is_zero:
+                    # If unable to find pair of neighbor atoms with desired species, fill the subAEV with zeros
                     angular_aev.append(torch.zeros(
                         conformations, self.per_species_angular_length(), dtype=self.dtype))
             angular_aev = torch.cat(angular_aev, dim=1)
