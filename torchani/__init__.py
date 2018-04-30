@@ -11,11 +11,11 @@ buildin_network_dir = pkg_resources.resource_filename(
 
 from .torchaev import AEV
 from .energyshifter import EnergyShifter
-from .nn import NeuralNetworkOnAEV
+from .nn import ModelOnAEV, PerSpeciesFromNeuroChem
 from .neighboraev import NeighborAEV
 import logging
 
-__all__ = ['AEV', 'NeighborAEV', 'EnergyShifter', 'NeuralNetworkOnAEV',
+__all__ = ['AEV', 'NeighborAEV', 'EnergyShifter', 'ModelOnAEV', 'PerSpeciesFromNeuroChem',
            'buildin_const_file', 'buildin_sae_file', 'buildin_network_dir']
 
 try:

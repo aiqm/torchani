@@ -8,93 +8,79 @@ import struct
 import copy
 import math
 
+class PerSpeciesFromNeuroChem(nn.Module):
+    """Subclass of `torch.nn.Module` for the per atom aev->y transformation, loaded from NeuroChem network dir.
+    
+    Attributes
+    ----------
+    dtype : torch.dtype
+        Pytorch data type for tensors
+    layers : int
+        Number of layers.
+    layerN : torch.nn.Linear
+        Linear model for each layer.
+    activation : function
+        Function for computing the activation for all layers but the last layer.
+    activation_index : int
+        The NeuroChem index for activation.
+    """
 
-class NeuralNetworkOnAEV(nn.Module):
+    def __init__(self, dtype, filename):
+        """Initialize from NeuroChem network directory.
 
-    def __init__(self, aev_computer, **kwargs):
-        super(NeuralNetworkOnAEV, self).__init__()
-        if not isinstance(aev_computer, AEVComputer):
-            raise TypeError(
-                "NeuralNetworkPotential: aev_computer must be a subclass of AEVComputer")
-        self.aev_computer = aev_computer
-        self.aev_length = aev_computer.radial_length() + aev_computer.angular_length()
+        Parameters
+        ----------
+        dtype : torch.dtype
+            Pytorch data type for tensors
+        filename : string
+            The file name for the `.nnf` file that store network hyperparameters. The `.bparam` and `.wparam`
+            must be in the same directory
+        """
+        super(PerSpeciesFromNeuroChem, self).__init__()
 
-        if 'from_pync' in kwargs:
-            self._from_pync(kwargs['from_pync'])
-        elif 'sizes' in kwargs:
-            sizes = kwargs['sizes']
-            if isinstance(sizes, list):
-                sz = sizes
-                sizes = {}
-                for i in aev_computer.species:
-                    sizes[i] = copy.copy(sz)
-            activation = kwargs['activation'] if 'activation' in kwargs else lambda x: torch.exp(
-                -x**2)
-            reducer = kwargs['reducer'] if 'reducer' in kwargs else torch.sum
-            self._from_config(sizes, activation, reducer)
-        else:
-            raise ValueError(
-                'bad arguments when initializing NeuralNetworkOnAEV')
+        self.dtype = dtype
+        networ_dir = os.path.dirname(filename)
+        with open(filename, 'rb') as f:
+            buffer = f.read()
+            buffer = self._decompress(buffer)
+            layer_setups = self._parse(buffer)
+            self._construct(layer_setups, networ_dir)
+        
 
-    def _load_params_from_param_file(self, linear, in_size, out_size, wfn, bfn):
-        wsize = in_size * out_size
-        fw = open(wfn, 'rb')
-        float_w = struct.unpack('{}f'.format(wsize), fw.read())
-        linear.weight = torch.nn.parameter.Parameter(torch.FloatTensor(
-            float_w).type(self.aev_computer.dtype).view(out_size, in_size))
-        fw.close()
-        fb = open(bfn, 'rb')
-        float_b = struct.unpack('{}f'.format(out_size), fb.read())
-        linear.bias = torch.nn.parameter.Parameter(torch.FloatTensor(
-            float_b).type(self.aev_computer.dtype).view(out_size))
-        fb.close()
+    def _decompress(self, buffer):
+        """Decompress the `.nnf` file
+        
+        Parameters
+        ----------
+        buffer : bytes
+            The buffer storing the whole compressed `.nnf` file content.
 
-    def _construct_layers_from_neurochem_cfgfile(self, species, setups, dirname):
-        # activation defined in file https://github.com/Jussmith01/NeuroChem/blob/master/src-atomicnnplib/cunetwork/cuannlayer_t.cu#L868
-        self.activation_index = None
-        self.activation = None
-        self.layers[species] = len(setups)
-        for i in range(self.layers[species]):
-            s = setups[i]
-            in_size = s['blocksize']
-            out_size = s['nodes']
-            activation = s['activation']
-            wfn, wsz = s['weights']
-            bfn, bsz = s['biases']
-            if i == self.layers[species]-1:
-                if activation != 6:  # no activation
-                    raise ValueError('activation in the last layer must be 6')
-            else:
-                if self.activation_index is None:
-                    if activation != 5:
-                        raise NotImplementedError('only gaussian is supported')
-                    else:
-                        self.activation_index = activation
-                        self.activation = lambda x: torch.exp(-x**2)
-                elif self.activation_index != activation:
-                    raise NotImplementedError(
-                        'different activation on different layers are not supported')
-            linear = nn.Linear(in_size, out_size).type(self.aev_computer.dtype)
-            name = '{}{}'.format(species, i)
-            setattr(self, name, linear)
-            if in_size * out_size != wsz or out_size != bsz:
-                raise ValueError('bad parameter shape')
-            wfn = os.path.join(dirname, wfn)
-            bfn = os.path.join(dirname, bfn)
-            self._load_params_from_param_file(
-                linear, in_size, out_size, wfn, bfn)
-
-    def _read_nnf_file(self, species, filename):
+        Returns
+        -------
+        string
+            The string storing the whole decompressed `.nnf` file content.
+        """
         # decompress nnf file
-        f = open(filename, 'rb')
-        d = f.read()
-        f.close()
-        while d[0] != b'='[0]:
-            d = d[1:]
-        d = d[2:]
-        d = bz2.decompress(d)[:-1].decode('ascii').strip()
+        while buffer[0] != b'='[0]:
+            buffer = buffer[1:]
+        buffer = buffer[2:]
+        return bz2.decompress(buffer)[:-1].decode('ascii').strip()
 
-        # parse input size
+    def _parse(self, nnf_file):
+        """Parse the `.nnf` file
+        
+        Parameters
+        ----------
+        nnf_file : string
+            The string storing the while decompressed `.nnf` file content.
+
+        Returns
+        -------
+        list of dict
+            Parsed setups as list of dictionary storing the parsed `.nnf` file content.
+            Each dictionary in the list is the hyperparameters for a layer.
+        """
+        # parse input file
         parser = lark.Lark(r'''
         identifier : CNAME
 
@@ -124,19 +110,10 @@ class NeuralNetworkOnAEV(nn.Module):
         %import common.WS
         %ignore WS
         ''')
-        tree = parser.parse(d)
+        tree = parser.parse(nnf_file)
 
         # execute parse tree
         class TreeExec(lark.Transformer):
-            def __init__(self, outerself, species):
-                self.outerself = outerself
-                self.species = species
-
-            def inputsize(self, v):
-                v = int(v[0])
-                if self.outerself.aev_length != v:
-                    raise ValueError('aev size of network file ({}) mismatch aev computer ({})'.format(
-                        v, self.outerself.aev_length))
 
             def identifier(self, v):
                 v = v[0].value
@@ -168,45 +145,195 @@ class NeuralNetworkOnAEV(nn.Module):
                 return dict(v)
 
             def atom_net(self, v):
-                s = v[0].value
                 layers = v[1:]
-                if self.species != s:
-                    raise ValueError(
-                        'network file does not store expected species')
                 return layers
 
             def start(self, v):
                 return v[1]
 
-        layer_setups = TreeExec(self, species).transform(tree)
-        self._construct_layers_from_neurochem_cfgfile(
-            species, layer_setups, os.path.dirname(filename))
+        layer_setups = TreeExec().transform(tree)
+        return layer_setups
 
-    def _from_pync(self, network_dir):
-        self.reducer = torch.sum
-        self.layers = {}
-        for i in self.aev_computer.species:
-            filename = os.path.join(network_dir, 'ANN-{}.nnf'.format(i))
-            self._read_nnf_file(i, filename)
+    def _construct(self, setups, dirname):
+        """Construct model from parsed setups
+        
+        Parameters
+        ----------
+        setups : list of dict
+            Parsed setups as list of dictionary storing the parsed `.nnf` file content.
+            Each dictionary in the list is the hyperparameters for a layer.
+        dirname : string
+            The directory where network files are stored.
+        """
 
-    def _from_config(self, sizes, activation, reducer):
-        self.activation = activation
-        self.reducer = reducer
-        for i in self.aev_computer.species:
-            sizes[i] = [self.aev_length] + sizes[i]
-            self.layers[i] = len(sizes[i])
-            for j in range(self.layers[i]):
-                linear = nn.Linear(sizes[j], sizes[j+1]
-                                   ).type(self.aev_computer.dtype)
-                setattr(self, '{}{}'.format(i, j), linear)
+        # Activation defined in:
+        # https://github.com/Jussmith01/NeuroChem/blob/master/src-atomicnnplib/cunetwork/cuannlayer_t.cu#L868
+        self.activation_index = None
+        self.activation = None
+        self.layers = len(setups)
+        for i in range(self.layers):
+            s = setups[i]
+            in_size = s['blocksize']
+            out_size = s['nodes']
+            activation = s['activation']
+            wfn, wsz = s['weights']
+            bfn, bsz = s['biases']
+            if i == self.layers-1:
+                if activation != 6:  # no activation
+                    raise ValueError('activation in the last layer must be 6')
+            else:
+                if self.activation_index is None:
+                    if activation != 5:
+                        raise NotImplementedError('only gaussian is supported')
+                    else:
+                        self.activation_index = activation
+                        self.activation = lambda x: torch.exp(-x**2)
+                elif self.activation_index != activation:
+                    raise NotImplementedError(
+                        'different activation on different layers are not supported')
+            linear = nn.Linear(in_size, out_size).type(self.dtype)
+            name = 'layer{}'.format(i)
+            setattr(self, name, linear)
+            if in_size * out_size != wsz or out_size != bsz:
+                raise ValueError('bad parameter shape')
+            wfn = os.path.join(dirname, wfn)
+            bfn = os.path.join(dirname, bfn)
+            self._load_param_file(linear, in_size, out_size, wfn, bfn)
+
+    def _load_param_file(self, linear, in_size, out_size, wfn, bfn):
+        """Load `.wparam` and `.bparam` files"""
+        wsize = in_size * out_size
+        fw = open(wfn, 'rb')
+        float_w = struct.unpack('{}f'.format(wsize), fw.read())
+        linear.weight = torch.nn.parameter.Parameter(torch.FloatTensor(
+            float_w).type(self.dtype).view(out_size, in_size))
+        fw.close()
+        fb = open(bfn, 'rb')
+        float_b = struct.unpack('{}f'.format(out_size), fb.read())
+        linear.bias = torch.nn.parameter.Parameter(torch.FloatTensor(
+            float_b).type(self.dtype).view(out_size))
+        fb.close()
+    
+    def get_activations(self, aev, layer):
+        """Compute the activation of the specified layer.
+        
+        Parameters
+        ----------
+        aev : torch.Tensor
+            The pytorch tensor of AEV as input to this model.
+        layer : int
+            The layer whose activation is desired. The index starts at zero, that is
+            `layer=0` means the `activation(layer0(aev))` instead of `aev`. If the given
+            layer is larger than the total number of layers, then the activation of the last
+            layer will be returned.
+
+        Returns
+        -------
+        torch.Tensor
+            The pytorch tensor of activations of specified layer.
+        """
+        y = aev
+        for j in range(self.layers):
+            linear = getattr(self, 'layer{}'.format(j))
+            y = linear(y)
+            y = self.activation(y)
+            if j == layer:
+                break
+        if layer >= self.layers-1:
+            linear = getattr(self, 'layer{}'.format(self.layers-1))
+            y = linear(y)
+        return y
+
+    def forward(self, aev):
+        """Compute output from aev"""
+        return self.get_activations(aev, math.inf)
+
+class ModelOnAEV(nn.Module):
+    """Subclass of `torch.nn.Module` for the [xyz]->[aev]->[per_atom_y]->y pipeline.
+
+    Attributes
+    ----------
+    aev_computer : AEVComputer
+        The AEV computer.
+    aev_length : int
+        Length of AEV.
+    model_X : nn.Module
+        Model for species X. There should be one such attribute for each supported species.
+    reducer : function
+        Function of (input, dim)->output that reduce the input tensor along the given dimension
+        to get an output tensor. This function will be called with the per atom output tensor
+        with internal shape as input, and desired reduction dimension as dim, and should reduce
+        the input into the tensor containing desired output.
+    """
+
+    def __init__(self, aev_computer, **kwargs):
+        """Initialize object from manual setup or from NeuroChem network directory.
+
+        The caller must set either `from_pync` in order to load from NeuroChem network directory,
+        or set `per_species` and `reducer`.
+
+        Parameters
+        ----------
+        aev_computer : AEVComputer
+            The AEV computer.
+
+        Other Parameters
+        ----------------
+        from_pync : string
+            Path to the NeuroChem network directory. If this parameter is set, then `per_species` and
+            `reducer` should not be set.
+        per_species : dict
+            Dictionary with supported species as keys and objects of `torch.nn.Model` as values, storing
+            the model for each supported species. These models will finally become `model_X` attributes.
+        reducer : function
+            The desired `reducer` attribute.
+
+        Raises
+        ------
+        ValueError
+            If `from_pync`, `per_species`, and `reducer` are not properly set.
+        """
+
+        super(ModelOnAEV, self).__init__()
+        if not isinstance(aev_computer, AEVComputer):
+            raise TypeError(
+                "NeuralNetworkPotential: aev_computer must be a subclass of AEVComputer")
+        self.aev_computer = aev_computer
+        self.aev_length = aev_computer.radial_length() + aev_computer.angular_length()
+
+        if 'from_pync' in kwargs and 'per_species' not in kwargs and 'reducer' not in kwargs:
+            network_dir = kwargs['from_pync']
+            self.reducer = torch.sum
+            for i in self.aev_computer.species:
+                filename = os.path.join(network_dir, 'ANN-{}.nnf'.format(i))
+                model_X = PerSpeciesFromNeuroChem(self.aev_computer.dtype, filename)
+                setattr(self, 'model_' + i, model_X)
+        elif 'from_pync' not in kwargs and 'per_species' in kwargs and 'reducer' in kwargs:
+            per_species = kwargs['per_species']
+            for i in per_species:
+                setattr(self, 'model_' + i, per_species[i])
+            self.reducer = kwargs['reducer']
+        else:
+            raise ValueError(
+                'bad arguments when initializing ModelOnAEV')
 
     def forward(self, coordinates, species):
-        per_atom_outputs = self.get_activations(coordinates, species, math.inf)
-        per_atom_outputs = torch.stack(per_atom_outputs)
-        molecule_output = self.reducer(per_atom_outputs, dim=0)
-        return torch.squeeze(molecule_output)
+        """Feed forward
+        
+        Parameters
+        ----------
+        coordinates : torch.Tensor
+            The pytorch tensor of shape (conformations, atoms, 3) storing
+            the coordinates of all atoms of all conformations.
+        species : list of string
+            List of string storing the species for each atom.
 
-    def get_activations(self, coordinates, species, layer):
+        Returns
+        -------
+        torch.Tensor
+            Pytorch tensor of shape (conformations, output_length) for the
+            output of each conformation.
+        """
         radial_aev, angular_aev = self.aev_computer(coordinates, species)
         fullaev = torch.cat([radial_aev, angular_aev], dim=2)
         atoms = len(species)
@@ -214,19 +341,10 @@ class NeuralNetworkOnAEV(nn.Module):
         for i in range(atoms):
             s = species[i]
             y = fullaev[:, i, :]
-            for j in range(self.layers[s]-1):
-                linear = getattr(self, '{}{}'.format(s, j))
-                y = linear(y)
-                y = self.activation(y)
-                if j == layer:
-                    break
-            if layer >= self.layers[s]-1:
-                linear = getattr(self, '{}{}'.format(s, self.layers[s]-1))
-                y = linear(y)
+            model_X = getattr(self, 'model_' + s)
+            y = model_X(y)
             per_atom_outputs.append(y)
-        return per_atom_outputs
 
-    def reset_parameters(self):
-        for s in self.aev_computer.species:
-            for j in range(self.layers[s]):
-                getattr(self, '{}{}'.format(s, j)).reset_parameters()
+        per_atom_outputs = torch.stack(per_atom_outputs)
+        molecule_output = self.reducer(per_atom_outputs, dim=0)
+        return molecule_output
