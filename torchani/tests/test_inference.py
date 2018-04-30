@@ -15,7 +15,7 @@ class TestInference(unittest.TestCase):
     def setUp(self, dtype=torch.cuda.float32):
         self.tolerance = 1e-5
         self.ncaev = torchani.NeuroChemAEV()
-        self.nn = torchani.NeuralNetworkOnAEV(
+        self.nn = torchani.ModelOnAEV(
             self.ncaev, from_pync=self.ncaev.network_dir)
         self.logger = logging.getLogger('smiles')
         self.shift_energy = torchani.EnergyShifter(self.ncaev.sae_file)
@@ -38,7 +38,7 @@ class TestInference(unittest.TestCase):
         energies = self._get_neurochem_energies(coordinates, species)
         energies = self.shift_energy.subtract_sae(energies, species)
         coordinates = torch.from_numpy(coordinates).type(self.ncaev.dtype)
-        pred_energies = self.nn(coordinates, species)
+        pred_energies = self.nn(coordinates, species).squeeze()
         maxdiff = torch.max(torch.abs(pred_energies - energies)).item()
         maxdiff_per_atom = maxdiff / len(species)
         self.assertLess(maxdiff_per_atom, self.tolerance)
@@ -46,9 +46,12 @@ class TestInference(unittest.TestCase):
     def _test_activations(self, coordinates, species):
         conformations = coordinates.shape[0]
         atoms = coordinates.shape[1]
+        radial_aev, angular_aev = self.nn.aev_computer(coordinates, species)
+        aev = torch.cat([radial_aev, angular_aev], dim=2)
         for i in range(conformations):
             for j in range(atoms):
-                layers = self.nn.layers[species[j]]
+                model_X = getattr(self.nn, 'model_' + species[j])
+                layers = model_X.layers
                 for layer in range(layers):
                     # get activation from NeuroChem
                     c = coordinates[i]
@@ -58,9 +61,10 @@ class TestInference(unittest.TestCase):
                     _ = mol.get_potential_energy()
                     nca = self.ncaev.nc.activations(j, layer, 0)
                     nca = torch.from_numpy(nca).type(self.ncaev.dtype)
-                    # get activation from NeuralNetworkOnAEV
-                    a = self.nn.get_activations(
-                        c.reshape(1, -1, 3), species, layer)[j].view(-1)
+                    # get activation from ModelOnAEV
+                    atom_aev = aev[:, j, :]
+                    a = model_X.get_activations(atom_aev, layer)
+                    a = a[i].view(-1)
                     # compute diff
                     maxdiff = torch.max(torch.abs(nca - a)).item()
                     self.assertLess(maxdiff, self.tolerance)

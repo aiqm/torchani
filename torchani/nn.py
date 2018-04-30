@@ -8,9 +8,10 @@ import struct
 import copy
 import math
 
+
 class PerSpeciesFromNeuroChem(nn.Module):
     """Subclass of `torch.nn.Module` for the per atom aev->y transformation, loaded from NeuroChem network dir.
-    
+
     Attributes
     ----------
     dtype : torch.dtype
@@ -45,11 +46,10 @@ class PerSpeciesFromNeuroChem(nn.Module):
             buffer = self._decompress(buffer)
             layer_setups = self._parse(buffer)
             self._construct(layer_setups, networ_dir)
-        
 
     def _decompress(self, buffer):
         """Decompress the `.nnf` file
-        
+
         Parameters
         ----------
         buffer : bytes
@@ -68,7 +68,7 @@ class PerSpeciesFromNeuroChem(nn.Module):
 
     def _parse(self, nnf_file):
         """Parse the `.nnf` file
-        
+
         Parameters
         ----------
         nnf_file : string
@@ -156,7 +156,7 @@ class PerSpeciesFromNeuroChem(nn.Module):
 
     def _construct(self, setups, dirname):
         """Construct model from parsed setups
-        
+
         Parameters
         ----------
         setups : list of dict
@@ -213,10 +213,10 @@ class PerSpeciesFromNeuroChem(nn.Module):
         linear.bias = torch.nn.parameter.Parameter(torch.FloatTensor(
             float_b).type(self.dtype).view(out_size))
         fb.close()
-    
+
     def get_activations(self, aev, layer):
         """Compute the activation of the specified layer.
-        
+
         Parameters
         ----------
         aev : torch.Tensor
@@ -233,7 +233,7 @@ class PerSpeciesFromNeuroChem(nn.Module):
             The pytorch tensor of activations of specified layer.
         """
         y = aev
-        for j in range(self.layers):
+        for j in range(self.layers-1):
             linear = getattr(self, 'layer{}'.format(j))
             y = linear(y)
             y = self.activation(y)
@@ -247,6 +247,7 @@ class PerSpeciesFromNeuroChem(nn.Module):
     def forward(self, aev):
         """Compute output from aev"""
         return self.get_activations(aev, math.inf)
+
 
 class ModelOnAEV(nn.Module):
     """Subclass of `torch.nn.Module` for the [xyz]->[aev]->[per_atom_y]->y pipeline.
@@ -306,7 +307,8 @@ class ModelOnAEV(nn.Module):
             self.reducer = torch.sum
             for i in self.aev_computer.species:
                 filename = os.path.join(network_dir, 'ANN-{}.nnf'.format(i))
-                model_X = PerSpeciesFromNeuroChem(self.aev_computer.dtype, filename)
+                model_X = PerSpeciesFromNeuroChem(
+                    self.aev_computer.dtype, filename)
                 setattr(self, 'model_' + i, model_X)
         elif 'from_pync' not in kwargs and 'per_species' in kwargs and 'reducer' in kwargs:
             per_species = kwargs['per_species']
@@ -319,7 +321,7 @@ class ModelOnAEV(nn.Module):
 
     def forward(self, coordinates, species):
         """Feed forward
-        
+
         Parameters
         ----------
         coordinates : torch.Tensor

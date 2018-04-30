@@ -180,7 +180,8 @@ class NeighborAEV(AEVComputer):
             species_neighbors[s] = (in_Rcr * selector, in_Rca * selector)
 
         # helper exception for control flow
-        class AEVIsZero(Exception): pass
+        class AEVIsZero(Exception):
+            pass
 
         # compute radial AEV
         radial_aevs = []

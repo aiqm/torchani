@@ -13,13 +13,14 @@ class TestNeuroChemLoader(unittest.TestCase):
         self.logger = logging.getLogger('species')
 
     def testLoader(self):
-        nn = torchani.NeuralNetworkOnAEV(
+        nn = torchani.ModelOnAEV(
             self.ncaev, from_pync=self.ncaev.network_dir)
         for i in range(len(self.ncaev.species)):
             s = self.ncaev.species[i]
+            model_X = getattr(nn, 'model_' + s)
             self.logger.info(s)
-            for j in range(nn.layers[s]):
-                linear = getattr(nn, '{}{}'.format(s, j))
+            for j in range(model_X.layers):
+                linear = getattr(model_X, 'layer{}'.format(j))
                 ncparams = self.ncaev.nc.getntwkparams(i, j)
                 ncw = ncparams['weights']
                 ncw = torch.from_numpy(ncw).type(self.ncaev.dtype)
