@@ -1,5 +1,4 @@
 import torch
-import numpy
 import itertools
 from .aev_base import AEVComputer
 from . import buildin_const_file, default_dtype
@@ -17,27 +16,6 @@ class AEV(AEVComputer):
         for i in self.species:
             self._species_indices[i] = index
             index += 1
-
-    @staticmethod
-    def _cutoff_cosine(distances, cutoff):
-        """Compute the elementwise cutoff cosine function
-
-        The cutoff cosine function is define in https://arxiv.org/pdf/1610.08935.pdf equation 2
-
-        Parameters
-        ----------
-        distances : pytorch tensor of `dtype`
-            The pytorch tensor that stores Rij values. This tensor can have any shape since the cutoff
-            cosine function is computed elementwise.
-        cutoff : float
-            The cutoff radius, i.e. the Rc in the equation. For any Rij > Rc, the function value is defined to be zero.
-
-        Returns
-        -------
-        pytorch tensor of `dtype`
-            The tensor of the same shape as `distances` that stores the computed function values.
-        """
-        return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
 
     def _compute_radial_terms(self, distances):
         """Compute the single terms of per atom radial AEV

@@ -15,6 +15,6 @@ setup(name='torchani',
           'lark-parser',
       ],
       test_suite='nose.collector',
-      tests_require=['nose'],
+      tests_require=['nose', 'cntk'],
       cmdclass=cmdclass,
       )

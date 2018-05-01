@@ -2,7 +2,6 @@ import torch
 import itertools
 from .aev_base import AEVComputer
 from . import buildin_const_file, default_dtype
-from .torchaev import AEV
 from . import _utils
 
 
@@ -47,7 +46,7 @@ class NeighborAEV(AEVComputer):
         # use broadcasting semantics to do Cartesian product on constants
         # shape convension (conformations, atoms, EtaR, ShfR)
         distances = distances.view(-1, atoms, 1, 1)
-        fc = AEV._cutoff_cosine(distances, self.constants['Rcr'])
+        fc = AEVComputer._cutoff_cosine(distances, self.constants['Rcr'])
         eta = torch.Tensor(self.constants['EtaR']).type(
             self.dtype).view(1, 1, -1, 1)
         radius_shift = torch.Tensor(self.constants['ShfR']).type(
@@ -112,7 +111,7 @@ class NeighborAEV(AEVComputer):
         # shape convension (conformations, pairs, EtaA, Zeta, ShfA, ShfZ)
         angles = angles.view(-1, pairs, 1, 1, 1, 1)
         Rij = R_distances.view(-1, pairs, 2, 1, 1, 1, 1)
-        fcj = AEV._cutoff_cosine(Rij, self.constants['Rca'])
+        fcj = AEVComputer._cutoff_cosine(Rij, self.constants['Rca'])
         eta = torch.Tensor(self.constants['EtaA']).type(
             self.dtype).view(1, 1, -1, 1, 1, 1)
         zeta = torch.Tensor(self.constants['Zeta']).type(
@@ -129,7 +128,7 @@ class NeighborAEV(AEVComputer):
         # flat the last 4 dimensions to view the subAEV as one dimension vector
         return ret.view(-1, self.per_species_angular_length())
 
-    def __call__(self, coordinates, species):
+    def forward(self, coordinates, species):
         # For the docstring of this method, refer to the base class
         conformations = coordinates.shape[0]
         atoms = coordinates.shape[1]

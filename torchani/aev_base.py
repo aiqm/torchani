@@ -1,8 +1,10 @@
 import torch
+import torch.nn as nn
+import numpy
 from . import buildin_const_file, default_dtype
 
 
-class AEVComputer:
+class AEVComputer(nn.Module):
     """Base class of various implementations of AEV computer
 
     Attributes
@@ -18,6 +20,8 @@ class AEVComputer:
     """
 
     def __init__(self, dtype=default_dtype, const_file=buildin_const_file):
+        super(AEVComputer, self).__init__()
+
         self.dtype = dtype
         self.const_file = const_file
 
@@ -42,6 +46,27 @@ class AEVComputer:
                 except:
                     raise ValueError('unable to parse const file')
 
+    @staticmethod
+    def _cutoff_cosine(distances, cutoff):
+        """Compute the elementwise cutoff cosine function
+
+        The cutoff cosine function is define in https://arxiv.org/pdf/1610.08935.pdf equation 2
+
+        Parameters
+        ----------
+        distances : pytorch tensor of `dtype`
+            The pytorch tensor that stores Rij values. This tensor can have any shape since the cutoff
+            cosine function is computed elementwise.
+        cutoff : float
+            The cutoff radius, i.e. the Rc in the equation. For any Rij > Rc, the function value is defined to be zero.
+
+        Returns
+        -------
+        pytorch tensor of `dtype`
+            The tensor of the same shape as `distances` that stores the computed function values.
+        """
+        return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
+
     def per_species_radial_length(self):
         """Returns the radial subaev length per species"""
         return len(self.constants['EtaR']) * len(self.constants['ShfR'])
@@ -59,7 +84,7 @@ class AEVComputer:
         species = len(self.species)
         return int((species * (species + 1)) / 2) * self.per_species_angular_length()
 
-    def __call__(self, coordinates, species):
+    def forward(self, coordinates, species):
         """Compute AEV from coordinates and species
 
         Parameters

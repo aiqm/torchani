@@ -7,3 +7,5 @@ a.out
 /test.py
 /.vscode
 /build
+/.eggs
+/torchani.egg-info

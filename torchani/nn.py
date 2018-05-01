@@ -7,7 +7,7 @@ import lark
 import struct
 import copy
 import math
-
+from . import buildin_network_dir
 
 class PerSpeciesFromNeuroChem(nn.Module):
     """Subclass of `torch.nn.Module` for the per atom aev->y transformation, loaded from NeuroChem network dir.
@@ -282,7 +282,8 @@ class ModelOnAEV(nn.Module):
         ----------------
         from_pync : string
             Path to the NeuroChem network directory. If this parameter is set, then `per_species` and
-            `reducer` should not be set.
+            `reducer` should not be set. If set to `None`, then the network ship with torchani will be
+            used.
         per_species : dict
             Dictionary with supported species as keys and objects of `torch.nn.Model` as values, storing
             the model for each supported species. These models will finally become `model_X` attributes.
@@ -304,6 +305,8 @@ class ModelOnAEV(nn.Module):
 
         if 'from_pync' in kwargs and 'per_species' not in kwargs and 'reducer' not in kwargs:
             network_dir = kwargs['from_pync']
+            if network_dir is None:
+                network_dir = buildin_network_dir
             self.reducer = torch.sum
             for i in self.aev_computer.species:
                 filename = os.path.join(network_dir, 'ANN-{}.nnf'.format(i))
