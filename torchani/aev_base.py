@@ -84,6 +84,9 @@ class AEVComputer(nn.Module):
         species = len(self.species)
         return int((species * (species + 1)) / 2) * self.per_species_angular_length()
 
+    def aev_length(self):
+        return self.radial_length() + self.angular_length()
+
     def forward(self, coordinates, species):
         """Compute AEV from coordinates and species
 

@@ -9,6 +9,7 @@ import copy
 import math
 from . import buildin_network_dir
 
+
 class PerSpeciesFromNeuroChem(nn.Module):
     """Subclass of `torch.nn.Module` for the per atom aev->y transformation, loaded from NeuroChem network dir.
 
@@ -187,7 +188,7 @@ class PerSpeciesFromNeuroChem(nn.Module):
                         raise NotImplementedError('only gaussian is supported')
                     else:
                         self.activation_index = activation
-                        self.activation = lambda x: torch.exp(-x**2)
+                        self.activation = lambda x: torch.exp(-x*x)
                 elif self.activation_index != activation:
                     raise NotImplementedError(
                         'different activation on different layers are not supported')
@@ -204,14 +205,14 @@ class PerSpeciesFromNeuroChem(nn.Module):
         """Load `.wparam` and `.bparam` files"""
         wsize = in_size * out_size
         fw = open(wfn, 'rb')
-        float_w = struct.unpack('{}f'.format(wsize), fw.read())
-        linear.weight = torch.nn.parameter.Parameter(torch.FloatTensor(
-            float_w).type(self.dtype).view(out_size, in_size))
+        w = struct.unpack('{}f'.format(wsize), fw.read())
+        w = torch.FloatTensor(w).type(self.dtype).view(out_size, in_size)
+        linear.weight = torch.nn.parameter.Parameter(w, requires_grad=True)
         fw.close()
         fb = open(bfn, 'rb')
-        float_b = struct.unpack('{}f'.format(out_size), fb.read())
-        linear.bias = torch.nn.parameter.Parameter(torch.FloatTensor(
-            float_b).type(self.dtype).view(out_size))
+        b = struct.unpack('{}f'.format(out_size), fb.read())
+        b = torch.FloatTensor(b).type(self.dtype).view(out_size)
+        linear.bias = torch.nn.parameter.Parameter(b, requires_grad=True)
         fb.close()
 
     def get_activations(self, aev, layer):
@@ -220,7 +221,7 @@ class PerSpeciesFromNeuroChem(nn.Module):
         Parameters
         ----------
         aev : torch.Tensor
-            The pytorch tensor of AEV as input to this model.
+            The pytorch tensor of shape (conformations, aev_length) storing AEV as input to this model.
         layer : int
             The layer whose activation is desired. The index starts at zero, that is
             `layer=0` means the `activation(layer0(aev))` instead of `aev`. If the given
@@ -245,7 +246,18 @@ class PerSpeciesFromNeuroChem(nn.Module):
         return y
 
     def forward(self, aev):
-        """Compute output from aev"""
+        """Compute output from aev
+
+        Parameters
+        ----------
+        aev : torch.Tensor
+            The pytorch tensor of shape (conformations, aev_length) storing AEV as input to this model.
+
+        Returns
+        -------
+        torch.Tensor
+            The pytorch tensor of shape (conformations, output_length) for output.
+        """
         return self.get_activations(aev, math.inf)
 
 
@@ -301,7 +313,7 @@ class ModelOnAEV(nn.Module):
             raise TypeError(
                 "NeuralNetworkPotential: aev_computer must be a subclass of AEVComputer")
         self.aev_computer = aev_computer
-        self.aev_length = aev_computer.radial_length() + aev_computer.angular_length()
+        self.aev_length = aev_computer.aev_length()
 
         if 'from_pync' in kwargs and 'per_species' not in kwargs and 'reducer' not in kwargs:
             network_dir = kwargs['from_pync']
@@ -353,3 +365,19 @@ class ModelOnAEV(nn.Module):
         per_atom_outputs = torch.stack(per_atom_outputs)
         molecule_output = self.reducer(per_atom_outputs, dim=0)
         return molecule_output
+
+    def export_onnx(self, dirname):
+        """Export atomic networks into onnx format
+
+        Parameters
+        ----------
+        dirname : string
+            Name of the directory to store exported networks.
+        """
+
+        aev_length = self.aev_computer.aev_length()
+        dummy_aev = torch.zeros(1, aev_length)
+        for s in self.aev_computer.species:
+            nn_onnx = os.path.join(dirname, '{}.proto'.format(s))
+            model_X = getattr(self, 'model_' + s)
+            torch.onnx.export(model_X, dummy_aev, nn_onnx)

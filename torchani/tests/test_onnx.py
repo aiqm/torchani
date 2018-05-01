@@ -4,61 +4,74 @@ import torch
 import cntk
 import tempfile
 import os
+import numpy
+
 
 class TestONNX(unittest.TestCase):
 
-    def _testONNX(self):  # not ready yet
+    def setUp(self):
+        self.tolerance = 1e-5
+
+    def testONNX(self):  # not ready yet
 
         # molecule structure: CH2OH
-        self.species = [ 'C', 'H', 'H', 'O', 'H' ]
-        self.coordinates = [
-            [0,0,0],  # C
-            [0,0,1],  # H
-            [1,0,0],  # H
-            [0,1,0],  # O
-            [0,1,1],  # H
+        species = ['C', 'H', 'H', 'O', 'H']
+        coordinates = [
+            [0, 0, 0],  # C
+            [0, 0, 1],  # H
+            [1, 0, 0],  # H
+            [0, 1, 0],  # O
+            [0, 1, 1],  # H
         ]
+
+        # compute aev using pytorch
+        aev_computer = torchani.NeighborAEV()
+        coordinates = torch.FloatTensor(coordinates)
+        coordinates = coordinates.unsqueeze(0)
+        radial_aev, angular_aev = aev_computer(coordinates, species)
+        aev = torch.cat([radial_aev, angular_aev], dim=2).numpy()
+
+        # temp directory storing exported networks
+        tmpdir = tempfile.TemporaryDirectory()
+        tmpdirname = tmpdir.name
 
         ####################################################
         # Step 1: use pytorch to export all graphs into ONNX
         ####################################################
 
-        tmpdir = tempfile.TemporaryDirectory()
-        tmpdirname = tmpdir.name
-        radial_onnx = os.path.join(tmpdirname, 'radial.proto')
+        # TODO: exporting AEV to ONNX is not supported yet,
+        # due to lack of operators in ONNX. Add this support
+        # when ONNX support this operation.
 
-        # export graph for radial AEV
-        dummy_center = torch.FloatTensor([[0,0,0]])
-        dummy_neighbors = torch.FloatTensor([[[0,0,1],[0,1,0]]])
-        aev_computer = torchani.NeighborAEV()
-        class RadialAEV(torchani.NeighborAEV):
-            def forward(self, center, neighbors):
-                return self.radial_subaev(center, neighbors)
-        torch.onnx.export(RadialAEV(), (dummy_center, dummy_neighbors), radial_onnx)
+        # Export neural network potential to ONNX
+        model = torchani.ModelOnAEV(aev_computer, from_pync=None)
+        model.export_onnx(tmpdirname)
 
         #####################################
         # Step 2: import from ONNX using CNTK
         #####################################
-
+        networks = {}
+        for s in aev_computer.species:
+            nn_onnx = os.path.join(tmpdirname, '{}.proto'.format(s))
+            networks[s] = cntk.Function.load(
+                nn_onnx, format=cntk.ModelFormat.ONNX)
 
         ###################################
         # Step 3: compute energy using CNTX
         ###################################
+        energy1 = 0
+        for i in range(len(species)):
+            atomic_aev = aev[:, i, :]
+            network = networks[species[i]]
+            atomic_energy = network(atomic_aev)[0, 0, 0]
+            energy1 += atomic_energy
 
+        ###############################################
+        # Test only: check the CNTK result with pytorch
+        ###############################################
+        energy2 = model(coordinates, species).squeeze().item()
+        self.assertLessEqual(abs(energy1 - energy2), self.tolerance)
 
-        ##########################################
-        # Test only: check the result with pytorch
-        ##########################################
-        # compute energy using pytorch
-        coordinates = torch.FloatTensor(self.coordinates)
-        coordinates = coordinates.unsqueeze(0)
-        model = torchani.ModelOnAEV(aev_computer, from_pync=None)
-        energy_shifter = torchani.EnergyShifter()
-        energy2 = model(coordinates, self.species)
-        energy2 = energy_shifter.add_sae(energy2, self.species)
-        energy2 = energy2.squeeze().item()
-        # assert that 
-        print(energy2)
 
 if __name__ == '__main__':
     unittest.main()
