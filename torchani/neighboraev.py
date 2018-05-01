@@ -1,7 +1,7 @@
 import torch
 import itertools
 from .aev_base import AEVComputer
-from . import buildin_const_file
+from . import buildin_const_file, default_dtype
 from .torchaev import AEV
 from . import _utils
 
@@ -9,7 +9,7 @@ from . import _utils
 class NeighborAEV(AEVComputer):
     """The AEV computer fully implemented using pytorch, making use of neighbor list"""
 
-    def __init__(self, dtype=torch.cuda.float32, const_file=buildin_const_file):
+    def __init__(self, dtype=default_dtype, const_file=buildin_const_file):
         super(NeighborAEV, self).__init__(dtype, const_file)
 
     def radial_subaev(self, center, neighbors):

@@ -2,13 +2,13 @@ import torch
 import numpy
 import itertools
 from .aev_base import AEVComputer
-from . import buildin_const_file
+from . import buildin_const_file, default_dtype
 
 
 class AEV(AEVComputer):
     """The AEV computer fully implemented using pytorch"""
 
-    def __init__(self, dtype=torch.cuda.float32, const_file=buildin_const_file):
+    def __init__(self, dtype=default_dtype, const_file=buildin_const_file):
         super(AEV, self).__init__(dtype, const_file)
 
         # assign supported species indices

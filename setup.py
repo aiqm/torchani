@@ -1,4 +1,6 @@
 from setuptools import setup
+from sphinx.setup_command import BuildDoc
+cmdclass = {'build_sphinx': BuildDoc}
 
 setup(name='torchani',
       version='0.1',
@@ -14,4 +16,5 @@ setup(name='torchani',
       ],
       test_suite='nose.collector',
       tests_require=['nose'],
-      zip_safe=False)
+      cmdclass=cmdclass,
+      )

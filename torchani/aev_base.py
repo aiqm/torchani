@@ -1,5 +1,5 @@
 import torch
-from . import buildin_const_file
+from . import buildin_const_file, default_dtype
 
 
 class AEVComputer:
@@ -17,7 +17,7 @@ class AEVComputer:
         values to store constants.
     """
 
-    def __init__(self, dtype=torch.cuda.float32, const_file=buildin_const_file):
+    def __init__(self, dtype=default_dtype, const_file=buildin_const_file):
         self.dtype = dtype
         self.const_file = const_file
 

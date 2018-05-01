@@ -1,4 +1,5 @@
 import pkg_resources
+import torch
 
 buildin_const_file = pkg_resources.resource_filename(
     __name__, 'data/rHCNO-4.6R_16-3.1A_a4-8_3.params')
@@ -8,6 +9,8 @@ buildin_sae_file = pkg_resources.resource_filename(
 
 buildin_network_dir = pkg_resources.resource_filename(
     __name__, 'data/networks/')
+
+default_dtype = torch.float32
 
 from .torchaev import AEV
 from .energyshifter import EnergyShifter
