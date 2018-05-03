@@ -270,6 +270,7 @@ class NeighborAEV(AEVComputer):
         """
         class M(torch.nn.Module):
             def __init__(self, outerself):
+                super(M,self).__init__()
                 self.outerself = outerself
             def forward(self, center, neighbors):
                 return self.outerself.radial_subaev(center, neighbors)
