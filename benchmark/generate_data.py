@@ -140,7 +140,6 @@ if __name__ == '__main__':
             save(f, *i)
 
     with h5py.File("waters.hdf5", "w") as f:
-        print(list(f.keys()))
         save(f, *waterbox(10, 10, 10))
         save(f, *waterbox(20, 20, 10))
         save(f, *waterbox(30, 30, 30))
