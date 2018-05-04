@@ -7,11 +7,27 @@ import numpy
 import h5py
 from rdkit import Chem
 from rdkit.Chem import AllChem
+# from asap3 import EMT
 from ase.calculators.emt import EMT
+from multiprocessing import Pool
+from tqdm import tqdm, tqdm_notebook, trange
+tqdm.monitor_interval = 0
 
-conformations = 2
+import functools
 
-def waterbox(x, y, z):
+conformations = 1024
+T = 30
+
+fw = h5py.File("waters.hdf5", "w")
+fm = h5py.File("molecules.hdf5", "w")
+
+
+def save(h5file, name, species, coordinates):
+    h5file[name] = coordinates
+    h5file[name].attrs['species'] = ' '.join(species)
+
+
+def waterbox(x, y, z, tqdmpos):
     name = '{}_waters'.format(x*y*z)
     # Set up water box at 20 deg C density
     a = angleHOH * numpy.pi / 180 / 2
@@ -29,7 +45,31 @@ def waterbox(x, y, z):
     species = atoms.get_chemical_symbols()
 
     atoms.calc = TIP3P()
-    md = Langevin(atoms, 1 * units.fs, temperature=300 *
+    md = Langevin(atoms, 1 * units.fs, temperature=T *
+                  units.kB, friction=0.01)
+
+    def generator(n):
+        for _ in trange(n, desc=name, position=tqdmpos):
+            md.run(1)
+            positions = atoms.get_positions()
+            yield positions
+
+    save(fw, name, species, numpy.stack(generator(conformations)))
+
+
+def compute(smiles):
+    m = Chem.MolFromSmiles(smiles)
+    m = Chem.AddHs(m)
+    AllChem.EmbedMolecule(m, useRandomCoords=True)
+    AllChem.UFFOptimizeMolecule(m)
+    pos = m.GetConformer().GetPositions()
+    natoms = m.GetNumAtoms()
+    species = [m.GetAtomWithIdx(j).GetSymbol() for j in range(natoms)]
+
+    atoms = Atoms(species, positions=pos)
+
+    atoms.calc = EMT()
+    md = Langevin(atoms, 1 * units.fs, temperature=T *
                   units.kB, friction=0.01)
 
     def generator(n):
@@ -38,7 +78,8 @@ def waterbox(x, y, z):
             positions = atoms.get_positions()
             yield positions
 
-    return name, species, numpy.stack(generator(conformations))
+    c = numpy.stack(generator(conformations))
+    return smiles.replace('/', '_'), species, c
 
 
 def molecules():
@@ -105,42 +146,19 @@ def molecules():
         ]
     }
 
-    for atoms in mols:
-        for smiles in mols[atoms]:
-            m = Chem.MolFromSmiles(smiles)
-            m = Chem.AddHs(m)
-            AllChem.EmbedMolecule(m,useRandomCoords=True)
-            AllChem.UFFOptimizeMolecule(m)
-            pos = m.GetConformer().GetPositions()
-            natoms = m.GetNumAtoms()
-            species = [m.GetAtomWithIdx(j).GetSymbol() for j in range(natoms)]
-            
-            atoms = Atoms(species, positions=pos)
+    smiles = [s for atoms in mols for s in mols[atoms]]
+    with Pool() as p:
+        return p.map(compute, smiles)
 
-            atoms.calc = EMT()
-            md = Langevin(atoms, 1 * units.fs, temperature=300 *
-                        units.kB, friction=0.01)
-
-            def generator(n):
-                for _ in range(n):
-                    md.run(1)
-                    positions = atoms.get_positions()
-                    yield positions
-
-            c = numpy.stack(generator(conformations))
-            yield smiles.replace('/','_'), species, c
-
-def save(h5file, name, species, coordinates):
-    h5file[name] = coordinates
-    h5file[name].attrs['species'] = ' '.join(species)
 
 if __name__ == '__main__':
-    with h5py.File("molecules.hdf5", "w") as f:
-        for i in molecules():
-            save(f, *i)
+    for i in molecules():
+        save(fm, *i)
+    print(list(fm.keys()))
+    print('done with molecules')
 
-    with h5py.File("waters.hdf5", "w") as f:
-        save(f, *waterbox(10, 10, 10))
-        save(f, *waterbox(20, 20, 10))
-        save(f, *waterbox(30, 30, 30))
-        save(f, *waterbox(40, 40, 40))
+    with Pool() as p:
+        p.starmap(waterbox, [(10, 10, 10, 0), (20, 20, 10,
+                                               1), (30, 30, 30, 2), (40, 40, 40, 3)])
+        print(list(fw.keys()))
+        print('done with water boxes')
