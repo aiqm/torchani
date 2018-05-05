@@ -42,8 +42,9 @@ class TestONNX(unittest.TestCase):
         # TODO: exporting AEV to ONNX is not supported yet,
         # due to lack of operators in ONNX. Add this support
         # when ONNX support this operation.
-        aev_computer.export_radial_subaev_onnx(
-            os.path.join(tmpdirname, 'radial.onnx'))
+
+        # aev_computer.export_radial_subaev_onnx(
+        #     os.path.join(tmpdirname, 'radial.onnx'))
 
         # Export neural network potential to ONNX
         model = torchani.ModelOnAEV(aev_computer, from_pync=None)

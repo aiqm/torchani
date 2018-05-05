@@ -7,8 +7,11 @@ from . import buildin_const_file, default_dtype
 class AEV(AEVComputer):
     """The AEV computer fully implemented using pytorch"""
 
-    def __init__(self, dtype=default_dtype, const_file=buildin_const_file):
-        super(AEV, self).__init__(dtype, const_file)
+    def __init__(self, benchmark=False, dtype=default_dtype, const_file=buildin_const_file):
+        super(AEV, self).__init__(benchmark, dtype, const_file)
+
+        if benchmark:
+            self._enable_benchmark(self.forward, 'aev')
 
         # assign supported species indices
         self._species_indices = {}
@@ -188,7 +191,7 @@ class AEV(AEVComputer):
             angular_aevs.append(torch.cat(angular_aev, dim=1))
         return torch.stack(angular_aevs, dim=1)
 
-    def __call__(self, coordinates, species):
+    def forward(self, coordinates, species):
         # For the docstring of this method, refer to the base class
 
         R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)

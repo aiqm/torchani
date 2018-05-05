@@ -8,8 +8,14 @@ from . import _utils
 class NeighborAEV(AEVComputer):
     """The AEV computer fully implemented using pytorch, making use of neighbor list"""
 
-    def __init__(self, dtype=default_dtype, const_file=buildin_const_file):
-        super(NeighborAEV, self).__init__(dtype, const_file)
+    def __init__(self, benchmark=False, dtype=default_dtype, const_file=buildin_const_file):
+        super(NeighborAEV, self).__init__(benchmark, dtype, const_file)
+        if benchmark:
+            self.compute_neighborlist = self._enable_benchmark(
+                self.compute_neighborlist, 'neighborlist')
+            self.compute_aev_using_neighborlist = self._enable_benchmark(
+                self.compute_aev_using_neighborlist, 'aev')
+            self.forward = self._enable_benchmark(self.forward, 'total')
 
     def radial_subaev(self, center, neighbors):
         """Compute the radial subAEV of the center atom given neighbors
@@ -128,9 +134,9 @@ class NeighborAEV(AEVComputer):
         # flat the last 4 dimensions to view the subAEV as one dimension vector
         return ret.view(-1, self.per_species_angular_length())
 
-    def forward(self, coordinates, species):
-        # For the docstring of this method, refer to the base class
-        conformations = coordinates.shape[0]
+    def compute_neighborlist(self, coordinates, species):
+        """Compute neighbor list of each atom, and group neighbors by species"""
+
         atoms = coordinates.shape[1]
 
         R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)
@@ -178,7 +184,13 @@ class NeighborAEV(AEVComputer):
             selector = species_selectors[s].unsqueeze(0)
             species_neighbors[s] = (in_Rcr * selector, in_Rca * selector)
 
+        return species_neighbors
+
+    def compute_aev_using_neighborlist(self, coordinates, species, species_neighbors):
+        conformations = coordinates.shape[0]
+        atoms = coordinates.shape[1]
         # helper exception for control flow
+
         class AEVIsZero(Exception):
             pass
 
@@ -259,6 +271,11 @@ class NeighborAEV(AEVComputer):
         angular_aevs = torch.stack(angular_aevs, dim=1)
 
         return radial_aevs, angular_aevs
+
+    def forward(self, coordinates, species):
+        # For the docstring of this method, refer to the base class
+        species_neighbors = self.compute_neighborlist(coordinates, species)
+        return self.compute_aev_using_neighborlist(coordinates, species, species_neighbors)
 
     def export_radial_subaev_onnx(self, filename):
         """Export the operation that compute radial subaev into onnx format

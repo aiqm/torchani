@@ -1,6 +1,5 @@
 from .aev_base import AEVComputer
 import torch
-import torch.nn as nn
 import bz2
 import os
 import lark
@@ -8,9 +7,10 @@ import struct
 import copy
 import math
 from . import buildin_network_dir
+from .benchmarked import BenchmarkedModule
 
 
-class PerSpeciesFromNeuroChem(nn.Module):
+class PerSpeciesFromNeuroChem(torch.nn.Module):
     """Subclass of `torch.nn.Module` for the per atom aev->y transformation, loaded from NeuroChem network dir.
 
     Attributes
@@ -192,7 +192,7 @@ class PerSpeciesFromNeuroChem(nn.Module):
                 elif self.activation_index != activation:
                     raise NotImplementedError(
                         'different activation on different layers are not supported')
-            linear = nn.Linear(in_size, out_size).type(self.dtype)
+            linear = torch.nn.Linear(in_size, out_size).type(self.dtype)
             name = 'layer{}'.format(i)
             setattr(self, name, linear)
             if in_size * out_size != wsz or out_size != bsz:
@@ -261,15 +261,13 @@ class PerSpeciesFromNeuroChem(nn.Module):
         return self.get_activations(aev, math.inf)
 
 
-class ModelOnAEV(nn.Module):
+class ModelOnAEV(BenchmarkedModule):
     """Subclass of `torch.nn.Module` for the [xyz]->[aev]->[per_atom_y]->y pipeline.
 
     Attributes
     ----------
     aev_computer : AEVComputer
         The AEV computer.
-    aev_length : int
-        Length of AEV.
     model_X : nn.Module
         Model for species X. There should be one such attribute for each supported species.
     reducer : function
@@ -279,7 +277,7 @@ class ModelOnAEV(nn.Module):
         the input into the tensor containing desired output.
     """
 
-    def __init__(self, aev_computer, **kwargs):
+    def __init__(self, aev_computer, benchmark=False, **kwargs):
         """Initialize object from manual setup or from NeuroChem network directory.
 
         The caller must set either `from_pync` in order to load from NeuroChem network directory,
@@ -289,6 +287,8 @@ class ModelOnAEV(nn.Module):
         ----------
         aev_computer : AEVComputer
             The AEV computer.
+        benchmark : boolean
+            Whether to enable benchmarking
 
         Other Parameters
         ----------------
@@ -308,12 +308,17 @@ class ModelOnAEV(nn.Module):
             If `from_pync`, `per_species`, and `reducer` are not properly set.
         """
 
-        super(ModelOnAEV, self).__init__()
+        super(ModelOnAEV, self).__init__(benchmark)
+        if benchmark:
+            self.compute_aev = self._enable_benchmark(self.compute_aev, 'aev')
+            self.aev_to_output = self._enable_benchmark(
+                self.aev_to_output, 'nn')
+            self.forward = self._enable_benchmark(self.forward, 'forward')
+
         if not isinstance(aev_computer, AEVComputer):
             raise TypeError(
                 "NeuralNetworkPotential: aev_computer must be a subclass of AEVComputer")
         self.aev_computer = aev_computer
-        self.aev_length = aev_computer.aev_length()
 
         if 'from_pync' in kwargs and 'per_species' not in kwargs and 'reducer' not in kwargs:
             network_dir = kwargs['from_pync']
@@ -334,6 +339,57 @@ class ModelOnAEV(nn.Module):
             raise ValueError(
                 'bad arguments when initializing ModelOnAEV')
 
+    def compute_aev(self, coordinates, species):
+        """Compute full AEV
+
+        Parameters
+        ----------
+        coordinates : torch.Tensor
+            The pytorch tensor of shape (conformations, atoms, 3) storing
+            the coordinates of all atoms of all conformations.
+        species : list of string
+            List of string storing the species for each atom.
+
+        Returns
+        -------
+        torch.Tensor
+            Pytorch tensor of shape (conformations, atoms, aev_length) storing
+            the computed AEVs.
+        """
+        radial_aev, angular_aev = self.aev_computer(coordinates, species)
+        fullaev = torch.cat([radial_aev, angular_aev], dim=2)
+        return fullaev
+
+    def aev_to_output(self, aev, species):
+        """Compute output from aev
+
+        Parameters
+        ----------
+        aev : torch.Tensor
+            Pytorch tensor of shape (conformations, atoms, aev_length) storing
+            the computed AEVs.
+        species : list of string
+            List of string storing the species for each atom.
+
+        Returns
+        -------
+        torch.Tensor
+            Pytorch tensor of shape (conformations, output_length) for the
+            output of each conformation.
+        """
+        atoms = len(species)
+        per_atom_outputs = []
+        for i in range(atoms):
+            s = species[i]
+            y = aev[:, i, :]
+            model_X = getattr(self, 'model_' + s)
+            y = model_X(y)
+            per_atom_outputs.append(y)
+
+        per_atom_outputs = torch.stack(per_atom_outputs)
+        molecule_output = self.reducer(per_atom_outputs, dim=0)
+        return molecule_output
+
     def forward(self, coordinates, species):
         """Feed forward
 
@@ -351,20 +407,8 @@ class ModelOnAEV(nn.Module):
             Pytorch tensor of shape (conformations, output_length) for the
             output of each conformation.
         """
-        radial_aev, angular_aev = self.aev_computer(coordinates, species)
-        fullaev = torch.cat([radial_aev, angular_aev], dim=2)
-        atoms = len(species)
-        per_atom_outputs = []
-        for i in range(atoms):
-            s = species[i]
-            y = fullaev[:, i, :]
-            model_X = getattr(self, 'model_' + s)
-            y = model_X(y)
-            per_atom_outputs.append(y)
-
-        per_atom_outputs = torch.stack(per_atom_outputs)
-        molecule_output = self.reducer(per_atom_outputs, dim=0)
-        return molecule_output
+        aev = self.compute_aev(coordinates, species)
+        return self.aev_to_output(aev, species)
 
     def export_onnx(self, dirname):
         """Export atomic networks into onnx format

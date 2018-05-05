@@ -2,13 +2,16 @@ import torch
 import torch.nn as nn
 import numpy
 from . import buildin_const_file, default_dtype
+from .benchmarked import BenchmarkedModule
 
 
-class AEVComputer(nn.Module):
+class AEVComputer(BenchmarkedModule):
     """Base class of various implementations of AEV computer
 
     Attributes
     ----------
+    benchmark : boolean
+        Whether to enable benchmark
     dtype : torch.dtype
         Data type of pytorch tensors for all the computations. This is also used
         to specify whether to use CPU or GPU.
@@ -19,8 +22,8 @@ class AEVComputer(nn.Module):
         values to store constants.
     """
 
-    def __init__(self, dtype=default_dtype, const_file=buildin_const_file):
-        super(AEVComputer, self).__init__()
+    def __init__(self, benchmark=False, dtype=default_dtype, const_file=buildin_const_file):
+        super(AEVComputer, self).__init__(benchmark)
 
         self.dtype = dtype
         self.const_file = const_file
