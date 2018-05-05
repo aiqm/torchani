@@ -22,7 +22,7 @@ class NeuroChemAEV (AEVComputer):
     """
 
     def __init__(self, dtype=torch.cuda.float32, const_file=buildin_const_file, sae_file=buildin_sae_file, network_dir=buildin_network_dir):
-        super(NeuroChemAEV, self).__init__(dtype, const_file)
+        super(NeuroChemAEV, self).__init__(False, dtype, const_file)
         self.sae_file = sae_file
         self.network_dir = network_dir
         self.nc = pyNeuroChem.molecule(const_file, sae_file, network_dir, 0)

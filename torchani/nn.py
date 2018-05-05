@@ -184,11 +184,16 @@ class PerSpeciesFromNeuroChem(torch.nn.Module):
                     raise ValueError('activation in the last layer must be 6')
             else:
                 if self.activation_index is None:
-                    if activation != 5:
-                        raise NotImplementedError('only gaussian is supported')
-                    else:
-                        self.activation_index = activation
+                    self.activation_index = activation
+                    if activation == 5:  # Gaussian
                         self.activation = lambda x: torch.exp(-x*x)
+                    elif activation == 9:  # CELU
+                        alpha = 0.1
+                        self.activation = lambda x: torch.where(
+                            x > 0, x, alpha * (torch.exp(x/alpha)-1))
+                    else:
+                        raise NotImplementedError(
+                            'Unexpected activation {}'.format(activation))
                 elif self.activation_index != activation:
                     raise NotImplementedError(
                         'different activation on different layers are not supported')

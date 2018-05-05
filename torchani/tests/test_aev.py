@@ -9,7 +9,7 @@ import logging
 
 class TestAEV(unittest.TestCase):
 
-    def setUp(self, dtype=torch.cuda.float32):
+    def setUp(self, dtype=torchani.default_dtype):
         self.aev = torchani.AEV(dtype)
         self.ncaev = torchani.NeuroChemAEV(dtype)
         self.tolerance = 1e-5
