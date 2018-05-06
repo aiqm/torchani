@@ -9,3 +9,5 @@ a.out
 /build
 /.eggs
 /torchani.egg-info
+/*.h5
+/*.hdf5
