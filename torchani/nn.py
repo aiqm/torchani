@@ -280,6 +280,11 @@ class ModelOnAEV(BenchmarkedModule):
         to get an output tensor. This function will be called with the per atom output tensor
         with internal shape as input, and desired reduction dimension as dim, and should reduce
         the input into the tensor containing desired output.
+    timers : dict
+        Dictionary storing the the benchmark result. It has the following keys:
+            aev : time spent on computing AEV.
+            nn : time spent on computing output from AEV.
+            forward : total time for the forward pass
     """
 
     def __init__(self, aev_computer, benchmark=False, **kwargs):

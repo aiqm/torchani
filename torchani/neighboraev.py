@@ -6,7 +6,16 @@ from . import _utils
 
 
 class NeighborAEV(AEVComputer):
-    """The AEV computer fully implemented using pytorch, making use of neighbor list"""
+    """The AEV computer fully implemented using pytorch, making use of neighbor list
+
+    Attributes
+    ----------
+    timers : dict
+        Dictionary storing the the benchmark result. It has the following keys:
+            neighborlist : time spent on computing neighborlist
+            aev : time spent on computing AEV, when the nighborlist is given
+            total : total time for computing everything, including neighborlist and AEV.
+    """
 
     def __init__(self, benchmark=False, dtype=default_dtype, const_file=buildin_const_file):
         super(NeighborAEV, self).__init__(benchmark, dtype, const_file)

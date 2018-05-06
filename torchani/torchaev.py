@@ -5,7 +5,14 @@ from . import buildin_const_file, default_dtype
 
 
 class AEV(AEVComputer):
-    """The AEV computer fully implemented using pytorch"""
+    """The AEV computer fully implemented using pytorch
+
+    Attributes
+    ----------
+    timers : dict
+        Dictionary storing the the benchmark result. It has the following keys:
+            aev : time spent on computing AEV.
+    """
 
     def __init__(self, benchmark=False, dtype=default_dtype, const_file=buildin_const_file):
         super(AEV, self).__init__(benchmark, dtype, const_file)
