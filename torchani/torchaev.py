@@ -18,7 +18,7 @@ class AEV(AEVComputer):
         super(AEV, self).__init__(benchmark, dtype, const_file)
 
         if benchmark:
-            self._enable_benchmark(self.forward, 'aev')
+            self.forward = self._enable_benchmark(self.forward, 'aev')
 
         # assign supported species indices
         self._species_indices = {}
@@ -200,7 +200,6 @@ class AEV(AEVComputer):
 
     def forward(self, coordinates, species):
         # For the docstring of this method, refer to the base class
-
         R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)
         """pytorch tensor of `dtype`: A tensor of shape (conformations, atoms, atoms, 3)
         that stores Rij vectors. The 3 dimensional vector at (N, i, j, :) is the Rij vector
