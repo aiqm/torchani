@@ -17,6 +17,8 @@ class PerSpeciesFromNeuroChem(torch.nn.Module):
     ----------
     dtype : torch.dtype
         Pytorch data type for tensors
+    device : torch.Device
+        The device where tensors should be.
     layers : int
         Number of layers.
     layerN : torch.nn.Linear
@@ -27,7 +29,7 @@ class PerSpeciesFromNeuroChem(torch.nn.Module):
         The NeuroChem index for activation.
     """
 
-    def __init__(self, dtype, filename):
+    def __init__(self, dtype, device, filename):
         """Initialize from NeuroChem network directory.
 
         Parameters
@@ -41,6 +43,7 @@ class PerSpeciesFromNeuroChem(torch.nn.Module):
         super(PerSpeciesFromNeuroChem, self).__init__()
 
         self.dtype = dtype
+        self.device = device
         networ_dir = os.path.dirname(filename)
         with open(filename, 'rb') as f:
             buffer = f.read()
@@ -211,12 +214,14 @@ class PerSpeciesFromNeuroChem(torch.nn.Module):
         wsize = in_size * out_size
         fw = open(wfn, 'rb')
         w = struct.unpack('{}f'.format(wsize), fw.read())
-        w = torch.FloatTensor(w).type(self.dtype).view(out_size, in_size)
+        w = torch.tensor(w, dtype=self.dtype, device=self.device).view(
+            out_size, in_size)
         linear.weight = torch.nn.parameter.Parameter(w, requires_grad=True)
         fw.close()
         fb = open(bfn, 'rb')
         b = struct.unpack('{}f'.format(out_size), fb.read())
-        b = torch.FloatTensor(b).type(self.dtype).view(out_size)
+        b = torch.tensor(b, dtype=self.dtype,
+                         device=self.device).view(out_size)
         linear.bias = torch.nn.parameter.Parameter(b, requires_grad=True)
         fb.close()
 
@@ -338,7 +343,7 @@ class ModelOnAEV(BenchmarkedModule):
             for i in self.aev_computer.species:
                 filename = os.path.join(network_dir, 'ANN-{}.nnf'.format(i))
                 model_X = PerSpeciesFromNeuroChem(
-                    self.aev_computer.dtype, filename)
+                    self.aev_computer.dtype, self.aev_computer.device, filename)
                 setattr(self, 'model_' + i, model_X)
         elif 'from_pync' not in kwargs and 'per_species' in kwargs and 'reducer' in kwargs:
             per_species = kwargs['per_species']

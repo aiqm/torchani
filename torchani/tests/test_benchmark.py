@@ -6,10 +6,13 @@ import copy
 
 class TestBenchmark(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
+        self.dtype = dtype
+        self.device = device
         self.conformations = 100
         self.species = list('CCHHNNOO')
-        self.coordinates = torch.randn(self.conformations, 8, 3)
+        self.coordinates = torch.randn(
+            self.conformations, 8, 3, dtype=dtype, device=device)
         self.count = 100
 
     def _testModule(self, module, asserts):
@@ -76,15 +79,18 @@ class TestBenchmark(unittest.TestCase):
             self.assertEqual(module.timers[i], 0)
 
     def testNeighborAEV(self):
-        aev_computer = torchani.NeighborAEV(benchmark=True)
+        aev_computer = torchani.NeighborAEV(
+            benchmark=True, dtype=self.dtype, device=self.device)
         self._testModule(aev_computer, ['total>neighborlist', 'total>aev'])
 
     def testAEV(self):
-        aev_computer = torchani.AEV(benchmark=True)
+        aev_computer = torchani.AEV(
+            benchmark=True, dtype=self.dtype, device=self.device)
         self._testModule(aev_computer, ['aev'])
 
     def testModelOnAEV(self):
-        aev_computer = torchani.NeighborAEV()
+        aev_computer = torchani.NeighborAEV(
+            dtype=self.dtype, device=self.device)
         model = torchani.ModelOnAEV(
             aev_computer, benchmark=True, from_pync=None)
         self._testModule(model, ['forward>aev', 'forward>nn'])

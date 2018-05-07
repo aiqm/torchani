@@ -4,7 +4,7 @@ import pyNeuroChem
 import ase_interface
 import numpy
 from .aev_base import AEVComputer
-from . import buildin_const_file, buildin_sae_file, buildin_network_dir
+from . import buildin_const_file, buildin_sae_file, buildin_network_dir, default_dtype, default_device
 
 
 class NeuroChemAEV (AEVComputer):
@@ -21,8 +21,8 @@ class NeuroChemAEV (AEVComputer):
         activations, etc.
     """
 
-    def __init__(self, dtype=torch.cuda.float32, const_file=buildin_const_file, sae_file=buildin_sae_file, network_dir=buildin_network_dir):
-        super(NeuroChemAEV, self).__init__(False, dtype, const_file)
+    def __init__(self, dtype=default_dtype, device=default_device, const_file=buildin_const_file, sae_file=buildin_sae_file, network_dir=buildin_network_dir):
+        super(NeuroChemAEV, self).__init__(False, dtype, device, const_file)
         self.sae_file = sae_file
         self.network_dir = network_dir
         self.nc = pyNeuroChem.molecule(const_file, sae_file, network_dir, 0)
@@ -88,5 +88,6 @@ class NeuroChemAEV (AEVComputer):
         conformations = coordinates.shape[0]
         aevs = [self._compute_neurochem_aevs_per_conformation(
             coordinates[i], species) for i in range(conformations)]
-        aevs = torch.from_numpy(numpy.stack(aevs)).type(self.dtype)
+        aevs = torch.from_numpy(numpy.stack(aevs)).type(
+            self.dtype).to(self.device)
         return self._get_radial_part(aevs), self._get_angular_part(aevs)

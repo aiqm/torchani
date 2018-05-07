@@ -1,7 +1,7 @@
 import torch
 import itertools
 from .aev_base import AEVComputer
-from . import buildin_const_file, default_dtype
+from . import buildin_const_file, default_dtype, default_device
 
 
 class AEV(AEVComputer):
@@ -14,8 +14,8 @@ class AEV(AEVComputer):
             aev : time spent on computing AEV.
     """
 
-    def __init__(self, benchmark=False, dtype=default_dtype, const_file=buildin_const_file):
-        super(AEV, self).__init__(benchmark, dtype, const_file)
+    def __init__(self, benchmark=False, device=default_device, dtype=default_dtype, const_file=buildin_const_file):
+        super(AEV, self).__init__(benchmark, dtype, device, const_file)
 
         if benchmark:
             self.forward = self._enable_benchmark(self.forward, 'aev')
@@ -50,10 +50,10 @@ class AEV(AEVComputer):
         atoms = distances.shape[1]
         distances = distances.view(-1, atoms, atoms, 1, 1)
         fc = AEV._cutoff_cosine(distances, self.constants['Rcr'])
-        eta = torch.Tensor(self.constants['EtaR']).type(
-            self.dtype).view(1, 1, 1, -1, 1)
-        radius_shift = torch.Tensor(self.constants['ShfR']).type(
-            self.dtype).view(1, 1, 1, 1, -1)
+        eta = torch.tensor(
+            self.constants['EtaR'], dtype=self.dtype, device=self.device).view(1, 1, 1, -1, 1)
+        radius_shift = torch.tensor(
+            self.constants['ShfR'], dtype=self.dtype, device=self.device).view(1, 1, 1, 1, -1)
         # Note that in the equation in the paper there is no 0.25 coefficient, but in NeuroChem there is such a coefficient. We choose to be consistent with NeuroChem instead of the paper here.
         ret = 0.25 * torch.exp(-eta * (distances - radius_shift)**2) * fc
         # end of shape convension
@@ -106,14 +106,14 @@ class AEV(AEVComputer):
         Rik = R_distances.view(-1, atoms, 1, atoms, 1, 1, 1, 1)
         fcj = AEV._cutoff_cosine(Rij, self.constants['Rca'])
         fck = AEV._cutoff_cosine(Rik, self.constants['Rca'])
-        eta = torch.Tensor(self.constants['EtaA']).type(
-            self.dtype).view(1, 1, 1, 1, -1, 1, 1, 1)
-        zeta = torch.Tensor(self.constants['Zeta']).type(
-            self.dtype).view(1, 1, 1, 1, 1, -1, 1, 1)
-        radius_shifts = torch.Tensor(self.constants['ShfA']).type(
-            self.dtype).view(1, 1, 1, 1, 1, 1, -1, 1)
-        angle_shifts = torch.Tensor(self.constants['ShfZ']).type(
-            self.dtype).view(1, 1, 1, 1, 1, 1, 1, -1)
+        eta = torch.tensor(self.constants['EtaA'], dtype=self.dtype, device=self.device).view(
+            1, 1, 1, 1, -1, 1, 1, 1)
+        zeta = torch.tensor(self.constants['Zeta'], dtype=self.dtype, device=self.device).view(
+            1, 1, 1, 1, 1, -1, 1, 1)
+        radius_shifts = torch.tensor(
+            self.constants['ShfA'], dtype=self.dtype, device=self.device).view(1, 1, 1, 1, 1, 1, -1, 1)
+        angle_shifts = torch.tensor(
+            self.constants['ShfZ'], dtype=self.dtype, device=self.device).view(1, 1, 1, 1, 1, 1, 1, -1)
         ret = 2 * ((1 + torch.cos(angles - angle_shifts)) / 2) ** zeta * \
             torch.exp(-eta * ((Rij + Rik) / 2 - radius_shifts)
                       ** 2) * fcj * fck
@@ -136,7 +136,7 @@ class AEV(AEVComputer):
         # the sum.
 
         radial_sum_indices = torch.zeros(1, atoms, len(self.species),
-                                         atoms, 1, dtype=self.dtype)
+                                         atoms, 1, dtype=self.dtype, device=self.device)
         """pytorch tensor of `dtype`: The tensor that specifies which atom goes which group.
         This tensor has shape (1, atoms, `len(self.species)`, atoms, 1), where the value at
         index (0, i, j, k, 0) == 1 means in the sum of atom i's radial subAEV of species j
@@ -192,7 +192,7 @@ class AEV(AEVComputer):
                     angular_aev.append(angular_sum_by_species[key])
                 else:
                     angular_aev.append(torch.zeros(
-                        conformations, per_species_angular_length, dtype=self.dtype))
+                        conformations, per_species_angular_length, dtype=self.dtype, device=self.device))
 
             # append angular_aev of this atom to `angular_aevs`
             angular_aevs.append(torch.cat(angular_aev, dim=1))

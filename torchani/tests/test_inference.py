@@ -12,9 +12,9 @@ import ase_interface
 
 class TestInference(unittest.TestCase):
 
-    def setUp(self, dtype=torch.cuda.float32):
+    def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
         self.tolerance = 1e-5
-        self.ncaev = torchani.NeuroChemAEV()
+        self.ncaev = torchani.NeuroChemAEV(dtype=dtype, device=device)
         self.nn = torchani.ModelOnAEV(
             self.ncaev, from_pync=self.ncaev.network_dir)
         self.logger = logging.getLogger('smiles')
@@ -32,12 +32,13 @@ class TestInference(unittest.TestCase):
             e = self.ncaev.nc.energy()[0]
             nc_energies.append(e)
         nc_energies = torch.DoubleTensor(nc_energies)
-        return nc_energies.type(self.ncaev.dtype)
+        return nc_energies.type(self.ncaev.dtype).to(self.ncaev.device)
 
     def _test_molecule_energy(self, coordinates, species):
         energies = self._get_neurochem_energies(coordinates, species)
         energies = self.shift_energy.subtract_sae(energies, species)
-        coordinates = torch.from_numpy(coordinates).type(self.ncaev.dtype)
+        coordinates = torch.from_numpy(coordinates).type(
+            self.ncaev.dtype).to(self.ncaev.device)
         pred_energies = self.nn(coordinates, species).squeeze()
         maxdiff = torch.max(torch.abs(pred_energies - energies)).item()
         maxdiff_per_atom = maxdiff / len(species)
@@ -60,7 +61,8 @@ class TestInference(unittest.TestCase):
                     mol.calc.setnc(self.ncaev.nc)
                     _ = mol.get_potential_energy()
                     nca = self.ncaev.nc.activations(j, layer, 0)
-                    nca = torch.from_numpy(nca).type(self.ncaev.dtype)
+                    nca = torch.from_numpy(nca).type(
+                        self.ncaev.dtype).to(self.ncaev.device)
                     # get activation from ModelOnAEV
                     atom_aev = aev[:, j, :]
                     a = model_X.get_activations(atom_aev, layer)

@@ -9,14 +9,15 @@ import logging
 
 class TestNeighborAEV(unittest.TestCase):
 
-    def setUp(self, dtype=torchani.default_dtype):
-        self.aev = torchani.NeighborAEV(dtype)
-        self.ncaev = torchani.NeuroChemAEV(dtype)
+    def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
+        self.aev = torchani.NeighborAEV(dtype, device)
+        self.ncaev = torchani.NeuroChemAEV(dtype, device)
         self.tolerance = 1e-5
         self.logger = logging.getLogger('smiles')
 
     def _test_molecule(self, coordinates, species):
-        coordinates = torch.from_numpy(coordinates).type(self.aev.dtype)
+        coordinates = torch.from_numpy(coordinates).type(
+            self.aev.dtype).to(self.aev.device)
         radial_neurochem, angular_neurochem = self.ncaev(coordinates, species)
         radial_torchani, angular_torchani = self.aev(coordinates, species)
         radial_diff = radial_neurochem - radial_torchani

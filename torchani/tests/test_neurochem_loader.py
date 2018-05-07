@@ -7,9 +7,9 @@ import logging
 
 class TestNeuroChemLoader(unittest.TestCase):
 
-    def setUp(self, dtype=torch.cuda.float32):
+    def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
         self.tolerance = 1e-5
-        self.ncaev = torchani.NeuroChemAEV()
+        self.ncaev = torchani.NeuroChemAEV(dtype=dtype, device=device)
         self.logger = logging.getLogger('species')
 
     def testLoader(self):
@@ -23,9 +23,11 @@ class TestNeuroChemLoader(unittest.TestCase):
                 linear = getattr(model_X, 'layer{}'.format(j))
                 ncparams = self.ncaev.nc.getntwkparams(i, j)
                 ncw = ncparams['weights']
-                ncw = torch.from_numpy(ncw).type(self.ncaev.dtype)
+                ncw = torch.from_numpy(ncw).type(
+                    self.ncaev.dtype).to(self.ncaev.device)
                 ncb = numpy.transpose(ncparams['biases'])
-                ncb = torch.from_numpy(ncb).type(self.ncaev.dtype)
+                ncb = torch.from_numpy(ncb).type(
+                    self.ncaev.dtype).to(self.ncaev.device)
                 max_wdiff = torch.max(
                     torch.abs(ncw - linear.weight.data)).item()
                 max_bdiff = torch.max(torch.abs(ncb - linear.bias.data)).item()

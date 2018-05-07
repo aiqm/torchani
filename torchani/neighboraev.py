@@ -1,7 +1,7 @@
 import torch
 import itertools
 from .aev_base import AEVComputer
-from . import buildin_const_file, default_dtype
+from . import buildin_const_file, default_dtype, default_device
 from . import _utils
 
 
@@ -17,8 +17,8 @@ class NeighborAEV(AEVComputer):
             total : total time for computing everything, including neighborlist and AEV.
     """
 
-    def __init__(self, benchmark=False, dtype=default_dtype, const_file=buildin_const_file):
-        super(NeighborAEV, self).__init__(benchmark, dtype, const_file)
+    def __init__(self, benchmark=False, device=default_device, dtype=default_dtype, const_file=buildin_const_file):
+        super(NeighborAEV, self).__init__(benchmark, dtype, device, const_file)
         if benchmark:
             self.compute_neighborlist = self._enable_benchmark(
                 self.compute_neighborlist, 'neighborlist')
@@ -62,10 +62,10 @@ class NeighborAEV(AEVComputer):
         # shape convension (conformations, atoms, EtaR, ShfR)
         distances = distances.view(-1, atoms, 1, 1)
         fc = AEVComputer._cutoff_cosine(distances, self.constants['Rcr'])
-        eta = torch.Tensor(self.constants['EtaR']).type(
-            self.dtype).view(1, 1, -1, 1)
-        radius_shift = torch.Tensor(self.constants['ShfR']).type(
-            self.dtype).view(1, 1, 1, -1)
+        eta = torch.tensor(
+            self.constants['EtaR'], dtype=self.dtype, device=self.device).view(1, 1, -1, 1)
+        radius_shift = torch.tensor(
+            self.constants['ShfR'], dtype=self.dtype, device=self.device).view(1, 1, 1, -1)
         # Note that in the equation in the paper there is no 0.25 coefficient, but in NeuroChem there is such a coefficient. We choose to be consistent with NeuroChem instead of the paper here.
         ret = 0.25 * torch.exp(-eta * (distances - radius_shift)**2) * fc
         # end of shape convension
@@ -127,14 +127,14 @@ class NeighborAEV(AEVComputer):
         angles = angles.view(-1, pairs, 1, 1, 1, 1)
         Rij = R_distances.view(-1, pairs, 2, 1, 1, 1, 1)
         fcj = AEVComputer._cutoff_cosine(Rij, self.constants['Rca'])
-        eta = torch.Tensor(self.constants['EtaA']).type(
-            self.dtype).view(1, 1, -1, 1, 1, 1)
-        zeta = torch.Tensor(self.constants['Zeta']).type(
-            self.dtype).view(1, 1, 1, -1, 1, 1)
-        radius_shifts = torch.Tensor(self.constants['ShfA']).type(
-            self.dtype).view(1, 1, 1, 1, -1, 1)
-        angle_shifts = torch.Tensor(self.constants['ShfZ']).type(
-            self.dtype).view(1, 1, 1, 1, 1, -1)
+        eta = torch.tensor(self.constants['EtaA'], dtype=self.dtype, device=self.device).view(
+            1, 1, -1, 1, 1, 1)
+        zeta = torch.tensor(
+            self.constants['Zeta'], dtype=self.dtype, device=self.device).view(1, 1, 1, -1, 1, 1)
+        radius_shifts = torch.tensor(
+            self.constants['ShfA'], dtype=self.dtype, device=self.device).view(1, 1, 1, 1, -1, 1)
+        angle_shifts = torch.tensor(
+            self.constants['ShfZ'], dtype=self.dtype, device=self.device).view(1, 1, 1, 1, 1, -1)
         ret = 2 * ((1 + torch.cos(angles - angle_shifts)) / 2) ** zeta * \
             torch.exp(-eta * ((Rij[:, :, 0, :, :, :, :] + Rij[:, :, 1, :, :, :, :]) / 2 - radius_shifts)
                       ** 2) * fcj[:, :, 0, :, :, :, :] * fcj[:, :, 1, :, :, :, :]
@@ -167,11 +167,13 @@ class NeighborAEV(AEVComputer):
         in_Rcr = R_distances <= self.constants['Rcr']
         in_Rcr = torch.sum(in_Rcr, dim=0) > 0
         # set diagnoal elements to 0
-        in_Rcr = in_Rcr * (1 - torch.eye(atoms, dtype=in_Rcr.dtype))
+        in_Rcr = in_Rcr * \
+            (1 - torch.eye(atoms, dtype=in_Rcr.dtype, device=self.device))
         in_Rca = R_distances <= self.constants['Rca']
         in_Rca = torch.sum(in_Rca, dim=0) > 0
         # set diagnoal elements to 0
-        in_Rca = in_Rca * (1 - torch.eye(atoms, dtype=in_Rca.dtype))
+        in_Rca = in_Rca * \
+            (1 - torch.eye(atoms, dtype=in_Rca.dtype, device=self.device))
 
         # Compute species selectors for all supported species.
         # A species selector is a tensor of shape (atoms,)
@@ -181,7 +183,8 @@ class NeighborAEV(AEVComputer):
         for i in range(atoms):
             s = species[i]
             if s not in species_selectors:
-                species_selectors[s] = torch.zeros(atoms, dtype=in_Rcr.dtype)
+                species_selectors[s] = torch.zeros(
+                    atoms, dtype=in_Rcr.dtype, device=self.device)
             species_selectors[s][i] = 1
 
         # Compute the list of neighbors of various species
@@ -226,7 +229,7 @@ class NeighborAEV(AEVComputer):
                 except AEVIsZero:
                     # If no neighbor atoms have desired species, fill the subAEV with zeros
                     radial_aev.append(torch.zeros(
-                        conformations, self.per_species_radial_length(), dtype=self.dtype))
+                        conformations, self.per_species_radial_length(), dtype=self.dtype, device=self.device))
             radial_aev = torch.cat(radial_aev, dim=1)
             radial_aevs.append(radial_aev)
         radial_aevs = torch.stack(radial_aevs, dim=1)
@@ -274,7 +277,7 @@ class NeighborAEV(AEVComputer):
                 except AEVIsZero:
                     # If unable to find pair of neighbor atoms with desired species, fill the subAEV with zeros
                     angular_aev.append(torch.zeros(
-                        conformations, self.per_species_angular_length(), dtype=self.dtype))
+                        conformations, self.per_species_angular_length(), dtype=self.dtype, device=self.device))
             angular_aev = torch.cat(angular_aev, dim=1)
             angular_aevs.append(angular_aev)
         angular_aevs = torch.stack(angular_aevs, dim=1)

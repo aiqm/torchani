@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy
-from . import buildin_const_file, default_dtype
+from . import buildin_const_file, default_dtype, default_device
 from .benchmarked import BenchmarkedModule
 
 
@@ -15,6 +15,8 @@ class AEVComputer(BenchmarkedModule):
     dtype : torch.dtype
         Data type of pytorch tensors for all the computations. This is also used
         to specify whether to use CPU or GPU.
+    device : torch.Device
+        The device where tensors should be.
     const_file : str
         The name of the original file that stores constant.
     constants : dict
@@ -22,11 +24,12 @@ class AEVComputer(BenchmarkedModule):
         values to store constants.
     """
 
-    def __init__(self, benchmark=False, dtype=default_dtype, const_file=buildin_const_file):
+    def __init__(self, benchmark=False, dtype=default_dtype, device=default_device, const_file=buildin_const_file):
         super(AEVComputer, self).__init__(benchmark)
 
         self.dtype = dtype
         self.const_file = const_file
+        self.device = device
 
         # load constants from const file
         self.constants = {}
