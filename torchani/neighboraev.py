@@ -13,7 +13,7 @@ class NeighborAEV(AEVComputer):
     timers : dict
         Dictionary storing the the benchmark result. It has the following keys:
             neighborlist : time spent on computing neighborlist
-            aev : time spent on computing AEV, when the nighborlist is given
+            aev : time spent on computing AEV, after the nighborlist is given
             total : total time for computing everything, including neighborlist and AEV.
     """
 
