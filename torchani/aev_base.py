@@ -20,7 +20,7 @@ class AEVComputer(BenchmarkedModule):
     const_file : str
         The name of the original file that stores constant.
     constants : dict
-        A dictionary that uses `str` as keys and `float` or `list` of `float`s as
+        A dictionary that uses `string` as keys, and float scalar/tensor as
         values to store constants.
     """
 
@@ -44,6 +44,7 @@ class AEVComputer(BenchmarkedModule):
                     elif name in ['EtaR', 'ShfR', 'Zeta', 'ShfZ', 'EtaA', 'ShfA']:
                         value = [float(x.strip()) for x in value.replace(
                             '[', '').replace(']', '').split(',')]
+                        value = torch.tensor(value, dtype=dtype, device=device)
                         self.constants[name] = value
                     elif name == 'Atyp':
                         value = [x.strip() for x in value.replace(
@@ -75,7 +76,7 @@ class AEVComputer(BenchmarkedModule):
 
     def per_species_radial_length(self):
         """Returns the radial subaev length per species"""
-        return len(self.constants['EtaR']) * len(self.constants['ShfR'])
+        return self.constants['EtaR'].shape[0] * self.constants['ShfR'].shape[0]
 
     def radial_length(self):
         """Returns the full radial aev length"""
@@ -83,7 +84,7 @@ class AEVComputer(BenchmarkedModule):
 
     def per_species_angular_length(self):
         """Returns the angular subaev length per species"""
-        return len(self.constants['EtaA']) * len(self.constants['Zeta']) * len(self.constants['ShfA']) * len(self.constants['ShfZ'])
+        return self.constants['EtaA'].shape[0] * self.constants['Zeta'].shape[0] * self.constants['ShfA'].shape[0] * self.constants['ShfZ'].shape[0]
 
     def angular_length(self):
         """Returns the full angular aev length"""

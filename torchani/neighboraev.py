@@ -62,10 +62,8 @@ class NeighborAEV(AEVComputer):
         # shape convension (conformations, atoms, EtaR, ShfR)
         distances = distances.view(-1, atoms, 1, 1)
         fc = AEVComputer._cutoff_cosine(distances, self.constants['Rcr'])
-        eta = torch.tensor(
-            self.constants['EtaR'], dtype=self.dtype, device=self.device).view(1, 1, -1, 1)
-        radius_shift = torch.tensor(
-            self.constants['ShfR'], dtype=self.dtype, device=self.device).view(1, 1, 1, -1)
+        eta = self.constants['EtaR'].view(1, 1, -1, 1)
+        radius_shift = self.constants['ShfR'].view(1, 1, 1, -1)
         # Note that in the equation in the paper there is no 0.25 coefficient, but in NeuroChem there is such a coefficient. We choose to be consistent with NeuroChem instead of the paper here.
         ret = 0.25 * torch.exp(-eta * (distances - radius_shift)**2) * fc
         # end of shape convension
@@ -127,14 +125,10 @@ class NeighborAEV(AEVComputer):
         angles = angles.view(-1, pairs, 1, 1, 1, 1)
         Rij = R_distances.view(-1, pairs, 2, 1, 1, 1, 1)
         fcj = AEVComputer._cutoff_cosine(Rij, self.constants['Rca'])
-        eta = torch.tensor(self.constants['EtaA'], dtype=self.dtype, device=self.device).view(
-            1, 1, -1, 1, 1, 1)
-        zeta = torch.tensor(
-            self.constants['Zeta'], dtype=self.dtype, device=self.device).view(1, 1, 1, -1, 1, 1)
-        radius_shifts = torch.tensor(
-            self.constants['ShfA'], dtype=self.dtype, device=self.device).view(1, 1, 1, 1, -1, 1)
-        angle_shifts = torch.tensor(
-            self.constants['ShfZ'], dtype=self.dtype, device=self.device).view(1, 1, 1, 1, 1, -1)
+        eta = self.constants['EtaA'].view(1, 1, -1, 1, 1, 1)
+        zeta = self.constants['Zeta'].view(1, 1, 1, -1, 1, 1)
+        radius_shifts = self.constants['ShfA'].view(1, 1, 1, 1, -1, 1)
+        angle_shifts = self.constants['ShfZ'].view(1, 1, 1, 1, 1, -1)
         ret = 2 * ((1 + torch.cos(angles - angle_shifts)) / 2) ** zeta * \
             torch.exp(-eta * ((Rij[:, :, 0, :, :, :, :] + Rij[:, :, 1, :, :, :, :]) / 2 - radius_shifts)
                       ** 2) * fcj[:, :, 0, :, :, :, :] * fcj[:, :, 1, :, :, :, :]
