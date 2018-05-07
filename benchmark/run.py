@@ -1,7 +1,7 @@
 import h5py
 import torch
 from selected_system import mols, mol_file
-from ani_benchmark import NeighborBenchmark,FreeNeighborBenchmark,NoNeighborBenchmark
+from ani_benchmark import NeighborBenchmark, FreeNeighborBenchmark, NoNeighborBenchmark
 import pandas
 
 torch.set_num_threads(1)
@@ -31,12 +31,12 @@ for i in mols:
             try:
                 result = bench.oneByOne(coordinates, species)
             except RuntimeError:
-                result = { 'aev': None, 'energy': None, 'force': None }
+                result = {'aev': None, 'energy': None, 'force': None}
             results[b + ',1'] = result
             try:
                 result = bench.inBatch(coordinates, species)
             except RuntimeError:
-                result = { 'aev': None, 'energy': None, 'force': None }
+                result = {'aev': None, 'energy': None, 'force': None}
             results[b + ',B'] = result
         df = pandas.DataFrame(results)
         print(df)

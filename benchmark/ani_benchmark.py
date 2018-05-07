@@ -59,6 +59,7 @@ class FreeNeighborBenchmark(Benchmark):
         self.model.reset_timers()
         return ret
 
+
 class NoNeighborBenchmark(Benchmark):
 
     def __init__(self, device):
