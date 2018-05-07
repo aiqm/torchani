@@ -140,6 +140,7 @@ class NeighborAEV(AEVComputer):
     def compute_neighborlist(self, coordinates, species):
         """Compute neighbor list of each atom, and group neighbors by species"""
 
+        coordinates = coordinates.detach()
         atoms = coordinates.shape[1]
 
         R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)

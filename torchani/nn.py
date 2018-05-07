@@ -21,6 +21,8 @@ class PerSpeciesFromNeuroChem(torch.nn.Module):
         The device where tensors should be.
     layers : int
         Number of layers.
+    output_length : int
+        The length of output vector
     layerN : torch.nn.Linear
         Linear model for each layer.
     activation : function
@@ -207,6 +209,7 @@ class PerSpeciesFromNeuroChem(torch.nn.Module):
                 raise ValueError('bad parameter shape')
             wfn = os.path.join(dirname, wfn)
             bfn = os.path.join(dirname, bfn)
+            self.output_length = out_size
             self._load_param_file(linear, in_size, out_size, wfn, bfn)
 
     def _load_param_file(self, linear, in_size, out_size, wfn, bfn):
@@ -278,6 +281,13 @@ class ModelOnAEV(BenchmarkedModule):
     ----------
     aev_computer : AEVComputer
         The AEV computer.
+    output_length : int
+        The length of output vector
+    derivative : boolean
+        Whether to support computing the derivative w.r.t coordinates, i.e. d(output)/dR
+    derivative_graph : boolean
+        Whether to generate a graph for the derivative. This would be required only if the
+        derivative is included as part of the loss function.
     model_X : nn.Module
         Model for species X. There should be one such attribute for each supported species.
     reducer : function
@@ -292,7 +302,7 @@ class ModelOnAEV(BenchmarkedModule):
             forward : total time for the forward pass
     """
 
-    def __init__(self, aev_computer, benchmark=False, **kwargs):
+    def __init__(self, aev_computer, derivative=False, derivative_graph=False, benchmark=False, **kwargs):
         """Initialize object from manual setup or from NeuroChem network directory.
 
         The caller must set either `from_pync` in order to load from NeuroChem network directory,
@@ -302,6 +312,12 @@ class ModelOnAEV(BenchmarkedModule):
         ----------
         aev_computer : AEVComputer
             The AEV computer.
+        derivative : boolean
+            Whether to support computing the derivative w.r.t coordinates, i.e. d(output)/dR
+        derivative_graph : boolean
+            Whether to generate a graph for the derivative. This would be required only if the
+            derivative is included as part of the loss function. This argument must be set to
+            False if `derivative` is set to False.
         benchmark : boolean
             Whether to enable benchmarking
 
@@ -324,15 +340,24 @@ class ModelOnAEV(BenchmarkedModule):
         """
 
         super(ModelOnAEV, self).__init__(benchmark)
+        self.derivative = derivative
+        self.output_length = None
+        if not derivative and derivative_graph:
+            raise ValueError(
+                'ModelOnAEV: can not create graph for derivative if the computation of derivative is turned off')
+        self.derivative_graph = derivative_graph
+
         if benchmark:
             self.compute_aev = self._enable_benchmark(self.compute_aev, 'aev')
             self.aev_to_output = self._enable_benchmark(
                 self.aev_to_output, 'nn')
+            self.compute_derivative = self._enable_benchmark(
+                self.compute_derivative, 'derivative')
             self.forward = self._enable_benchmark(self.forward, 'forward')
 
         if not isinstance(aev_computer, AEVComputer):
             raise TypeError(
-                "NeuralNetworkPotential: aev_computer must be a subclass of AEVComputer")
+                "ModelOnAEV: aev_computer must be a subclass of AEVComputer")
         self.aev_computer = aev_computer
 
         if 'from_pync' in kwargs and 'per_species' not in kwargs and 'reducer' not in kwargs:
@@ -344,15 +369,33 @@ class ModelOnAEV(BenchmarkedModule):
                 filename = os.path.join(network_dir, 'ANN-{}.nnf'.format(i))
                 model_X = PerSpeciesFromNeuroChem(
                     self.aev_computer.dtype, self.aev_computer.device, filename)
+                if self.output_length is None:
+                    self.output_length = model_X.output_length
+                elif self.output_length != model_X.output_length:
+                    raise ValueError(
+                        'output length of each atomic neural network must match')
                 setattr(self, 'model_' + i, model_X)
         elif 'from_pync' not in kwargs and 'per_species' in kwargs and 'reducer' in kwargs:
             per_species = kwargs['per_species']
             for i in per_species:
-                setattr(self, 'model_' + i, per_species[i])
+                model_X = per_species[i]
+                if not hasattr(model_X, 'output_length'):
+                    raise ValueError(
+                        'atomic neural network must explicitly specify output length')
+                elif self.output_length is None:
+                    self.output_length = model_X.output_length
+                elif self.output_length != model_X.output_length:
+                    raise ValueError(
+                        'output length of each atomic neural network must match')
+                setattr(self, 'model_' + i, model_X)
             self.reducer = kwargs['reducer']
         else:
             raise ValueError(
-                'bad arguments when initializing ModelOnAEV')
+                'ModelOnAEV: bad arguments when initializing ModelOnAEV')
+
+        if derivative and self.output_length != 1:
+            raise ValueError(
+                'derivative can only be computed for output length 1')
 
     def compute_aev(self, coordinates, species):
         """Compute full AEV
@@ -405,6 +448,13 @@ class ModelOnAEV(BenchmarkedModule):
         molecule_output = self.reducer(per_atom_outputs, dim=0)
         return molecule_output
 
+    def compute_derivative(self, output, coordinates):
+        """Compute the gradient d(output)/d(coordinates)"""
+        # Since different conformations are independent, computing
+        # the derivatives of all outputs w.r.t. its own coordinate is equivalent
+        # to compute the derivative of the sum of all outputs w.r.t. all coordinates.
+        return torch.autograd.grad(output.sum(), coordinates, create_graph=self.derivative_graph)
+
     def forward(self, coordinates, species):
         """Feed forward
 
@@ -418,12 +468,26 @@ class ModelOnAEV(BenchmarkedModule):
 
         Returns
         -------
-        torch.Tensor
-            Pytorch tensor of shape (conformations, output_length) for the
-            output of each conformation.
+        torch.Tensor or (torch.Tensor, torch.Tensor)
+            If derivative is turned off, then this function will return a pytorch
+            tensor of shape (conformations, output_length) for the output of each
+            conformation.
+            If derivative is turned on, then this function will return a pair of
+            pytorch tensors where the first tensor is the output tensor as when the
+            derivative is off, and the second tensor is a tensor of shape
+            (conformation, atoms, 3) storing the d(output)/dR.
         """
+        if not self.derivative:
+            coordinates = coordinates.detach()
+        else:
+            coordinates = torch.tensor(coordinates, requires_grad=True)
         aev = self.compute_aev(coordinates, species)
-        return self.aev_to_output(aev, species)
+        output = self.aev_to_output(aev, species)
+        if not self.derivative:
+            return output
+        else:
+            derivative = self.compute_derivative(output, coordinates)
+            return output, derivative
 
     def export_onnx(self, dirname):
         """Export atomic networks into onnx format
