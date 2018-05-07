@@ -8,7 +8,7 @@ class NeighborBenchmark(Benchmark):
         super(NeighborBenchmark, self).__init__(device)
         self.aev_computer = torchani.NeighborAEV(device=device)
         self.model = torchani.ModelOnAEV(
-            self.aev_computer, benchmark=True, from_pync=None)
+            self.aev_computer, benchmark=True, derivative=True, from_pync=None)
 
     def oneByOne(self, coordinates, species):
         conformations = coordinates.shape[0]
@@ -16,16 +16,16 @@ class NeighborBenchmark(Benchmark):
         for i in range(conformations):
             c = coordinates[i:i+1, :, :]
             self.model(c, species)
-        ret = {'aev': int(self.model.timers['aev']), 'energy': int(
-            self.model.timers['nn']), 'force': None}
+        ret = {'aev': self.model.timers['aev'], 'energy': self.model.timers['nn'],
+               'force': self.model.timers['derivative']}
         self.model.reset_timers()
         return ret
 
     def inBatch(self, coordinates, species):
         coordinates = coordinates.to(self.device)
         self.model(coordinates, species)
-        ret = {'aev': int(self.model.timers['aev']), 'energy': int(
-            self.model.timers['nn']), 'force': None}
+        ret = {'aev': self.model.timers['aev'], 'energy': self.model.timers['nn'],
+               'force': self.model.timers['derivative']}
         self.model.reset_timers()
         return ret
 
@@ -36,7 +36,7 @@ class FreeNeighborBenchmark(Benchmark):
         super(FreeNeighborBenchmark, self).__init__(device)
         self.aev_computer = torchani.NeighborAEV(benchmark=True, device=device)
         self.model = torchani.ModelOnAEV(
-            self.aev_computer, benchmark=True, from_pync=None)
+            self.aev_computer, benchmark=True, derivative=True, from_pync=None)
 
     def oneByOne(self, coordinates, species):
         conformations = coordinates.shape[0]
@@ -44,8 +44,8 @@ class FreeNeighborBenchmark(Benchmark):
         for i in range(conformations):
             c = coordinates[i:i+1, :, :]
             self.model(c, species)
-        ret = {'aev': int(self.aev_computer.timers['aev']), 'energy': int(
-            self.model.timers['nn']), 'force': None}
+        ret = {'aev': self.aev_computer.timers['aev'],
+               'energy': self.model.timers['nn'], 'force': self.model.timers['derivative']}
         self.aev_computer.reset_timers()
         self.model.reset_timers()
         return ret
@@ -53,8 +53,8 @@ class FreeNeighborBenchmark(Benchmark):
     def inBatch(self, coordinates, species):
         coordinates = coordinates.to(self.device)
         self.model(coordinates, species)
-        ret = {'aev': int(self.aev_computer.timers['aev']), 'energy': int(
-            self.model.timers['nn']), 'force': None}
+        ret = {'aev': self.aev_computer.timers['aev'],
+               'energy': self.model.timers['nn'], 'force': self.model.timers['derivative']}
         self.aev_computer.reset_timers()
         self.model.reset_timers()
         return ret
@@ -66,7 +66,7 @@ class NoNeighborBenchmark(Benchmark):
         super(NoNeighborBenchmark, self).__init__(device)
         self.aev_computer = torchani.AEV(device=device)
         self.model = torchani.ModelOnAEV(
-            self.aev_computer, benchmark=True, from_pync=None)
+            self.aev_computer, benchmark=True, derivative=True, from_pync=None)
 
     def oneByOne(self, coordinates, species):
         conformations = coordinates.shape[0]
@@ -74,15 +74,15 @@ class NoNeighborBenchmark(Benchmark):
         for i in range(conformations):
             c = coordinates[i:i+1, :, :]
             self.model(c, species)
-        ret = {'aev': int(self.model.timers['aev']), 'energy': int(
-            self.model.timers['nn']), 'force': None}
+        ret = {'aev': self.model.timers['aev'], 'energy':  self.model.timers['nn'],
+               'force': self.model.timers['derivative']}
         self.model.reset_timers()
         return ret
 
     def inBatch(self, coordinates, species):
         coordinates = coordinates.to(self.device)
         self.model(coordinates, species)
-        ret = {'aev': int(self.model.timers['aev']), 'energy': int(
-            self.model.timers['nn']), 'force': None}
+        ret = {'aev': self.model.timers['aev'], 'energy': self.model.timers['nn'],
+               'force': self.model.timers['derivative']}
         self.model.reset_timers()
         return ret
