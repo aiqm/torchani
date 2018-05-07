@@ -11,3 +11,4 @@ a.out
 /torchani.egg-info
 /*.h5
 /*.hdf5
+.ipynb_checkpoints
