@@ -4,6 +4,9 @@ import numpy
 class Benchmark:
     """Abstract class for benchmarking ANI implementations"""
 
+    def __init__(self, device):
+        self.device = device
+
     def oneByOne(self, coordinates, species):
         """Benchmarking the given dataset of computing energies and forces one at a time
 
