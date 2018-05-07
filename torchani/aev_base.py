@@ -20,8 +20,7 @@ class AEVComputer(BenchmarkedModule):
     const_file : str
         The name of the original file that stores constant.
     constants : dict
-        A dictionary that uses `string` as keys, and float scalar/tensor as
-        values to store constants.
+        Dictionary with string keys and tensor of dtype values storing constants.
     """
 
     def __init__(self, benchmark=False, dtype=default_dtype, device=default_device, const_file=buildin_const_file):
