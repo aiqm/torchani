@@ -143,104 +143,78 @@ class AEV(AEVComputer):
         coordinates = coordinates.detach()
         atoms = coordinates.shape[1]
 
-        R_vecs = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)
-        """pytorch tensor of `dtype`: A tensor of shape (conformations, atoms, atoms, 3)
-        that stores Rij vectors. The 3 dimensional vector at (N, i, j, :) is the Rij vector
-        of conformation N.
-        """
+        indices = {}
+        for s in self.species:
+            indices[s] = []
 
-        R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))
-        """pytorch tensor of `dtype`: A tensor of shape (conformations, atoms, atoms)
-        that stores |Rij|, i.e. the length of Rij vectors. The value at (N, i, j) is
-        the |Rij| of conformation N.
-        """
+        species_masks = {}
+        for s in self.species:
+            mask = [1 if x == s else 0 for x in species]
+            species_masks[s] = torch.tensor(
+                mask, dtype=torch.uint8, device=self.device)
 
-        # Compute the list of atoms inside cutoff radius
-        # The list is stored as a tensor of shape (atoms, atoms)
-        # where the value at (i,j) == 1 means j is a neighbor of i, otherwise
-        # the value should be 0
-        in_Rcr = R_distances <= self.constants['Rcr']
-        in_Rcr = torch.sum(in_Rcr, dim=0) > 0
-        # set diagnoal elements to 0
-        in_Rcr = in_Rcr * \
-            (1 - torch.eye(atoms, dtype=in_Rcr.dtype, device=self.device))
-        in_Rca = R_distances <= self.constants['Rca']
-        in_Rca = torch.sum(in_Rca, dim=0) > 0
-        # set diagnoal elements to 0
-        in_Rca = in_Rca * \
-            (1 - torch.eye(atoms, dtype=in_Rca.dtype, device=self.device))
-
-        # Compute species selectors for all supported species.
-        # A species selector is a tensor of shape (atoms,)
-        # where the value == 1 means the atom with that index is the species
-        # of the selector otherwise value should be 0.
-        species_selectors = {}
         for i in range(atoms):
-            s = species[i]
-            if s not in species_selectors:
-                species_selectors[s] = torch.zeros(
-                    atoms, dtype=in_Rcr.dtype, device=self.device)
-            species_selectors[s][i] = 1
+            center = coordinates[:, i:i+1, :]
+            R_vecs = coordinates - center
+            R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))
+            in_Rcr = R_distances <= self.constants['Rcr']
+            in_Rcr = torch.sum(in_Rcr.type(torch.half), dim=0) > 0
+            in_Rcr[i] = 0
+            in_Rca = R_distances <= self.constants['Rca']
+            in_Rca = torch.sum(in_Rca.type(torch.half), dim=0) > 0
+            in_Rca[i] = 0
+            for s in self.species:
+                mask = species_masks[s]
+                in_Rcr_idx = (in_Rcr * mask).nonzero().view(-1)
+                in_Rca_idx = (in_Rca * mask).nonzero().view(-1)
+                indices[s].append((in_Rcr_idx, in_Rca_idx))
 
-        # Compute the list of neighbors of various species
-        # The list is stored as a tensor of shape (atoms, atoms)
-        # where the value at (i,j) == 1 means j is a neighbor of i and j has the
-        # specified species, otherwise the value should be 0
-        species_neighbors = {}
-        for s in species_selectors:
-            selector = species_selectors[s].unsqueeze(0)
-            species_neighbors[s] = (in_Rcr * selector, in_Rca * selector)
+        return indices
 
-        return species_neighbors
-
-    def compute_aev_using_neighborlist(self, coordinates, species, species_neighbors):
+    def compute_aev_using_neighborlist(self, coordinates, species, neighbor_indices):
         conformations = coordinates.shape[0]
         atoms = coordinates.shape[1]
-        # helper exception for control flow
 
+        # helper exception for control flow
         class AEVIsZero(Exception):
             pass
 
         # compute radial AEV
         radial_aevs = []
+        zero_subaev = torch.zeros(conformations, self.per_species_radial_length(
+        ), dtype=self.dtype, device=self.device)
         """The list whose elements are full radial AEV of each atom"""
         for i in range(atoms):
             radial_aev = []
             """The list whose elements are atom i's per species subAEV of each species"""
             for s in self.species:
-                try:
-                    if s not in species_neighbors:
-                        raise AEVIsZero()
-                    indices = species_neighbors[s][0][i, :].nonzero().view(-1)
-                    """Indices of atoms that have species s and position inside cutoff radius"""
-                    if indices.shape[0] <= 0:
-                        raise AEVIsZero()
+                indices = neighbor_indices[s][i][0]
+                """Indices of atoms that have species s and position inside cutoff radius"""
+                if indices.shape[0] > 0:
                     neighbors = coordinates.index_select(1, indices)
                     """pytroch tensor of shape (conformations, N, 3) storing coordinates of
                     neighbor atoms that have desired species, where N is the number of neighbors.
                     """
                     radial_aev.append(self.radial_subaev(
                         coordinates[:, i, :], neighbors))
-                except AEVIsZero:
+                else:
                     # If no neighbor atoms have desired species, fill the subAEV with zeros
-                    radial_aev.append(torch.zeros(
-                        conformations, self.per_species_radial_length(), dtype=self.dtype, device=self.device))
+                    radial_aev.append(zero_subaev)
             radial_aev = torch.cat(radial_aev, dim=1)
             radial_aevs.append(radial_aev)
         radial_aevs = torch.stack(radial_aevs, dim=1)
 
         # compute angular AEV
         angular_aevs = []
+        zero_subaev = torch.zeros(conformations, self.per_species_angular_length(
+        ), dtype=self.dtype, device=self.device)
         """The list whose elements are full angular AEV of each atom"""
         for i in range(atoms):
             angular_aev = []
             """The list whose elements are atom i's per species subAEV of each species"""
             for j, k in itertools.combinations_with_replacement(self.species, 2):
                 try:
-                    if j not in species_neighbors or k not in species_neighbors:
-                        raise AEVIsZero()
-                    indices_j = species_neighbors[j][1][i, :].nonzero(
-                    ).view(-1)
+                    indices_j = neighbor_indices[j][i][1]
                     if indices_j.shape[0] < 1:
                         raise AEVIsZero()
                     """Indices of atoms that have species j and position inside cutoff radius"""
@@ -250,8 +224,7 @@ class AEV(AEVComputer):
                     """
                     if j != k:
                         # the two atoms in the pair have different species
-                        indices_k = species_neighbors[k][1][i, :].nonzero(
-                        ).view(-1)
+                        indices_k = neighbor_indices[k][i][1]
                         """Indices of atoms that have species k and position inside cutoff radius"""
                         if indices_k.shape[0] < 1:
                             raise AEVIsZero()
@@ -271,8 +244,7 @@ class AEV(AEVComputer):
                         coordinates[:, i, :], neighbors))
                 except AEVIsZero:
                     # If unable to find pair of neighbor atoms with desired species, fill the subAEV with zeros
-                    angular_aev.append(torch.zeros(
-                        conformations, self.per_species_angular_length(), dtype=self.dtype, device=self.device))
+                    angular_aev.append(zero_subaev)
             angular_aev = torch.cat(angular_aev, dim=1)
             angular_aevs.append(angular_aev)
         angular_aevs = torch.stack(angular_aevs, dim=1)
@@ -281,8 +253,8 @@ class AEV(AEVComputer):
 
     def forward(self, coordinates, species):
         # For the docstring of this method, refer to the base class
-        species_neighbors = self.compute_neighborlist(coordinates, species)
-        return self.compute_aev_using_neighborlist(coordinates, species, species_neighbors)
+        neighbors = self.compute_neighborlist(coordinates, species)
+        return self.compute_aev_using_neighborlist(coordinates, species, neighbors)
 
     def export_radial_subaev_onnx(self, filename):
         """Export the operation that compute radial subaev into onnx format
