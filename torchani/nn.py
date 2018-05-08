@@ -351,8 +351,9 @@ class ModelOnAEV(BenchmarkedModule):
             self.compute_aev = self._enable_benchmark(self.compute_aev, 'aev')
             self.aev_to_output = self._enable_benchmark(
                 self.aev_to_output, 'nn')
-            self.compute_derivative = self._enable_benchmark(
-                self.compute_derivative, 'derivative')
+            if derivative:
+                self.compute_derivative = self._enable_benchmark(
+                    self.compute_derivative, 'derivative')
             self.forward = self._enable_benchmark(self.forward, 'forward')
 
         if not isinstance(aev_computer, AEVComputer):
@@ -453,7 +454,7 @@ class ModelOnAEV(BenchmarkedModule):
         # Since different conformations are independent, computing
         # the derivatives of all outputs w.r.t. its own coordinate is equivalent
         # to compute the derivative of the sum of all outputs w.r.t. all coordinates.
-        return torch.autograd.grad(output.sum(), coordinates, create_graph=self.derivative_graph)
+        return torch.autograd.grad(output.sum(), coordinates, create_graph=self.derivative_graph)[0]
 
     def forward(self, coordinates, species):
         """Feed forward
