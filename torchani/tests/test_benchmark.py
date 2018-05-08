@@ -78,18 +78,13 @@ class TestBenchmark(unittest.TestCase):
         for i in keys:
             self.assertEqual(module.timers[i], 0)
 
-    def testNeighborAEV(self):
-        aev_computer = torchani.NeighborAEV(
-            benchmark=True, dtype=self.dtype, device=self.device)
-        self._testModule(aev_computer, ['total>neighborlist', 'total>aev'])
-
     def testAEV(self):
         aev_computer = torchani.AEV(
             benchmark=True, dtype=self.dtype, device=self.device)
-        self._testModule(aev_computer, ['aev'])
+        self._testModule(aev_computer, ['total>neighborlist', 'total>aev'])
 
     def testModelOnAEV(self):
-        aev_computer = torchani.NeighborAEV(
+        aev_computer = torchani.AEV(
             dtype=self.dtype, device=self.device)
         model = torchani.ModelOnAEV(
             aev_computer, benchmark=True, from_pync=None)

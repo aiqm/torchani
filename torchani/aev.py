@@ -5,7 +5,7 @@ from . import buildin_const_file, default_dtype, default_device
 from . import _utils
 
 
-class NeighborAEV(AEVComputer):
+class AEV(AEVComputer):
     """The AEV computer fully implemented using pytorch, making use of neighbor list
 
     Attributes
@@ -18,7 +18,7 @@ class NeighborAEV(AEVComputer):
     """
 
     def __init__(self, benchmark=False, device=default_device, dtype=default_dtype, const_file=buildin_const_file):
-        super(NeighborAEV, self).__init__(benchmark, dtype, device, const_file)
+        super(AEV, self).__init__(benchmark, dtype, device, const_file)
         if benchmark:
             self.compute_neighborlist = self._enable_benchmark(
                 self.compute_neighborlist, 'neighborlist')

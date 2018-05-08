@@ -16,7 +16,7 @@ class TestForceNeuroChem(unittest.TestCase):
         self.tolerance = 1e-5
         self.logger = logging.getLogger('smiles')
         self.ncaev = torchani.NeuroChemAEV(dtype=dtype, device=device)
-        self.aev_computer = torchani.NeighborAEV(dtype=dtype, device=device)
+        self.aev_computer = torchani.AEV(dtype=dtype, device=device)
         self.model = torchani.ModelOnAEV(
             self.aev_computer, derivative=True, device=device, from_pync=None)
 

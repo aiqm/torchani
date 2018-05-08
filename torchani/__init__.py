@@ -13,13 +13,12 @@ buildin_network_dir = pkg_resources.resource_filename(
 default_dtype = torch.float32
 default_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-from .torchaev import AEV
 from .energyshifter import EnergyShifter
 from .nn import ModelOnAEV, PerSpeciesFromNeuroChem
-from .neighboraev import NeighborAEV
+from .aev import AEV
 import logging
 
-__all__ = ['AEV', 'NeighborAEV', 'EnergyShifter', 'ModelOnAEV', 'PerSpeciesFromNeuroChem',
+__all__ = ['AEV', 'EnergyShifter', 'ModelOnAEV', 'PerSpeciesFromNeuroChem',
            'buildin_const_file', 'buildin_sae_file', 'buildin_network_dir', 'default_dtype', 'default_device']
 
 try:

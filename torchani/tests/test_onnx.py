@@ -26,7 +26,7 @@ class TestONNX(unittest.TestCase):
         ]
 
         # compute aev using pytorch
-        aev_computer = torchani.NeighborAEV()
+        aev_computer = torchani.AEV()
         coordinates = torch.FloatTensor(coordinates)
         coordinates = coordinates.unsqueeze(0)
         radial_aev, angular_aev = aev_computer(coordinates, species)

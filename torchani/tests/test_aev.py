@@ -7,11 +7,11 @@ import pkg_resources
 import logging
 
 
-class TestAEV(unittest.TestCase):
+class TestNeighborAEV(unittest.TestCase):
 
     def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
-        self.aev = torchani.AEV(dtype=dtype, device=device)
-        self.ncaev = torchani.NeuroChemAEV(dtype=dtype, device=device)
+        self.aev = torchani.AEV(dtype, device)
+        self.ncaev = torchani.NeuroChemAEV(dtype, device)
         self.tolerance = 1e-5
         self.logger = logging.getLogger('smiles')
 
