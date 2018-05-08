@@ -299,6 +299,8 @@ class ModelOnAEV(BenchmarkedModule):
         Dictionary storing the the benchmark result. It has the following keys:
             aev : time spent on computing AEV.
             nn : time spent on computing output from AEV.
+            derivative : time spend on computing derivative w.r.t. coordinates after the outputs
+                is given. This key is only available if derivative computation is turned on.
             forward : total time for the forward pass
     """
 
