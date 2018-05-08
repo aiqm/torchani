@@ -179,11 +179,11 @@ class AEV(AEVComputer):
             R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))
 
             in_Rcr = R_distances <= self.constants['Rcr']
-            in_Rcr = torch.sum(in_Rcr.type(torch.half), dim=0) > 0
+            in_Rcr = torch.sum(in_Rcr.type(torch.float), dim=0) > 0
             in_Rcr[i] = 0
 
             in_Rca = R_distances <= self.constants['Rca']
-            in_Rca = torch.sum(in_Rca.type(torch.half), dim=0) > 0
+            in_Rca = torch.sum(in_Rca.type(torch.float), dim=0) > 0
             in_Rca[i] = 0
 
             for s in self.species:
