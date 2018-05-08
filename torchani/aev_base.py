@@ -60,7 +60,7 @@ class AEVComputer(BenchmarkedModule):
 
         Parameters
         ----------
-        distances : pytorch tensor of `dtype`
+        distances : torch.Tensor
             The pytorch tensor that stores Rij values. This tensor can have any shape since the cutoff
             cosine function is computed elementwise.
         cutoff : float
@@ -68,7 +68,7 @@ class AEVComputer(BenchmarkedModule):
 
         Returns
         -------
-        pytorch tensor of `dtype`
+        torch.Tensor
             The tensor of the same shape as `distances` that stores the computed function values.
         """
         return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
@@ -98,16 +98,16 @@ class AEVComputer(BenchmarkedModule):
 
         Parameters
         ----------
-        coordinates : pytorch tensor of `dtype`
+        coordinates : torch.Tensor
             The tensor that specifies the xyz coordinates of atoms in the molecule.
             The tensor must have shape (conformations, atoms, 3)
-        species : list of str
+        species : list of string
             The list that specifies the species of each atom. The length of the list
             must match with `coordinates.shape[1]`.
 
         Returns
         -------
-        (pytorch tensor of `dtype`, pytorch tensor of `dtype`)
+        (torch.Tensor, torch.Tensor)
             Returns (radial AEV, angular AEV), both are pytorch tensor of `dtype`.
             The radial AEV must be of shape (conformations, atoms, radial_length())
             The angular AEV must be of shape (conformations, atoms, angular_length())

@@ -138,7 +138,24 @@ class AEV(AEVComputer):
         return ret.view(-1, self.per_species_angular_length())
 
     def compute_neighborlist(self, coordinates, species):
-        """Compute neighbor list of each atom, and group neighbors by species"""
+        """Compute neighbor list of each atom, and group neighbors by species
+
+        Parameters
+        ----------
+        coordinates : pytorch tensor of `dtype`
+            The tensor that specifies the xyz coordinates of atoms in the molecule.
+            The tensor must have shape (conformations, atoms, 3)
+        species : list of str
+            The list that specifies the species of each atom. The length of the list
+            must match with `coordinates.shape[1]`.
+
+        Returns
+        -------
+        dict
+            Dictionary storing neighbor information. The key for this dictionary is species,
+            and the corresponding value is a list of size `atoms`. The elements in the list
+            is a pair of long tensors storing the indices of neighbors of that atom.
+        """
 
         coordinates = coordinates.detach()
         atoms = coordinates.shape[1]
@@ -148,6 +165,9 @@ class AEV(AEVComputer):
             indices[s] = []
 
         species_masks = {}
+        """Dictionary storing the masks for each species. The keys are species. The values
+        are tensors of 0s and 1s with shape (atoms,) where the value is 1 at index i means
+        atom i is of the specified species"""
         for s in self.species:
             mask = [1 if x == s else 0 for x in species]
             species_masks[s] = torch.tensor(
@@ -157,12 +177,15 @@ class AEV(AEVComputer):
             center = coordinates[:, i:i+1, :]
             R_vecs = coordinates - center
             R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))
+
             in_Rcr = R_distances <= self.constants['Rcr']
             in_Rcr = torch.sum(in_Rcr.type(torch.half), dim=0) > 0
             in_Rcr[i] = 0
+
             in_Rca = R_distances <= self.constants['Rca']
             in_Rca = torch.sum(in_Rca.type(torch.half), dim=0) > 0
             in_Rca[i] = 0
+
             for s in self.species:
                 mask = species_masks[s]
                 in_Rcr_idx = (in_Rcr * mask).nonzero().view(-1)
