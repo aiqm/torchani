@@ -176,13 +176,13 @@ class AEV(AEVComputer):
         for i in range(atoms):
             center = coordinates[:, i:i+1, :]
             R_vecs = coordinates - center
-            R_distances = torch.sqrt(torch.sum(R_vecs ** 2, dim=-1))
+            R_distances_squared = torch.sum(R_vecs ** 2, dim=-1)
 
-            in_Rcr = R_distances <= self.constants['Rcr']
+            in_Rcr = R_distances_squared <= (self.constants['Rcr'] ** 2)
             in_Rcr = torch.sum(in_Rcr.type(torch.float), dim=0) > 0
             in_Rcr[i] = 0
 
-            in_Rca = R_distances <= self.constants['Rca']
+            in_Rca = R_distances_squared <= (self.constants['Rca'] ** 2)
             in_Rca = torch.sum(in_Rca.type(torch.float), dim=0) > 0
             in_Rca[i] = 0
 
