@@ -23,16 +23,17 @@ class Benchmark:
         dict
             Dictionary storing the times for computing AEVs, energies and forces, in milliseconds.
             The dictionary should contain the following keys:
-            aev : the time used to compute AEVs from coordinates.
+            neighborlist : the time used to compute neighbor list
+            aev : the time used to compute AEVs from coordinates with given neighbor list.
             energy : the time used to compute energies, when the AEVs are given.
             force : the time used to compute forces, when the energies and AEVs are given.
         """
-        # return { 'aev': 0, 'energy': 0, 'force': 0 }
+        # return { 'neighborlist': 0, 'aev': 0, 'energy': 0, 'force': 0 }
         raise NotImplementedError('subclass must implement this method')
 
     def inBatch(self, coordinates, species):
         """Benchmarking the given dataset of computing energies and forces in batch mode
 
         The signature of this function is the same as `oneByOne`"""
-        # return { 'aev': 0, 'energy': 0, 'force': 0 }
+        # return { 'neighborlist': 0, 'aev': 0, 'energy': 0, 'force': 0 }
         raise NotImplementedError('subclass must implement this method')
