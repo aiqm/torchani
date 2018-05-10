@@ -13,6 +13,7 @@ setup(name='torchani',
       install_requires=[
           'torch>=0.4',
           'lark-parser',
+          'h5py',
       ],
       test_suite='nose.collector',
       tests_require=['nose', 'cntk'],
