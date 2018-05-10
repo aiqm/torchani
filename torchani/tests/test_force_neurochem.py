@@ -18,7 +18,7 @@ class TestForceNeuroChem(unittest.TestCase):
         self.ncaev = torchani.NeuroChemAEV(dtype=dtype, device=device)
         self.aev_computer = torchani.AEV(dtype=dtype, device=device)
         self.model = torchani.ModelOnAEV(
-            self.aev_computer, derivative=True, device=device, from_pync=None)
+            self.aev_computer, derivative=True, device=device, from_nc=None)
 
     def _test_molecule(self, coordinates, species):
         _, force = self.model(coordinates, species)

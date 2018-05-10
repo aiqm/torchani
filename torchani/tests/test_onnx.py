@@ -48,7 +48,7 @@ class TestONNX(unittest.TestCase):
             os.path.join(tmpdirname, 'radial.onnx'))
 
         # Export neural network potential to ONNX
-        model = torchani.ModelOnAEV(aev_computer, from_pync=None)
+        model = torchani.ModelOnAEV(aev_computer, from_nc=None)
         model.export_onnx(tmpdirname)
 
         #####################################

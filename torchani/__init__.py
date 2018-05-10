@@ -10,6 +10,9 @@ buildin_sae_file = pkg_resources.resource_filename(
 buildin_network_dir = pkg_resources.resource_filename(
     __name__, 'data/networks/')
 
+buildin_dataset_dir = pkg_resources.resource_filename(
+    __name__, 'data/')
+
 default_dtype = torch.float32
 default_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -20,7 +23,7 @@ from .dataset import Dataset
 import logging
 
 __all__ = ['AEV', 'EnergyShifter', 'ModelOnAEV', 'PerSpeciesFromNeuroChem', 'Dataset',
-           'buildin_const_file', 'buildin_sae_file', 'buildin_network_dir', 'default_dtype', 'default_device']
+           'buildin_const_file', 'buildin_sae_file', 'buildin_network_dir', 'buildin_dataset_dir', 'default_dtype', 'default_device']
 
 try:
     from .neurochem_aev import NeuroChemAEV

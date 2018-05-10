@@ -307,7 +307,7 @@ class ModelOnAEV(BenchmarkedModule):
     def __init__(self, aev_computer, derivative=False, derivative_graph=False, benchmark=False, **kwargs):
         """Initialize object from manual setup or from NeuroChem network directory.
 
-        The caller must set either `from_pync` in order to load from NeuroChem network directory,
+        The caller must set either `from_nc` in order to load from NeuroChem network directory,
         or set `per_species` and `reducer`.
 
         Parameters
@@ -325,7 +325,7 @@ class ModelOnAEV(BenchmarkedModule):
 
         Other Parameters
         ----------------
-        from_pync : string
+        from_nc : string
             Path to the NeuroChem network directory. If this parameter is set, then `per_species` and
             `reducer` should not be set. If set to `None`, then the network ship with torchani will be
             used.
@@ -338,7 +338,7 @@ class ModelOnAEV(BenchmarkedModule):
         Raises
         ------
         ValueError
-            If `from_pync`, `per_species`, and `reducer` are not properly set.
+            If `from_nc`, `per_species`, and `reducer` are not properly set.
         """
 
         super(ModelOnAEV, self).__init__(benchmark)
@@ -363,8 +363,8 @@ class ModelOnAEV(BenchmarkedModule):
                 "ModelOnAEV: aev_computer must be a subclass of AEVComputer")
         self.aev_computer = aev_computer
 
-        if 'from_pync' in kwargs and 'per_species' not in kwargs and 'reducer' not in kwargs:
-            network_dir = kwargs['from_pync']
+        if 'from_nc' in kwargs and 'per_species' not in kwargs and 'reducer' not in kwargs:
+            network_dir = kwargs['from_nc']
             if network_dir is None:
                 network_dir = buildin_network_dir
             self.reducer = torch.sum
@@ -378,7 +378,7 @@ class ModelOnAEV(BenchmarkedModule):
                     raise ValueError(
                         'output length of each atomic neural network must match')
                 setattr(self, 'model_' + i, model_X)
-        elif 'from_pync' not in kwargs and 'per_species' in kwargs and 'reducer' in kwargs:
+        elif 'from_nc' not in kwargs and 'per_species' in kwargs and 'reducer' in kwargs:
             per_species = kwargs['per_species']
             for i in per_species:
                 model_X = per_species[i]

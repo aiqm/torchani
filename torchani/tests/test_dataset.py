@@ -4,14 +4,12 @@ import unittest
 import copy
 import tempfile
 import os
-import numpy
-
-default_data_file = pkg_resources.resource_filename(torchani.__name__, 'data/')
+import torch
 
 
 class TestDataset(unittest.TestCase):
 
-    def setUp(self, data_file=default_data_file):
+    def setUp(self, data_file=torchani.buildin_dataset_dir):
         self.ds = torchani.Dataset(data_file)
 
     def testLen(self):
@@ -44,7 +42,7 @@ class TestDataset(unittest.TestCase):
         for i, j in zip(self.ds.iter(1024), ds2.iter(1024)):
             i, _, _ = i
             j, _, _ = j
-            self.assertEqual(numpy.max(i-j), 0)
+            self.assertEqual(torch.max(i-j), 0)
 
 
 if __name__ == '__main__':

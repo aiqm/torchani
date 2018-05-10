@@ -16,7 +16,7 @@ class TestInference(unittest.TestCase):
         self.tolerance = 1e-5
         self.ncaev = torchani.NeuroChemAEV(dtype=dtype, device=device)
         self.nn = torchani.ModelOnAEV(
-            self.ncaev, from_pync=self.ncaev.network_dir)
+            self.ncaev, from_nc=self.ncaev.network_dir)
         self.logger = logging.getLogger('smiles')
         self.shift_energy = torchani.EnergyShifter(self.ncaev.sae_file)
 

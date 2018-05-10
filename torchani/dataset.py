@@ -4,6 +4,8 @@ from .pyanitools import anidataloader
 import random
 import json
 import copy
+import torch
+from . import default_dtype, default_device
 
 
 class Dataset:
@@ -13,7 +15,7 @@ class Dataset:
     different API.
     """
 
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, dtype=default_dtype, device=default_device):
         """Initialize Dataset.
 
         Parameters
@@ -24,7 +26,12 @@ class Dataset:
             with extension `.h5` or `.hdf5` in that directory will be loaded. If
             `None` is given, then the dataset will not be initialized. The user
             then have to manually load from a json file dump.
+        device : torch.Device
+            The device where the tensor should be put.
         """
+        self.device = device
+        self.dtype = dtype
+
         if filename is None:
             return
         if os.path.isdir(filename):
@@ -129,8 +136,16 @@ class Dataset:
             end_index = batch_size
             while start_index < conformations:
                 if end_index > conformations:
-                    yield coordinates[start_index:], energies[start_index:], species
+                    c = torch.from_numpy(coordinates[start_index:]).type(
+                        self.dtype).to(self.device)
+                    e = torch.from_numpy(energies[start_index:]).type(
+                        self.dtype).to(self.device)
+                    yield c, e, species
                 else:
-                    yield coordinates[start_index:end_index], energies[start_index:end_index], species
+                    c = torch.from_numpy(coordinates[start_index:end_index]).type(
+                        self.dtype).to(self.device)
+                    e = torch.from_numpy(energies[start_index:end_index]).type(
+                        self.dtype).to(self.device)
+                    yield c, e, species
                 start_index = end_index
                 end_index += batch_size

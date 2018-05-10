@@ -87,10 +87,10 @@ class TestBenchmark(unittest.TestCase):
         aev_computer = torchani.AEV(
             dtype=self.dtype, device=self.device)
         model = torchani.ModelOnAEV(
-            aev_computer, benchmark=True, from_pync=None)
+            aev_computer, benchmark=True, from_nc=None)
         self._testModule(model, ['forward>aev', 'forward>nn'])
         model = torchani.ModelOnAEV(
-            aev_computer, benchmark=True, derivative=True, from_pync=None)
+            aev_computer, benchmark=True, derivative=True, from_nc=None)
         self._testModule(
             model, ['forward>aev', 'forward>nn', 'forward>derivative'])
 

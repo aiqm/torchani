@@ -14,7 +14,7 @@ class TestNeuroChemLoader(unittest.TestCase):
 
     def testLoader(self):
         nn = torchani.ModelOnAEV(
-            self.ncaev, from_pync=self.ncaev.network_dir)
+            self.ncaev, from_nc=self.ncaev.network_dir)
         for i in range(len(self.ncaev.species)):
             s = self.ncaev.species[i]
             model_X = getattr(nn, 'model_' + s)
