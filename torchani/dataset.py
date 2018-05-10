@@ -112,8 +112,12 @@ class Dataset:
     def iter(self, batch_size, subset=None):
         """Iterate through the selected subset. Each yield get batch size number of conformations
 
-        Only conformations belong to the same molecule will be yielded. If the remaining
-        conformations is less than the specified batch size, a smaller batch will be yielded.
+        Only conformations belong to the same molecule will be yielded for each batch. If the
+        remaining conformations is less than the specified batch size, a smaller batch will be
+        yielded. The iterator will visit the first batch of the first molecule, then the first
+        batch of the second molecule, ..., after the first batch of all the molecules are visited,
+        the second batch of the first molecule will be visited, then the second batch of the second
+        molecule, ..., and so on.
 
         Parameters
         ----------
@@ -122,28 +126,42 @@ class Dataset:
         subset : string
             The name of subset to iterate. If `None` or 'all' is given, then iterate on the
             whole dataset.
+
+        Yields
+        ------
+        (torch.Tensor, torch.Tensor, list)
+            Tuple of coordinates, energies, species
         """
         subset = self._keys if (
             subset is None or subset == 'all') else self._subsets[subset]
-        for filename, path in subset:
-            loader = self._loaders[filename]
-            data = loader.store[path]
-            species = [i.decode('ascii') for i in data['species']]
-            coordinates = torch.from_numpy(data['coordinates'][()]).type(
-                self.dtype).to(self.device)
-            conformations = coordinates.shape[0]
-            energies = torch.from_numpy(data['energies'][()]).type(
-                self.dtype).to(self.device)
-            start_index = 0
-            end_index = batch_size
-            while start_index < conformations:
-                if end_index > conformations:
-                    c = coordinates[start_index:]
-                    e = energies[start_index:]
-                    yield c, e, species
-                else:
-                    c = coordinates[start_index:end_index]
-                    e = energies[start_index:end_index]
-                    yield c, e, species
-                start_index = end_index
-                end_index += batch_size
+        progress = {}
+        done = False
+        while not done:
+            done = True
+            for key in subset:
+                filename, path = key
+                loader = self._loaders[filename]
+                data = loader.store[path]
+                species = [i.decode('ascii') for i in data['species']]
+                coordinates = data['coordinates'][()]
+                conformations = coordinates.shape[0]
+                energies = data['energies'][()]
+                if key not in progress:
+                    progress[key] = 0
+                start_index = progress[key]
+                end_index = start_index + batch_size
+                if start_index < conformations:
+                    done = False
+                    progress[key] = end_index
+                    if end_index > conformations:
+                        c = torch.from_numpy(coordinates[start_index:]).type(
+                            self.dtype).to(self.device)
+                        e = torch.from_numpy(energies[start_index:]).type(
+                            self.dtype).to(self.device)
+                        yield c, e, species
+                    else:
+                        c = torch.from_numpy(coordinates[start_index:end_index]).type(
+                            self.dtype).to(self.device)
+                        e = torch.from_numpy(energies[start_index:end_index]).type(
+                            self.dtype).to(self.device)
+                        yield c, e, species

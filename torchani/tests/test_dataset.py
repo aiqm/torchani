@@ -14,7 +14,10 @@ class TestDataset(unittest.TestCase):
 
     def testLen(self):
         # compute data length using Dataset
-        l1 = len(list(self.ds.iter(1)))
+        l1 = 0
+        for i in self.ds.iter(1024):
+            i, _, _ = i
+            l1 += i.shape[0]
         # compute data lenght using pyanitools
         totoal_conformations = 0
         for i in self.ds._loaders:
