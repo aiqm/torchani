@@ -51,7 +51,7 @@ class Dataset:
         self._subsets = {}
 
     def shuffle(self):
-        """Shuffle the whole dataset. 
+        """Shuffle the whole dataset.
 
         Note that this methond have no effect on already splitted subsets.
         If you want to shuffle everything, then you should shuffle the whole
@@ -129,23 +129,21 @@ class Dataset:
             loader = self._loaders[filename]
             data = loader.store[path]
             species = [i.decode('ascii') for i in data['species']]
-            coordinates = data['coordinates'][()]
+            coordinates = torch.from_numpy(data['coordinates'][()]).type(
+                self.dtype).to(self.device)
             conformations = coordinates.shape[0]
-            energies = data['energies'][()]
+            energies = torch.from_numpy(data['energies'][()]).type(
+                self.dtype).to(self.device)
             start_index = 0
             end_index = batch_size
             while start_index < conformations:
                 if end_index > conformations:
-                    c = torch.from_numpy(coordinates[start_index:]).type(
-                        self.dtype).to(self.device)
-                    e = torch.from_numpy(energies[start_index:]).type(
-                        self.dtype).to(self.device)
+                    c = coordinates[start_index:]
+                    e = energies[start_index:]
                     yield c, e, species
                 else:
-                    c = torch.from_numpy(coordinates[start_index:end_index]).type(
-                        self.dtype).to(self.device)
-                    e = torch.from_numpy(energies[start_index:end_index]).type(
-                        self.dtype).to(self.device)
+                    c = coordinates[start_index:end_index]
+                    e = energies[start_index:end_index]
                     yield c, e, species
                 start_index = end_index
                 end_index += batch_size
