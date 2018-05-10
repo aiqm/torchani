@@ -1,6 +1,7 @@
 from benchmark import Benchmark
 import torchani
 
+
 class ANIBenchmark(Benchmark):
 
     def __init__(self, device):
