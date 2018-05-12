@@ -11,7 +11,7 @@ setup(name='torchani',
       license='MIT',
       packages=['torchani'],
       install_requires=[
-          'torch>=0.4',
+          'torch',
           'lark-parser',
           'h5py',
       ],
