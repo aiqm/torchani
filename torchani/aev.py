@@ -12,9 +12,9 @@ class AEV(AEVComputer):
     ----------
     timers : dict
         Dictionary storing the the benchmark result. It has the following keys:
-            neighborlist : time spent on computing neighborlist
-            aev : time spent on computing AEV, after the nighborlist is given
-            total : total time for computing everything, including neighborlist and AEV.
+            radial_subaev : time spent on computing radial subaev
+            angular_subaev : time spent on computing angular subaev
+            total : total time for computing everything.
     """
 
     def __init__(self, benchmark=False, device=default_device, dtype=default_dtype, const_file=buildin_const_file):
@@ -24,10 +24,6 @@ class AEV(AEVComputer):
                 self.radial_subaev, 'radial_subaev')
             self.angular_subaev = self._enable_benchmark(
                 self.angular_subaev, 'angular_subaev')
-            self.compute_neighborlist = self._enable_benchmark(
-                self.compute_neighborlist, 'neighborlist')
-            self.compute_aev_using_neighborlist = self._enable_benchmark(
-                self.compute_aev_using_neighborlist, 'aev')
             self.forward = self._enable_benchmark(self.forward, 'total')
 
     def radial_subaev(self, distances):
@@ -111,41 +107,27 @@ class AEV(AEVComputer):
         # flat the last 4 dimensions to view the subAEV as one dimension vector
         return ret.view(-1, self.angular_sublength)
 
-    def compute_neighborlist(self, coordinates, species):
-        """Compute neighbor list of each atom, and group neighbors by species
-
-        Parameters
-        ----------
-        coordinates : pytorch tensor of `dtype`
-            The tensor that specifies the xyz coordinates of atoms in the molecule.
-            The tensor must have shape (conformations, atoms, 3)
-        species : list of str
-            The list that specifies the species of each atom. The length of the list
-            must match with `coordinates.shape[1]`.
-
-        Returns
-        -------
-        dict
-            Dictionary storing neighbor information. The key for this dictionary is species,
-            and the corresponding value is a list of size `atoms`. The elements in the list
-            is a pair of long tensors storing the indices of neighbors of that atom.
-        """
+    def forward(self, coordinates, species):
         conformations = coordinates.shape[0]
         atoms = coordinates.shape[1]
-        
-        zero_radial_subaev = torch.zeros(conformations, self.radial_sublength, dtype=self.dtype, device=self.device)
 
-        indices = {}
-        for s in self.species:
-            indices[s] = []
+        zero_radial_subaev = torch.zeros(
+            conformations, self.radial_sublength, dtype=self.dtype, device=self.device)
+        zero_angular_subaev = torch.zeros(
+            conformations, self.angular_sublength, dtype=self.dtype, device=self.device)
+
+        class AEVIsZero(Exception):
+            """Helper exception for control flow"""
+            pass
 
         masks = {}
         for s in self.species:
             mask = [1 if x == s else 0 for x in species]
-            masks[s] = torch.tensor(mask, dtype=torch.uint8, device=self.device)
+            masks[s] = torch.tensor(
+                mask, dtype=torch.uint8, device=self.device)
 
         radial_aevs = []
-        """The list whose elements are full radial AEV of each atom"""
+        angular_aevs = []
 
         for i in range(atoms):
             center = coordinates[:, i:i+1, :]
@@ -163,71 +145,57 @@ class AEV(AEVComputer):
             radial_aev = []
             """The list whose elements are atom i's per species subAEV of each species"""
 
+            R_vecs_in_Rca = {}
+
             for s in self.species:
                 mask = masks[s]
 
                 # compute radial AEV
                 in_Rcr_idx = (in_Rcr * mask).nonzero().view(-1)
                 if in_Rcr_idx.shape[0] > 0:
-                    radial_aev.append(self.radial_subaev(R_distances.index_select(1, in_Rcr_idx)))
+                    radial_aev.append(self.radial_subaev(
+                        R_distances.index_select(1, in_Rcr_idx)))
                 else:
                     radial_aev.append(zero_radial_subaev)
 
-                # compute angular
+                # prepare to compute angular AEV
                 in_Rca_idx = (in_Rca * mask).nonzero().view(-1)
-                indices[s].append(R_vecs.index_select(1, in_Rca_idx))
+                R_vecs_in_Rca[s] = R_vecs.index_select(1, in_Rca_idx)
 
             radial_aev = torch.cat(radial_aev, dim=1)
             radial_aevs.append(radial_aev)
 
-        radial_aevs = torch.stack(radial_aevs, dim=1)
-        return radial_aevs, indices
-
-    def compute_aev_using_neighborlist(self, coordinates, species, neighbor_indices):
-        conformations = coordinates.shape[0]
-        atoms = coordinates.shape[1]
-
-        # helper exception for control flow
-        class AEVIsZero(Exception):
-            pass
-
-        # compute angular AEV
-        angular_aevs = []
-        zero_subaev = torch.zeros(conformations, self.angular_sublength, dtype=self.dtype, device=self.device)
-        """The list whose elements are full angular AEV of each atom"""
-        for i in range(atoms):
+            # Compute angular AEV
             angular_aev = []
             """The list whose elements are atom i's per species subAEV of each species"""
             for j, k in itertools.combinations_with_replacement(self.species, 2):
                 try:
-                    R_vecs_j = neighbor_indices[j][i]
+                    R_vecs_j = R_vecs_in_Rca[j]
                     if len(R_vecs_j) == 0:
                         raise AEVIsZero()
                     if j != k:
                         # the two atoms in the pair have different species
-                        R_vecs_k = neighbor_indices[k][i]
+                        R_vecs_k = R_vecs_in_Rca[k]
                         if len(R_vecs_k) == 0:
                             raise AEVIsZero()
-                        R_vecs_pairs = _utils.cartesian_prod(R_vecs_j, R_vecs_k, dim=1, newdim=2)
+                        R_vecs_pairs = _utils.cartesian_prod(
+                            R_vecs_j, R_vecs_k, dim=1, newdim=2)
                     else:
                         # the two atoms in the pair have the same species j
                         if len(R_vecs_j.shape) != 3 or R_vecs_j.shape[1] < 2:
                             raise AEVIsZero()
-                        R_vecs_pairs = _utils.combinations(R_vecs_j, 2, dim=1, newdim=2)
+                        R_vecs_pairs = _utils.combinations(
+                            R_vecs_j, 2, dim=1, newdim=2)
                     angular_aev.append(self.angular_subaev(R_vecs_pairs))
                 except AEVIsZero:
                     # If unable to find pair of neighbor atoms with desired species, fill the subAEV with zeros
-                    angular_aev.append(zero_subaev)
+                    angular_aev.append(zero_angular_subaev)
             angular_aev = torch.cat(angular_aev, dim=1)
             angular_aevs.append(angular_aev)
+
+        radial_aevs = torch.stack(radial_aevs, dim=1)
         angular_aevs = torch.stack(angular_aevs, dim=1)
-
-        return angular_aevs
-
-    def forward(self, coordinates, species):
-        # For the docstring of this method, refer to the base class
-        radial_aevs, neighbors = self.compute_neighborlist(coordinates, species)
-        return radial_aevs, self.compute_aev_using_neighborlist(coordinates, species, neighbors)
+        return radial_aevs, angular_aevs
 
     def export_radial_subaev_onnx(self, filename):
         """Export the operation that compute radial subaev into onnx format

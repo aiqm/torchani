@@ -82,7 +82,7 @@ class TestBenchmark(unittest.TestCase):
         aev_computer = torchani.AEV(
             benchmark=True, dtype=self.dtype, device=self.device)
         self._testModule(aev_computer, [
-                         'total>neighborlist', 'total>aev', 'aev>radial_subaev', 'aev>angular_subaev'])
+                         'total>radial_subaev', 'total>angular_subaev'])
 
     def testModelOnAEV(self):
         aev_computer = torchani.AEV(

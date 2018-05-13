@@ -66,9 +66,11 @@ class AEVComputer(BenchmarkedModule):
         # Compute lengths
         self.radial_sublength = self.EtaR.shape[0] * self.ShfR.shape[0]
         self.radial_length = len(self.species) * self.radial_sublength
-        self.angular_sublength = self.EtaA.shape[0] * self.Zeta.shape[0] * self.ShfA.shape[0] * self.ShfZ.shape[0]
+        self.angular_sublength = self.EtaA.shape[0] * \
+            self.Zeta.shape[0] * self.ShfA.shape[0] * self.ShfZ.shape[0]
         species = len(self.species)
-        self.angular_length = int((species * (species + 1)) / 2) * self.angular_sublength
+        self.angular_length = int(
+            (species * (species + 1)) / 2) * self.angular_sublength
         self.aev_length = self.radial_length + self.angular_length
 
     @staticmethod
