@@ -61,7 +61,7 @@ class AEV(AEVComputer):
         # flat the last two dimensions to view the subAEV as one dimensional vector
         return ret.view(-1, self.radial_sublength)
 
-    def angular_subaev(self, center, neighbors):
+    def angular_subaev(self, Rij_vec):
         """Compute the angular subAEV of the center atom given neighbor pairs.
 
         The angular AEV is define in https://arxiv.org/pdf/1610.08935.pdf equation 4.
@@ -70,26 +70,17 @@ class AEV(AEVComputer):
 
         Parameters
         ----------
-        center : pytorch tensor of `dtype`
-            A tensor of shape (conformations, 3) that stores the xyz coordinate of the
-            center atoms.
-        neighbors : pytorch tensor of `dtype`
-            A tensor of shape (conformations, N, 2, 3) where N is the number of neighbor pairs.
-            The tensor stores the xyz coordinate of the 2 atoms in neighbor pairs. Note that
-            different conformations might have different neighbor pairs within the cutoff radius,
-            if this is the case, the union of neighbors of all conformations should be given for
-            this parameter.
+        Rij_vec : torch.Tensor
+            Tensor of shape (conformations, N, 2, 3) storing the Rij vectors where i is the
+            center atom, and j is a neighbor. The vector (n,k,l,:) is the Rij where j refer
+            to the l-th atom of the k-th pair.
 
         Returns
         -------
-        pytorch tensor of `dtype`
-            A tensor of shape (conformations, `angular_sublength`) storing the subAEVs.
+        torch.Tensor
+            Tensor of shape (conformations, `angular_sublength`) storing the subAEVs.
         """
-        pairs = neighbors.shape[1]
-        Rij_vec = neighbors - center.view(-1, 1, 1, 3)
-        """pytorch tensor of shape (conformations, N, 2, 3) storing the Rij vectors where i is the
-        center atom, and j is a neighbor. The vector (n,k,l,:) is the Rij where j refer to the l-th
-        atom of the k-th pair."""
+        pairs = Rij_vec.shape[1]
         R_distances = torch.norm(Rij_vec, 2, dim=-1)
         """pytorch tensor of shape (conformations, N, 2) storing the |Rij| length where i is the
         center atom, and j is a neighbor. The value at (n,k,l) is the |Rij| where j refer to the
@@ -148,6 +139,11 @@ class AEV(AEVComputer):
         for s in self.species:
             indices[s] = []
 
+        masks = {}
+        for s in self.species:
+            mask = [1 if x == s else 0 for x in species]
+            masks[s] = torch.tensor(mask, dtype=torch.uint8, device=self.device)
+
         radial_aevs = []
         """The list whose elements are full radial AEV of each atom"""
 
@@ -168,23 +164,18 @@ class AEV(AEVComputer):
             """The list whose elements are atom i's per species subAEV of each species"""
 
             for s in self.species:
-                mask = [1 if x == s else 0 for x in species]
-                mask = torch.tensor(mask, dtype=torch.uint8, device=self.device)
+                mask = masks[s]
 
                 # compute radial AEV
                 in_Rcr_idx = (in_Rcr * mask).nonzero().view(-1)
                 if in_Rcr_idx.shape[0] > 0:
-                    radial_neighbor_distances = R_distances.index_select(1, in_Rcr_idx)
-                    """pytroch tensor of shape (conformations, N, 3) storing distances of
-                    neighbor atoms that have desired species, where N is the number of neighbors.
-                    """
-                    radial_aev.append(self.radial_subaev(radial_neighbor_distances))
+                    radial_aev.append(self.radial_subaev(R_distances.index_select(1, in_Rcr_idx)))
                 else:
                     radial_aev.append(zero_radial_subaev)
 
                 # compute angular
                 in_Rca_idx = (in_Rca * mask).nonzero().view(-1)
-                indices[s].append(in_Rca_idx)
+                indices[s].append(R_vecs.index_select(1, in_Rca_idx))
 
             radial_aev = torch.cat(radial_aev, dim=1)
             radial_aevs.append(radial_aev)
@@ -209,34 +200,21 @@ class AEV(AEVComputer):
             """The list whose elements are atom i's per species subAEV of each species"""
             for j, k in itertools.combinations_with_replacement(self.species, 2):
                 try:
-                    indices_j = neighbor_indices[j][i]
-                    if indices_j.shape[0] < 1:
+                    R_vecs_j = neighbor_indices[j][i]
+                    if len(R_vecs_j) == 0:
                         raise AEVIsZero()
-                    """Indices of atoms that have species j and position inside cutoff radius"""
-                    neighbors_j = coordinates.index_select(1, indices_j)
-                    """pytroch tensor of shape (conformations, N, 3) storing coordinates of
-                    neighbors atoms that have desired species j, where N is the number of neighbors.
-                    """
                     if j != k:
                         # the two atoms in the pair have different species
-                        indices_k = neighbor_indices[k][i]
-                        """Indices of atoms that have species k and position inside cutoff radius"""
-                        if indices_k.shape[0] < 1:
+                        R_vecs_k = neighbor_indices[k][i]
+                        if len(R_vecs_k) == 0:
                             raise AEVIsZero()
-                        neighbors_k = coordinates.index_select(1, indices_k)
-                        """pytroch tensor of shape (conformations, N, 3) storing coordinates of
-                        neighbors atoms that have desired species k, where N is the number of neighbors.
-                        """
-                        neighbors = _utils.cartesian_prod(
-                            neighbors_j, neighbors_k, dim=1, newdim=2)
+                        R_vecs_pairs = _utils.cartesian_prod(R_vecs_j, R_vecs_k, dim=1, newdim=2)
                     else:
                         # the two atoms in the pair have the same species j
-                        if indices_j.shape[0] < 2:
+                        if len(R_vecs_j.shape) != 3 or R_vecs_j.shape[1] < 2:
                             raise AEVIsZero()
-                        neighbors = _utils.combinations(
-                            neighbors_j, 2, dim=1, newdim=2)
-                    angular_aev.append(self.angular_subaev(
-                        coordinates[:, i, :], neighbors))
+                        R_vecs_pairs = _utils.combinations(R_vecs_j, 2, dim=1, newdim=2)
+                    angular_aev.append(self.angular_subaev(R_vecs_pairs))
                 except AEVIsZero:
                     # If unable to find pair of neighbor atoms with desired species, fill the subAEV with zeros
                     angular_aev.append(zero_subaev)
@@ -244,7 +222,7 @@ class AEV(AEVComputer):
             angular_aevs.append(angular_aev)
         angular_aevs = torch.stack(angular_aevs, dim=1)
 
-        return  angular_aevs
+        return angular_aevs
 
     def forward(self, coordinates, species):
         # For the docstring of this method, refer to the base class
