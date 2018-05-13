@@ -20,6 +20,10 @@ class AEV(AEVComputer):
     def __init__(self, benchmark=False, device=default_device, dtype=default_dtype, const_file=buildin_const_file):
         super(AEV, self).__init__(benchmark, dtype, device, const_file)
         if benchmark:
+            self.radial_subaev = self._enable_benchmark(
+                self.radial_subaev, 'radial_subaev')
+            self.angular_subaev = self._enable_benchmark(
+                self.angular_subaev, 'angular_subaev')
             self.compute_neighborlist = self._enable_benchmark(
                 self.compute_neighborlist, 'neighborlist')
             self.compute_aev_using_neighborlist = self._enable_benchmark(
@@ -61,9 +65,9 @@ class AEV(AEVComputer):
         # use broadcasting semantics to do Cartesian product on constants
         # shape convension (conformations, atoms, EtaR, ShfR)
         distances = distances.view(-1, atoms, 1, 1)
-        fc = AEVComputer._cutoff_cosine(distances, self.constants['Rcr'])
-        eta = self.constants['EtaR'].view(1, 1, -1, 1)
-        radius_shift = self.constants['ShfR'].view(1, 1, 1, -1)
+        fc = AEVComputer._cutoff_cosine(distances, self.Rcr)
+        eta = self.EtaR.view(1, 1, -1, 1)
+        radius_shift = self.ShfR.view(1, 1, 1, -1)
         # Note that in the equation in the paper there is no 0.25 coefficient, but in NeuroChem there is such a coefficient. We choose to be consistent with NeuroChem instead of the paper here.
         ret = 0.25 * torch.exp(-eta * (distances - radius_shift)**2) * fc
         # end of shape convension
@@ -124,11 +128,11 @@ class AEV(AEVComputer):
         # shape convension (conformations, pairs, EtaA, Zeta, ShfA, ShfZ)
         angles = angles.view(-1, pairs, 1, 1, 1, 1)
         Rij = R_distances.view(-1, pairs, 2, 1, 1, 1, 1)
-        fcj = AEVComputer._cutoff_cosine(Rij, self.constants['Rca'])
-        eta = self.constants['EtaA'].view(1, 1, -1, 1, 1, 1)
-        zeta = self.constants['Zeta'].view(1, 1, 1, -1, 1, 1)
-        radius_shifts = self.constants['ShfA'].view(1, 1, 1, 1, -1, 1)
-        angle_shifts = self.constants['ShfZ'].view(1, 1, 1, 1, 1, -1)
+        fcj = AEVComputer._cutoff_cosine(Rij, self.Rca)
+        eta = self.EtaA.view(1, 1, -1, 1, 1, 1)
+        zeta = self.Zeta.view(1, 1, 1, -1, 1, 1)
+        radius_shifts = self.ShfA.view(1, 1, 1, 1, -1, 1)
+        angle_shifts = self.ShfZ.view(1, 1, 1, 1, 1, -1)
         ret = 2 * ((1 + torch.cos(angles - angle_shifts)) / 2) ** zeta * \
             torch.exp(-eta * ((Rij[:, :, 0, :, :, :, :] + Rij[:, :, 1, :, :, :, :]) / 2 - radius_shifts)
                       ** 2) * fcj[:, :, 0, :, :, :, :] * fcj[:, :, 1, :, :, :, :]
@@ -178,11 +182,11 @@ class AEV(AEVComputer):
             R_vecs = coordinates - center
             R_distances_squared = torch.sum(R_vecs ** 2, dim=-1)
 
-            in_Rcr = R_distances_squared <= (self.constants['Rcr'] ** 2)
+            in_Rcr = R_distances_squared <= (self.Rcr * self.Rcr)
             in_Rcr = torch.sum(in_Rcr.type(torch.float), dim=0) > 0
             in_Rcr[i] = 0
 
-            in_Rca = R_distances_squared <= (self.constants['Rca'] ** 2)
+            in_Rca = R_distances_squared <= (self.Rca * self.Rca)
             in_Rca = torch.sum(in_Rca.type(torch.float), dim=0) > 0
             in_Rca[i] = 0
 

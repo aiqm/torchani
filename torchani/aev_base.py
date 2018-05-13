@@ -19,8 +19,10 @@ class AEVComputer(BenchmarkedModule):
         The device where tensors should be.
     const_file : str
         The name of the original file that stores constant.
-    constants : dict
-        Dictionary with string keys and tensor of dtype values storing constants.
+    Rcr, Rca : float
+        Cutoff radius
+    EtaR, ShfR, Zeta, ShfZ, EtaA, ShfA : torch.Tensor
+        Tensor storing constants.
     """
 
     def __init__(self, benchmark=False, dtype=default_dtype, device=default_device, const_file=buildin_const_file):
@@ -31,7 +33,6 @@ class AEVComputer(BenchmarkedModule):
         self.device = device
 
         # load constants from const file
-        self.constants = {}
         with open(const_file) as f:
             for i in f:
                 try:
@@ -39,12 +40,12 @@ class AEVComputer(BenchmarkedModule):
                     name = line[0]
                     value = line[1]
                     if name == 'Rcr' or name == 'Rca':
-                        self.constants[name] = float(value)
+                        setattr(self, name, value)
                     elif name in ['EtaR', 'ShfR', 'Zeta', 'ShfZ', 'EtaA', 'ShfA']:
                         value = [float(x.strip()) for x in value.replace(
                             '[', '').replace(']', '').split(',')]
                         value = torch.tensor(value, dtype=dtype, device=device)
-                        self.constants[name] = value
+                        setattr(self, name, value)
                     elif name == 'Atyp':
                         value = [x.strip() for x in value.replace(
                             '[', '').replace(']', '').split(',')]
@@ -75,7 +76,7 @@ class AEVComputer(BenchmarkedModule):
 
     def per_species_radial_length(self):
         """Returns the radial subaev length per species"""
-        return self.constants['EtaR'].shape[0] * self.constants['ShfR'].shape[0]
+        return self.EtaR.shape[0] * self.ShfR.shape[0]
 
     def radial_length(self):
         """Returns the full radial aev length"""
@@ -83,7 +84,7 @@ class AEVComputer(BenchmarkedModule):
 
     def per_species_angular_length(self):
         """Returns the angular subaev length per species"""
-        return self.constants['EtaA'].shape[0] * self.constants['Zeta'].shape[0] * self.constants['ShfA'].shape[0] * self.constants['ShfZ'].shape[0]
+        return self.EtaA.shape[0] * self.Zeta.shape[0] * self.ShfA.shape[0] * self.ShfZ.shape[0]
 
     def angular_length(self):
         """Returns the full angular aev length"""
