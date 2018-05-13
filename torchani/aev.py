@@ -30,7 +30,7 @@ class AEV(AEVComputer):
                 self.compute_aev_using_neighborlist, 'aev')
             self.forward = self._enable_benchmark(self.forward, 'total')
 
-    def radial_subaev(self, center, neighbors):
+    def radial_subaev(self, distances):
         """Compute the radial subAEV of the center atom given neighbors
 
         The radial AEV is define in https://arxiv.org/pdf/1610.08935.pdf equation 3.
@@ -39,32 +39,18 @@ class AEV(AEVComputer):
 
         Parameters
         ----------
-        center : pytorch tensor of `dtype`
-            A tensor of shape (conformations, 3) that stores the xyz coordinate of the
-            center atoms.
-        neighbors : pytorch tensor of `dtype`
-            A tensor of shape (conformations, N, 3) where N is the number of neighbors.
-            The tensor stores the xyz coordinate of the neighbor atoms. Note that different
-            conformations might have different neighbor atoms within the cutoff radius, if
-            this is the case, the union of neighbors of all conformations should be given for
-            this parameter.
+        distances : torch.Tensor
+            Pytorch tensor of shape (conformations, N) storing the |Rij| length where i is the
+            center atom, and j is a neighbor. The |Rij| of conformation n is stored as (n,j).
 
         Returns
         -------
-        pytorch tensor of `dtype`
+        torch.Tensor
             A tensor of shape (conformations, `per_species_radial_length()`) storing the subAEVs.
         """
-        atoms = neighbors.shape[1]
-        Rij_vec = neighbors - center.view(-1, 1, 3)
-        """pytorch tensor of shape (conformations, N, 3) storing the Rij vectors where i is the
-        center atom, and j is a neighbor. The Rij of conformation n is stored as (n,j,:)"""
-        distances = torch.sqrt(torch.sum(Rij_vec ** 2, dim=-1))
-        """pytorch tensor of shape (conformations, N) storing the |Rij| length where i is the
-        center atom, and j is a neighbor. The |Rij| of conformation n is stored as (n,j)"""
-
         # use broadcasting semantics to do Cartesian product on constants
         # shape convension (conformations, atoms, EtaR, ShfR)
-        distances = distances.view(-1, atoms, 1, 1)
+        distances = distances.unsqueeze(-1).unsqueeze(-1)
         fc = AEVComputer._cutoff_cosine(distances, self.Rcr)
         eta = self.EtaR.view(1, 1, -1, 1)
         radius_shift = self.ShfR.view(1, 1, 1, -1)
@@ -104,24 +90,17 @@ class AEV(AEVComputer):
         """pytorch tensor of shape (conformations, N, 2, 3) storing the Rij vectors where i is the
         center atom, and j is a neighbor. The vector (n,k,l,:) is the Rij where j refer to the l-th
         atom of the k-th pair."""
-        R_distances = torch.sqrt(torch.sum(Rij_vec ** 2, dim=-1))
+        R_distances = torch.norm(Rij_vec, 2, dim=-1)
         """pytorch tensor of shape (conformations, N, 2) storing the |Rij| length where i is the
         center atom, and j is a neighbor. The value at (n,k,l) is the |Rij| where j refer to the
         l-th atom of the k-th pair."""
 
-        # Compute the product of two distances |Rij| * |Rik| where j and k are the two atoms in
-        # a pair. The result tensor would have shape (conformations, pairs)
-        Rijk_distance_prods = R_distances[:, :, 0] * R_distances[:, :, 1]
-
-        # Compute the inner product Rij (dot) Rik where j and k are the two atoms in a pair.
-        # The result tensor would have shape (conformations, pairs)
-        Rijk_inner_prods = torch.sum(
-            Rij_vec[:, :, 0, :] * Rij_vec[:, :, 1, :], dim=-1)
-
         # Compute the angles jik with i in the center and j and k are the two atoms in a pair.
         # The result tensor would have shape (conformations, pairs)
         # 0.95 is multiplied to the cos values to prevent acos from returning NaN.
-        cos_angles = 0.95 * Rijk_inner_prods / Rijk_distance_prods
+        cos_angles = 0.95 * \
+            torch.nn.functional.cosine_similarity(
+                Rij_vec[:, :, 0, :], Rij_vec[:, :, 1, :], dim=-1)
         angles = torch.acos(cos_angles)
 
         # use broadcasting semantics to combine constants
@@ -180,21 +159,28 @@ class AEV(AEVComputer):
         for i in range(atoms):
             center = coordinates[:, i:i+1, :]
             R_vecs = coordinates - center
-            R_distances_squared = torch.sum(R_vecs ** 2, dim=-1)
+            R_distances = torch.norm(R_vecs, 2, dim=-1)
 
-            in_Rcr = R_distances_squared <= (self.Rcr * self.Rcr)
+            in_Rcr = R_distances <= self.Rcr
             in_Rcr = torch.sum(in_Rcr.type(torch.float), dim=0) > 0
             in_Rcr[i] = 0
 
-            in_Rca = R_distances_squared <= (self.Rca * self.Rca)
+            in_Rca = R_distances <= self.Rca
             in_Rca = torch.sum(in_Rca.type(torch.float), dim=0) > 0
             in_Rca[i] = 0
 
             for s in self.species:
                 mask = species_masks[s]
+                # compute radial neighbor distances
                 in_Rcr_idx = (in_Rcr * mask).nonzero().view(-1)
+                radial_neighbor_distances = R_distances.index_select(
+                    1, in_Rcr_idx)
+                """pytroch tensor of shape (conformations, N, 3) storing coordinates of
+                neighbor atoms that have desired species, where N is the number of neighbors.
+                """
+                # compute angular
                 in_Rca_idx = (in_Rca * mask).nonzero().view(-1)
-                indices[s].append((in_Rcr_idx, in_Rca_idx))
+                indices[s].append((radial_neighbor_distances, in_Rca_idx))
 
         return indices
 
@@ -215,15 +201,9 @@ class AEV(AEVComputer):
             radial_aev = []
             """The list whose elements are atom i's per species subAEV of each species"""
             for s in self.species:
-                indices = neighbor_indices[s][i][0]
-                """Indices of atoms that have species s and position inside cutoff radius"""
-                if indices.shape[0] > 0:
-                    neighbors = coordinates.index_select(1, indices)
-                    """pytroch tensor of shape (conformations, N, 3) storing coordinates of
-                    neighbor atoms that have desired species, where N is the number of neighbors.
-                    """
-                    radial_aev.append(self.radial_subaev(
-                        coordinates[:, i, :], neighbors))
+                neighbor_distances = neighbor_indices[s][i][0]
+                if neighbor_distances.shape[0] > 0:
+                    radial_aev.append(self.radial_subaev(neighbor_distances))
                 else:
                     # If no neighbor atoms have desired species, fill the subAEV with zeros
                     radial_aev.append(zero_subaev)
