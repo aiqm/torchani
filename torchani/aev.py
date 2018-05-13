@@ -46,7 +46,7 @@ class AEV(AEVComputer):
         Returns
         -------
         torch.Tensor
-            A tensor of shape (conformations, `per_species_radial_length()`) storing the subAEVs.
+            A tensor of shape (conformations, `radial_sublength()`) storing the subAEVs.
         """
         # use broadcasting semantics to do Cartesian product on constants
         # shape convension (conformations, atoms, EtaR, ShfR)
@@ -59,7 +59,7 @@ class AEV(AEVComputer):
         # end of shape convension
         ret = torch.sum(ret, dim=1)
         # flat the last two dimensions to view the subAEV as one dimensional vector
-        return ret.view(-1, self.per_species_radial_length())
+        return ret.view(-1, self.radial_sublength)
 
     def angular_subaev(self, center, neighbors):
         """Compute the angular subAEV of the center atom given neighbor pairs.
@@ -83,7 +83,7 @@ class AEV(AEVComputer):
         Returns
         -------
         pytorch tensor of `dtype`
-            A tensor of shape (conformations, `per_species_angular_length()`) storing the subAEVs.
+            A tensor of shape (conformations, `angular_sublength`) storing the subAEVs.
         """
         pairs = neighbors.shape[1]
         Rij_vec = neighbors - center.view(-1, 1, 1, 3)
@@ -118,7 +118,7 @@ class AEV(AEVComputer):
         # end of shape convension
         ret = torch.sum(ret, dim=1)
         # flat the last 4 dimensions to view the subAEV as one dimension vector
-        return ret.view(-1, self.per_species_angular_length())
+        return ret.view(-1, self.angular_sublength)
 
     def compute_neighborlist(self, coordinates, species):
         """Compute neighbor list of each atom, and group neighbors by species
@@ -141,7 +141,8 @@ class AEV(AEVComputer):
         """
         conformations = coordinates.shape[0]
         atoms = coordinates.shape[1]
-        radial_subaev_length = self.per_species_radial_length()
+        
+        zero_radial_subaev = torch.zeros(conformations, self.radial_sublength, dtype=self.dtype, device=self.device)
 
         indices = {}
         for s in self.species:
@@ -165,7 +166,6 @@ class AEV(AEVComputer):
 
             radial_aev = []
             """The list whose elements are atom i's per species subAEV of each species"""
-            zero_radial_subaev = torch.zeros(conformations, radial_subaev_length, dtype=self.dtype, device=self.device)
 
             for s in self.species:
                 mask = [1 if x == s else 0 for x in species]
@@ -202,8 +202,7 @@ class AEV(AEVComputer):
 
         # compute angular AEV
         angular_aevs = []
-        zero_subaev = torch.zeros(conformations, self.per_species_angular_length(
-        ), dtype=self.dtype, device=self.device)
+        zero_subaev = torch.zeros(conformations, self.angular_sublength, dtype=self.dtype, device=self.device)
         """The list whose elements are full angular AEV of each atom"""
         for i in range(atoms):
             angular_aev = []

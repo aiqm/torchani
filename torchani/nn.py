@@ -501,7 +501,7 @@ class ModelOnAEV(BenchmarkedModule):
             Name of the directory to store exported networks.
         """
 
-        aev_length = self.aev_computer.aev_length()
+        aev_length = self.aev_computer.aev_length
         dummy_aev = torch.zeros(1, aev_length)
         for s in self.aev_computer.species:
             nn_onnx = os.path.join(dirname, '{}.proto'.format(s))

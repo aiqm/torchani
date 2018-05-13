@@ -40,7 +40,7 @@ class NeuroChemAEV (AEVComputer):
         pytorch tensor of `dtype`
             The radial AEV in shape(conformations, atoms, `radial_length()`)
         """
-        radial_size = self.radial_length()
+        radial_size = self.radial_length
         return fullaev[:, :, :radial_size]
 
     def _get_angular_part(self, fullaev):
@@ -56,7 +56,7 @@ class NeuroChemAEV (AEVComputer):
         pytorch tensor of `dtype`
             The radial AEV in shape (conformations, atoms, `angular_length()`)
         """
-        radial_size = self.radial_length()
+        radial_size = self.radial_length
         return fullaev[:, :, radial_size:]
 
     def _compute_neurochem_aevs_per_conformation(self, coordinates, species):

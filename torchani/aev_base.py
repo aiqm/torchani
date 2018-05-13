@@ -23,6 +23,16 @@ class AEVComputer(BenchmarkedModule):
         Cutoff radius
     EtaR, ShfR, Zeta, ShfZ, EtaA, ShfA : torch.Tensor
         Tensor storing constants.
+    radial_sublength : int
+        The length of radial subaev of a single species
+    radial_length : int
+        The length of full radial aev
+    angular_sublength : int
+        The length of angular subaev of a single species
+    angular_length : int
+        The length of full angular aev
+    aev_length : int
+        The length of full aev
     """
 
     def __init__(self, benchmark=False, dtype=default_dtype, device=default_device, const_file=buildin_const_file):
@@ -53,6 +63,14 @@ class AEVComputer(BenchmarkedModule):
                 except:
                     raise ValueError('unable to parse const file')
 
+        # Compute lengths
+        self.radial_sublength = self.EtaR.shape[0] * self.ShfR.shape[0]
+        self.radial_length = len(self.species) * self.radial_sublength
+        self.angular_sublength = self.EtaA.shape[0] * self.Zeta.shape[0] * self.ShfA.shape[0] * self.ShfZ.shape[0]
+        species = len(self.species)
+        self.angular_length = int((species * (species + 1)) / 2) * self.angular_sublength
+        self.aev_length = self.radial_length + self.angular_length
+
     @staticmethod
     def _cutoff_cosine(distances, cutoff):
         """Compute the elementwise cutoff cosine function
@@ -74,26 +92,6 @@ class AEVComputer(BenchmarkedModule):
         """
         return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
 
-    def per_species_radial_length(self):
-        """Returns the radial subaev length per species"""
-        return self.EtaR.shape[0] * self.ShfR.shape[0]
-
-    def radial_length(self):
-        """Returns the full radial aev length"""
-        return len(self.species) * self.per_species_radial_length()
-
-    def per_species_angular_length(self):
-        """Returns the angular subaev length per species"""
-        return self.EtaA.shape[0] * self.Zeta.shape[0] * self.ShfA.shape[0] * self.ShfZ.shape[0]
-
-    def angular_length(self):
-        """Returns the full angular aev length"""
-        species = len(self.species)
-        return int((species * (species + 1)) / 2) * self.per_species_angular_length()
-
-    def aev_length(self):
-        return self.radial_length() + self.angular_length()
-
     def forward(self, coordinates, species):
         """Compute AEV from coordinates and species
 
@@ -110,7 +108,7 @@ class AEVComputer(BenchmarkedModule):
         -------
         (torch.Tensor, torch.Tensor)
             Returns (radial AEV, angular AEV), both are pytorch tensor of `dtype`.
-            The radial AEV must be of shape (conformations, atoms, radial_length())
-            The angular AEV must be of shape (conformations, atoms, angular_length())
+            The radial AEV must be of shape (conformations, atoms, radial_length)
+            The angular AEV must be of shape (conformations, atoms, angular_length)
         """
         raise NotImplementedError('subclass must override this method')
