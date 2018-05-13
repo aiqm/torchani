@@ -8,7 +8,7 @@ class BenchmarkedModule(torch.nn.Module):
     The benchmarking is done by wrapping the original member function with
     a wrapped function. The wrapped function will call the original function,
     and accumulate its running time into `self.timers`. Different accumulators are
-    distinguished by different keys. All times should have unit milliseconds.
+    distinguished by different keys. All times should have unit seconds.
 
     To enable benchmarking for member functions in a subclass, simply
     call the `__init__` of this class with `benchmark=True`, and add the following
@@ -70,7 +70,7 @@ class BenchmarkedModule(torch.nn.Module):
             ret = fun(*args, **kwargs)
             end = timeit.default_timer()
             for key in keys:
-                self.timers[key] += (end - start) * 1000
+                self.timers[key] += end - start
             return ret
         return wrapped
 
