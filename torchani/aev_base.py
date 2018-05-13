@@ -40,7 +40,7 @@ class AEVComputer(BenchmarkedModule):
                     name = line[0]
                     value = line[1]
                     if name == 'Rcr' or name == 'Rca':
-                        setattr(self, name, value)
+                        setattr(self, name, float(value))
                     elif name in ['EtaR', 'ShfR', 'Zeta', 'ShfZ', 'EtaA', 'ShfA']:
                         value = [float(x.strip()) for x in value.replace(
                             '[', '').replace(']', '').split(',')]
