@@ -44,8 +44,6 @@ class AEV(AEVComputer):
         torch.Tensor
             A tensor of shape (conformations, `radial_sublength`) storing the subAEVs.
         """
-        # use broadcasting semantics to do Cartesian product on constants
-        # shape convension (conformations, atoms, EtaR, ShfR)
         distances = distances.unsqueeze(-1).unsqueeze(-1)
         fc = AEVComputer._cutoff_cosine(distances, self.Rcr)
         # Note that in the equation in the paper there is no 0.25 coefficient, but in NeuroChem there is such a coefficient. We choose to be consistent with NeuroChem instead of the paper here.
@@ -74,8 +72,8 @@ class AEV(AEVComputer):
         torch.Tensor
             Tensor of shape (conformations, `angular_sublength`) storing the subAEVs.
         """
-        pairs = Rij_vec.shape[1]
-        R_distances = torch.norm(Rij_vec, 2, dim=-1)
+        Rij_vec = Rij_vec.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+        R_distances = torch.norm(Rij_vec, 2, dim=3)
         """pytorch tensor of shape (conformations, N, 2) storing the |Rij| length where i is the
         center atom, and j is a neighbor. The value at (n,k,l) is the |Rij| where j refer to the
         l-th atom of the k-th pair."""
@@ -85,16 +83,12 @@ class AEV(AEVComputer):
         # 0.95 is multiplied to the cos values to prevent acos from returning NaN.
         cos_angles = 0.95 * \
             torch.nn.functional.cosine_similarity(
-                *torch.unbind(Rij_vec, dim=2), dim=-1)
+                *torch.unbind(Rij_vec, dim=2), dim=2)
         angles = torch.acos(cos_angles)
 
-        # use broadcasting semantics to combine constants
-        # shape convension (conformations, pairs, EtaA, Zeta, ShfA, ShfZ)
-        angles = angles.view(-1, pairs, 1, 1, 1, 1)
-        Rij = R_distances.view(-1, pairs, 2, 1, 1, 1, 1)
-        fcj = AEVComputer._cutoff_cosine(Rij, self.Rca)
+        fcj = AEVComputer._cutoff_cosine(R_distances, self.Rca)
         ret = 2 * ((1 + torch.cos(angles - self.ShfZ)) / 2) ** self.Zeta * \
-            torch.exp(-self.EtaA * (torch.sum(Rij, dim=2) / 2 -
+            torch.exp(-self.EtaA * (torch.sum(R_distances, dim=2) / 2 -
                                     self.ShfA) ** 2) * torch.prod(fcj, dim=2)
         # end of shape convension
         ret = torch.sum(ret, dim=1)

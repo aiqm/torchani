@@ -73,13 +73,15 @@ class AEVComputer(BenchmarkedModule):
             (species * (species + 1)) / 2) * self.angular_sublength
         self.aev_length = self.radial_length + self.angular_length
 
-        # convert constant tensors to a ready-to-braodcast shape
-        self.EtaR = self.EtaR.view(1, 1, -1, 1)
-        self.ShfR = self.ShfR.view(1, 1, 1, -1)
-        self.EtaA = self.EtaA.view(1, 1, -1, 1, 1, 1)
-        self.Zeta = self.Zeta.view(1, 1, 1, -1, 1, 1)
-        self.ShfA = self.ShfA.view(1, 1, 1, 1, -1, 1)
-        self.ShfZ = self.ShfZ.view(1, 1, 1, 1, 1, -1)
+        # convert constant tensors to a ready-to-broadcast shape
+        # shape convension (..., EtaR, ShfR)
+        self.EtaR = self.EtaR.view(-1, 1)
+        self.ShfR = self.ShfR.view(1, -1)
+        # shape convension (..., EtaA, Zeta, ShfA, ShfZ)
+        self.EtaA = self.EtaA.view(-1, 1, 1, 1)
+        self.Zeta = self.Zeta.view(1, -1, 1, 1)
+        self.ShfA = self.ShfA.view(1, 1, -1, 1)
+        self.ShfZ = self.ShfZ.view(1, 1, 1, -1)
 
     @staticmethod
     def _cutoff_cosine(distances, cutoff):
