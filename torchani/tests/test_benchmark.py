@@ -79,7 +79,7 @@ class TestBenchmark(unittest.TestCase):
             self.assertEqual(module.timers[i], 0)
 
     def testAEV(self):
-        aev_computer = torchani.AEV(
+        aev_computer = torchani.SortedAEV(
             benchmark=True, dtype=self.dtype, device=self.device)
         self._testModule(aev_computer, [
                          'total>radial_subaev', 'total>angular_subaev'])

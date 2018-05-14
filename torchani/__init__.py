@@ -18,12 +18,13 @@ default_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 from .energyshifter import EnergyShifter
 from .nn import ModelOnAEV, PerSpeciesFromNeuroChem
-from .aev import AEV
+from .aev import SortedAEV
 from .dataset import Dataset
 import logging
 
-__all__ = ['AEV', 'EnergyShifter', 'ModelOnAEV', 'PerSpeciesFromNeuroChem', 'Dataset',
-           'buildin_const_file', 'buildin_sae_file', 'buildin_network_dir', 'buildin_dataset_dir', 'default_dtype', 'default_device']
+__all__ = ['SortedAEV', 'EnergyShifter', 'ModelOnAEV', 'PerSpeciesFromNeuroChem', 'Dataset',
+           'buildin_const_file', 'buildin_sae_file', 'buildin_network_dir', 'buildin_dataset_dir',
+           'default_dtype', 'default_device']
 
 try:
     from .neurochem_aev import NeuroChemAEV
