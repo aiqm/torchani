@@ -104,10 +104,6 @@ class AEV(AEVComputer):
         zero_angular_subaev = torch.zeros(
             conformations, self.angular_sublength, dtype=self.dtype, device=self.device)
 
-        class AEVIsZero(Exception):
-            """Helper exception for control flow"""
-            pass
-
         masks = {}
         for s in self.species:
             mask = [1 if x == s else 0 for x in species]
@@ -146,7 +142,7 @@ class AEV(AEVComputer):
 
                 # prepare to compute angular AEV
                 in_Rca_idx = (in_Rca * mask).nonzero().view(-1)
-                R_vecs_in_Rca[s] = R_vecs.index_select(1, in_Rca_idx)
+                R_vecs_in_Rca[s] = R_vecs.index_select(1, in_Rca_idx) if len(in_Rca_idx) > 0 else None
 
             radial_aev = torch.cat(radial_aev, dim=1)
             radial_aevs.append(radial_aev)
@@ -155,26 +151,23 @@ class AEV(AEVComputer):
             angular_aev = []
             """The list whose elements are atom i's per species subAEV of each species"""
             for j, k in itertools.combinations_with_replacement(self.species, 2):
-                try:
+                R_vecs_pairs = None
+                if j != k:
+                    # the two atoms in the pair have different species
                     R_vecs_j = R_vecs_in_Rca[j]
-                    if len(R_vecs_j) == 0:
-                        raise AEVIsZero()
-                    if j != k:
-                        # the two atoms in the pair have different species
-                        R_vecs_k = R_vecs_in_Rca[k]
-                        if len(R_vecs_k) == 0:
-                            raise AEVIsZero()
+                    R_vecs_k = R_vecs_in_Rca[k]
+                    if R_vecs_j is not None and R_vecs_k is not None:
                         R_vecs_pairs = _utils.cartesian_prod(
                             R_vecs_j, R_vecs_k, dim=1, newdim=2)
-                    else:
-                        # the two atoms in the pair have the same species j
-                        if len(R_vecs_j.shape) != 3 or R_vecs_j.shape[1] < 2:
-                            raise AEVIsZero()
+                else:
+                    # the two atoms in the pair have the same species j
+                    R_vecs_j = R_vecs_in_Rca[j]
+                    if R_vecs_j is not None and R_vecs_j.shape[1] >= 2:
                         R_vecs_pairs = _utils.combinations(
                             R_vecs_j, 2, dim=1, newdim=2)
+                if R_vecs_pairs is not None:
                     angular_aev.append(self.angular_subaev(R_vecs_pairs))
-                except AEVIsZero:
-                    # If unable to find pair of neighbor atoms with desired species, fill the subAEV with zeros
+                else:
                     angular_aev.append(zero_angular_subaev)
             angular_aev = torch.cat(angular_aev, dim=1)
             angular_aevs.append(angular_aev)
