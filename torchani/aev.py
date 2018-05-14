@@ -42,7 +42,7 @@ class AEV(AEVComputer):
         Returns
         -------
         torch.Tensor
-            A tensor of shape (conformations, `radial_sublength()`) storing the subAEVs.
+            A tensor of shape (conformations, `radial_sublength`) storing the subAEVs.
         """
         # use broadcasting semantics to do Cartesian product on constants
         # shape convension (conformations, atoms, EtaR, ShfR)
@@ -87,7 +87,7 @@ class AEV(AEVComputer):
         # 0.95 is multiplied to the cos values to prevent acos from returning NaN.
         cos_angles = 0.95 * \
             torch.nn.functional.cosine_similarity(
-                Rij_vec[:, :, 0, :], Rij_vec[:, :, 1, :], dim=-1)
+                *torch.unbind(Rij_vec, dim=2), dim=-1)
         angles = torch.acos(cos_angles)
 
         # use broadcasting semantics to combine constants
@@ -100,8 +100,8 @@ class AEV(AEVComputer):
         radius_shifts = self.ShfA.view(1, 1, 1, 1, -1, 1)
         angle_shifts = self.ShfZ.view(1, 1, 1, 1, 1, -1)
         ret = 2 * ((1 + torch.cos(angles - angle_shifts)) / 2) ** zeta * \
-            torch.exp(-eta * ((Rij[:, :, 0, :, :, :, :] + Rij[:, :, 1, :, :, :, :]) / 2 - radius_shifts)
-                      ** 2) * fcj[:, :, 0, :, :, :, :] * fcj[:, :, 1, :, :, :, :]
+            torch.exp(-eta * (torch.sum(Rij, dim=2) / 2 - radius_shifts)
+                      ** 2) * torch.prod(fcj, dim=2)
         # end of shape convension
         ret = torch.sum(ret, dim=1)
         # flat the last 4 dimensions to view the subAEV as one dimension vector
