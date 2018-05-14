@@ -134,12 +134,10 @@ class AEV(AEVComputer):
             R_vecs = coordinates - center
             R_distances = torch.norm(R_vecs, 2, dim=-1)
 
-            in_Rcr = R_distances <= self.Rcr
-            in_Rcr = torch.sum(in_Rcr.type(torch.float), dim=0) > 0
+            in_Rcr = (R_distances <= self.Rcr).any(dim=0)
             in_Rcr[i] = 0
 
-            in_Rca = R_distances <= self.Rca
-            in_Rca = torch.sum(in_Rca.type(torch.float), dim=0) > 0
+            in_Rca = (R_distances <= self.Rca).any(dim=0)
             in_Rca[i] = 0
 
             radial_aev = []
