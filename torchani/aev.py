@@ -48,10 +48,8 @@ class AEV(AEVComputer):
         # shape convension (conformations, atoms, EtaR, ShfR)
         distances = distances.unsqueeze(-1).unsqueeze(-1)
         fc = AEVComputer._cutoff_cosine(distances, self.Rcr)
-        eta = self.EtaR.view(1, 1, -1, 1)
-        radius_shift = self.ShfR.view(1, 1, 1, -1)
         # Note that in the equation in the paper there is no 0.25 coefficient, but in NeuroChem there is such a coefficient. We choose to be consistent with NeuroChem instead of the paper here.
-        ret = 0.25 * torch.exp(-eta * (distances - radius_shift)**2) * fc
+        ret = 0.25 * torch.exp(-self.EtaR * (distances - self.ShfR)**2) * fc
         # end of shape convension
         ret = torch.sum(ret, dim=1)
         # flat the last two dimensions to view the subAEV as one dimensional vector
@@ -95,13 +93,9 @@ class AEV(AEVComputer):
         angles = angles.view(-1, pairs, 1, 1, 1, 1)
         Rij = R_distances.view(-1, pairs, 2, 1, 1, 1, 1)
         fcj = AEVComputer._cutoff_cosine(Rij, self.Rca)
-        eta = self.EtaA.view(1, 1, -1, 1, 1, 1)
-        zeta = self.Zeta.view(1, 1, 1, -1, 1, 1)
-        radius_shifts = self.ShfA.view(1, 1, 1, 1, -1, 1)
-        angle_shifts = self.ShfZ.view(1, 1, 1, 1, 1, -1)
-        ret = 2 * ((1 + torch.cos(angles - angle_shifts)) / 2) ** zeta * \
-            torch.exp(-eta * (torch.sum(Rij, dim=2) / 2 - radius_shifts)
-                      ** 2) * torch.prod(fcj, dim=2)
+        ret = 2 * ((1 + torch.cos(angles - self.ShfZ)) / 2) ** self.Zeta * \
+            torch.exp(-self.EtaA * (torch.sum(Rij, dim=2) / 2 -
+                                    self.ShfA) ** 2) * torch.prod(fcj, dim=2)
         # end of shape convension
         ret = torch.sum(ret, dim=1)
         # flat the last 4 dimensions to view the subAEV as one dimension vector

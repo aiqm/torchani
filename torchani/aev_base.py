@@ -73,6 +73,14 @@ class AEVComputer(BenchmarkedModule):
             (species * (species + 1)) / 2) * self.angular_sublength
         self.aev_length = self.radial_length + self.angular_length
 
+        # convert constant tensors to a ready-to-braodcast shape
+        self.EtaR = self.EtaR.view(1, 1, -1, 1)
+        self.ShfR = self.ShfR.view(1, 1, 1, -1)
+        self.EtaA = self.EtaA.view(1, 1, -1, 1, 1, 1)
+        self.Zeta = self.Zeta.view(1, 1, 1, -1, 1, 1)
+        self.ShfA = self.ShfA.view(1, 1, 1, 1, -1, 1)
+        self.ShfZ = self.ShfZ.view(1, 1, 1, 1, 1, -1)
+
     @staticmethod
     def _cutoff_cosine(distances, cutoff):
         """Compute the elementwise cutoff cosine function
