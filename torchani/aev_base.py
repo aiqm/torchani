@@ -104,6 +104,27 @@ class AEVComputer(BenchmarkedModule):
         """
         return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
 
+    def sort_by_species(self, data, species):
+        """Sort the data by its species according to the order in `self.species`
+
+        Parameters
+        ----------
+        data : torch.Tensor
+            Tensor of shape (conformations, atoms, ...) for data.
+        species : list
+            List storing species of each atom.
+
+        Returns
+        -------
+        (torch.Tensor, list)
+            Tuple of (sorted data, sorted species).
+        """
+        atoms = list(zip(species, torch.unbind(data, 1)))
+        atoms = sorted(atoms, key=lambda x: self.species.index(x[0]))
+        species = [s for s, _ in atoms]
+        data = torch.stack([c for _, c in atoms], dim=1)
+        return data, species
+
     def forward(self, coordinates, species):
         """Compute AEV from coordinates and species
 

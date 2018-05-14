@@ -10,7 +10,7 @@ class TestBenchmark(unittest.TestCase):
         self.dtype = dtype
         self.device = device
         self.conformations = 100
-        self.species = list('CCHHNNOO')
+        self.species = list('HHCCNNOO')
         self.coordinates = torch.randn(
             self.conformations, 8, 3, dtype=dtype, device=device)
         self.count = 100
@@ -85,7 +85,7 @@ class TestBenchmark(unittest.TestCase):
                          'total>radial_subaev', 'total>angular_subaev'])
 
     def testModelOnAEV(self):
-        aev_computer = torchani.AEV(
+        aev_computer = torchani.SortedAEV(
             dtype=self.dtype, device=self.device)
         model = torchani.ModelOnAEV(
             aev_computer, benchmark=True, from_nc=None)

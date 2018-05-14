@@ -10,8 +10,8 @@ import logging
 class TestAEV(unittest.TestCase):
 
     def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
-        self.aev = torchani.SortedAEV(dtype, device)
-        self.ncaev = torchani.NeuroChemAEV(dtype, device)
+        self.aev = torchani.SortedAEV(dtype=dtype, device=device)
+        self.ncaev = torchani.NeuroChemAEV(dtype=dtype, device=device)
         self.tolerance = 1e-5
         self.logger = logging.getLogger('smiles')
 
@@ -25,6 +25,17 @@ class TestAEV(unittest.TestCase):
         radial_max_error = torch.max(torch.abs(radial_diff))
         angular_diff = angular_neurochem - angular_torchani
         angular_max_error = torch.max(torch.abs(angular_diff))
+        if radial_max_error > self.tolerance:
+            print(species)
+            for i in range(len(species)):
+                r1 = angular_neurochem[0, i, :]
+                r2 = angular_torchani[0, i, :]
+                max_err = torch.max(torch.abs(r1 - r2))
+                if max_err > self.tolerance:
+                    print('atom', i, 'species', species[i], 'radial aevs:')
+                    print(torch.stack([r1, r2, r1-r2], dim=1))
+                    break
+
         self.assertLess(radial_max_error, self.tolerance)
         self.assertLess(angular_max_error, self.tolerance)
 
@@ -36,6 +47,8 @@ class TestAEV(unittest.TestCase):
             coordinates = data['coordinates'][:10, :]
             species = data['species']
             smiles = ''.join(data['smiles'])
+            # if smiles != '[H]C([H])([H])C([H])([H])C([H])([H])C([H])([H])[H]':
+            #     continue
             self._test_molecule(coordinates, species)
             self.logger.info('Test pass: ' + smiles)
 
@@ -52,6 +65,7 @@ class TestAEV(unittest.TestCase):
         self._test_datafile(4)
 
     def testCH4(self):
+        # return
         coordinates = numpy.array([[[0.03192167,  0.00638559,  0.01301679],
                                     [-0.83140486,  0.39370209, -0.26395324],
                                     [-0.66518241, -0.84461308,  0.20759389],

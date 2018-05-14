@@ -484,8 +484,10 @@ class ModelOnAEV(BenchmarkedModule):
             coordinates = coordinates.detach()
         else:
             coordinates = torch.tensor(coordinates, requires_grad=True)
-        aev = self.compute_aev(coordinates, species)
-        output = self.aev_to_output(aev, species)
+        _coordinates, _species = self.aev_computer.sort_by_species(
+            coordinates, species)
+        aev = self.compute_aev(_coordinates, _species)
+        output = self.aev_to_output(aev, _species)
         if not self.derivative:
             return output
         else:
