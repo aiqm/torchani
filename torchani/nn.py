@@ -438,17 +438,24 @@ class ModelOnAEV(BenchmarkedModule):
             Pytorch tensor of shape (conformations, output_length) for the
             output of each conformation.
         """
+        conformations = aev.shape[0]
         atoms = len(species)
-        per_atom_outputs = []
-        for i in range(atoms):
-            s = species[i]
-            y = aev[:, i, :]
+        rev_species = species[::-1]
+        species_dedup = sorted(
+            set(species), key=self.aev_computer.species.index)
+        per_species_outputs = []
+        for s in species_dedup:
+            begin = species.index(s)
+            end = atoms - rev_species.index(s)
+            y = aev[:, begin:end, :].contiguous(
+            ).view(-1, self.aev_computer.aev_length)
             model_X = getattr(self, 'model_' + s)
             y = model_X(y)
-            per_atom_outputs.append(y)
+            y = y.view(conformations, -1, self.output_length)
+            per_species_outputs.append(y)
 
-        per_atom_outputs = torch.stack(per_atom_outputs)
-        molecule_output = self.reducer(per_atom_outputs, dim=0)
+        per_species_outputs = torch.cat(per_species_outputs, dim=1)
+        molecule_output = self.reducer(per_species_outputs, dim=1)
         return molecule_output
 
     def compute_derivative(self, output, coordinates):
