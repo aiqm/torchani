@@ -41,7 +41,7 @@ def cartesian_prod(*tensors, dim=0, newdim=0):
 
     Returns
     -------
-    pytorch tensor
+    torch.Tensor
         The cartesian product of input tensors along specified dimension.
     """
     total_dims = len(tensors[0].shape)
@@ -90,7 +90,7 @@ def combinations(tensor, repeat, dim=0, newdim=0):
 
     Returns
     -------
-    pytorch tensor
+    torch.Tensor
         The combination of input tensors along specified dimension.
     """
     total_dims = len(tensor.shape)
@@ -139,7 +139,7 @@ def combinations_with_replacement(tensor, repeat, dim=0, newdim=0):
 
     Returns
     -------
-    pytorch tensor
+    torch.Tensor
         The combination with replacement of input tensors along specified dimension.
     """
     total_dims = len(tensor.shape)
