@@ -183,8 +183,7 @@ class SortedAEV(AEVComputer):
         del vectors
 
         # assemble subAEVs to construct full radial and angular AEV
-        species_dedup = sorted(list(species_dedup),
-                               key=lambda x: self.species.index(x[0]))
+        species_dedup = sorted(species_dedup, key=self.species.index)
         radial_aevs = []
         angular_aevs = []
         for s0 in species_dedup:
