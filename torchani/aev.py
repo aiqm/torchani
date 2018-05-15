@@ -97,9 +97,10 @@ class SortedAEV(AEVComputer):
         # partition coordinates by species
         coordinates_by_species = {}
         atoms_by_species = {}
+        rev_species = species[::-1]
         for s in set(species):
             begin = species.index(s)
-            end = atoms - species[::-1].index(s)
+            end = atoms - rev_species.index(s)
             coordinates_by_species[s] = coordinates[:, begin:end, :]
             atoms_by_species[s] = end - begin
         del coordinates
