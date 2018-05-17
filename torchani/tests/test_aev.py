@@ -28,14 +28,23 @@ class TestAEV(unittest.TestCase):
         if radial_max_error > self.tolerance:
             print(species)
             for i in range(len(species)):
-                r1 = angular_neurochem[0, i, :]
-                r2 = angular_torchani[0, i, :]
+                r1 = radial_neurochem[0, i, :]
+                r2 = radial_torchani[0, i, :]
                 max_err = torch.max(torch.abs(r1 - r2))
                 if max_err > self.tolerance:
                     print('atom', i, 'species', species[i], 'radial aevs:')
                     print(torch.stack([r1, r2, r1-r2], dim=1))
                     break
-
+        if angular_max_error > self.tolerance:
+            print(species)
+            for i in range(len(species)):
+                r1 = angular_neurochem[0, i, :]
+                r2 = angular_torchani[0, i, :]
+                max_err = torch.max(torch.abs(r1 - r2))
+                if max_err > self.tolerance:
+                    print('atom', i, 'species', species[i], 'angular aevs:')
+                    print(torch.stack([r1, r2, r1-r2], dim=1))
+                    break
         self.assertLess(radial_max_error, self.tolerance)
         self.assertLess(angular_max_error, self.tolerance)
 
@@ -47,8 +56,6 @@ class TestAEV(unittest.TestCase):
             coordinates = data['coordinates'][:10, :]
             species = data['species']
             smiles = ''.join(data['smiles'])
-            # if smiles != '[H]C([H])([H])C([H])([H])C([H])([H])C([H])([H])[H]':
-            #     continue
             self._test_molecule(coordinates, species)
             self.logger.info('Test pass: ' + smiles)
 

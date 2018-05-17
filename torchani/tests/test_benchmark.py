@@ -82,7 +82,10 @@ class TestBenchmark(unittest.TestCase):
         aev_computer = torchani.SortedAEV(
             benchmark=True, dtype=self.dtype, device=self.device)
         self._testModule(aev_computer, [
-                         'total>radial_subaev', 'total>angular_subaev'])
+                         'terms and indices>radial terms',
+                         'terms and indices>angular terms',
+                         'total>terms and indices',
+                         'total>partition', 'total>assemble'])
 
     def testModelOnAEV(self):
         aev_computer = torchani.SortedAEV(
