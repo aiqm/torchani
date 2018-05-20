@@ -21,9 +21,8 @@ class Benchmark:
         Returns
         -------
         dict
-            Dictionary storing the times for computing AEVs, energies and forces, in milliseconds.
+            Dictionary storing the times for computing AEVs, energies and forces, in seconds.
             The dictionary should contain the following keys:
-            neighborlist : the time used to compute neighbor list
             aev : the time used to compute AEVs from coordinates with given neighbor list.
             energy : the time used to compute energies, when the AEVs are given.
             force : the time used to compute forces, when the energies and AEVs are given.
