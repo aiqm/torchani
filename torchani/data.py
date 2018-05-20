@@ -5,8 +5,9 @@ from torch import tensor, full_like, long
 from torch.utils.data import TensorDataset, ConcatDataset
 from torch.utils.data.dataloader import default_collate
 from math import ceil
+from . import default_dtype
 
-def load_dataset(path):
+def load_dataset(path, dtype=default_dtype):
     # get name of files storing data
     files = []
     if isdir(path):
@@ -25,8 +26,8 @@ def load_dataset(path):
     datasets = []
     for f in files:
         for m in anidataloader(f):
-            coordinates = tensor(m['coordinates'])
-            energies = tensor(m['energies'])
+            coordinates = tensor(m['coordinates'], dtype=dtype)
+            energies = tensor(m['energies'], dtype=dtype)
             _molecule_id = full_like(energies, molecule_id).type(long)
             datasets.append(TensorDataset(_molecule_id, coordinates, energies))
             species.append(m['species'])
