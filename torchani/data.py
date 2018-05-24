@@ -99,7 +99,7 @@ def collate(batch):
         by_molecules[i] = default_collate(by_molecules[i])
     return by_molecules
 
-def random_split(dataset, lengths):
+def random_split(dataset, lengths, chunk_size):
     """
     Randomly split a dataset into non-overlapping new datasets of given lengths
     ds
@@ -108,4 +108,5 @@ def random_split(dataset, lengths):
         dataset (Dataset): Dataset to be split
         lengths (iterable): lengths of splits to be produced
     """
-    pass
+    if sum(lengths) != len(dataset):
+        raise ValueError("Sum of input lengths does not equal the length of the input dataset!")
