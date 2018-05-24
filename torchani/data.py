@@ -2,12 +2,29 @@ from .pyanitools import anidataloader
 from os import listdir
 from os.path import join, isfile, isdir
 from torch import tensor, full_like, long
-from torch.utils.data import TensorDataset, ConcatDataset
+from torch.utils.data import Dataset, Subset, TensorDataset, ConcatDataset
 from torch.utils.data.dataloader import default_collate
 from math import ceil
 from . import default_dtype
+from random import shuffle
+from itertools import chain
+
+class MoleculeDataset(Dataset):
+
+    def __init__(self, dataset, sizes):
+        super(MoleculeDataset, self).__init__()
+        self.dataset = dataset
+        self.sizes = sizes
+        self.cumulative_sizes = ConcatDataset.cumsum(sizes)
+
+    def __getitem__(self, idx):
+        return self.dataset[idx]
+
+    def __len__(self):
+        return len(self.dataset)
 
 def load_dataset(path, dtype=default_dtype):
+    """The returned dataset has cumulative_sizes and molecule_sizes"""
     # get name of files storing data
     files = []
     if isdir(path):
@@ -32,12 +49,17 @@ def load_dataset(path, dtype=default_dtype):
             datasets.append(TensorDataset(_molecule_id, coordinates, energies))
             species.append(m['species'])
             molecule_id += 1
-    return species, ConcatDataset(datasets)
+    dataset = ConcatDataset(datasets)
+    sizes = [len(x) for x in dataset.datasets]
+    dataset = MoleculeDataset(dataset, sizes)
+    return species, dataset
 
 class BatchSampler(object):
 
-    def __init__(self, concat_source, chunk_size, batch_chunks):
-        self.concat_source = concat_source
+    def __init__(self, source, chunk_size, batch_chunks):
+        if not isinstance(source, MoleculeDataset):
+            raise ValueError("BatchSampler must take MoleculeDataset as input")
+        self.source = source
         self.chunk_size = chunk_size
         self.batch_chunks = batch_chunks
 
@@ -46,14 +68,13 @@ class BatchSampler(object):
         Get the index in the  dataset of the specified conformation
         of the specified molecule.
         """
-        src = self.concat_source
+        src = self.source
         cumulative_sizes = [0] + src.cumulative_sizes
         return cumulative_sizes[molecule] + conformation
 
     def __iter__(self):
-        src = self.concat_source
-        molecules = len(src.datasets)
-        sizes = [len(x) for x in src.datasets]
+        molecules = len(self.source.sizes)
+        sizes = self.source.sizes
         """Number of conformations of each molecule"""
         unfinished = list(zip(range(molecules), [0] * molecules))
         """List of pairs (molecule, progress) storing the current progress
@@ -83,7 +104,7 @@ class BatchSampler(object):
             yield batch
 
     def __len__(self):
-        sizes = [len(x) for x in self.concat_source.datasets]
+        sizes = self.source.sizes
         chunks = [ceil(x/self.chunk_size) for x in sizes]
         chunks = sum(chunks)
         return ceil(chunks / self.batch_chunks)
@@ -99,14 +120,38 @@ def collate(batch):
         by_molecules[i] = default_collate(by_molecules[i])
     return by_molecules
 
-def random_split(dataset, lengths, chunk_size):
+def random_split(dataset, num_chunks, chunk_size, save=None):
     """
     Randomly split a dataset into non-overlapping new datasets of given lengths
-    ds
+    TODO: explain by chunk
 
     Arguments:
         dataset (Dataset): Dataset to be split
-        lengths (iterable): lengths of splits to be produced
+        num_chunks (iterable): number of chuncks of splits to be produced
     """
-    if sum(lengths) != len(dataset):
-        raise ValueError("Sum of input lengths does not equal the length of the input dataset!")
+    chunks = list(BatchSampler(dataset, chunk_size, 1))
+    shuffle(chunks)
+    if sum(chunk_lengths) != len(chunks):
+        raise ValueError("Sum of input number of chunks does not equal the length of the total dataset!")
+    offset = 0
+    subsets = []
+    for i in num_chunks:
+        _chunks = chunks[offset, offset+i]
+        offset += i
+        # merge chunks by molecule
+        by_molecules = {}
+        for chunk in _chunks:
+            molecule_id, _, _ = dataset[chunk[0]]
+            if molecule_id not in by_molecules:
+                by_molecules[molecule_id] = []
+            by_molecules[molecule_id] += chunk
+        _chunks = list(by_molecules.values())
+        # construct subset
+        sizes = [len(j) for j in _chunks]
+        indices = chain.from_iterable(_chunks)
+        _dataset = Subset(dataset, indices)
+        _dataset = MoleculeDataset(_dataset, sizes)
+        subsets.append(_dataset)
+    return subsets
+
+
