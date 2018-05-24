@@ -6,7 +6,7 @@ import ase
 import pyNeuroChem
 import ase_interface
 import pyanitools
-import pkg_resources
+import os
 import logging
 
 
@@ -51,7 +51,7 @@ class TestForceNeuroChem(unittest.TestCase):
         self._test_molecule(coordinates, species)
 
     def _test_by_file(self, number):
-        data_file = os.path.join(torchani.buildin_dataset_dir, 'data/ani_gdb_s0{}.h5'.format(number))
+        data_file = os.path.join(torchani.buildin_dataset_dir, 'ani_gdb_s0{}.h5'.format(number))
         adl = pyanitools.anidataloader(data_file)
         for data in adl:
             coordinates = data['coordinates'][:10, :]

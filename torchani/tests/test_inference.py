@@ -2,7 +2,7 @@ import torch
 import numpy
 import torchani
 import unittest
-import pkg_resources
+import os
 import logging
 import pyanitools
 import ase
@@ -72,7 +72,7 @@ class TestInference(unittest.TestCase):
                     self.assertLess(maxdiff, self.tolerance)
 
     def _test_by_file(self, number):
-        data_file = os.path.join(torchani.buildin_dataset_dir, 'data/ani_gdb_s0{}.h5'.format(number))
+        data_file = os.path.join(torchani.buildin_dataset_dir, 'ani_gdb_s0{}.h5'.format(number))
         adl = pyanitools.anidataloader(data_file)
         for data in adl:
             coordinates = data['coordinates'][:10, :]
