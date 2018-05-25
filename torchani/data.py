@@ -169,7 +169,7 @@ def random_split(dataset, num_chunks, chunk_size):
         # merge chunks by molecule
         by_molecules = {}
         for chunk in _chunks:
-            molecule_id, _, _ = dataset[chunk[0]]
+            molecule_id = dataset[chunk[0]][0].item()
             if molecule_id not in by_molecules:
                 by_molecules[molecule_id] = []
             by_molecules[molecule_id] += chunk
@@ -177,7 +177,7 @@ def random_split(dataset, num_chunks, chunk_size):
         shuffle(_chunks)
         # construct subset
         sizes = [len(j) for j in _chunks]
-        indices = chain.from_iterable(_chunks)
+        indices = list(chain.from_iterable(_chunks))
         _dataset = Subset(dataset, indices)
         _dataset = ANIDataset(_dataset, sizes, dataset.species)
         subsets.append(_dataset)
