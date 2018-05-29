@@ -10,8 +10,8 @@ import os
 import pickle
 
 
-if len(sys.argv)==4:
-    configs.device = torch.device(sys.argv[3])
+if len(sys.argv)>=2:
+    configs.device = torch.device(sys.argv[1])
 from common import *
 
 ds = torchani.data.load_dataset(configs.data_path)
@@ -71,6 +71,8 @@ def compute(chunk_size, batch_chunks):
     with open('data/avg-{}-{}.dat'.format(chunk_size, batch_chunks), 'wb') as f:
         pickle.dump((ag, agsqr), f)
 
-chunk_size = int(sys.argv[1])
-batch_chunks = int(sys.argv[2])
+chunk_size = int(sys.argv[2])
+batch_chunks = int(sys.argv[3])
 compute(chunk_size, batch_chunks)
+# for chunk_size, batch_chunks in hyperparams:
+#     compute(chunk_size, batch_chunks)
