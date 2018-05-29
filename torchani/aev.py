@@ -204,7 +204,6 @@ class SortedAEV(AEVComputer):
             indices_a1, indices_a2 = None, None
         else:
             indices_a1, indices_a2 = indices_a
-        atoms = len(species)
         partition = {}
         species_indices = _species_indices(species)
         for s in set(species):

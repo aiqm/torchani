@@ -95,11 +95,13 @@ def subset_rmse(subset_dataloader):
         for molecule_id in batch:
             _species = subset_dataloader.dataset.species[molecule_id]
             coordinates, energies = batch[molecule_id]
-            coordinates = coordinates.to(aev_computer.device).detach()
-            energies = energies.to(aev_computer.device).detach()
-            a.add(*evaluate(coordinates, energies, _species))
+            coordinates = coordinates.to(aev_computer.device)
+            energies = energies.to(aev_computer.device)
+            count, squared_error = evaluate(coordinates, energies, _species)
+            squared_error = squared_error.item()
+            a.add(count, squared_error)
     mse = a.avg()
-    rmse = math.sqrt(mse.item()) * 627.509
+    rmse = math.sqrt(mse) * 627.509
     return rmse
 
 def optimize_step(a):
