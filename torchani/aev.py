@@ -4,6 +4,30 @@ from .aev_base import AEVComputer
 from . import buildin_const_file, default_dtype, default_device
 from . import _utils
 
+def _species_indices(species):
+    """Get the beginning and ending indices for all species
+    
+    Parameters
+    ----------
+    species : list
+        A list of species, sorted.
+    
+    Returns
+    -------
+    dict
+        Dictionary of then beginning and ending indices with species as key
+    """
+    ret = dict()
+    begin = 0
+    last_species = species[0]
+    for i in range(1, len(species)):
+        s = species[i]
+        if s != last_species:
+            ret[last_species] = (begin, i)
+            begin = i
+            last_species = s
+    ret[last_species] = (begin, len(species))
+    return ret
 
 class SortedAEV(AEVComputer):
     """The AEV computer assuming input coordinates sorted by species
@@ -182,10 +206,9 @@ class SortedAEV(AEVComputer):
             indices_a1, indices_a2 = indices_a
         atoms = len(species)
         partition = {}
-        rev_species = species[::-1]
+        species_indices = _species_indices(species)
         for s in set(species):
-            begin = species.index(s)
-            end = atoms - rev_species.index(s)
+            begin, end = species_indices[s]
             mask_r = (indices_r >= begin) * (indices_r < end)
             # TODO: can we remove this if pytorch support 0 size tensors?
             mask_a1 = (indices_a1 >= begin) * (indices_a1 <
