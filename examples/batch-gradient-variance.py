@@ -38,6 +38,12 @@ hyperparams = [  # (chunk size, batch chunks)
     (2048, 1),
 ]
 
+def grad_or_zero(parameter):
+    if parameter.grad is not None:
+        return parameter.grad.reshape(-1)
+    else:
+        return torch.zeros_like(parameter.reshape(-1))
+
 def batch_gradient(batch):
     a = Averager()
     for molecule_id in batch:
@@ -49,7 +55,7 @@ def batch_gradient(batch):
     mse = a.avg()
     optimizer.zero_grad()
     mse.backward()
-    grads = [p.grad.reshape(-1) for p in model.parameters()]
+    grads = [grad_or_zero(p) for p in model.parameters()]
     grads = torch.cat(grads)
     return grads
 
