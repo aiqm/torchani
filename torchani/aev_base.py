@@ -111,9 +111,9 @@ class AEVComputer(BenchmarkedModule):
         coordinates : torch.Tensor
             The tensor that specifies the xyz coordinates of atoms in the molecule.
             The tensor must have shape (conformations, atoms, 3)
-        species : list of string
-            The list that specifies the species of each atom. The length of the list
-            must match with `coordinates.shape[1]`.
+        species : torch.LongTensor
+            Long tensor for the species, where a value k means the species is
+            the same as self.species[k]
 
         Returns
         -------

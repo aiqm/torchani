@@ -25,31 +25,6 @@ def _cutoff_cosine(distances, cutoff):
     """
     return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
 
-def _species_indices(species):
-    """Get the beginning and ending indices for all species
-    
-    Parameters
-    ----------
-    species : list
-        A list of species, sorted.
-    
-    Returns
-    -------
-    dict
-        Dictionary of then beginning and ending indices with species as key
-    """
-    ret = dict()
-    begin = 0
-    last_species = species[0]
-    for i in range(1, len(species)):
-        s = species[i]
-        if s != last_species:
-            ret[last_species] = (begin, i)
-            begin = i
-            last_species = s
-    ret[last_species] = (begin, len(species))
-    return ret
-
 class SortedAEV(AEVComputer):
     """The AEV computer assuming input coordinates sorted by species
 
@@ -75,6 +50,24 @@ class SortedAEV(AEVComputer):
                 self.partition, 'partition')
             self.assemble = self._enable_benchmark(self.assemble, 'assemble')
             self.forward = self._enable_benchmark(self.forward, 'total')
+
+    def species_to_tensor(self, species):
+        """Convert species list into a long tensor.
+
+        Parameters
+        ----------
+        species : list
+            List of string for the species of each atoms.
+
+        Returns
+        -------
+        torch.Tensor
+            Long tensor for the species, where a value k means the species is
+            the same as self.species[k].
+        """
+        indices = {self.species[i]:i for i in range(len(self.species))}
+        values = [indices[i] for i in species]
+        return torch.tensor(values, dtype=torch.long, device=self.device)
 
     def radial_subaev_terms(self, distances):
         """Compute the radial subAEV terms of the center atom given neighbors
@@ -206,9 +199,9 @@ class SortedAEV(AEVComputer):
             See the return value of `self.terms_and_indices`
         indices_a : torch.Tensor
             See the return value of `self.terms_and_indices`
-        species : list of string
-            The list that specifies the species of each atom. The length of the list
-            must be the number of atoms.
+        species : torch.Tensor
+            Long tensor for the species, where a value k means the species is
+            the same as self.species[k].
 
         Returns
         -------
@@ -219,23 +212,22 @@ class SortedAEV(AEVComputer):
             (mask_a2) are the masks of combinations of `indices_a` where the first (second)
             element of the pair has the specified species.
         """
-        indices_a = _utils.combinations(indices_a, -1)
+        species_r = species[indices_r]
+        species_a = species[indices_a]
+        species_a = _utils.combinations(species_a, -1)
         if indices_a is None:
             # TODO: can we remove this if pytorch support 0 size tensors?
-            indices_a1, indices_a2 = None, None
+            species_a1, species_a2 = None, None
         else:
-            indices_a1, indices_a2 = indices_a
+            species_a1, species_a2 = species_a
         partition = {}
-        species_indices = _species_indices(species)
-        for s in set(species):
-            begin, end = species_indices[s]
-            mask_r = (indices_r >= begin) * (indices_r < end)
+        for s in species.unique().sort()[0]:
+            s = s.item()
+            mask_r = (species_r == s)
             # TODO: can we remove this if pytorch support 0 size tensors?
-            mask_a1 = (indices_a1 >= begin) * (indices_a1 <
-                                               end) if indices_a1 is not None else None
+            mask_a1 = (species_a1 == s) if species_a1 is not None else None
             # TODO: can we remove this if pytorch support 0 size tensors?
-            mask_a2 = (indices_a2 >= begin) * (indices_a2 <
-                                               end) if indices_a2 is not None else None
+            mask_a2 = (species_a2 == s) if species_a2 is not None else None
             partition[s] = (mask_r, mask_a1, mask_a2)
         return partition
 
@@ -265,7 +257,7 @@ class SortedAEV(AEVComputer):
         radial_aevs = []
         zero_radial_subaev = torch.zeros(
             conformations, atoms, self.radial_sublength, dtype=self.dtype, device=self.device)
-        for s in self.species:
+        for s in range(len(self.species)):
             if s in partition:
                 mask = partition[s][0]
                 mask = mask.type(self.dtype).unsqueeze(-1)
@@ -295,6 +287,7 @@ class SortedAEV(AEVComputer):
         return torch.cat(radial_aevs, dim=2), torch.cat(angular_aevs, dim=2)
 
     def forward(self, coordinates, species):
+        species = self.species_to_tensor(species)
         radial_terms, angular_terms, indices_r, indices_a = self.terms_and_indices(
             coordinates)
         partition = self.partition(indices_r, indices_a, species)
