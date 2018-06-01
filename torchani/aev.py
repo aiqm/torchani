@@ -5,6 +5,10 @@ from .aev_base import AEVComputer
 from . import buildin_const_file, default_dtype, default_device
 from . import _utils
 
+def _cpu(self, x):
+    # TODO: remove this when pytorch support `torch.unique` on GPU
+    return x.to('cpu')
+
 def _cutoff_cosine(distances, cutoff):
     """Compute the elementwise cutoff cosine function
 
@@ -50,6 +54,10 @@ class SortedAEV(AEVComputer):
                 self.partition, 'partition')
             self.assemble = self._enable_benchmark(self.assemble, 'assemble')
             self.forward = self._enable_benchmark(self.forward, 'total')
+
+    def _d(self, x):
+        # TODO: remove this when pytorch support `torch.unique` on GPU
+        return x.to(self.device)
 
     def species_to_tensor(self, species):
         """Convert species list into a long tensor.
@@ -221,7 +229,8 @@ class SortedAEV(AEVComputer):
         else:
             species_a1, species_a2 = species_a
         partition = {}
-        for s in species.unique().sort()[0]:
+        for s in self._d(_cpu(species).unique()).sort()[0]:
+            # TODO: change this to species.unique() once unique is supported GPU
             s = s.item()
             mask_r = (species_r == s)
             # TODO: can we remove this if pytorch support 0 size tensors?
