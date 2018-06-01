@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import numpy
 from . import buildin_const_file, default_dtype, default_device
 from .benchmarked import BenchmarkedModule
 
@@ -82,27 +81,6 @@ class AEVComputer(BenchmarkedModule):
         self.Zeta = self.Zeta.view(1, -1, 1, 1)
         self.ShfA = self.ShfA.view(1, 1, -1, 1)
         self.ShfZ = self.ShfZ.view(1, 1, 1, -1)
-
-    @staticmethod
-    def _cutoff_cosine(distances, cutoff):
-        """Compute the elementwise cutoff cosine function
-
-        The cutoff cosine function is define in https://arxiv.org/pdf/1610.08935.pdf equation 2
-
-        Parameters
-        ----------
-        distances : torch.Tensor
-            The pytorch tensor that stores Rij values. This tensor can have any shape since the cutoff
-            cosine function is computed elementwise.
-        cutoff : float
-            The cutoff radius, i.e. the Rc in the equation. For any Rij > Rc, the function value is defined to be zero.
-
-        Returns
-        -------
-        torch.Tensor
-            The tensor of the same shape as `distances` that stores the computed function values.
-        """
-        return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
 
     def sort_by_species(self, data, species):
         """Sort the data by its species according to the order in `self.species`

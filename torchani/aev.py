@@ -1,8 +1,29 @@
 import torch
 import itertools
+import numpy
 from .aev_base import AEVComputer
 from . import buildin_const_file, default_dtype, default_device
 from . import _utils
+
+def _cutoff_cosine(distances, cutoff):
+    """Compute the elementwise cutoff cosine function
+
+    The cutoff cosine function is define in https://arxiv.org/pdf/1610.08935.pdf equation 2
+
+    Parameters
+    ----------
+    distances : torch.Tensor
+        The pytorch tensor that stores Rij values. This tensor can have any shape since the cutoff
+        cosine function is computed elementwise.
+    cutoff : float
+        The cutoff radius, i.e. the Rc in the equation. For any Rij > Rc, the function value is defined to be zero.
+
+    Returns
+    -------
+    torch.Tensor
+        The tensor of the same shape as `distances` that stores the computed function values.
+    """
+    return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
 
 def _species_indices(species):
     """Get the beginning and ending indices for all species
@@ -74,7 +95,7 @@ class SortedAEV(AEVComputer):
             A tensor of shape (..., neighbors, `radial_sublength`) storing the subAEVs.
         """
         distances = distances.unsqueeze(-1).unsqueeze(-1)
-        fc = AEVComputer._cutoff_cosine(distances, self.Rcr)
+        fc = _cutoff_cosine(distances, self.Rcr)
         # Note that in the equation in the paper there is no 0.25 coefficient, but in NeuroChem there is such a coefficient. We choose to be consistent with NeuroChem instead of the paper here.
         ret = 0.25 * torch.exp(-self.EtaR * (distances - self.ShfR)**2) * fc
         return ret.view(*ret.shape[:-2], -1)
@@ -111,8 +132,8 @@ class SortedAEV(AEVComputer):
                 vectors1, vectors2, dim=-5)
         angles = torch.acos(cos_angles)
 
-        fcj1 = AEVComputer._cutoff_cosine(distances1, self.Rca)
-        fcj2 = AEVComputer._cutoff_cosine(distances2, self.Rca)
+        fcj1 = _cutoff_cosine(distances1, self.Rca)
+        fcj2 = _cutoff_cosine(distances2, self.Rca)
         factor1 = ((1 + torch.cos(angles - self.ShfZ)) / 2) ** self.Zeta
         factor2 = torch.exp(-self.EtaA *
                             ((distances1 + distances2) / 2 - self.ShfA) ** 2)

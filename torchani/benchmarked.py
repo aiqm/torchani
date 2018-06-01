@@ -2,7 +2,7 @@ import torch
 import timeit
 
 
-class BenchmarkedModule(torch.nn.Module):
+class BenchmarkedModule(torch.jit.ScriptModule):
     """Module with member function benchmarking support.
 
     The benchmarking is done by wrapping the original member function with
