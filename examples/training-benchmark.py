@@ -6,6 +6,7 @@ import math
 import timeit
 
 import configs
+import functools
 configs.benchmark = True
 from common import *
 
@@ -15,6 +16,21 @@ dataloader = torch.utils.data.DataLoader(ds, batch_sampler=sampler, collate_fn=t
 
 optimizer = torch.optim.Adam(model.parameters(), amsgrad=True)
 
+def benchmark(timer, index):
+    def wrapper(fun):
+        @functools.wraps(fun)
+        def wrapped(*args, **kwargs):
+            start = timeit.default_timer()
+            ret = fun(*args, **kwargs)
+            end = timeit.default_timer()
+            timer[index] += end - start
+            return ret
+        return wrapped
+    return wrapper
+
+timer = {'backward':0}
+
+@benchmark(timer, 'backward')
 def optimize_step(a):
     mse = a.avg()
     optimizer.zero_grad()
@@ -33,7 +49,6 @@ for batch in tqdm.tqdm(dataloader, total=len(sampler)):
     optimize_step(a)
 
 elapsed = round(timeit.default_timer() - start, 2)
-print('Epoch time:', elapsed)
 print('Radial terms:', aev_computer.timers['radial terms'])
 print('Angular terms:', aev_computer.timers['angular terms'])
 print('Terms and indices:', aev_computer.timers['terms and indices'])
@@ -42,3 +57,5 @@ print('Assemble:', aev_computer.timers['assemble'])
 print('Total AEV:', aev_computer.timers['total'])
 print('NN:', model.timers['nn'])
 print('Total Forward:', model.timers['forward'])
+print('Total Backward:', timer['backward'])
+print('Epoch time:', elapsed)
