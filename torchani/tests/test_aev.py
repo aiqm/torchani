@@ -21,12 +21,13 @@ class TestAEV(unittest.TestCase):
         coordinates, species = self.aev.sort_by_species(coordinates, species)
         radial_neurochem, angular_neurochem = self.ncaev(coordinates, species)
         radial_torchani, angular_torchani = self.aev(coordinates, species)
+        print(radial_neurochem.shape(), radial_torchani.shape())
         radial_diff = radial_neurochem - radial_torchani
         radial_max_error = torch.max(torch.abs(radial_diff))
         angular_diff = angular_neurochem - angular_torchani
         angular_max_error = torch.max(torch.abs(angular_diff))
         if radial_max_error > self.tolerance:
-            print(species)
+            print('radial aev for', species)
             for i in range(len(species)):
                 r1 = radial_neurochem[0, i, :]
                 r2 = radial_torchani[0, i, :]
@@ -36,7 +37,7 @@ class TestAEV(unittest.TestCase):
                     print(torch.stack([r1, r2, r1-r2], dim=1))
                     break
         if angular_max_error > self.tolerance:
-            print(species)
+            print('angular aev for', species)
             for i in range(len(species)):
                 r1 = angular_neurochem[0, i, :]
                 r2 = angular_torchani[0, i, :]

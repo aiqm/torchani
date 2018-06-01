@@ -223,7 +223,7 @@ class SortedAEV(AEVComputer):
         species_r = species[indices_r]
         species_a = species[indices_a]
         species_a = _utils.combinations(species_a, -1)
-        if indices_a is None:
+        if species_a is None:
             # TODO: can we remove this if pytorch support 0 size tensors?
             species_a1, species_a2 = None, None
         else:
@@ -279,7 +279,7 @@ class SortedAEV(AEVComputer):
         angular_aevs = []
         zero_angular_subaev = torch.zeros(
             conformations, atoms, self.angular_sublength, dtype=self.dtype, device=self.device)
-        for s1, s2 in itertools.combinations_with_replacement(self.species, 2):
+        for s1, s2 in itertools.combinations_with_replacement(range(len(self.species)), 2):
             # TODO: can we remove this if pytorch support 0 size tensors?
             if s1 in partition and s2 in partition and angular_terms is not None:
                 mask1 = partition[s1][1]
