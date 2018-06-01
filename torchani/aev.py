@@ -163,14 +163,14 @@ class SortedAEV(AEVComputer):
             Tensor of shape (conformations, atoms, neighbors, `radial_sublength`) for
             the (unsummed) radial subAEV terms.
         angular_terms : torch.Tensor
-            Tensor of shape (conformations, atoms, pairs, `radial_sublength`) for the
+            Tensor of shape (conformations, atoms, pairs, `angular_sublength`) for the
             (unsummed) angular subAEV terms.
         indices_r : torch.Tensor
             Tensor of shape (conformations, atoms, neighbors). Let l = indices_r(i,j,k),
             then this means that radial_terms(i,j,k,:) is in the subAEV term of conformation
             i between atom j and atom l. 
         indices_a : torch.Tensor
-            Same as indices_r, except that the cutoff radius is Rca rather than Rcr.
+            Same as indices_r, except that the cutoff radius is Rca instead of Rcr.
         """
 
         vec = coordinates.unsqueeze(2) - coordinates.unsqueeze(1)
@@ -204,16 +204,22 @@ class SortedAEV(AEVComputer):
         Parameters
         ----------
         indices_r : torch.Tensor
-            See the return value of `self.terms_and_indices`
+            Tensor of shape (conformations, atoms, neighbors). Let l = indices_r(i,j,k),
+            then this means that radial_terms(i,j,k,:) is in the subAEV term of conformation
+            i between atom j and atom l. 
         indices_a : torch.Tensor
-            See the return value of `self.terms_and_indices`
+            Same as indices_r, except that the cutoff radius is Rca instead of Rcr.
         species : torch.Tensor
             Long tensor for the species, where a value k means the species is
             the same as self.species[k].
 
         Returns
         -------
-        dict
+        (mask_r, partition_a)
+        mask_r : torch.Tensor
+            Tensor of shape (conformations, atoms, neighbors, present species) storing
+            the mask for each species.
+        partition_a : dict
             The keys of the dict are species appears in the molecules. The values of the
             dict are a torch.Tensor triple of (mask_r, mask_a1, mask_a2), where mask_r is
             has the mask of `indices_r` where it has the specified species, and mask_a1
@@ -228,27 +234,37 @@ class SortedAEV(AEVComputer):
             species_a1, species_a2 = None, None
         else:
             species_a1, species_a2 = species_a
-        partition = {}
-        for s in self._d(_cpu(species).unique()).sort()[0]:
-            # TODO: change this to species.unique() once unique is supported GPU
-            s = s.item()
-            mask_r = (species_r == s)
+        
+        present_species = self._d(_cpu(species).unique()).sort()[0]
+
+        # compute partition for radial parts, the result is mask_r, a tensor
+        # of shape (conformations, atoms, neighbors, present species), that
+        # stores the mask for each species.
+        mask_r = (species_r.unsqueeze(-1) == torch.arange(len(self.species)))
+
+        partition_a = {}
+        for s in present_species:
             # TODO: can we remove this if pytorch support 0 size tensors?
             mask_a1 = (species_a1 == s) if species_a1 is not None else None
             # TODO: can we remove this if pytorch support 0 size tensors?
             mask_a2 = (species_a2 == s) if species_a2 is not None else None
-            partition[s] = (mask_r, mask_a1, mask_a2)
-        return partition
+            partition_a[s] = (mask_a1, mask_a2)
+        return mask_r, partition_a
 
-    def assemble(self, radial_terms, angular_terms, partition):
+    def assemble(self, radial_terms, angular_terms, mask_r, partition):
         """Assemble radial and angular AEV from computed terms according to the given partition information.
 
         Parameters
         ----------
         radial_terms : torch.Tensor
-            See the return value of `self.terms_and_indices`
+            Tensor of shape (conformations, atoms, neighbors, `radial_sublength`) for
+            the (unsummed) radial subAEV terms.
         angular_terms : torch.Tensor
-            See the return value of `self.terms_and_indices`
+            Tensor of shape (conformations, atoms, pairs, `angular_sublength`) for the
+            (unsummed) angular subAEV terms.
+        mask_r : torch.Tensor
+            Tensor of shape (conformations, atoms, neighbors, present species) storing
+            the mask for each species.
         partition : dict
             See the return value of `self.partition`
 
@@ -263,17 +279,9 @@ class SortedAEV(AEVComputer):
         atoms = radial_terms.shape[1]
 
         # assemble radial subaev
-        radial_aevs = []
-        zero_radial_subaev = torch.zeros(
-            conformations, atoms, self.radial_sublength, dtype=self.dtype, device=self.device)
-        for s in range(len(self.species)):
-            if s in partition:
-                mask = partition[s][0]
-                mask = mask.type(self.dtype).unsqueeze(-1)
-                subaev = (radial_terms * mask).sum(-2)
-            else:
-                subaev = zero_radial_subaev
-            radial_aevs.append(subaev)
+        present_radial_aevs = (radial_terms.unsqueeze(-2) * mask_r.unsqueeze(-1)).sum(-3)
+        """Tensor of shape (conformations, atoms, present species, radial_length)"""
+        radial_aevs = present_radial_aevs.view(*radial_terms.shape[:2], -1)
 
         # assemble angular subaev
         angular_aevs = []
@@ -299,8 +307,8 @@ class SortedAEV(AEVComputer):
         species = self.species_to_tensor(species)
         radial_terms, angular_terms, indices_r, indices_a = self.terms_and_indices(
             coordinates)
-        partition = self.partition(indices_r, indices_a, species)
-        return self.assemble(radial_terms, angular_terms, partition)
+        mask_r, partition_a = self.partition(indices_r, indices_a, species)
+        return self.assemble(radial_terms, angular_terms, mask_r, partition_a)
 
     def export_radial_subaev_onnx(self, filename):
         """Export the operation that compute radial subaev into onnx format
