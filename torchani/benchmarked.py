@@ -1,5 +1,6 @@
 import torch
 import timeit
+import functools
 
 
 class BenchmarkedModule(torch.jit.ScriptModule):
@@ -65,6 +66,7 @@ class BenchmarkedModule(torch.jit.ScriptModule):
         for key in keys:
             self.timers[key] = 0
 
+        @functools.wraps(fun)
         def wrapped(*args, **kwargs):
             start = timeit.default_timer()
             ret = fun(*args, **kwargs)
