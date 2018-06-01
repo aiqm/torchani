@@ -5,7 +5,7 @@ from .aev_base import AEVComputer
 from . import buildin_const_file, default_dtype, default_device
 from . import _utils
 
-def _cpu(self, x):
+def _cpu(x):
     # TODO: remove this when pytorch support `torch.unique` on GPU
     return x.to('cpu')
 
