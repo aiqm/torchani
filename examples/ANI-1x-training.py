@@ -17,19 +17,26 @@ batch_chunks = 1024 // chunk_size
 with open('data/dataset.dat', 'rb') as f:
     training, validation, testing = pickle.load(f)
 
-    training_sampler = torchani.data.BatchSampler(training, chunk_size, batch_chunks)
-    validation_sampler = torchani.data.BatchSampler(validation, chunk_size, batch_chunks)
-    testing_sampler = torchani.data.BatchSampler(testing, chunk_size, batch_chunks)
+    training_sampler = torchani.data.BatchSampler(
+        training, chunk_size, batch_chunks)
+    validation_sampler = torchani.data.BatchSampler(
+        validation, chunk_size, batch_chunks)
+    testing_sampler = torchani.data.BatchSampler(
+        testing, chunk_size, batch_chunks)
 
-    training_dataloader = torch.utils.data.DataLoader(training, batch_sampler=training_sampler, collate_fn=torchani.data.collate)
-    validation_dataloader = torch.utils.data.DataLoader(validation, batch_sampler=validation_sampler, collate_fn=torchani.data.collate)
-    testing_dataloader = torch.utils.data.DataLoader(testing, batch_sampler=testing_sampler, collate_fn=torchani.data.collate)
+    training_dataloader = torch.utils.data.DataLoader(
+        training, batch_sampler=training_sampler, collate_fn=torchani.data.collate)
+    validation_dataloader = torch.utils.data.DataLoader(
+        validation, batch_sampler=validation_sampler, collate_fn=torchani.data.collate)
+    testing_dataloader = torch.utils.data.DataLoader(
+        testing, batch_sampler=testing_sampler, collate_fn=torchani.data.collate)
 
 writer = SummaryWriter()
 
 optimizer = torch.optim.Adam(model.parameters(), amsgrad=True)
 step = 0
 epoch = 0
+
 
 def subset_rmse(subset_dataloader):
     a = Averager()
@@ -46,6 +53,7 @@ def subset_rmse(subset_dataloader):
     rmse = math.sqrt(mse) * 627.509
     return rmse
 
+
 def optimize_step(a):
     mse = a.avg()
     rmse = math.sqrt(mse.item()) * 627.509
@@ -54,6 +62,7 @@ def optimize_step(a):
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+
 
 best_validation_rmse = math.inf
 best_epoch = 0
@@ -72,20 +81,22 @@ while True:
 
     validation_rmse = subset_rmse(validation_dataloader)
     elapsed = round(timeit.default_timer() - start, 2)
-    print('Epoch:', epoch, 'time:', elapsed, 'validation rmse:', validation_rmse)
+    print('Epoch:', epoch, 'time:', elapsed,
+          'validation rmse:', validation_rmse)
     writer.add_scalar('validation_rmse_vs_epoch', validation_rmse, epoch)
     writer.add_scalar('epoch_vs_step', epoch, step)
     writer.add_scalar('time_vs_epoch', elapsed, epoch)
-    
+
     if validation_rmse < best_validation_rmse:
         best_validation_rmse = validation_rmse
         best_epoch = epoch
-        writer.add_scalar('best_validation_rmse_vs_epoch', best_validation_rmse, best_epoch)
+        writer.add_scalar('best_validation_rmse_vs_epoch',
+                          best_validation_rmse, best_epoch)
     elif epoch - best_epoch > 1000:
         print('Stop at best validation rmse:', best_validation_rmse)
         break
 
     epoch += 1
-    
+
 testing_rmse = subset_rmse(testing_dataloader)
 print('Test rmse:', validation_rmse)

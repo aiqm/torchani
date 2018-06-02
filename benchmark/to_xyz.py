@@ -16,12 +16,13 @@ for i in mols:
             conformations = coordinates.shape[0]
             atoms = len(species)
             for i in range(conformations):
-                fxyz.write('{}\n{}\n'.format(atoms, 'smiles:{}\tconformation:{}'.format(s,i)))
+                fxyz.write('{}\n{}\n'.format(
+                    atoms, 'smiles:{}\tconformation:{}'.format(s, i)))
                 for j in range(atoms):
                     ss = species[j]
-                    xyz = coordinates[i,j,:]
+                    xyz = coordinates[i, j, :]
                     x = xyz[0]
                     y = xyz[1]
                     z = xyz[2]
-                    fxyz.write('{} {} {} {}\n'.format(ss,x,y,z))
+                    fxyz.write('{} {} {} {}\n'.format(ss, x, y, z))
             break

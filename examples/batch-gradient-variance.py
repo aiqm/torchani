@@ -10,12 +10,13 @@ import os
 import pickle
 
 
-if len(sys.argv)>=2:
+if len(sys.argv) >= 2:
     configs.device = torch.device(sys.argv[1])
 from common import *
 
 ds = torchani.data.load_dataset(configs.data_path)
-optimizer = torch.optim.Adam(model.parameters())  # just to conveniently zero grads
+# just to conveniently zero grads
+optimizer = torch.optim.Adam(model.parameters())
 
 hyperparams = [  # (chunk size, batch chunks)
     (64, 4),
@@ -38,11 +39,13 @@ hyperparams = [  # (chunk size, batch chunks)
     (2048, 1),
 ]
 
+
 def grad_or_zero(parameter):
     if parameter.grad is not None:
         return parameter.grad.reshape(-1)
     else:
         return torch.zeros_like(parameter.reshape(-1))
+
 
 def batch_gradient(batch):
     a = Averager()
@@ -59,12 +62,15 @@ def batch_gradient(batch):
     grads = torch.cat(grads)
     return grads
 
+
 def compute(chunk_size, batch_chunks):
     sampler = torchani.data.BatchSampler(ds, chunk_size, batch_chunks)
-    dataloader = torch.utils.data.DataLoader(ds, batch_sampler=sampler, collate_fn=torchani.data.collate)
+    dataloader = torch.utils.data.DataLoader(
+        ds, batch_sampler=sampler, collate_fn=torchani.data.collate)
 
     model_file = 'data/model.pt'
-    model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
+    model.load_state_dict(torch.load(
+        model_file, map_location=lambda storage, loc: storage))
 
     ag = Averager()  # avg(grad)
     agsqr = Averager()  # avg(grad^2)
@@ -76,6 +82,7 @@ def compute(chunk_size, batch_chunks):
     agsqr = agsqr.avg()
     with open('data/avg-{}-{}.dat'.format(chunk_size, batch_chunks), 'wb') as f:
         pickle.dump((ag, agsqr), f)
+
 
 chunk_size = int(sys.argv[2])
 batch_chunks = int(sys.argv[3])

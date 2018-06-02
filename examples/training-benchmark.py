@@ -12,9 +12,11 @@ from common import *
 
 ds = torchani.data.load_dataset(configs.data_path)
 sampler = torchani.data.BatchSampler(ds, 256, 4)
-dataloader = torch.utils.data.DataLoader(ds, batch_sampler=sampler, collate_fn=torchani.data.collate, num_workers=20)
+dataloader = torch.utils.data.DataLoader(
+    ds, batch_sampler=sampler, collate_fn=torchani.data.collate, num_workers=20)
 
 optimizer = torch.optim.Adam(model.parameters(), amsgrad=True)
+
 
 def benchmark(timer, index):
     def wrapper(fun):
@@ -28,7 +30,9 @@ def benchmark(timer, index):
         return wrapped
     return wrapper
 
-timer = {'backward':0}
+
+timer = {'backward': 0}
+
 
 @benchmark(timer, 'backward')
 def optimize_step(a):
@@ -36,6 +40,7 @@ def optimize_step(a):
     optimizer.zero_grad()
     mse.backward()
     optimizer.step()
+
 
 start = timeit.default_timer()
 for batch in tqdm.tqdm(dataloader, total=len(sampler)):
