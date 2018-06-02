@@ -297,7 +297,7 @@ class SortedAEV(AEVComputer):
             conformations, atoms, self.angular_sublength, dtype=self.dtype, device=self.device)
         for s1, s2 in itertools.combinations_with_replacement(range(len(self.species)), 2):
             # TODO: can we remove this if pytorch support 0 size tensors?
-            if s1 in present_species and s2 in present_species and mask_a is not None:
+            if s1 in rev_indices and s2 in rev_indices and mask_a is not None:
                 i1 = rev_indices[s1]
                 i2 = rev_indices[s2]
                 mask = mask_a[..., i1, i2].unsqueeze(-1).type(self.dtype)
