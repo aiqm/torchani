@@ -5,9 +5,11 @@ from .aev_base import AEVComputer
 from . import buildin_const_file, default_dtype, default_device
 from . import _utils
 
+
 def _cpu(x):
     # TODO: remove this when pytorch support `torch.unique` on GPU
     return x.to('cpu')
+
 
 def _cutoff_cosine(distances, cutoff):
     """Compute the elementwise cutoff cosine function
@@ -28,6 +30,7 @@ def _cutoff_cosine(distances, cutoff):
         The tensor of the same shape as `distances` that stores the computed function values.
     """
     return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
+
 
 class SortedAEV(AEVComputer):
     """The AEV computer assuming input coordinates sorted by species
@@ -73,7 +76,7 @@ class SortedAEV(AEVComputer):
             Long tensor for the species, where a value k means the species is
             the same as self.species[k].
         """
-        indices = {self.species[i]:i for i in range(len(self.species))}
+        indices = {self.species[i]: i for i in range(len(self.species))}
         values = [indices[i] for i in species]
         return torch.tensor(values, dtype=torch.long, device=self.device)
 
@@ -234,16 +237,18 @@ class SortedAEV(AEVComputer):
             species_a1, species_a2 = None, None
         else:
             species_a1, species_a2 = species_a
-        
+
         present_species = self._d(_cpu(species).unique()).sort()[0]
 
         # compute partition for radial parts, the result is mask_r, a tensor
         # of shape (conformations, atoms, neighbors, present species), that
         # stores the mask for each species.
-        mask_r = (species_r.unsqueeze(-1) == torch.arange(len(self.species)))
+        mask_r = (species_r.unsqueeze(-1) ==
+                  torch.arange(len(self.species), device=self.device))
 
         partition_a = {}
         for s in present_species:
+            s = s.item()
             # TODO: can we remove this if pytorch support 0 size tensors?
             mask_a1 = (species_a1 == s) if species_a1 is not None else None
             # TODO: can we remove this if pytorch support 0 size tensors?
@@ -251,7 +256,7 @@ class SortedAEV(AEVComputer):
             partition_a[s] = (mask_a1, mask_a2)
         return mask_r, partition_a
 
-    def assemble(self, radial_terms, angular_terms, mask_r, partition):
+    def assemble(self, radial_terms, angular_terms, mask_r, partition_a):
         """Assemble radial and angular AEV from computed terms according to the given partition information.
 
         Parameters
@@ -265,7 +270,7 @@ class SortedAEV(AEVComputer):
         mask_r : torch.Tensor
             Tensor of shape (conformations, atoms, neighbors, present species) storing
             the mask for each species.
-        partition : dict
+        partition_a : dict
             See the return value of `self.partition`
 
         Returns
@@ -279,7 +284,8 @@ class SortedAEV(AEVComputer):
         atoms = radial_terms.shape[1]
 
         # assemble radial subaev
-        present_radial_aevs = (radial_terms.unsqueeze(-2) * mask_r.unsqueeze(-1)).sum(-3)
+        present_radial_aevs = (radial_terms.unsqueeze(-2)
+                               * mask_r.unsqueeze(-1).type(self.dtype)).sum(-3)
         """Tensor of shape (conformations, atoms, present species, radial_length)"""
         radial_aevs = present_radial_aevs.view(*radial_terms.shape[:2], -1)
 
@@ -289,11 +295,11 @@ class SortedAEV(AEVComputer):
             conformations, atoms, self.angular_sublength, dtype=self.dtype, device=self.device)
         for s1, s2 in itertools.combinations_with_replacement(range(len(self.species)), 2):
             # TODO: can we remove this if pytorch support 0 size tensors?
-            if s1 in partition and s2 in partition and angular_terms is not None:
-                mask1 = partition[s1][1]
-                mask2 = partition[s2][2]
-                mask1_rev = partition[s2][1]
-                mask2_rev = partition[s1][2]
+            if s1 in partition_a and s2 in partition_a and angular_terms is not None:
+                mask1 = partition_a[s1][0]
+                mask2 = partition_a[s2][1]
+                mask1_rev = partition_a[s2][0]
+                mask2_rev = partition_a[s1][1]
                 mask = (mask1 * mask2 + mask1_rev * mask2_rev) > 0
                 mask = mask.type(self.dtype).unsqueeze(-1)
                 subaev = (angular_terms * mask).sum(-2)
@@ -301,7 +307,7 @@ class SortedAEV(AEVComputer):
                 subaev = zero_angular_subaev
             angular_aevs.append(subaev)
 
-        return torch.cat(radial_aevs, dim=2), torch.cat(angular_aevs, dim=2)
+        return radial_aevs, torch.cat(angular_aevs, dim=2)
 
     def forward(self, coordinates, species):
         species = self.species_to_tensor(species)
