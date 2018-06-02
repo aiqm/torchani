@@ -290,10 +290,7 @@ class SortedAEV(AEVComputer):
 
         # assemble angular subaev
         rev_indices = {present_species[i].item(): i
-                           for i in range(len(present_species))}
-        if angular_terms is not None:  #TODO: remove this when pytorch support 0 size tensors
-            present_angular_aevs = (angular_terms.unsqueeze(-2).unsqueeze(-2)
-                                    * mask_a.unsqueeze(-1).type(self.dtype)).sum(-4)
+                       for i in range(len(present_species))}
         """Tensor of shape (conformations, atoms, present species, present species, angular_length)"""
         angular_aevs = []
         zero_angular_subaev = torch.zeros(
@@ -304,7 +301,7 @@ class SortedAEV(AEVComputer):
                 i1 = rev_indices[s1]
                 i2 = rev_indices[s2]
                 mask = mask_a[..., i1, i2].unsqueeze(-1).type(self.dtype)
-                subaev = angular_terms * mask
+                subaev = (angular_terms * mask).sum(-2)
             else:
                 subaev = zero_angular_subaev
             angular_aevs.append(subaev)
