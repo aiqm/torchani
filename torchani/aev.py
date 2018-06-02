@@ -218,45 +218,41 @@ class SortedAEV(AEVComputer):
 
         Returns
         -------
-        (mask_r, partition_a)
+        (present_species, mask_r, mask_a1, mask_a2)
+        present_species : torch.Tensor
+            Long tensor for species of atoms present in the molecules.
         mask_r : torch.Tensor
             Tensor of shape (conformations, atoms, neighbors, present species) storing
             the mask for each species.
-        partition_a : dict
-            The keys of the dict are species appears in the molecules. The values of the
-            dict are a torch.Tensor triple of (mask_r, mask_a1, mask_a2), where mask_r is
-            has the mask of `indices_r` where it has the specified species, and mask_a1
-            (mask_a2) are the masks of combinations of `indices_a` where the first (second)
-            element of the pair has the specified species.
+        mask_a : torch.Tensor
+            Tensor of shape (conformations, atoms, pairs, present species, present species)
+            storing the mask for each pair.
         """
         species_r = species[indices_r]
         species_a = species[indices_a]
         species_a = _utils.combinations(species_a, -1)
-        if species_a is None:
+        if species_a is not None:
             # TODO: can we remove this if pytorch support 0 size tensors?
-            species_a1, species_a2 = None, None
-        else:
             species_a1, species_a2 = species_a
 
         present_species = self._d(_cpu(species).unique()).sort()[0]
 
-        # compute partition for radial parts, the result is mask_r, a tensor
-        # of shape (conformations, atoms, neighbors, present species), that
-        # stores the mask for each species.
         mask_r = (species_r.unsqueeze(-1) ==
                   torch.arange(len(self.species), device=self.device))
 
-        partition_a = {}
-        for s in present_species:
-            s = s.item()
-            # TODO: can we remove this if pytorch support 0 size tensors?
-            mask_a1 = (species_a1 == s) if species_a1 is not None else None
-            # TODO: can we remove this if pytorch support 0 size tensors?
-            mask_a2 = (species_a2 == s) if species_a2 is not None else None
-            partition_a[s] = (mask_a1, mask_a2)
-        return mask_r, partition_a
+        if species_a is not None:
+            mask_a1 = (species_a1.unsqueeze(-1) ==
+                       present_species).unsqueeze(-1)
+            mask_a2 = (species_a2.unsqueeze(-1).unsqueeze(-1)
+                       == present_species)
+            mask = mask_a1 * mask_a2
+            mask_rev = mask.permute(0, 1, 2, 4, 3)
+            mask_a = (mask + mask_rev) > 0
+            return present_species, mask_r, mask_a
+        else:
+            return present_species, mask_r, None
 
-    def assemble(self, radial_terms, angular_terms, mask_r, partition_a):
+    def assemble(self, radial_terms, angular_terms, present_species, mask_r, mask_a):
         """Assemble radial and angular AEV from computed terms according to the given partition information.
 
         Parameters
@@ -267,11 +263,14 @@ class SortedAEV(AEVComputer):
         angular_terms : torch.Tensor
             Tensor of shape (conformations, atoms, pairs, `angular_sublength`) for the
             (unsummed) angular subAEV terms.
+        present_species : torch.Tensor
+            Long tensor for species of atoms present in the molecules.
         mask_r : torch.Tensor
             Tensor of shape (conformations, atoms, neighbors, present species) storing
             the mask for each species.
-        partition_a : dict
-            See the return value of `self.partition`
+        mask_a : torch.Tensor
+            Tensor of shape (conformations, atoms, pairs, present species, present species)
+            storing the mask for each pair.
 
         Returns
         -------
@@ -290,19 +289,20 @@ class SortedAEV(AEVComputer):
         radial_aevs = present_radial_aevs.view(*radial_terms.shape[:2], -1)
 
         # assemble angular subaev
+        rev_indices = {present_species[i].item(
+        ): i for i in range(len(present_species))}
+        present_angular_aevs = (angular_terms.unsqueeze(-2).unsqueeze(-2)
+                                * mask_a.unsqueeze(-1).type(self.dtype)).sum(-4)
+        """Tensor of shape (conformations, atoms, present species, present species, angular_length)"""
         angular_aevs = []
         zero_angular_subaev = torch.zeros(
             conformations, atoms, self.angular_sublength, dtype=self.dtype, device=self.device)
         for s1, s2 in itertools.combinations_with_replacement(range(len(self.species)), 2):
             # TODO: can we remove this if pytorch support 0 size tensors?
-            if s1 in partition_a and s2 in partition_a and angular_terms is not None:
-                mask1 = partition_a[s1][0]
-                mask2 = partition_a[s2][1]
-                mask1_rev = partition_a[s2][0]
-                mask2_rev = partition_a[s1][1]
-                mask = (mask1 * mask2 + mask1_rev * mask2_rev) > 0
-                mask = mask.type(self.dtype).unsqueeze(-1)
-                subaev = (angular_terms * mask).sum(-2)
+            if s1 in present_species and s2 in present_species and mask_a is not None:
+                i1 = rev_indices[s1]
+                i2 = rev_indices[s2]
+                subaev = present_angular_aevs[..., i1, i2, :]
             else:
                 subaev = zero_angular_subaev
             angular_aevs.append(subaev)
@@ -313,8 +313,9 @@ class SortedAEV(AEVComputer):
         species = self.species_to_tensor(species)
         radial_terms, angular_terms, indices_r, indices_a = self.terms_and_indices(
             coordinates)
-        mask_r, partition_a = self.partition(indices_r, indices_a, species)
-        return self.assemble(radial_terms, angular_terms, mask_r, partition_a)
+        present_species, mask_r, mask_a1, mask_a2 = self.partition(
+            indices_r, indices_a, species)
+        return self.assemble(radial_terms, angular_terms, present_species, mask_r, mask_a1, mask_a2)
 
     def export_radial_subaev_onnx(self, filename):
         """Export the operation that compute radial subaev into onnx format
