@@ -289,10 +289,11 @@ class SortedAEV(AEVComputer):
         radial_aevs = present_radial_aevs.view(*radial_terms.shape[:2], -1)
 
         # assemble angular subaev
-        rev_indices = {present_species[i].item(
-        ): i for i in range(len(present_species))}
-        present_angular_aevs = (angular_terms.unsqueeze(-2).unsqueeze(-2)
-                                * mask_a.unsqueeze(-1).type(self.dtype)).sum(-4)
+        rev_indices = {present_species[i].item(): i
+                           for i in range(len(present_species))}
+        if angular_terms is not None:  #TODO: remove this when pytorch support 0 size tensors
+            present_angular_aevs = (angular_terms.unsqueeze(-2).unsqueeze(-2)
+                                    * mask_a.unsqueeze(-1).type(self.dtype)).sum(-4)
         """Tensor of shape (conformations, atoms, present species, present species, angular_length)"""
         angular_aevs = []
         zero_angular_subaev = torch.zeros(
@@ -313,9 +314,9 @@ class SortedAEV(AEVComputer):
         species = self.species_to_tensor(species)
         radial_terms, angular_terms, indices_r, indices_a = self.terms_and_indices(
             coordinates)
-        present_species, mask_r, mask_a1, mask_a2 = self.partition(
+        present_species, mask_r, mask_a = self.partition(
             indices_r, indices_a, species)
-        return self.assemble(radial_terms, angular_terms, present_species, mask_r, mask_a1, mask_a2)
+        return self.assemble(radial_terms, angular_terms, present_species, mask_r, mask_a)
 
     def export_radial_subaev_onnx(self, filename):
         """Export the operation that compute radial subaev into onnx format
