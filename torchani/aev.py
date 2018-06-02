@@ -303,7 +303,8 @@ class SortedAEV(AEVComputer):
             if s1 in present_species and s2 in present_species and mask_a is not None:
                 i1 = rev_indices[s1]
                 i2 = rev_indices[s2]
-                subaev = present_angular_aevs[..., i1, i2, :]
+                mask = mask_a[..., i1, i2].unsqueeze(-1).type(self.dtype)
+                subaev = angular_terms * mask
             else:
                 subaev = zero_angular_subaev
             angular_aevs.append(subaev)
