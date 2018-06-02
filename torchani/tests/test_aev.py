@@ -26,7 +26,7 @@ class TestAEV(unittest.TestCase):
         angular_diff = angular_neurochem - angular_torchani
         angular_max_error = torch.max(torch.abs(angular_diff))
         if radial_max_error > self.tolerance:
-            print(species)
+            print('radial aev for', species)
             for i in range(len(species)):
                 r1 = radial_neurochem[0, i, :]
                 r2 = radial_torchani[0, i, :]
@@ -36,7 +36,7 @@ class TestAEV(unittest.TestCase):
                     print(torch.stack([r1, r2, r1-r2], dim=1))
                     break
         if angular_max_error > self.tolerance:
-            print(species)
+            print('angular aev for', species)
             for i in range(len(species)):
                 r1 = angular_neurochem[0, i, :]
                 r2 = angular_torchani[0, i, :]

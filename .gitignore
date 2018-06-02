@@ -12,3 +12,4 @@ a.out
 /*.h5
 /*.hdf5
 .ipynb_checkpoints
+benchmark_xyz

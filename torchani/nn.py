@@ -10,7 +10,7 @@ from . import buildin_network_dir
 from .benchmarked import BenchmarkedModule
 
 
-class PerSpeciesFromNeuroChem(torch.nn.Module):
+class PerSpeciesFromNeuroChem(torch.jit.ScriptModule):
     """Subclass of `torch.nn.Module` for the per atom aev->y transformation, loaded from NeuroChem network dir.
 
     Attributes

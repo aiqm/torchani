@@ -1,8 +1,9 @@
 import torch
 import timeit
+import functools
 
 
-class BenchmarkedModule(torch.nn.Module):
+class BenchmarkedModule(torch.jit.ScriptModule):
     """Module with member function benchmarking support.
 
     The benchmarking is done by wrapping the original member function with
@@ -65,6 +66,7 @@ class BenchmarkedModule(torch.nn.Module):
         for key in keys:
             self.timers[key] = 0
 
+        @functools.wraps(fun)
         def wrapped(*args, **kwargs):
             start = timeit.default_timer()
             ret = fun(*args, **kwargs)
