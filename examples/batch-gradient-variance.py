@@ -17,27 +17,6 @@ from common import *
 ds = torchani.data.load_dataset(configs.data_path)
 optimizer = torch.optim.Adam(model.parameters())  # just to conveniently zero grads
 
-hyperparams = [  # (chunk size, batch chunks)
-    (64, 4),
-    (64, 8),
-    (64, 16),
-    (64, 32),
-    (128, 2),
-    (128, 4),
-    (128, 8),
-    (128, 16),
-    (256, 1),
-    (256, 2),
-    (256, 4),
-    (256, 8),
-    (512, 1),
-    (512, 2),
-    (512, 4),
-    (1024, 1),
-    (1024, 2),
-    (2048, 1),
-]
-
 def grad_or_zero(parameter):
     if parameter.grad is not None:
         return parameter.grad.reshape(-1)
