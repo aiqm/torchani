@@ -41,7 +41,7 @@ checkpoint = 'data/checkpoint.pt'
 
 def model_saver():
     while True:
-        model = queue.get()
+        state_dict = queue.get()
         torch.save(model.state_dict(), checkpoint)
 
 
@@ -109,7 +109,7 @@ while True:
         best_epoch = epoch
         writer.add_scalar('best_validation_rmse_vs_epoch',
                           best_validation_rmse, best_epoch)
-        queue.put(deepcopy(model))
+        queue.put(deepcopy(model.state_dict()))
     elif epoch - best_epoch > 1000:
         print('Stop at best validation rmse:', best_validation_rmse)
         break
