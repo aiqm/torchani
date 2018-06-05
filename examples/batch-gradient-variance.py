@@ -18,6 +18,7 @@ ds = torchani.data.load_dataset(configs.data_path)
 # just to conveniently zero grads
 optimizer = torch.optim.Adam(model.parameters())
 
+
 def grad_or_zero(parameter):
     if parameter.grad is not None:
         return parameter.grad.reshape(-1)
