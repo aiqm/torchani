@@ -10,6 +10,7 @@ import pickle
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
 from common import *
+from copy import deepcopy
 
 chunk_size = 256
 batch_chunks = 1024 // chunk_size
@@ -32,6 +33,21 @@ with open('data/dataset.dat', 'rb') as f:
         testing, batch_sampler=testing_sampler, collate_fn=torchani.data.collate)
 
 writer = SummaryWriter()
+
+
+queue = torch.multiprocessing.Queue()
+checkpoint = 'data/checkpoint.pt'
+
+
+def model_saver():
+    while True:
+        model = queue.get()
+        torch.save(model.state_dict(), checkpoint)
+
+
+p = torch.multiprocessing.Process(target=model_saver)
+p.start()
+
 
 optimizer = torch.optim.Adam(model.parameters(), amsgrad=True)
 step = 0
@@ -75,7 +91,8 @@ while True:
             coordinates, energies = batch[molecule_id]
             coordinates = coordinates.to(aev_computer.device)
             energies = energies.to(aev_computer.device)
-            a.add(*evaluate(coordinates, energies, _species))
+            count, squared_error = evaluate(coordinates, energies, _species)
+            a.add(count, squared_error / len(_species))
         optimize_step(a)
         step += 1
 
@@ -92,6 +109,7 @@ while True:
         best_epoch = epoch
         writer.add_scalar('best_validation_rmse_vs_epoch',
                           best_validation_rmse, best_epoch)
+        queue.put(deepcopy(model))
     elif epoch - best_epoch > 1000:
         print('Stop at best validation rmse:', best_validation_rmse)
         break
