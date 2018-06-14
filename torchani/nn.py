@@ -370,23 +370,24 @@ class ModelOnAEV(BenchmarkedModule):
         if 'from_nc' in kwargs and 'per_species' not in kwargs and 'reducer' not in kwargs:
             if 'ensemble' not in kwargs:
                 network_dirs = [kwargs['from_nc']]
-                suffixes = ['']
+                self.suffixes = ['']
             else:
-                self.ensemble = kwargs['ensemble']
                 network_prefix = kwargs['from_nc']
                 network_dirs = []
-                suffixes = []
+                self.suffixes = []
                 for i in range(kwargs['ensemble']):
                     suffix = '{}'.format(i)
-                    network_dirs.append(network_prefix+suffix)
-                    suffixes.append(suffix)
+                    network_dir = os.path(network_prefix+suffix, 'networks')
+                    network_dirs.append(network_dir)
+                    self.suffixes.append(suffix)
 
             self.reducer = torch.sum
-            for network_dir, suffix in zip(network_dirs, suffixes):
+            for network_dir, suffix in zip(network_dirs, self.suffixes):
                 if network_dir is None:
                     network_dir = buildin_network_dir
                 for i in self.aev_computer.species:
-                    filename = os.path.join(network_dir, 'ANN-{}.nnf'.format(i))
+                    filename = os.path.join(
+                        network_dir, 'ANN-{}.nnf'.format(i))
                     model_X = PerSpeciesFromNeuroChem(
                         self.aev_computer.dtype, self.aev_computer.device, filename)
                     if self.output_length is None:
@@ -396,6 +397,7 @@ class ModelOnAEV(BenchmarkedModule):
                             'output length of each atomic neural network must match')
                     setattr(self, 'model_' + i + suffix, model_X)
         elif 'from_nc' not in kwargs and 'per_species' in kwargs and 'reducer' in kwargs:
+            self.suffixes = ['']
             per_species = kwargs['per_species']
             for i in per_species:
                 model_X = per_species[i]
@@ -466,8 +468,12 @@ class ModelOnAEV(BenchmarkedModule):
             end = atoms - rev_species.index(s)
             y = aev[:, begin:end, :].contiguous(
             ).view(-1, self.aev_computer.aev_length)
-            model_X = getattr(self, 'model_' + s)
-            y = model_X(y)
+
+            def apply_model(suffix):
+                model_X = getattr(self, 'model_' + s + suffix)
+                return model_X(y)
+            ys = [apply_model(suffix) for suffix in self.suffixes]
+            y = sum(ys) / len(ys)
             y = y.view(conformations, -1, self.output_length)
             per_species_outputs.append(y)
 

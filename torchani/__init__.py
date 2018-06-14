@@ -2,13 +2,13 @@ import pkg_resources
 import torch
 
 buildin_const_file = pkg_resources.resource_filename(
-    __name__, 'resources/rHCNO-4.6R_16-3.1A_a4-8_3.params')
+    __name__, 'resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')
 
 buildin_sae_file = pkg_resources.resource_filename(
-    __name__, 'resources/sae_linfit.dat')
+    __name__, 'resources/ani-1x_dft_x8ens/sae_linfit.dat')
 
 buildin_network_dir = pkg_resources.resource_filename(
-    __name__, 'resources/networks/')
+    __name__, 'resources/ani-1x_dft_x8ens/train0/networks/')
 
 buildin_dataset_dir = pkg_resources.resource_filename(
     __name__, 'resources/')
