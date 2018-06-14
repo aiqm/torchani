@@ -17,11 +17,15 @@ class TestForceNeuroChem(unittest.TestCase):
         self.logger = logging.getLogger('smiles')
         self.ncaev = torchani.NeuroChemAEV(dtype=dtype, device=device)
         self.aev_computer = torchani.SortedAEV(dtype=dtype, device=device)
-        self.model = torchani.ModelOnAEV(
+        self.model1 = torchani.ModelOnAEV(
             self.aev_computer, derivative=True, device=device, from_nc=None)
+        self.model2 = torchani.ModelOnAEV(
+            self.aev_computer, derivative=True, device=device, from_nc=None, ensemble=1)
+        self.logger = logging.getLogger('smiles')
 
     def _test_molecule(self, coordinates, species):
-        _, force = self.model(coordinates, species)
+        _, force1 = self.model1(coordinates, species)
+        _, force2 = self.model1(coordinates, species)
         conformations = coordinates.shape[0]
         for i in range(conformations):
             c = coordinates[i]
@@ -32,7 +36,9 @@ class TestForceNeuroChem(unittest.TestCase):
             force_nc = self.ncaev.nc.force()
             force_nc = torch.from_numpy(force_nc).type(
                 self.aev_computer.dtype).to(self.aev_computer.device)
-            max_diff = torch.max(force_nc+force[i])
+            max_diff1 = torch.max(force_nc+force1[i])
+            max_diff2 = torch.max(force_nc+force2[i])
+            max_diff = max(max_diff1, max_diff2)
             self.assertLess(max_diff, self.tolerance)
 
     def testCH4(self):

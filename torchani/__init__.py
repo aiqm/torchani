@@ -10,6 +10,9 @@ buildin_sae_file = pkg_resources.resource_filename(
 buildin_network_dir = pkg_resources.resource_filename(
     __name__, 'resources/ani-1x_dft_x8ens/train0/networks/')
 
+buildin_model_prefix = pkg_resources.resource_filename(
+    __name__, 'resources/ani-1x_dft_x8ens/train')
+
 buildin_dataset_dir = pkg_resources.resource_filename(
     __name__, 'resources/')
 

@@ -6,7 +6,7 @@ import lark
 import struct
 import copy
 import math
-from . import buildin_network_dir
+from . import buildin_network_dir, buildin_model_prefix
 from .benchmarked import BenchmarkedModule
 
 
@@ -369,22 +369,25 @@ class ModelOnAEV(BenchmarkedModule):
 
         if 'from_nc' in kwargs and 'per_species' not in kwargs and 'reducer' not in kwargs:
             if 'ensemble' not in kwargs:
+                if kwargs['from_nc'] is None:
+                    kwargs['from_nc'] = buildin_network_dir
                 network_dirs = [kwargs['from_nc']]
                 self.suffixes = ['']
             else:
+                if kwargs['from_nc'] is None:
+                    kwargs['from_nc'] = buildin_model_prefix
                 network_prefix = kwargs['from_nc']
                 network_dirs = []
                 self.suffixes = []
                 for i in range(kwargs['ensemble']):
                     suffix = '{}'.format(i)
-                    network_dir = os.path(network_prefix+suffix, 'networks')
+                    network_dir = os.path.join(
+                        network_prefix+suffix, 'networks')
                     network_dirs.append(network_dir)
                     self.suffixes.append(suffix)
 
             self.reducer = torch.sum
             for network_dir, suffix in zip(network_dirs, self.suffixes):
-                if network_dir is None:
-                    network_dir = buildin_network_dir
                 for i in self.aev_computer.species:
                     filename = os.path.join(
                         network_dir, 'ANN-{}.nnf'.format(i))

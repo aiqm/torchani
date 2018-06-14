@@ -17,6 +17,9 @@ class TestInference(unittest.TestCase):
         self.ncaev = torchani.NeuroChemAEV(dtype=dtype, device=device)
         self.nn = torchani.ModelOnAEV(
             self.ncaev, from_nc=self.ncaev.network_dir)
+        self.nn1 = torchani.ModelOnAEV(self.ncaev, from_nc=None)
+        self.nn2 = torchani.ModelOnAEV(
+            self.ncaev, from_nc=torchani.buildin_model_prefix, ensemble=1)
         self.logger = logging.getLogger('smiles')
         self.shift_energy = torchani.EnergyShifter(self.ncaev.sae_file)
 
@@ -39,8 +42,11 @@ class TestInference(unittest.TestCase):
         energies = self.shift_energy.subtract_sae(energies, species)
         coordinates = torch.from_numpy(coordinates).type(
             self.ncaev.dtype).to(self.ncaev.device)
-        pred_energies = self.nn(coordinates, species).squeeze()
-        maxdiff = torch.max(torch.abs(pred_energies - energies)).item()
+        pred_energies1 = self.nn1(coordinates, species).squeeze()
+        pred_energies2 = self.nn2(coordinates, species).squeeze()
+        maxdiff1 = torch.max(torch.abs(pred_energies1 - energies)).item()
+        maxdiff2 = torch.max(torch.abs(pred_energies2 - energies)).item()
+        maxdiff = max(maxdiff1, maxdiff2)
         maxdiff_per_atom = maxdiff / len(species)
         self.assertLess(maxdiff_per_atom, self.tolerance)
 
