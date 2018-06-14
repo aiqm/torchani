@@ -329,6 +329,10 @@ class ModelOnAEV(BenchmarkedModule):
             Path to the NeuroChem network directory. If this parameter is set, then `per_species` and
             `reducer` should not be set. If set to `None`, then the network ship with torchani will be
             used.
+        ensemble : int
+            Number of models in the model ensemble. If this is not set, then `from_nc` would refer to
+            the directory storing the model. If set to a number, then `from_nc` would refer to the prefix
+            of directories.
         per_species : dict
             Dictionary with supported species as keys and objects of `torch.nn.Model` as values, storing
             the model for each supported species. These models will finally become `model_X` attributes.
@@ -364,20 +368,33 @@ class ModelOnAEV(BenchmarkedModule):
         self.aev_computer = aev_computer
 
         if 'from_nc' in kwargs and 'per_species' not in kwargs and 'reducer' not in kwargs:
-            network_dir = kwargs['from_nc']
-            if network_dir is None:
-                network_dir = buildin_network_dir
+            if 'ensemble' not in kwargs:
+                network_dirs = [kwargs['from_nc']]
+                suffixes = ['']
+            else:
+                self.ensemble = kwargs['ensemble']
+                network_prefix = kwargs['from_nc']
+                network_dirs = []
+                suffixes = []
+                for i in range(kwargs['ensemble']):
+                    suffix = '{}'.format(i)
+                    network_dirs.append(network_prefix+suffix)
+                    suffixes.append(suffix)
+
             self.reducer = torch.sum
-            for i in self.aev_computer.species:
-                filename = os.path.join(network_dir, 'ANN-{}.nnf'.format(i))
-                model_X = PerSpeciesFromNeuroChem(
-                    self.aev_computer.dtype, self.aev_computer.device, filename)
-                if self.output_length is None:
-                    self.output_length = model_X.output_length
-                elif self.output_length != model_X.output_length:
-                    raise ValueError(
-                        'output length of each atomic neural network must match')
-                setattr(self, 'model_' + i, model_X)
+            for network_dir, suffix in zip(network_dirs, suffixes):
+                if network_dir is None:
+                    network_dir = buildin_network_dir
+                for i in self.aev_computer.species:
+                    filename = os.path.join(network_dir, 'ANN-{}.nnf'.format(i))
+                    model_X = PerSpeciesFromNeuroChem(
+                        self.aev_computer.dtype, self.aev_computer.device, filename)
+                    if self.output_length is None:
+                        self.output_length = model_X.output_length
+                    elif self.output_length != model_X.output_length:
+                        raise ValueError(
+                            'output length of each atomic neural network must match')
+                    setattr(self, 'model_' + i + suffix, model_X)
         elif 'from_nc' not in kwargs and 'per_species' in kwargs and 'reducer' in kwargs:
             per_species = kwargs['per_species']
             for i in per_species:
