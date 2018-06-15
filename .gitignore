@@ -13,3 +13,4 @@ a.out
 /*.hdf5
 .ipynb_checkpoints
 benchmark_xyz
+*.pyc

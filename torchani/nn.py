@@ -9,6 +9,10 @@ import math
 from . import buildin_network_dir, buildin_model_prefix
 from .benchmarked import BenchmarkedModule
 
+# For python 2 compatibility
+if not hasattr(math, 'inf'):
+    math.inf = float('inf')
+
 
 class PerSpeciesFromNeuroChem(torch.jit.ScriptModule):
     """Subclass of `torch.nn.Module` for the per atom aev->y transformation, loaded from NeuroChem network dir.

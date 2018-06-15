@@ -102,7 +102,8 @@ class SortedAEV(AEVComputer):
         fc = _cutoff_cosine(distances, self.Rcr)
         # Note that in the equation in the paper there is no 0.25 coefficient, but in NeuroChem there is such a coefficient. We choose to be consistent with NeuroChem instead of the paper here.
         ret = 0.25 * torch.exp(-self.EtaR * (distances - self.ShfR)**2) * fc
-        return ret.view(*ret.shape[:-2], -1)
+        new_shape = list(ret.shape[:-2]) + [-1]
+        return ret.view(*new_shape)
 
     def angular_subaev_terms(self, vectors1, vectors2):
         """Compute the angular subAEV terms of the center atom given neighbor pairs.
@@ -144,7 +145,8 @@ class SortedAEV(AEVComputer):
         ret = 2 * factor1 * factor2 * fcj1 * fcj2
         # ret now have shape (..., pairs, ?, ?, ?, ?) where ? depend on constants
         # flat the last 4 dimensions to view the subAEV as one dimension vector
-        return ret.view(*ret.shape[:-4], -1)
+        new_shape = list(ret.shape[:-4]) + [-1]
+        return ret.view(*new_shape)
 
     def terms_and_indices(self, coordinates):
         """Compute radial and angular subAEV terms, and original indices.
@@ -193,7 +195,8 @@ class SortedAEV(AEVComputer):
         radial_terms = self.radial_subaev_terms(distances)
 
         indices_a = indices.index_select(-1, inRca)
-        _indices_a = indices_a.unsqueeze(-1).expand(*indices_a.shape, 3)
+        new_shape = list(indices_a.shape) + [3]
+        _indices_a = indices_a.unsqueeze(-1).expand(*new_shape)
         vec = vec.gather(-2, _indices_a)
         vec = _utils.combinations(vec, -2)
         angular_terms = self.angular_subaev_terms(
@@ -286,7 +289,8 @@ class SortedAEV(AEVComputer):
         present_radial_aevs = (radial_terms.unsqueeze(-2)
                                * mask_r.unsqueeze(-1).type(self.dtype)).sum(-3)
         """Tensor of shape (conformations, atoms, present species, radial_length)"""
-        radial_aevs = present_radial_aevs.view(*radial_terms.shape[:2], -1)
+        new_shape = list(radial_terms.shape[:2]) + [-1]
+        radial_aevs = present_radial_aevs.view(*new_shape)
 
         # assemble angular subaev
         rev_indices = {present_species[i].item(): i
