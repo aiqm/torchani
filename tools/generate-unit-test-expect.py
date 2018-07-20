@@ -40,7 +40,8 @@ class NeuroChem (torchani.aev_base.AEVComputer):
 
     def forward(self, coordinates, species):
         conformations = coordinates.shape[0]
-        aevs, energies, forces = [self._per_conformation(coordinates[i], species) for i in range(conformations)]
+        results = [self._per_conformation(coordinates[i], species) for i in range(conformations)]
+        aevs, energies, forces = zip(*results)
         aevs = torch.from_numpy(numpy.stack(aevs)).type(self.dtype).to(self.device)
         energies = torch.from_numpy(numpy.stack(energies)).type(self.dtype).to(self.device)
         forces = torch.from_numpy(numpy.stack(forces)).type(self.dtype).to(self.device)
@@ -59,6 +60,7 @@ for i in [1,2,3,4]:
         radial, angular, energies, forces = ncaev(coordinates, species)
         pickleobj = (coordinates, species, radial, angular, energies, forces)
         dumpfile = os.path.join(path, 'test_data/{}'.format(mol_count))
-        pickle.dump(pickle, )
+        with open(dumpfile, 'wb') as f:
+            pickle.dump(pickleobj, f)
         mol_count += 1
         
