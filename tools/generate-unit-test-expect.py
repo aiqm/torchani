@@ -33,8 +33,8 @@ class NeuroChem (torchani.aev_base.AEVComputer):
         mol.set_calculator(ase_interface.ANI(False))
         mol.calc.setnc(self.nc)
         energy = mol.get_potential_energy()
-        force = mol.get_forces()
         aevs = [self.nc.atomicenvironments(j) for j in range(atoms)]
+        force = mol.get_forces()
         aevs = numpy.stack(aevs)
         return aevs, energy, force
 
@@ -47,8 +47,8 @@ class NeuroChem (torchani.aev_base.AEVComputer):
         forces = torch.from_numpy(numpy.stack(forces)).type(self.dtype).to(self.device)
         return self._get_radial_part(aevs), self._get_angular_part(aevs), energies, forces
 
-aev = torchani.SortedAEV()
-ncaev = NeuroChem()
+aev = torchani.SortedAEV(device=torch.device('cpu'))
+ncaev = NeuroChem(device=torch.device('cpu'))
 mol_count = 0
 
 for i in [1,2,3,4]:
@@ -59,7 +59,6 @@ for i in [1,2,3,4]:
         coordinates = torch.from_numpy(coordinates).type(aev.dtype)
         species = data['species']
         coordinates, species = aev.sort_by_species(coordinates, species)
-        coordinates = coordinates.numpy()
         smiles = ''.join(data['smiles'])
         radial, angular, energies, forces = ncaev(coordinates, species)
         pickleobj = (coordinates, species, radial, angular, energies, forces)

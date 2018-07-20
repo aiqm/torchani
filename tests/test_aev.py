@@ -10,13 +10,11 @@ N = 97
 
 class TestAEV(unittest.TestCase):
 
-    def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
-        self.aev = torchani.SortedAEV(dtype=dtype, device=device)
+    def setUp(self, dtype=torchani.default_dtype):
+        self.aev = torchani.SortedAEV(dtype=dtype, device=torch.device('cpu'))
         self.tolerance = 1e-5
 
     def _test_molecule(self, coordinates, species, expected_radial, expected_angular):
-        coordinates = torch.from_numpy(coordinates).type(
-            self.aev.dtype).to(self.aev.device)
         radial, angular = self.aev(coordinates, species)
         radial_diff = expected_radial - radial
         radial_max_error = torch.max(torch.abs(radial_diff))
@@ -30,7 +28,6 @@ class TestAEV(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, radial, angular, _, _ = pickle.load(f)
-                print(species)
                 self._test_molecule(coordinates, species, radial, angular)
 
 
