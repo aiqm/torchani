@@ -18,7 +18,6 @@ class TestAEV(unittest.TestCase):
     def _test_molecule(self, coordinates, species, expected_radial, expected_angular):
         coordinates = torch.from_numpy(coordinates).type(
             self.aev.dtype).to(self.aev.device)
-        coordinates, species = self.aev.sort_by_species(coordinates, species)
         radial, angular = self.aev(coordinates, species)
         radial2, angular2 = self.ncaev(coordinates, species)
 
