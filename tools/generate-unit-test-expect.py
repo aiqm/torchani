@@ -51,11 +51,13 @@ ncaev = NeuroChem()
 mol_count = 0
 
 for i in [1,2,3,4]:
+    aev = torchani.SortedAEV(dtype=dtype, device=device)
     data_file = os.path.join(path, 'dataset/ani_gdb_s0{}.h5'.format(i))
     adl = torchani.pyanitools.anidataloader(data_file)
     for data in adl:
         coordinates = data['coordinates'][:10, :]
         species = data['species']
+        coordinates, species = self.aev.sort_by_species(coordinates, species)
         smiles = ''.join(data['smiles'])
         radial, angular, energies, forces = ncaev(coordinates, species)
         pickleobj = (coordinates, species, radial, angular, energies, forces)
