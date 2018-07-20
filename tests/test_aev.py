@@ -27,7 +27,7 @@ class TestAEV(unittest.TestCase):
 
     def testGDB(self):
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/{}'.format(N))
+            datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, radial, angular, _, _ = pickle.load(f)
                 self._test_molecule(coordinates, species, radial, angular)
