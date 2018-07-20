@@ -47,17 +47,19 @@ class NeuroChem (torchani.aev_base.AEVComputer):
         forces = torch.from_numpy(numpy.stack(forces)).type(self.dtype).to(self.device)
         return self._get_radial_part(aevs), self._get_angular_part(aevs), energies, forces
 
+aev = torchani.SortedAEV()
 ncaev = NeuroChem()
 mol_count = 0
 
 for i in [1,2,3,4]:
-    aev = torchani.SortedAEV(dtype=dtype, device=device)
     data_file = os.path.join(path, 'dataset/ani_gdb_s0{}.h5'.format(i))
     adl = torchani.pyanitools.anidataloader(data_file)
     for data in adl:
         coordinates = data['coordinates'][:10, :]
+        coordinates = torch.from_numpy(coordinates).type(aev.dtype)
         species = data['species']
-        coordinates, species = self.aev.sort_by_species(coordinates, species)
+        coordinates, species = aev.sort_by_species(coordinates, species)
+        coordinates = coordinates.numpy()
         smiles = ''.join(data['smiles'])
         radial, angular, energies, forces = ncaev(coordinates, species)
         pickleobj = (coordinates, species, radial, angular, energies, forces)

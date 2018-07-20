@@ -7,6 +7,7 @@ import pickle
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
+
 class TestAEV(unittest.TestCase):
 
     def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
@@ -30,6 +31,7 @@ class TestAEV(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, radial, angular, _, _ = pickle.load(f)
+                print(species)
                 self._test_molecule(coordinates, species, radial, angular)
 
 
