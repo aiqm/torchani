@@ -10,6 +10,7 @@ from torchani import buildin_const_file, buildin_sae_file, buildin_network_dir, 
 import torchani.pyanitools
 
 path = os.path.dirname(os.path.realpath(__file__))
+conv_au_ev = 27.21138505
 
 class NeuroChem (torchani.aev_base.AEVComputer):
 
@@ -17,7 +18,7 @@ class NeuroChem (torchani.aev_base.AEVComputer):
         super(NeuroChem, self).__init__(False, dtype, device, const_file)
         self.sae_file = sae_file
         self.network_dir = network_dir
-        self.nc = pyNeuroChem.molecule(const_file, sae_file, network_dir, 0)
+        self.nc = pyNeuroChem.molecule(self.const_file, self.sae_file, self.network_dir, 0)
 
     def _get_radial_part(self, fullaev):
         radial_size = self.radial_length
@@ -32,9 +33,9 @@ class NeuroChem (torchani.aev_base.AEVComputer):
         mol = ase.Atoms(''.join(species), positions=coordinates)
         mol.set_calculator(ase_interface.ANI(False))
         mol.calc.setnc(self.nc)
-        energy = mol.get_potential_energy()
-        aevs = [self.nc.atomicenvironments(j) for j in range(atoms)]
-        force = mol.get_forces()
+        energy = mol.get_potential_energy() / conv_au_ev
+        aevs = [mol.calc.nc.atomicenvironments(j) for j in range(atoms)]
+        force = mol.get_forces() / conv_au_ev
         aevs = numpy.stack(aevs)
         return aevs, energy, force
 
@@ -62,7 +63,7 @@ for i in [1,2,3,4]:
         smiles = ''.join(data['smiles'])
         radial, angular, energies, forces = ncaev(coordinates, species)
         pickleobj = (coordinates, species, radial, angular, energies, forces)
-        dumpfile = os.path.join(path, 'test_data/{}'.format(mol_count))
+        dumpfile = os.path.join(path, '../tests/test_data/{}'.format(mol_count))
         with open(dumpfile, 'wb') as f:
             pickle.dump(pickleobj, f)
         mol_count += 1

@@ -8,7 +8,7 @@ import pickle
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
 
-class TestForceNeuroChem(unittest.TestCase):
+class TestForce(unittest.TestCase):
 
     def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
         self.tolerance = 1e-5
@@ -18,8 +18,7 @@ class TestForceNeuroChem(unittest.TestCase):
 
     def _test_molecule(self, coordinates, species, forces):
         _, derivative = self.nnp(coordinates, species)
-        conformations = coordinates.shape[0]
-        max_diff = (forces + derivative).abs().max()
+        max_diff = (forces + derivative).abs().max().item()
         self.assertLess(max_diff, self.tolerance)
 
     def testGDB(self):
