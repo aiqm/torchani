@@ -52,7 +52,7 @@ ncaev = NeuroChem(device=torch.device('cpu'))
 mol_count = 0
 
 for i in [1,2,3,4]:
-    data_file = os.path.join(path, 'dataset/ani_gdb_s0{}.h5'.format(i))
+    data_file = os.path.join(path, '../tests/dataset/ani_gdb_s0{}.h5'.format(i))
     adl = torchani.pyanitools.anidataloader(data_file)
     for data in adl:
         coordinates = data['coordinates'][:10, :]
