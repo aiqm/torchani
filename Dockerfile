@@ -1,3 +1,4 @@
 FROM zasdfgbnm/pytorch-master
-RUN python setup.py test
-RUN python2 setup.py test
+COPY . /torchani
+RUN cd torchani && python setup.py test
+RUN cd torchani && python2 setup.py test
