@@ -14,7 +14,8 @@ class TestEnergies(unittest.TestCase):
 
     def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
         self.tolerance = 5e-5
-        self.aev_computer = torchani.SortedAEV(dtype=dtype, device=torch.device('cpu'))
+        self.aev_computer = torchani.SortedAEV(
+            dtype=dtype, device=torch.device('cpu'))
         self.nnp = torchani.ModelOnAEV(self.aev_computer, from_nc=None)
 
     def _test_molecule(self, coordinates, species, energies):

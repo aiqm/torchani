@@ -14,6 +14,7 @@ from pickle import dump, load
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_dir = os.path.join(path, 'dataset')
 
+
 class TestDataset(unittest.TestCase):
 
     def setUp(self, data_path=dataset_dir):
