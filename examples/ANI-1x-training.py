@@ -78,7 +78,8 @@ while True:
             coordinates, energies = batch[molecule_id]
             coordinates = coordinates.to(aev_computer.device)
             energies = energies.to(aev_computer.device)
-            count, squared_error = evaluate(model, coordinates, energies, _species)
+            count, squared_error = evaluate(
+                model, coordinates, energies, _species)
             a.add(count, squared_error / len(_species))
         optimize_step(a)
         step += 1

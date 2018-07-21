@@ -11,9 +11,13 @@ from bisect import bisect
 from pickle import dump, load
 
 
+path = os.path.dirname(os.path.realpath(__file__))
+dataset_dir = os.path.join(path, 'dataset')
+
+
 class TestDataset(unittest.TestCase):
 
-    def setUp(self, data_path=torchani.buildin_dataset_dir):
+    def setUp(self, data_path=dataset_dir):
         self.data_path = data_path
         self.ds = torchani.data.load_dataset(data_path)
 

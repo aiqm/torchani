@@ -17,6 +17,6 @@ setup(name='torchani',
           'h5py',
       ],
       test_suite='nose.collector',
-      tests_require=['nose', 'cntk'],
+      tests_require=['nose'],
       cmdclass=cmdclass,
       )
