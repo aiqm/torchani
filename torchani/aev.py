@@ -92,7 +92,8 @@ class SortedAEV(AEVComputer):
         torch.Tensor
             A tensor of shape (..., neighbors, `radial_sublength`) storing the subAEVs.
         """
-        distances = distances.unsqueeze(-1).unsqueeze(-1) #TODO: allow unsqueeze to insert multiple dimensions
+        distances = distances.unsqueeze(
+            -1).unsqueeze(-1)  # TODO: allow unsqueeze to insert multiple dimensions
         fc = _cutoff_cosine(distances, self.Rcr)
         # Note that in the equation in the paper there is no 0.25 coefficient, but in NeuroChem there is such a coefficient. We choose to be consistent with NeuroChem instead of the paper here.
         ret = 0.25 * torch.exp(-self.EtaR * (distances - self.ShfR)**2) * fc
@@ -118,9 +119,9 @@ class SortedAEV(AEVComputer):
             Tensor of shape (..., pairs, `angular_sublength`) storing the subAEVs.
         """
         vectors1 = vectors1.unsqueeze(
-            -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1) #TODO: allow unsqueeze to plug in multiple dims
+            -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)  # TODO: allow unsqueeze to plug in multiple dims
         vectors2 = vectors2.unsqueeze(
-            -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1) #TODO: allow unsqueeze to plug in multiple dims
+            -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)  # TODO: allow unsqueeze to plug in multiple dims
         distances1 = vectors1.norm(2, dim=-5)
         distances2 = vectors2.norm(2, dim=-5)
 
@@ -179,7 +180,8 @@ class SortedAEV(AEVComputer):
         distances, indices = distances.sort(-1)
 
         min_distances, _ = distances.flatten(end_dim=1).min(0)
-        inRcr = (min_distances <= self.Rcr).nonzero().flatten()[1:]  #TODO: can we use something like find_first?
+        inRcr = (min_distances <= self.Rcr).nonzero().flatten()[
+            1:]  # TODO: can we use something like find_first?
         inRca = (min_distances <= self.Rca).nonzero().flatten()[1:]
 
         distances = distances.index_select(-1, inRcr)
@@ -188,9 +190,12 @@ class SortedAEV(AEVComputer):
 
         indices_a = indices.index_select(-1, inRca)
         new_shape = list(indices_a.shape) + [3]
-        _indices_a = indices_a.unsqueeze(-1).expand(*new_shape)  #TODO: can we add something like expand_dim(dim=0, repeat=3)
-        vec = vec.gather(-2, _indices_a)  #TODO: can we make gather broadcast??
-        vec = self.combinations(vec, -2)  #TODO: can we move combinations to ATen?
+        # TODO: can we add something like expand_dim(dim=0, repeat=3)
+        _indices_a = indices_a.unsqueeze(-1).expand(*new_shape)
+        # TODO: can we make gather broadcast??
+        vec = vec.gather(-2, _indices_a)
+        # TODO: can we move combinations to ATen?
+        vec = self.combinations(vec, -2)
         angular_terms = self.angular_subaev_terms(
             *vec) if vec is not None else None
 
@@ -226,7 +231,6 @@ class SortedAEV(AEVComputer):
         mask_r = (species_r.unsqueeze(-1) ==
                   torch.arange(len(self.species), device=self.device))
         return mask_r
-
 
     def compute_mask_a(self, species_a, present_species):
         """Partition indices according to their species, angular part
@@ -299,12 +303,12 @@ class SortedAEV(AEVComputer):
         radial_aevs = present_radial_aevs.flatten(start_dim=2)
 
         # assemble angular subaev
-        rev_indices = {present_species[i].item(): i  #TODO: can we use find_first?
+        rev_indices = {present_species[i].item(): i  # TODO: can we use find_first?
                        for i in range(len(present_species))}
         """Tensor of shape (conformations, atoms, present species, present species, angular_length)"""
         angular_aevs = []
-        zero_angular_subaev = torch.zeros(  #TODO: can we make stack and cat broadcast?
-            conformations, atoms, self.angular_sublength, dtype=self.dtype, device=self.device)  #TODO: can we make torch.zeros, torch.ones typeless and deviceless?
+        zero_angular_subaev = torch.zeros(  # TODO: can we make stack and cat broadcast?
+            conformations, atoms, self.angular_sublength, dtype=self.dtype, device=self.device)  # TODO: can we make torch.zeros, torch.ones typeless and deviceless?
         for s1, s2 in itertools.combinations_with_replacement(range(len(self.species)), 2):
             # TODO: can we remove this if pytorch support 0 size tensors?
             if s1 in rev_indices and s2 in rev_indices and mask_a is not None:

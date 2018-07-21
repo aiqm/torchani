@@ -6,7 +6,7 @@ from .benchmarked import BenchmarkedModule
 
 class AEVComputer(BenchmarkedModule):
     __constants__ = ['Rcr', 'Rca', 'dtype', 'device', 'radial_sublength',
-        'radial_length', 'angular_sublength', 'angular_length', 'aev_length']
+                     'radial_length', 'angular_sublength', 'angular_length', 'aev_length']
 
     """Base class of various implementations of AEV computer
 
