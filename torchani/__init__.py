@@ -27,10 +27,3 @@ import logging
 __all__ = ['SortedAEV', 'EnergyShifter', 'ModelOnAEV', 'PerSpeciesFromNeuroChem', 'data',
            'buildin_const_file', 'buildin_sae_file', 'buildin_network_dir', 'buildin_dataset_dir',
            'default_dtype', 'default_device']
-
-try:
-    from .neurochem_aev import NeuroChemAEV
-    __all__.append('NeuroChemAEV')
-except ImportError:
-    logging.log(logging.WARNING,
-                'Unable to import NeuroChemAEV, please check your pyNeuroChem installation.')
