@@ -85,7 +85,7 @@ class TestBenchmark(unittest.TestCase):
                          'terms and indices>radial terms',
                          'terms and indices>angular terms',
                          'total>terms and indices',
-                         'total>combinations', 'total>assemble'
+                         'total>combinations', 'total>assemble',
                          'total>mask_r', 'total>mask_a'
                          ])
 
