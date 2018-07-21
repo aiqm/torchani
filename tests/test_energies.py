@@ -6,15 +6,22 @@ import os
 import pickle
 
 
-class TestInference(unittest.TestCase):
+path = os.path.dirname(os.path.realpath(__file__))
+N = 97
+
+
+class TestEnergies(unittest.TestCase):
 
     def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
         self.tolerance = 1e-5
-        self.aev_computer = torchani.SortedAEV(dtype=dtype, device=device=torch.device('cpu'))
+        self.aev_computer = torchani.SortedAEV(dtype=dtype, device=torch.device('cpu'))
         self.nnp = torchani.ModelOnAEV(self.aev_computer, from_nc=None)
 
     def _test_molecule(self, coordinates, species, energies):
-        energies_ = self.nnp(coordinates, species)
+        shift_energy = torchani.EnergyShifter(torchani.buildin_sae_file)
+        energies_ = self.nnp(coordinates, species).squeeze()
+        #energies_ = shift_energy.add_sae(energies_, species)
+        print(torch.stack([energies_, energies]))
         conformations = coordinates.shape[0]
         max_diff = (energies - energies_).abs().max()
         self.assertLess(max_diff, self.tolerance)

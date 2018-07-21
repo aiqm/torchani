@@ -5,11 +5,14 @@ import unittest
 import os
 import pickle
 
+path = os.path.dirname(os.path.realpath(__file__))
+N = 97
+
 class TestForceNeuroChem(unittest.TestCase):
 
     def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
         self.tolerance = 1e-5
-        self.aev_computer = torchani.SortedAEV(dtype=dtype, device=device=torch.device('cpu'))
+        self.aev_computer = torchani.SortedAEV(dtype=dtype, device=torch.device('cpu'))
         self.nnp = torchani.ModelOnAEV(
             self.aev_computer, derivative=True, from_nc=None)
 
