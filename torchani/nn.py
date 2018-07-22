@@ -4,7 +4,6 @@ import bz2
 import os
 import lark
 import struct
-import copy
 import math
 from . import buildin_network_dir, buildin_model_prefix
 from .benchmarked import BenchmarkedModule
@@ -15,7 +14,8 @@ if not hasattr(math, 'inf'):
 
 
 class PerSpeciesFromNeuroChem(torch.jit.ScriptModule):
-    """Subclass of `torch.nn.Module` for the per atom aev->y transformation, loaded from NeuroChem network dir.
+    """Subclass of `torch.nn.Module` for the per atom aev->y
+    transformation, loaded from NeuroChem network dir.
 
     Attributes
     ----------
@@ -30,7 +30,8 @@ class PerSpeciesFromNeuroChem(torch.jit.ScriptModule):
     layerN : torch.nn.Linear
         Linear model for each layer.
     activation : function
-        Function for computing the activation for all layers but the last layer.
+        Function for computing the activation for all layers but the
+        last layer.
     activation_index : int
         The NeuroChem index for activation.
     """
@@ -43,8 +44,9 @@ class PerSpeciesFromNeuroChem(torch.jit.ScriptModule):
         dtype : torch.dtype
             Pytorch data type for tensors
         filename : string
-            The file name for the `.nnf` file that store network hyperparameters. The `.bparam` and `.wparam`
-            must be in the same directory
+            The file name for the `.nnf` file that store network
+            hyperparameters. The `.bparam` and `.wparam` must be
+            in the same directory
         """
         super(PerSpeciesFromNeuroChem, self).__init__()
 
@@ -87,8 +89,9 @@ class PerSpeciesFromNeuroChem(torch.jit.ScriptModule):
         Returns
         -------
         list of dict
-            Parsed setups as list of dictionary storing the parsed `.nnf` file content.
-            Each dictionary in the list is the hyperparameters for a layer.
+            Parsed setups as list of dictionary storing the parsed `.nnf`
+            file content. Each dictionary in the list is the hyperparameters
+            for a layer.
         """
         # parse input file
         parser = lark.Lark(r'''
@@ -170,8 +173,9 @@ class PerSpeciesFromNeuroChem(torch.jit.ScriptModule):
         Parameters
         ----------
         setups : list of dict
-            Parsed setups as list of dictionary storing the parsed `.nnf` file content.
-            Each dictionary in the list is the hyperparameters for a layer.
+            Parsed setups as list of dictionary storing the parsed `.nnf`
+            file content. Each dictionary in the list is the hyperparameters
+            for a layer.
         dirname : string
             The directory where network files are stored.
         """
@@ -205,7 +209,8 @@ class PerSpeciesFromNeuroChem(torch.jit.ScriptModule):
                             'Unexpected activation {}'.format(activation))
                 elif self.activation_index != activation:
                     raise NotImplementedError(
-                        'different activation on different layers are not supported')
+                        '''different activation on different
+                        layers are not supported''')
             linear = torch.nn.Linear(in_size, out_size).type(self.dtype)
             name = 'layer{}'.format(i)
             setattr(self, name, linear)
@@ -238,12 +243,13 @@ class PerSpeciesFromNeuroChem(torch.jit.ScriptModule):
         Parameters
         ----------
         aev : torch.Tensor
-            The pytorch tensor of shape (conformations, aev_length) storing AEV as input to this model.
+            The pytorch tensor of shape (conformations, aev_length) storing AEV
+            as input to this model.
         layer : int
-            The layer whose activation is desired. The index starts at zero, that is
-            `layer=0` means the `activation(layer0(aev))` instead of `aev`. If the given
-            layer is larger than the total number of layers, then the activation of the last
-            layer will be returned.
+            The layer whose activation is desired. The index starts at zero,
+            that is `layer=0` means the `activation(layer0(aev))` instead of
+            `aev`. If the given layer is larger than the total number of
+            layers, then the activation of the last layer will be returned.
 
         Returns
         -------
@@ -268,18 +274,21 @@ class PerSpeciesFromNeuroChem(torch.jit.ScriptModule):
         Parameters
         ----------
         aev : torch.Tensor
-            The pytorch tensor of shape (conformations, aev_length) storing AEV as input to this model.
+            The pytorch tensor of shape (conformations, aev_length) storing
+            AEV as input to this model.
 
         Returns
         -------
         torch.Tensor
-            The pytorch tensor of shape (conformations, output_length) for output.
+            The pytorch tensor of shape (conformations, output_length) for
+            output.
         """
         return self.get_activations(aev, math.inf)
 
 
 class ModelOnAEV(BenchmarkedModule):
-    """Subclass of `torch.nn.Module` for the [xyz]->[aev]->[per_atom_y]->y pipeline.
+    """Subclass of `torch.nn.Module` for the [xyz]->[aev]->[per_atom_y]->y
+    pipeline.
 
     Attributes
     ----------
@@ -288,58 +297,67 @@ class ModelOnAEV(BenchmarkedModule):
     output_length : int
         The length of output vector
     derivative : boolean
-        Whether to support computing the derivative w.r.t coordinates, i.e. d(output)/dR
+        Whether to support computing the derivative w.r.t coordinates,
+        i.e. d(output)/dR
     derivative_graph : boolean
-        Whether to generate a graph for the derivative. This would be required only if the
-        derivative is included as part of the loss function.
+        Whether to generate a graph for the derivative. This would be required
+        only if the derivative is included as part of the loss function.
     model_X : nn.Module
-        Model for species X. There should be one such attribute for each supported species.
+        Model for species X. There should be one such attribute for each
+        supported species.
     reducer : function
-        Function of (input, dim)->output that reduce the input tensor along the given dimension
-        to get an output tensor. This function will be called with the per atom output tensor
-        with internal shape as input, and desired reduction dimension as dim, and should reduce
-        the input into the tensor containing desired output.
+        Function of (input, dim)->output that reduce the input tensor along the
+        given dimension to get an output tensor. This function will be called
+        with the per atom output tensor with internal shape as input, and
+        desired reduction dimension as dim, and should reduce the input into
+        the tensor containing desired output.
     timers : dict
         Dictionary storing the the benchmark result. It has the following keys:
             aev : time spent on computing AEV.
             nn : time spent on computing output from AEV.
-            derivative : time spend on computing derivative w.r.t. coordinates after the outputs
-                is given. This key is only available if derivative computation is turned on.
+            derivative : time spend on computing derivative w.r.t. coordinates
+                after the outputs is given. This key is only available if
+                derivative computation is turned on.
             forward : total time for the forward pass
     """
 
-    def __init__(self, aev_computer, derivative=False, derivative_graph=False, benchmark=False, **kwargs):
-        """Initialize object from manual setup or from NeuroChem network directory.
+    def __init__(self, aev_computer, derivative=False, derivative_graph=False,
+                 benchmark=False, **kwargs):
+        """Initialize object from manual setup or from NeuroChem network
+        directory.
 
-        The caller must set either `from_nc` in order to load from NeuroChem network directory,
-        or set `per_species` and `reducer`.
+        The caller must set either `from_nc` in order to load from NeuroChem
+        network directory, or set `per_species` and `reducer`.
 
         Parameters
         ----------
         aev_computer : AEVComputer
             The AEV computer.
         derivative : boolean
-            Whether to support computing the derivative w.r.t coordinates, i.e. d(output)/dR
+            Whether to support computing the derivative w.r.t coordinates,
+            i.e. d(output)/dR
         derivative_graph : boolean
-            Whether to generate a graph for the derivative. This would be required only if the
-            derivative is included as part of the loss function. This argument must be set to
-            False if `derivative` is set to False.
+            Whether to generate a graph for the derivative. This would be
+            required only if the derivative is included as part of the loss
+            function. This argument must be set to False if `derivative` is
+            set to False.
         benchmark : boolean
             Whether to enable benchmarking
 
         Other Parameters
         ----------------
         from_nc : string
-            Path to the NeuroChem network directory. If this parameter is set, then `per_species` and
-            `reducer` should not be set. If set to `None`, then the network ship with torchani will be
-            used.
+            Path to the NeuroChem network directory. If this parameter is set,
+            then `per_species` and `reducer` should not be set. If set to
+            `None`, then the network ship with torchani will be used.
         ensemble : int
-            Number of models in the model ensemble. If this is not set, then `from_nc` would refer to
-            the directory storing the model. If set to a number, then `from_nc` would refer to the prefix
-            of directories.
+            Number of models in the model ensemble. If this is not set, then
+            `from_nc` would refer to the directory storing the model. If set to
+            a number, then `from_nc` would refer to the prefix of directories.
         per_species : dict
-            Dictionary with supported species as keys and objects of `torch.nn.Model` as values, storing
-            the model for each supported species. These models will finally become `model_X` attributes.
+            Dictionary with supported species as keys and objects of
+            `torch.nn.Model` as values, storing the model for each supported
+            species. These models will finally become `model_X` attributes.
         reducer : function
             The desired `reducer` attribute.
 
@@ -354,7 +372,8 @@ class ModelOnAEV(BenchmarkedModule):
         self.output_length = None
         if not derivative and derivative_graph:
             raise ValueError(
-                'ModelOnAEV: can not create graph for derivative if the computation of derivative is turned off')
+                '''ModelOnAEV: can not create graph for derivative if the
+                computation of derivative is turned off''')
         self.derivative_graph = derivative_graph
 
         if benchmark:
@@ -371,7 +390,8 @@ class ModelOnAEV(BenchmarkedModule):
                 "ModelOnAEV: aev_computer must be a subclass of AEVComputer")
         self.aev_computer = aev_computer
 
-        if 'from_nc' in kwargs and 'per_species' not in kwargs and 'reducer' not in kwargs:
+        if 'from_nc' in kwargs and 'per_species' not in kwargs and \
+           'reducer' not in kwargs:
             if 'ensemble' not in kwargs:
                 if kwargs['from_nc'] is None:
                     kwargs['from_nc'] = buildin_network_dir
@@ -396,26 +416,31 @@ class ModelOnAEV(BenchmarkedModule):
                     filename = os.path.join(
                         network_dir, 'ANN-{}.nnf'.format(i))
                     model_X = PerSpeciesFromNeuroChem(
-                        self.aev_computer.dtype, self.aev_computer.device, filename)
+                        self.aev_computer.dtype, self.aev_computer.device,
+                        filename)
                     if self.output_length is None:
                         self.output_length = model_X.output_length
                     elif self.output_length != model_X.output_length:
                         raise ValueError(
-                            'output length of each atomic neural network must match')
+                            '''output length of each atomic neural networt
+                            must match''')
                     setattr(self, 'model_' + i + suffix, model_X)
-        elif 'from_nc' not in kwargs and 'per_species' in kwargs and 'reducer' in kwargs:
+        elif 'from_nc' not in kwargs and 'per_species' in kwargs and \
+             'reducer' in kwargs:
             self.suffixes = ['']
             per_species = kwargs['per_species']
             for i in per_species:
                 model_X = per_species[i]
                 if not hasattr(model_X, 'output_length'):
                     raise ValueError(
-                        'atomic neural network must explicitly specify output length')
+                        '''atomic neural network must explicitly specify
+                        output length''')
                 elif self.output_length is None:
                     self.output_length = model_X.output_length
                 elif self.output_length != model_X.output_length:
                     raise ValueError(
-                        'output length of each atomic neural network must match')
+                        '''output length of each atomic neural network must
+                        match''')
                 setattr(self, 'model_' + i, model_X)
             self.reducer = kwargs['reducer']
         else:
@@ -491,9 +516,11 @@ class ModelOnAEV(BenchmarkedModule):
     def compute_derivative(self, output, coordinates):
         """Compute the gradient d(output)/d(coordinates)"""
         # Since different conformations are independent, computing
-        # the derivatives of all outputs w.r.t. its own coordinate is equivalent
-        # to compute the derivative of the sum of all outputs w.r.t. all coordinates.
-        return torch.autograd.grad(output.sum(), coordinates, create_graph=self.derivative_graph)[0]
+        # the derivatives of all outputs w.r.t. its own coordinate is
+        # equivalent to compute the derivative of the sum of all outputs
+        # w.r.t. all coordinates.
+        return torch.autograd.grad(output.sum(), coordinates,
+                                   create_graph=self.derivative_graph)[0]
 
     def forward(self, coordinates, species):
         """Feed forward
@@ -509,13 +536,13 @@ class ModelOnAEV(BenchmarkedModule):
         Returns
         -------
         torch.Tensor or (torch.Tensor, torch.Tensor)
-            If derivative is turned off, then this function will return a pytorch
-            tensor of shape (conformations, output_length) for the output of each
-            conformation.
-            If derivative is turned on, then this function will return a pair of
-            pytorch tensors where the first tensor is the output tensor as when the
-            derivative is off, and the second tensor is a tensor of shape
-            (conformation, atoms, 3) storing the d(output)/dR.
+            If derivative is turned off, then this function will return a
+            pytorch tensor of shape (conformations, output_length) for the
+            output of each conformation.
+            If derivative is turned on, then this function will return a pair
+            of pytorch tensors where the first tensor is the output tensor as
+            when the derivative is off, and the second tensor is a tensor of
+            shape (conformation, atoms, 3) storing the d(output)/dR.
         """
         if not self.derivative:
             coordinates = coordinates.detach()

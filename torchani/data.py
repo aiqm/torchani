@@ -142,10 +142,11 @@ def random_split(dataset, num_chunks, chunk_size):
     Randomly split a dataset into non-overlapping new datasets of given lengths
 
     The splitting is by chunk, which makes it possible for batching: The whole
-    dataset is first splitted into chunks of specified size, each chunk are different
-    conformation of the same isomer/molecule, then these chunks are randomly shuffled
-    and splitted accorting to the given `num_chunks`. After splitted, chunks belong to
-    the same molecule/isomer of the same subset will be merged to allow larger batch.
+    dataset is first splitted into chunks of specified size, each chunk are
+    different conformation of the same isomer/molecule, then these chunks are
+    randomly shuffled and splitted accorting to the given `num_chunks`. After
+    splitted, chunks belong to the same molecule/isomer of the same subset will
+    be merged to allow larger batch.
 
     Parameters
     ----------
@@ -160,7 +161,8 @@ def random_split(dataset, num_chunks, chunk_size):
     shuffle(chunks)
     if sum(num_chunks) != len(chunks):
         raise ValueError(
-            "Sum of input number of chunks does not equal the length of the total dataset!")
+            """Sum of input number of chunks does not equal the length of the
+            total dataset!""")
     offset = 0
     subsets = []
     for i in num_chunks:
