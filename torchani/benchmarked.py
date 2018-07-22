@@ -8,12 +8,13 @@ class BenchmarkedModule(torch.jit.ScriptModule):
 
     The benchmarking is done by wrapping the original member function with
     a wrapped function. The wrapped function will call the original function,
-    and accumulate its running time into `self.timers`. Different accumulators are
-    distinguished by different keys. All times should have unit seconds.
+    and accumulate its running time into `self.timers`. Different accumulators
+    are distinguished by different keys. All times should have unit seconds.
 
     To enable benchmarking for member functions in a subclass, simply
-    call the `__init__` of this class with `benchmark=True`, and add the following
-    code to your subclass's `__init__`:
+    call the `__init__` of this class with `benchmark=True`, and add the
+    following code to your subclass's `__init__`:
+
     ```
     if self.benchmark:
         self._enable_benchmark(self.function_to_be_benchmarked, 'key1', 'key2')
@@ -21,8 +22,8 @@ class BenchmarkedModule(torch.jit.ScriptModule):
 
     Example
     -------
-    The following code implements a subclass for timing the running time of member function
-    `f` and `g` and the total of these two::
+    The following code implements a subclass for timing the running time of
+    member function `f` and `g` and the total of these two::
     ```
     class BenchmarkFG(BenchmarkedModule):
         def __init__(self, benchmark=False)
@@ -47,21 +48,22 @@ class BenchmarkedModule(torch.jit.ScriptModule):
     """
 
     def _enable_benchmark(self, fun, *keys):
-        """Wrap a function to automatically benchmark it, and assign a key for it.
+        """Wrap a function to automatically benchmark it, and assign a key
+        for it.
 
         Parameters
         ----------
         keys
-            The keys in `self.timers` assigned. If multiple keys are specified, then
-            the time will be accumulated to all the keys.
+            The keys in `self.timers` assigned. If multiple keys are specified,
+            then the time will be accumulated to all the keys.
         func : function
             The function to be benchmarked.
 
         Returns
         -------
         function
-            Wrapped function that time the original function and update the corresponding
-            value in `self.timers` automatically.
+            Wrapped function that time the original function and update the
+            corresponding value in `self.timers` automatically.
         """
         for key in keys:
             self.timers[key] = 0
@@ -77,7 +79,8 @@ class BenchmarkedModule(torch.jit.ScriptModule):
         return wrapped
 
     def reset_timers(self):
-        """Reset all timers. If benchmark is not enabled, a `ValueError` will be raised."""
+        """Reset all timers. If benchmark is not enabled, a `ValueError`
+        will be raised."""
         if not self.benchmark:
             raise ValueError('Can not reset timers, benchmark not enabled')
         for i in self.timers:

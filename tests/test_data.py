@@ -1,6 +1,5 @@
 import torchani
 import unittest
-import copy
 import tempfile
 import os
 import torch
@@ -28,7 +27,8 @@ class TestDataset(unittest.TestCase):
         l2 = 0
         for f in os.listdir(self.data_path):
             f = os.path.join(self.data_path, f)
-            if os.path.isfile(f) and (f.endswith('.h5') or f.endswith('.hdf5')):
+            if os.path.isfile(f) and \
+               (f.endswith('.h5') or f.endswith('.hdf5')):
                 for j in pyanitools.anidataloader(f):
                     l2 += j['energies'].shape[0]
         # compute data length using iterator
@@ -46,7 +46,8 @@ class TestDataset(unittest.TestCase):
         l2 = 0
         for f in os.listdir(self.data_path):
             f = os.path.join(self.data_path, f)
-            if os.path.isfile(f) and (f.endswith('.h5') or f.endswith('.hdf5')):
+            if os.path.isfile(f) and \
+               (f.endswith('.h5') or f.endswith('.hdf5')):
                 for j in pyanitools.anidataloader(f):
                     conformations = j['energies'].shape[0]
                     l2 += ceil(conformations / chunksize)
@@ -102,12 +103,12 @@ class TestDataset(unittest.TestCase):
 
     def _testMolSizes(self, ds):
         for i in range(len(ds)):
-            l = bisect(ds.cumulative_sizes, i)
+            left = bisect(ds.cumulative_sizes, i)
             moli = ds[i][0].item()
             for j in range(len(ds)):
-                l2 = bisect(ds.cumulative_sizes, j)
+                left2 = bisect(ds.cumulative_sizes, j)
                 molj = ds[j][0].item()
-                if l == l2:
+                if left == left2:
                     self.assertEqual(moli, molj)
                 else:
                     if moli == molj:

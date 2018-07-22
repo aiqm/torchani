@@ -3,14 +3,11 @@ import torchani
 import torchani.data
 import math
 import timeit
-import itertools
-import os
 import sys
 import pickle
 from tensorboardX import SummaryWriter
 from tqdm import tqdm
-from common import *
-import sys
+from common import get_or_create_model, Averager, evaluate
 import json
 
 chunk_size = 256
@@ -27,11 +24,14 @@ with open('data/dataset.dat', 'rb') as f:
         testing, chunk_size, batch_chunks)
 
     training_dataloader = torch.utils.data.DataLoader(
-        training, batch_sampler=training_sampler, collate_fn=torchani.data.collate)
+        training, batch_sampler=training_sampler,
+        collate_fn=torchani.data.collate)
     validation_dataloader = torch.utils.data.DataLoader(
-        validation, batch_sampler=validation_sampler, collate_fn=torchani.data.collate)
+        validation, batch_sampler=validation_sampler,
+        collate_fn=torchani.data.collate)
     testing_dataloader = torch.utils.data.DataLoader(
-        testing, batch_sampler=testing_sampler, collate_fn=torchani.data.collate)
+        testing, batch_sampler=testing_sampler,
+        collate_fn=torchani.data.collate)
 
 writer = SummaryWriter('runs/adam-{}'.format(sys.argv[1]))
 
@@ -48,8 +48,8 @@ def subset_rmse(subset_dataloader):
         for molecule_id in batch:
             _species = subset_dataloader.dataset.species[molecule_id]
             coordinates, energies = batch[molecule_id]
-            coordinates = coordinates.to(aev_computer.device)
-            energies = energies.to(aev_computer.device)
+            coordinates = coordinates.to(model.aev_computer.device)
+            energies = energies.to(model.aev_computer.device)
             count, squared_error = evaluate(
                 model, coordinates, energies, _species)
             squared_error = squared_error.item()
@@ -73,13 +73,15 @@ best_validation_rmse = math.inf
 best_epoch = 0
 start = timeit.default_timer()
 while True:
-    for batch in tqdm(training_dataloader, desc='epoch {}'.format(epoch), total=len(training_sampler)):
+    for batch in tqdm(training_dataloader,
+                      desc='epoch {}'.format(epoch),
+                      total=len(training_sampler)):
         a = Averager()
         for molecule_id in batch:
             _species = training.species[molecule_id]
             coordinates, energies = batch[molecule_id]
-            coordinates = coordinates.to(aev_computer.device)
-            energies = energies.to(aev_computer.device)
+            coordinates = coordinates.to(model.aev_computer.device)
+            energies = energies.to(model.aev_computer.device)
             count, squared_error = evaluate(
                 model, coordinates, energies, _species)
             a.add(count, squared_error / len(_species))

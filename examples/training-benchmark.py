@@ -2,18 +2,17 @@ import torch
 import torchani
 import torchani.data
 import tqdm
-import math
 import timeit
 import configs
 import functools
-configs.benchmark = True
-from common import *
+from common import get_or_create_model, Averager, evaluate
 
 ds = torchani.data.load_dataset(configs.data_path)
 sampler = torchani.data.BatchSampler(ds, 256, 4)
 dataloader = torch.utils.data.DataLoader(
-    ds, batch_sampler=sampler, collate_fn=torchani.data.collate, num_workers=20)
-model = get_or_create_model('/tmp/model.pt')
+    ds, batch_sampler=sampler,
+    collate_fn=torchani.data.collate, num_workers=20)
+model = get_or_create_model('/tmp/model.pt', True)
 optimizer = torch.optim.Adam(model.parameters(), amsgrad=True)
 
 
@@ -47,20 +46,20 @@ for batch in tqdm.tqdm(dataloader, total=len(sampler)):
     for molecule_id in batch:
         _species = ds.species[molecule_id]
         coordinates, energies = batch[molecule_id]
-        coordinates = coordinates.to(aev_computer.device)
-        energies = energies.to(aev_computer.device)
+        coordinates = coordinates.to(model.aev_computer.device)
+        energies = energies.to(model.aev_computer.device)
         a.add(*evaluate(model, coordinates, energies, _species))
     optimize_step(a)
 
 elapsed = round(timeit.default_timer() - start, 2)
-print('Radial terms:', aev_computer.timers['radial terms'])
-print('Angular terms:', aev_computer.timers['angular terms'])
-print('Terms and indices:', aev_computer.timers['terms and indices'])
-print('Combinations:', aev_computer.timers['combinations'])
-print('Mask R:', aev_computer.timers['mask_r'])
-print('Mask A:', aev_computer.timers['mask_a'])
-print('Assemble:', aev_computer.timers['assemble'])
-print('Total AEV:', aev_computer.timers['total'])
+print('Radial terms:', model.aev_computer.timers['radial terms'])
+print('Angular terms:', model.aev_computer.timers['angular terms'])
+print('Terms and indices:', model.aev_computer.timers['terms and indices'])
+print('Combinations:', model.aev_computer.timers['combinations'])
+print('Mask R:', model.aev_computer.timers['mask_r'])
+print('Mask A:', model.aev_computer.timers['mask_a'])
+print('Assemble:', model.aev_computer.timers['assemble'])
+print('Total AEV:', model.aev_computer.timers['total'])
 print('NN:', model.timers['nn'])
 print('Total Forward:', model.timers['forward'])
 print('Total Backward:', timer['backward'])

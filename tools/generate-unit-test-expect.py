@@ -6,7 +6,8 @@ import ase_interface
 import numpy
 import torchani
 import pickle
-from torchani import buildin_const_file, buildin_sae_file, buildin_network_dir, default_dtype, default_device
+from torchani import buildin_const_file, buildin_sae_file, \
+    buildin_network_dir, default_dtype, default_device
 import torchani.pyanitools
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -15,7 +16,9 @@ conv_au_ev = 27.21138505
 
 class NeuroChem (torchani.aev_base.AEVComputer):
 
-    def __init__(self, dtype=default_dtype, device=default_device, const_file=buildin_const_file, sae_file=buildin_sae_file, network_dir=buildin_network_dir):
+    def __init__(self, dtype=default_dtype, device=default_device,
+                 const_file=buildin_const_file, sae_file=buildin_sae_file,
+                 network_dir=buildin_network_dir):
         super(NeuroChem, self).__init__(False, dtype, device, const_file)
         self.sae_file = sae_file
         self.network_dir = network_dir
@@ -52,7 +55,9 @@ class NeuroChem (torchani.aev_base.AEVComputer):
             self.dtype).to(self.device)
         forces = torch.from_numpy(numpy.stack(forces)).type(
             self.dtype).to(self.device)
-        return self._get_radial_part(aevs), self._get_angular_part(aevs), energies, forces
+        return self._get_radial_part(aevs), \
+            self._get_angular_part(aevs), \
+            energies, forces
 
 
 aev = torchani.SortedAEV(device=torch.device('cpu'))

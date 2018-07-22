@@ -1,7 +1,7 @@
 import torchani
 import torch
 import os
-from configs import benchmark, device
+import configs
 
 
 class Averager:
@@ -18,17 +18,15 @@ class Averager:
         return self.subtotal / self.count
 
 
-aev_computer = torchani.SortedAEV(benchmark=benchmark, device=device)
-
-
 def celu(x, alpha):
     return torch.where(x > 0, x, alpha * (torch.exp(x/alpha)-1))
 
 
 class AtomicNetwork(torch.nn.Module):
 
-    def __init__(self):
+    def __init__(self, aev_computer):
         super(AtomicNetwork, self).__init__()
+        self.aev_computer = aev_computer
         self.output_length = 1
         self.layer1 = torch.nn.Linear(384, 128).type(
             aev_computer.dtype).to(aev_computer.device)
@@ -51,16 +49,17 @@ class AtomicNetwork(torch.nn.Module):
         return y
 
 
-def get_or_create_model(filename):
+def get_or_create_model(filename, benchmark=False, device=configs.device):
+    aev_computer = torchani.SortedAEV(benchmark=benchmark, device=device)
     model = torchani.ModelOnAEV(
         aev_computer,
         reducer=torch.sum,
         benchmark=benchmark,
         per_species={
-            'C': AtomicNetwork(),
-            'H': AtomicNetwork(),
-            'N': AtomicNetwork(),
-            'O': AtomicNetwork(),
+            'C': AtomicNetwork(aev_computer),
+            'H': AtomicNetwork(aev_computer),
+            'N': AtomicNetwork(aev_computer),
+            'O': AtomicNetwork(aev_computer),
         })
     if os.path.isfile(filename):
         model.load_state_dict(torch.load(filename))

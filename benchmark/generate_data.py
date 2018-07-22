@@ -2,7 +2,6 @@ from ase import Atoms
 from ase.calculators.tip3p import TIP3P, rOH, angleHOH
 from ase.md import Langevin
 import ase.units as units
-from ase.io.trajectory import Trajectory
 import numpy
 import h5py
 from rdkit import Chem
@@ -10,14 +9,12 @@ from rdkit.Chem import AllChem
 # from asap3 import EMT
 from ase.calculators.emt import EMT
 from multiprocessing import Pool
-from tqdm import tqdm, tqdm_notebook, trange
-tqdm.monitor_interval = 0
+from tqdm import tqdm, trange
 from selected_system import mols, mol_file
-
-import functools
 
 conformations = 1024
 T = 30
+tqdm.monitor_interval = 0
 
 fw = h5py.File("waters.hdf5", "w")
 fm = h5py.File(mol_file, "w")
@@ -96,7 +93,7 @@ if __name__ == '__main__':
     print('done with molecules')
 
     with Pool() as p:
-        p.starmap(waterbox, [(10, 10, 10, 0), (20, 20, 10,
-                                               1), (30, 30, 30, 2), (40, 40, 40, 3)])
+        p.starmap(waterbox, [(10, 10, 10, 0), (20, 20, 10, 1),
+                             (30, 30, 30, 2), (40, 40, 40, 3)])
         print(list(fw.keys()))
         print('done with water boxes')

@@ -1,5 +1,4 @@
 import torch
-import numpy
 import torchani
 import unittest
 import os
@@ -11,7 +10,8 @@ N = 97
 
 class TestForce(unittest.TestCase):
 
-    def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
+    def setUp(self, dtype=torchani.default_dtype,
+              device=torchani.default_device):
         self.tolerance = 1e-5
         self.aev_computer = torchani.SortedAEV(
             dtype=dtype, device=torch.device('cpu'))

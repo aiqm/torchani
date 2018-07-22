@@ -10,4 +10,5 @@ steps:
   unit-tests:
     image: '${{build-torchani}}'
     commands:
+      - flake8
       - python setup.py test

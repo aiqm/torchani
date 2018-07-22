@@ -49,7 +49,8 @@ class anidataloader(object):
             exit('Error: file not found - '+store_file)
         self.store = h5py.File(store_file, 'r')
 
-    ''' Group recursive iterator (iterate through all groups in all branches and return datasets in dicts) '''
+    ''' Group recursive iterator (iterate through all groups
+        in all branches and return datasets in dicts) '''
 
     def h5py_dataset_iterator(self, g, prefix=''):
         for key in g.keys():
