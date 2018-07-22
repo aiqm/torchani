@@ -1,6 +1,6 @@
 import sys
 
-if sys.version_info.major >= 3: 
+if sys.version_info.major >= 3:
     import torchani
     import unittest
     import tempfile
@@ -12,10 +12,8 @@ if sys.version_info.major >= 3:
     from bisect import bisect
     from pickle import dump, load
 
-
     path = os.path.dirname(os.path.realpath(__file__))
     dataset_dir = os.path.join(path, 'dataset')
-
 
     class TestDataset(unittest.TestCase):
 
@@ -31,7 +29,7 @@ if sys.version_info.major >= 3:
             for f in os.listdir(self.data_path):
                 f = os.path.join(self.data_path, f)
                 if os.path.isfile(f) and \
-                (f.endswith('.h5') or f.endswith('.hdf5')):
+                   (f.endswith('.h5') or f.endswith('.hdf5')):
                     for j in pyanitools.anidataloader(f):
                         l2 += j['energies'].shape[0]
             # compute data length using iterator
@@ -50,7 +48,7 @@ if sys.version_info.major >= 3:
             for f in os.listdir(self.data_path):
                 f = os.path.join(self.data_path, f)
                 if os.path.isfile(f) and \
-                (f.endswith('.h5') or f.endswith('.hdf5')):
+                   (f.endswith('.h5') or f.endswith('.hdf5')):
                     for j in pyanitools.anidataloader(f):
                         conformations = j['energies'].shape[0]
                         l2 += ceil(conformations / chunksize)
@@ -160,7 +158,6 @@ if sys.version_info.major >= 3:
                 e1 = i1[2].item()
                 e2 = i2[2].item()
                 self.assertEqual(e1, e2)
-
 
     if __name__ == '__main__':
         unittest.main()
