@@ -1,5 +1,5 @@
 import torch
-from . import buildin_const_file, default_dtype, default_device
+from .env import buildin_const_file, default_dtype, default_device
 from .benchmarked import BenchmarkedModule
 
 

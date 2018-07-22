@@ -5,7 +5,7 @@ import os
 import lark
 import struct
 import math
-from . import buildin_network_dir, buildin_model_prefix
+from .env import buildin_network_dir, buildin_model_prefix
 from .benchmarked import BenchmarkedModule
 
 # For python 2 compatibility
