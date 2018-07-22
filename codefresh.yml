@@ -8,6 +8,6 @@ steps:
     dockerfile: Dockerfile
     tag: latest
   unit-tests:
-    image: torchani
+    image: '${{build-torchani}}'
     commands:
-      - cd torchani && python setup.py test
+      - python setup.py test
