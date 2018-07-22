@@ -28,3 +28,5 @@ Never commit to the master branch directly. If you need to change something, cre
 You must pass all the tests on GitHub before your PR can be merged.
 
 Code review is required before merging pull request.
+
+To manually run unit tests, do `python setup.py test`
