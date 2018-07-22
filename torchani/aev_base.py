@@ -1,12 +1,12 @@
 import torch
-import torch.nn as nn
 from . import buildin_const_file, default_dtype, default_device
 from .benchmarked import BenchmarkedModule
 
 
 class AEVComputer(BenchmarkedModule):
     __constants__ = ['Rcr', 'Rca', 'dtype', 'device', 'radial_sublength',
-                     'radial_length', 'angular_sublength', 'angular_length', 'aev_length']
+                     'radial_length', 'angular_sublength', 'angular_length',
+                     'aev_length']
 
     """Base class of various implementations of AEV computer
 
@@ -15,8 +15,8 @@ class AEVComputer(BenchmarkedModule):
     benchmark : boolean
         Whether to enable benchmark
     dtype : torch.dtype
-        Data type of pytorch tensors for all the computations. This is also used
-        to specify whether to use CPU or GPU.
+        Data type of pytorch tensors for all the computations. This is
+        also used to specify whether to use CPU or GPU.
     device : torch.Device
         The device where tensors should be.
     const_file : str
@@ -37,7 +37,8 @@ class AEVComputer(BenchmarkedModule):
         The length of full aev
     """
 
-    def __init__(self, benchmark=False, dtype=default_dtype, device=default_device, const_file=buildin_const_file):
+    def __init__(self, benchmark=False, dtype=default_dtype,
+                 device=default_device, const_file=buildin_const_file):
         super(AEVComputer, self).__init__(benchmark)
 
         self.dtype = dtype
@@ -53,7 +54,8 @@ class AEVComputer(BenchmarkedModule):
                     value = line[1]
                     if name == 'Rcr' or name == 'Rca':
                         setattr(self, name, float(value))
-                    elif name in ['EtaR', 'ShfR', 'Zeta', 'ShfZ', 'EtaA', 'ShfA']:
+                    elif name in ['EtaR', 'ShfR', 'Zeta',
+                                  'ShfZ', 'EtaA', 'ShfA']:
                         value = [float(x.strip()) for x in value.replace(
                             '[', '').replace(']', '').split(',')]
                         value = torch.tensor(value, dtype=dtype, device=device)
@@ -62,7 +64,7 @@ class AEVComputer(BenchmarkedModule):
                         value = [x.strip() for x in value.replace(
                             '[', '').replace(']', '').split(',')]
                         self.species = value
-                except:
+                except Exception:
                     raise ValueError('unable to parse const file')
 
         # Compute lengths
@@ -112,8 +114,8 @@ class AEVComputer(BenchmarkedModule):
         Parameters
         ----------
         coordinates : torch.Tensor
-            The tensor that specifies the xyz coordinates of atoms in the molecule.
-            The tensor must have shape (conformations, atoms, 3)
+            The tensor that specifies the xyz coordinates of atoms in the
+            molecule. The tensor must have shape (conformations, atoms, 3)
         species : torch.LongTensor
             Long tensor for the species, where a value k means the species is
             the same as self.species[k]
@@ -121,8 +123,9 @@ class AEVComputer(BenchmarkedModule):
         Returns
         -------
         (torch.Tensor, torch.Tensor)
-            Returns (radial AEV, angular AEV), both are pytorch tensor of `dtype`.
-            The radial AEV must be of shape (conformations, atoms, radial_length)
-            The angular AEV must be of shape (conformations, atoms, angular_length)
+            Returns (radial AEV, angular AEV), both are pytorch tensor
+            of `dtype`. The radial AEV must be of shape
+            (conformations, atoms, radial_length). The angular AEV must
+            be of shape (conformations, atoms, angular_length)
         """
         raise NotImplementedError('subclass must override this method')
