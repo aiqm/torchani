@@ -2,28 +2,36 @@ import torch
 import itertools
 import numpy
 from .aev_base import AEVComputer
-from . import buildin_const_file, default_dtype, default_device
+from .env import buildin_const_file, default_dtype, default_device
 
 
 def _cutoff_cosine(distances, cutoff):
     """Compute the elementwise cutoff cosine function
 
-    The cutoff cosine function is define in https://arxiv.org/pdf/1610.08935.pdf equation 2
+    The cutoff cosine function is define in
+    https://arxiv.org/pdf/1610.08935.pdf equation 2
 
     Parameters
     ----------
     distances : torch.Tensor
-        The pytorch tensor that stores Rij values. This tensor can have any shape since the cutoff
-        cosine function is computed elementwise.
+        The pytorch tensor that stores Rij values. This tensor can
+        have any shape since the cutoff cosine function is computed
+        elementwise.
     cutoff : float
-        The cutoff radius, i.e. the Rc in the equation. For any Rij > Rc, the function value is defined to be zero.
+        The cutoff radius, i.e. the Rc in the equation. For any Rij > Rc,
+        the function value is defined to be zero.
 
     Returns
     -------
     torch.Tensor
-        The tensor of the same shape as `distances` that stores the computed function values.
+        The tensor of the same shape as `distances` that stores the
+        computed function values.
     """
-    return torch.where(distances <= cutoff, 0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5, torch.zeros_like(distances))
+    return torch.where(
+        distances <= cutoff,
+        0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5,
+        torch.zeros_like(distances)
+    )
 
 
 class SortedAEV(AEVComputer):
@@ -38,7 +46,8 @@ class SortedAEV(AEVComputer):
             total : total time for computing everything.
     """
 
-    def __init__(self, benchmark=False, device=default_device, dtype=default_dtype, const_file=buildin_const_file):
+    def __init__(self, benchmark=False, device=default_device,
+                 dtype=default_dtype, const_file=buildin_const_file):
         super(SortedAEV, self).__init__(benchmark, dtype, device, const_file)
         if benchmark:
             self.radial_subaev_terms = self._enable_benchmark(
@@ -77,55 +86,63 @@ class SortedAEV(AEVComputer):
     def radial_subaev_terms(self, distances):
         """Compute the radial subAEV terms of the center atom given neighbors
 
-        The radial AEV is define in https://arxiv.org/pdf/1610.08935.pdf equation 3.
-        The sum computed by this method is over all given neighbors, so the caller
-        of this method need to select neighbors if the caller want a per species subAEV.
+        The radial AEV is define in
+        https://arxiv.org/pdf/1610.08935.pdf equation 3.
+        The sum computed by this method is over all given neighbors,
+        so the caller of this method need to select neighbors if the
+        caller want a per species subAEV.
 
         Parameters
         ----------
         distances : torch.Tensor
-            Pytorch tensor of shape (..., neighbors) storing the |Rij| length where i are the
-            center atoms, and j are their neighbors.
+            Pytorch tensor of shape (..., neighbors) storing the |Rij|
+            length where i are the center atoms, and j are their neighbors.
 
         Returns
         -------
         torch.Tensor
-            A tensor of shape (..., neighbors, `radial_sublength`) storing the subAEVs.
+            A tensor of shape (..., neighbors, `radial_sublength`) storing
+            the subAEVs.
         """
-        distances = distances.unsqueeze(
-            -1).unsqueeze(-1)  # TODO: allow unsqueeze to insert multiple dimensions
+        distances = distances.unsqueeze(-1).unsqueeze(-1)
         fc = _cutoff_cosine(distances, self.Rcr)
-        # Note that in the equation in the paper there is no 0.25 coefficient, but in NeuroChem there is such a coefficient. We choose to be consistent with NeuroChem instead of the paper here.
+        # Note that in the equation in the paper there is no 0.25
+        # coefficient, but in NeuroChem there is such a coefficient.
+        # We choose to be consistent with NeuroChem instead of the paper here.
         ret = 0.25 * torch.exp(-self.EtaR * (distances - self.ShfR)**2) * fc
         return ret.flatten(start_dim=-2)
 
     def angular_subaev_terms(self, vectors1, vectors2):
         """Compute the angular subAEV terms of the center atom given neighbor pairs.
 
-        The angular AEV is define in https://arxiv.org/pdf/1610.08935.pdf equation 4.
-        The sum computed by this method is over all given neighbor pairs, so the caller
-        of this method need to select neighbors if the caller want a per species subAEV.
+        The angular AEV is define in
+        https://arxiv.org/pdf/1610.08935.pdf equation 4.
+        The sum computed by this method is over all given neighbor pairs,
+        so the caller of this method need to select neighbors if the caller
+        want a per species subAEV.
 
         Parameters
         ----------
         vectors1, vectors2: torch.Tensor
-            Tensor of shape (..., pairs, 3) storing the Rij vectors of pairs of neighbors.
-            The vectors1(..., j, :) and vectors2(..., j, :) are the Rij vectors of the
-            two atoms of pair j.
+            Tensor of shape (..., pairs, 3) storing the Rij vectors of pairs
+            of neighbors. The vectors1(..., j, :) and vectors2(..., j, :) are
+            the Rij vectors of the two atoms of pair j.
 
         Returns
         -------
         torch.Tensor
-            Tensor of shape (..., pairs, `angular_sublength`) storing the subAEVs.
+            Tensor of shape (..., pairs, `angular_sublength`) storing the
+            subAEVs.
         """
         vectors1 = vectors1.unsqueeze(
-            -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)  # TODO: allow unsqueeze to plug in multiple dims
+            -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
         vectors2 = vectors2.unsqueeze(
-            -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)  # TODO: allow unsqueeze to plug in multiple dims
+            -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
         distances1 = vectors1.norm(2, dim=-5)
         distances2 = vectors2.norm(2, dim=-5)
 
-        # 0.95 is multiplied to the cos values to prevent acos from returning NaN.
+        # 0.95 is multiplied to the cos values to prevent acos from
+        # returning NaN.
         cos_angles = 0.95 * \
             torch.nn.functional.cosine_similarity(
                 vectors1, vectors2, dim=-5)
@@ -137,38 +154,42 @@ class SortedAEV(AEVComputer):
         factor2 = torch.exp(-self.EtaA *
                             ((distances1 + distances2) / 2 - self.ShfA) ** 2)
         ret = 2 * factor1 * factor2 * fcj1 * fcj2
-        # ret now have shape (..., pairs, ?, ?, ?, ?) where ? depend on constants
+        # ret now have shape (..., pairs, ?, ?, ?, ?) where ? depend on
+        # constants
+
         # flat the last 4 dimensions to view the subAEV as one dimension vector
         return ret.flatten(start_dim=-4)
 
     def terms_and_indices(self, coordinates):
         """Compute radial and angular subAEV terms, and original indices.
 
-        Terms will be sorted according to their distances to central atoms, and only
-        these within cutoff radius are valid. The returned indices contains what would
-        their original indices be if they were unsorted.
+        Terms will be sorted according to their distances to central atoms,
+        and only these within cutoff radius are valid. The returned indices
+        contains what would their original indices be if they were unsorted.
 
         Parameters
         ----------
         coordinates : torch.Tensor
-            The tensor that specifies the xyz coordinates of atoms in the molecule.
-            The tensor must have shape (conformations, atoms, 3)
+            The tensor that specifies the xyz coordinates of atoms in the
+            molecule. The tensor must have shape (conformations, atoms, 3)
 
         Returns
         -------
         (radial_terms, angular_terms, indices_r, indices_a)
         radial_terms : torch.Tensor
-            Tensor of shape (conformations, atoms, neighbors, `radial_sublength`) for
-            the (unsummed) radial subAEV terms.
+            Tensor shaped (conformations, atoms, neighbors, `radial_sublength`)
+            for the (unsummed) radial subAEV terms.
         angular_terms : torch.Tensor
-            Tensor of shape (conformations, atoms, pairs, `angular_sublength`) for the
-            (unsummed) angular subAEV terms.
+            Tensor of shape (conformations, atoms, pairs, `angular_sublength`)
+            for the (unsummed) angular subAEV terms.
         indices_r : torch.Tensor
-            Tensor of shape (conformations, atoms, neighbors). Let l = indices_r(i,j,k),
-            then this means that radial_terms(i,j,k,:) is in the subAEV term of conformation
-            i between atom j and atom l. 
+            Tensor of shape (conformations, atoms, neighbors).
+            Let l = indices_r(i,j,k), then this means that
+            radial_terms(i,j,k,:) is in the subAEV term of conformation i
+            between atom j and atom l.
         indices_a : torch.Tensor
-            Same as indices_r, except that the cutoff radius is Rca instead of Rcr.
+            Same as indices_r, except that the cutoff radius is Rca instead of
+            Rcr.
         """
 
         vec = coordinates.unsqueeze(2) - coordinates.unsqueeze(1)
@@ -208,10 +229,12 @@ class SortedAEV(AEVComputer):
         index1 = grid_y[torch.triu(torch.ones(n, n), diagonal=1) == 1]
         index2 = grid_x[torch.triu(torch.ones(n, n), diagonal=1) == 1]
         if torch.numel(index1) == 0:
-            # TODO: pytorch are unable to handle size 0 tensor well. Is this an expected behavior?
+            # TODO: pytorch are unable to handle size 0 tensor well.
+            # Is this an expected behavior?
             # See: https://github.com/pytorch/pytorch/issues/5014
             return None
-        return tensor.index_select(dim, index1), tensor.index_select(dim, index2)
+        return tensor.index_select(dim, index1), \
+            tensor.index_select(dim, index2)
 
     def compute_mask_r(self, species_r):
         """Partition indices according to their species, radial part
@@ -219,14 +242,14 @@ class SortedAEV(AEVComputer):
         Parameters
         ----------
         species_r : torch.Tensor
-            Tensor of shape (conformations, atoms, neighbors) storing species of
-            neighbors.
+            Tensor of shape (conformations, atoms, neighbors) storing
+            species of neighbors.
 
         Returns
         -------
         torch.Tensor
-            Tensor of shape (conformations, atoms, neighbors, all species) storing
-            the mask for each species.
+            Tensor of shape (conformations, atoms, neighbors, all species)
+            storing the mask for each species.
         """
         mask_r = (species_r.unsqueeze(-1) ==
                   torch.arange(len(self.species), device=self.device))
@@ -238,16 +261,16 @@ class SortedAEV(AEVComputer):
         Parameters
         ----------
         species_a : torch.Tensor
-            Tensor of shape (conformations, atoms, neighbors) storing the species of
-            neighbors
+            Tensor of shape (conformations, atoms, neighbors) storing the
+            species of neighbors.
         present_species : torch.Tensor
             Long tensor for the species, already uniqued.
 
         Returns
         -------
         torch.Tensor
-            Tensor of shape (conformations, atoms, pairs, present species, present species)
-            storing the mask for each pair.
+            Tensor of shape (conformations, atoms, pairs, present species,
+            present species) storing the mask for each pair.
         """
         species_a = self.combinations(species_a, -1)
         if species_a is not None:
@@ -266,32 +289,35 @@ class SortedAEV(AEVComputer):
         else:
             return None
 
-    def assemble(self, radial_terms, angular_terms, present_species, mask_r, mask_a):
-        """Assemble radial and angular AEV from computed terms according to the given partition information.
+    def assemble(self, radial_terms, angular_terms, present_species,
+                 mask_r, mask_a):
+        """Assemble radial and angular AEV from computed terms according
+        to the given partition information.
 
         Parameters
         ----------
         radial_terms : torch.Tensor
-            Tensor of shape (conformations, atoms, neighbors, `radial_sublength`) for
-            the (unsummed) radial subAEV terms.
+            Tensor shaped (conformations, atoms, neighbors, `radial_sublength`)
+            for the (unsummed) radial subAEV terms.
         angular_terms : torch.Tensor
-            Tensor of shape (conformations, atoms, pairs, `angular_sublength`) for the
-            (unsummed) angular subAEV terms.
+            Tensor of shape (conformations, atoms, pairs, `angular_sublength`)
+            for the (unsummed) angular subAEV terms.
         present_species : torch.Tensor
             Long tensor for species of atoms present in the molecules.
         mask_r : torch.Tensor
-            Tensor of shape (conformations, atoms, neighbors, present species) storing
-            the mask for each species.
+            Tensor of shape (conformations, atoms, neighbors, present species)
+            storing the mask for each species.
         mask_a : torch.Tensor
-            Tensor of shape (conformations, atoms, pairs, present species, present species)
-            storing the mask for each pair.
+            Tensor of shape (conformations, atoms, pairs, present species,
+            present species) storing the mask for each pair.
 
         Returns
         -------
         (torch.Tensor, torch.Tensor)
-            Returns (radial AEV, angular AEV), both are pytorch tensor of `dtype`.
-            The radial AEV must be of shape (conformations, atoms, radial_length)
-            The angular AEV must be of shape (conformations, atoms, angular_length)
+            Returns (radial AEV, angular AEV), both are pytorch tensor of
+            `dtype`. The radial AEV must be of shape (conformations, atoms,
+            radial_length) The angular AEV must be of shape (conformations,
+            atoms, angular_length)
         """
         conformations = radial_terms.shape[0]
         atoms = radial_terms.shape[1]
@@ -299,17 +325,22 @@ class SortedAEV(AEVComputer):
         # assemble radial subaev
         present_radial_aevs = (radial_terms.unsqueeze(-2)
                                * mask_r.unsqueeze(-1).type(self.dtype)).sum(-3)
-        """Tensor of shape (conformations, atoms, present species, radial_length)"""
+        """shape (conformations, atoms, present species, radial_length)"""
         radial_aevs = present_radial_aevs.flatten(start_dim=2)
 
         # assemble angular subaev
-        rev_indices = {present_species[i].item(): i  # TODO: can we use find_first?
+        # TODO: can we use find_first?
+        rev_indices = {present_species[i].item(): i
                        for i in range(len(present_species))}
-        """Tensor of shape (conformations, atoms, present species, present species, angular_length)"""
+        """shape (conformations, atoms, present species,
+                  present species, angular_length)"""
         angular_aevs = []
-        zero_angular_subaev = torch.zeros(  # TODO: can we make stack and cat broadcast?
-            conformations, atoms, self.angular_sublength, dtype=self.dtype, device=self.device)  # TODO: can we make torch.zeros, torch.ones typeless and deviceless?
-        for s1, s2 in itertools.combinations_with_replacement(range(len(self.species)), 2):
+        zero_angular_subaev = torch.zeros(
+            # TODO: can we make stack and cat broadcast?
+            conformations, atoms, self.angular_sublength,
+            dtype=self.dtype, device=self.device)
+        for s1, s2 in itertools.combinations_with_replacement(
+                                        range(len(self.species)), 2):
             # TODO: can we remove this if pytorch support 0 size tensors?
             if s1 in rev_indices and s2 in rev_indices and mask_a is not None:
                 i1 = rev_indices[s1]
@@ -326,15 +357,16 @@ class SortedAEV(AEVComputer):
         species = self.species_to_tensor(species)
         present_species = species.unique(sorted=True)
 
-        radial_terms, angular_terms, indices_r, indices_a = self.terms_and_indices(
-            coordinates)
+        radial_terms, angular_terms, indices_r, indices_a = \
+            self.terms_and_indices(coordinates)
 
         species_r = species[indices_r]
         mask_r = self.compute_mask_r(species_r)
         species_a = species[indices_a]
         mask_a = self.compute_mask_a(species_a, present_species)
 
-        return self.assemble(radial_terms, angular_terms, present_species, mask_r, mask_a)
+        return self.assemble(radial_terms, angular_terms, present_species,
+                             mask_r, mask_a)
 
     def export_radial_subaev_onnx(self, filename):
         """Export the operation that compute radial subaev into onnx format

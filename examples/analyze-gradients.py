@@ -23,7 +23,8 @@ hyperparams = [  # (chunk size, batch chunks)
 ]
 
 for chunk_size, batch_chunks in hyperparams:
-    with open('data/avg-{}-{}.dat'.format(chunk_size, batch_chunks), 'rb') as f:
+    with open('data/avg-{}-{}.dat'.format(chunk_size, batch_chunks),
+              'rb') as f:
         ag, agsqr = pickle.load(f)
         variance = torch.sum(agsqr) - torch.sum(ag**2)
         stddev = torch.sqrt(variance).item()

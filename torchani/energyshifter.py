@@ -1,4 +1,4 @@
-from . import buildin_sae_file
+from .env import buildin_sae_file
 
 
 class EnergyShifter:
@@ -20,7 +20,7 @@ class EnergyShifter:
                     name = line[0].split(',')[0].strip()
                     value = float(line[1])
                     self.self_energies[name] = value
-                except:
+                except Exception:
                     pass  # ignore unrecognizable line
 
     def subtract_sae(self, energies, species):
