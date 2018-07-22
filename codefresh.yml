@@ -12,3 +12,4 @@ steps:
     commands:
       - flake8
       - python setup.py test
+      - python2 setup.py test
