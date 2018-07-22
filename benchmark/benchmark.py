@@ -1,38 +1,35 @@
-import numpy
+import torchani
 
 
-class Benchmark:
-    """Abstract class for benchmarking ANI implementations"""
+class ANIBenchmark:
 
     def __init__(self, device):
-        self.device = device
+        super(ANIBenchmark, self).__init__(device)
+        self.aev_computer = torchani.SortedAEV(device=device)
+        self.model = torchani.ModelOnAEV(
+            self.aev_computer, benchmark=True, derivative=True, from_nc=None)
 
     def oneByOne(self, coordinates, species):
-        """Benchmarking the given dataset of computing energies and forces one at a time
-
-        Parameters
-        ----------
-        coordinates : numpy.ndarray
-            Array of shape (conformations, atoms, 3)
-        species : list
-            List of species for this molecule. The length of the list must be the same as
-            atoms in the molecule.
-
-        Returns
-        -------
-        dict
-            Dictionary storing the times for computing AEVs, energies and forces, in seconds.
-            The dictionary should contain the following keys:
-            aev : the time used to compute AEVs from coordinates with given neighbor list.
-            energy : the time used to compute energies, when the AEVs are given.
-            force : the time used to compute forces, when the energies and AEVs are given.
-        """
-        # return { 'neighborlist': 0, 'aev': 0, 'energy': 0, 'force': 0 }
-        raise NotImplementedError('subclass must implement this method')
+        conformations = coordinates.shape[0]
+        coordinates = coordinates.to(self.device)
+        for i in range(conformations):
+            c = coordinates[i:i+1, :, :]
+            self.model(c, species)
+        ret = {
+            'aev': self.model.timers['aev'],
+            'energy': self.model.timers['nn'],
+            'force': self.model.timers['derivative']
+        }
+        self.model.reset_timers()
+        return ret
 
     def inBatch(self, coordinates, species):
-        """Benchmarking the given dataset of computing energies and forces in batch mode
-
-        The signature of this function is the same as `oneByOne`"""
-        # return { 'neighborlist': 0, 'aev': 0, 'energy': 0, 'force': 0 }
-        raise NotImplementedError('subclass must implement this method')
+        coordinates = coordinates.to(self.device)
+        self.model(coordinates, species)
+        ret = {
+            'aev': self.model.timers['aev'],
+            'energy': self.model.timers['nn'],
+            'force': self.model.timers['derivative']
+        }
+        self.model.reset_timers()
+        return ret
