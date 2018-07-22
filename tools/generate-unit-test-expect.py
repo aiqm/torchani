@@ -79,5 +79,5 @@ for i in [1, 2, 3, 4]:
         dumpfile = os.path.join(
             path, '../tests/test_data/{}'.format(mol_count))
         with open(dumpfile, 'wb') as f:
-            pickle.dump(pickleobj, f)
+            pickle.dump(pickleobj, f, protocol=2)
         mol_count += 1
