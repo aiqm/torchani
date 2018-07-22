@@ -3,18 +3,16 @@ import torch
 import torchani
 import configs
 import torchani.data
-import math
 from tqdm import tqdm
-import itertools
-import os
 import pickle
+from common import get_or_create_model, Averager, evaluate
 
-
+device = configs.device
 if len(sys.argv) >= 2:
-    configs.device = torch.device(sys.argv[1])
-from common import *
+    device = torch.device(sys.argv[1])
 
 ds = torchani.data.load_dataset(configs.data_path)
+model = get_or_create_model('/tmp/model.pt', device=device)
 # just to conveniently zero grads
 optimizer = torch.optim.Adam(model.parameters())
 
@@ -31,8 +29,8 @@ def batch_gradient(batch):
     for molecule_id in batch:
         _species = ds.species[molecule_id]
         coordinates, energies = batch[molecule_id]
-        coordinates = coordinates.to(aev_computer.device)
-        energies = energies.to(aev_computer.device)
+        coordinates = coordinates.to(model.aev_computer.device)
+        energies = energies.to(model.aev_computer.device)
         a.add(*evaluate(coordinates, energies, _species))
     mse = a.avg()
     optimizer.zero_grad()
@@ -59,7 +57,8 @@ def compute(chunk_size, batch_chunks):
         agsqr.add(1, g**2)
     ag = ag.avg()
     agsqr = agsqr.avg()
-    with open('data/avg-{}-{}.dat'.format(chunk_size, batch_chunks), 'wb') as f:
+    filename = 'data/avg-{}-{}.dat'.format(chunk_size, batch_chunks)
+    with open(filename, 'wb') as f:
         pickle.dump((ag, agsqr), f)
 
 
