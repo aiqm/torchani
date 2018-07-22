@@ -6,7 +6,8 @@ import copy
 
 class TestBenchmark(unittest.TestCase):
 
-    def setUp(self, dtype=torchani.default_dtype, device=torchani.default_device):
+    def setUp(self, dtype=torchani.default_dtype,
+              device=torchani.default_device):
         self.dtype = dtype
         self.device = device
         self.conformations = 100

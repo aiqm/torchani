@@ -1,5 +1,4 @@
 import torch
-import numpy
 import torchani
 import unittest
 import os
@@ -15,7 +14,8 @@ class TestAEV(unittest.TestCase):
         self.aev = torchani.SortedAEV(dtype=dtype, device=torch.device('cpu'))
         self.tolerance = 1e-5
 
-    def _test_molecule(self, coordinates, species, expected_radial, expected_angular):
+    def _test_molecule(self, coordinates, species, expected_radial,
+                       expected_angular):
         radial, angular = self.aev(coordinates, species)
         radial_diff = expected_radial - radial
         radial_max_error = torch.max(torch.abs(radial_diff)).item()
