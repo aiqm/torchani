@@ -1,0 +1,13 @@
+version: '1.0'
+
+steps:
+  build-torchani:
+    type: build
+    description: Build TorchANI
+    image-name: torchani
+    dockerfile: Dockerfile
+    tag: latest
+  unit-tests:
+    image: torchani
+    commands:
+      - cd torchani && python setup.py test
