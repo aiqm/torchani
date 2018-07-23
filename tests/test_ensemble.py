@@ -29,17 +29,17 @@ class TestEnsemble(unittest.TestCase):
         self.assertLess(energy_diff, self.tol)
         self.assertLess(force_diff, self.tol)
 
-    def testRandomH(self):
+    def testRandomHH(self):
         coordinates = torch.randn(self.conformations, 1, 3)
-        self._test_molecule(coordinates, ['H'])
+        self._test_molecule(coordinates, ['H', 'H'])
 
     def testRandomHC(self):
         coordinates = torch.randn(self.conformations, 2, 3)
         self._test_molecule(coordinates, ['H', 'C'])
 
-    def testRandomHNCOCCHHNNOO(self):
-        coordinates = torch.randn(self.conformations, 12, 3)
-        self._test_molecule(coordinates, list('HNCOCCHHNNOO'))
+    def testRandomHNCONCHO(self):
+        coordinates = torch.randn(self.conformations, 8, 3)
+        self._test_molecule(coordinates, list('HNCONCHO'))
 
 
 if __name__ == '__main__':
