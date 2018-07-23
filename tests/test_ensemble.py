@@ -1,6 +1,11 @@
 import unittest
+import pickle
+import os
 import torch
 import torchani
+
+path = os.path.dirname(os.path.realpath(__file__))
+N = 97
 
 
 class TestEnsemble(unittest.TestCase):
@@ -29,17 +34,12 @@ class TestEnsemble(unittest.TestCase):
         self.assertLess(energy_diff, self.tol)
         self.assertLess(force_diff, self.tol)
 
-    def testRandomHH(self):
-        coordinates = torch.rand(self.conformations, 1, 3)
-        self._test_molecule(coordinates, ['H', 'H'])
-
-    def testRandomHC(self):
-        coordinates = torch.rand(self.conformations, 2, 3)
-        self._test_molecule(coordinates, ['H', 'C'])
-
-    def testRandomHNCONCHO(self):
-        coordinates = torch.rand(self.conformations, 8, 3)
-        self._test_molecule(coordinates, list('HNCONCHO'))
+    def testGDB(self):
+        for i in range(N):
+            datafile = os.path.join(path, 'test_data/{}'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, _, _, _, _ = pickle.load(f)
+                self._test_molecule(coordinates, species)
 
 
 if __name__ == '__main__':
