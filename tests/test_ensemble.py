@@ -30,15 +30,15 @@ class TestEnsemble(unittest.TestCase):
         self.assertLess(force_diff, self.tol)
 
     def testRandomHH(self):
-        coordinates = torch.randn(self.conformations, 1, 3)
+        coordinates = torch.rand(self.conformations, 1, 3)
         self._test_molecule(coordinates, ['H', 'H'])
 
     def testRandomHC(self):
-        coordinates = torch.randn(self.conformations, 2, 3)
+        coordinates = torch.rand(self.conformations, 2, 3)
         self._test_molecule(coordinates, ['H', 'C'])
 
     def testRandomHNCONCHO(self):
-        coordinates = torch.randn(self.conformations, 8, 3)
+        coordinates = torch.rand(self.conformations, 8, 3)
         self._test_molecule(coordinates, list('HNCONCHO'))
 
 
