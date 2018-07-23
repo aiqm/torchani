@@ -24,8 +24,8 @@ class TestEnsemble(unittest.TestCase):
         energy2, force2 = zip(*[m(coordinates, species) for m in models])
         energy2 = sum(energy2) / n
         force2 = sum(force2) / n
-        energy_diff = (energy1 - energy2).abs().max
-        force_diff = (force1 - force2).abs().max
+        energy_diff = (energy1 - energy2).abs().max().item()
+        force_diff = (force1 - force2).abs().max().item()
         self.assertLess(energy_diff, self.tol)
         self.assertLess(force_diff, self.tol)
 
