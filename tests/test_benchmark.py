@@ -93,11 +93,11 @@ class TestBenchmark(unittest.TestCase):
     def testModelOnAEV(self):
         aev_computer = torchani.SortedAEV(
             dtype=self.dtype, device=self.device)
-        model = torchani.ModelOnAEV(
-            aev_computer, benchmark=True, from_nc=None)
+        model = torchani.models.NeuroChemNNP(
+            aev_computer, benchmark=True)
         self._testModule(model, ['forward>aev', 'forward>nn'])
-        model = torchani.ModelOnAEV(
-            aev_computer, benchmark=True, derivative=True, from_nc=None)
+        model = torchani.models.NeuroChemNNP(
+            aev_computer, benchmark=True, derivative=True)
         self._testModule(
             model, ['forward>aev', 'forward>nn', 'forward>derivative'])
 
