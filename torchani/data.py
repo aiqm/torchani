@@ -1,8 +1,10 @@
 from torch.utils.data import Dataset
 from os.path import join, isfile, isdir
-from os import listdir
+import os
 from .pyanitools import anidataloader
 import torch
+import torch.utils.data as data
+import pickle
 
 
 class ANIDataset(Dataset):
@@ -13,7 +15,7 @@ class ANIDataset(Dataset):
         # get name of files storing data
         files = []
         if isdir(path):
-            for f in listdir(path):
+            for f in os.listdir(path):
                 f = join(path, f)
                 if isfile(f) and (f.endswith('.h5') or f.endswith('.hdf5')):
                     files.append(f)
@@ -49,3 +51,20 @@ class ANIDataset(Dataset):
 
     def __len__(self):
         return len(self.chunks)
+
+
+def maybe_create_checkpoint(checkpoint, dataset_path, chunk_size):
+    if not os.path.isfile(checkpoint):
+        full_dataset = ANIDataset(dataset_path, chunk_size)
+        training_size = int(len(full_dataset) * 0.8)
+        validation_size = int(len(full_dataset) * 0.1)
+        testing_size = len(full_dataset) - training_size - validation_size
+        lengths = [training_size, validation_size, testing_size]
+        subsets = data.random_split(full_dataset, lengths)
+        with open(checkpoint, 'wb') as f:
+            pickle.dump(subsets, f)
+
+    # load dataset from checkpoint file
+    with open(checkpoint, 'rb') as f:
+        training, validation, testing = pickle.load(f)
+    return training, validation, testing
