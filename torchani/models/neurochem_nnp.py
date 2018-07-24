@@ -45,7 +45,7 @@ class NeuroChemNNP(ANIModel):
 
         models = {}
         output_length = None
-        for network_dir, suffix in zip(network_dirs, self.suffixes):
+        for network_dir, suffix in zip(network_dirs, suffixes):
             for i in aev_computer.species:
                 filename = os.path.join(
                     network_dir, 'ANN-{}.nnf'.format(i))
