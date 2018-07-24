@@ -1,5 +1,6 @@
 from .ani_model import ANIModel
 
+
 class CustomModel(ANIModel):
 
     def __init__(self, aev_computer, per_species, reducer,

@@ -1,9 +1,11 @@
-from .. import _six
+from .. import _six  # noqa: F401
 import os
 import bz2
 import lark
 import torch
 import math
+import struct
+
 
 class NeuroChemAtomicNetwork(torch.jit.ScriptModule):
     """Per atom aev->y transformation, loaded from NeuroChem network dir.

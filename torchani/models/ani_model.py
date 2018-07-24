@@ -1,7 +1,7 @@
 from ..aev_base import AEVComputer
 import torch
-import os
 from ..benchmarked import BenchmarkedModule
+
 
 class ANIModel(BenchmarkedModule):
     """Subclass of `torch.nn.Module` for the [xyz]->[aev]->[per_atom_y]->y

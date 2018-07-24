@@ -4,6 +4,7 @@ from .ani_model import ANIModel
 from .neurochem_atomic_network import NeuroChemAtomicNetwork
 from ..env import buildin_network_dir, buildin_model_prefix, buildin_ensemble
 
+
 class NeuroChemNNP(ANIModel):
 
     def __init__(self, aev_computer, from_=None, ensemble=False,
