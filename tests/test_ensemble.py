@@ -21,8 +21,10 @@ class TestEnsemble(unittest.TestCase):
         coordinates, species = aev.sort_by_species(coordinates, species)
         ensemble = torchani.models.NeuroChemNNP(aev, derivative=True,
                                                 ensemble=True)
-        models = [torchani.models.NeuroChemNNP(aev, derivative=True,
-                    ensemble=False, from_=prefix + '{}/networks/'.format(i))
+        models = [torchani.models.
+                  NeuroChemNNP(aev, derivative=True,
+                               ensemble=False,
+                               from_=prefix + '{}/networks/'.format(i))
                   for i in range(n)]
 
         energy1, force1 = ensemble(coordinates, species)
