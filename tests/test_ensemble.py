@@ -15,15 +15,15 @@ class TestEnsemble(unittest.TestCase):
         self.conformations = 20
 
     def _test_molecule(self, coordinates, species):
+        n = torchani.buildin_ensemble
         prefix = torchani.buildin_model_prefix
-        n = torchani.buildin_ensembles
         aev = torchani.SortedAEV(device=torch.device('cpu'))
         coordinates, species = aev.sort_by_species(coordinates, species)
-        ensemble = torchani.ModelOnAEV(aev, derivative=True,
-                                       from_nc=prefix,
-                                       ensemble=n)
-        models = [torchani.ModelOnAEV(aev, derivative=True,
-                  from_nc=prefix + '{}/networks/'.format(i)) for i in range(n)]
+        ensemble = torchani.models.NeuroChemNNP(aev, derivative=True,
+                                                ensemble=True)
+        models = [torchani.models.NeuroChemNNP(aev, derivative=True,
+                    ensemble=False, from_=prefix + '{}/networks/'.format(i))
+                  for i in range(n)]
 
         energy1, force1 = ensemble(coordinates, species)
         energy2, force2 = zip(*[m(coordinates, species) for m in models])

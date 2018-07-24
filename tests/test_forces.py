@@ -15,8 +15,8 @@ class TestForce(unittest.TestCase):
         self.tolerance = 1e-5
         self.aev_computer = torchani.SortedAEV(
             dtype=dtype, device=torch.device('cpu'))
-        self.nnp = torchani.ModelOnAEV(
-            self.aev_computer, derivative=True, from_nc=None)
+        self.nnp = torchani.models.NeuroChemNNP(
+            self.aev_computer, derivative=True)
 
     def _test_molecule(self, coordinates, species, forces):
         _, derivative = self.nnp(coordinates, species)
