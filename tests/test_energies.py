@@ -16,7 +16,7 @@ class TestEnergies(unittest.TestCase):
         self.tolerance = 5e-5
         self.aev_computer = torchani.SortedAEV(
             dtype=dtype, device=torch.device('cpu'))
-        self.nnp = torchani.ModelOnAEV(self.aev_computer, from_nc=None)
+        self.nnp = torchani.models.NeuroChemNNP(self.aev_computer)
 
     def _test_molecule(self, coordinates, species, energies):
         shift_energy = torchani.EnergyShifter(torchani.buildin_sae_file)
