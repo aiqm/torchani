@@ -10,6 +10,10 @@ class ANIDataset(Dataset):
     def __init__(self, path, chunk_size, shuffle=True,
                  properties=['energies']):
         super(ANIDataset, self).__init__()
+        self.path = path
+        self.chunks_size = chunk_size
+        self.shuffle = shuffle
+        self.properties = properties
 
         # get name of files storing data
         files = []
