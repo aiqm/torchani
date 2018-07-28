@@ -1,8 +1,6 @@
-import torchani
 import torch
+import torchani
 import os
-import configs
-
 
 class Averager:
 
@@ -28,14 +26,10 @@ class AtomicNetwork(torch.nn.Module):
         super(AtomicNetwork, self).__init__()
         self.aev_computer = aev_computer
         self.output_length = 1
-        self.layer1 = torch.nn.Linear(384, 128).type(
-            aev_computer.dtype).to(aev_computer.device)
-        self.layer2 = torch.nn.Linear(128, 128).type(
-            aev_computer.dtype).to(aev_computer.device)
-        self.layer3 = torch.nn.Linear(128, 64).type(
-            aev_computer.dtype).to(aev_computer.device)
-        self.layer4 = torch.nn.Linear(64, 1).type(
-            aev_computer.dtype).to(aev_computer.device)
+        self.layer1 = torch.nn.Linear(384, 128)
+        self.layer2 = torch.nn.Linear(128, 128)
+        self.layer3 = torch.nn.Linear(128, 64)
+        self.layer4 = torch.nn.Linear(64, 1)
 
     def forward(self, aev):
         y = aev
@@ -51,7 +45,7 @@ class AtomicNetwork(torch.nn.Module):
 
 def get_or_create_model(filename, benchmark=False, device=configs.device):
     aev_computer = torchani.SortedAEV(benchmark=benchmark, device=device)
-    model = torchani.ModelOnAEV(
+    model = torchani.models.CustomModel(
         aev_computer,
         reducer=torch.sum,
         benchmark=benchmark,
