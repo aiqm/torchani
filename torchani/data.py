@@ -7,7 +7,8 @@ import torch
 
 class ANIDataset(Dataset):
 
-    def __init__(self, path, chunk_size, shuffle=True, properties=['energies']):
+    def __init__(self, path, chunk_size, shuffle=True,
+                 properties=['energies']):
         super(ANIDataset, self).__init__()
 
         # get name of files storing data

@@ -1,5 +1,6 @@
 import torch
 
+
 class BatchModel(torch.nn.Module):
 
     def __init__(self, model):
