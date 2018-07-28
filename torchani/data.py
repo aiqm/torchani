@@ -1,4 +1,4 @@
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from os.path import join, isfile, isdir
 import os
 from .pyanitools import anidataloader
@@ -9,8 +9,13 @@ import pickle
 
 class ANIDataset(Dataset):
 
-    def __init__(self, path, chunk_size, randomize_chunk=True):
+    def __init__(self, path, chunk_size, shuffle=True,
+                 properties=['energies']):
         super(ANIDataset, self).__init__()
+        self.path = path
+        self.chunks_size = chunk_size
+        self.shuffle = shuffle
+        self.properties = properties
 
         # get name of files storing data
         files = []
@@ -28,11 +33,14 @@ class ANIDataset(Dataset):
         chunks = []
         for f in files:
             for m in anidataloader(f):
-                xyz = torch.from_numpy(m['coordinates'])
-                conformations = xyz.shape[0]
-                energies = torch.from_numpy(m['energies'])
+                full = {
+                    'coordinates': torch.from_numpy(m['coordinates'])
+                }
+                conformations = full['coordinates'].shape[0]
+                for i in properties:
+                    full[i] = torch.from_numpy(m[i])
                 species = m['species']
-                if randomize_chunk:
+                if shuffle:
                     indices = torch.randperm(conformations)
                 else:
                     indices = torch.arange(conformations, dtype=torch.int64)
@@ -41,9 +49,11 @@ class ANIDataset(Dataset):
                     chunk_start = i * chunk_size
                     chunk_end = min(chunk_start + chunk_size, conformations)
                     chunk_indices = indices[chunk_start:chunk_end]
-                    chunk_xyz = xyz.index_select(0, chunk_indices)
-                    chunk_energies = energies.index_select(0, chunk_indices)
-                    chunks.append((chunk_xyz, chunk_energies, species))
+                    chunk = {}
+                    for j in full:
+                        chunk[j] = full[j].index_select(0, chunk_indices)
+                    chunk['species'] = species
+                    chunks.append(chunk)
         self.chunks = chunks
 
     def __getitem__(self, idx):
@@ -68,3 +78,23 @@ def maybe_create_checkpoint(checkpoint, dataset_path, chunk_size):
     with open(checkpoint, 'rb') as f:
         training, validation, testing = pickle.load(f)
     return training, validation, testing
+
+def _collate(batch):
+    input_keys = ['coordinates', 'species']
+    inputs = [{k: i[k] for k in input_keys} for i in batch]
+    outputs = {}
+    for i in batch:
+        for j in i:
+            if j in input_keys:
+                continue
+            if j not in outputs:
+                outputs[j] = []
+            outputs[j].append(i[j])
+    for i in outputs:
+        outputs[i] = torch.cat(outputs[i])
+    return inputs, outputs
+
+
+def dataloader(dataset, batch_chunks, **kwargs):
+    return DataLoader(dataset, batch_chunks, dataset.shuffle,
+                      collate_fn=_collate, **kwargs)
