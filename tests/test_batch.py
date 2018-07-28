@@ -6,6 +6,7 @@ if sys.version_info.major >= 3:
     import torch
     import torchani
     import torchani.data
+    import itertools
 
     path = os.path.dirname(os.path.realpath(__file__))
     path = os.path.join(path, 'dataset')
@@ -22,7 +23,7 @@ if sys.version_info.major >= 3:
             aev_computer = torchani.SortedAEV(dtype=dtype, device=device)
             nnp = torchani.models.NeuroChemNNP(aev_computer)
             batch_nnp = torchani.models.BatchModel(nnp)
-            for batch_input, batch_output in loader:
+            for batch_input, batch_output in itertools.islice(loader, 10):
                 batch_output_ = batch_nnp(batch_input).squeeze()
                 self.assertListEqual(list(batch_output_.shape),
                                      list(batch_output['energies'].shape))
