@@ -13,7 +13,7 @@ if sys.version_info.major >= 3:
         def _test_chunksize(self, chunksize):
             ds = torchani.data.ANIDataset(path, chunksize)
             for i in ds:
-                self.assertLessEqual(i[0].shape[0], chunksize)
+                self.assertLessEqual(i['coordinates'].shape[0], chunksize)
 
         def testChunk64(self):
             self._test_chunksize(64)
