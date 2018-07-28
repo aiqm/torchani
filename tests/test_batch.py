@@ -25,7 +25,7 @@ if sys.version_info.major >= 3:
             for batch_input, batch_output in loader:
                 batch_output_ = batch_nnp(batch_input)
                 self.assertListEqual(batch_output_.shape,
-                                     batch_output['energies'])
+                                     batch_output['energies'].shape)
 
     if __name__ == '__main__':
         unittest.main()
