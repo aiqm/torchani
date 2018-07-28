@@ -23,9 +23,9 @@ if sys.version_info.major >= 3:
             nnp = torchani.models.NeuroChemNNP(aev_computer)
             batch_nnp = torchani.models.BatchModel(nnp)
             for batch_input, batch_output in loader:
-                batch_output_ = batch_nnp(batch_input)
-                self.assertListEqual(batch_output_.shape,
-                                     batch_output['energies'].shape)
+                batch_output_ = batch_nnp(batch_input).squeeze()
+                self.assertListEqual(list(batch_output_.shape),
+                                     list(batch_output['energies'].shape))
 
     if __name__ == '__main__':
         unittest.main()
