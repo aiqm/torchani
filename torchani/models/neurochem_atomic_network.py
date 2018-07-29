@@ -7,7 +7,7 @@ import math
 import struct
 
 
-class NeuroChemAtomicNetwork(torch.jit.ScriptModule):
+class NeuroChemAtomicNetwork(torch.nn.Module):
     """Per atom aev->y transformation, loaded from NeuroChem network dir.
 
     Attributes

@@ -2,6 +2,7 @@ from torch.utils.data import Dataset, DataLoader
 from os.path import join, isfile, isdir
 import os
 from .pyanitools import anidataloader
+from .env import default_dtype
 import torch
 import torch.utils.data as data
 import pickle
@@ -10,12 +11,13 @@ import pickle
 class ANIDataset(Dataset):
 
     def __init__(self, path, chunk_size, shuffle=True,
-                 properties=['energies']):
+                 properties=['energies'], dtype=default_dtype):
         super(ANIDataset, self).__init__()
         self.path = path
         self.chunks_size = chunk_size
         self.shuffle = shuffle
         self.properties = properties
+        self.dtype = dtype
 
         # get name of files storing data
         files = []
@@ -35,10 +37,11 @@ class ANIDataset(Dataset):
             for m in anidataloader(f):
                 full = {
                     'coordinates': torch.from_numpy(m['coordinates'])
+                                        .type(dtype)
                 }
                 conformations = full['coordinates'].shape[0]
                 for i in properties:
-                    full[i] = torch.from_numpy(m[i])
+                    full[i] = torch.from_numpy(m[i]).type(dtype)
                 species = m['species']
                 if shuffle:
                     indices = torch.randperm(conformations)
