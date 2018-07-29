@@ -2,20 +2,6 @@ import torch
 import torchani
 import os
 
-class Averager:
-
-    def __init__(self):
-        self.count = 0
-        self.subtotal = 0
-
-    def add(self, count, subtotal):
-        self.count += count
-        self.subtotal += subtotal
-
-    def avg(self):
-        return self.subtotal / self.count
-
-
 def celu(x, alpha):
     return torch.where(x > 0, x, alpha * (torch.exp(x/alpha)-1))
 
@@ -60,16 +46,3 @@ def get_or_create_model(filename, benchmark=False, device=configs.device):
     else:
         torch.save(model.state_dict(), filename)
     return model
-
-
-energy_shifter = torchani.EnergyShifter()
-
-loss = torch.nn.MSELoss(size_average=False)
-
-
-def evaluate(model, coordinates, energies, species):
-    count = coordinates.shape[0]
-    pred = model(coordinates, species).squeeze()
-    pred = energy_shifter.add_sae(pred, species)
-    squared_error = loss(pred, energies)
-    return count, squared_error

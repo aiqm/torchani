@@ -94,7 +94,6 @@ def _collate(batch):
         outputs[i] = torch.cat(outputs[i])
     return inputs, outputs
 
-
 def dataloader(dataset, batch_chunks, **kwargs):
     return DataLoader(dataset, batch_chunks, dataset.shuffle,
                       collate_fn=_collate, **kwargs)
