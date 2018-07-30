@@ -18,7 +18,10 @@ if sys.version_info.major >= 3:
     class TestIgnite(unittest.TestCase):
 
         def testIgnite(self):
-            ds = torchani.data.ANIDataset(path, chunksize)
+            shift_energy = torchani.EnergyShifter()
+            ds = torchani.data.ANIDataset(
+                path, chunksize,
+                transform=[shift_energy.dataset_subtract_sae])
             loader = torchani.data.dataloader(ds, batch_chunks)
             aev_computer = torchani.SortedAEV(dtype=dtype, device=device)
             nnp = torchani.models.NeuroChemNNP(aev_computer)

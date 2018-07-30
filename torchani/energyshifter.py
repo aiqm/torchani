@@ -67,3 +67,10 @@ class EnergyShifter:
         for i in species:
             s += self.self_energies[i]
         return energies + s
+
+    def dataset_subtract_sae(self, data):
+        """Allow object of this class to be used as transforms of pytorch's
+        dataset.
+        """
+        data['energies'] = self.subtract_sae(data['energies'], data['species'])
+        return data
