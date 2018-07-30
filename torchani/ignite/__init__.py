@@ -1,4 +1,4 @@
 from .container import Container
-from .dict_loss import DictLosses
+from .loss_metrics import DictLoss, DictMetric
 
-__all__ = ['Container', 'DictLosses']
+__all__ = ['Container', 'DictLoss', 'DictMetric']
