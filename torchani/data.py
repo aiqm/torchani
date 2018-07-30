@@ -8,8 +8,8 @@ import torch
 
 class ANIDataset(Dataset):
 
-    def __init__(self, path, chunk_size, shuffle=True,
-                 properties=['energies'], dtype=default_dtype):
+    def __init__(self, path, chunk_size, shuffle=True, properties=['energies'],
+                 transform=(), dtype=default_dtype):
         super(ANIDataset, self).__init__()
         self.path = path
         self.chunks_size = chunk_size
@@ -54,6 +54,8 @@ class ANIDataset(Dataset):
                     for j in full:
                         chunk[j] = full[j].index_select(0, chunk_indices)
                     chunk['species'] = species
+                    for t in transform:
+                        chunk = t(chunk)
                     chunks.append(chunk)
         self.chunks = chunks
 
@@ -80,6 +82,6 @@ def _collate(batch):
     return inputs, outputs
 
 
-def dataloader(dataset, batch_chunks, **kwargs):
-    return DataLoader(dataset, batch_chunks, dataset.shuffle,
+def dataloader(dataset, batch_chunks, shuffle=True, **kwargs):
+    return DataLoader(dataset, batch_chunks, shuffle,
                       collate_fn=_collate, **kwargs)
