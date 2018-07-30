@@ -1,14 +1,15 @@
 import os
 import sys
 import torch
-import pickle
 import ignite
 import torchani
-import torchani.data
+import model
 
 chunk_size = 256
+batch_chunks = 4
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_checkpoint = os.path.join(path, '../dataset-checkpoint.dat')
+model_checkpoint = 'checkpoint.pt'
 
 if len(sys.argv) == 1:
     dataset_path = os.path.join(path, '../dataset')
@@ -22,9 +23,29 @@ else:
 
 training, validation, testing = torchani.data.maybe_create_checkpoint(
     dataset_checkpoint, dataset_path, chunk_size)
-training = torchani.data.dataloader(training, chunk_size)
-validation = torch.utils.data.DataLoader(validation, batch_size=4, shuffle=True, collate_fn=lambda x:x)
+training = torchani.data.dataloader(training, batch_chunks)
+validation = torchani.data.dataloader(validation, batch_chunks)
 
+nnp = model.get_or_create_model(model_checkpoint)
+class Flatten(torch.nn.Module):
+
+    def __init__(self, model):
+        super(Flatten, self).__init__()
+        self.model = model
+
+    def forward(self, *input):
+        return self.model(*input).flatten()
+batch_nnp = torchani.models.BatchModel(Flatten(nnp))
+container = torchani.ignite.Container({'energies': batch_nnp})
+loss = torchani.ignite.DictLosses({'energies': torch.nn.MSELoss()})
+
+
+optimizer = torch.optim.SGD(container.parameters(),
+                            lr=0.001, momentum=0.8)
+
+
+trainer = ignite.engine.create_supervised_trainer(container, optimizer, loss)
+trainer.run(training, max_epochs=100)
 
 class Averager:
 
@@ -38,7 +59,6 @@ class Averager:
 
     def avg(self):
         return self.subtotal / self.count
-
 
 
 energy_shifter = torchani.EnergyShifter()

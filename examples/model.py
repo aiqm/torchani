@@ -29,7 +29,7 @@ class AtomicNetwork(torch.nn.Module):
         return y
 
 
-def get_or_create_model(filename, benchmark=False, device=configs.device):
+def get_or_create_model(filename, benchmark=False, device=torchani.default_device):
     aev_computer = torchani.SortedAEV(benchmark=benchmark, device=device)
     model = torchani.models.CustomModel(
         aev_computer,
@@ -45,4 +45,4 @@ def get_or_create_model(filename, benchmark=False, device=configs.device):
         model.load_state_dict(torch.load(filename))
     else:
         torch.save(model.state_dict(), filename)
-    return model
+    return model.to(device)
