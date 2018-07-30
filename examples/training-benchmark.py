@@ -1,4 +1,3 @@
-import os
 import sys
 import torch
 import ignite
@@ -9,9 +8,13 @@ import model
 chunk_size = 256
 batch_chunks = 4
 dataset_path = sys.argv[1]
-dataset = torchani.data.ANIDataset(dataset_path, chunk_size)
+shift_energy = torchani.EnergyShifter()
+dataset = torchani.data.ANIDataset(
+    dataset_path, chunk_size,
+    transform=[shift_energy.dataset_subtract_sae])
 dataloader = torchani.data.dataloader(dataset, batch_chunks)
 nnp = model.get_or_create_model('/tmp/model.pt', True)
+
 
 class Flatten(torch.nn.Module):
 
@@ -21,6 +24,8 @@ class Flatten(torch.nn.Module):
 
     def forward(self, *input):
         return self.model(*input).flatten()
+
+
 batch_nnp = torchani.models.BatchModel(Flatten(nnp))
 container = torchani.ignite.Container({'energies': batch_nnp})
 

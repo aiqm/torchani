@@ -2,6 +2,7 @@ import torch
 import torchani
 import os
 
+
 def celu(x, alpha):
     return torch.where(x > 0, x, alpha * (torch.exp(x/alpha)-1))
 
@@ -29,7 +30,8 @@ class AtomicNetwork(torch.nn.Module):
         return y
 
 
-def get_or_create_model(filename, benchmark=False, device=torchani.default_device):
+def get_or_create_model(filename, benchmark=False,
+                        device=torchani.default_device):
     aev_computer = torchani.SortedAEV(benchmark=benchmark, device=device)
     model = torchani.models.CustomModel(
         aev_computer,

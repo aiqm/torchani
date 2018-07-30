@@ -47,7 +47,8 @@ class ANIDataset(Dataset):
                 if shuffle:
                     indices = torch.randperm(conformations, device=device)
                 else:
-                    indices = torch.arange(conformations, dtype=torch.int64, device=device)
+                    indices = torch.arange(conformations, dtype=torch.int64,
+                                           device=device)
                 num_chunks = (conformations + chunk_size - 1) // chunk_size
                 for i in range(num_chunks):
                     chunk_start = i * chunk_size
