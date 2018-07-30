@@ -4,7 +4,6 @@ if sys.version_info.major >= 3:
     import os
     import unittest
     import torch
-    from ignite.metrics import RootMeanSquaredError
     from ignite.engine import create_supervised_trainer, \
         create_supervised_evaluator
     import torchani
@@ -39,15 +38,13 @@ if sys.version_info.major >= 3:
             nnp = Flatten(nnp)
             batch_nnp = torchani.models.BatchModel(nnp)
             container = torchani.ignite.Container({'energies': batch_nnp})
-            loss = torchani.ignite.DictLoss('energies', torch.nn.MSELoss())
             optimizer = torch.optim.SGD(container.parameters(),
                                         lr=0.001, momentum=0.8)
-            trainer = create_supervised_trainer(container, optimizer, loss)
+            trainer = create_supervised_trainer(
+                container, optimizer, torchani.ignite.energy_mse_loss)
             trainer.run(loader, max_epochs=10)
-            metric = torchani.ignite.DictMetric('energies',
-                                                RootMeanSquaredError())
             evaluator = create_supervised_evaluator(container, metrics={
-                'RMSE': metric
+                'RMSE': torchani.ignite.energy_rmse_metric
             })
             evaluator.run(loader)
 

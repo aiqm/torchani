@@ -1,5 +1,7 @@
 from torch.nn.modules.loss import _Loss
 from ignite.metrics.metric import Metric
+from ignite.metrics import RootMeanSquaredError
+import torch
 
 
 class DictLoss(_Loss):
@@ -29,3 +31,7 @@ class DictMetric(Metric):
 
     def compute(self):
         self.metric.compute()
+
+
+energy_mse_loss = DictLoss('energies', torch.nn.MSELoss())
+energy_rmse_metric = DictMetric('energies', RootMeanSquaredError())
