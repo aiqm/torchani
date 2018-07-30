@@ -29,7 +29,7 @@ class Flatten(torch.nn.Module):
 batch_nnp = torchani.models.BatchModel(Flatten(nnp))
 container = torchani.ignite.Container({'energies': batch_nnp})
 
-loss = torchani.ignite.DictLosses({'energies': torch.nn.MSELoss()})
+loss = torchani.ignite.DictLoss('energies', torch.nn.MSELoss())
 optimizer = torch.optim.Adam(nnp.parameters())
 
 trainer = ignite.engine.create_supervised_trainer(container, optimizer, loss)
