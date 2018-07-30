@@ -2,7 +2,7 @@ from torch.utils.data import Dataset, DataLoader
 from os.path import join, isfile, isdir
 import os
 from .pyanitools import anidataloader
-from .env import default_dtype
+from .env import default_dtype, default_device
 import torch
 import torch.utils.data as data
 import pickle
@@ -10,14 +10,15 @@ import pickle
 
 class ANIDataset(Dataset):
 
-    def __init__(self, path, chunk_size, shuffle=True,
-                 properties=['energies'], dtype=default_dtype):
+    def __init__(self, path, chunk_size, shuffle=True, properties=['energies'],
+                 dtype=default_dtype, device=default_device):
         super(ANIDataset, self).__init__()
         self.path = path
         self.chunks_size = chunk_size
         self.shuffle = shuffle
         self.properties = properties
         self.dtype = dtype
+        self.device = device
 
         # get name of files storing data
         files = []
@@ -37,16 +38,16 @@ class ANIDataset(Dataset):
             for m in anidataloader(f):
                 full = {
                     'coordinates': torch.from_numpy(m['coordinates'])
-                                        .type(dtype)
+                                        .type(dtype).to(device)
                 }
                 conformations = full['coordinates'].shape[0]
                 for i in properties:
-                    full[i] = torch.from_numpy(m[i]).type(dtype)
+                    full[i] = torch.from_numpy(m[i]).type(dtype).to(device)
                 species = m['species']
                 if shuffle:
-                    indices = torch.randperm(conformations)
+                    indices = torch.randperm(conformations, device=device)
                 else:
-                    indices = torch.arange(conformations, dtype=torch.int64)
+                    indices = torch.arange(conformations, dtype=torch.int64, device=device)
                 num_chunks = (conformations + chunk_size - 1) // chunk_size
                 for i in range(num_chunks):
                     chunk_start = i * chunk_size
