@@ -9,7 +9,7 @@ if sys.version_info.major >= 3:
     import itertools
 
     path = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(path, 'dataset')
+    path = os.path.join(path, '../dataset')
     chunksize = 32
     batch_chunks = 32
     dtype = torch.float32
