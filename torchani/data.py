@@ -70,9 +70,11 @@ class ANIDataset(Dataset):
         return len(self.chunks)
 
 
-def maybe_create_checkpoint(checkpoint, dataset_path, chunk_size):
+def load_or_create(checkpoint, dataset_path, chunk_size, *args, **kwargs):
+    """Generate a 80-10-10 split of the dataset, and checkpoint
+    the resulting dataset"""
     if not os.path.isfile(checkpoint):
-        full_dataset = ANIDataset(dataset_path, chunk_size)
+        full_dataset = ANIDataset(dataset_path, chunk_size, *args, **kwargs)
         training_size = int(len(full_dataset) * 0.8)
         validation_size = int(len(full_dataset) * 0.1)
         testing_size = len(full_dataset) - training_size - validation_size

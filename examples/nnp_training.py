@@ -7,22 +7,14 @@ import model
 
 chunk_size = 256
 batch_chunks = 4
-path = os.path.dirname(os.path.realpath(__file__))
-dataset_checkpoint = os.path.join(path, '../dataset-checkpoint.dat')
+dataset_path = sys.argv[1]
+dataset_checkpoint = 'dataset-checkpoint.dat'
 model_checkpoint = 'checkpoint.pt'
 
-if len(sys.argv) == 1:
-    dataset_path = os.path.join(path, '../dataset')
-elif len(sys.argv) == 2:
-    dataset_path = sys.argv[1]
-else:
-    print('Usage:')
-    print('python nnp_training.py [dataset path]')
-    print('If no dataset path specified, the build-in dataset will be used')
-    raise TypeError('Can only take 0 or 1 arguments')
-
-training, validation, testing = torchani.data.maybe_create_checkpoint(
-    dataset_checkpoint, dataset_path, chunk_size)
+shift_energy = torchani.EnergyShifter()
+training, validation, testing = torchani.data.create_or_load(
+    dataset_checkpoint, dataset_path,
+    chunk_sizetransform=[shift_energy.load_or_create])
 training = torchani.data.dataloader(training, batch_chunks)
 validation = torchani.data.dataloader(validation, batch_chunks)
 
@@ -35,14 +27,13 @@ class Flatten(torch.nn.Module):
 
     def forward(self, *input):
         return self.model(*input).flatten()
+
+
 batch_nnp = torchani.models.BatchModel(Flatten(nnp))
 container = torchani.ignite.Container({'energies': batch_nnp})
+
 loss = torchani.ignite.DictLosses({'energies': torch.nn.MSELoss()})
-
-
-optimizer = torch.optim.SGD(container.parameters(),
-                            lr=0.001, momentum=0.8)
-
+optimizer = torch.optim.Adam(nnp.parameters())
 
 trainer = ignite.engine.create_supervised_trainer(container, optimizer, loss)
 trainer.run(training, max_epochs=100)
