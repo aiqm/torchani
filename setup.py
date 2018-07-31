@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 from sphinx.setup_command import BuildDoc
 cmdclass = {'build_sphinx': BuildDoc}
 
@@ -9,7 +9,7 @@ setup(name='torchani',
       author='Xiang Gao',
       author_email='qasdfgtyuiop@ufl.edu',
       license='MIT',
-      packages=['torchani'],
+      packages=find_packages(),
       include_package_data=True,
       install_requires=[
           'torch',
