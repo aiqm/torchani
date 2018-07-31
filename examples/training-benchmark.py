@@ -15,19 +15,7 @@ dataset = torchani.data.ANIDataset(
     transform=[shift_energy.dataset_subtract_sae])
 dataloader = torchani.data.dataloader(dataset, batch_chunks)
 nnp = model.get_or_create_model('/tmp/model.pt', True)
-
-
-class Flatten(torch.nn.Module):
-
-    def __init__(self, model):
-        super(Flatten, self).__init__()
-        self.model = model
-
-    def forward(self, *input):
-        return self.model(*input).flatten()
-
-
-batch_nnp = torchani.models.BatchModel(Flatten(nnp))
+batch_nnp = torchani.models.BatchModel(nnp)
 container = torchani.ignite.Container({'energies': batch_nnp})
 optimizer = torch.optim.Adam(nnp.parameters())
 

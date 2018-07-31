@@ -42,7 +42,13 @@ def get_or_create_model(filename, benchmark=False,
             'N': AtomicNetwork(),
             'O': AtomicNetwork(),
         })
-    model = torch.nn.Sequential(prepare, aev_computer, model)
+
+    class Flatten(torch.nn.Module):
+
+        def forward(self, x):
+            return x.flatten()
+
+    model = torch.nn.Sequential(prepare, aev_computer, model, Flatten())
     if os.path.isfile(filename):
         model.load_state_dict(torch.load(filename))
     else:
