@@ -53,7 +53,7 @@ if sys.version_info.major >= 3:
                 metrics = evaluator.state.metrics
                 self.assertLess(metrics['RMSE'], threshold)
                 self.assertLess(trainer.state.output, threshold)
-            
+
             trainer.run(loader, max_epochs=1000)
 
     if __name__ == '__main__':
