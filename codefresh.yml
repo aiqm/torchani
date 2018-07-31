@@ -1,15 +1,27 @@
 version: '1.0'
 
 steps:
-  build-torchani:
+
+  BuildTorchANI:
     type: build
     description: Build TorchANI
-    image-name: torchani
+    image_name: torchani
     dockerfile: Dockerfile
     tag: latest
-  unit-tests:
-    image: '${{build-torchani}}'
+
+  CodeStyle:
+    image: '${{BuildTorchANI}}'
     commands:
       - flake8
+
+  UnitTests:
+    image: '${{BuildTorchANI}}'
+    commands:
       - python setup.py test
       # - python2 setup.py test
+
+  Examples:
+    image: '${{BuildTorchANI}}'
+    commands:
+      - python examples/nnp_training.py  ./dataset/ani_gdb_s01.h5
+      - python examples/training-benchmark.py ./dataset/ani_gdb_s01.h5
