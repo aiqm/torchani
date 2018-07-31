@@ -10,7 +10,7 @@ if sys.version_info.major >= 3:
     import torchani.data
 
     path = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(path, 'dataset/ani_gdb_s01.h5')
+    path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
     chunksize = 32
     batch_chunks = 32
     dtype = torch.float32

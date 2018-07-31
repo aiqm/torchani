@@ -1,26 +1,29 @@
 from torch.utils.data import Dataset, DataLoader
 from os.path import join, isfile, isdir
-from os import listdir
+import os
 from .pyanitools import anidataloader
-from .env import default_dtype
+from .env import default_dtype, default_device
 import torch
+import torch.utils.data as data
+import pickle
 
 
 class ANIDataset(Dataset):
 
     def __init__(self, path, chunk_size, shuffle=True, properties=['energies'],
-                 transform=(), dtype=default_dtype):
+                 transform=(), dtype=default_dtype, device=default_device):
         super(ANIDataset, self).__init__()
         self.path = path
         self.chunks_size = chunk_size
         self.shuffle = shuffle
         self.properties = properties
         self.dtype = dtype
+        self.device = device
 
         # get name of files storing data
         files = []
         if isdir(path):
-            for f in listdir(path):
+            for f in os.listdir(path):
                 f = join(path, f)
                 if isfile(f) and (f.endswith('.h5') or f.endswith('.hdf5')):
                     files.append(f)
@@ -35,16 +38,17 @@ class ANIDataset(Dataset):
             for m in anidataloader(f):
                 full = {
                     'coordinates': torch.from_numpy(m['coordinates'])
-                                        .type(dtype)
+                                        .type(dtype).to(device)
                 }
                 conformations = full['coordinates'].shape[0]
                 for i in properties:
-                    full[i] = torch.from_numpy(m[i]).type(dtype)
+                    full[i] = torch.from_numpy(m[i]).type(dtype).to(device)
                 species = m['species']
                 if shuffle:
-                    indices = torch.randperm(conformations)
+                    indices = torch.randperm(conformations, device=device)
                 else:
-                    indices = torch.arange(conformations, dtype=torch.int64)
+                    indices = torch.arange(conformations, dtype=torch.int64,
+                                           device=device)
                 num_chunks = (conformations + chunk_size - 1) // chunk_size
                 for i in range(num_chunks):
                     chunk_start = i * chunk_size
@@ -64,6 +68,25 @@ class ANIDataset(Dataset):
 
     def __len__(self):
         return len(self.chunks)
+
+
+def load_or_create(checkpoint, dataset_path, chunk_size, *args, **kwargs):
+    """Generate a 80-10-10 split of the dataset, and checkpoint
+    the resulting dataset"""
+    if not os.path.isfile(checkpoint):
+        full_dataset = ANIDataset(dataset_path, chunk_size, *args, **kwargs)
+        training_size = int(len(full_dataset) * 0.8)
+        validation_size = int(len(full_dataset) * 0.1)
+        testing_size = len(full_dataset) - training_size - validation_size
+        lengths = [training_size, validation_size, testing_size]
+        subsets = data.random_split(full_dataset, lengths)
+        with open(checkpoint, 'wb') as f:
+            pickle.dump(subsets, f)
+
+    # load dataset from checkpoint file
+    with open(checkpoint, 'rb') as f:
+        training, validation, testing = pickle.load(f)
+    return training, validation, testing
 
 
 def _collate(batch):

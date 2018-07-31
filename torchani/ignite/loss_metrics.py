@@ -30,7 +30,7 @@ class DictMetric(Metric):
         self.metric.update((y_pred[self.key], y[self.key]))
 
     def compute(self):
-        self.metric.compute()
+        return self.metric.compute()
 
 
 energy_mse_loss = DictLoss('energies', torch.nn.MSELoss())
