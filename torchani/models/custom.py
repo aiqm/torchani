@@ -3,7 +3,7 @@ from .ani_model import ANIModel
 
 class CustomModel(ANIModel):
 
-    def __init__(self, aev_computer, per_species, reducer,
+    def __init__(self, per_species, reducer,
                  derivative=False, derivative_graph=False, benchmark=False):
         """Custom single model, no ensemble
 
@@ -31,7 +31,8 @@ class CustomModel(ANIModel):
                 raise ValueError(
                     '''output length of each atomic neural network must
                     match''')
-        super(CustomModel, self).__init__(aev_computer, suffixes, reducer,
-                                          output_length, models, benchmark)
+        super(CustomModel, self).__init__(list(per_species.keys()), suffixes,
+                                          reducer, output_length, models,
+                                          benchmark)
         for i in per_species:
             setattr(self, 'model_' + i, per_species[i])

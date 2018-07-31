@@ -89,6 +89,52 @@ class AEVComputer(BenchmarkedModule):
         self.ShfA = self.ShfA.view(1, 1, -1, 1)
         self.ShfZ = self.ShfZ.view(1, 1, 1, -1)
 
+    def forward(self, coordinates_species):
+        """Compute AEV from coordinates and species
+
+        Parameters
+        ----------
+        (species, coordinates)
+        species : torch.LongTensor
+            Long tensor for the species, where a value k means the species is
+            the same as self.species[k]
+        coordinates : torch.Tensor
+            The tensor that specifies the xyz coordinates of atoms in the
+            molecule. The tensor must have shape (conformations, atoms, 3)
+
+        Returns
+        -------
+        (torch.Tensor, torch.LongTensor)
+            Returns full AEV and species
+        """
+        raise NotImplementedError('subclass must override this method')
+
+
+class PrepareInput(torch.nn.Module):
+
+    def __init__(self, species, device):
+        super(PrepareInput, self).__init__()
+        self.species = species
+        self.device = device
+
+    def species_to_tensor(self, species):
+        """Convert species list into a long tensor.
+
+        Parameters
+        ----------
+        species : list
+            List of string for the species of each atoms.
+
+        Returns
+        -------
+        torch.Tensor
+            Long tensor for the species, where a value k means the species is
+            the same as self.species[k].
+        """
+        indices = {self.species[i]: i for i in range(len(self.species))}
+        values = [indices[i] for i in species]
+        return torch.tensor(values, dtype=torch.long, device=self.device)
+
     def sort_by_species(self, species, *tensors):
         """Sort the data by its species according to the order in `self.species`
 
@@ -110,28 +156,10 @@ class AEVComputer(BenchmarkedModule):
             new_tensors.append(t.index_select(1, reverse))
         return (species, *tensors)
 
-    def forward(self, coordinates_species):
-        """Compute AEV from coordinates and species
-
-        Parameters
-        ----------
-        (coordinates, species)
-        coordinates : torch.Tensor
-            The tensor that specifies the xyz coordinates of atoms in the
-            molecule. The tensor must have shape (conformations, atoms, 3)
-        species : torch.LongTensor
-            Long tensor for the species, where a value k means the species is
-            the same as self.species[k]
-
-        Returns
-        -------
-        (torch.Tensor, torch.Tensor)
-            Returns (radial AEV, angular AEV), both are pytorch tensor
-            of `dtype`. The radial AEV must be of shape
-            (conformations, atoms, radial_length). The angular AEV must
-            be of shape (conformations, atoms, angular_length)
-        """
-        raise NotImplementedError('subclass must override this method')
+    def forward(self, species_coordinates):
+        species, coordinates = species_coordinates
+        species = self.species_to_tensor(species)
+        return self.sort_by_species(species, coordinates)
 
 
 def _cutoff_cosine(distances, cutoff):
@@ -193,24 +221,6 @@ class SortedAEV(AEVComputer):
                 self.compute_mask_a, 'mask_a')
             self.assemble = self._enable_benchmark(self.assemble, 'assemble')
             self.forward = self._enable_benchmark(self.forward, 'total')
-
-    def species_to_tensor(self, species):
-        """Convert species list into a long tensor.
-
-        Parameters
-        ----------
-        species : list
-            List of string for the species of each atoms.
-
-        Returns
-        -------
-        torch.Tensor
-            Long tensor for the species, where a value k means the species is
-            the same as self.species[k].
-        """
-        indices = {self.species[i]: i for i in range(len(self.species))}
-        values = [indices[i] for i in species]
-        return torch.tensor(values, dtype=torch.long, device=self.device)
 
     def radial_subaev_terms(self, distances):
         """Compute the radial subAEV terms of the center atom given neighbors
@@ -482,8 +492,8 @@ class SortedAEV(AEVComputer):
 
         return radial_aevs, torch.cat(angular_aevs, dim=2)
 
-    def forward(self, coordinates_species):
-        coordinates, species = coordinates_species
+    def forward(self, species_coordinates):
+        species, coordinates = species_coordinates
         present_species = species.unique(sorted=True)
 
         radial_terms, angular_terms, indices_r, indices_a = \
@@ -497,4 +507,4 @@ class SortedAEV(AEVComputer):
         radial, angular = self.assemble(radial_terms, angular_terms,
                                         present_species, mask_r, mask_a)
         fullaev = torch.cat([radial, angular], dim=2)
-        return fullaev
+        return species, fullaev

@@ -21,8 +21,11 @@ if sys.version_info.major >= 3:
             ds = torchani.data.ANIDataset(path, chunksize, device=device)
             loader = torchani.data.dataloader(ds, batch_chunks)
             aev_computer = torchani.SortedAEV(dtype=dtype, device=device)
-            nnp = torchani.models.NeuroChemNNP(aev_computer)
-            batch_nnp = torchani.models.BatchModel(nnp)
+            prepare = torchani.PrepareInput(aev_computer.species,
+                                            aev_computer.device)
+            nnp = torchani.models.NeuroChemNNP(aev_computer.species)
+            model = torch.nn.Sequential(prepare, aev_computer, nnp)
+            batch_nnp = torchani.models.BatchModel(model)
             for batch_input, batch_output in itertools.islice(loader, 10):
                 batch_output_ = batch_nnp(batch_input).squeeze()
                 self.assertListEqual(list(batch_output_.shape),

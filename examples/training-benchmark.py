@@ -15,19 +15,7 @@ dataset = torchani.data.ANIDataset(
     transform=[shift_energy.dataset_subtract_sae])
 dataloader = torchani.data.dataloader(dataset, batch_chunks)
 nnp = model.get_or_create_model('/tmp/model.pt', True)
-
-
-class Flatten(torch.nn.Module):
-
-    def __init__(self, model):
-        super(Flatten, self).__init__()
-        self.model = model
-
-    def forward(self, *input):
-        return self.model(*input).flatten()
-
-
-batch_nnp = torchani.models.BatchModel(Flatten(nnp))
+batch_nnp = torchani.models.BatchModel(nnp)
 container = torchani.ignite.Container({'energies': batch_nnp})
 optimizer = torch.optim.Adam(nnp.parameters())
 
@@ -53,14 +41,13 @@ def finalize_tqdm(trainer):
 start = timeit.default_timer()
 trainer.run(dataloader, max_epochs=1)
 elapsed = round(timeit.default_timer() - start, 2)
-print('Radial terms:', nnp.aev_computer.timers['radial terms'])
-print('Angular terms:', nnp.aev_computer.timers['angular terms'])
-print('Terms and indices:', nnp.aev_computer.timers['terms and indices'])
-print('Combinations:', nnp.aev_computer.timers['combinations'])
-print('Mask R:', nnp.aev_computer.timers['mask_r'])
-print('Mask A:', nnp.aev_computer.timers['mask_a'])
-print('Assemble:', nnp.aev_computer.timers['assemble'])
-print('Total AEV:', nnp.aev_computer.timers['total'])
-print('NN:', nnp.timers['nn'])
-print('Total Forward:', nnp.timers['forward'])
+print('Radial terms:', nnp[1].timers['radial terms'])
+print('Angular terms:', nnp[1].timers['angular terms'])
+print('Terms and indices:', nnp[1].timers['terms and indices'])
+print('Combinations:', nnp[1].timers['combinations'])
+print('Mask R:', nnp[1].timers['mask_r'])
+print('Mask A:', nnp[1].timers['mask_a'])
+print('Assemble:', nnp[1].timers['assemble'])
+print('Total AEV:', nnp[1].timers['total'])
+print('NN:', nnp[2].timers['forward'])
 print('Epoch time:', elapsed)
