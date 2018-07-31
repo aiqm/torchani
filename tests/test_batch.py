@@ -18,7 +18,7 @@ if sys.version_info.major >= 3:
     class TestBatch(unittest.TestCase):
 
         def testBatchLoadAndInference(self):
-            ds = torchani.data.ANIDataset(path, chunksize)
+            ds = torchani.data.ANIDataset(path, chunksize, device=device)
             loader = torchani.data.dataloader(ds, batch_chunks)
             aev_computer = torchani.SortedAEV(dtype=dtype, device=device)
             nnp = torchani.models.NeuroChemNNP(aev_computer)
