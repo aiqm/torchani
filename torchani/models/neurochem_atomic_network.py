@@ -221,13 +221,13 @@ class NeuroChemAtomicNetwork(torch.nn.Module):
         w = struct.unpack('{}f'.format(wsize), fw.read())
         w = torch.tensor(w, dtype=self.dtype, device=self.device).view(
             out_size, in_size)
-        linear.weight = torch.nn.parameter.Parameter(w, requires_grad=True)
+        linear.weight.data = w
         fw.close()
         fb = open(bfn, 'rb')
         b = struct.unpack('{}f'.format(out_size), fb.read())
         b = torch.tensor(b, dtype=self.dtype,
                          device=self.device).view(out_size)
-        linear.bias = torch.nn.parameter.Parameter(b, requires_grad=True)
+        linear.bias.data = b
         fb.close()
 
     def get_activations(self, aev, layer):
