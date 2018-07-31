@@ -82,8 +82,8 @@ class ANIModel(BenchmarkedModule):
         aev : torch.Tensor
             Pytorch tensor of shape (conformations, atoms, aev_length) storing
             the computed AEVs.
-        species : list of string
-            List of string storing the species for each atom.
+        species : torch.Tensor
+            Tensor storing the species for each atom.
 
         Returns
         -------
@@ -93,17 +93,19 @@ class ANIModel(BenchmarkedModule):
         """
         conformations = aev.shape[0]
         atoms = len(species)
-        rev_species = species[::-1]
-        species_dedup = sorted(
-            set(species), key=self.aev_computer.species.index)
+        rev_species = species.__reversed__()
+        species_dedup = species.unique()
         per_species_outputs = []
+        species = species.tolist()
+        rev_species = rev_species.tolist()
         for s in species_dedup:
             begin = species.index(s)
             end = atoms - rev_species.index(s)
             y = aev[:, begin:end, :].reshape(-1, self.aev_computer.aev_length)
 
             def apply_model(suffix):
-                model_X = getattr(self, 'model_' + s + suffix)
+                model_X = getattr(self, 'model_' +
+                                  self.aev_computer.species[s] + suffix)
                 return model_X(y)
             ys = [apply_model(suffix) for suffix in self.suffixes]
             y = sum(ys) / len(ys)
@@ -145,12 +147,13 @@ class ANIModel(BenchmarkedModule):
             when the derivative is off, and the second tensor is a tensor of
             shape (conformation, atoms, 3) storing the d(output)/dR.
         """
+        species = self.aev_computer.species_to_tensor(species)
         if not self.derivative:
             coordinates = coordinates.detach()
         else:
             coordinates = torch.tensor(coordinates, requires_grad=True)
-        _coordinates, _species = self.aev_computer.sort_by_species(
-            coordinates, species)
+        _species, _coordinates, = self.aev_computer.sort_by_species(
+            species, coordinates)
         aev = self.aev_computer((_coordinates, _species))
         output = self.aev_to_output(aev, _species)
         if not self.derivative:
