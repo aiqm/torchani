@@ -1,6 +1,6 @@
 import torch
 import itertools
-import numpy
+import math
 from .env import buildin_const_file, default_dtype, default_device
 from .benchmarked import BenchmarkedModule
 
@@ -89,26 +89,26 @@ class AEVComputer(BenchmarkedModule):
         self.ShfA = self.ShfA.view(1, 1, -1, 1)
         self.ShfZ = self.ShfZ.view(1, 1, 1, -1)
 
-    def sort_by_species(self, data, species):
+    def sort_by_species(self, species, *tensors):
         """Sort the data by its species according to the order in `self.species`
 
         Parameters
         ----------
-        data : torch.Tensor
-            Tensor of shape (conformations, atoms, ...) for data.
-        species : list
-            List storing species of each atom.
+        species : torch.Tensor
+            Tensor storing species of each atom.
+        *tensors : tuple
+            Tensors of shape (conformations, atoms, ...) for data.
 
         Returns
         -------
-        (torch.Tensor, list)
-            Tuple of (sorted data, sorted species).
+        (species, ...)
+            Tensors sorted by species.
         """
-        atoms = list(zip(species, torch.unbind(data, 1)))
-        atoms = sorted(atoms, key=lambda x: self.species.index(x[0]))
-        species = [s for s, _ in atoms]
-        data = torch.stack([c for _, c in atoms], dim=1)
-        return data, species
+        species, reverse = torch.sort(species)
+        new_tensors = []
+        for t in tensors:
+            new_tensors.append(t.index_select(1, reverse))
+        return (species, *tensors)
 
     def forward(self, coordinates_species):
         """Compute AEV from coordinates and species
@@ -158,7 +158,7 @@ def _cutoff_cosine(distances, cutoff):
     """
     return torch.where(
         distances <= cutoff,
-        0.5 * torch.cos(numpy.pi * distances / cutoff) + 0.5,
+        0.5 * torch.cos(math.pi * distances / cutoff) + 0.5,
         torch.zeros_like(distances)
     )
 
@@ -484,7 +484,6 @@ class SortedAEV(AEVComputer):
 
     def forward(self, coordinates_species):
         coordinates, species = coordinates_species
-        species = self.species_to_tensor(species)
         present_species = species.unique(sorted=True)
 
         radial_terms, angular_terms, indices_r, indices_a = \

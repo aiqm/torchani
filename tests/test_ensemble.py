@@ -18,7 +18,6 @@ class TestEnsemble(unittest.TestCase):
         n = torchani.buildin_ensemble
         prefix = torchani.buildin_model_prefix
         aev = torchani.SortedAEV(device=torch.device('cpu'))
-        coordinates, species = aev.sort_by_species(coordinates, species)
         ensemble = torchani.models.NeuroChemNNP(aev, derivative=True,
                                                 ensemble=True)
         models = [torchani.models.
