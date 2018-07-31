@@ -1,4 +1,3 @@
-from ..aev import AEVComputer
 import torch
 from ..benchmarked import BenchmarkedModule
 
@@ -9,10 +8,10 @@ class ANIModel(BenchmarkedModule):
 
     Attributes
     ----------
-    aev_computer : AEVComputer
-        The AEV computer.
+    species : list
+        Chemical symbol of supported atom species.
     output_length : int
-        The length of output vector
+        The length of output vector.
     suffixes : sequence
         Different suffixes denote different models in an ensemble.
     model_<X><suffix> : nn.Module
@@ -26,30 +25,15 @@ class ANIModel(BenchmarkedModule):
         the tensor containing desired output.
     output_length : int
         Length of output of each submodel.
-    derivative : boolean
-        Whether to support computing the derivative w.r.t coordinates,
-        i.e. d(output)/dR
-    derivative_graph : boolean
-        Whether to generate a graph for the derivative. This would be required
-        only if the derivative is included as part of the loss function.
     timers : dict
         Dictionary storing the the benchmark result. It has the following keys:
-            aev : time spent on computing AEV.
-            nn : time spent on computing output from AEV.
-            derivative : time spend on computing derivative w.r.t. coordinates
-                after the outputs is given. This key is only available if
-                derivative computation is turned on.
             forward : total time for the forward pass
     """
 
-    def __init__(self, aev_computer, suffixes, reducer, output_length, models,
+    def __init__(self, species, suffixes, reducer, output_length, models,
                  benchmark=False):
         super(ANIModel, self).__init__(benchmark)
-        if not isinstance(aev_computer, AEVComputer):
-            raise TypeError(
-                "ModelOnAEV: aev_computer must be a subclass of AEVComputer")
-        self.aev_computer = aev_computer
-
+        self.species = species
         self.suffixes = suffixes
         self.reducer = reducer
         self.output_length = output_length
@@ -57,20 +41,19 @@ class ANIModel(BenchmarkedModule):
             setattr(self, i, models[i])
 
         if benchmark:
-            self.aev_to_output = self._enable_benchmark(
-                self.aev_to_output, 'nn')
             self.forward = self._enable_benchmark(self.forward, 'forward')
 
-    def aev_to_output(self, aev, species):
+    def forward(self, species_aev):
         """Compute output from aev
 
         Parameters
         ----------
+        (species, aev)
+        species : torch.Tensor
+            Tensor storing the species for each atom.
         aev : torch.Tensor
             Pytorch tensor of shape (conformations, atoms, aev_length) storing
             the computed AEVs.
-        species : torch.Tensor
-            Tensor storing the species for each atom.
 
         Returns
         -------
@@ -78,6 +61,7 @@ class ANIModel(BenchmarkedModule):
             Pytorch tensor of shape (conformations, output_length) for the
             output of each conformation.
         """
+        species, aev = species_aev
         conformations = aev.shape[0]
         atoms = len(species)
         rev_species = species.__reversed__()
@@ -88,11 +72,11 @@ class ANIModel(BenchmarkedModule):
         for s in species_dedup:
             begin = species.index(s)
             end = atoms - rev_species.index(s)
-            y = aev[:, begin:end, :].reshape(-1, self.aev_computer.aev_length)
+            y = aev[:, begin:end, :].flatten(0, 1)
 
             def apply_model(suffix):
                 model_X = getattr(self, 'model_' +
-                                  self.aev_computer.species[s] + suffix)
+                                  self.species[s] + suffix)
                 return model_X(y)
             ys = [apply_model(suffix) for suffix in self.suffixes]
             y = sum(ys) / len(ys)
@@ -102,26 +86,3 @@ class ANIModel(BenchmarkedModule):
         per_species_outputs = torch.cat(per_species_outputs, dim=1)
         molecule_output = self.reducer(per_species_outputs, dim=1)
         return molecule_output
-
-    def forward(self, coordinates, species):
-        """Feed forward
-
-        Parameters
-        ----------
-        coordinates : torch.Tensor
-            The pytorch tensor of shape (conformations, atoms, 3) storing
-            the coordinates of all atoms of all conformations.
-        species : list of string
-            List of string storing the species for each atom.
-
-        Returns
-        -------
-        torch.Tensor
-            Tensor of shape (conformations, output_length) for the
-            output of each conformation.
-        """
-        species = self.aev_computer.species_to_tensor(species)
-        _species, _coordinates, = self.aev_computer.sort_by_species(
-            species, coordinates)
-        aev = self.aev_computer((_coordinates, _species))
-        return self.aev_to_output(aev, _species)

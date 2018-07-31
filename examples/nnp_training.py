@@ -24,23 +24,11 @@ training, validation, testing = torchani.data.load_or_create(
     transform=[shift_energy.dataset_subtract_sae])
 training = torchani.data.dataloader(training, batch_chunks)
 validation = torchani.data.dataloader(validation, batch_chunks)
-
 nnp = model.get_or_create_model(model_checkpoint)
-
-
-class Flatten(torch.nn.Module):
-
-    def __init__(self, model):
-        super(Flatten, self).__init__()
-        self.model = model
-
-    def forward(self, *input):
-        return self.model(*input).flatten()
-
-
-batch_nnp = torchani.models.BatchModel(Flatten(nnp))
+batch_nnp = torchani.models.BatchModel(nnp)
 container = torchani.ignite.Container({'energies': batch_nnp})
 optimizer = torch.optim.Adam(nnp.parameters())
+
 trainer = ignite.engine.create_supervised_trainer(
     container, optimizer, torchani.ignite.energy_mse_loss)
 evaluator = ignite.engine.create_supervised_evaluator(container, metrics={

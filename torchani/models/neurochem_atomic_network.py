@@ -12,10 +12,6 @@ class NeuroChemAtomicNetwork(torch.nn.Module):
 
     Attributes
     ----------
-    dtype : torch.dtype
-        Pytorch data type for tensors
-    device : torch.Device
-        The device where tensors should be.
     layers : int
         Number of layers.
     output_length : int
@@ -29,13 +25,11 @@ class NeuroChemAtomicNetwork(torch.nn.Module):
         The NeuroChem index for activation.
     """
 
-    def __init__(self, dtype, device, filename):
+    def __init__(self, filename):
         """Initialize from NeuroChem network directory.
 
         Parameters
         ----------
-        dtype : torch.dtype
-            Pytorch data type for tensors
         filename : string
             The file name for the `.nnf` file that store network
             hyperparameters. The `.bparam` and `.wparam` must be
@@ -43,8 +37,6 @@ class NeuroChemAtomicNetwork(torch.nn.Module):
         """
         super(NeuroChemAtomicNetwork, self).__init__()
 
-        self.dtype = dtype
-        self.device = device
         networ_dir = os.path.dirname(filename)
         with open(filename, 'rb') as f:
             buffer = f.read()
@@ -204,7 +196,7 @@ class NeuroChemAtomicNetwork(torch.nn.Module):
                     raise NotImplementedError(
                         '''different activation on different
                         layers are not supported''')
-            linear = torch.nn.Linear(in_size, out_size).type(self.dtype)
+            linear = torch.nn.Linear(in_size, out_size)
             name = 'layer{}'.format(i)
             setattr(self, name, linear)
             if in_size * out_size != wsz or out_size != bsz:
@@ -219,14 +211,12 @@ class NeuroChemAtomicNetwork(torch.nn.Module):
         wsize = in_size * out_size
         fw = open(wfn, 'rb')
         w = struct.unpack('{}f'.format(wsize), fw.read())
-        w = torch.tensor(w, dtype=self.dtype, device=self.device).view(
-            out_size, in_size)
+        w = torch.tensor(w).view(out_size, in_size)
         linear.weight.data = w
         fw.close()
         fb = open(bfn, 'rb')
         b = struct.unpack('{}f'.format(out_size), fb.read())
-        b = torch.tensor(b, dtype=self.dtype,
-                         device=self.device).view(out_size)
+        b = torch.tensor(b).view(out_size)
         linear.bias.data = b
         fb.close()
 

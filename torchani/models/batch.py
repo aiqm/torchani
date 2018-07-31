@@ -12,5 +12,5 @@ class BatchModel(torch.nn.Module):
         for i in batch:
             coordinates = i['coordinates']
             species = i['species']
-            results.append(self.model(coordinates, species))
+            results.append(self.model((species, coordinates)))
         return torch.cat(results)
