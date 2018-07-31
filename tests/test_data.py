@@ -6,7 +6,7 @@ if sys.version_info.major >= 3:
     import torchani.data
 
     path = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(path, 'dataset')
+    path = os.path.join(path, '../dataset')
 
     class TestDataset(unittest.TestCase):
 

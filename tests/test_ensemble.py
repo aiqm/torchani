@@ -5,7 +5,7 @@ import torch
 import torchani
 
 path = os.path.dirname(os.path.realpath(__file__))
-N = 97
+N = 10
 
 
 class TestEnsemble(unittest.TestCase):

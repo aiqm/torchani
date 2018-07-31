@@ -1,66 +1,49 @@
+import sys
 import torch
+import ignite
 import torchani
-import torchani.data
-import tqdm
 import timeit
-import configs
-import functools
-from common import get_or_create_model, Averager, evaluate
+import model
 
-ds = torchani.data.load_dataset(configs.data_path)
-sampler = torchani.data.BatchSampler(ds, 256, 4)
-dataloader = torch.utils.data.DataLoader(
-    ds, batch_sampler=sampler,
-    collate_fn=torchani.data.collate, num_workers=20)
-model = get_or_create_model('/tmp/model.pt', True)
-optimizer = torch.optim.Adam(model.parameters(), amsgrad=True)
-
-
-def benchmark(timer, index):
-    def wrapper(fun):
-        @functools.wraps(fun)
-        def wrapped(*args, **kwargs):
-            start = timeit.default_timer()
-            ret = fun(*args, **kwargs)
-            end = timeit.default_timer()
-            timer[index] += end - start
-            return ret
-        return wrapped
-    return wrapper
+chunk_size = 256
+batch_chunks = 4
+dataset_path = sys.argv[1]
+shift_energy = torchani.EnergyShifter()
+dataset = torchani.data.ANIDataset(
+    dataset_path, chunk_size,
+    transform=[shift_energy.dataset_subtract_sae])
+dataloader = torchani.data.dataloader(dataset, batch_chunks)
+nnp = model.get_or_create_model('/tmp/model.pt', True)
 
 
-timer = {'backward': 0}
+class Flatten(torch.nn.Module):
+
+    def __init__(self, model):
+        super(Flatten, self).__init__()
+        self.model = model
+
+    def forward(self, *input):
+        return self.model(*input).flatten()
 
 
-@benchmark(timer, 'backward')
-def optimize_step(a):
-    mse = a.avg()
-    optimizer.zero_grad()
-    mse.backward()
-    optimizer.step()
+batch_nnp = torchani.models.BatchModel(Flatten(nnp))
+container = torchani.ignite.Container({'energies': batch_nnp})
+optimizer = torch.optim.Adam(nnp.parameters())
 
+trainer = ignite.engine.create_supervised_trainer(
+    container, optimizer, torchani.ignite.energy_mse_loss)
 
 start = timeit.default_timer()
-for batch in tqdm.tqdm(dataloader, total=len(sampler)):
-    a = Averager()
-    for molecule_id in batch:
-        _species = ds.species[molecule_id]
-        coordinates, energies = batch[molecule_id]
-        coordinates = coordinates.to(model.aev_computer.device)
-        energies = energies.to(model.aev_computer.device)
-        a.add(*evaluate(model, coordinates, energies, _species))
-    optimize_step(a)
-
+trainer.run(dataloader, max_epochs=1)
 elapsed = round(timeit.default_timer() - start, 2)
-print('Radial terms:', model.aev_computer.timers['radial terms'])
-print('Angular terms:', model.aev_computer.timers['angular terms'])
-print('Terms and indices:', model.aev_computer.timers['terms and indices'])
-print('Combinations:', model.aev_computer.timers['combinations'])
-print('Mask R:', model.aev_computer.timers['mask_r'])
-print('Mask A:', model.aev_computer.timers['mask_a'])
-print('Assemble:', model.aev_computer.timers['assemble'])
-print('Total AEV:', model.aev_computer.timers['total'])
-print('NN:', model.timers['nn'])
-print('Total Forward:', model.timers['forward'])
-print('Total Backward:', timer['backward'])
+print('Radial terms:', nnp.aev_computer.timers['radial terms'])
+print('Angular terms:', nnp.aev_computer.timers['angular terms'])
+print('Terms and indices:', nnp.aev_computer.timers['terms and indices'])
+print('Combinations:', nnp.aev_computer.timers['combinations'])
+print('Mask R:', nnp.aev_computer.timers['mask_r'])
+print('Mask A:', nnp.aev_computer.timers['mask_a'])
+print('Assemble:', nnp.aev_computer.timers['assemble'])
+print('Total AEV:', nnp.aev_computer.timers['total'])
+print('NN:', nnp.timers['nn'])
+print('Total Forward:', nnp.timers['forward'])
 print('Epoch time:', elapsed)
