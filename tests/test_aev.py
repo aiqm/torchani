@@ -16,7 +16,9 @@ class TestAEV(unittest.TestCase):
 
     def _test_molecule(self, coordinates, species, expected_radial,
                        expected_angular):
-        radial, angular = self.aev(coordinates, species)
+        aev = self.aev((coordinates, species))
+        radial = aev[..., :self.aev.radial_length]
+        angular = aev[..., self.aev.radial_length:]
         radial_diff = expected_radial - radial
         radial_max_error = torch.max(torch.abs(radial_diff)).item()
         angular_diff = expected_angular - angular
