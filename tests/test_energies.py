@@ -14,13 +14,16 @@ class TestEnergies(unittest.TestCase):
     def setUp(self, dtype=torchani.default_dtype,
               device=torchani.default_device):
         self.tolerance = 5e-5
-        self.aev_computer = torchani.SortedAEV(
+        aev_computer = torchani.SortedAEV(
             dtype=dtype, device=torch.device('cpu'))
-        self.nnp = torchani.models.NeuroChemNNP(self.aev_computer)
+        prepare = torchani.PrepareInput(aev_computer.species,
+                                        aev_computer.device)
+        nnp = torchani.models.NeuroChemNNP(aev_computer.species)
+        self.model = torch.nn.Sequential(prepare, aev_computer, nnp)
 
     def _test_molecule(self, coordinates, species, energies):
         shift_energy = torchani.EnergyShifter(torchani.buildin_sae_file)
-        energies_ = self.nnp(coordinates, species).squeeze()
+        energies_ = self.model((species, coordinates)).squeeze()
         energies_ = shift_energy.add_sae(energies_, species)
         max_diff = (energies - energies_).abs().max().item()
         self.assertLess(max_diff, self.tolerance)

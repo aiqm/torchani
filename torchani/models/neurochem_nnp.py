@@ -7,8 +7,7 @@ from ..env import buildin_network_dir, buildin_model_prefix, buildin_ensemble
 
 class NeuroChemNNP(ANIModel):
 
-    def __init__(self, aev_computer, from_=None, ensemble=False,
-                 derivative=False, derivative_graph=False, benchmark=False):
+    def __init__(self, species, from_=None, ensemble=False, benchmark=False):
         """If from_=None then ensemble must be a boolean. If ensemble=False,
             then use buildin network0, else use buildin network ensemble.
         If from_ != None, ensemble must be either False or an integer
@@ -46,12 +45,10 @@ class NeuroChemNNP(ANIModel):
         models = {}
         output_length = None
         for network_dir, suffix in zip(network_dirs, suffixes):
-            for i in aev_computer.species:
+            for i in species:
                 filename = os.path.join(
                     network_dir, 'ANN-{}.nnf'.format(i))
-                model_X = NeuroChemAtomicNetwork(
-                    aev_computer.dtype, aev_computer.device,
-                    filename)
+                model_X = NeuroChemAtomicNetwork(filename)
                 if output_length is None:
                     output_length = model_X.output_length
                 elif output_length != model_X.output_length:
@@ -59,5 +56,5 @@ class NeuroChemNNP(ANIModel):
                         '''output length of each atomic neural networt
                         must match''')
                 models['model_' + i + suffix] = model_X
-        super(NeuroChemNNP, self).__init__(aev_computer, suffixes, reducer,
+        super(NeuroChemNNP, self).__init__(species, suffixes, reducer,
                                            output_length, models, benchmark)

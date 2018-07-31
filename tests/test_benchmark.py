@@ -16,7 +16,7 @@ class TestBenchmark(unittest.TestCase):
             self.conformations, 8, 3, dtype=dtype, device=device)
         self.count = 100
 
-    def _testModule(self, module, asserts):
+    def _testModule(self, run_module, result_module, asserts):
         keys = []
         for i in asserts:
             if '>=' in i:
@@ -36,57 +36,57 @@ class TestBenchmark(unittest.TestCase):
                 keys += [i[0].strip(), i[1].strip()]
             else:
                 keys.append(i.strip())
-        self.assertEqual(set(module.timers.keys()), set(keys))
+        self.assertEqual(set(result_module.timers.keys()), set(keys))
         for i in keys:
-            self.assertEqual(module.timers[i], 0)
-        old_timers = copy.copy(module.timers)
+            self.assertEqual(result_module.timers[i], 0)
+        old_timers = copy.copy(result_module.timers)
         for _ in range(self.count):
-            if isinstance(module, torchani.aev.AEVComputer):
-                species = module.species_to_tensor(self.species)
-                module((self.coordinates, species))
-            else:
-                module(self.coordinates, self.species)
+            run_module((self.species, self.coordinates))
             for i in keys:
-                self.assertLess(old_timers[i], module.timers[i])
+                self.assertLess(old_timers[i], result_module.timers[i])
             for i in asserts:
                 if '>=' in i:
                     i = i.split('>=')
                     key0 = i[0].strip()
                     key1 = i[1].strip()
                     self.assertGreaterEqual(
-                        module.timers[key0], module.timers[key1])
+                        result_module.timers[key0], result_module.timers[key1])
                 elif '<=' in i:
                     i = i.split('<=')
                     key0 = i[0].strip()
                     key1 = i[1].strip()
                     self.assertLessEqual(
-                        module.timers[key0], module.timers[key1])
+                        result_module.timers[key0], result_module.timers[key1])
                 elif '>' in i:
                     i = i.split('>')
                     key0 = i[0].strip()
                     key1 = i[1].strip()
                     self.assertGreater(
-                        module.timers[key0], module.timers[key1])
+                        result_module.timers[key0], result_module.timers[key1])
                 elif '<' in i:
                     i = i.split('<')
                     key0 = i[0].strip()
                     key1 = i[1].strip()
-                    self.assertLess(module.timers[key0], module.timers[key1])
+                    self.assertLess(result_module.timers[key0],
+                                    result_module.timers[key1])
                 elif '=' in i:
                     i = i.split('=')
                     key0 = i[0].strip()
                     key1 = i[1].strip()
-                    self.assertEqual(module.timers[key0], module.timers[key1])
-            old_timers = copy.copy(module.timers)
-        module.reset_timers()
-        self.assertEqual(set(module.timers.keys()), set(keys))
+                    self.assertEqual(result_module.timers[key0],
+                                     result_module.timers[key1])
+            old_timers = copy.copy(result_module.timers)
+        result_module.reset_timers()
+        self.assertEqual(set(result_module.timers.keys()), set(keys))
         for i in keys:
-            self.assertEqual(module.timers[i], 0)
+            self.assertEqual(result_module.timers[i], 0)
 
     def testAEV(self):
         aev_computer = torchani.SortedAEV(
             benchmark=True, dtype=self.dtype, device=self.device)
-        self._testModule(aev_computer, [
+        prepare = torchani.PrepareInput(aev_computer.species, self.device)
+        run_module = torch.nn.Sequential(prepare, aev_computer)
+        self._testModule(run_module, aev_computer, [
                          'terms and indices>radial terms',
                          'terms and indices>angular terms',
                          'total>terms and indices',
@@ -97,9 +97,11 @@ class TestBenchmark(unittest.TestCase):
     def testANIModel(self):
         aev_computer = torchani.SortedAEV(
             dtype=self.dtype, device=self.device)
+        prepare = torchani.PrepareInput(aev_computer.species, self.device)
         model = torchani.models.NeuroChemNNP(
-            aev_computer, benchmark=True)
-        self._testModule(model, ['forward>nn'])
+            aev_computer.species, benchmark=True)
+        run_module = torch.nn.Sequential(prepare, aev_computer, model)
+        self._testModule(run_module, model, ['forward'])
 
 
 if __name__ == '__main__':

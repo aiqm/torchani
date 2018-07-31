@@ -9,9 +9,8 @@ def celu(x, alpha):
 
 class AtomicNetwork(torch.nn.Module):
 
-    def __init__(self, aev_computer):
+    def __init__(self):
         super(AtomicNetwork, self).__init__()
-        self.aev_computer = aev_computer
         self.output_length = 1
         self.layer1 = torch.nn.Linear(384, 128)
         self.layer2 = torch.nn.Linear(128, 128)
@@ -33,16 +32,17 @@ class AtomicNetwork(torch.nn.Module):
 def get_or_create_model(filename, benchmark=False,
                         device=torchani.default_device):
     aev_computer = torchani.SortedAEV(benchmark=benchmark, device=device)
+    prepare = torchani.PrepareInput(aev_computer.species, aev_computer.device)
     model = torchani.models.CustomModel(
-        aev_computer,
         reducer=torch.sum,
         benchmark=benchmark,
         per_species={
-            'C': AtomicNetwork(aev_computer),
-            'H': AtomicNetwork(aev_computer),
-            'N': AtomicNetwork(aev_computer),
-            'O': AtomicNetwork(aev_computer),
+            'C': AtomicNetwork(),
+            'H': AtomicNetwork(),
+            'N': AtomicNetwork(),
+            'O': AtomicNetwork(),
         })
+    model = torch.nn.Sequential(prepare, aev_computer, model)
     if os.path.isfile(filename):
         model.load_state_dict(torch.load(filename))
     else:

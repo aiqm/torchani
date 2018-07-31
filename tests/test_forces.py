@@ -13,14 +13,16 @@ class TestForce(unittest.TestCase):
     def setUp(self, dtype=torchani.default_dtype,
               device=torchani.default_device):
         self.tolerance = 1e-5
-        self.aev_computer = torchani.SortedAEV(
+        aev_computer = torchani.SortedAEV(
             dtype=dtype, device=torch.device('cpu'))
-        self.nnp = torchani.models.NeuroChemNNP(
-            self.aev_computer)
+        prepare = torchani.PrepareInput(aev_computer.species,
+                                        aev_computer.device)
+        nnp = torchani.models.NeuroChemNNP(aev_computer.species)
+        self.model = torch.nn.Sequential(prepare, aev_computer, nnp)
 
     def _test_molecule(self, coordinates, species, forces):
         coordinates = torch.tensor(coordinates, requires_grad=True)
-        energies = self.nnp(coordinates, species)
+        energies = self.model((species, coordinates))
         derivative = torch.autograd.grad(energies.sum(), coordinates)[0]
         max_diff = (forces + derivative).abs().max().item()
         self.assertLess(max_diff, self.tolerance)

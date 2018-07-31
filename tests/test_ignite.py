@@ -26,19 +26,16 @@ if sys.version_info.major >= 3:
             ds = torch.utils.data.Subset(ds, [0])
             loader = torchani.data.dataloader(ds, 1)
             aev_computer = torchani.SortedAEV(dtype=dtype, device=device)
-            nnp = torchani.models.NeuroChemNNP(aev_computer)
+            prepare = torchani.PrepareInput(aev_computer.species,
+                                            aev_computer.device)
+            nnp = torchani.models.NeuroChemNNP(aev_computer.species)
 
             class Flatten(torch.nn.Module):
+                def forward(self, x):
+                    return x.flatten()
 
-                def __init__(self, model):
-                    super(Flatten, self).__init__()
-                    self.model = model
-
-                def forward(self, *input):
-                    return self.model(*input).flatten()
-
-            nnp = Flatten(nnp)
-            batch_nnp = torchani.models.BatchModel(nnp)
+            model = torch.nn.Sequential(prepare, aev_computer, nnp, Flatten())
+            batch_nnp = torchani.models.BatchModel(model)
             container = torchani.ignite.Container({'energies': batch_nnp})
             optimizer = torch.optim.Adam(container.parameters())
             trainer = create_supervised_trainer(
