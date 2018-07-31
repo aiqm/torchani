@@ -42,7 +42,8 @@ class TestBenchmark(unittest.TestCase):
         old_timers = copy.copy(module.timers)
         for _ in range(self.count):
             if isinstance(module, torchani.aev.AEVComputer):
-                module((self.coordinates, self.species))
+                species = module.species_to_tensor(self.species)
+                module((self.coordinates, species))
             else:
                 module(self.coordinates, self.species)
             for i in keys:

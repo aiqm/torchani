@@ -11,7 +11,7 @@ if sys.version_info.major >= 3:
 
     path = os.path.dirname(os.path.realpath(__file__))
     path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
-    chunksize = 8
+    chunksize = 4
     threshold = 1e-5
     dtype = torch.float32
     device = torch.device('cpu')

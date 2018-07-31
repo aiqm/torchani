@@ -16,6 +16,7 @@ class TestAEV(unittest.TestCase):
 
     def _test_molecule(self, coordinates, species, expected_radial,
                        expected_angular):
+        species = self.aev.species_to_tensor(species)
         aev = self.aev((coordinates, species))
         radial = aev[..., :self.aev.radial_length]
         angular = aev[..., self.aev.radial_length:]
