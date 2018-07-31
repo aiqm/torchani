@@ -37,17 +37,17 @@ trainer = ignite.engine.create_supervised_trainer(
 
 @trainer.on(ignite.engine.Events.EPOCH_STARTED)
 def init_tqdm(trainer):
-    trainer.state.epoch_progress = tqdm.tqdm(total=len(dataloader), desc='epoch')
+    trainer.state.tqdm = tqdm.tqdm(total=len(dataloader), desc='epoch')
 
 
 @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
 def update_tqdm(trainer):
-    trainer.state.epoch_progress.update(1)
+    trainer.state.tqdm.update(1)
 
 
 @trainer.on(ignite.engine.Events.EPOCH_COMPLETED)
 def finalize_tqdm(trainer):
-    trainer.state.epoch_progress.close()
+    trainer.state.tqdm.close()
 
 
 start = timeit.default_timer()
