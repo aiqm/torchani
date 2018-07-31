@@ -1,4 +1,4 @@
-from ..aev_base import AEVComputer
+from ..aev import AEVComputer
 import torch
 from ..benchmarked import BenchmarkedModule
 
@@ -67,34 +67,12 @@ class ANIModel(BenchmarkedModule):
                 'derivative can only be computed for output length 1')
 
         if benchmark:
-            self.compute_aev = self._enable_benchmark(self.compute_aev, 'aev')
             self.aev_to_output = self._enable_benchmark(
                 self.aev_to_output, 'nn')
             if derivative:
                 self.compute_derivative = self._enable_benchmark(
                     self.compute_derivative, 'derivative')
             self.forward = self._enable_benchmark(self.forward, 'forward')
-
-    def compute_aev(self, coordinates, species):
-        """Compute full AEV
-
-        Parameters
-        ----------
-        coordinates : torch.Tensor
-            The pytorch tensor of shape (conformations, atoms, 3) storing
-            the coordinates of all atoms of all conformations.
-        species : list of string
-            List of string storing the species for each atom.
-
-        Returns
-        -------
-        torch.Tensor
-            Pytorch tensor of shape (conformations, atoms, aev_length) storing
-            the computed AEVs.
-        """
-        radial_aev, angular_aev = self.aev_computer(coordinates, species)
-        fullaev = torch.cat([radial_aev, angular_aev], dim=2)
-        return fullaev
 
     def aev_to_output(self, aev, species):
         """Compute output from aev
@@ -173,7 +151,7 @@ class ANIModel(BenchmarkedModule):
             coordinates = torch.tensor(coordinates, requires_grad=True)
         _coordinates, _species = self.aev_computer.sort_by_species(
             coordinates, species)
-        aev = self.compute_aev(_coordinates, _species)
+        aev = self.aev_computer((_coordinates, _species))
         output = self.aev_to_output(aev, _species)
         if not self.derivative:
             return output

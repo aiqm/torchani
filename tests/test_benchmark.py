@@ -41,7 +41,10 @@ class TestBenchmark(unittest.TestCase):
             self.assertEqual(module.timers[i], 0)
         old_timers = copy.copy(module.timers)
         for _ in range(self.count):
-            module(self.coordinates, self.species)
+            if isinstance(module, torchani.aev.AEVComputer):
+                module((self.coordinates, self.species))
+            else:
+                module(self.coordinates, self.species)
             for i in keys:
                 self.assertLess(old_timers[i], module.timers[i])
             for i in asserts:
@@ -90,16 +93,16 @@ class TestBenchmark(unittest.TestCase):
                          'total>mask_r', 'total>mask_a'
                          ])
 
-    def testModelOnAEV(self):
+    def testANIModel(self):
         aev_computer = torchani.SortedAEV(
             dtype=self.dtype, device=self.device)
         model = torchani.models.NeuroChemNNP(
             aev_computer, benchmark=True)
-        self._testModule(model, ['forward>aev', 'forward>nn'])
+        self._testModule(model, ['forward>nn'])
         model = torchani.models.NeuroChemNNP(
             aev_computer, benchmark=True, derivative=True)
         self._testModule(
-            model, ['forward>aev', 'forward>nn', 'forward>derivative'])
+            model, ['forward>nn', 'forward>derivative'])
 
 
 if __name__ == '__main__':
