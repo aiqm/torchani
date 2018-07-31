@@ -32,14 +32,11 @@ class Flatten(torch.nn.Module):
 
 batch_nnp = torchani.models.BatchModel(Flatten(nnp))
 container = torchani.ignite.Container({'energies': batch_nnp})
-
-loss = torchani.ignite.DictLoss('energies', torch.nn.MSELoss())
-metric = torchani.ignite.DictMetric('energies',
-                                    ignite.metrics.RootMeanSquaredError())
 optimizer = torch.optim.Adam(nnp.parameters())
-trainer = ignite.engine.create_supervised_trainer(container, optimizer, loss)
+trainer = ignite.engine.create_supervised_trainer(
+    container, optimizer, torchani.ignite.energy_mse_loss)
 evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
-        'RMSE': metric
+        'RMSE': torchani.ignite.energy_rmse_metric
     })
 
 
@@ -58,11 +55,11 @@ def log_training_results(trainer):
 
 
 @trainer.on(ignite.engine.Events.EPOCH_COMPLETED)
-def log_validation_results(validation):
+def log_validation_results(trainer):
     evaluator.run(validation)
     metrics = evaluator.state.metrics
     print("Validation Results - Epoch: {}  RMSE: {:.2f}"
           .format(trainer.state.epoch, metrics['RMSE']))
 
 
-trainer.run(training, max_epochs=100)
+trainer.run(training, max_epochs=10)
