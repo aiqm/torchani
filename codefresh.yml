@@ -25,3 +25,4 @@ steps:
     commands:
       - python examples/nnp_training.py  ./dataset/ani_gdb_s01.h5
       - python examples/training-benchmark.py ./dataset/ani_gdb_s01.h5
+      - python examples/energy_force.py
