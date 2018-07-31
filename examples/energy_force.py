@@ -19,10 +19,12 @@ coordinates = torch.tensor([[[0.03192167,  0.00638559,  0.01301679],
                              [0.45554739,   0.54289633,  0.81170881],
                              [0.66091919,  -0.16799635, -0.91037834]]],
                            dtype=aev_computer.dtype,
-                           device=aev_computer.device)
+                           device=aev_computer.device,
+                           requires_grad=True)
 species = ['C', 'H', 'H', 'H', 'H']
 
-energy, derivative = nn(coordinates, species)
+energy = nn(coordinates, species)
+derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
 energy = shift_energy.add_sae(energy, species)
 force = -derivative
 

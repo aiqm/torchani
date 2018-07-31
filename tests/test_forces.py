@@ -16,10 +16,12 @@ class TestForce(unittest.TestCase):
         self.aev_computer = torchani.SortedAEV(
             dtype=dtype, device=torch.device('cpu'))
         self.nnp = torchani.models.NeuroChemNNP(
-            self.aev_computer, derivative=True)
+            self.aev_computer)
 
     def _test_molecule(self, coordinates, species, forces):
-        _, derivative = self.nnp(coordinates, species)
+        coordinates = torch.tensor(coordinates, requires_grad=True)
+        energies = self.nnp(coordinates, species)
+        derivative = torch.autograd.grad(energies.sum(), coordinates)[0]
         max_diff = (forces + derivative).abs().max().item()
         self.assertLess(max_diff, self.tolerance)
 

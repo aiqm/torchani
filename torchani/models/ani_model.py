@@ -43,7 +43,7 @@ class ANIModel(BenchmarkedModule):
     """
 
     def __init__(self, aev_computer, suffixes, reducer, output_length, models,
-                 derivative=False, derivative_graph=False, benchmark=False):
+                 benchmark=False):
         super(ANIModel, self).__init__(benchmark)
         if not isinstance(aev_computer, AEVComputer):
             raise TypeError(
@@ -56,22 +56,9 @@ class ANIModel(BenchmarkedModule):
         for i in models:
             setattr(self, i, models[i])
 
-        self.derivative = derivative
-        if not derivative and derivative_graph:
-            raise ValueError(
-                '''BySpeciesModel: can not create graph for derivative if the
-                computation of derivative is turned off''')
-        self.derivative_graph = derivative_graph
-        if derivative and self.output_length != 1:
-            raise ValueError(
-                'derivative can only be computed for output length 1')
-
         if benchmark:
             self.aev_to_output = self._enable_benchmark(
                 self.aev_to_output, 'nn')
-            if derivative:
-                self.compute_derivative = self._enable_benchmark(
-                    self.compute_derivative, 'derivative')
             self.forward = self._enable_benchmark(self.forward, 'forward')
 
     def aev_to_output(self, aev, species):
@@ -116,15 +103,6 @@ class ANIModel(BenchmarkedModule):
         molecule_output = self.reducer(per_species_outputs, dim=1)
         return molecule_output
 
-    def compute_derivative(self, output, coordinates):
-        """Compute the gradient d(output)/d(coordinates)"""
-        # Since different conformations are independent, computing
-        # the derivatives of all outputs w.r.t. its own coordinate is
-        # equivalent to compute the derivative of the sum of all outputs
-        # w.r.t. all coordinates.
-        return torch.autograd.grad(output.sum(), coordinates,
-                                   create_graph=self.derivative_graph)[0]
-
     def forward(self, coordinates, species):
         """Feed forward
 
@@ -138,26 +116,12 @@ class ANIModel(BenchmarkedModule):
 
         Returns
         -------
-        torch.Tensor or (torch.Tensor, torch.Tensor)
-            If derivative is turned off, then this function will return a
-            pytorch tensor of shape (conformations, output_length) for the
+        torch.Tensor
+            Tensor of shape (conformations, output_length) for the
             output of each conformation.
-            If derivative is turned on, then this function will return a pair
-            of pytorch tensors where the first tensor is the output tensor as
-            when the derivative is off, and the second tensor is a tensor of
-            shape (conformation, atoms, 3) storing the d(output)/dR.
         """
         species = self.aev_computer.species_to_tensor(species)
-        if not self.derivative:
-            coordinates = coordinates.detach()
-        else:
-            coordinates = torch.tensor(coordinates, requires_grad=True)
         _species, _coordinates, = self.aev_computer.sort_by_species(
             species, coordinates)
         aev = self.aev_computer((_coordinates, _species))
-        output = self.aev_to_output(aev, _species)
-        if not self.derivative:
-            return output
-        else:
-            derivative = self.compute_derivative(output, coordinates)
-            return output, derivative
+        return self.aev_to_output(aev, _species)

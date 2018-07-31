@@ -60,5 +60,4 @@ class NeuroChemNNP(ANIModel):
                         must match''')
                 models['model_' + i + suffix] = model_X
         super(NeuroChemNNP, self).__init__(aev_computer, suffixes, reducer,
-                                           output_length, models, derivative,
-                                           derivative_graph, benchmark)
+                                           output_length, models, benchmark)

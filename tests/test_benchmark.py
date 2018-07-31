@@ -100,10 +100,6 @@ class TestBenchmark(unittest.TestCase):
         model = torchani.models.NeuroChemNNP(
             aev_computer, benchmark=True)
         self._testModule(model, ['forward>nn'])
-        model = torchani.models.NeuroChemNNP(
-            aev_computer, benchmark=True, derivative=True)
-        self._testModule(
-            model, ['forward>nn', 'forward>derivative'])
 
 
 if __name__ == '__main__':

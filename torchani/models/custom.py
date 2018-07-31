@@ -32,7 +32,6 @@ class CustomModel(ANIModel):
                     '''output length of each atomic neural network must
                     match''')
         super(CustomModel, self).__init__(aev_computer, suffixes, reducer,
-                                          output_length, models, derivative,
-                                          derivative_graph, benchmark)
+                                          output_length, models, benchmark)
         for i in per_species:
             setattr(self, 'model_' + i, per_species[i])
