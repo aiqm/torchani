@@ -4,6 +4,7 @@ import ignite
 import torchani
 import timeit
 import model
+import tqdm
 
 chunk_size = 256
 batch_chunks = 4
@@ -32,6 +33,22 @@ optimizer = torch.optim.Adam(nnp.parameters())
 
 trainer = ignite.engine.create_supervised_trainer(
     container, optimizer, torchani.ignite.energy_mse_loss)
+
+
+@trainer.on(ignite.engine.Events.EPOCH_STARTED)
+def init_tqdm(trainer):
+    trainer.state.tqdm = tqdm.tqdm(total=len(dataloader), desc='epoch')
+
+
+@trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
+def update_tqdm(trainer):
+    trainer.state.tqdm.update(1)
+
+
+@trainer.on(ignite.engine.Events.EPOCH_COMPLETED)
+def finalize_tqdm(trainer):
+    trainer.state.tqdm.close()
+
 
 start = timeit.default_timer()
 trainer.run(dataloader, max_epochs=1)
