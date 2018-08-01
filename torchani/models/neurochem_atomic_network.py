@@ -187,8 +187,7 @@ class NeuroChemAtomicNetwork(torch.nn.Module):
                         self.activation = lambda x: torch.exp(-x*x)
                     elif activation == 9:  # CELU
                         alpha = 0.1
-                        self.activation = lambda x: torch.where(
-                            x > 0, x, alpha * (torch.exp(x/alpha)-1))
+                        self.activation = lambda x: torch.celu(x, alpha)
                     else:
                         raise NotImplementedError(
                             'Unexpected activation {}'.format(activation))
