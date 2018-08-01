@@ -99,7 +99,7 @@ class TestBenchmark(unittest.TestCase):
             dtype=self.dtype, device=self.device)
         prepare = torchani.PrepareInput(aev_computer.species, self.device)
         model = torchani.models.NeuroChemNNP(
-            aev_computer.species, benchmark=True)
+            aev_computer.species, benchmark=True).to(self.device)
         run_module = torch.nn.Sequential(prepare, aev_computer, model)
         self._testModule(run_module, model, ['forward'])
 
