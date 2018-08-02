@@ -18,9 +18,9 @@ def atomic():
 
 
 def get_or_create_model(filename, benchmark=False,
-                        device=torchani.default_device):
-    aev_computer = torchani.SortedAEV(benchmark=benchmark, device=device)
-    prepare = torchani.PrepareInput(aev_computer.species, aev_computer.device)
+                        device=torch.device('cpu')):
+    aev_computer = torchani.SortedAEV(benchmark=benchmark)
+    prepare = torchani.PrepareInput(aev_computer.species)
     model = torchani.models.CustomModel(
         reducer=torch.sum,
         benchmark=benchmark,
