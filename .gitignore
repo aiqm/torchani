@@ -15,4 +15,5 @@ a.out
 benchmark_xyz
 *.pyc
 *checkpoint*
+*.pt
 /runs
