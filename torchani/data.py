@@ -2,7 +2,6 @@ from torch.utils.data import Dataset, DataLoader
 from os.path import join, isfile, isdir
 import os
 from .pyanitools import anidataloader
-from .env import default_dtype, default_device
 import torch
 import torch.utils.data as data
 import pickle
@@ -11,7 +10,8 @@ import pickle
 class ANIDataset(Dataset):
 
     def __init__(self, path, chunk_size, shuffle=True, properties=['energies'],
-                 transform=(), dtype=default_dtype, device=default_device):
+                 transform=(), dtype=torch.get_default_dtype(),
+                 device=torch.device('cpu')):
         super(ANIDataset, self).__init__()
         self.path = path
         self.chunks_size = chunk_size

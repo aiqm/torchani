@@ -1,14 +1,13 @@
 import torch
 import itertools
 import math
-from .env import buildin_const_file, default_dtype, default_device
+from .env import buildin_const_file
 from .benchmarked import BenchmarkedModule
 
 
 class AEVComputer(BenchmarkedModule):
-    __constants__ = ['Rcr', 'Rca', 'dtype', 'device', 'radial_sublength',
-                     'radial_length', 'angular_sublength', 'angular_length',
-                     'aev_length']
+    __constants__ = ['Rcr', 'Rca', 'radial_sublength', 'radial_length',
+                     'angular_sublength', 'angular_length', 'aev_length']
 
     """Base class of various implementations of AEV computer
 
@@ -16,11 +15,6 @@ class AEVComputer(BenchmarkedModule):
     ----------
     benchmark : boolean
         Whether to enable benchmark
-    dtype : torch.dtype
-        Data type of pytorch tensors for all the computations. This is
-        also used to specify whether to use CPU or GPU.
-    device : torch.Device
-        The device where tensors should be.
     const_file : str
         The name of the original file that stores constant.
     Rcr, Rca : float
@@ -39,15 +33,12 @@ class AEVComputer(BenchmarkedModule):
         The length of full aev
     """
 
-    def __init__(self, benchmark=False, dtype=default_dtype,
-                 device=default_device, const_file=buildin_const_file):
+    def __init__(self, benchmark=False, const_file=buildin_const_file):
         super(AEVComputer, self).__init__(benchmark)
-
-        self.dtype = dtype
         self.const_file = const_file
-        self.device = device
 
         # load constants from const file
+        const = {}
         with open(const_file) as f:
             for i in f:
                 try:
@@ -60,8 +51,8 @@ class AEVComputer(BenchmarkedModule):
                                   'ShfZ', 'EtaA', 'ShfA']:
                         value = [float(x.strip()) for x in value.replace(
                             '[', '').replace(']', '').split(',')]
-                        value = torch.tensor(value, dtype=dtype, device=device)
-                        setattr(self, name, value)
+                        value = torch.tensor(value)
+                        const[name] = value
                     elif name == 'Atyp':
                         value = [x.strip() for x in value.replace(
                             '[', '').replace(']', '').split(',')]
@@ -70,10 +61,11 @@ class AEVComputer(BenchmarkedModule):
                     raise ValueError('unable to parse const file')
 
         # Compute lengths
-        self.radial_sublength = self.EtaR.shape[0] * self.ShfR.shape[0]
+        self.radial_sublength = const['EtaR'].shape[0] * const['ShfR'].shape[0]
         self.radial_length = len(self.species) * self.radial_sublength
-        self.angular_sublength = self.EtaA.shape[0] * \
-            self.Zeta.shape[0] * self.ShfA.shape[0] * self.ShfZ.shape[0]
+        self.angular_sublength = const['EtaA'].shape[0] * \
+            const['Zeta'].shape[0] * const['ShfA'].shape[0] * \
+            const['ShfZ'].shape[0]
         species = len(self.species)
         self.angular_length = int(
             (species * (species + 1)) / 2) * self.angular_sublength
@@ -81,13 +73,17 @@ class AEVComputer(BenchmarkedModule):
 
         # convert constant tensors to a ready-to-broadcast shape
         # shape convension (..., EtaR, ShfR)
-        self.EtaR = self.EtaR.view(-1, 1)
-        self.ShfR = self.ShfR.view(1, -1)
+        const['EtaR'] = const['EtaR'].view(-1, 1)
+        const['ShfR'] = const['ShfR'].view(1, -1)
         # shape convension (..., EtaA, Zeta, ShfA, ShfZ)
-        self.EtaA = self.EtaA.view(-1, 1, 1, 1)
-        self.Zeta = self.Zeta.view(1, -1, 1, 1)
-        self.ShfA = self.ShfA.view(1, 1, -1, 1)
-        self.ShfZ = self.ShfZ.view(1, 1, 1, -1)
+        const['EtaA'] = const['EtaA'].view(-1, 1, 1, 1)
+        const['Zeta'] = const['Zeta'].view(1, -1, 1, 1)
+        const['ShfA'] = const['ShfA'].view(1, 1, -1, 1)
+        const['ShfZ'] = const['ShfZ'].view(1, 1, 1, -1)
+
+        # register buffers
+        for i in const:
+            self.register_buffer(i, const[i])
 
     def forward(self, coordinates_species):
         """Compute AEV from coordinates and species
@@ -112,18 +108,19 @@ class AEVComputer(BenchmarkedModule):
 
 class PrepareInput(torch.nn.Module):
 
-    def __init__(self, species, device):
+    def __init__(self, species):
         super(PrepareInput, self).__init__()
         self.species = species
-        self.device = device
 
-    def species_to_tensor(self, species):
+    def species_to_tensor(self, species, device):
         """Convert species list into a long tensor.
 
         Parameters
         ----------
         species : list
             List of string for the species of each atoms.
+        device : torch.device
+            The device to store tensor
 
         Returns
         -------
@@ -133,7 +130,7 @@ class PrepareInput(torch.nn.Module):
         """
         indices = {self.species[i]: i for i in range(len(self.species))}
         values = [indices[i] for i in species]
-        return torch.tensor(values, dtype=torch.long, device=self.device)
+        return torch.tensor(values, dtype=torch.long, device=device)
 
     def sort_by_species(self, species, *tensors):
         """Sort the data by its species according to the order in `self.species`
@@ -158,7 +155,7 @@ class PrepareInput(torch.nn.Module):
 
     def forward(self, species_coordinates):
         species, coordinates = species_coordinates
-        species = self.species_to_tensor(species)
+        species = self.species_to_tensor(species, coordinates.device)
         return self.sort_by_species(species, coordinates)
 
 
@@ -203,9 +200,8 @@ class SortedAEV(AEVComputer):
             total : total time for computing everything.
     """
 
-    def __init__(self, benchmark=False, device=default_device,
-                 dtype=default_dtype, const_file=buildin_const_file):
-        super(SortedAEV, self).__init__(benchmark, dtype, device, const_file)
+    def __init__(self, benchmark=False, const_file=buildin_const_file):
+        super(SortedAEV, self).__init__(benchmark, const_file)
         if benchmark:
             self.radial_subaev_terms = self._enable_benchmark(
                 self.radial_subaev_terms, 'radial terms')
@@ -385,7 +381,7 @@ class SortedAEV(AEVComputer):
             storing the mask for each species.
         """
         mask_r = (species_r.unsqueeze(-1) ==
-                  torch.arange(len(self.species), device=self.device))
+                  torch.arange(len(self.species), device=self.EtaR.device))
         return mask_r
 
     def compute_mask_a(self, species_a, present_species):
@@ -451,8 +447,10 @@ class SortedAEV(AEVComputer):
         atoms = radial_terms.shape[1]
 
         # assemble radial subaev
-        present_radial_aevs = (radial_terms.unsqueeze(-2)
-                               * mask_r.unsqueeze(-1).type(self.dtype)).sum(-3)
+        present_radial_aevs = (
+            radial_terms.unsqueeze(-2) *
+            mask_r.unsqueeze(-1).type(radial_terms.dtype)
+        ).sum(-3)
         """shape (conformations, atoms, present species, radial_length)"""
         radial_aevs = present_radial_aevs.flatten(start_dim=2)
 
@@ -466,13 +464,13 @@ class SortedAEV(AEVComputer):
         zero_angular_subaev = torch.zeros(
             # TODO: can we make stack and cat broadcast?
             conformations, atoms, self.angular_sublength,
-            dtype=self.dtype, device=self.device)
+            dtype=self.EtaR.dtype, device=self.EtaR.device)
         for s1, s2 in itertools.combinations_with_replacement(
                                         range(len(self.species)), 2):
             if s1 in rev_indices and s2 in rev_indices:
                 i1 = rev_indices[s1]
                 i2 = rev_indices[s2]
-                mask = mask_a[..., i1, i2].unsqueeze(-1).type(self.dtype)
+                mask = mask_a[..., i1, i2].unsqueeze(-1).type(self.EtaR.dtype)
                 subaev = (angular_terms * mask).sum(-2)
             else:
                 subaev = zero_angular_subaev

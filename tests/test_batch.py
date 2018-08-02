@@ -12,17 +12,14 @@ if sys.version_info.major >= 3:
     path = os.path.join(path, '../dataset')
     chunksize = 32
     batch_chunks = 32
-    dtype = torch.float32
-    device = torch.device('cpu')
 
     class TestBatch(unittest.TestCase):
 
         def testBatchLoadAndInference(self):
-            ds = torchani.data.ANIDataset(path, chunksize, device=device)
+            ds = torchani.data.ANIDataset(path, chunksize)
             loader = torchani.data.dataloader(ds, batch_chunks)
-            aev_computer = torchani.SortedAEV(dtype=dtype, device=device)
-            prepare = torchani.PrepareInput(aev_computer.species,
-                                            aev_computer.device)
+            aev_computer = torchani.SortedAEV()
+            prepare = torchani.PrepareInput(aev_computer.species)
             nnp = torchani.models.NeuroChemNNP(aev_computer.species)
             model = torch.nn.Sequential(prepare, aev_computer, nnp)
             batch_nnp = torchani.models.BatchModel(model)
