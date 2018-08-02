@@ -10,12 +10,11 @@ N = 97
 
 class TestAEV(unittest.TestCase):
 
-    def setUp(self, dtype=torchani.default_dtype):
-        aev_computer = torchani.SortedAEV(dtype=dtype,
-                                          device=torch.device('cpu'))
+    def setUp(self):
+        aev_computer = torchani.SortedAEV()
         self.radial_length = aev_computer.radial_length
         self.aev = torch.nn.Sequential(
-            torchani.PrepareInput(aev_computer.species, aev_computer.device),
+            torchani.PrepareInput(aev_computer.species),
             aev_computer
         )
         self.tolerance = 1e-5

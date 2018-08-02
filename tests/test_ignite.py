@@ -13,21 +13,17 @@ if sys.version_info.major >= 3:
     path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
     chunksize = 4
     threshold = 1e-5
-    dtype = torch.float32
-    device = torch.device('cpu')
 
     class TestIgnite(unittest.TestCase):
 
         def testIgnite(self):
             shift_energy = torchani.EnergyShifter()
             ds = torchani.data.ANIDataset(
-                path, chunksize, device=device,
-                transform=[shift_energy.dataset_subtract_sae])
+                path, chunksize, transform=[shift_energy.dataset_subtract_sae])
             ds = torch.utils.data.Subset(ds, [0])
             loader = torchani.data.dataloader(ds, 1)
-            aev_computer = torchani.SortedAEV(dtype=dtype, device=device)
-            prepare = torchani.PrepareInput(aev_computer.species,
-                                            aev_computer.device)
+            aev_computer = torchani.SortedAEV()
+            prepare = torchani.PrepareInput(aev_computer.species)
             nnp = torchani.models.NeuroChemNNP(aev_computer.species)
 
             class Flatten(torch.nn.Module):

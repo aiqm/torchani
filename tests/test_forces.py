@@ -10,13 +10,10 @@ N = 97
 
 class TestForce(unittest.TestCase):
 
-    def setUp(self, dtype=torchani.default_dtype,
-              device=torchani.default_device):
+    def setUp(self):
         self.tolerance = 1e-5
-        aev_computer = torchani.SortedAEV(
-            dtype=dtype, device=torch.device('cpu'))
-        prepare = torchani.PrepareInput(aev_computer.species,
-                                        aev_computer.device)
+        aev_computer = torchani.SortedAEV()
+        prepare = torchani.PrepareInput(aev_computer.species)
         nnp = torchani.models.NeuroChemNNP(aev_computer.species)
         self.model = torch.nn.Sequential(prepare, aev_computer, nnp)
 
