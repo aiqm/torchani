@@ -6,15 +6,17 @@ import timeit
 import model
 import tqdm
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 chunk_size = 256
 batch_chunks = 4
 dataset_path = sys.argv[1]
 shift_energy = torchani.EnergyShifter()
 dataset = torchani.data.ANIDataset(
-    dataset_path, chunk_size,
+    dataset_path, chunk_size, device=device,
     transform=[shift_energy.dataset_subtract_sae])
 dataloader = torchani.data.dataloader(dataset, batch_chunks)
-nnp = model.get_or_create_model('/tmp/model.pt', True)
+nnp = model.get_or_create_model('/tmp/model.pt', True, device=device)
 batch_nnp = torchani.models.BatchModel(nnp)
 container = torchani.ignite.Container({'energies': batch_nnp})
 optimizer = torch.optim.Adam(nnp.parameters())

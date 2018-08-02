@@ -6,14 +6,10 @@ import copy
 
 class TestBenchmark(unittest.TestCase):
 
-    def setUp(self, dtype=torchani.default_dtype,
-              device=torchani.default_device):
-        self.dtype = dtype
-        self.device = device
+    def setUp(self):
         self.conformations = 100
         self.species = list('HHCCNNOO')
-        self.coordinates = torch.randn(
-            self.conformations, 8, 3, dtype=dtype, device=device)
+        self.coordinates = torch.randn(self.conformations, 8, 3)
         self.count = 100
 
     def _testModule(self, run_module, result_module, asserts):
@@ -82,9 +78,8 @@ class TestBenchmark(unittest.TestCase):
             self.assertEqual(result_module.timers[i], 0)
 
     def testAEV(self):
-        aev_computer = torchani.SortedAEV(
-            benchmark=True, dtype=self.dtype, device=self.device)
-        prepare = torchani.PrepareInput(aev_computer.species, self.device)
+        aev_computer = torchani.SortedAEV(benchmark=True)
+        prepare = torchani.PrepareInput(aev_computer.species)
         run_module = torch.nn.Sequential(prepare, aev_computer)
         self._testModule(run_module, aev_computer, [
                          'terms and indices>radial terms',
@@ -95,11 +90,10 @@ class TestBenchmark(unittest.TestCase):
                          ])
 
     def testANIModel(self):
-        aev_computer = torchani.SortedAEV(
-            dtype=self.dtype, device=self.device)
-        prepare = torchani.PrepareInput(aev_computer.species, self.device)
-        model = torchani.models.NeuroChemNNP(
-            aev_computer.species, benchmark=True).to(self.device)
+        aev_computer = torchani.SortedAEV()
+        prepare = torchani.PrepareInput(aev_computer.species)
+        model = torchani.models.NeuroChemNNP(aev_computer.species,
+                                             benchmark=True)
         run_module = torch.nn.Sequential(prepare, aev_computer, model)
         self._testModule(run_module, model, ['forward'])
 
