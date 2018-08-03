@@ -41,4 +41,4 @@ def get_or_create_model(filename, benchmark=False,
         model.load_state_dict(torch.load(filename))
     else:
         torch.save(model.state_dict(), filename)
-    return model.to(device)
+    return model.to(device), torchani.EnergyShifter(aev_computer.species)

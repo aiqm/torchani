@@ -24,12 +24,12 @@ parser = parser.parse_args()
 
 # set up benchmark
 device = torch.device(parser.device)
-shift_energy = torchani.EnergyShifter()
+nnp, shift_energy = model.get_or_create_model('/tmp/model.pt',
+                                              True, device=device)
 dataset = torchani.data.ANIDataset(
     parser.dataset_path, parser.chunk_size, device=device,
-    transform=[shift_energy.dataset_subtract_sae])
+    transform=[shift_energy.subtract_from_dataset])
 dataloader = torchani.data.dataloader(dataset, parser.batch_chunks)
-nnp = model.get_or_create_model('/tmp/model.pt', True, device=device)
 container = torchani.ignite.Container({'energies': nnp})
 optimizer = torch.optim.Adam(nnp.parameters())
 

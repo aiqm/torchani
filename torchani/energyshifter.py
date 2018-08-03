@@ -1,16 +1,11 @@
+import torch
 from .env import buildin_sae_file
 
 
-class EnergyShifter:
-    """Class that deal with self atomic energies.
+class EnergyShifter(torch.nn.Module):
 
-    Attributes
-    ----------
-    self_energies : dict
-        The dictionary that stores self energies of species.
-    """
-
-    def __init__(self, self_energy_file=buildin_sae_file):
+    def __init__(self, species, self_energy_file=buildin_sae_file):
+        super(EnergyShifter, self).__init__()
         # load self energies
         self.self_energies = {}
         with open(self_energy_file) as f:
@@ -22,55 +17,24 @@ class EnergyShifter:
                     self.self_energies[name] = value
                 except Exception:
                     pass  # ignore unrecognizable line
+        self_energies_tensor = [self.self_energies[s] for s in species]
+        self.register_buffer('self_energies_tensor',
+                             torch.tensor(self_energies_tensor,
+                                          dtype=torch.double))
 
-    def subtract_sae(self, energies, species):
-        """Subtract self atomic energies from `energies`.
+    def sae_from_list(self, species):
+        energies = [self.self_energies[i] for i in species]
+        return sum(energies)
 
-        Parameters
-        ----------
-        energies : pytorch tensor of `dtype`
-            The tensor of any shape that stores the raw energies.
-        species : list of str
-            The list specifying the species of each atom. The length of the
-            list must be the same as the number of atoms.
+    def sae_from_tensor(self, species):
+        return self.self_energies_tensor[species].sum().item()
 
-        Returns
-        -------
-        pytorch tensor of `dtype`
-            The tensor of the same shape as `energies` that stores the energies
-            with self atomic energies subtracted.
-        """
-        s = 0
-        for i in species:
-            s += self.self_energies[i]
-        return energies - s
-
-    def add_sae(self, energies, species):
-        """Add self atomic energies to `energies`
-
-        Parameters
-        ----------
-        energies : pytorch tensor of `dtype`
-            The tensor of any shape that stores the energies excluding self
-            atomic energies.
-        species : list of str
-            The list specifying the species of each atom. The length of the
-            list must be the same as the number of atoms.
-
-        Returns
-        -------
-        pytorch tensor of `dtype`
-            The tensor of the same shape as `energies` that stores the raw
-            energies, i.e. the energy including self atomic energies.
-        """
-        s = 0
-        for i in species:
-            s += self.self_energies[i]
-        return energies + s
-
-    def dataset_subtract_sae(self, data):
-        """Allow object of this class to be used as transforms of pytorch's
-        dataset.
-        """
-        data['energies'] = self.subtract_sae(data['energies'], data['species'])
+    def subtract_from_dataset(self, data):
+        sae = self.sae_from_list(data['species'])
+        data['energies'] -= sae
         return data
+
+    def forward(self, species_energies):
+        species, energies = species_energies
+        sae = self.sae_from_tensor(species)
+        return species, energies + sae

@@ -16,13 +16,13 @@ class TestEnergies(unittest.TestCase):
         aev_computer = torchani.SortedAEV()
         prepare = torchani.PrepareInput(aev_computer.species)
         nnp = torchani.models.NeuroChemNNP(aev_computer.species)
-        self.model = torch.nn.Sequential(prepare, aev_computer, nnp)
+        shift_energy = torchani.EnergyShifter(aev_computer.species)
+        self.model = torch.nn.Sequential(prepare, aev_computer,
+                                         nnp, shift_energy)
 
     def _test_molecule(self, coordinates, species, energies):
-        shift_energy = torchani.EnergyShifter()
         _, energies_ = self.model((species, coordinates))
-        energies_ = shift_energy.add_sae(energies_.squeeze(), species)
-        max_diff = (energies - energies_).abs().max().item()
+        max_diff = (energies - energies_.squeeze()).abs().max().item()
         self.assertLess(max_diff, self.tolerance)
 
     def testGDB(self):
