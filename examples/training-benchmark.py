@@ -30,12 +30,11 @@ dataset = torchani.data.ANIDataset(
     transform=[shift_energy.dataset_subtract_sae])
 dataloader = torchani.data.dataloader(dataset, parser.batch_chunks)
 nnp = model.get_or_create_model('/tmp/model.pt', True, device=device)
-batch_nnp = torchani.models.BatchModel(nnp)
-container = torchani.ignite.Container({'energies': batch_nnp})
+container = torchani.ignite.Container({'energies': nnp})
 optimizer = torch.optim.Adam(nnp.parameters())
 
 trainer = ignite.engine.create_supervised_trainer(
-    container, optimizer, torchani.ignite.energy_mse_loss)
+    container, optimizer, torchani.ignite.MSELoss('energies'))
 
 
 @trainer.on(ignite.engine.Events.EPOCH_STARTED)

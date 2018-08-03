@@ -85,4 +85,4 @@ class ANIModel(BenchmarkedModule):
 
         per_species_outputs = torch.cat(per_species_outputs, dim=1)
         molecule_output = self.reducer(per_species_outputs, dim=1)
-        return molecule_output
+        return species, molecule_output
