@@ -4,14 +4,6 @@ from ignite.metrics import RootMeanSquaredError
 import torch
 
 
-def num_atoms(input):
-    ret = []
-    for s, c in zip(input['species'], input['coordinates']):
-        ret.append(torch.full((c.shape[0],), len(s),
-                   dtype=c.dtype, device=c.device))
-    return torch.cat(ret)
-
-
 class DictLoss(_Loss):
 
     def __init__(self, key, loss):
@@ -21,6 +13,23 @@ class DictLoss(_Loss):
 
     def forward(self, input, other):
         return self.loss(input[self.key], other[self.key])
+
+
+class _PerAtomDictLoss(DictLoss):
+
+    @staticmethod
+    def num_atoms(input):
+        ret = []
+        for s, c in zip(input['species'], input['coordinates']):
+            ret.append(torch.full((c.shape[0],), len(s),
+                       dtype=c.dtype, device=c.device))
+        return torch.cat(ret)
+
+    def forward(self, input, other):
+        loss = self.loss(input[self.key], other[self.key])
+        loss /= self.num_atoms(input)
+        n = loss.numel()
+        return loss.sum() / n
 
 
 class DictMetric(Metric):
@@ -41,8 +50,11 @@ class DictMetric(Metric):
         return self.metric.compute()
 
 
-def MSELoss(key):
-    return DictLoss(key, torch.nn.MSELoss())
+def MSELoss(key, per_atom=True):
+    if per_atom:
+        return _PerAtomDictLoss(key, torch.nn.MSELoss(reduce=False))
+    else:
+        return DictLoss(key, torch.nn.MSELoss())
 
 
 def RMSEMetric(key):
