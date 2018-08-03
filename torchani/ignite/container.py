@@ -1,5 +1,5 @@
 import torch
-from ..models import BatchModel
+from ..data import collate
 
 
 class Container(torch.nn.Module):
@@ -8,13 +8,15 @@ class Container(torch.nn.Module):
         super(Container, self).__init__()
         self.keys = models.keys()
         for i in models:
-            if not isinstance(models[i], BatchModel):
-                raise ValueError('Container must contain batch models')
             setattr(self, 'model_' + i, models[i])
 
     def forward(self, batch):
-        output = {}
-        for i in self.keys:
-            model = getattr(self, 'model_' + i)
-            output[i] = model(batch)
-        return output
+        all_results = []
+        for i in zip(batch['species'], batch['coordinates']):
+            results = {}
+            for k in self.keys:
+                model = getattr(self, 'model_' + k)
+                _, results[k] = model(i)
+                all_results.append(results)
+        batch.update(collate(all_results))
+        return batch

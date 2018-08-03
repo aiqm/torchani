@@ -28,16 +28,15 @@ if sys.version_info.major >= 3:
 
             class Flatten(torch.nn.Module):
                 def forward(self, x):
-                    return x.flatten()
+                    return x[0], x[1].flatten()
 
             model = torch.nn.Sequential(prepare, aev_computer, nnp, Flatten())
-            batch_nnp = torchani.models.BatchModel(model)
-            container = torchani.ignite.Container({'energies': batch_nnp})
+            container = torchani.ignite.Container({'energies': model})
             optimizer = torch.optim.Adam(container.parameters())
             trainer = create_supervised_trainer(
-                container, optimizer, torchani.ignite.energy_mse_loss)
+                container, optimizer, torchani.ignite.MSELoss('energies'))
             evaluator = create_supervised_evaluator(container, metrics={
-                'RMSE': torchani.ignite.energy_rmse_metric
+                'RMSE': torchani.ignite.RMSEMetric('energies')
             })
 
             @trainer.on(Events.COMPLETED)

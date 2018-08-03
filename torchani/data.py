@@ -5,6 +5,7 @@ from .pyanitools import anidataloader
 import torch
 import torch.utils.data as data
 import pickle
+import collections
 
 
 class ANIDataset(Dataset):
@@ -64,7 +65,9 @@ class ANIDataset(Dataset):
         self.chunks = chunks
 
     def __getitem__(self, idx):
-        return self.chunks[idx]
+        chunk = self.chunks[idx]
+        input_chunk = {k: chunk[k] for k in ('coordinates', 'species')}
+        return input_chunk, chunk
 
     def __len__(self):
         return len(self.chunks)
@@ -89,22 +92,21 @@ def load_or_create(checkpoint, dataset_path, chunk_size, *args, **kwargs):
     return training, validation, testing
 
 
-def _collate(batch):
-    input_keys = ['coordinates', 'species']
-    inputs = [{k: i[k] for k in input_keys} for i in batch]
-    outputs = {}
-    for i in batch:
-        for j in i:
-            if j in input_keys:
-                continue
-            if j not in outputs:
-                outputs[j] = []
-            outputs[j].append(i[j])
-    for i in outputs:
-        outputs[i] = torch.cat(outputs[i])
-    return inputs, outputs
+def collate(batch):
+    no_collate = ['coordinates', 'species']
+    if isinstance(batch[0], torch.Tensor):
+        return torch.cat(batch)
+    elif isinstance(batch[0], collections.Mapping):
+        return {key: ((lambda x: x) if key in no_collate else collate)
+                     ([d[key] for d in batch])
+                for key in batch[0]}
+    elif isinstance(batch[0], collections.Sequence):
+        transposed = zip(*batch)
+        return [collate(samples) for samples in transposed]
+    else:
+        raise ValueError('Unexpected element type: {}'.format(type(batch[0])))
 
 
 def dataloader(dataset, batch_chunks, shuffle=True, **kwargs):
     return DataLoader(dataset, batch_chunks, shuffle,
-                      collate_fn=_collate, **kwargs)
+                      collate_fn=collate, **kwargs)

@@ -23,7 +23,7 @@ coordinates = torch.tensor([[[0.03192167,  0.00638559,  0.01301679],
                            requires_grad=True)
 species = ['C', 'H', 'H', 'H', 'H']
 
-energy = model((species, coordinates))
+_, energy = model((species, coordinates))
 derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
 energy = shift_energy.add_sae(energy, species)
 force = -derivative

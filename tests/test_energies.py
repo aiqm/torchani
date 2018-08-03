@@ -19,9 +19,9 @@ class TestEnergies(unittest.TestCase):
         self.model = torch.nn.Sequential(prepare, aev_computer, nnp)
 
     def _test_molecule(self, coordinates, species, energies):
-        shift_energy = torchani.EnergyShifter(torchani.buildin_sae_file)
-        energies_ = self.model((species, coordinates)).squeeze()
-        energies_ = shift_energy.add_sae(energies_, species)
+        shift_energy = torchani.EnergyShifter()
+        _, energies_ = self.model((species, coordinates))
+        energies_ = shift_energy.add_sae(energies_.squeeze(), species)
         max_diff = (energies - energies_).abs().max().item()
         self.assertLess(max_diff, self.tolerance)
 
