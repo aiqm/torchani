@@ -401,13 +401,9 @@ class SortedAEV(AEVComputer):
             Tensor of shape (conformations, atoms, pairs, present species,
             present species) storing the mask for each pair.
         """
-        species_a = self.combinations(species_a, -1)
-        species_a1, species_a2 = species_a
-
-        mask_a1 = (species_a1.unsqueeze(-1) ==
-                   present_species).unsqueeze(-1)
-        mask_a2 = (species_a2.unsqueeze(-1).unsqueeze(-1)
-                   == present_species)
+        species_a1, species_a2 = self.combinations(species_a, -1)
+        mask_a1 = (species_a1.unsqueeze(-1) == present_species).unsqueeze(-1)
+        mask_a2 = (species_a2.unsqueeze(-1).unsqueeze(-1) == present_species)
         mask = mask_a1 * mask_a2
         mask_rev = mask.permute(0, 1, 2, 4, 3)
         mask_a = (mask + mask_rev) > 0

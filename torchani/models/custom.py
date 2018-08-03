@@ -19,8 +19,6 @@ class CustomModel(ANIModel):
         suffixes = ['']
         models = {}
         for i in per_species:
-            model_X = per_species[i]
+            models['model_' + i] = per_species[i]
         super(CustomModel, self).__init__(list(per_species.keys()), suffixes,
                                           reducer, models, benchmark)
-        for i in per_species:
-            setattr(self, 'model_' + i, per_species[i])
