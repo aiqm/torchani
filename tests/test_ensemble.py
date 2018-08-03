@@ -28,9 +28,9 @@ class TestEnsemble(unittest.TestCase):
                   for i in range(n)]
         models = [torch.nn.Sequential(prepare, aev, m) for m in models]
 
-        energy1 = ensemble((species, coordinates))
+        _, energy1 = ensemble((species, coordinates))
         force1 = torch.autograd.grad(energy1.sum(), coordinates)[0]
-        energy2 = [m((species, coordinates)) for m in models]
+        energy2 = [m((species, coordinates))[1] for m in models]
         energy2 = sum(energy2) / n
         force2 = torch.autograd.grad(energy2.sum(), coordinates)[0]
         energy_diff = (energy1 - energy2).abs().max().item()

@@ -4,6 +4,14 @@ from ignite.metrics import RootMeanSquaredError
 import torch
 
 
+def num_atoms(input):
+    ret = []
+    for s, c in zip(input['species'], input['coordinates']):
+        ret.append(torch.full((c.shape[0],), len(s),
+                   dtype=c.dtype, device=c.device))
+    return torch.cat(ret)
+
+
 class DictLoss(_Loss):
 
     def __init__(self, key, loss):
@@ -33,5 +41,9 @@ class DictMetric(Metric):
         return self.metric.compute()
 
 
-energy_mse_loss = DictLoss('energies', torch.nn.MSELoss())
-energy_rmse_metric = DictMetric('energies', RootMeanSquaredError())
+def MSELoss(key):
+    return DictLoss(key, torch.nn.MSELoss())
+
+
+def RMSEMetric(key):
+    return DictMetric(key, RootMeanSquaredError())

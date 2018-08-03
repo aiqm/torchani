@@ -19,7 +19,7 @@ class TestForce(unittest.TestCase):
 
     def _test_molecule(self, coordinates, species, forces):
         coordinates = torch.tensor(coordinates, requires_grad=True)
-        energies = self.model((species, coordinates))
+        _, energies = self.model((species, coordinates))
         derivative = torch.autograd.grad(energies.sum(), coordinates)[0]
         max_diff = (forces + derivative).abs().max().item()
         self.assertLess(max_diff, self.tolerance)

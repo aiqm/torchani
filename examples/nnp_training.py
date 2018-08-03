@@ -55,17 +55,16 @@ training, validation, testing = torchani.data.load_or_create(
 training = torchani.data.dataloader(training, parser.batch_chunks)
 validation = torchani.data.dataloader(validation, parser.batch_chunks)
 nnp = model.get_or_create_model(parser.model_checkpoint, device=device)
-batch_nnp = torchani.models.BatchModel(nnp)
-container = torchani.ignite.Container({'energies': batch_nnp})
+container = torchani.ignite.Container({'energies': nnp})
 
 parser.optim_args = json.loads(parser.optim_args)
 optimizer = getattr(torch.optim, parser.optimizer)
 optimizer = optimizer(nnp.parameters(), **parser.optim_args)
 
 trainer = ignite.engine.create_supervised_trainer(
-    container, optimizer, torchani.ignite.energy_mse_loss)
+    container, optimizer, torchani.ignite.MSELoss('energies'))
 evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
-        'RMSE': torchani.ignite.energy_rmse_metric
+        'RMSE': torchani.ignite.RMSEMetric('energies')
     })
 
 

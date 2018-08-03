@@ -34,7 +34,7 @@ def get_or_create_model(filename, benchmark=False,
     class Flatten(torch.nn.Module):
 
         def forward(self, x):
-            return x.flatten()
+            return x[0], x[1].flatten()
 
     model = torch.nn.Sequential(prepare, aev_computer, model, Flatten())
     if os.path.isfile(filename):
