@@ -17,14 +17,15 @@ if sys.version_info.major >= 3:
     class TestIgnite(unittest.TestCase):
 
         def testIgnite(self):
-            shift_energy = torchani.EnergyShifter()
-            ds = torchani.data.ANIDataset(
-                path, chunksize, transform=[shift_energy.dataset_subtract_sae])
-            ds = torch.utils.data.Subset(ds, [0])
-            loader = torchani.data.dataloader(ds, 1)
             aev_computer = torchani.SortedAEV()
             prepare = torchani.PrepareInput(aev_computer.species)
             nnp = torchani.models.NeuroChemNNP(aev_computer.species)
+            shift_energy = torchani.EnergyShifter(aev_computer.species)
+            ds = torchani.data.ANIDataset(
+                path, chunksize,
+                transform=[shift_energy.subtract_from_dataset])
+            ds = torch.utils.data.Subset(ds, [0])
+            loader = torchani.data.dataloader(ds, 1)
 
             class Flatten(torch.nn.Module):
                 def forward(self, x):

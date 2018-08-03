@@ -12,8 +12,8 @@ aev_computer = torchani.SortedAEV(const_file=const_file)
 prepare = torchani.PrepareInput(aev_computer.species)
 nn = torchani.models.NeuroChemNNP(aev_computer.species, from_=network_dir,
                                   ensemble=8)
-model = torch.nn.Sequential(prepare, aev_computer, nn)
-shift_energy = torchani.EnergyShifter(sae_file)
+shift_energy = torchani.EnergyShifter(aev_computer.species, sae_file)
+model = torch.nn.Sequential(prepare, aev_computer, nn, shift_energy)
 
 coordinates = torch.tensor([[[0.03192167,  0.00638559,  0.01301679],
                              [-0.83140486,  0.39370209, -0.26395324],
@@ -25,7 +25,6 @@ species = ['C', 'H', 'H', 'H', 'H']
 
 _, energy = model((species, coordinates))
 derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
-energy = shift_energy.add_sae(energy, species)
 force = -derivative
 
 print('Energy:', energy.item())

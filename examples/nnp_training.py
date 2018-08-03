@@ -48,13 +48,13 @@ device = torch.device(parser.device)
 writer = tensorboardX.SummaryWriter(log_dir=parser.log)
 start = timeit.default_timer()
 
-shift_energy = torchani.EnergyShifter()
+nnp, shift_energy = model.get_or_create_model('/tmp/model.pt',
+                                              True, device=device)
 training, validation, testing = torchani.data.load_or_create(
     parser.dataset_checkpoint, parser.dataset_path, parser.chunk_size,
-    device=device, transform=[shift_energy.dataset_subtract_sae])
+    device=device, transform=[shift_energy.subtract_from_dataset])
 training = torchani.data.dataloader(training, parser.batch_chunks)
 validation = torchani.data.dataloader(validation, parser.batch_chunks)
-nnp = model.get_or_create_model(parser.model_checkpoint, device=device)
 container = torchani.ignite.Container({'energies': nnp})
 
 parser.optim_args = json.loads(parser.optim_args)
