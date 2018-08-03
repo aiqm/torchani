@@ -14,8 +14,6 @@ class NeuroChemAtomicNetwork(torch.nn.Module):
     ----------
     layers : int
         Number of layers.
-    output_length : int
-        The length of output vector
     layerN : torch.nn.Linear
         Linear model for each layer.
     activation : function
@@ -202,7 +200,6 @@ class NeuroChemAtomicNetwork(torch.nn.Module):
                 raise ValueError('bad parameter shape')
             wfn = os.path.join(dirname, wfn)
             bfn = os.path.join(dirname, bfn)
-            self.output_length = out_size
             self._load_param_file(linear, in_size, out_size, wfn, bfn)
 
     def _load_param_file(self, linear, in_size, out_size, wfn, bfn):

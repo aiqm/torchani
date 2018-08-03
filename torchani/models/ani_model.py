@@ -10,8 +10,6 @@ class ANIModel(BenchmarkedModule):
     ----------
     species : list
         Chemical symbol of supported atom species.
-    output_length : int
-        The length of output vector.
     suffixes : sequence
         Different suffixes denote different models in an ensemble.
     model_<X><suffix> : nn.Module
@@ -30,13 +28,12 @@ class ANIModel(BenchmarkedModule):
             forward : total time for the forward pass
     """
 
-    def __init__(self, species, suffixes, reducer, output_length, models,
+    def __init__(self, species, suffixes, reducer, models,
                  benchmark=False):
         super(ANIModel, self).__init__(benchmark)
         self.species = species
         self.suffixes = suffixes
         self.reducer = reducer
-        self.output_length = output_length
         for i in models:
             setattr(self, i, models[i])
 
@@ -72,6 +69,7 @@ class ANIModel(BenchmarkedModule):
         for s in species_dedup:
             begin = species.index(s)
             end = atoms - rev_species.index(s)
+            part_atoms = end - begin
             y = aev[:, begin:end, :].flatten(0, 1)
 
             def apply_model(suffix):
@@ -80,7 +78,7 @@ class ANIModel(BenchmarkedModule):
                 return model_X(y)
             ys = [apply_model(suffix) for suffix in self.suffixes]
             y = sum(ys) / len(ys)
-            y = y.view(conformations, -1, self.output_length)
+            y = y.view(conformations, part_atoms, -1)
             per_species_outputs.append(y)
 
         per_species_outputs = torch.cat(per_species_outputs, dim=1)
