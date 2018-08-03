@@ -43,18 +43,11 @@ class NeuroChemNNP(ANIModel):
         reducer = torch.sum
 
         models = {}
-        output_length = None
         for network_dir, suffix in zip(network_dirs, suffixes):
             for i in species:
                 filename = os.path.join(
                     network_dir, 'ANN-{}.nnf'.format(i))
                 model_X = NeuroChemAtomicNetwork(filename)
-                if output_length is None:
-                    output_length = model_X.output_length
-                elif output_length != model_X.output_length:
-                    raise ValueError(
-                        '''output length of each atomic neural networt
-                        must match''')
                 models['model_' + i + suffix] = model_X
         super(NeuroChemNNP, self).__init__(species, suffixes, reducer,
-                                           output_length, models, benchmark)
+                                           models, benchmark)

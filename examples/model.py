@@ -13,7 +13,6 @@ def atomic():
         torch.nn.CELU(0.1),
         torch.nn.Linear(64, 1)
     )
-    model.output_length = 1
     return model
 
 

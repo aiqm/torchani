@@ -52,7 +52,7 @@ class DictMetric(Metric):
 
 def MSELoss(key, per_atom=True):
     if per_atom:
-        return _PerAtomDictLoss(key, torch.nn.MSELoss(reduce=False))
+        return _PerAtomDictLoss(key, torch.nn.MSELoss(reduction='none'))
     else:
         return DictLoss(key, torch.nn.MSELoss())
 
