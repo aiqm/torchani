@@ -22,7 +22,10 @@ parser.add_argument('--model_checkpoint',
                     default='model.pt')
 parser.add_argument('-m', '--max_epochs',
                     help='Maximum number of epoches',
-                    default=10, type=int)
+                    default=100, type=int)
+parser.add_argument('--training_rmse_every',
+                    help='Compute training RMSE every epoches',
+                    default=20, type=int)
 parser.add_argument('-d', '--device',
                     help='Device of modules and tensors',
                     default=('cuda' if torch.cuda.is_available() else 'cpu'))
@@ -94,12 +97,25 @@ def finalize_tqdm(trainer):
 
 @trainer.on(ignite.engine.Events.EPOCH_STARTED)
 def validation_and_checkpoint(trainer):
+    # compute validation RMSE
     evaluator.run(validation)
     metrics = evaluator.state.metrics
     rmse = hartree2kcal(metrics['RMSE'])
     writer.add_scalar('validation_rmse_vs_epoch', rmse, trainer.state.epoch)
+
+    # compute training RMSE
+    if trainer.state.epoch % parser.training_rmse_every == 0:
+        evaluator.run(training)
+        metrics = evaluator.state.metrics
+        rmse = hartree2kcal(metrics['RMSE'])
+        writer.add_scalar('training_rmse_vs_epoch', rmse,
+                          trainer.state.epoch)
+
+    # handle best validation RMSE
     if rmse < trainer.state.best_validation_rmse:
         trainer.state.best_validation_rmse = rmse
+        writer.add_scalar('best_validation_rmse_vs_epoch', rmse,
+                          trainer.state.epoch)
         torch.save(nnp.state_dict(), parser.model_checkpoint)
 
 
