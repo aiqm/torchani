@@ -65,13 +65,9 @@ else:
 def hartree2kcal(x):
     return 627.509 * x
 
+
 for dataset in datasets:
     dataloader = torchani.data.dataloader(dataset, parser.batch_chunks)
-    # for i in dataloader:
-    #     print(i[1]['energies'])
-    #     print(container(i[0])['energies'])
-    #     break
-    # break
     evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
         'RMSE': torchani.ignite.RMSEMetric('energies')
     })
