@@ -29,3 +29,4 @@ steps:
       - python examples/training-benchmark.py ./dataset/ani_gdb_s01.h5
       - python examples/training-benchmark.py ./dataset/ani_gdb_s01.h5  # run twice to test if checkpoint is working
       - python examples/energy_force.py
+      - python examples/neurochem-test.py ./dataset/ani_gdb_s01.h5
