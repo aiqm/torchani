@@ -44,6 +44,9 @@ parser.add_argument('--optimizer',
 parser.add_argument('--optim_args',
                     help='Arguments to optimizers, in the format of json',
                     default='{}')
+parser.add_argument('--early_stopping',
+                    help='Stop after epoches of no improvements',
+                    default=math.inf, type=int)
 parser = parser.parse_args()
 
 # set up the training
@@ -78,6 +81,7 @@ def hartree2kcal(x):
 @trainer.on(ignite.engine.Events.STARTED)
 def initialize(trainer):
     trainer.state.best_validation_rmse = math.inf
+    trainer.state.no_improve_count = 0
 
 
 @trainer.on(ignite.engine.Events.EPOCH_STARTED)
@@ -113,10 +117,16 @@ def validation_and_checkpoint(trainer):
 
     # handle best validation RMSE
     if rmse < trainer.state.best_validation_rmse:
+        trainer.state.no_improve_count = 0
         trainer.state.best_validation_rmse = rmse
         writer.add_scalar('best_validation_rmse_vs_epoch', rmse,
                           trainer.state.epoch)
         torch.save(nnp.state_dict(), parser.model_checkpoint)
+    else:
+        trainer.state.no_improve_count += 1
+
+    if trainer.state.no_improve_count > parser.early_stopping:
+        trainer.terminate()
 
 
 @trainer.on(ignite.engine.Events.EPOCH_STARTED)
