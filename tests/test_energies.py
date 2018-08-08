@@ -21,6 +21,12 @@ class TestEnergies(unittest.TestCase):
                                          nnp, shift_energy)
 
     def _test_molecule(self, coordinates, species, energies):
+        # generate a random permute
+        atoms = len(species)
+        randperm = torch.randperm(atoms)
+        coordinates = coordinates.index_select(1, randperm)
+        species = [species[i] for i in randperm.tolist()]
+
         _, energies_ = self.model((species, coordinates))
         max_diff = (energies - energies_.squeeze()).abs().max().item()
         self.assertLess(max_diff, self.tolerance)

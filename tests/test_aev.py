@@ -11,19 +11,29 @@ N = 97
 class TestAEV(unittest.TestCase):
 
     def setUp(self):
-        aev_computer = torchani.SortedAEV()
-        self.radial_length = aev_computer.radial_length
+        self.aev_computer = torchani.SortedAEV()
+        self.radial_length = self.aev_computer.radial_length
+        self.prepare = torchani.PrepareInput(self.aev_computer.species)
         self.aev = torch.nn.Sequential(
-            torchani.PrepareInput(aev_computer.species),
-            aev_computer
+            self.prepare,
+            self.aev_computer
         )
         self.tolerance = 1e-5
 
     def _test_molecule(self, coordinates, species, expected_radial,
                        expected_angular):
-        species, aev = self.aev((species, coordinates))
+        # compute aev using aev computer, sorted
+        _, aev = self.aev((species, coordinates))
         radial = aev[..., :self.radial_length]
         angular = aev[..., self.radial_length:]
+
+        # manually sort expected values
+        species = self.prepare.species_to_tensor(species,
+                                                 self.aev_computer.EtaR.device)
+        _, reverse = torch.sort(species)
+        expected_radial = expected_radial.index_select(1, reverse)
+        expected_angular = expected_angular.index_select(1, reverse)
+
         radial_diff = expected_radial - radial
         radial_max_error = torch.max(torch.abs(radial_diff)).item()
         angular_diff = expected_angular - angular

@@ -18,6 +18,13 @@ class TestForce(unittest.TestCase):
         self.model = torch.nn.Sequential(prepare, aev_computer, nnp)
 
     def _test_molecule(self, coordinates, species, forces):
+        # generate a random permute
+        atoms = len(species)
+        randperm = torch.randperm(atoms)
+        coordinates = coordinates.index_select(1, randperm)
+        forces = forces.index_select(1, randperm)
+        species = [species[i] for i in randperm.tolist()]
+
         coordinates = torch.tensor(coordinates, requires_grad=True)
         _, energies = self.model((species, coordinates))
         derivative = torch.autograd.grad(energies.sum(), coordinates)[0]
