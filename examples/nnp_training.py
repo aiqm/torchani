@@ -129,7 +129,7 @@ def log_time(trainer):
 def log_loss_and_time(trainer):
     iteration = trainer.state.iteration
     rmse = hartree2kcal(math.sqrt(trainer.state.output))
-    writer.add_scalar('training_rmse_vs_iteration', rmse, iteration)
+    writer.add_scalar('training_atomic_rmse_vs_iteration', rmse, iteration)
 
 
 trainer.run(training, max_epochs=parser.max_epochs)
