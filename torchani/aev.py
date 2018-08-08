@@ -151,7 +151,7 @@ class PrepareInput(torch.nn.Module):
         new_tensors = []
         for t in tensors:
             new_tensors.append(t.index_select(1, reverse))
-        return (species, *tensors)
+        return (species, *new_tensors)
 
     def forward(self, species_coordinates):
         species, coordinates = species_coordinates
