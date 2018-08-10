@@ -5,7 +5,7 @@ from .pyanitools import anidataloader
 import torch
 import torch.utils.data as data
 import pickle
-import collections
+import collections.abc
 
 
 class ANIDataset(Dataset):
@@ -96,11 +96,11 @@ def collate(batch):
     no_collate = ['coordinates', 'species']
     if isinstance(batch[0], torch.Tensor):
         return torch.cat(batch)
-    elif isinstance(batch[0], collections.Mapping):
+    elif isinstance(batch[0], collections.abc.Mapping):
         return {key: ((lambda x: x) if key in no_collate else collate)
                      ([d[key] for d in batch])
                 for key in batch[0]}
-    elif isinstance(batch[0], collections.Sequence):
+    elif isinstance(batch[0], collections.abc.Sequence):
         transposed = zip(*batch)
         return [collate(samples) for samples in transposed]
     else:
