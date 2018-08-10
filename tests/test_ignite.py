@@ -34,8 +34,10 @@ if sys.version_info.major >= 3:
             model = torch.nn.Sequential(prepare, aev_computer, nnp, Flatten())
             container = torchani.ignite.Container({'energies': model})
             optimizer = torch.optim.Adam(container.parameters())
+            loss = torchani.ignite.TransformedLoss(
+                torchani.ignite.MSELoss('energies'), lambda x: torch.exp(x))
             trainer = create_supervised_trainer(
-                container, optimizer, torchani.ignite.MSELoss('energies'))
+                container, optimizer, loss)
             evaluator = create_supervised_evaluator(container, metrics={
                 'RMSE': torchani.ignite.RMSEMetric('energies')
             })
