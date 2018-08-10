@@ -360,8 +360,12 @@ class SortedAEV(AEVComputer):
         n = tensor.shape[dim]
         r = torch.arange(n).type(torch.long).to(tensor.device)
         grid_x, grid_y = torch.meshgrid([r, r])
-        index1 = grid_y[torch.triu(torch.ones(n, n), diagonal=1) == 1]
-        index2 = grid_x[torch.triu(torch.ones(n, n), diagonal=1) == 1]
+        index1 = grid_y.masked_select(
+            torch.triu(torch.ones(n, n, device=self.EtaR.device),
+                       diagonal=1) == 1)
+        index2 = grid_x.masked_select(
+            torch.triu(torch.ones(n, n, device=self.EtaR.device),
+                       diagonal=1) == 1)
         return tensor.index_select(dim, index1), \
             tensor.index_select(dim, index2)
 
@@ -481,9 +485,9 @@ class SortedAEV(AEVComputer):
         radial_terms, angular_terms, indices_r, indices_a = \
             self.terms_and_indices(coordinates)
 
-        species_r = species[indices_r]
+        species_r = species.take(indices_r)
         mask_r = self.compute_mask_r(species_r)
-        species_a = species[indices_a]
+        species_a = species.take(indices_a)
         mask_a = self.compute_mask_a(species_a, present_species)
 
         radial, angular = self.assemble(radial_terms, angular_terms,
