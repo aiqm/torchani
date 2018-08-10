@@ -57,5 +57,16 @@ def MSELoss(key, per_atom=True):
         return DictLoss(key, torch.nn.MSELoss())
 
 
+class TransformedLoss(_Loss):
+
+    def __init__(self, origin, transform):
+        super(TransformedLoss, self).__init__()
+        self.origin = origin
+        self.transform = transform
+
+    def forward(self, input, other):
+        return self.transform(self.origin(input, other))
+
+
 def RMSEMetric(key):
     return DictMetric(key, RootMeanSquaredError())
