@@ -35,7 +35,8 @@ if sys.version_info.major >= 3:
             container = torchani.ignite.Container({'energies': model})
             optimizer = torch.optim.Adam(container.parameters())
             loss = torchani.ignite.TransformedLoss(
-                torchani.ignite.MSELoss('energies'), lambda x: torch.exp(x) - 1)
+                torchani.ignite.MSELoss('energies'),
+                lambda x: torch.exp(x) - 1)
             trainer = create_supervised_trainer(
                 container, optimizer, loss)
             evaluator = create_supervised_evaluator(container, metrics={
