@@ -60,6 +60,7 @@ def MSELoss(key, per_atom=True):
 class TransformedLoss(_Loss):
 
     def __init__(self, origin, transform):
+        super(TransformedLoss, self).__init__()
         self.origin = origin
         self.transform = transform
 
