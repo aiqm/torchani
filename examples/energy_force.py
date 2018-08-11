@@ -8,7 +8,7 @@ const_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/rHCNO-5.
 sae_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/sae_linfit.dat')  # noqa: E501
 network_dir = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/train')  # noqa: E501
 
-aev_computer = torchani.SortedAEV(const_file=const_file)
+aev_computer = torchani.AEVComputer(const_file=const_file)
 prepare = torchani.PrepareInput(aev_computer.species)
 nn = torchani.models.NeuroChemNNP(aev_computer.species, from_=network_dir,
                                   ensemble=8)

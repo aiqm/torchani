@@ -3,9 +3,10 @@ import itertools
 import math
 from .env import buildin_const_file
 from .benchmarked import BenchmarkedModule
+from . import padding
 
 
-class AEVComputer(BenchmarkedModule):
+class AEVComputerBase(BenchmarkedModule):
     __constants__ = ['Rcr', 'Rca', 'radial_sublength', 'radial_length',
                      'angular_sublength', 'angular_length', 'aev_length']
 
@@ -34,7 +35,7 @@ class AEVComputer(BenchmarkedModule):
     """
 
     def __init__(self, benchmark=False, const_file=buildin_const_file):
-        super(AEVComputer, self).__init__(benchmark)
+        super(AEVComputerBase, self).__init__(benchmark)
         self.const_file = const_file
 
         # load constants from const file
@@ -132,31 +133,12 @@ class PrepareInput(torch.nn.Module):
         values = [indices[i] for i in species]
         return torch.tensor(values, dtype=torch.long, device=device)
 
-    def sort_by_species(self, species, *tensors):
-        """Sort the data by its species according to the order in `self.species`
-
-        Parameters
-        ----------
-        species : torch.Tensor
-            Tensor storing species of each atom.
-        *tensors : tuple
-            Tensors of shape (conformations, atoms, ...) for data.
-
-        Returns
-        -------
-        (species, ...)
-            Tensors sorted by species.
-        """
-        species, reverse = torch.sort(species)
-        new_tensors = []
-        for t in tensors:
-            new_tensors.append(t.index_select(1, reverse))
-        return (species, *new_tensors)
-
     def forward(self, species_coordinates):
         species, coordinates = species_coordinates
+        conformations = coordinates.shape[0]
         species = self.species_to_tensor(species, coordinates.device)
-        return self.sort_by_species(species, coordinates)
+        species = species.expand(conformations, -1)
+        return species, coordinates
 
 
 def _cutoff_cosine(distances, cutoff):
@@ -188,7 +170,7 @@ def _cutoff_cosine(distances, cutoff):
     )
 
 
-class SortedAEV(AEVComputer):
+class AEVComputer(AEVComputerBase):
     """The AEV computer assuming input coordinates sorted by species
 
     Attributes
@@ -201,7 +183,7 @@ class SortedAEV(AEVComputer):
     """
 
     def __init__(self, benchmark=False, const_file=buildin_const_file):
-        super(SortedAEV, self).__init__(benchmark, const_file)
+        super(AEVComputer, self).__init__(benchmark, const_file)
         if benchmark:
             self.radial_subaev_terms = self._enable_benchmark(
                 self.radial_subaev_terms, 'radial terms')
@@ -295,7 +277,7 @@ class SortedAEV(AEVComputer):
         # flat the last 4 dimensions to view the subAEV as one dimension vector
         return ret.flatten(start_dim=-4)
 
-    def terms_and_indices(self, coordinates):
+    def terms_and_indices(self, species, coordinates):
         """Compute radial and angular subAEV terms, and original indices.
 
         Terms will be sorted according to their distances to central atoms,
@@ -304,6 +286,9 @@ class SortedAEV(AEVComputer):
 
         Parameters
         ----------
+        species : torch.Tensor
+            The tensor that specifies the species of atoms in the molecule.
+            The tensor must have shape (conformations, atoms)
         coordinates : torch.Tensor
             The tensor that specifies the xyz coordinates of atoms in the
             molecule. The tensor must have shape (conformations, atoms, 3)
@@ -332,6 +317,10 @@ class SortedAEV(AEVComputer):
 
         distances = vec.norm(2, -1)
         """Shape (conformations, atoms, atoms) storing Rij distances"""
+
+        padding_mask = (species == -1).unsqueeze(1)
+        distances = torch.where(padding_mask, torch.tensor(math.inf),
+                                distances)
 
         distances, indices = distances.sort(-1)
 
@@ -369,14 +358,16 @@ class SortedAEV(AEVComputer):
         return tensor.index_select(dim, index1), \
             tensor.index_select(dim, index2)
 
-    def compute_mask_r(self, species_r):
+    def compute_mask_r(self, species, indices_r):
         """Partition indices according to their species, radial part
 
         Parameters
         ----------
-        species_r : torch.Tensor
-            Tensor of shape (conformations, atoms, neighbors) storing
-            species of neighbors.
+        indices_r : torch.Tensor
+            Tensor of shape (conformations, atoms, neighbors).
+            Let l = indices_r(i,j,k), then this means that
+            radial_terms(i,j,k,:) is in the subAEV term of conformation i
+            between atom j and atom l.
 
         Returns
         -------
@@ -384,11 +375,14 @@ class SortedAEV(AEVComputer):
             Tensor of shape (conformations, atoms, neighbors, all species)
             storing the mask for each species.
         """
+        species_r = species.gather(-1, indices_r)
+        """Tensor of shape (conformations, atoms, neighbors) storing species
+        of neighbors."""
         mask_r = (species_r.unsqueeze(-1) ==
                   torch.arange(len(self.species), device=self.EtaR.device))
         return mask_r
 
-    def compute_mask_a(self, species_a, present_species):
+    def compute_mask_a(self, species, indices_a, present_species):
         """Partition indices according to their species, angular part
 
         Parameters
@@ -405,6 +399,7 @@ class SortedAEV(AEVComputer):
             Tensor of shape (conformations, atoms, pairs, present species,
             present species) storing the mask for each pair.
         """
+        species_a = species.gather(-1, indices_a)
         species_a1, species_a2 = self.combinations(species_a, -1)
         mask_a1 = (species_a1.unsqueeze(-1) == present_species).unsqueeze(-1)
         mask_a2 = (species_a2.unsqueeze(-1).unsqueeze(-1) == present_species)
@@ -480,15 +475,17 @@ class SortedAEV(AEVComputer):
 
     def forward(self, species_coordinates):
         species, coordinates = species_coordinates
-        present_species = species.unique(sorted=True)
+
+        present_species = padding.present_species(species)
+
+        # TODO: remove this workaround after gather support broadcasting
+        atoms = coordinates.shape[1]
+        species_ = species.unsqueeze(1).expand(-1, atoms, -1)
 
         radial_terms, angular_terms, indices_r, indices_a = \
-            self.terms_and_indices(coordinates)
-
-        species_r = species.take(indices_r)
-        mask_r = self.compute_mask_r(species_r)
-        species_a = species.take(indices_a)
-        mask_a = self.compute_mask_a(species_a, present_species)
+            self.terms_and_indices(species, coordinates)
+        mask_r = self.compute_mask_r(species_, indices_r)
+        mask_a = self.compute_mask_a(species_, indices_a, present_species)
 
         radial, angular = self.assemble(radial_terms, angular_terms,
                                         present_species, mask_r, mask_a)

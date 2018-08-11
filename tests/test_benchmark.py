@@ -78,7 +78,7 @@ class TestBenchmark(unittest.TestCase):
             self.assertEqual(result_module.timers[i], 0)
 
     def testAEV(self):
-        aev_computer = torchani.SortedAEV(benchmark=True)
+        aev_computer = torchani.AEVComputer(benchmark=True)
         prepare = torchani.PrepareInput(aev_computer.species)
         run_module = torch.nn.Sequential(prepare, aev_computer)
         self._testModule(run_module, aev_computer, [
@@ -90,7 +90,7 @@ class TestBenchmark(unittest.TestCase):
                          ])
 
     def testANIModel(self):
-        aev_computer = torchani.SortedAEV()
+        aev_computer = torchani.AEVComputer()
         prepare = torchani.PrepareInput(aev_computer.species)
         model = torchani.models.NeuroChemNNP(aev_computer.species,
                                              benchmark=True)
