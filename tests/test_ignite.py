@@ -17,7 +17,7 @@ if sys.version_info.major >= 3:
     class TestIgnite(unittest.TestCase):
 
         def testIgnite(self):
-            aev_computer = torchani.SortedAEV()
+            aev_computer = torchani.AEVComputer()
             prepare = torchani.PrepareInput(aev_computer.species)
             nnp = torchani.models.NeuroChemNNP(aev_computer.species)
             shift_energy = torchani.EnergyShifter(aev_computer.species)

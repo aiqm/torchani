@@ -18,7 +18,7 @@ class TestEnsemble(unittest.TestCase):
         coordinates = torch.tensor(coordinates, requires_grad=True)
         n = torchani.buildin_ensemble
         prefix = torchani.buildin_model_prefix
-        aev = torchani.SortedAEV()
+        aev = torchani.AEVComputer()
         prepare = torchani.PrepareInput(aev.species)
         ensemble = torchani.models.NeuroChemNNP(aev.species, ensemble=True)
         ensemble = torch.nn.Sequential(prepare, aev, ensemble)
