@@ -14,29 +14,35 @@ class TestEnergies(unittest.TestCase):
     def setUp(self):
         self.tolerance = 5e-5
         aev_computer = torchani.AEVComputer()
-        prepare = torchani.PrepareInput(aev_computer.species)
+        self.prepare = torchani.PrepareInput(aev_computer.species)
         nnp = torchani.models.NeuroChemNNP(aev_computer.species)
         shift_energy = torchani.EnergyShifter(aev_computer.species)
-        self.model = torch.nn.Sequential(prepare, aev_computer,
-                                         nnp, shift_energy)
+        self.model = torch.nn.Sequential(aev_computer,nnp, shift_energy)
 
-    def _test_molecule(self, coordinates, species, energies):
-        # generate a random permute
-        atoms = len(species)
-        randperm = torch.randperm(atoms)
-        coordinates = coordinates.index_select(1, randperm)
-        species = [species[i] for i in randperm.tolist()]
-
-        _, energies_ = self.model((species, coordinates))
-        max_diff = (energies - energies_.squeeze()).abs().max().item()
-        self.assertLess(max_diff, self.tolerance)
-
-    def testGDB(self):
+    def testIsomers(self):
         for i in range(N):
             datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, energies, _ = pickle.load(f)
-                self._test_molecule(coordinates, species, energies)
+                species, coordinates = self.prepare((species, coordinates))
+                _, energies_ = self.model((species, coordinates))
+                max_diff = (energies - energies_).abs().max().item()
+                self.assertLess(max_diff, self.tolerance)
+
+    def testPadding(self):
+        species_coordinates = []
+        energies = []
+        for i in range(N):
+            datafile = os.path.join(path, 'test_data/{}'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, _, _, e, _ = pickle.load(f)
+                species_coordinates.append(self.prepare((species, coordinates)))
+                energies.append(e)
+        species, coordinates = torchani.padding.pad_and_batch(species_coordinates)
+        energies = torch.cat(energies)
+        _, energies_ = self.model((species, coordinates))
+        max_diff = (energies - energies_).abs().max().item()
+        self.assertLess(max_diff, self.tolerance)
 
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@ import itertools
 import math
 from .env import buildin_const_file
 from .benchmarked import BenchmarkedModule
+from . import padding
 
 
 class AEVComputerBase(BenchmarkedModule):
@@ -474,11 +475,9 @@ class AEVComputer(AEVComputerBase):
     def forward(self, species_coordinates):
         species, coordinates = species_coordinates
 
-        present_species = species.flatten().unique(sorted=True)
-        if present_species[0].item() == -1:
-            present_species = present_species[1:]
+        present_species = padding.present_species(species)
 
-        # TODO: remove this workaround
+        # TODO: remove this workaround after gather support broadcasting
         atoms = coordinates.shape[1]
         species_ = species.unsqueeze(1).expand(-1, atoms, -1)
 

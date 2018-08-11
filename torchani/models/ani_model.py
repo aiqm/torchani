@@ -1,5 +1,6 @@
 import torch
 from ..benchmarked import BenchmarkedModule
+from .. import padding
 
 
 class ANIModel(BenchmarkedModule):
@@ -66,12 +67,13 @@ class ANIModel(BenchmarkedModule):
         """
         species, aev = species_aev
         species_ = species.flatten()
+        present_species = padding.present_species(species)
         aev = aev.flatten(0, 1)
         outputs = []
         for suffix in self.suffixes:
             output = torch.full_like(species_, self.padding_fill,
                                      dtype=aev.dtype)
-            for i in species.unique().tolist():
+            for i in present_species:
                 s = self.species[i]
                 model_X = getattr(self, 'model_' + s + suffix)
                 mask = (species_ == i)

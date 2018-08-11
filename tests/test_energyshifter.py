@@ -22,7 +22,7 @@ class TestEnergyShifter(unittest.TestCase):
             species_coordinates.append(self.prepare((species, coordinates)))
             e = self.shift_energy.sae_from_list(species)
             saes.append(e)
-        species, _ = torchani.data.pad_and_batch(species_coordinates)
+        species, _ = torchani.padding.pad_and_batch(species_coordinates)
         saes_ = self.shift_energy.sae_from_tensor(species)
         saes = torch.tensor(saes, dtype=saes_.dtype, device=saes_.device)
         self.assertLess((saes - saes_).abs().max(), self.tol)
