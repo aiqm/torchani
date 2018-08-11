@@ -27,13 +27,6 @@ class TestAEV(unittest.TestCase):
         radial = aev[..., :self.radial_length]
         angular = aev[..., self.radial_length:]
 
-        # manually sort expected values
-        species = self.prepare.species_to_tensor(species,
-                                                 self.aev_computer.EtaR.device)
-        _, reverse = torch.sort(species)
-        expected_radial = expected_radial.index_select(1, reverse)
-        expected_angular = expected_angular.index_select(1, reverse)
-
         radial_diff = expected_radial - radial
         radial_max_error = torch.max(torch.abs(radial_diff)).item()
         angular_diff = expected_angular - angular

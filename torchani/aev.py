@@ -5,7 +5,7 @@ from .env import buildin_const_file
 from .benchmarked import BenchmarkedModule
 
 
-class AEVComputer(BenchmarkedModule):
+class AEVComputerBase(BenchmarkedModule):
     __constants__ = ['Rcr', 'Rca', 'radial_sublength', 'radial_length',
                      'angular_sublength', 'angular_length', 'aev_length']
 
@@ -132,33 +132,12 @@ class PrepareInput(torch.nn.Module):
         values = [indices[i] for i in species]
         return torch.tensor(values, dtype=torch.long, device=device)
 
-    def sort_by_species(self, species, *tensors):
-        """Sort the data by its species according to the order in `self.species`
-
-        Parameters
-        ----------
-        species : torch.Tensor
-            Tensor storing species of each atom.
-        *tensors : tuple
-            Tensors of shape (conformations, atoms, ...) for data.
-
-        Returns
-        -------
-        (species, ...)
-            Tensors sorted by species.
-        """
-        species, reverse = torch.sort(species)
-        new_tensors = []
-        for t in tensors:
-            new_tensors.append(t.index_select(1, reverse))
-        return (species, *new_tensors)
-
     def forward(self, species_coordinates):
         species, coordinates = species_coordinates
         conformations = coordinates.shape[0]
         species = self.species_to_tensor(species, coordinates.device)
         species = species.expand(conformations ,-1)
-        return self.sort_by_species(species, coordinates)
+        return species, coordinates
 
 
 def _cutoff_cosine(distances, cutoff):
@@ -190,7 +169,7 @@ def _cutoff_cosine(distances, cutoff):
     )
 
 
-class SortedAEV(AEVComputer):
+class AEVComputer(AEVComputerBase):
     """The AEV computer assuming input coordinates sorted by species
 
     Attributes
@@ -203,7 +182,7 @@ class SortedAEV(AEVComputer):
     """
 
     def __init__(self, benchmark=False, const_file=buildin_const_file):
-        super(SortedAEV, self).__init__(benchmark, const_file)
+        super(AEVComputer, self).__init__(benchmark, const_file)
         if benchmark:
             self.radial_subaev_terms = self._enable_benchmark(
                 self.radial_subaev_terms, 'radial terms')
@@ -388,7 +367,7 @@ class SortedAEV(AEVComputer):
             Tensor of shape (conformations, atoms, neighbors, all species)
             storing the mask for each species.
         """
-        species_r = species.take(indices_r)
+        species_r = species.gather(-1, indices_r)
         """Tensor of shape (conformations, atoms, neighbors) storing species
         of neighbors."""
         mask_r = (species_r.unsqueeze(-1) ==
@@ -489,6 +468,10 @@ class SortedAEV(AEVComputer):
     def forward(self, species_coordinates):
         species, coordinates = species_coordinates
         present_species = species.unique(sorted=True)
+
+        # TODO: remove this workaround 
+        atoms = coordinates.shape[1]
+        species = species.unsqueeze(1).expand(-1, atoms, -1)
 
         radial_terms, angular_terms, indices_r, indices_a = \
             self.terms_and_indices(coordinates)
