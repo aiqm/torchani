@@ -397,7 +397,7 @@ class AEVComputer(AEVComputerBase):
             Tensor of shape (conformations, atoms, pairs, present species,
             present species) storing the mask for each pair.
         """
-        species_a = species.take(indices_a)
+        species_a = species.gather(-1, indices_a)
         species_a1, species_a2 = self.combinations(species_a, -1)
         mask_a1 = (species_a1.unsqueeze(-1) == present_species).unsqueeze(-1)
         mask_a2 = (species_a2.unsqueeze(-1).unsqueeze(-1) == present_species)
@@ -473,7 +473,10 @@ class AEVComputer(AEVComputerBase):
 
     def forward(self, species_coordinates):
         species, coordinates = species_coordinates
-        present_species = species.unique(sorted=True)
+
+        present_species = species.flatten().unique(sorted=True)
+        if present_species[0].item() == -1:
+            present_species = present_species[1:]
 
         # TODO: remove this workaround
         atoms = coordinates.shape[1]
