@@ -80,6 +80,12 @@ class TestPadAndBatch(unittest.TestCase):
         self.assertEqual((species - expected_species).abs().max().item(), 0)
         self.assertEqual(coordinates.abs().max().item(), 0)
 
+    def testPresentSpecies(self):
+        species = torch.LongTensor([0, 1, 1, 0, 3, 7, -1, -1])
+        present_species = torchani.padding.present_species(species)
+        expected = torch.LongTensor([0, 1, 3, 7])
+        self.assertEqual((expected - present_species).abs().max().item(), 0)
+
 
 if __name__ == '__main__':
     unittest.main()
