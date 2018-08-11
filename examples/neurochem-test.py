@@ -36,7 +36,7 @@ parser = parser.parse_args()
 
 # load modules and datasets
 device = torch.device(parser.device)
-aev_computer = torchani.SortedAEV(const_file=parser.const_file)
+aev_computer = torchani.AEVComputer(const_file=parser.const_file)
 prepare = torchani.PrepareInput(aev_computer.species)
 nn = torchani.models.NeuroChemNNP(aev_computer.species,
                                   from_=parser.network_dir,
