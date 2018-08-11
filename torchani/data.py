@@ -6,7 +6,6 @@ import torch
 import torch.utils.data as data
 import pickle
 import collections.abc
-import math
 
 
 class ANIDataset(Dataset):

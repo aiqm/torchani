@@ -1,11 +1,10 @@
-import sys
 import os
 import unittest
-import torch
 import torchani.data
 
 path = os.path.dirname(os.path.realpath(__file__))
 path = os.path.join(path, '../dataset')
+
 
 class TestDataset(unittest.TestCase):
 

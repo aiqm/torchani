@@ -28,7 +28,7 @@ class EnergyShifter(torch.nn.Module):
 
     def sae_from_tensor(self, species):
         self_energies = self.self_energies_tensor[species]
-        self_energies[species==-1] = 0
+        self_energies[species == -1] = 0
         return self_energies.sum(dim=1)
 
     def subtract_from_dataset(self, data):

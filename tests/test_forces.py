@@ -25,7 +25,8 @@ class TestForce(unittest.TestCase):
                 coordinates, species, _, _, _, forces = pickle.load(f)
                 coordinates = torch.tensor(coordinates, requires_grad=True)
                 _, energies = self.model((species, coordinates))
-                derivative = torch.autograd.grad(energies.sum(), coordinates)[0]
+                derivative = torch.autograd.grad(energies.sum(),
+                                                 coordinates)[0]
                 max_diff = (forces + derivative).abs().max().item()
                 self.assertLess(max_diff, self.tolerance)
 
@@ -40,7 +41,8 @@ class TestForce(unittest.TestCase):
                 coordinates = torch.tensor(coordinates, requires_grad=True)
                 species_coordinates.append((species, coordinates))
                 coordinates_forces.append((coordinates, forces))
-        species, coordinates = torchani.padding.pad_and_batch(species_coordinates)
+        species, coordinates = torchani.padding.pad_and_batch(
+            species_coordinates)
         _, energies = self.prepared2e((species, coordinates))
         energies = energies.sum()
         for coordinates, forces in coordinates_forces:

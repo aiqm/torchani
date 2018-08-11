@@ -17,7 +17,7 @@ class TestEnergies(unittest.TestCase):
         self.prepare = torchani.PrepareInput(aev_computer.species)
         nnp = torchani.models.NeuroChemNNP(aev_computer.species)
         shift_energy = torchani.EnergyShifter(aev_computer.species)
-        self.model = torch.nn.Sequential(aev_computer,nnp, shift_energy)
+        self.model = torch.nn.Sequential(aev_computer, nnp, shift_energy)
 
     def testIsomers(self):
         for i in range(N):
@@ -36,9 +36,11 @@ class TestEnergies(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, e, _ = pickle.load(f)
-                species_coordinates.append(self.prepare((species, coordinates)))
+                species_coordinates.append(
+                    self.prepare((species, coordinates)))
                 energies.append(e)
-        species, coordinates = torchani.padding.pad_and_batch(species_coordinates)
+        species, coordinates = torchani.padding.pad_and_batch(
+            species_coordinates)
         energies = torch.cat(energies)
         _, energies_ = self.model((species, coordinates))
         max_diff = (energies - energies_).abs().max().item()
