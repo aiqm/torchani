@@ -11,7 +11,7 @@ N = 97
 class TestAEV(unittest.TestCase):
 
     def setUp(self):
-        self.aev_computer = torchani.SortedAEV()
+        self.aev_computer = torchani.AEVComputer()
         self.radial_length = self.aev_computer.radial_length
         self.prepare = torchani.PrepareInput(self.aev_computer.species)
         self.aev = torch.nn.Sequential(

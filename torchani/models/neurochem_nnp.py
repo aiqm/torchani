@@ -40,8 +40,6 @@ class NeuroChemNNP(ANIModel):
                 network_dirs.append(network_dir)
                 suffixes.append(suffix)
 
-        reducer = torch.sum
-
         models = {}
         for network_dir, suffix in zip(network_dirs, suffixes):
             for i in species:
@@ -49,5 +47,5 @@ class NeuroChemNNP(ANIModel):
                     network_dir, 'ANN-{}.nnf'.format(i))
                 model_X = NeuroChemAtomicNetwork(filename)
                 models['model_' + i + suffix] = model_X
-        super(NeuroChemNNP, self).__init__(species, suffixes, reducer,
-                                           models, benchmark)
+        super(NeuroChemNNP, self).__init__(species, suffixes, torch.sum,
+                                           0, models, benchmark)

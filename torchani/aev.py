@@ -34,7 +34,7 @@ class AEVComputerBase(BenchmarkedModule):
     """
 
     def __init__(self, benchmark=False, const_file=buildin_const_file):
-        super(AEVComputer, self).__init__(benchmark)
+        super(AEVComputerBase, self).__init__(benchmark)
         self.const_file = const_file
 
         # load constants from const file
@@ -471,12 +471,12 @@ class AEVComputer(AEVComputerBase):
 
         # TODO: remove this workaround 
         atoms = coordinates.shape[1]
-        species = species.unsqueeze(1).expand(-1, atoms, -1)
+        species_ = species.unsqueeze(1).expand(-1, atoms, -1)
 
         radial_terms, angular_terms, indices_r, indices_a = \
             self.terms_and_indices(coordinates)
-        mask_r = self.compute_mask_r(species, indices_r)
-        mask_a = self.compute_mask_a(species, indices_a, present_species)
+        mask_r = self.compute_mask_r(species_, indices_r)
+        mask_a = self.compute_mask_a(species_, indices_a, present_species)
 
         radial, angular = self.assemble(radial_terms, angular_terms,
                                         present_species, mask_r, mask_a)

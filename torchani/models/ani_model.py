@@ -21,6 +21,8 @@ class ANIModel(BenchmarkedModule):
         with the per atom output tensor with internal shape as input, and
         desired reduction dimension as dim, and should reduce the input into
         the tensor containing desired output.
+    padding_fill : float
+        Default value used to fill padding atoms
     output_length : int
         Length of output of each submodel.
     timers : dict
@@ -28,12 +30,13 @@ class ANIModel(BenchmarkedModule):
             forward : total time for the forward pass
     """
 
-    def __init__(self, species, suffixes, reducer, models,
-                 benchmark=False):
+    def __init__(self, species, suffixes, reducer, padding_fill, models,
+                 benchmark=False): 
         super(ANIModel, self).__init__(benchmark)
         self.species = species
         self.suffixes = suffixes
         self.reducer = reducer
+        self.padding_fill = padding_fill
         for i in models:
             setattr(self, i, models[i])
 
@@ -54,33 +57,28 @@ class ANIModel(BenchmarkedModule):
 
         Returns
         -------
-        torch.Tensor
+        (species, output)
+        species : torch.Tensor
+            Tensor storing the species for each atom.
+        output : torch.Tensor
             Pytorch tensor of shape (conformations, output_length) for the
             output of each conformation.
         """
         species, aev = species_aev
-        conformations = aev.shape[0]
-        atoms = len(species)
-        rev_species = species.__reversed__()
-        species_dedup = species.unique()
-        per_species_outputs = []
-        species = species.tolist()
-        rev_species = rev_species.tolist()
-        for s in species_dedup:
-            begin = species.index(s)
-            end = atoms - rev_species.index(s)
-            part_atoms = end - begin
-            y = aev[:, begin:end, :].flatten(0, 1)
-
-            def apply_model(suffix):
-                model_X = getattr(self, 'model_' +
-                                  self.species[s] + suffix)
-                return model_X(y)
-            ys = [apply_model(suffix) for suffix in self.suffixes]
-            y = sum(ys) / len(ys)
-            y = y.view(conformations, part_atoms, -1)
-            per_species_outputs.append(y)
-
-        per_species_outputs = torch.cat(per_species_outputs, dim=1)
-        molecule_output = self.reducer(per_species_outputs, dim=1)
-        return species, molecule_output
+        species_ = species.flatten()
+        aev = aev.flatten(0,1)
+        outputs = []
+        for suffix in self.suffixes:
+            output = torch.full_like(species_, self.padding_fill,
+                                     dtype=aev.dtype)
+            for i in range(len(self.species)):
+                s = self.species[i]
+                print('model_' + s + suffix)
+                model_X = getattr(self, 'model_' + s + suffix)
+                mask = (species_ == i)
+                input = aev.index_select(0, mask.nonzero().squeeze())
+                print(input.shape)
+                output[mask] = model_X(input).squeeze()
+            outputs.append(output)
+        print(done)
+        return species, sum(outputs) / len(outputs)
