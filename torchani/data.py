@@ -110,3 +110,21 @@ def collate(batch):
 def dataloader(dataset, batch_chunks, shuffle=True, **kwargs):
     return DataLoader(dataset, batch_chunks, shuffle,
                       collate_fn=collate, **kwargs)
+
+
+def pad_and_batch(species_coordinates):
+    max_atoms = max([c.shape[1] for _, c in species_coordinates])
+    species = []
+    coordinates = []
+    for s, c in species_coordinates:
+        natoms = c.shape[1]
+        if len(s.shape) == 1:
+            s = s.unsqueeze(0)
+        if natoms < max_atoms:
+            padding = torch.full((s.shape[0], max_atoms - natoms), -1,
+                                    dtype=torch.long, device=s.device)
+            s = torch.cat([s, padding])
+        s = s.expand(c.shape[0], max_atoms)
+        species.append(s)
+        coordinates.append(c)
+    return torch.cat(species), torch.cat(coordinates)
