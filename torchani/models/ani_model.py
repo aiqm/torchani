@@ -31,7 +31,7 @@ class ANIModel(BenchmarkedModule):
     """
 
     def __init__(self, species, suffixes, reducer, padding_fill, models,
-                 benchmark=False): 
+                 benchmark=False):
         super(ANIModel, self).__init__(benchmark)
         self.species = species
         self.suffixes = suffixes
@@ -66,7 +66,7 @@ class ANIModel(BenchmarkedModule):
         """
         species, aev = species_aev
         species_ = species.flatten()
-        aev = aev.flatten(0,1)
+        aev = aev.flatten(0, 1)
         outputs = []
         for suffix in self.suffixes:
             output = torch.full_like(species_, self.padding_fill,

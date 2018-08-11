@@ -8,7 +8,7 @@ class TestEnergyShifter(unittest.TestCase):
 
     def setUp(self):
         self.tol = 1e-5
-        self.species = torchani.SortedAEV().species
+        self.species = torchani.AEVComputer().species
         self.prepare = torchani.PrepareInput(self.species)
         self.shift_energy = torchani.EnergyShifter(self.species)
 
@@ -19,7 +19,8 @@ class TestEnergyShifter(unittest.TestCase):
             species_tensor = self.prepare.species_to_tensor(
                 species, torch.device('cpu'))
             e1 = self.shift_energy.sae_from_list(species)
-            e2 = self.shift_energy.sae_from_tensor(species_tensor.unsqueeze(0)).item()
+            e2 = self.shift_energy.sae_from_tensor(
+                species_tensor.unsqueeze(0)).item()
             self.assertLess(abs(e1 - e2), self.tol)
 
 

@@ -136,7 +136,7 @@ class PrepareInput(torch.nn.Module):
         species, coordinates = species_coordinates
         conformations = coordinates.shape[0]
         species = self.species_to_tensor(species, coordinates.device)
-        species = species.expand(conformations ,-1)
+        species = species.expand(conformations, -1)
         return species, coordinates
 
 
@@ -469,7 +469,7 @@ class AEVComputer(AEVComputerBase):
         species, coordinates = species_coordinates
         present_species = species.unique(sorted=True)
 
-        # TODO: remove this workaround 
+        # TODO: remove this workaround
         atoms = coordinates.shape[1]
         species_ = species.unsqueeze(1).expand(-1, atoms, -1)
 
