@@ -71,14 +71,13 @@ class ANIModel(BenchmarkedModule):
         for suffix in self.suffixes:
             output = torch.full_like(species_, self.padding_fill,
                                      dtype=aev.dtype)
-            for i in range(len(self.species)):
+            for i in species.unique().tolist():
                 s = self.species[i]
-                print('model_' + s + suffix)
                 model_X = getattr(self, 'model_' + s + suffix)
                 mask = (species_ == i)
                 input = aev.index_select(0, mask.nonzero().squeeze())
-                print(input.shape)
                 output[mask] = model_X(input).squeeze()
-            outputs.append(output)
-        print(done)
+            output = output.view_as(species)
+            outputs.append(self.reducer(output, dim=1))
+
         return species, sum(outputs) / len(outputs)

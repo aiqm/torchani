@@ -19,15 +19,14 @@ class EnergyShifter(torch.nn.Module):
                     pass  # ignore unrecognizable line
         self_energies_tensor = [self.self_energies[s] for s in species]
         self.register_buffer('self_energies_tensor',
-                             torch.tensor(self_energies_tensor,
-                                          dtype=torch.double))
+                             torch.tensor(self_energies_tensor))
 
     def sae_from_list(self, species):
         energies = [self.self_energies[i] for i in species]
         return sum(energies)
 
     def sae_from_tensor(self, species):
-        return self.self_energies_tensor[species].sum().item()
+        return self.self_energies_tensor[species].sum(dim=1)
 
     def subtract_from_dataset(self, data):
         sae = self.sae_from_list(data['species'])
