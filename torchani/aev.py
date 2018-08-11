@@ -276,7 +276,7 @@ class AEVComputer(AEVComputerBase):
         # flat the last 4 dimensions to view the subAEV as one dimension vector
         return ret.flatten(start_dim=-4)
 
-    def terms_and_indices(self, coordinates):
+    def terms_and_indices(self, species, coordinates):
         """Compute radial and angular subAEV terms, and original indices.
 
         Terms will be sorted according to their distances to central atoms,
@@ -285,6 +285,9 @@ class AEVComputer(AEVComputerBase):
 
         Parameters
         ----------
+        species : torch.Tensor
+            The tensor that specifies the species of atoms in the molecule.
+            The tensor must have shape (conformations, atoms)
         coordinates : torch.Tensor
             The tensor that specifies the xyz coordinates of atoms in the
             molecule. The tensor must have shape (conformations, atoms, 3)
@@ -313,6 +316,9 @@ class AEVComputer(AEVComputerBase):
 
         distances = vec.norm(2, -1)
         """Shape (conformations, atoms, atoms) storing Rij distances"""
+
+        padding_mask = (species == -1).unsqueeze(1)
+        distances = torch.where(padding_mask, torch.tensor(math.inf), distances)
 
         distances, indices = distances.sort(-1)
 
@@ -474,7 +480,7 @@ class AEVComputer(AEVComputerBase):
         species_ = species.unsqueeze(1).expand(-1, atoms, -1)
 
         radial_terms, angular_terms, indices_r, indices_a = \
-            self.terms_and_indices(coordinates)
+            self.terms_and_indices(species, coordinates)
         mask_r = self.compute_mask_r(species_, indices_r)
         mask_a = self.compute_mask_a(species_, indices_a, present_species)
 

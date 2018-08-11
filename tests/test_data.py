@@ -39,7 +39,7 @@ class TestPadAndBatch(unittest.TestCase):
             (species2, coordinates2),
         ])
         self.assertEqual(species.shape[0], 7)
-        self.assertEqual(species.shape[0], 5)
+        self.assertEqual(species.shape[1], 5)
         expected_species = torch.LongTensor([
             [0, 2, 3, 1, -1],
             [0, 2, 3, 1, -1],
@@ -62,7 +62,7 @@ class TestPadAndBatch(unittest.TestCase):
             (species2, coordinates2),
         ])
         self.assertEqual(species.shape[0], 7)
-        self.assertEqual(species.shape[0], 5)
+        self.assertEqual(species.shape[1], 5)
         expected_species = torch.LongTensor([
             [0, 2, 3, 1, -1],
             [0, 2, 3, 1, -1],
@@ -91,7 +91,7 @@ class TestPadAndBatch(unittest.TestCase):
             (species2, coordinates2),
         ])
         self.assertEqual(species.shape[0], 7)
-        self.assertEqual(species.shape[0], 5)
+        self.assertEqual(species.shape[1], 5)
         expected_species = torch.LongTensor([
             [0, 2, 3, 1, -1],
             [0, 2, 3, 1, -1],
