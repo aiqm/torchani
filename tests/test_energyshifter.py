@@ -7,7 +7,7 @@ import random
 class TestEnergyShifter(unittest.TestCase):
 
     def setUp(self):
-        self.tol = 1e-5
+        self.tol = 5e-5
         self.species = torchani.AEVComputer().species
         self.prepare = torchani.PrepareInput(self.species)
         self.shift_energy = torchani.EnergyShifter(self.species)
