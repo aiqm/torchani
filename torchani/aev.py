@@ -155,7 +155,9 @@ class PrepareInput(torch.nn.Module):
 
     def forward(self, species_coordinates):
         species, coordinates = species_coordinates
+        conformations = coordinates.shape[0]
         species = self.species_to_tensor(species, coordinates.device)
+        species = species.expand(conformations ,-1)
         return self.sort_by_species(species, coordinates)
 
 
