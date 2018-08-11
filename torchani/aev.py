@@ -369,14 +369,16 @@ class SortedAEV(AEVComputer):
         return tensor.index_select(dim, index1), \
             tensor.index_select(dim, index2)
 
-    def compute_mask_r(self, species_r):
+    def compute_mask_r(self, species, indices_r):
         """Partition indices according to their species, radial part
 
         Parameters
         ----------
-        species_r : torch.Tensor
-            Tensor of shape (conformations, atoms, neighbors) storing
-            species of neighbors.
+        indices_r : torch.Tensor
+            Tensor of shape (conformations, atoms, neighbors).
+            Let l = indices_r(i,j,k), then this means that
+            radial_terms(i,j,k,:) is in the subAEV term of conformation i
+            between atom j and atom l.
 
         Returns
         -------
@@ -384,11 +386,14 @@ class SortedAEV(AEVComputer):
             Tensor of shape (conformations, atoms, neighbors, all species)
             storing the mask for each species.
         """
+        species_r = species.take(indices_r)
+        """Tensor of shape (conformations, atoms, neighbors) storing species
+        of neighbors."""
         mask_r = (species_r.unsqueeze(-1) ==
                   torch.arange(len(self.species), device=self.EtaR.device))
         return mask_r
 
-    def compute_mask_a(self, species_a, present_species):
+    def compute_mask_a(self, species, indices_a, present_species):
         """Partition indices according to their species, angular part
 
         Parameters
@@ -405,6 +410,7 @@ class SortedAEV(AEVComputer):
             Tensor of shape (conformations, atoms, pairs, present species,
             present species) storing the mask for each pair.
         """
+        species_a = species.take(indices_a)
         species_a1, species_a2 = self.combinations(species_a, -1)
         mask_a1 = (species_a1.unsqueeze(-1) == present_species).unsqueeze(-1)
         mask_a2 = (species_a2.unsqueeze(-1).unsqueeze(-1) == present_species)
@@ -484,11 +490,8 @@ class SortedAEV(AEVComputer):
 
         radial_terms, angular_terms, indices_r, indices_a = \
             self.terms_and_indices(coordinates)
-
-        species_r = species.take(indices_r)
-        mask_r = self.compute_mask_r(species_r)
-        species_a = species.take(indices_a)
-        mask_a = self.compute_mask_a(species_a, present_species)
+        mask_r = self.compute_mask_r(species, indices_r)
+        mask_a = self.compute_mask_a(species, indices_a, present_species)
 
         radial, angular = self.assemble(radial_terms, angular_terms,
                                         present_species, mask_r, mask_a)
