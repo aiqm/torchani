@@ -1,9 +1,10 @@
+import torch
 from .ani_model import ANIModel
 
 
 class CustomModel(ANIModel):
 
-    def __init__(self, per_species, reducer,
+    def __init__(self, per_species, reducer=torch.sum, padding_fill=0,
                  derivative=False, derivative_graph=False, benchmark=False):
         """Custom single model, no ensemble
 
@@ -21,4 +22,5 @@ class CustomModel(ANIModel):
         for i in per_species:
             models['model_' + i] = per_species[i]
         super(CustomModel, self).__init__(list(per_species.keys()), suffixes,
-                                          reducer, models, benchmark)
+                                          reducer, padding_fill, models,
+                                          benchmark)
