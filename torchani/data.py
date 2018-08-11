@@ -124,13 +124,11 @@ def pad_and_batch(species_coordinates):
         if natoms < max_atoms:
             padding = torch.full((s.shape[0], max_atoms - natoms), -1,
                                     dtype=torch.long, device=s.device)
-            print(s.shape, padding.shape)
             s = torch.cat([s, padding], dim=1)
             padding = torch.full((c.shape[0], max_atoms - natoms, 3), 0,
                                   dtype=c.dtype, device=c.device)
             c = torch.cat([c, padding], dim=1)
         s = s.expand(c.shape[0], max_atoms)
-        print(s.shape)
         species.append(s)
         coordinates.append(c)
     return torch.cat(species), torch.cat(coordinates)

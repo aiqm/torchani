@@ -20,13 +20,9 @@ class TestAEV(unittest.TestCase):
         )
         self.tolerance = 1e-5
 
-    def _test_molecule(self, coordinates, species, expected_radial,
-                       expected_angular):
-        # compute aev using aev computer, sorted
-        _, aev = self.aev((species, coordinates))
+    def _assertAEVEqual(self, expected_radial, expected_angular, aev):
         radial = aev[..., :self.radial_length]
         angular = aev[..., self.radial_length:]
-
         radial_diff = expected_radial - radial
         radial_max_error = torch.max(torch.abs(radial_diff)).item()
         angular_diff = expected_angular - angular
@@ -34,12 +30,35 @@ class TestAEV(unittest.TestCase):
         self.assertLess(radial_max_error, self.tolerance)
         self.assertLess(angular_max_error, self.tolerance)
 
-    def testGDB(self):
+    def testIsomers(self):
+        for i in range(N):
+            datafile = os.path.join(path, 'test_data/{}'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, expected_radial, expected_angular, _, _ \
+                    = pickle.load(f)
+                _, aev = self.aev((species, coordinates))
+                self._assertAEVEqual(expected_radial, expected_angular, aev)
+
+    def testPadding(self):
+        species_coordinates = []
+        radial_angular = []
         for i in range(N):
             datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, radial, angular, _, _ = pickle.load(f)
-                self._test_molecule(coordinates, species, radial, angular)
+                species_coordinates.append(self.prepare((species, coordinates)))
+                radial_angular.append((radial, angular))
+        species, coordinates = torchani.data.pad_and_batch(species_coordinates)
+        _, aev = self.aev_computer((species, coordinates))
+        start = 0
+        for expected_radial, expected_angular in radial_angular:
+            conformations = expected_radial.shape[0]
+            atoms = expected_radial.shape[1]
+            aev_ = aev[start:start+conformations, 0:atoms]
+            start += conformations
+            self._assertAEVEqual(expected_radial, expected_angular, aev_)
+
+
 
 
 if __name__ == '__main__':
