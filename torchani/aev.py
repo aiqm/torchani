@@ -107,7 +107,6 @@ class AEVComputerBase(BenchmarkedModule):
         raise NotImplementedError('subclass must override this method')
 
 
-
 def _cutoff_cosine(distances, cutoff):
     """Compute the elementwise cutoff cosine function
 

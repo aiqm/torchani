@@ -1,19 +1,18 @@
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from os.path import join, isfile, isdir
 import os
 from .pyanitools import anidataloader
 import torch
 import torch.utils.data as data
 import pickle
-import collections.abc
 from .. import padding
 
 
 class BatchedANIDataset(Dataset):
 
-    def __init__(self, path, species, batch_size, shuffle=True, properties=['energies'],
-                 transform=(), dtype=torch.get_default_dtype(),
-                 device=torch.device('cpu')):
+    def __init__(self, path, species, batch_size, shuffle=True,
+                 properties=['energies'], transform=(),
+                 dtype=torch.get_default_dtype(), device=torch.device('cpu')):
         super(BatchedANIDataset, self).__init__()
         self.path = path
         self.species = species
@@ -39,19 +38,19 @@ class BatchedANIDataset(Dataset):
 
         # load full dataset
         species_coordinates = []
-        properties = {
-            self.properties[i]: [] for i in self.properties,
-        }
+        properties = {self.properties[i]: [] for i in self.properties}
         for f in files:
             for m in anidataloader(f):
                 species = m['species']
                 indices = [self.species_indices[i] for i in species]
-                species = torch.tensor(indices, dtype=torch.long, device=device)
+                species = torch.tensor(indices, dtype=torch.long,
+                                       device=device)
                 coordinates = torch.from_numpy(m['coordinates']) \
                                    .type(dtype).to(device)
                 species_coordinates.append((species, coordinates))
                 for i in properties:
-                    properties[i].append(torch.from_numpy(m[i]).type(dtype).to(device))
+                    properties[i].append(torch.from_numpy(m[i])
+                                              .type(dtype).to(device))
         species, coordinates = padding.pad_and_batch(species_coordinates)
         for i in properties:
             properties[i] = torch.cat(properties[i])
@@ -76,11 +75,12 @@ class BatchedANIDataset(Dataset):
             properties_batch = {
                 k: properties[k][start:end, ...] for k in properties
             }
-            batches.append((species_batch, coordinates_batch), properties_batch)
+            batches.append((species_batch, coordinates_batch),
+                           properties_batch)
         self.batches = batches
 
     def __getitem__(self, idx):
-        return batches[idx]
+        return self.batches[idx]
 
     def __len__(self):
         return len(self.batches)
@@ -90,7 +90,8 @@ def load_or_create(checkpoint, dataset_path, batch_size, *args, **kwargs):
     """Generate a 80-10-10 split of the dataset, and checkpoint
     the resulting dataset"""
     if not os.path.isfile(checkpoint):
-        full_dataset = ANIDataset(dataset_path, batch_size, *args, **kwargs)
+        full_dataset = BatchedANIDataset(dataset_path, batch_size,
+                                         *args, **kwargs)
         training_size = int(len(full_dataset) * 0.8)
         validation_size = int(len(full_dataset) * 0.1)
         testing_size = len(full_dataset) - training_size - validation_size

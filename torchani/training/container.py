@@ -1,5 +1,4 @@
 import torch
-from ..data import collate
 
 
 class Container(torch.nn.Module):
@@ -10,13 +9,13 @@ class Container(torch.nn.Module):
         for i in models:
             setattr(self, 'model_' + i, models[i])
 
-    def forward(self, batch):
-        all_results = []
-        for i in zip(batch['species'], batch['coordinates']):
-            results = {}
-            for k in self.keys:
-                model = getattr(self, 'model_' + k)
-                _, results[k] = model(i)
-                all_results.append(results)
-        batch.update(collate(all_results))
-        return batch
+    def forward(self, species_coordinates):
+        species, coordinates = species_coordinates
+        results = {
+            'species': species,
+            'coordinates': coordinates,
+        }
+        for k in self.keys:
+            model = getattr(self, 'model_' + k)
+            results[k] = model((species, coordinates))
+        return results
