@@ -107,39 +107,6 @@ class AEVComputerBase(BenchmarkedModule):
         raise NotImplementedError('subclass must override this method')
 
 
-class PrepareInput(torch.nn.Module):
-
-    def __init__(self, species):
-        super(PrepareInput, self).__init__()
-        self.species = species
-
-    def species_to_tensor(self, species, device):
-        """Convert species list into a long tensor.
-
-        Parameters
-        ----------
-        species : list
-            List of string for the species of each atoms.
-        device : torch.device
-            The device to store tensor
-
-        Returns
-        -------
-        torch.Tensor
-            Long tensor for the species, where a value k means the species is
-            the same as self.species[k].
-        """
-        indices = {self.species[i]: i for i in range(len(self.species))}
-        values = [indices[i] for i in species]
-        return torch.tensor(values, dtype=torch.long, device=device)
-
-    def forward(self, species_coordinates):
-        species, coordinates = species_coordinates
-        conformations = coordinates.shape[0]
-        species = self.species_to_tensor(species, coordinates.device)
-        species = species.expand(conformations, -1)
-        return species, coordinates
-
 
 def _cutoff_cosine(distances, cutoff):
     """Compute the elementwise cutoff cosine function

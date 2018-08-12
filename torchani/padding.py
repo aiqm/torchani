@@ -27,3 +27,10 @@ def present_species(species):
     if present_species[0].item() == -1:
         present_species = present_species[1:]
     return present_species
+
+
+def strip_redundant_padding(species, coordinates):
+    non_padding = (species >= 0).any(dim=0)
+    species = species.masked_select(non_padding, dim=1)
+    coordinates = coordinates.masked_select(non_padding, dim=1)
+    return species, coordinates
