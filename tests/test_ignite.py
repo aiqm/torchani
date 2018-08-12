@@ -7,22 +7,20 @@ if sys.version_info.major >= 3:
     from ignite.engine import create_supervised_trainer, \
         create_supervised_evaluator, Events
     import torchani
-    import torchani.data
+    import torchani.training
 
     path = os.path.dirname(os.path.realpath(__file__))
     path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
-    chunksize = 4
+    batchsize = 4
     threshold = 1e-5
 
     class TestIgnite(unittest.TestCase):
 
         def testIgnite(self):
             aev_computer = torchani.AEVComputer()
-            prepare = torchani.PrepareInput(aev_computer.species)
             nnp = torchani.models.NeuroChemNNP(aev_computer.species)
             shift_energy = torchani.EnergyShifter(aev_computer.species)
-            ds = torchani.data.ANIDataset(
-                path, chunksize,
+            ds = torchani.training.BatchedANIDataset(path, batchsize,
                 transform=[shift_energy.subtract_from_dataset])
             ds = torch.utils.data.Subset(ds, [0])
             loader = torchani.data.dataloader(ds, 1)
@@ -31,7 +29,7 @@ if sys.version_info.major >= 3:
                 def forward(self, x):
                     return x[0], x[1].flatten()
 
-            model = torch.nn.Sequential(prepare, aev_computer, nnp, Flatten())
+            model = torch.nn.Sequential(aev_computer, nnp, Flatten())
             container = torchani.ignite.Container({'energies': model})
             optimizer = torch.optim.Adam(container.parameters())
             loss = torchani.ignite.TransformedLoss(

@@ -64,6 +64,11 @@ class BatchedANIDataset(Dataset):
             for i in properties:
                 properties[i] = properties[i].index_select(0, indices)
 
+        # do transformations on data
+        for t in transform:
+            species, coordinates, properties = t(species, coordinates,
+                                                 properties)
+
         # split into minibatches, and strip reduncant padding
         batches = []
         num_batches = (conformations + batch_size - 1) / batch_size
