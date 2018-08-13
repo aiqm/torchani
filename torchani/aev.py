@@ -285,8 +285,11 @@ class AEVComputer(AEVComputerBase):
         """Shape (conformations, atoms, atoms) storing Rij distances"""
 
         padding_mask = (species == -1).unsqueeze(1)
-        distances = torch.where(padding_mask, torch.tensor(math.inf),
-                                distances)
+        distances = torch.where(
+            padding_mask,
+            torch.tensor(math.inf, dtype=self.EtaR.dtype,
+                         device=self.EtaR.device),
+            distances)
 
         distances, indices = distances.sort(-1)
 
