@@ -11,10 +11,13 @@ aev = torchani.AEVComputer()
 
 class TestData(unittest.TestCase):
 
+    def setUp(self):
+        self.ds = torchani.training.BatchedANIDataset(dataset_path,
+                                                      aev.species,
+                                                      batch_size)
+
     def testTensorShape(self):
-        ds = torchani.training.BatchedANIDataset(dataset_path, aev.species,
-                                                 batch_size)
-        for i in ds:
+        for i in self.ds:
             input, output = i
             species, coordinates = input
             energies = output['energies']
@@ -26,6 +29,13 @@ class TestData(unittest.TestCase):
             self.assertEqual(coordinates.shape[0], coordinates.shape[0])
             self.assertEqual(len(energies.shape), 1)
             self.assertEqual(coordinates.shape[0], energies.shape[0])
+
+    def testNoUnnecessaryPadding(self):
+        for i in self.ds:
+            input, _ = i
+            species, _ = input
+            non_padding = (species >= 0)[:, -1].nonzero()
+            self.assertGreater(non_padding.numel(), 0)
 
 
 if __name__ == '__main__':
