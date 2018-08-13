@@ -23,6 +23,7 @@ class BatchedANIDataset(Dataset):
         self.properties = properties
         self.dtype = dtype
         self.device = device
+        device = torch.device('cpu')
 
         # get name of files storing data
         files = []
@@ -85,7 +86,13 @@ class BatchedANIDataset(Dataset):
         self.batches = batches
 
     def __getitem__(self, idx):
-        return self.batches[idx]
+        (species, coordinates), properties = self.batches[idx]
+        species = species.to(self.device)
+        coordinates = coordinates.to(self.device)
+        properties = {
+            k: properties[k].to(self.device) for k in properties
+        }
+        return (species, coordinates), properties
 
     def __len__(self):
         return len(self.batches)
