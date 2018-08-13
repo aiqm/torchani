@@ -91,11 +91,12 @@ class BatchedANIDataset(Dataset):
         return len(self.batches)
 
 
-def load_or_create(checkpoint, dataset_path, batch_size, *args, **kwargs):
+def load_or_create(checkpoint, batch_size, species, dataset_path,
+                   *args, **kwargs):
     """Generate a 80-10-10 split of the dataset, and checkpoint
     the resulting dataset"""
     if not os.path.isfile(checkpoint):
-        full_dataset = BatchedANIDataset(dataset_path, batch_size,
+        full_dataset = BatchedANIDataset(dataset_path, species, batch_size,
                                          *args, **kwargs)
         training_size = int(len(full_dataset) * 0.8)
         validation_size = int(len(full_dataset) * 0.1)
