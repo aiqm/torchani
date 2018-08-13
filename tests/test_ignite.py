@@ -48,5 +48,6 @@ class TestIgnite(unittest.TestCase):
 
         trainer.run(ds, max_epochs=1000)
 
+
 if __name__ == '__main__':
     unittest.main()
