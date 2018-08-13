@@ -17,5 +17,5 @@ class Container(torch.nn.Module):
         }
         for k in self.keys:
             model = getattr(self, 'model_' + k)
-            results[k] = model((species, coordinates))
+            _, results[k] = model((species, coordinates))
         return results

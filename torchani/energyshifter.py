@@ -22,21 +22,18 @@ class EnergyShifter(torch.nn.Module):
                              torch.tensor(self_energies_tensor,
                                           dtype=torch.double))
 
-    def sae_from_list(self, species):
-        energies = [self.self_energies[i] for i in species]
-        return sum(energies)
-
-    def sae_from_tensor(self, species):
+    def sae(self, species):
         self_energies = self.self_energies_tensor[species]
         self_energies[species == -1] = 0
         return self_energies.sum(dim=1)
 
-    def subtract_from_dataset(self, data):
-        sae = self.sae_from_list(data['species'])
-        data['energies'] -= sae
-        return data
+    def subtract_from_dataset(self, species, coordinates, properties):
+        dtype = properties['energies'].dtype
+        device = properties['energies'].device
+        properties['energies'] -= self.sae(species).to(dtype).to(device)
+        return species, coordinates, properties
 
     def forward(self, species_energies):
         species, energies = species_energies
-        sae = self.sae_from_tensor(species).to(energies.dtype)
+        sae = self.sae(species).to(energies.dtype).to(energies.device)
         return species, energies + sae

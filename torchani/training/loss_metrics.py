@@ -20,7 +20,7 @@ class _PerAtomDictLoss(DictLoss):
     def forward(self, input, other):
         loss = self.loss(input[self.key], other[self.key])
         num_atoms = (input['species'] >= 0).sum(dim=1)
-        loss /= num_atoms
+        loss /= num_atoms.to(loss.dtype).to(loss.device)
         n = loss.numel()
         return loss.sum() / n
 

@@ -38,7 +38,7 @@ class BatchedANIDataset(Dataset):
 
         # load full dataset
         species_coordinates = []
-        properties = {self.properties[i]: [] for i in self.properties}
+        properties = {k: [] for k in self.properties}
         for f in files:
             for m in anidataloader(f):
                 species = m['species']
@@ -71,7 +71,7 @@ class BatchedANIDataset(Dataset):
 
         # split into minibatches, and strip reduncant padding
         batches = []
-        num_batches = (conformations + batch_size - 1) / batch_size
+        num_batches = (conformations + batch_size - 1) // batch_size
         for i in range(num_batches):
             start = i * batch_size
             end = min((i + 1) * batch_size, conformations)
@@ -80,8 +80,8 @@ class BatchedANIDataset(Dataset):
             properties_batch = {
                 k: properties[k][start:end, ...] for k in properties
             }
-            batches.append((species_batch, coordinates_batch),
-                           properties_batch)
+            batches.append(((species_batch, coordinates_batch),
+                           properties_batch))
         self.batches = batches
 
     def __getitem__(self, idx):
