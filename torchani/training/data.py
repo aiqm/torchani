@@ -81,7 +81,8 @@ class BatchedANIDataset(Dataset):
             properties_batch = {
                 k: properties[k][start:end, ...] for k in properties
             }
-            batches.append(((species_batch, coordinates_batch),
+            batches.append((padding.strip_redundant_padding(species_batch,
+                                                            coordinates_batch),
                            properties_batch))
         self.batches = batches
 
