@@ -29,12 +29,9 @@ parser.add_argument('--training_rmse_every',
 parser.add_argument('-d', '--device',
                     help='Device of modules and tensors',
                     default=('cuda' if torch.cuda.is_available() else 'cpu'))
-parser.add_argument('--chunk_size',
-                    help='Number of conformations of each chunk',
-                    default=256, type=int)
-parser.add_argument('--batch_chunks',
-                    help='Number of chunks in each minibatch',
-                    default=4, type=int)
+parser.add_argument('--batch_size',
+                    help='Number of conformations of each batch',
+                    default=1024, type=int)
 parser.add_argument('--log',
                     help='Log directory for tensorboardX',
                     default=None)
@@ -56,21 +53,20 @@ start = timeit.default_timer()
 
 nnp, shift_energy = model.get_or_create_model(parser.model_checkpoint,
                                               True, device=device)
-training, validation, testing = torchani.data.load_or_create(
-    parser.dataset_checkpoint, parser.dataset_path, parser.chunk_size,
-    device=device, transform=[shift_energy.subtract_from_dataset])
-training = torchani.data.dataloader(training, parser.batch_chunks)
-validation = torchani.data.dataloader(validation, parser.batch_chunks)
-container = torchani.ignite.Container({'energies': nnp})
+training, validation, testing = torchani.training.load_or_create(
+    parser.dataset_checkpoint, parser.batch_size, nnp[0].species,
+    parser.dataset_path, device=device,
+    transform=[shift_energy.subtract_from_dataset])
+container = torchani.training.Container({'energies': nnp})
 
 parser.optim_args = json.loads(parser.optim_args)
 optimizer = getattr(torch.optim, parser.optimizer)
 optimizer = optimizer(nnp.parameters(), **parser.optim_args)
 
 trainer = ignite.engine.create_supervised_trainer(
-    container, optimizer, torchani.ignite.MSELoss('energies'))
+    container, optimizer, torchani.training.MSELoss('energies'))
 evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
-        'RMSE': torchani.ignite.RMSEMetric('energies')
+        'RMSE': torchani.training.RMSEMetric('energies')
     })
 
 

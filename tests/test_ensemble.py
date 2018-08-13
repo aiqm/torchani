@@ -19,14 +19,13 @@ class TestEnsemble(unittest.TestCase):
         n = torchani.buildin_ensemble
         prefix = torchani.buildin_model_prefix
         aev = torchani.AEVComputer()
-        prepare = torchani.PrepareInput(aev.species)
         ensemble = torchani.models.NeuroChemNNP(aev.species, ensemble=True)
-        ensemble = torch.nn.Sequential(prepare, aev, ensemble)
+        ensemble = torch.nn.Sequential(aev, ensemble)
         models = [torchani.models.
                   NeuroChemNNP(aev.species, ensemble=False,
                                from_=prefix + '{}/networks/'.format(i))
                   for i in range(n)]
-        models = [torch.nn.Sequential(prepare, aev, m) for m in models]
+        models = [torch.nn.Sequential(aev, m) for m in models]
 
         _, energy1 = ensemble((species, coordinates))
         force1 = torch.autograd.grad(energy1.sum(), coordinates)[0]

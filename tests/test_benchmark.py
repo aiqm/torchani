@@ -8,7 +8,8 @@ class TestBenchmark(unittest.TestCase):
 
     def setUp(self):
         self.conformations = 100
-        self.species = list('HHCCNNOO')
+        self.species = torch.randint(4, (self.conformations, 8),
+                                     dtype=torch.long)
         self.coordinates = torch.randn(self.conformations, 8, 3)
         self.count = 100
 
@@ -79,9 +80,7 @@ class TestBenchmark(unittest.TestCase):
 
     def testAEV(self):
         aev_computer = torchani.AEVComputer(benchmark=True)
-        prepare = torchani.PrepareInput(aev_computer.species)
-        run_module = torch.nn.Sequential(prepare, aev_computer)
-        self._testModule(run_module, aev_computer, [
+        self._testModule(aev_computer, aev_computer, [
                          'terms and indices>radial terms',
                          'terms and indices>angular terms',
                          'total>terms and indices',
@@ -91,10 +90,9 @@ class TestBenchmark(unittest.TestCase):
 
     def testANIModel(self):
         aev_computer = torchani.AEVComputer()
-        prepare = torchani.PrepareInput(aev_computer.species)
         model = torchani.models.NeuroChemNNP(aev_computer.species,
                                              benchmark=True)
-        run_module = torch.nn.Sequential(prepare, aev_computer, model)
+        run_module = torch.nn.Sequential(aev_computer, model)
         self._testModule(run_module, model, ['forward'])
 
 
