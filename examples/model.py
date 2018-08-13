@@ -19,7 +19,6 @@ def atomic():
 def get_or_create_model(filename, benchmark=False,
                         device=torch.device('cpu')):
     aev_computer = torchani.AEVComputer(benchmark=benchmark)
-    prepare = torchani.PrepareInput(aev_computer.species)
     model = torchani.models.CustomModel(
         benchmark=benchmark,
         per_species={
@@ -34,7 +33,7 @@ def get_or_create_model(filename, benchmark=False,
         def forward(self, x):
             return x[0], x[1].flatten()
 
-    model = torch.nn.Sequential(prepare, aev_computer, model, Flatten())
+    model = torch.nn.Sequential(aev_computer, model, Flatten())
     if os.path.isfile(filename):
         model.load_state_dict(torch.load(filename))
     else:

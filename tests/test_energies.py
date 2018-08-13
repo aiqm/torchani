@@ -14,7 +14,6 @@ class TestEnergies(unittest.TestCase):
     def setUp(self):
         self.tolerance = 5e-5
         aev_computer = torchani.AEVComputer()
-        self.prepare = torchani.PrepareInput(aev_computer.species)
         nnp = torchani.models.NeuroChemNNP(aev_computer.species)
         shift_energy = torchani.EnergyShifter(aev_computer.species)
         self.model = torch.nn.Sequential(aev_computer, nnp, shift_energy)
@@ -24,7 +23,6 @@ class TestEnergies(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, energies, _ = pickle.load(f)
-                species, coordinates = self.prepare((species, coordinates))
                 _, energies_ = self.model((species, coordinates))
                 max_diff = (energies - energies_).abs().max().item()
                 self.assertLess(max_diff, self.tolerance)
@@ -36,8 +34,7 @@ class TestEnergies(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, e, _ = pickle.load(f)
-                species_coordinates.append(
-                    self.prepare((species, coordinates)))
+                species_coordinates.append((species, coordinates))
                 energies.append(e)
         species, coordinates = torchani.padding.pad_and_batch(
             species_coordinates)

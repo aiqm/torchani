@@ -1,29 +1,31 @@
 import os
+import torchani
 import unittest
-import torchani.data
 
 path = os.path.dirname(os.path.realpath(__file__))
-path = os.path.join(path, '../dataset')
+dataset_path = os.path.join(path, '../dataset')
+print(dataset_path)
+batch_size = 256
+aev = torchani.AEVComputer()
 
 
-class TestDataset(unittest.TestCase):
+class TestData(unittest.TestCase):
 
-    def _test_chunksize(self, chunksize):
-        ds = torchani.data.ANIDataset(path, chunksize)
-        for i, _ in ds:
-            self.assertLessEqual(i['coordinates'].shape[0], chunksize)
-
-    def testChunk64(self):
-        self._test_chunksize(64)
-
-    def testChunk128(self):
-        self._test_chunksize(128)
-
-    def testChunk32(self):
-        self._test_chunksize(32)
-
-    def testChunk256(self):
-        self._test_chunksize(256)
+    def testTensorShape(self):
+        ds = torchani.training.BatchedANIDataset(dataset_path, aev.species,
+                                                 batch_size)
+        for i in ds:
+            input, output = i
+            species, coordinates = input
+            energies = output['energies']
+            self.assertEqual(len(species.shape), 2)
+            self.assertLessEqual(species.shape[0], batch_size)
+            self.assertEqual(len(coordinates.shape), 3)
+            self.assertEqual(coordinates.shape[2], 3)
+            self.assertEqual(coordinates.shape[1], coordinates.shape[1])
+            self.assertEqual(coordinates.shape[0], coordinates.shape[0])
+            self.assertEqual(len(energies.shape), 1)
+            self.assertEqual(coordinates.shape[0], energies.shape[0])
 
 
 if __name__ == '__main__':

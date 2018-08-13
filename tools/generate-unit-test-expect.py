@@ -8,7 +8,7 @@ import torchani
 import pickle
 from torchani import buildin_const_file, buildin_sae_file, \
     buildin_network_dir
-import torchani.pyanitools
+import torchani.training.pyanitools
 
 path = os.path.dirname(os.path.realpath(__file__))
 conv_au_ev = 27.21138505
@@ -58,19 +58,24 @@ class NeuroChem (torchani.aev.AEVComputer):
             energies, forces
 
 
+aev = torchani.AEVComputer()
 ncaev = NeuroChem().to(torch.device('cpu'))
 mol_count = 0
 
+
+species_indices = {aev.species[i]: i for i in range(len(aev.species))}
 for i in [1, 2, 3, 4]:
     data_file = os.path.join(
         path, '../dataset/ani_gdb_s0{}.h5'.format(i))
-    adl = torchani.pyanitools.anidataloader(data_file)
+    adl = torchani.training.pyanitools.anidataloader(data_file)
     for data in adl:
         coordinates = data['coordinates'][:10, :]
         coordinates = torch.from_numpy(coordinates).type(ncaev.EtaR.dtype)
-        species = data['species']
+        species = torch.tensor([species_indices[i] for i in data['species']],
+                               dtype=torch.long, device=torch.device('cpu')) \
+                       .expand(10, -1)
         smiles = ''.join(data['smiles'])
-        radial, angular, energies, forces = ncaev(coordinates, species)
+        radial, angular, energies, forces = ncaev(coordinates, data['species'])
         pickleobj = (coordinates, species, radial, angular, energies, forces)
         dumpfile = os.path.join(
             path, '../tests/test_data/{}'.format(mol_count))

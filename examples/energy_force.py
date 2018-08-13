@@ -9,11 +9,10 @@ sae_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/sae_linfit
 network_dir = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/train')  # noqa: E501
 
 aev_computer = torchani.AEVComputer(const_file=const_file)
-prepare = torchani.PrepareInput(aev_computer.species)
 nn = torchani.models.NeuroChemNNP(aev_computer.species, from_=network_dir,
                                   ensemble=8)
 shift_energy = torchani.EnergyShifter(aev_computer.species, sae_file)
-model = torch.nn.Sequential(prepare, aev_computer, nn, shift_energy)
+model = torch.nn.Sequential(aev_computer, nn, shift_energy)
 
 coordinates = torch.tensor([[[0.03192167,  0.00638559,  0.01301679],
                              [-0.83140486,  0.39370209, -0.26395324],
@@ -21,7 +20,7 @@ coordinates = torch.tensor([[[0.03192167,  0.00638559,  0.01301679],
                              [0.45554739,   0.54289633,  0.81170881],
                              [0.66091919,  -0.16799635, -0.91037834]]],
                            requires_grad=True)
-species = ['C', 'H', 'H', 'H', 'H']
+species = torch.LongTensor([[2, 1, 1, 1, 1]])  # 1 = H, 2 = C, 3 = N, 4 = O
 
 _, energy = model((species, coordinates))
 derivative = torch.autograd.grad(energy.sum(), coordinates)[0]

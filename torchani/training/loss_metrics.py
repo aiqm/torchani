@@ -17,17 +17,10 @@ class DictLoss(_Loss):
 
 class _PerAtomDictLoss(DictLoss):
 
-    @staticmethod
-    def num_atoms(input):
-        ret = []
-        for s, c in zip(input['species'], input['coordinates']):
-            ret.append(torch.full((c.shape[0],), len(s),
-                       dtype=c.dtype, device=c.device))
-        return torch.cat(ret)
-
     def forward(self, input, other):
         loss = self.loss(input[self.key], other[self.key])
-        loss /= self.num_atoms(input)
+        num_atoms = (input['species'] >= 0).sum(dim=1)
+        loss /= num_atoms.to(loss.dtype).to(loss.device)
         n = loss.numel()
         return loss.sum() / n
 

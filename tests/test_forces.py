@@ -13,10 +13,8 @@ class TestForce(unittest.TestCase):
     def setUp(self):
         self.tolerance = 1e-5
         aev_computer = torchani.AEVComputer()
-        self.prepare = torchani.PrepareInput(aev_computer.species)
         nnp = torchani.models.NeuroChemNNP(aev_computer.species)
-        self.model = torch.nn.Sequential(self.prepare, aev_computer, nnp)
-        self.prepared2e = torch.nn.Sequential(aev_computer, nnp)
+        self.model = torch.nn.Sequential(aev_computer, nnp)
 
     def testIsomers(self):
         for i in range(N):
@@ -37,13 +35,12 @@ class TestForce(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
-                species, coordinates = self.prepare((species, coordinates))
                 coordinates = torch.tensor(coordinates, requires_grad=True)
                 species_coordinates.append((species, coordinates))
                 coordinates_forces.append((coordinates, forces))
         species, coordinates = torchani.padding.pad_and_batch(
             species_coordinates)
-        _, energies = self.prepared2e((species, coordinates))
+        _, energies = self.model((species, coordinates))
         energies = energies.sum()
         for coordinates, forces in coordinates_forces:
             derivative = torch.autograd.grad(energies, coordinates,

@@ -14,12 +14,9 @@ parser.add_argument('dataset_path',
 parser.add_argument('-d', '--device',
                     help='Device of modules and tensors',
                     default=('cuda' if torch.cuda.is_available() else 'cpu'))
-parser.add_argument('--chunk_size',
-                    help='Number of conformations of each chunk',
-                    default=256, type=int)
-parser.add_argument('--batch_chunks',
-                    help='Number of chunks in each minibatch',
-                    default=4, type=int)
+parser.add_argument('--batch_size',
+                    help='Number of conformations of each batch',
+                    default=1024, type=int)
 parser.add_argument('--const_file',
                     help='File storing constants',
                     default=torchani.buildin_const_file)
@@ -37,12 +34,11 @@ parser = parser.parse_args()
 # load modules and datasets
 device = torch.device(parser.device)
 aev_computer = torchani.AEVComputer(const_file=parser.const_file)
-prepare = torchani.PrepareInput(aev_computer.species)
 nn = torchani.models.NeuroChemNNP(aev_computer.species,
                                   from_=parser.network_dir,
                                   ensemble=parser.ensemble)
-model = torch.nn.Sequential(prepare, aev_computer, nn)
-container = torchani.ignite.Container({'energies': model})
+model = torch.nn.Sequential(aev_computer, nn)
+container = torchani.training.Container({'energies': model})
 container = container.to(device)
 
 # load datasets
@@ -50,9 +46,9 @@ shift_energy = torchani.EnergyShifter(aev_computer.species, parser.sae_file)
 if parser.dataset_path.endswith('.h5') or \
    parser.dataset_path.endswith('.hdf5') or \
    os.path.isdir(parser.dataset_path):
-    dataset = torchani.data.ANIDataset(
-        parser.dataset_path, parser.chunk_size, device=device,
-        transform=[shift_energy.subtract_from_dataset])
+    dataset = torchani.training.BatchedANIDataset(
+        parser.dataset_path, aev_computer.species, parser.batch_size,
+        device=device, transform=[shift_energy.subtract_from_dataset])
     datasets = [dataset]
 else:
     with open(parser.dataset_path, 'rb') as f:
@@ -67,11 +63,10 @@ def hartree2kcal(x):
 
 
 for dataset in datasets:
-    dataloader = torchani.data.dataloader(dataset, parser.batch_chunks)
     evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
-        'RMSE': torchani.ignite.RMSEMetric('energies')
+        'RMSE': torchani.training.RMSEMetric('energies')
     })
-    evaluator.run(dataloader)
+    evaluator.run(dataset)
     metrics = evaluator.state.metrics
     rmse = hartree2kcal(metrics['RMSE'])
     print(rmse, 'kcal/mol')
