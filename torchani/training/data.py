@@ -86,13 +86,13 @@ class BatchedANIDataset(Dataset):
         self.batches = batches
 
     def __getitem__(self, idx):
-        (species_batch, coordinates_batch), properties_batch = self.batches[idx]
-        species_batch = species_batch.to(self.device)
-        coordinates_batch = coordinates_batch.to(self.device)
-        properties_batch = {
-            k: properties_batch[k].to(self.device) for k in properties_batch
+        (species, coordinates), properties = self.batches[idx]
+        species = species.to(self.device)
+        coordinates = coordinates.to(self.device)
+        properties = {
+            k: properties[k].to(self.device) for k in properties
         }
-        return (species_batch, coordinates_batch), properties_batch
+        return (species, coordinates), properties
 
     def __len__(self):
         return len(self.batches)
