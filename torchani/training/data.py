@@ -6,6 +6,74 @@ import torch
 import torch.utils.data as data
 import pickle
 from .. import padding
+import itertools
+import math
+import copy
+import random
+
+
+per_split_cost = 3000
+def split_cost(counts, split):
+    cost = per_split_cost * len(split)
+    split = list(split)
+    split.append(math.inf)
+    chunk_count = 0
+    natoms = 0
+    for i in range(len(counts)):
+        if i <= split[0]:
+            chunk_count += counts[i][1]
+            natoms = counts[i][0]
+        else:
+            cost += chunk_count * natoms ** 2
+            split = split[1:]
+            chunk_count = 0
+    cost += chunk_count * natoms ** 2
+    return cost
+
+def split_batch(natoms, species, coordinates):
+    # count number of conformation by natoms
+    natoms = natoms.tolist()
+    counts = []
+    for i in natoms:
+        if len(counts) == 0:
+            counts.append([i, 1])
+            continue
+        if i == counts[-1][0]:
+            counts[-1][1] += 1
+        else:
+            counts.append([i, 1])
+    # find best split
+    best_cost = math.inf
+    best_split = None
+    for k in range(min(len(counts)-1, 32)):
+        splits = list(itertools.combinations(range(len(counts)-1), r=k))
+        random.shuffle(splits)
+        # print(len(list(itertools.islice(splits, 1000))))
+        # print(len(splits))
+        for split in splits:
+            split_ = split
+            cost = split_cost(counts, split)
+            if cost < best_cost:
+                best_cost = cost
+                best_split = split_
+        if cost < best_cost:
+            best_cost = cost
+            best_split = split
+    # do split
+    start = 0
+    species_coordinates = []
+    for end in best_split:
+        end = end + 1
+        s = species[start:end, ...]
+        c = coordinates[start:end, ...]
+        s, c = padding.strip_redundant_padding(s, c)
+        species_coordinates.append((s, c))
+        start = end
+    s = species[start:, ...]
+    c = coordinates[start:, ...]
+    s, c = padding.strip_redundant_padding(s, c)
+    species_coordinates.append((s, c))
+    return species_coordinates
 
 
 class BatchedANIDataset(Dataset):
@@ -71,22 +139,29 @@ class BatchedANIDataset(Dataset):
                                                  properties)
 
         # split into minibatches, and strip reduncant padding
+        natoms = (species >= 0).to(torch.long).sum(1)
         batches = []
         num_batches = (conformations + batch_size - 1) // batch_size
         for i in range(num_batches):
             start = i * batch_size
             end = min((i + 1) * batch_size, conformations)
-            species_batch = species[start:end, ...]
-            coordinates_batch = coordinates[start:end, ...]
+            natoms_batch = natoms[start:end]
+            natoms_batch, indices = natoms_batch.sort()
+            species_batch = species[start:end, ...].index_select(0, indices)
+            coordinates_batch = coordinates[start:end, ...] \
+                .index_select(0, indices)
             properties_batch = {
-                k: properties[k][start:end, ...] for k in properties
+                k: properties[k][start:end, ...].index_select(0, indices)
+                for k in properties
             }
-            batches.append((padding.strip_redundant_padding(species_batch,
-                                                            coordinates_batch),
-                           properties_batch))
+            # further split batch into chunks
+            species_coordinates = split_batch(natoms_batch, species_batch, coordinates_batch)
+            batch = species_coordinates, properties_batch
+            batches.append(batch)
         self.batches = batches
 
     def __getitem__(self, idx):
+        return self.batches[idx]
         (species, coordinates), properties = self.batches[idx]
         species = species.to(self.device)
         coordinates = coordinates.to(self.device)
