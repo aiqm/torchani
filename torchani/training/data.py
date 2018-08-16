@@ -10,6 +10,12 @@ import itertools
 import math
 import copy
 import random
+import tqdm
+
+
+def nCr(n,r):
+    f = math.factorial
+    return f(n) / f(r) / f(n-r)
 
 
 per_split_cost = 3000
@@ -46,16 +52,16 @@ def split_batch(natoms, species, coordinates):
     best_cost = math.inf
     best_split = None
     for k in range(min(len(counts)-1, 32)):
-        splits = list(itertools.combinations(range(len(counts)-1), r=k))
-        random.shuffle(splits)
-        # print(len(list(itertools.islice(splits, 1000))))
-        # print(len(splits))
+        if nCr(len(counts)-1, k) < 1000:
+            splits = itertools.combinations(range(len(counts)-1), k)
+        else:
+            splits = [random.sample(range(len(counts)-1), k)
+                      for _ in range(100)]
         for split in splits:
-            split_ = split
             cost = split_cost(counts, split)
             if cost < best_cost:
                 best_cost = cost
-                best_split = split_
+                best_split = split
         if cost < best_cost:
             best_cost = cost
             best_split = split
@@ -142,7 +148,7 @@ class BatchedANIDataset(Dataset):
         natoms = (species >= 0).to(torch.long).sum(1)
         batches = []
         num_batches = (conformations + batch_size - 1) // batch_size
-        for i in range(num_batches):
+        for i in tqdm.tqdm(range(num_batches)):
             start = i * batch_size
             end = min((i + 1) * batch_size, conformations)
             natoms_batch = natoms[start:end]
