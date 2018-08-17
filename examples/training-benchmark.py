@@ -16,7 +16,7 @@ parser.add_argument('-d', '--device',
                     default=('cuda' if torch.cuda.is_available() else 'cpu'))
 parser.add_argument('--batch_size',
                     help='Number of conformations of each batch',
-                    default=256, type=int)
+                    default=1024, type=int)
 parser = parser.parse_args()
 
 # set up benchmark

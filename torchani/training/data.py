@@ -8,6 +8,73 @@ import pickle
 from .. import padding
 
 
+def chunk_counts(counts, split):
+    split = [x + 1 for x in split] + [None]
+    count_chunks = []
+    start = 0
+    for i in split:
+        count_chunks.append(counts[start:i])
+        start = i
+    chunk_conformations = [sum([y[1] for y in x]) for x in count_chunks]
+    chunk_maxatoms = [x[-1][0] for x in count_chunks]
+    return chunk_conformations, chunk_maxatoms
+
+
+def split_cost(counts, split):
+    split_min_cost = 40000
+    cost = 0
+    chunk_conformations, chunk_maxatoms = chunk_counts(counts, split)
+    for conformations, maxatoms in zip(chunk_conformations, chunk_maxatoms):
+        cost += max(conformations * maxatoms ** 2, split_min_cost)
+    return cost
+
+
+def split_batch(natoms, species, coordinates):
+    # count number of conformation by natoms
+    natoms = natoms.tolist()
+    counts = []
+    for i in natoms:
+        if len(counts) == 0:
+            counts.append([i, 1])
+            continue
+        if i == counts[-1][0]:
+            counts[-1][1] += 1
+        else:
+            counts.append([i, 1])
+    # find best split using greedy strategy
+    split = []
+    cost = split_cost(counts, split)
+    improved = True
+    while improved:
+        improved = False
+        cycle_split = split
+        cycle_cost = cost
+        for i in range(len(counts)-1):
+            if i not in split:
+                s = sorted(split + [i])
+                c = split_cost(counts, s)
+                if c < cycle_cost:
+                    improved = True
+                    cycle_cost = c
+                    cycle_split = s
+        if improved:
+            split = cycle_split
+            cost = cycle_cost
+    # do split
+    start = 0
+    species_coordinates = []
+    chunk_conformations, _ = chunk_counts(counts, split)
+    for i in chunk_conformations:
+        s = species
+        end = start + i
+        s = species[start:end, ...]
+        c = coordinates[start:end, ...]
+        s, c = padding.strip_redundant_padding(s, c)
+        species_coordinates.append((s, c))
+        start = end
+    return species_coordinates
+
+
 class BatchedANIDataset(Dataset):
 
     def __init__(self, path, species, batch_size, shuffle=True,
@@ -71,29 +138,36 @@ class BatchedANIDataset(Dataset):
                                                  properties)
 
         # split into minibatches, and strip reduncant padding
+        natoms = (species >= 0).to(torch.long).sum(1)
         batches = []
         num_batches = (conformations + batch_size - 1) // batch_size
         for i in range(num_batches):
             start = i * batch_size
             end = min((i + 1) * batch_size, conformations)
-            species_batch = species[start:end, ...]
-            coordinates_batch = coordinates[start:end, ...]
+            natoms_batch = natoms[start:end]
+            natoms_batch, indices = natoms_batch.sort()
+            species_batch = species[start:end, ...].index_select(0, indices)
+            coordinates_batch = coordinates[start:end, ...] \
+                .index_select(0, indices)
             properties_batch = {
-                k: properties[k][start:end, ...] for k in properties
+                k: properties[k][start:end, ...].index_select(0, indices)
+                for k in properties
             }
-            batches.append((padding.strip_redundant_padding(species_batch,
-                                                            coordinates_batch),
-                           properties_batch))
+            # further split batch into chunks
+            species_coordinates = split_batch(natoms_batch, species_batch,
+                                              coordinates_batch)
+            batch = species_coordinates, properties_batch
+            batches.append(batch)
         self.batches = batches
 
     def __getitem__(self, idx):
-        (species, coordinates), properties = self.batches[idx]
-        species = species.to(self.device)
-        coordinates = coordinates.to(self.device)
+        species_coordinates, properties = self.batches[idx]
+        species_coordinates = [(s.to(self.device), c.to(self.device))
+                               for s, c in species_coordinates]
         properties = {
             k: properties[k].to(self.device) for k in properties
         }
-        return (species, coordinates), properties
+        return species_coordinates, properties
 
     def __len__(self):
         return len(self.batches)
