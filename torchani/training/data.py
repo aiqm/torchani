@@ -13,26 +13,24 @@ import random
 import tqdm
 
 
-def nCr(n,r):
-    f = math.factorial
-    return f(n) / f(r) / f(n-r)
+def chunk_counts(counts, split):
+    split = [x + 1 for x in split] + [None]
+    count_chunks = []
+    start = 0
+    for i in split:
+        count_chunks.append(counts[start:i])
+        start = i
+    chunk_conformations = [sum([y[1] for y in x]) for x in count_chunks]
+    chunk_maxatoms = [x[-1][0] for x in count_chunks]
+    return chunk_conformations, chunk_maxatoms
 
 
-split_min_cost = 10000
+split_min_cost = 40000
 def split_cost(counts, split):
     cost = 0
-    split = split + [math.inf]
-    chunk_count = 0
-    natoms = 0
-    for i in range(len(counts)):
-        if i <= split[0]:
-            chunk_count += counts[i][1]
-            natoms = counts[i][0]
-        else:
-            cost += max(chunk_count * natoms ** 2, split_min_cost)
-            split = split[1:]
-            chunk_count = 0
-    cost += max(chunk_count * natoms ** 2, split_min_cost)
+    chunk_conformations, chunk_maxatoms = chunk_counts(counts, split)
+    for conformations, maxatoms in zip(chunk_conformations, chunk_maxatoms):
+        cost += max(conformations * maxatoms ** 2, split_min_cost)
     return cost
 
 def split_batch(natoms, species, coordinates):
@@ -69,20 +67,15 @@ def split_batch(natoms, species, coordinates):
     # do split
     start = 0
     species_coordinates = []
-    cumsum = list(itertools.accumulate([x for _, x in counts]))
-    for end in split:
-        end = end + 1
-        start_index = cumsum[start]
-        end_index = cumsum[end]
-        s = species[start_index:end_index, ...]
-        c = coordinates[start_index:end_index, ...]
+    chunk_conformations, _ = chunk_counts(counts, split)
+    for i in chunk_conformations:
+        s = species
+        end = start + i
+        s = species[start:end, ...]
+        c = coordinates[start:end, ...]
         s, c = padding.strip_redundant_padding(s, c)
         species_coordinates.append((s, c))
         start = end
-    s = species[cumsum[start]:, ...]
-    c = coordinates[cumsum[start]:, ...]
-    s, c = padding.strip_redundant_padding(s, c)
-    species_coordinates.append((s, c))
     return species_coordinates
 
 
@@ -152,7 +145,7 @@ class BatchedANIDataset(Dataset):
         natoms = (species >= 0).to(torch.long).sum(1)
         batches = []
         num_batches = (conformations + batch_size - 1) // batch_size
-        for i in tqdm.tqdm(range(num_batches)):
+        for i in range(num_batches):
             start = i * batch_size
             end = min((i + 1) * batch_size, conformations)
             natoms_batch = natoms[start:end]
@@ -176,8 +169,6 @@ class BatchedANIDataset(Dataset):
         properties = {
             k: properties[k].to(self.device) for k in properties
         }
-        for s, _ in species_coordinates:
-            print(s.shape)
         return species_coordinates, properties
 
     def __len__(self):
