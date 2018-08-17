@@ -32,7 +32,8 @@ class TestData(unittest.TestCase):
             (species3, coordinates3),
         ])
         natoms = (species >= 0).to(torch.long).sum(1)
-        chunks = torchani.training.data.split_batch(natoms, species, coordinates)
+        chunks = torchani.training.data.split_batch(natoms, species,
+                                                    coordinates)
         start = 0
         last = None
         for s, c in chunks:

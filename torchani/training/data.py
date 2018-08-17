@@ -6,11 +6,6 @@ import torch
 import torch.utils.data as data
 import pickle
 from .. import padding
-import itertools
-import math
-import copy
-import random
-import tqdm
 
 
 def chunk_counts(counts, split):
@@ -25,13 +20,14 @@ def chunk_counts(counts, split):
     return chunk_conformations, chunk_maxatoms
 
 
-split_min_cost = 40000
 def split_cost(counts, split):
+    split_min_cost = 40000
     cost = 0
     chunk_conformations, chunk_maxatoms = chunk_counts(counts, split)
     for conformations, maxatoms in zip(chunk_conformations, chunk_maxatoms):
         cost += max(conformations * maxatoms ** 2, split_min_cost)
     return cost
+
 
 def split_batch(natoms, species, coordinates):
     # count number of conformation by natoms
@@ -158,14 +154,16 @@ class BatchedANIDataset(Dataset):
                 for k in properties
             }
             # further split batch into chunks
-            species_coordinates = split_batch(natoms_batch, species_batch, coordinates_batch)
+            species_coordinates = split_batch(natoms_batch, species_batch,
+                                              coordinates_batch)
             batch = species_coordinates, properties_batch
             batches.append(batch)
         self.batches = batches
 
     def __getitem__(self, idx):
         species_coordinates, properties = self.batches[idx]
-        species_coordinates = [(s.to(self.device), c.to(self.device)) for s,c in species_coordinates]
+        species_coordinates = [(s.to(self.device), c.to(self.device))
+                               for s, c in species_coordinates]
         properties = {
             k: properties[k].to(self.device) for k in properties
         }

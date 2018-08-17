@@ -17,7 +17,8 @@ class Container(torch.nn.Module):
                 model = getattr(self, 'model_' + k)
                 _, result = model(sc)
                 results[k].append(result)
-        results['species'], results['coordinates'] = padding.pad_and_batch(species_coordinates)
+        results['species'], results['coordinates'] = \
+            padding.pad_and_batch(species_coordinates)
         for k in self.keys:
             results[k] = torch.cat(results[k])
         return results
