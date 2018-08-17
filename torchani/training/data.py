@@ -18,11 +18,10 @@ def nCr(n,r):
     return f(n) / f(r) / f(n-r)
 
 
-per_split_cost = 3000
+split_min_cost = 10000
 def split_cost(counts, split):
-    cost = per_split_cost * len(split)
-    split = list(split)
-    split.append(math.inf)
+    cost = 0
+    split = split + [math.inf]
     chunk_count = 0
     natoms = 0
     for i in range(len(counts)):
@@ -30,10 +29,10 @@ def split_cost(counts, split):
             chunk_count += counts[i][1]
             natoms = counts[i][0]
         else:
-            cost += chunk_count * natoms ** 2
+            cost += max(chunk_count * natoms ** 2, split_min_cost)
             split = split[1:]
             chunk_count = 0
-    cost += chunk_count * natoms ** 2
+    cost += max(chunk_count * natoms ** 2, split_min_cost)
     return cost
 
 def split_batch(natoms, species, coordinates):
@@ -48,35 +47,40 @@ def split_batch(natoms, species, coordinates):
             counts[-1][1] += 1
         else:
             counts.append([i, 1])
-    # find best split
-    best_cost = math.inf
-    best_split = None
-    for k in range(min(len(counts)-1, 32)):
-        if nCr(len(counts)-1, k) < 1000:
-            splits = itertools.combinations(range(len(counts)-1), k)
-        else:
-            splits = [random.sample(range(len(counts)-1), k)
-                      for _ in range(100)]
-        for split in splits:
-            cost = split_cost(counts, split)
-            if cost < best_cost:
-                best_cost = cost
-                best_split = split
-        if cost < best_cost:
-            best_cost = cost
-            best_split = split
+    # find best split using greedy strategy
+    split = []
+    cost = split_cost(counts, split)
+    improved = True
+    while improved:
+        improved = False
+        cycle_split = split
+        cycle_cost = cost
+        for i in range(len(counts)-1):
+            if i not in split:
+                s = sorted(split + [i])
+                c = split_cost(counts, s)
+                if c < cycle_cost:
+                    improved = True
+                    cycle_cost = c
+                    cycle_split = s
+        if improved:
+            split = cycle_split
+            cost = cycle_cost
     # do split
     start = 0
     species_coordinates = []
-    for end in best_split:
+    cumsum = list(itertools.accumulate([x for _, x in counts]))
+    for end in split:
         end = end + 1
-        s = species[start:end, ...]
-        c = coordinates[start:end, ...]
+        start_index = cumsum[start]
+        end_index = cumsum[end]
+        s = species[start_index:end_index, ...]
+        c = coordinates[start_index:end_index, ...]
         s, c = padding.strip_redundant_padding(s, c)
         species_coordinates.append((s, c))
         start = end
-    s = species[start:, ...]
-    c = coordinates[start:, ...]
+    s = species[cumsum[start]:, ...]
+    c = coordinates[cumsum[start]:, ...]
     s, c = padding.strip_redundant_padding(s, c)
     species_coordinates.append((s, c))
     return species_coordinates
@@ -167,14 +171,14 @@ class BatchedANIDataset(Dataset):
         self.batches = batches
 
     def __getitem__(self, idx):
-        return self.batches[idx]
-        (species, coordinates), properties = self.batches[idx]
-        species = species.to(self.device)
-        coordinates = coordinates.to(self.device)
+        species_coordinates, properties = self.batches[idx]
+        species_coordinates = [(s.to(self.device), c.to(self.device)) for s,c in species_coordinates]
         properties = {
             k: properties[k].to(self.device) for k in properties
         }
-        return (species, coordinates), properties
+        for s, _ in species_coordinates:
+            print(s.shape)
+        return species_coordinates, properties
 
     def __len__(self):
         return len(self.batches)
