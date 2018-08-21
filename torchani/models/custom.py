@@ -4,8 +4,7 @@ from .ani_model import ANIModel
 
 class CustomModel(ANIModel):
 
-    def __init__(self, per_species, reducer=torch.sum, padding_fill=0,
-                 derivative=False, derivative_graph=False):
+    def __init__(self, per_species, reducer=torch.sum, padding_fill=0):
         """Custom single model, no ensemble
 
         Parameters

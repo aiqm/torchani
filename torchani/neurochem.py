@@ -58,3 +58,17 @@ class Constants(Mapping):
 
     def __getitem__(self, item):
         return getattr(self, item)
+
+
+def load_sae(filename=buildin_sae_file):
+    self_energies = {}
+    with open(filename) as f:
+        for i in f:
+            try:
+                line = [x.strip() for x in i.split('=')]
+                name = line[0].split(',')[0].strip()
+                value = float(line[1])
+                self_energies[name] = value
+            except Exception:
+                pass  # ignore unrecognizable line
+    return self_energies

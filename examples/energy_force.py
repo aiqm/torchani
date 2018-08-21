@@ -9,10 +9,11 @@ sae_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/sae_linfit
 network_dir = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/train')  # noqa: E501
 
 consts = torchani.neurochem.Constants(const_file)
+sae = torchani.neurochem.load_sae(sae_file)
 aev_computer = torchani.AEVComputer(**consts)
 nn = torchani.models.NeuroChemNNP(consts.species, from_=network_dir,
                                   ensemble=8)
-shift_energy = torchani.EnergyShifter(consts.species, sae_file)
+shift_energy = torchani.EnergyShifter(consts.species, sae)
 model = torch.nn.Sequential(aev_computer, nn, shift_energy)
 
 coordinates = torch.tensor([[[0.03192167,  0.00638559,  0.01301679],
