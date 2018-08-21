@@ -14,7 +14,7 @@ class TestForce(unittest.TestCase):
         self.tolerance = 1e-5
         consts = torchani.neurochem.Constants()
         aev_computer = torchani.AEVComputer(**consts)
-        nnp = torchani.models.NeuroChemNNP(consts.species)
+        nnp = torchani.neurochem.load_model(consts.species)
         self.model = torch.nn.Sequential(aev_computer, nnp)
 
     def testIsomers(self):

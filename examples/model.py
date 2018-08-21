@@ -21,12 +21,12 @@ def get_or_create_model(filename, benchmark=False,
     consts = torchani.neurochem.Constants()
     sae = torchani.neurochem.load_sae()
     aev_computer = torchani.AEVComputer(**consts)
-    model = torchani.models.CustomModel({
-        'C': atomic(),
-        'H': atomic(),
-        'N': atomic(),
-        'O': atomic(),
-    })
+    model = torchani.ANIModel([
+        ('C', atomic()),
+        ('H', atomic()),
+        ('N', atomic()),
+        ('O', atomic()),
+    ])
 
     class Flatten(torch.nn.Module):
 

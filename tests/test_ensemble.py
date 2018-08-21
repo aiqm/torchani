@@ -20,11 +20,11 @@ class TestEnsemble(unittest.TestCase):
         prefix = torchani.neurochem.buildin_model_prefix
         consts = torchani.neurochem.Constants()
         aev = torchani.AEVComputer(**consts)
-        ensemble = torchani.models.NeuroChemNNP(consts.species, ensemble=True)
+        ensemble = torchani.neurochem.load_model(consts.species, ensemble=True)
         ensemble = torch.nn.Sequential(aev, ensemble)
-        models = [torchani.models.
-                  NeuroChemNNP(consts.species, ensemble=False,
-                               from_=prefix + '{}/networks/'.format(i))
+        models = [torchani.neurochem.load_model(
+                    consts.species, ensemble=False,
+                    from_=prefix + '{}/networks/'.format(i))
                   for i in range(n)]
         models = [torch.nn.Sequential(aev, m) for m in models]
 

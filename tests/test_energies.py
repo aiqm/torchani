@@ -16,7 +16,7 @@ class TestEnergies(unittest.TestCase):
         consts = torchani.neurochem.Constants()
         sae = torchani.neurochem.load_sae()
         aev_computer = torchani.AEVComputer(**consts)
-        nnp = torchani.models.NeuroChemNNP(consts.species)
+        nnp = torchani.neurochem.load_model(consts.species)
         shift_energy = torchani.EnergyShifter(consts.species, sae)
         self.model = torch.nn.Sequential(aev_computer, nnp, shift_energy)
 
