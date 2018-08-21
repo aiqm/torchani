@@ -1,110 +1,7 @@
 import torch
 import itertools
 import math
-from .env import buildin_const_file
-from .benchmarked import BenchmarkedModule
 from . import padding
-
-
-class AEVComputerBase(BenchmarkedModule):
-    __constants__ = ['Rcr', 'Rca', 'radial_sublength', 'radial_length',
-                     'angular_sublength', 'angular_length', 'aev_length']
-
-    """Base class of various implementations of AEV computer
-
-    Attributes
-    ----------
-    benchmark : boolean
-        Whether to enable benchmark
-    const_file : str
-        The name of the original file that stores constant.
-    Rcr, Rca : float
-        Cutoff radius
-    EtaR, ShfR, Zeta, ShfZ, EtaA, ShfA : torch.Tensor
-        Tensor storing constants.
-    radial_sublength : int
-        The length of radial subaev of a single species
-    radial_length : int
-        The length of full radial aev
-    angular_sublength : int
-        The length of angular subaev of a single species
-    angular_length : int
-        The length of full angular aev
-    aev_length : int
-        The length of full aev
-    """
-
-    def __init__(self, benchmark=False, const_file=buildin_const_file):
-        super(AEVComputerBase, self).__init__(benchmark)
-        self.const_file = const_file
-
-        # load constants from const file
-        const = {}
-        with open(const_file) as f:
-            for i in f:
-                try:
-                    line = [x.strip() for x in i.split('=')]
-                    name = line[0]
-                    value = line[1]
-                    if name == 'Rcr' or name == 'Rca':
-                        setattr(self, name, float(value))
-                    elif name in ['EtaR', 'ShfR', 'Zeta',
-                                  'ShfZ', 'EtaA', 'ShfA']:
-                        value = [float(x.strip()) for x in value.replace(
-                            '[', '').replace(']', '').split(',')]
-                        value = torch.tensor(value)
-                        const[name] = value
-                    elif name == 'Atyp':
-                        value = [x.strip() for x in value.replace(
-                            '[', '').replace(']', '').split(',')]
-                        self.species = value
-                except Exception:
-                    raise ValueError('unable to parse const file')
-
-        # Compute lengths
-        self.radial_sublength = const['EtaR'].shape[0] * const['ShfR'].shape[0]
-        self.radial_length = len(self.species) * self.radial_sublength
-        self.angular_sublength = const['EtaA'].shape[0] * \
-            const['Zeta'].shape[0] * const['ShfA'].shape[0] * \
-            const['ShfZ'].shape[0]
-        species = len(self.species)
-        self.angular_length = int(
-            (species * (species + 1)) / 2) * self.angular_sublength
-        self.aev_length = self.radial_length + self.angular_length
-
-        # convert constant tensors to a ready-to-broadcast shape
-        # shape convension (..., EtaR, ShfR)
-        const['EtaR'] = const['EtaR'].view(-1, 1)
-        const['ShfR'] = const['ShfR'].view(1, -1)
-        # shape convension (..., EtaA, Zeta, ShfA, ShfZ)
-        const['EtaA'] = const['EtaA'].view(-1, 1, 1, 1)
-        const['Zeta'] = const['Zeta'].view(1, -1, 1, 1)
-        const['ShfA'] = const['ShfA'].view(1, 1, -1, 1)
-        const['ShfZ'] = const['ShfZ'].view(1, 1, 1, -1)
-
-        # register buffers
-        for i in const:
-            self.register_buffer(i, const[i])
-
-    def forward(self, coordinates_species):
-        """Compute AEV from coordinates and species
-
-        Parameters
-        ----------
-        (species, coordinates)
-        species : torch.LongTensor
-            Long tensor for the species, where a value k means the species is
-            the same as self.species[k]
-        coordinates : torch.Tensor
-            The tensor that specifies the xyz coordinates of atoms in the
-            molecule. The tensor must have shape (conformations, atoms, 3)
-
-        Returns
-        -------
-        (torch.Tensor, torch.LongTensor)
-            Returns full AEV and species
-        """
-        raise NotImplementedError('subclass must override this method')
 
 
 def _cutoff_cosine(distances, cutoff):
@@ -136,35 +33,56 @@ def _cutoff_cosine(distances, cutoff):
     )
 
 
-class AEVComputer(AEVComputerBase):
-    """The AEV computer assuming input coordinates sorted by species
+class AEVComputer(torch.nn.Module):
+    """AEV computer
 
     Attributes
     ----------
-    timers : dict
-        Dictionary storing the the benchmark result. It has the following keys:
-            radial_subaev : time spent on computing radial subaev
-            angular_subaev : time spent on computing angular subaev
-            total : total time for computing everything.
+    filename : str
+        The name of the file that stores constant.
+    Rcr, Rca, EtaR, ShfR, Zeta, ShfZ, EtaA, ShfA : torch.Tensor
+        Tensor storing constants.
+    species : list(str)
+        Chemical symbols of supported atom types
     """
 
-    def __init__(self, benchmark=False, const_file=buildin_const_file):
-        super(AEVComputer, self).__init__(benchmark, const_file)
-        if benchmark:
-            self.radial_subaev_terms = self._enable_benchmark(
-                self.radial_subaev_terms, 'radial terms')
-            self.angular_subaev_terms = self._enable_benchmark(
-                self.angular_subaev_terms, 'angular terms')
-            self.terms_and_indices = self._enable_benchmark(
-                self.terms_and_indices, 'terms and indices')
-            self.combinations = self._enable_benchmark(
-                self.combinations, 'combinations')
-            self.compute_mask_r = self._enable_benchmark(
-                self.compute_mask_r, 'mask_r')
-            self.compute_mask_a = self._enable_benchmark(
-                self.compute_mask_a, 'mask_a')
-            self.assemble = self._enable_benchmark(self.assemble, 'assemble')
-            self.forward = self._enable_benchmark(self.forward, 'total')
+    def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, species):
+        super(AEVComputer, self).__init__()
+        self.register_buffer('Rcr', Rcr)
+        self.register_buffer('Rca', Rca)
+        # convert constant tensors to a ready-to-broadcast shape
+        # shape convension (..., EtaR, ShfR)
+        self.register_buffer('EtaR', EtaR.view(-1, 1))
+        self.register_buffer('ShfR', ShfR.view(1, -1))
+        # shape convension (..., EtaA, Zeta, ShfA, ShfZ)
+        self.register_buffer('EtaA', EtaA.view(-1, 1, 1, 1))
+        self.register_buffer('Zeta', Zeta.view(1, -1, 1, 1))
+        self.register_buffer('ShfA', ShfA.view(1, 1, -1, 1))
+        self.register_buffer('ShfZ', ShfZ.view(1, 1, 1, -1))
+
+        self.species = species
+
+    def radial_sublength(self):
+        """Returns the length of radial subaev of a single species"""
+        return self.EtaR.numel() * self.ShfR.numel()
+
+    def radial_length(self):
+        """Returns the length of full radial aev"""
+        return len(self.species) * self.radial_sublength()
+
+    def angular_sublength(self):
+        """Returns the length of angular subaev of a single species"""
+        return self.EtaA.numel() * self.Zeta.numel() * self.ShfA.numel() * \
+            self.ShfZ.numel()
+
+    def angular_length(self):
+        """Returns the length of full angular aev"""
+        species = len(self.species)
+        return int((species * (species + 1)) / 2) * self.angular_sublength()
+
+    def aev_length(self):
+        """Returns the length of full aev"""
+        return self.radial_length() + self.angular_length()
 
     def radial_subaev_terms(self, distances):
         """Compute the radial subAEV terms of the center atom given neighbors
@@ -316,13 +234,13 @@ class AEVComputer(AEVComputerBase):
 
     def combinations(self, tensor, dim=0):
         n = tensor.shape[dim]
-        r = torch.arange(n).type(torch.long).to(tensor.device)
+        r = torch.arange(n, dtype=torch.long, device=tensor.device)
         grid_x, grid_y = torch.meshgrid([r, r])
         index1 = grid_y.masked_select(
-            torch.triu(torch.ones(n, n, device=self.EtaR.device),
+            torch.triu(torch.ones(n, n, device=tensor.device),
                        diagonal=1) == 1)
         index2 = grid_x.masked_select(
-            torch.triu(torch.ones(n, n, device=self.EtaR.device),
+            torch.triu(torch.ones(n, n, device=tensor.device),
                        diagonal=1) == 1)
         return tensor.index_select(dim, index1), \
             tensor.index_select(dim, index2)
@@ -427,7 +345,7 @@ class AEVComputer(AEVComputerBase):
         angular_aevs = []
         zero_angular_subaev = torch.zeros(
             # TODO: can we make stack and cat broadcast?
-            conformations, atoms, self.angular_sublength,
+            conformations, atoms, self.angular_sublength(),
             dtype=self.EtaR.dtype, device=self.EtaR.device)
         for s1, s2 in itertools.combinations_with_replacement(
                                         range(len(self.species)), 2):

@@ -11,8 +11,9 @@ N = 97
 class TestAEV(unittest.TestCase):
 
     def setUp(self):
-        self.aev_computer = torchani.AEVComputer()
-        self.radial_length = self.aev_computer.radial_length
+        self.constants = torchani.neurochem.Constants()
+        self.aev_computer = torchani.AEVComputer(**self.constants)
+        self.radial_length = self.aev_computer.radial_length()
         self.tolerance = 1e-5
 
     def _assertAEVEqual(self, expected_radial, expected_angular, aev):
