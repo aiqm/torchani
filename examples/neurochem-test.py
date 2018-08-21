@@ -33,8 +33,9 @@ parser = parser.parse_args()
 
 # load modules and datasets
 device = torch.device(parser.device)
-aev_computer = torchani.AEVComputer(const_file=parser.const_file)
-nn = torchani.models.NeuroChemNNP(aev_computer.species,
+consts = torchani.neurochem.Constants(parser.const_file)
+aev_computer = torchani.AEVComputer(**consts)
+nn = torchani.models.NeuroChemNNP(consts.species,
                                   from_=parser.network_dir,
                                   ensemble=parser.ensemble)
 model = torch.nn.Sequential(aev_computer, nn)
@@ -42,12 +43,12 @@ container = torchani.training.Container({'energies': model})
 container = container.to(device)
 
 # load datasets
-shift_energy = torchani.EnergyShifter(aev_computer.species, parser.sae_file)
+shift_energy = torchani.EnergyShifter(consts.species, parser.sae_file)
 if parser.dataset_path.endswith('.h5') or \
    parser.dataset_path.endswith('.hdf5') or \
    os.path.isdir(parser.dataset_path):
     dataset = torchani.training.BatchedANIDataset(
-        parser.dataset_path, aev_computer.species, parser.batch_size,
+        parser.dataset_path, consts.species, parser.batch_size,
         device=device, transform=[shift_energy.subtract_from_dataset])
     datasets = [dataset]
 else:

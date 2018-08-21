@@ -1,4 +1,3 @@
-from .. import _six  # noqa: F401
 import os
 import bz2
 import lark

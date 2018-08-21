@@ -2,12 +2,13 @@ import os
 import torch
 from .ani_model import ANIModel
 from .neurochem_atomic_network import NeuroChemAtomicNetwork
-from ..env import buildin_network_dir, buildin_model_prefix, buildin_ensemble
+from ..neurochem import buildin_network_dir, buildin_model_prefix, \
+    buildin_ensemble
 
 
 class NeuroChemNNP(ANIModel):
 
-    def __init__(self, species, from_=None, ensemble=False, benchmark=False):
+    def __init__(self, species, from_=None, ensemble=False):
         """If from_=None then ensemble must be a boolean. If ensemble=False,
             then use buildin network0, else use buildin network ensemble.
         If from_ != None, ensemble must be either False or an integer
@@ -48,4 +49,4 @@ class NeuroChemNNP(ANIModel):
                 model_X = NeuroChemAtomicNetwork(filename)
                 models['model_' + i + suffix] = model_X
         super(NeuroChemNNP, self).__init__(species, suffixes, torch.sum,
-                                           0, models, benchmark)
+                                           0, models)

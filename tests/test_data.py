@@ -6,14 +6,14 @@ import unittest
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, '../dataset')
 batch_size = 256
-aev = torchani.AEVComputer()
+consts = torchani.neurochem.Constants()
 
 
 class TestData(unittest.TestCase):
 
     def setUp(self):
         self.ds = torchani.training.BatchedANIDataset(dataset_path,
-                                                      aev.species,
+                                                      consts.species,
                                                       batch_size)
 
     def _assertTensorEqual(self, t1, t2):

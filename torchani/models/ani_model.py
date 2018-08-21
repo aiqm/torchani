@@ -1,9 +1,8 @@
 import torch
-from ..benchmarked import BenchmarkedModule
 from .. import padding
 
 
-class ANIModel(BenchmarkedModule):
+class ANIModel(torch.nn.Module):
     """Subclass of `torch.nn.Module` for the [xyz]->[aev]->[per_atom_y]->y
     pipeline.
 
@@ -31,18 +30,14 @@ class ANIModel(BenchmarkedModule):
             forward : total time for the forward pass
     """
 
-    def __init__(self, species, suffixes, reducer, padding_fill, models,
-                 benchmark=False):
-        super(ANIModel, self).__init__(benchmark)
+    def __init__(self, species, suffixes, reducer, padding_fill, models):
+        super(ANIModel, self).__init__()
         self.species = species
         self.suffixes = suffixes
         self.reducer = reducer
         self.padding_fill = padding_fill
         for i in models:
             setattr(self, i, models[i])
-
-        if benchmark:
-            self.forward = self._enable_benchmark(self.forward, 'forward')
 
     def forward(self, species_aev):
         """Compute output from aev

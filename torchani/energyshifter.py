@@ -1,5 +1,5 @@
 import torch
-from .env import buildin_sae_file
+from .neurochem import buildin_sae_file
 
 
 class EnergyShifter(torch.nn.Module):

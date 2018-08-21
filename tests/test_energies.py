@@ -13,9 +13,10 @@ class TestEnergies(unittest.TestCase):
 
     def setUp(self):
         self.tolerance = 5e-5
-        aev_computer = torchani.AEVComputer()
-        nnp = torchani.models.NeuroChemNNP(aev_computer.species)
-        shift_energy = torchani.EnergyShifter(aev_computer.species)
+        consts = torchani.neurochem.Constants()
+        aev_computer = torchani.AEVComputer(**consts)
+        nnp = torchani.models.NeuroChemNNP(consts.species)
+        shift_energy = torchani.EnergyShifter(consts.species)
         self.model = torch.nn.Sequential(aev_computer, nnp, shift_energy)
 
     def testIsomers(self):
