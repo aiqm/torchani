@@ -16,8 +16,7 @@ def atomic():
     return model
 
 
-def get_or_create_model(filename, benchmark=False,
-                        device=torch.device('cpu')):
+def get_or_create_model(filename, device=torch.device('cpu')):
     consts = torchani.neurochem.Constants()
     sae = torchani.neurochem.load_sae()
     aev_computer = torchani.AEVComputer(**consts)

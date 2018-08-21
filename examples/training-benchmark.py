@@ -21,8 +21,7 @@ parser = parser.parse_args()
 
 # set up benchmark
 device = torch.device(parser.device)
-nnp, shift_energy = model.get_or_create_model('/tmp/model.pt',
-                                              True, device=device)
+nnp, shift_energy = model.get_or_create_model('/tmp/model.pt', device=device)
 dataset = torchani.training.BatchedANIDataset(
     parser.dataset_path, nnp[0].species, parser.batch_size, device=device,
     transform=[shift_energy.subtract_from_dataset])
@@ -48,17 +47,47 @@ def finalize_tqdm(trainer):
     trainer.state.tqdm.close()
 
 
+timers = {}
+
+
+def time_func(key, func):
+    timers[key] = 0
+
+    def wrapper(*args, **kwargs):
+        start = timeit.default_timer()
+        ret = func(*args, **kwargs)
+        end = timeit.default_timer()
+        timers[key] += end - start
+        return ret
+
+    return wrapper
+
+
+# enable timers
+nnp[0].radial_subaev_terms = time_func('radial terms',
+                                       nnp[0].radial_subaev_terms)
+nnp[0].angular_subaev_terms = time_func('angular terms',
+                                        nnp[0].angular_subaev_terms)
+nnp[0].terms_and_indices = time_func('terms and indices',
+                                     nnp[0].terms_and_indices)
+nnp[0].combinations = time_func('combinations', nnp[0].combinations)
+nnp[0].compute_mask_r = time_func('mask_r', nnp[0].compute_mask_r)
+nnp[0].compute_mask_a = time_func('mask_a', nnp[0].compute_mask_a)
+nnp[0].assemble = time_func('assemble', nnp[0].assemble)
+nnp[0].forward = time_func('total', nnp[0].forward)
+nnp[1].forward = time_func('forward', nnp[1].forward)
+
 # run it!
 start = timeit.default_timer()
 trainer.run(dataset, max_epochs=1)
 elapsed = round(timeit.default_timer() - start, 2)
-print('Radial terms:', nnp[0].timers['radial terms'])
-print('Angular terms:', nnp[0].timers['angular terms'])
-print('Terms and indices:', nnp[0].timers['terms and indices'])
-print('Combinations:', nnp[0].timers['combinations'])
-print('Mask R:', nnp[0].timers['mask_r'])
-print('Mask A:', nnp[0].timers['mask_a'])
-print('Assemble:', nnp[0].timers['assemble'])
-print('Total AEV:', nnp[0].timers['total'])
-print('NN:', nnp[1].timers['forward'])
+print('Radial terms:', timers['radial terms'])
+print('Angular terms:', timers['angular terms'])
+print('Terms and indices:', timers['terms and indices'])
+print('Combinations:', timers['combinations'])
+print('Mask R:', timers['mask_r'])
+print('Mask A:', timers['mask_a'])
+print('Assemble:', timers['assemble'])
+print('Total AEV:', timers['total'])
+print('NN:', timers['forward'])
 print('Epoch time:', elapsed)
