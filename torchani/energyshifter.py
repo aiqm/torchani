@@ -1,23 +1,11 @@
 import torch
-from .env import buildin_sae_file
 
 
 class EnergyShifter(torch.nn.Module):
 
-    def __init__(self, species, self_energy_file=buildin_sae_file):
+    def __init__(self, species, self_energies):
         super(EnergyShifter, self).__init__()
-        # load self energies
-        self.self_energies = {}
-        with open(self_energy_file) as f:
-            for i in f:
-                try:
-                    line = [x.strip() for x in i.split('=')]
-                    name = line[0].split(',')[0].strip()
-                    value = float(line[1])
-                    self.self_energies[name] = value
-                except Exception:
-                    pass  # ignore unrecognizable line
-        self_energies_tensor = [self.self_energies[s] for s in species]
+        self_energies_tensor = [self_energies[s] for s in species]
         self.register_buffer('self_energies_tensor',
                              torch.tensor(self_energies_tensor,
                                           dtype=torch.double))

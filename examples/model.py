@@ -16,17 +16,16 @@ def atomic():
     return model
 
 
-def get_or_create_model(filename, benchmark=False,
-                        device=torch.device('cpu')):
-    aev_computer = torchani.AEVComputer(benchmark=benchmark)
-    model = torchani.models.CustomModel(
-        benchmark=benchmark,
-        per_species={
-            'C': atomic(),
-            'H': atomic(),
-            'N': atomic(),
-            'O': atomic(),
-        })
+def get_or_create_model(filename, device=torch.device('cpu')):
+    consts = torchani.neurochem.Constants()
+    sae = torchani.neurochem.load_sae()
+    aev_computer = torchani.AEVComputer(**consts)
+    model = torchani.ANIModel([
+        ('C', atomic()),
+        ('H', atomic()),
+        ('N', atomic()),
+        ('O', atomic()),
+    ])
 
     class Flatten(torch.nn.Module):
 
@@ -38,4 +37,4 @@ def get_or_create_model(filename, benchmark=False,
         model.load_state_dict(torch.load(filename))
     else:
         torch.save(model.state_dict(), filename)
-    return model.to(device), torchani.EnergyShifter(aev_computer.species)
+    return model.to(device), torchani.EnergyShifter(consts.species, sae)

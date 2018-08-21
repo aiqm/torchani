@@ -19,10 +19,10 @@ parser.add_argument('--batch_size',
                     default=1024, type=int)
 parser.add_argument('--const_file',
                     help='File storing constants',
-                    default=torchani.buildin_const_file)
+                    default=torchani.neurochem.buildin_const_file)
 parser.add_argument('--sae_file',
                     help='File storing self atomic energies',
-                    default=torchani.buildin_sae_file)
+                    default=torchani.neurochem.buildin_sae_file)
 parser.add_argument('--network_dir',
                     help='Directory or prefix of directories storing networks',
                     default=None)
@@ -33,21 +33,23 @@ parser = parser.parse_args()
 
 # load modules and datasets
 device = torch.device(parser.device)
-aev_computer = torchani.AEVComputer(const_file=parser.const_file)
-nn = torchani.models.NeuroChemNNP(aev_computer.species,
-                                  from_=parser.network_dir,
-                                  ensemble=parser.ensemble)
+consts = torchani.neurochem.Constants(parser.const_file)
+sae = torchani.neurochem.load_sae(parser.sae_file)
+aev_computer = torchani.AEVComputer(**consts)
+nn = torchani.neurochem.load_model(consts.species,
+                                   from_=parser.network_dir,
+                                   ensemble=parser.ensemble)
 model = torch.nn.Sequential(aev_computer, nn)
 container = torchani.training.Container({'energies': model})
 container = container.to(device)
 
 # load datasets
-shift_energy = torchani.EnergyShifter(aev_computer.species, parser.sae_file)
+shift_energy = torchani.EnergyShifter(consts.species, sae)
 if parser.dataset_path.endswith('.h5') or \
    parser.dataset_path.endswith('.hdf5') or \
    os.path.isdir(parser.dataset_path):
     dataset = torchani.training.BatchedANIDataset(
-        parser.dataset_path, aev_computer.species, parser.batch_size,
+        parser.dataset_path, consts.species, parser.batch_size,
         device=device, transform=[shift_energy.subtract_from_dataset])
     datasets = [dataset]
 else:

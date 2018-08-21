@@ -58,12 +58,13 @@ class NeuroChem (torchani.aev.AEVComputer):
             energies, forces
 
 
-aev = torchani.AEVComputer()
+consts = torchani.neurochem.Constants()
+aev = torchani.AEVComputer(**consts)
 ncaev = NeuroChem().to(torch.device('cpu'))
 mol_count = 0
 
 
-species_indices = {aev.species[i]: i for i in range(len(aev.species))}
+species_indices = {consts.species[i]: i for i in range(len(aev.species))}
 for i in [1, 2, 3, 4]:
     data_file = os.path.join(
         path, '../dataset/ani_gdb_s0{}.h5'.format(i))

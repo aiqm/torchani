@@ -17,6 +17,7 @@ steps:
   UnitTests:
     image: '${{BuildTorchANI}}'
     commands:
+      - find . -name '*.pyc' -delete
       - python setup.py test
       # - python2 setup.py test
 

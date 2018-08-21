@@ -16,14 +16,15 @@ class TestEnsemble(unittest.TestCase):
 
     def _test_molecule(self, coordinates, species):
         coordinates = torch.tensor(coordinates, requires_grad=True)
-        n = torchani.buildin_ensemble
-        prefix = torchani.buildin_model_prefix
-        aev = torchani.AEVComputer()
-        ensemble = torchani.models.NeuroChemNNP(aev.species, ensemble=True)
+        n = torchani.neurochem.buildin_ensemble
+        prefix = torchani.neurochem.buildin_model_prefix
+        consts = torchani.neurochem.Constants()
+        aev = torchani.AEVComputer(**consts)
+        ensemble = torchani.neurochem.load_model(consts.species, ensemble=True)
         ensemble = torch.nn.Sequential(aev, ensemble)
-        models = [torchani.models.
-                  NeuroChemNNP(aev.species, ensemble=False,
-                               from_=prefix + '{}/networks/'.format(i))
+        models = [torchani.neurochem.load_model(
+                    consts.species, ensemble=False,
+                    from_=prefix + '{}/networks/'.format(i))
                   for i in range(n)]
         models = [torch.nn.Sequential(aev, m) for m in models]
 
