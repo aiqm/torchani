@@ -2,15 +2,14 @@ import torch
 from . import utils
 
 
-class ANIModel(torch.nn.Module):
+class ANIModel(torch.nn.ModuleList):
 
-    def __init__(self, models, reducer=torch.sum, padding_fill=0):
+    def __init__(self, modules, reducer=torch.sum, padding_fill=0):
         """
         Parameters
         ----------
-        models : (str, torch.nn.Module)
-            Models for all species. This must be a mapping where the key is
-            atomic symbol and the value is a module.
+        modules : seq(torch.nn.Module)
+            Modules for all species.
         reducer : function
             Function of (input, dim)->output that reduce the input tensor along
             the given dimension to get an output tensor. This function will be
@@ -20,12 +19,9 @@ class ANIModel(torch.nn.Module):
         padding_fill : float
             Default value used to fill padding atoms
         """
-        super(ANIModel, self).__init__()
-        self.species = [s for s, _ in models]
+        super(ANIModel, self).__init__(modules)
         self.reducer = reducer
         self.padding_fill = padding_fill
-        for s, m in models:
-            setattr(self, 'model_' + s, m)
 
     def forward(self, species_aev):
         """Compute output from aev
@@ -56,11 +52,9 @@ class ANIModel(torch.nn.Module):
         output = torch.full_like(species_, self.padding_fill,
                                  dtype=aev.dtype)
         for i in present_species:
-            s = self.species[i]
-            model_X = getattr(self, 'model_' + s)
             mask = (species_ == i)
             input = aev.index_select(0, mask.nonzero().squeeze())
-            output[mask] = model_X(input).squeeze()
+            output[mask] = self[i](input).squeeze()
         output = output.view_as(species)
         return species, self.reducer(output, dim=1)
 

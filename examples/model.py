@@ -3,6 +3,10 @@ import torchani
 import os
 
 
+consts = torchani.buildins.consts
+aev_computer = torchani.buildins.aev_computer
+
+
 def atomic():
     model = torch.nn.Sequential(
         torch.nn.Linear(384, 128),
@@ -17,13 +21,7 @@ def atomic():
 
 
 def get_or_create_model(filename, device=torch.device('cpu')):
-    aev_computer = torchani.buildins.aev_computer
-    model = torchani.ANIModel([
-        ('C', atomic()),
-        ('H', atomic()),
-        ('N', atomic()),
-        ('O', atomic()),
-    ])
+    model = torchani.ANIModel([atomic() for _ in range(4)])
 
     class Flatten(torch.nn.Module):
 
