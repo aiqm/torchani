@@ -12,9 +12,8 @@ class TestForce(unittest.TestCase):
 
     def setUp(self):
         self.tolerance = 1e-5
-        consts = torchani.neurochem.Constants()
-        aev_computer = torchani.AEVComputer(**consts)
-        nnp = torchani.neurochem.load_model(consts.species)
+        aev_computer = torchani.buildins.aev_computer
+        nnp = torchani.buildins.models[0]
         self.model = torch.nn.Sequential(aev_computer, nnp)
 
     def testIsomers(self):
@@ -39,7 +38,7 @@ class TestForce(unittest.TestCase):
                 coordinates = torch.tensor(coordinates, requires_grad=True)
                 species_coordinates.append((species, coordinates))
                 coordinates_forces.append((coordinates, forces))
-        species, coordinates = torchani.padding.pad_and_batch(
+        species, coordinates = torchani.utils.pad_and_batch(
             species_coordinates)
         _, energies = self.model((species, coordinates))
         energies = energies.sum()

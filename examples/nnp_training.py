@@ -51,8 +51,8 @@ device = torch.device(parser.device)
 writer = tensorboardX.SummaryWriter(log_dir=parser.log)
 start = timeit.default_timer()
 
-nnp, shift_energy = model.get_or_create_model(parser.model_checkpoint,
-                                              device=device)
+nnp = model.get_or_create_model(parser.model_checkpoint, device=device)
+shift_energy = torchani.buildins.energy_shifter
 training, validation, testing = torchani.training.load_or_create(
     parser.dataset_checkpoint, parser.batch_size, nnp[0].species,
     parser.dataset_path, device=device,

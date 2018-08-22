@@ -1,6 +1,7 @@
 import os
 import unittest
 import torch
+import copy
 from ignite.engine import create_supervised_trainer, \
     create_supervised_evaluator, Events
 import torchani
@@ -15,13 +16,11 @@ threshold = 1e-5
 class TestIgnite(unittest.TestCase):
 
     def testIgnite(self):
-        consts = torchani.neurochem.Constants()
-        sae = torchani.neurochem.load_sae()
-        aev_computer = torchani.AEVComputer(**consts)
-        nnp = torchani.neurochem.load_model(consts.species)
-        shift_energy = torchani.EnergyShifter(consts.species, sae)
+        aev_computer = torchani.buildins.aev_computer
+        nnp = copy.deepcopy(torchani.buildins.models[0])
+        shift_energy = torchani.buildins.energy_shifter
         ds = torchani.training.BatchedANIDataset(
-            path, consts.species, batchsize,
+            path, torchani.buildins.consts.species, batchsize,
             transform=[shift_energy.subtract_from_dataset])
         ds = torch.utils.data.Subset(ds, [0])
 

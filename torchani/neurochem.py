@@ -6,26 +6,13 @@ import lark
 import struct
 from collections.abc import Mapping
 from .models import ANIModel, Ensemble
-
-
-buildin_const_file = pkg_resources.resource_filename(
-    __name__, 'resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')
-
-buildin_sae_file = pkg_resources.resource_filename(
-    __name__, 'resources/ani-1x_dft_x8ens/sae_linfit.dat')
-
-buildin_network_dir = pkg_resources.resource_filename(
-    __name__, 'resources/ani-1x_dft_x8ens/train0/networks/')
-
-buildin_model_prefix = pkg_resources.resource_filename(
-    __name__, 'resources/ani-1x_dft_x8ens/train')
-
-buildin_ensemble = 8
+from .utils import EnergyShifter
+from .aev import AEVComputer
 
 
 class Constants(Mapping):
 
-    def __init__(self, filename=buildin_const_file):
+    def __init__(self, filename):
         self.filename = filename
         with open(filename) as f:
             for i in f:
@@ -73,7 +60,7 @@ class Constants(Mapping):
         return torch.tensor(rev, dtype=torch.long, device=device)
 
 
-def load_sae(filename=buildin_sae_file):
+def load_sae(filename):
     """Load self energies from NeuroChem sae file"""
     self_energies = {}
     with open(filename) as f:
@@ -241,37 +228,42 @@ def load_atomic_network(filename):
         return torch.nn.Sequential(*layers)
 
 
-def load_model(species, from_=None, ensemble=False):
-    """If from_=None then ensemble must be a boolean. If ensemble=False,
-        then use buildin network0, else use buildin network ensemble.
-    If from_ != None, ensemble must be either False or an integer
-        specifying the number of networks in the ensemble.
-    """
-    if from_ is None:
-        if not isinstance(ensemble, bool):
-            raise TypeError('ensemble must be boolean')
-        if ensemble:
-            from_ = buildin_model_prefix
-            ensemble = buildin_ensemble
-        else:
-            from_ = buildin_network_dir
-    else:
-        if not (ensemble is False or isinstance(ensemble, int)):
-            raise ValueError('invalid argument ensemble')
+def load_model(species, from_):
+    models = []
+    for i in species:
+        filename = os.path.join(from_, 'ANN-{}.nnf'.format(i))
+        models.append((i, load_atomic_network(filename)))
+    return ANIModel(models)
 
-    def load_single_model(from_):
-        models = []
-        for i in species:
-            filename = os.path.join(from_, 'ANN-{}.nnf'.format(i))
-            models.append((i, load_atomic_network(filename)))
-        return ANIModel(models)
 
-    if ensemble is False:
-        return load_single_model(from_)
-    else:
-        assert isinstance(ensemble, int)
-        models = []
-        for i in range(ensemble):
-            network_dir = os.path.join('{}{}'.format(from_, i), 'networks')
-            models.append(load_single_model(network_dir))
-        return Ensemble(models)
+def load_model_ensemble(species, prefix, count):
+    models = []
+    for i in range(count):
+        network_dir = os.path.join('{}{}'.format(prefix, i), 'networks')
+        models.append(load_model(species, network_dir))
+    return Ensemble(models)
+
+
+class Buildins:
+
+    def __init__(self):
+        self.const_file = pkg_resources.resource_filename(
+            __name__,
+            'resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')
+        self.consts = Constants(self.const_file)
+        self.aev_computer = AEVComputer(**self.consts)
+
+        self.sae_file = pkg_resources.resource_filename(
+            __name__, 'resources/ani-1x_dft_x8ens/sae_linfit.dat')
+        self.energy_shifter = EnergyShifter(self.consts.species,
+                                            load_sae(self.sae_file))
+
+        self.ensemble_size = 8
+        self.ensemble_prefix = pkg_resources.resource_filename(
+            __name__, 'resources/ani-1x_dft_x8ens/train')
+        self.models = load_model_ensemble(self.consts.species,
+                                          self.ensemble_prefix,
+                                          self.ensemble_size)
+
+
+buildins = Buildins()

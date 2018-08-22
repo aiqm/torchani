@@ -1,5 +1,5 @@
 import torch
-from . import padding
+from . import utils
 
 
 class ANIModel(torch.nn.Module):
@@ -50,7 +50,7 @@ class ANIModel(torch.nn.Module):
         """
         species, aev = species_aev
         species_ = species.flatten()
-        present_species = padding.present_species(species)
+        present_species = utils.present_species(species)
         aev = aev.flatten(0, 1)
 
         output = torch.full_like(species_, self.padding_fill,

@@ -5,7 +5,7 @@ from .pyanitools import anidataloader
 import torch
 import torch.utils.data as data
 import pickle
-from .. import padding
+from .. import utils
 
 
 def chunk_counts(counts, split):
@@ -69,7 +69,7 @@ def split_batch(natoms, species, coordinates):
         end = start + i
         s = species[start:end, ...]
         c = coordinates[start:end, ...]
-        s, c = padding.strip_redundant_padding(s, c)
+        s, c = utils.strip_redundant_padding(s, c)
         species_coordinates.append((s, c))
         start = end
     return species_coordinates
@@ -119,7 +119,7 @@ class BatchedANIDataset(Dataset):
                 for i in properties:
                     properties[i].append(torch.from_numpy(m[i])
                                               .type(dtype).to(device))
-        species, coordinates = padding.pad_and_batch(species_coordinates)
+        species, coordinates = utils.pad_and_batch(species_coordinates)
         for i in properties:
             properties[i] = torch.cat(properties[i])
 
