@@ -101,32 +101,39 @@ def finalize_tqdm(trainer):
 
 @trainer.on(ignite.engine.Events.EPOCH_STARTED)
 def validation_and_checkpoint(trainer):
-    # compute validation RMSE
-    evaluator.run(validation)
-    metrics = evaluator.state.metrics
-    rmse = hartree2kcal(metrics['RMSE'])
-    writer.add_scalar('validation_rmse_vs_epoch', rmse, trainer.state.epoch)
-
-    # compute training RMSE
-    if trainer.state.epoch % parser.training_rmse_every == 0:
-        evaluator.run(training)
+    def evaluate(dataset, name):
+        evaluator = ignite.engine.create_supervised_evaluator(
+            container,
+            metrics={
+            'RMSE': torchani.training.RMSEMetric('energies')
+            }
+        )
+        evaluator.run(dataset)
         metrics = evaluator.state.metrics
         rmse = hartree2kcal(metrics['RMSE'])
-        writer.add_scalar('training_rmse_vs_epoch', rmse,
-                          trainer.state.epoch)
+        writer.add_scalar(name, rmse, trainer.state.epoch)
+        return rmse
+
+    # compute validation RMSE
+    rmse = evaluate(validation, 'validation_rmse_vs_epoch')
+
+    # compute training RMSE
+    if trainer.state.epoch % parser.training_rmse_every == 1:
+        evaluate(training, 'training_rmse_vs_epoch')
 
     # handle best validation RMSE
     if rmse < trainer.state.best_validation_rmse:
         trainer.state.no_improve_count = 0
         trainer.state.best_validation_rmse = rmse
         writer.add_scalar('best_validation_rmse_vs_epoch', rmse,
-                          trainer.state.epoch)
+                            trainer.state.epoch)
         torch.save(nnp.state_dict(), parser.model_checkpoint)
     else:
         trainer.state.no_improve_count += 1
+    writer.add_scalar('no_improve_count_vs_epoch', trainer.state.no_improve_count, trainer.state.epoch)
 
     if trainer.state.no_improve_count > parser.early_stopping:
-        trainer.terminate()
+            trainer.terminate()
 
 
 @trainer.on(ignite.engine.Events.EPOCH_STARTED)
@@ -138,8 +145,7 @@ def log_time(trainer):
 @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
 def log_loss_and_time(trainer):
     iteration = trainer.state.iteration
-    rmse = hartree2kcal(math.sqrt(trainer.state.output))
-    writer.add_scalar('training_atomic_rmse_vs_iteration', rmse, iteration)
+    writer.add_scalar('loss_vs_iteration', trainer.state.output, iteration)
 
 
 trainer.run(training, max_epochs=parser.max_epochs)
