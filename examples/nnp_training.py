@@ -11,18 +11,18 @@ import json
 
 # parse command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('dataset_path',
-                    help='Path of the dataset, can a hdf5 file \
+parser.add_argument('training_path',
+                    help='Path of the training set, can be a hdf5 file \
                           or a directory containing hdf5 files')
-parser.add_argument('--dataset_checkpoint',
-                    help='Checkpoint file for datasets',
-                    default='dataset-checkpoint.dat')
+parser.add_argument('validation_path',
+                    help='Path of the validation set, can be a hdf5 file \
+                          or a directory containing hdf5 files')
 parser.add_argument('--model_checkpoint',
                     help='Checkpoint file for model',
                     default='model.pt')
 parser.add_argument('-m', '--max_epochs',
                     help='Maximum number of epoches',
-                    default=100, type=int)
+                    default=300, type=int)
 parser.add_argument('--training_rmse_every',
                     help='Compute training RMSE every epoches',
                     default=20, type=int)
@@ -53,9 +53,13 @@ start = timeit.default_timer()
 
 nnp = model.get_or_create_model(parser.model_checkpoint, device=device)
 shift_energy = torchani.buildins.energy_shifter
-training, validation, testing = torchani.training.load_or_create(
-    parser.dataset_checkpoint, parser.batch_size, model.consts.species,
-    parser.dataset_path, device=device,
+training = torchani.data.BatchedANIDataset(
+    parser.training_path, model.consts.species_to_tensor,
+    parser.batch_size, device=device,
+    transform=[shift_energy.subtract_from_dataset])
+validation = torchani.data.BatchedANIDataset(
+    parser.validation_path, model.consts.species_to_tensor,
+    parser.batch_size, device=device,
     transform=[shift_energy.subtract_from_dataset])
 container = torchani.training.Container({'energies': nnp})
 
