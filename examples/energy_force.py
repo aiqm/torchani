@@ -10,11 +10,10 @@ network_dir = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/train')
 ensemble = 8
 
 consts = torchani.neurochem.Constants(const_file)
-sae = torchani.neurochem.load_sae(sae_file)
 aev_computer = torchani.AEVComputer(**consts)
 nn = torchani.neurochem.load_model_ensemble(consts.species, network_dir,
                                             ensemble)
-shift_energy = torchani.EnergyShifter(consts.species, sae)
+shift_energy = torchani.neurochem.load_sae(sae_file)
 model = torch.nn.Sequential(aev_computer, nn, shift_energy)
 
 coordinates = torch.tensor([[[0.03192167,  0.00638559,  0.01301679],
