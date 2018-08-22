@@ -19,7 +19,7 @@ class TestIgnite(unittest.TestCase):
         aev_computer = torchani.buildins.aev_computer
         nnp = copy.deepcopy(torchani.buildins.models[0])
         shift_energy = torchani.buildins.energy_shifter
-        ds = torchani.training.BatchedANIDataset(
+        ds = torchani.data.BatchedANIDataset(
             path, torchani.buildins.consts.species, batchsize,
             transform=[shift_energy.subtract_from_dataset])
         ds = torch.utils.data.Subset(ds, [0])
