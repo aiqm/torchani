@@ -105,7 +105,7 @@ def validation_and_checkpoint(trainer):
         evaluator = ignite.engine.create_supervised_evaluator(
             container,
             metrics={
-            'RMSE': torchani.training.RMSEMetric('energies')
+                'RMSE': torchani.training.RMSEMetric('energies')
             }
         )
         evaluator.run(dataset)
@@ -126,11 +126,13 @@ def validation_and_checkpoint(trainer):
         trainer.state.no_improve_count = 0
         trainer.state.best_validation_rmse = rmse
         writer.add_scalar('best_validation_rmse_vs_epoch', rmse,
-                            trainer.state.epoch)
+                          trainer.state.epoch)
         torch.save(nnp.state_dict(), parser.model_checkpoint)
     else:
         trainer.state.no_improve_count += 1
-    writer.add_scalar('no_improve_count_vs_epoch', trainer.state.no_improve_count, trainer.state.epoch)
+    writer.add_scalar('no_improve_count_vs_epoch',
+                      trainer.state.no_improve_count,
+                      trainer.state.epoch)
 
     if trainer.state.no_improve_count > parser.early_stopping:
             trainer.terminate()
