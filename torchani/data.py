@@ -1,11 +1,9 @@
 from torch.utils.data import Dataset
 from os.path import join, isfile, isdir
 import os
-from .pyanitools import anidataloader
+from ._pyanitools import anidataloader
 import torch
-import torch.utils.data as data
-import pickle
-from .. import utils
+from . import utils
 
 
 def chunk_counts(counts, split):
@@ -77,14 +75,11 @@ def split_batch(natoms, species, coordinates):
 
 class BatchedANIDataset(Dataset):
 
-    def __init__(self, path, species, batch_size, shuffle=True,
-                 properties=['energies'], transform=(),
+    def __init__(self, path, species_tensor_converter, batch_size,
+                 shuffle=True, properties=['energies'], transform=(),
                  dtype=torch.get_default_dtype(), device=torch.device('cpu')):
         super(BatchedANIDataset, self).__init__()
         self.path = path
-        self.species = species
-        self.species_indices = {
-            self.species[i]: i for i in range(len(self.species))}
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.properties = properties
@@ -108,13 +103,12 @@ class BatchedANIDataset(Dataset):
         properties = {k: [] for k in self.properties}
         for f in files:
             for m in anidataloader(f):
-                species = m['species']
-                indices = [self.species_indices[i] for i in species]
-                species = torch.tensor(indices, dtype=torch.long)
-                coordinates = torch.from_numpy(m['coordinates'])
-                species_coordinates.append((species, coordinates))
+                s = species_tensor_converter(m['species'])
+                c = torch.from_numpy(m['coordinates']).to(torch.double)
+                species_coordinates.append((s, c))
                 for i in properties:
-                    properties[i].append(torch.from_numpy(m[i]))
+                    p = torch.from_numpy(m[i]).to(torch.double)
+                    properties[i].append(p)
         species, coordinates = utils.pad_and_batch(species_coordinates)
         for i in properties:
             properties[i] = torch.cat(properties[i])
@@ -136,9 +130,10 @@ class BatchedANIDataset(Dataset):
         # convert to desired dtype
         species = species
         coordinates = coordinates.to(dtype)
-        properties = {k: properties[k].to(dtype) for k in properties}
+        for k in properties:
+            properties[k] = properties[k].to(dtype)
 
-        # split into minibatches, and strip reduncant padding
+        # split into minibatches, and strip redundant padding
         natoms = (species >= 0).to(torch.long).sum(1)
         batches = []
         num_batches = (conformations + batch_size - 1) // batch_size
@@ -146,6 +141,7 @@ class BatchedANIDataset(Dataset):
             start = i * batch_size
             end = min((i + 1) * batch_size, conformations)
             natoms_batch = natoms[start:end]
+            # sort batch by number of atoms to prepare for splitting
             natoms_batch, indices = natoms_batch.sort()
             species_batch = species[start:end, ...].index_select(0, indices)
             coordinates_batch = coordinates[start:end, ...] \
@@ -172,24 +168,3 @@ class BatchedANIDataset(Dataset):
 
     def __len__(self):
         return len(self.batches)
-
-
-def load_or_create(checkpoint, batch_size, species, dataset_path,
-                   *args, **kwargs):
-    """Generate a 80-10-10 split of the dataset, and checkpoint
-    the resulting dataset"""
-    if not os.path.isfile(checkpoint):
-        full_dataset = BatchedANIDataset(dataset_path, species, batch_size,
-                                         *args, **kwargs)
-        training_size = int(len(full_dataset) * 0.8)
-        validation_size = int(len(full_dataset) * 0.1)
-        testing_size = len(full_dataset) - training_size - validation_size
-        lengths = [training_size, validation_size, testing_size]
-        subsets = data.random_split(full_dataset, lengths)
-        with open(checkpoint, 'wb') as f:
-            pickle.dump(subsets, f)
-
-    # load dataset from checkpoint file
-    with open(checkpoint, 'rb') as f:
-        training, validation, testing = pickle.load(f)
-    return training, validation, testing

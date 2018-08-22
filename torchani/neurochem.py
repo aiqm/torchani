@@ -56,9 +56,9 @@ class Constants(Mapping):
     def __getitem__(self, item):
         return getattr(self, item)
 
-    def species_to_tensor(self, species, device):
+    def species_to_tensor(self, species):
         rev = [self.rev_species[s] for s in species]
-        return torch.tensor(rev, dtype=torch.long, device=device)
+        return torch.tensor(rev, dtype=torch.long)
 
 
 def load_sae(filename):

@@ -23,8 +23,8 @@ parser = parser.parse_args()
 device = torch.device(parser.device)
 nnp = model.get_or_create_model('/tmp/model.pt', device=device)
 shift_energy = torchani.buildins.energy_shifter
-dataset = torchani.training.BatchedANIDataset(
-    parser.dataset_path, model.consts.species,
+dataset = torchani.data.BatchedANIDataset(
+    parser.dataset_path, model.consts.species_to_tensor,
     parser.batch_size, device=device,
     transform=[shift_energy.subtract_from_dataset])
 container = torchani.training.Container({'energies': nnp})
