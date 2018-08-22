@@ -6,5 +6,5 @@ from . import utils
 from . import neurochem
 from .neurochem import buildins
 
-__all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble', 'buildins'
+__all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble', 'buildins',
            'training', 'utils', 'neurochem']
