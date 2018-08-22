@@ -38,22 +38,21 @@ def strip_redundant_padding(species, coordinates):
 
 class EnergyShifter(torch.nn.Module):
 
-    def __init__(self, species, self_energies):
+    def __init__(self, self_energies):
         super(EnergyShifter, self).__init__()
-        self_energies_tensor = [self_energies[s] for s in species]
-        self.register_buffer('self_energies_tensor',
-                             torch.tensor(self_energies_tensor,
-                                          dtype=torch.double))
+        self_energies = torch.tensor(self_energies, dtype=torch.double)
+        self.register_buffer('self_energies', self_energies)
 
     def sae(self, species):
-        self_energies = self.self_energies_tensor[species]
+        self_energies = self.self_energies[species]
         self_energies[species == -1] = 0
         return self_energies.sum(dim=1)
 
     def subtract_from_dataset(self, species, coordinates, properties):
-        dtype = properties['energies'].dtype
-        device = properties['energies'].device
-        properties['energies'] -= self.sae(species).to(dtype).to(device)
+        energies = properties['energies']
+        device = energies.device
+        energies = energies.to(torch.double) - self.sae(species).to(device)
+        properties['energies'] = energies
         return species, coordinates, properties
 
     def forward(self, species_energies):
