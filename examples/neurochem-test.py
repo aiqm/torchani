@@ -35,14 +35,14 @@ shift_energy = torchani.neurochem.load_sae(parser.sae_file)
 aev_computer = torchani.AEVComputer(**consts)
 nn = torchani.neurochem.load_model(consts.species, parser.network_dir)
 model = torch.nn.Sequential(aev_computer, nn)
-container = torchani.training.Container({'energies': model})
+container = torchani.ignite.Container({'energies': model})
 container = container.to(device)
 
 # load datasets
 if parser.dataset_path.endswith('.h5') or \
    parser.dataset_path.endswith('.hdf5') or \
    os.path.isdir(parser.dataset_path):
-    dataset = torchani.training.BatchedANIDataset(
+    dataset = torchani.ignite.BatchedANIDataset(
         parser.dataset_path, consts.species_to_tensor, parser.batch_size,
         device=device, transform=[shift_energy.subtract_from_dataset])
     datasets = [dataset]
@@ -60,7 +60,7 @@ def hartree2kcal(x):
 
 for dataset in datasets:
     evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
-        'RMSE': torchani.training.RMSEMetric('energies')
+        'RMSE': torchani.ignite.RMSEMetric('energies')
     })
     evaluator.run(dataset)
     metrics = evaluator.state.metrics

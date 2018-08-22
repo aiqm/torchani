@@ -61,16 +61,16 @@ validation = torchani.data.BatchedANIDataset(
     parser.validation_path, model.consts.species_to_tensor,
     parser.batch_size, device=device,
     transform=[shift_energy.subtract_from_dataset])
-container = torchani.training.Container({'energies': nnp})
+container = torchani.ignite.Container({'energies': nnp})
 
 parser.optim_args = json.loads(parser.optim_args)
 optimizer = getattr(torch.optim, parser.optimizer)
 optimizer = optimizer(nnp.parameters(), **parser.optim_args)
 
 trainer = ignite.engine.create_supervised_trainer(
-    container, optimizer, torchani.training.MSELoss('energies'))
+    container, optimizer, torchani.ignite.MSELoss('energies'))
 evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
-        'RMSE': torchani.training.RMSEMetric('energies')
+        'RMSE': torchani.ignite.RMSEMetric('energies')
     })
 
 
@@ -105,7 +105,7 @@ def validation_and_checkpoint(trainer):
         evaluator = ignite.engine.create_supervised_evaluator(
             container,
             metrics={
-                'RMSE': torchani.training.RMSEMetric('energies')
+                'RMSE': torchani.ignite.RMSEMetric('energies')
             }
         )
         evaluator.run(dataset)
