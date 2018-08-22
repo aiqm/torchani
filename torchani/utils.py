@@ -50,10 +50,9 @@ class EnergyShifter(torch.nn.Module):
 
     def subtract_from_dataset(self, species, coordinates, properties):
         energies = properties['energies']
-        dtype = energies.dtype
         device = energies.device
         energies = energies.to(torch.double) - self.sae(species).to(device)
-        properties['energies'] = energies.to(dtype)
+        properties['energies'] = energies
         return species, coordinates, properties
 
     def forward(self, species_energies):

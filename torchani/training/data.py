@@ -90,7 +90,6 @@ class BatchedANIDataset(Dataset):
         self.properties = properties
         self.dtype = dtype
         self.device = device
-        device = torch.device('cpu')
 
         # get name of files storing data
         files = []
@@ -111,14 +110,11 @@ class BatchedANIDataset(Dataset):
             for m in anidataloader(f):
                 species = m['species']
                 indices = [self.species_indices[i] for i in species]
-                species = torch.tensor(indices, dtype=torch.long,
-                                       device=device)
-                coordinates = torch.from_numpy(m['coordinates']) \
-                                   .type(dtype).to(device)
+                species = torch.tensor(indices, dtype=torch.long)
+                coordinates = torch.from_numpy(m['coordinates'])
                 species_coordinates.append((species, coordinates))
                 for i in properties:
-                    properties[i].append(torch.from_numpy(m[i])
-                                              .type(dtype).to(device))
+                    properties[i].append(torch.from_numpy(m[i]))
         species, coordinates = utils.pad_and_batch(species_coordinates)
         for i in properties:
             properties[i] = torch.cat(properties[i])
@@ -126,7 +122,7 @@ class BatchedANIDataset(Dataset):
         # shuffle if required
         conformations = coordinates.shape[0]
         if shuffle:
-            indices = torch.randperm(conformations, device=device)
+            indices = torch.randperm(conformations)
             species = species.index_select(0, indices)
             coordinates = coordinates.index_select(0, indices)
             for i in properties:
@@ -136,6 +132,11 @@ class BatchedANIDataset(Dataset):
         for t in transform:
             species, coordinates, properties = t(species, coordinates,
                                                  properties)
+
+        # convert to desired dtype
+        species = species
+        coordinates = coordinates.to(dtype)
+        properties = {k: properties[k].to(dtype) for k in properties}
 
         # split into minibatches, and strip reduncant padding
         natoms = (species >= 0).to(torch.long).sum(1)
