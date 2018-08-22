@@ -43,7 +43,7 @@ if parser.dataset_path.endswith('.h5') or \
    parser.dataset_path.endswith('.hdf5') or \
    os.path.isdir(parser.dataset_path):
     dataset = torchani.training.BatchedANIDataset(
-        parser.dataset_path, consts.species, parser.batch_size,
+        parser.dataset_path, consts.species_to_tensor, parser.batch_size,
         device=device, transform=[shift_energy.subtract_from_dataset])
     datasets = [dataset]
 else:
