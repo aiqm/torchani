@@ -21,7 +21,8 @@ parser = parser.parse_args()
 
 # set up benchmark
 device = torch.device(parser.device)
-nnp, shift_energy = model.get_or_create_model('/tmp/model.pt', device=device)
+nnp = model.get_or_create_model('/tmp/model.pt', device=device)
+shift_energy = torchani.buildins.energy_shifter
 dataset = torchani.training.BatchedANIDataset(
     parser.dataset_path, nnp[0].species, parser.batch_size, device=device,
     transform=[shift_energy.subtract_from_dataset])

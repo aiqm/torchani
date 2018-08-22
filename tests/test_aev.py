@@ -11,8 +11,7 @@ N = 97
 class TestAEV(unittest.TestCase):
 
     def setUp(self):
-        self.constants = torchani.neurochem.Constants()
-        self.aev_computer = torchani.AEVComputer(**self.constants)
+        self.aev_computer = torchani.buildins.aev_computer
         self.radial_length = self.aev_computer.radial_length()
         self.tolerance = 1e-5
 
@@ -44,7 +43,7 @@ class TestAEV(unittest.TestCase):
                 coordinates, species, radial, angular, _, _ = pickle.load(f)
                 species_coordinates.append((species, coordinates))
                 radial_angular.append((radial, angular))
-        species, coordinates = torchani.padding.pad_and_batch(
+        species, coordinates = torchani.utils.pad_and_batch(
             species_coordinates)
         _, aev = self.aev_computer((species, coordinates))
         start = 0

@@ -1,7 +1,7 @@
 import torch
 import itertools
 import math
-from . import padding
+from . import utils
 
 
 def _cutoff_cosine(distances, cutoff):
@@ -363,7 +363,7 @@ class AEVComputer(torch.nn.Module):
     def forward(self, species_coordinates):
         species, coordinates = species_coordinates
 
-        present_species = padding.present_species(species)
+        present_species = utils.present_species(species)
 
         # TODO: remove this workaround after gather support broadcasting
         atoms = coordinates.shape[1]

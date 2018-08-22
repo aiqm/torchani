@@ -1,5 +1,5 @@
 import torch
-from .. import padding
+from .. import utils
 
 
 class Container(torch.nn.Module):
@@ -18,7 +18,7 @@ class Container(torch.nn.Module):
                 _, result = model(sc)
                 results[k].append(result)
         results['species'], results['coordinates'] = \
-            padding.pad_and_batch(species_coordinates)
+            utils.pad_and_batch(species_coordinates)
         for k in self.keys:
             results[k] = torch.cat(results[k])
         return results
