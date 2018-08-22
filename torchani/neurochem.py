@@ -63,17 +63,15 @@ class Constants(Mapping):
 
 def load_sae(filename):
     """Load self energies from NeuroChem sae file"""
-    self_energies = {}
+    self_energies = []
     with open(filename) as f:
         for i in f:
-            try:
-                line = [x.strip() for x in i.split('=')]
-                name = line[0].split(',')[0].strip()
-                value = float(line[1])
-                self_energies[name] = value
-            except Exception:
-                pass  # ignore unrecognizable line
-    return self_energies
+            line = [x.strip() for x in i.split('=')]
+            index = int(line[0].split(',')[1].strip())
+            value = float(line[1])
+            self_energies.append((index, value))
+    self_energies = [i for _, i in sorted(self_energies)]
+    return EnergyShifter(self_energies)
 
 
 def load_atomic_network(filename):
@@ -256,8 +254,7 @@ class Buildins:
 
         self.sae_file = pkg_resources.resource_filename(
             __name__, 'resources/ani-1x_dft_x8ens/sae_linfit.dat')
-        self.energy_shifter = EnergyShifter(self.consts.species,
-                                            load_sae(self.sae_file))
+        self.energy_shifter = load_sae(self.sae_file)
 
         self.ensemble_size = 8
         self.ensemble_prefix = pkg_resources.resource_filename(
