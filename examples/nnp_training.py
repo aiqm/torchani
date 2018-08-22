@@ -54,7 +54,7 @@ start = timeit.default_timer()
 nnp = model.get_or_create_model(parser.model_checkpoint, device=device)
 shift_energy = torchani.buildins.energy_shifter
 training, validation, testing = torchani.training.load_or_create(
-    parser.dataset_checkpoint, parser.batch_size, nnp[0].species,
+    parser.dataset_checkpoint, parser.batch_size, model.consts.species,
     parser.dataset_path, device=device,
     transform=[shift_energy.subtract_from_dataset])
 container = torchani.training.Container({'energies': nnp})

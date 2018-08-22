@@ -42,11 +42,12 @@ class AEVComputer(torch.nn.Module):
         The name of the file that stores constant.
     Rcr, Rca, EtaR, ShfR, Zeta, ShfZ, EtaA, ShfA : torch.Tensor
         Tensor storing constants.
-    species : list(str)
-        Chemical symbols of supported atom types
+    num_species : int
+        Number of supported atom types
     """
 
-    def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, species):
+    def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ,
+                 num_species):
         super(AEVComputer, self).__init__()
         self.register_buffer('Rcr', Rcr)
         self.register_buffer('Rca', Rca)
@@ -60,7 +61,7 @@ class AEVComputer(torch.nn.Module):
         self.register_buffer('ShfA', ShfA.view(1, 1, -1, 1))
         self.register_buffer('ShfZ', ShfZ.view(1, 1, 1, -1))
 
-        self.species = species
+        self.num_species = num_species
 
     def radial_sublength(self):
         """Returns the length of radial subaev of a single species"""
@@ -68,7 +69,7 @@ class AEVComputer(torch.nn.Module):
 
     def radial_length(self):
         """Returns the length of full radial aev"""
-        return len(self.species) * self.radial_sublength()
+        return self.num_species * self.radial_sublength()
 
     def angular_sublength(self):
         """Returns the length of angular subaev of a single species"""
@@ -77,8 +78,8 @@ class AEVComputer(torch.nn.Module):
 
     def angular_length(self):
         """Returns the length of full angular aev"""
-        species = len(self.species)
-        return int((species * (species + 1)) / 2) * self.angular_sublength()
+        s = self.num_species
+        return (s * (s + 1)) // 2 * self.angular_sublength()
 
     def aev_length(self):
         """Returns the length of full aev"""
@@ -266,7 +267,7 @@ class AEVComputer(torch.nn.Module):
         """Tensor of shape (conformations, atoms, neighbors) storing species
         of neighbors."""
         mask_r = (species_r.unsqueeze(-1) ==
-                  torch.arange(len(self.species), device=self.EtaR.device))
+                  torch.arange(self.num_species, device=self.EtaR.device))
         return mask_r
 
     def compute_mask_a(self, species, indices_a, present_species):
@@ -348,7 +349,7 @@ class AEVComputer(torch.nn.Module):
             conformations, atoms, self.angular_sublength(),
             dtype=self.EtaR.dtype, device=self.EtaR.device)
         for s1, s2 in itertools.combinations_with_replacement(
-                                        range(len(self.species)), 2):
+                                        range(self.num_species), 2):
             if s1 in rev_indices and s2 in rev_indices:
                 i1 = rev_indices[s1]
                 i2 = rev_indices[s2]

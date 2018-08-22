@@ -33,6 +33,7 @@ class Constants(Mapping):
                         self.species = value
                 except Exception:
                     raise ValueError('unable to parse const file')
+        self.num_species = len(self.species)
         self.rev_species = {}
         for i in range(len(self.species)):
             s = self.species[i]
@@ -47,7 +48,7 @@ class Constants(Mapping):
         yield 'Zeta'
         yield 'ShfA'
         yield 'ShfZ'
-        yield 'species'
+        yield 'num_species'
 
     def __len__(self):
         return 8
@@ -232,7 +233,7 @@ def load_model(species, from_):
     models = []
     for i in species:
         filename = os.path.join(from_, 'ANN-{}.nnf'.format(i))
-        models.append((i, load_atomic_network(filename)))
+        models.append(load_atomic_network(filename))
     return ANIModel(models)
 
 

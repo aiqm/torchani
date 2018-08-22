@@ -24,7 +24,8 @@ device = torch.device(parser.device)
 nnp = model.get_or_create_model('/tmp/model.pt', device=device)
 shift_energy = torchani.buildins.energy_shifter
 dataset = torchani.training.BatchedANIDataset(
-    parser.dataset_path, nnp[0].species, parser.batch_size, device=device,
+    parser.dataset_path, model.consts.species,
+    parser.batch_size, device=device,
     transform=[shift_energy.subtract_from_dataset])
 container = torchani.training.Container({'energies': nnp})
 optimizer = torch.optim.Adam(nnp.parameters())
