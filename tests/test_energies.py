@@ -13,11 +13,9 @@ class TestEnergies(unittest.TestCase):
 
     def setUp(self):
         self.tolerance = 5e-5
-        consts = torchani.neurochem.Constants()
-        sae = torchani.neurochem.load_sae()
-        aev_computer = torchani.AEVComputer(**consts)
-        nnp = torchani.neurochem.load_model(consts.species)
-        shift_energy = torchani.EnergyShifter(consts.species, sae)
+        aev_computer = torchani.buildins.aev_computer
+        nnp = torchani.buildins.models[0]
+        shift_energy = torchani.buildins.energy_shifter
         self.model = torch.nn.Sequential(aev_computer, nnp, shift_energy)
 
     def testIsomers(self):
@@ -38,7 +36,7 @@ class TestEnergies(unittest.TestCase):
                 coordinates, species, _, _, e, _ = pickle.load(f)
                 species_coordinates.append((species, coordinates))
                 energies.append(e)
-        species, coordinates = torchani.padding.pad_and_batch(
+        species, coordinates = torchani.utils.pad_and_batch(
             species_coordinates)
         energies = torch.cat(energies)
         _, energies_ = self.model((species, coordinates))

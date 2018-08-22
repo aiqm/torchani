@@ -17,9 +17,7 @@ def atomic():
 
 
 def get_or_create_model(filename, device=torch.device('cpu')):
-    consts = torchani.neurochem.Constants()
-    sae = torchani.neurochem.load_sae()
-    aev_computer = torchani.AEVComputer(**consts)
+    aev_computer = torchani.buildins.aev_computer
     model = torchani.ANIModel([
         ('C', atomic()),
         ('H', atomic()),
@@ -37,4 +35,4 @@ def get_or_create_model(filename, device=torch.device('cpu')):
         model.load_state_dict(torch.load(filename))
     else:
         torch.save(model.state_dict(), filename)
-    return model.to(device), torchani.EnergyShifter(consts.species, sae)
+    return model.to(device)

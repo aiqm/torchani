@@ -12,8 +12,8 @@ ensemble = 8
 consts = torchani.neurochem.Constants(const_file)
 sae = torchani.neurochem.load_sae(sae_file)
 aev_computer = torchani.AEVComputer(**consts)
-nn = torchani.neurochem.load_model(consts.species, from_=network_dir,
-                                   ensemble=ensemble)
+nn = torchani.neurochem.load_model_ensemble(consts.species, network_dir,
+                                            ensemble)
 shift_energy = torchani.EnergyShifter(consts.species, sae)
 model = torch.nn.Sequential(aev_computer, nn, shift_energy)
 
