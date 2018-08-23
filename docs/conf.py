@@ -10,6 +10,9 @@ release = '0.1alpha'
 
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.mathjax',
 ]
 
 templates_path = ['_templates']
@@ -21,6 +24,12 @@ pygments_style = 'sphinx'
 html_theme = 'sphinx_rtd_theme'
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 htmlhelp_basename = 'TorchANIdoc'
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/', None),
+    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'torch': ('https://pytorch.org/docs/master/', None),
+}
 
 latex_documents = [
     (master_doc, 'TorchANI.tex', 'TorchANI Documentation',

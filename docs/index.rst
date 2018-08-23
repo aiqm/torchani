@@ -1,17 +1,10 @@
-Welcome to TorchANI's documentation!
-====================================
-
-.. automodule:: torchani
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-
 TorchANI
 ========
 
+.. automodule:: torchani
+
 .. autoclass:: torchani.AEVComputer
+    :members:
 .. autoclass:: torchani.ANIModel
 .. autoclass:: torchani.Ensemble
 .. autoclass:: torchani.EnergyShifter

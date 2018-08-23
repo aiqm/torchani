@@ -66,16 +66,16 @@ def time_func(key, func):
 
 
 # enable timers
-nnp[0].radial_subaev_terms = time_func('radial terms',
-                                       nnp[0].radial_subaev_terms)
-nnp[0].angular_subaev_terms = time_func('angular terms',
-                                        nnp[0].angular_subaev_terms)
-nnp[0].terms_and_indices = time_func('terms and indices',
-                                     nnp[0].terms_and_indices)
-nnp[0].combinations = time_func('combinations', nnp[0].combinations)
-nnp[0].compute_mask_r = time_func('mask_r', nnp[0].compute_mask_r)
-nnp[0].compute_mask_a = time_func('mask_a', nnp[0].compute_mask_a)
-nnp[0].assemble = time_func('assemble', nnp[0].assemble)
+nnp[0]._radial_subaev_terms = time_func('radial terms',
+                                        nnp[0]._radial_subaev_terms)
+nnp[0]._angular_subaev_terms = time_func('angular terms',
+                                         nnp[0]._angular_subaev_terms)
+nnp[0]._terms_and_indices = time_func('terms and indices',
+                                      nnp[0]._terms_and_indices)
+nnp[0]._combinations = time_func('combinations', nnp[0]._combinations)
+nnp[0]._compute_mask_r = time_func('mask_r', nnp[0]._compute_mask_r)
+nnp[0]._compute_mask_a = time_func('mask_a', nnp[0]._compute_mask_a)
+nnp[0]._assemble = time_func('assemble', nnp[0]._assemble)
 nnp[0].forward = time_func('total', nnp[0].forward)
 nnp[1].forward = time_func('forward', nnp[1].forward)
 
