@@ -5,7 +5,7 @@ import copy
 from ignite.engine import create_supervised_trainer, \
     create_supervised_evaluator, Events
 import torchani
-import torchani.training
+import torchani.ignite
 
 path = os.path.dirname(os.path.realpath(__file__))
 path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
@@ -19,8 +19,8 @@ class TestIgnite(unittest.TestCase):
         aev_computer = torchani.buildins.aev_computer
         nnp = copy.deepcopy(torchani.buildins.models[0])
         shift_energy = torchani.buildins.energy_shifter
-        ds = torchani.training.BatchedANIDataset(
-            path, torchani.buildins.consts.species, batchsize,
+        ds = torchani.data.BatchedANIDataset(
+            path, torchani.buildins.consts.species_to_tensor, batchsize,
             transform=[shift_energy.subtract_from_dataset])
         ds = torch.utils.data.Subset(ds, [0])
 
@@ -29,15 +29,15 @@ class TestIgnite(unittest.TestCase):
                 return x[0], x[1].flatten()
 
         model = torch.nn.Sequential(aev_computer, nnp, Flatten())
-        container = torchani.training.Container({'energies': model})
+        container = torchani.ignite.Container({'energies': model})
         optimizer = torch.optim.Adam(container.parameters())
-        loss = torchani.training.TransformedLoss(
-            torchani.training.MSELoss('energies'),
+        loss = torchani.ignite.TransformedLoss(
+            torchani.ignite.MSELoss('energies'),
             lambda x: torch.exp(x) - 1)
         trainer = create_supervised_trainer(
             container, optimizer, loss)
         evaluator = create_supervised_evaluator(container, metrics={
-            'RMSE': torchani.training.RMSEMetric('energies')
+            'RMSE': torchani.ignite.RMSEMetric('energies')
         })
 
         @trainer.on(Events.COMPLETED)

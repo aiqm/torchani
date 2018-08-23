@@ -1,7 +1,26 @@
+import torch
+from . import utils
 from torch.nn.modules.loss import _Loss
 from ignite.metrics.metric import Metric
 from ignite.metrics import RootMeanSquaredError
-import torch
+
+
+class Container(torch.nn.ModuleDict):
+
+    def __init__(self, modules):
+        super(Container, self).__init__(modules)
+
+    def forward(self, species_coordinates):
+        results = {k: [] for k in self}
+        for sc in species_coordinates:
+            for k in self:
+                _, result = self[k](sc)
+                results[k].append(result)
+        for k in self:
+            results[k] = torch.cat(results[k])
+        results['species'], results['coordinates'] = \
+            utils.pad_and_batch(species_coordinates)
+        return results
 
 
 class DictLoss(_Loss):
