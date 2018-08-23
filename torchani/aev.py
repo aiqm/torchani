@@ -108,8 +108,8 @@ class AEVComputer(torch.nn.Module):
         This correspond to equation (4) in the `ANI paper`_. This function just
         compute the terms. The sum in the equation is not computed.
         The input tensor have shape (conformations, atoms, N), where N
-        is the number of neighbor atom pairs within the cutoff radius and output
-        tensor should have shape
+        is the number of neighbor atom pairs within the cutoff radius and
+        output tensor should have shape
         (conformations, atoms, ``self.angular_sublength()``)
 
         .. _ANI paper:
@@ -223,7 +223,7 @@ class AEVComputer(torch.nn.Module):
         return mask_a
 
     def _assemble(self, radial_terms, angular_terms, present_species,
-                 mask_r, mask_a):
+                  mask_r, mask_a):
         """Returns radial and angular AEV computed from terms according
         to the given partition information.
 
@@ -298,6 +298,6 @@ class AEVComputer(torch.nn.Module):
         mask_a = self._compute_mask_a(species_, indices_a, present_species)
 
         radial, angular = self._assemble(radial_terms, angular_terms,
-                                        present_species, mask_r, mask_a)
+                                         present_species, mask_r, mask_a)
         fullaev = torch.cat([radial, angular], dim=2)
         return species, fullaev
