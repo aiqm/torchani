@@ -24,9 +24,9 @@ steps:
   Examples:
     image: '${{BuildTorchANI}}'
     commands:
-      - rm -rf *.dat *.pt
-      - python examples/nnp_training.py  ./dataset/ani_gdb_s01.h5
-      - python examples/nnp_training.py  ./dataset/ani_gdb_s01.h5  # run twice to test if checkpoint is working
+      - rm -rf *.pt
+      - python examples/nnp_training.py dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5
+      - python examples/nnp_training.py dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5  # run twice to test if checkpoint is working
       - python examples/training-benchmark.py ./dataset/ani_gdb_s01.h5
       - python examples/training-benchmark.py ./dataset/ani_gdb_s01.h5  # run twice to test if checkpoint is working
       - python examples/energy_force.py

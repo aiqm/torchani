@@ -11,18 +11,18 @@ import json
 
 # parse command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('dataset_path',
-                    help='Path of the dataset, can a hdf5 file \
+parser.add_argument('training_path',
+                    help='Path of the training set, can be a hdf5 file \
                           or a directory containing hdf5 files')
-parser.add_argument('--dataset_checkpoint',
-                    help='Checkpoint file for datasets',
-                    default='dataset-checkpoint.dat')
+parser.add_argument('validation_path',
+                    help='Path of the validation set, can be a hdf5 file \
+                          or a directory containing hdf5 files')
 parser.add_argument('--model_checkpoint',
                     help='Checkpoint file for model',
                     default='model.pt')
 parser.add_argument('-m', '--max_epochs',
                     help='Maximum number of epoches',
-                    default=100, type=int)
+                    default=300, type=int)
 parser.add_argument('--training_rmse_every',
                     help='Compute training RMSE every epoches',
                     default=20, type=int)
@@ -53,20 +53,24 @@ start = timeit.default_timer()
 
 nnp = model.get_or_create_model(parser.model_checkpoint, device=device)
 shift_energy = torchani.buildins.energy_shifter
-training, validation, testing = torchani.training.load_or_create(
-    parser.dataset_checkpoint, parser.batch_size, model.consts.species,
-    parser.dataset_path, device=device,
+training = torchani.data.BatchedANIDataset(
+    parser.training_path, model.consts.species_to_tensor,
+    parser.batch_size, device=device,
     transform=[shift_energy.subtract_from_dataset])
-container = torchani.training.Container({'energies': nnp})
+validation = torchani.data.BatchedANIDataset(
+    parser.validation_path, model.consts.species_to_tensor,
+    parser.batch_size, device=device,
+    transform=[shift_energy.subtract_from_dataset])
+container = torchani.ignite.Container({'energies': nnp})
 
 parser.optim_args = json.loads(parser.optim_args)
 optimizer = getattr(torch.optim, parser.optimizer)
 optimizer = optimizer(nnp.parameters(), **parser.optim_args)
 
 trainer = ignite.engine.create_supervised_trainer(
-    container, optimizer, torchani.training.MSELoss('energies'))
+    container, optimizer, torchani.ignite.MSELoss('energies'))
 evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
-        'RMSE': torchani.training.RMSEMetric('energies')
+        'RMSE': torchani.ignite.RMSEMetric('energies')
     })
 
 
@@ -97,19 +101,25 @@ def finalize_tqdm(trainer):
 
 @trainer.on(ignite.engine.Events.EPOCH_STARTED)
 def validation_and_checkpoint(trainer):
-    # compute validation RMSE
-    evaluator.run(validation)
-    metrics = evaluator.state.metrics
-    rmse = hartree2kcal(metrics['RMSE'])
-    writer.add_scalar('validation_rmse_vs_epoch', rmse, trainer.state.epoch)
-
-    # compute training RMSE
-    if trainer.state.epoch % parser.training_rmse_every == 0:
-        evaluator.run(training)
+    def evaluate(dataset, name):
+        evaluator = ignite.engine.create_supervised_evaluator(
+            container,
+            metrics={
+                'RMSE': torchani.ignite.RMSEMetric('energies')
+            }
+        )
+        evaluator.run(dataset)
         metrics = evaluator.state.metrics
         rmse = hartree2kcal(metrics['RMSE'])
-        writer.add_scalar('training_rmse_vs_epoch', rmse,
-                          trainer.state.epoch)
+        writer.add_scalar(name, rmse, trainer.state.epoch)
+        return rmse
+
+    # compute validation RMSE
+    rmse = evaluate(validation, 'validation_rmse_vs_epoch')
+
+    # compute training RMSE
+    if trainer.state.epoch % parser.training_rmse_every == 1:
+        evaluate(training, 'training_rmse_vs_epoch')
 
     # handle best validation RMSE
     if rmse < trainer.state.best_validation_rmse:
@@ -120,9 +130,12 @@ def validation_and_checkpoint(trainer):
         torch.save(nnp.state_dict(), parser.model_checkpoint)
     else:
         trainer.state.no_improve_count += 1
+    writer.add_scalar('no_improve_count_vs_epoch',
+                      trainer.state.no_improve_count,
+                      trainer.state.epoch)
 
     if trainer.state.no_improve_count > parser.early_stopping:
-        trainer.terminate()
+            trainer.terminate()
 
 
 @trainer.on(ignite.engine.Events.EPOCH_STARTED)
@@ -134,8 +147,7 @@ def log_time(trainer):
 @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
 def log_loss_and_time(trainer):
     iteration = trainer.state.iteration
-    rmse = hartree2kcal(math.sqrt(trainer.state.output))
-    writer.add_scalar('training_atomic_rmse_vs_iteration', rmse, iteration)
+    writer.add_scalar('loss_vs_iteration', trainer.state.output, iteration)
 
 
 trainer.run(training, max_epochs=parser.max_epochs)
