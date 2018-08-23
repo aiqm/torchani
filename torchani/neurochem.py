@@ -5,7 +5,7 @@ import bz2
 import lark
 import struct
 from collections.abc import Mapping
-from .models import ANIModel, Ensemble
+from .nn import ANIModel, Ensemble
 from .utils import EnergyShifter
 from .aev import AEVComputer
 
@@ -262,6 +262,3 @@ class Buildins:
         self.models = load_model_ensemble(self.consts.species,
                                           self.ensemble_prefix,
                                           self.ensemble_size)
-
-
-buildins = Buildins()

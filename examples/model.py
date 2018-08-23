@@ -3,8 +3,9 @@ import torchani
 import os
 
 
-consts = torchani.buildins.consts
-aev_computer = torchani.buildins.aev_computer
+buildins = torchani.neurochem.Buildins()
+consts = buildins.consts
+aev_computer = buildins.aev_computer
 
 
 def atomic():

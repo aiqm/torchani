@@ -20,10 +20,4 @@ setup_attrs = {
     'tests_require': ['nose'],
 }
 
-try:
-    from sphinx.setup_command import BuildDoc
-    setup_attrs['cmdclass'] = {'build_sphinx': BuildDoc}
-except ModuleNotFoundError:
-    pass
-
 setup(**setup_attrs)

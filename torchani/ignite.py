@@ -34,7 +34,7 @@ class DictLoss(_Loss):
         return self.loss(input[self.key], other[self.key])
 
 
-class _PerAtomDictLoss(DictLoss):
+class PerAtomDictLoss(DictLoss):
 
     def forward(self, input, other):
         loss = self.loss(input[self.key], other[self.key])
@@ -64,7 +64,7 @@ class DictMetric(Metric):
 
 def MSELoss(key, per_atom=True):
     if per_atom:
-        return _PerAtomDictLoss(key, torch.nn.MSELoss(reduction='none'))
+        return PerAtomDictLoss(key, torch.nn.MSELoss(reduction='none'))
     else:
         return DictLoss(key, torch.nn.MSELoss())
 
