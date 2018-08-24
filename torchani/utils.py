@@ -120,7 +120,8 @@ class EnergyShifter(torch.nn.Module):
         return species, coordinates, properties
 
     def forward(self, species_energies):
-        """(species, molecular energies)->(species, molecular energies + sae)"""
+        """(species, molecular energies)->(species, molecular energies + sae)
+        """
         species, energies = species_energies
         sae = self.sae(species).to(energies.dtype).to(energies.device)
         return species, energies + sae
