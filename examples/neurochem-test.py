@@ -5,6 +5,9 @@ import ignite
 import pickle
 import argparse
 
+
+buildins = torchani.neurochem.Buildins()
+
 # parse command line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('dataset_path',
@@ -19,13 +22,13 @@ parser.add_argument('--batch_size',
                     default=1024, type=int)
 parser.add_argument('--const_file',
                     help='File storing constants',
-                    default=torchani.buildins.const_file)
+                    default=buildins.const_file)
 parser.add_argument('--sae_file',
                     help='File storing self atomic energies',
-                    default=torchani.buildins.sae_file)
+                    default=buildins.sae_file)
 parser.add_argument('--network_dir',
                     help='Directory or prefix of directories storing networks',
-                    default=torchani.buildins.ensemble_prefix + '0/networks')
+                    default=buildins.ensemble_prefix + '0/networks')
 parser = parser.parse_args()
 
 # load modules and datasets
