@@ -9,10 +9,10 @@ def pad_and_batch(species_coordinates):
     will be added to make it fit into the same shape.
 
     Arguments:
-        species_coordinates (sequence): sequence of pairs of species and
-            coordinates. Species must be of shape ``(N, A)`` and coordinates
-            must be of shape ``(N, A, 3)``, where ``N`` is the number of 3D
-            structures, ``A`` is the number of atoms.
+        species_coordinates (:class:`collections.abc.Sequence`): sequence of
+            pairs of species and coordinates. Species must be of shape
+            ``(N, A)`` and coordinates must be of shape ``(N, A, 3)``, where
+            ``N`` is the number of 3D structures, ``A`` is the number of atoms.
 
     Returns:
         (:class:`torch.Tensor`, :class:`torch.Tensor`): Species, and
@@ -79,9 +79,9 @@ class EnergyShifter(torch.nn.Module):
     in a pipeline as ``[input->AEVComputer->ANIModel->EnergyShifter->output]``.
 
     Arguments:
-        self_energies (sequence): Sequence of floating numbers for the self
-            energy of each atom type. The numbers should be in order, i.e.
-            ``self_energies[i]`` should be atom type ``i``.
+        self_energies (:class:`collections.abc.Sequence`): Sequence of floating
+            numbers for the self energy of each atom type. The numbers should
+            be in order, i.e. ``self_energies[i]`` should be atom type ``i``.
     """
 
     def __init__(self, self_energies):

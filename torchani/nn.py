@@ -11,11 +11,11 @@ class ANIModel(torch.nn.ModuleList):
     different atoms to obtain molecular properties.
 
     Arguments:
-        modules (sequence): Modules for each atom types. Atom types are
-            distinguished by their order in :attr:`modules`, which means, for
-            example ``modules[i]`` must be the module for atom type ``i``.
-            Different atom types can share a module by putting the same
-            reference in :attr:`modules`.
+        modules (:class:`collections.abc.Sequence`): Modules for each atom
+            types. Atom types are distinguished by their order in
+            :attr:`modules`, which means, for example ``modules[i]`` must be
+            the module for atom type ``i``. Different atom types can share a
+            module by putting the same reference in :attr:`modules`.
         reducer (:class:`collections.abc.Callable`): The callable that reduce
             atomic outputs into molecular outputs. It must have signature
             ``(tensor, dim)->tensor``.

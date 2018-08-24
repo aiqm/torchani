@@ -21,6 +21,7 @@ Datasets
 Utilities
 =========
 
+.. automodule:: torchani.utils
 .. autofunction:: torchani.utils.pad_and_batch
 .. autofunction:: torchani.utils.present_species
 .. autofunction:: torchani.utils.strip_redundant_padding
@@ -31,7 +32,9 @@ NeuroChem Importers
 
 .. automodule:: torchani.neurochem
 .. autoclass:: torchani.neurochem.Constants
+    :members:
 .. autofunction:: torchani.neurochem.load_sae
+.. autofunction:: torchani.neurochem.load_atomic_network
 .. autofunction:: torchani.neurochem.load_model
 .. autofunction:: torchani.neurochem.load_model_ensemble
 .. autoclass:: torchani.neurochem.Buildins
