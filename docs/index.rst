@@ -45,6 +45,7 @@ Ignite Helpers
 
 .. automodule:: torchani.ignite
 .. autoclass:: torchani.ignite.Container
+    :members:
 .. autoclass:: torchani.ignite.DictLoss
 .. autoclass:: torchani.ignite.PerAtomDictLoss
 .. autoclass:: torchani.ignite.TransformedLoss

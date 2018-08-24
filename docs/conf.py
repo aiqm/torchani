@@ -30,6 +30,7 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
     'torch': ('https://pytorch.org/docs/master/', None),
+    'ignite': ('https://pytorch.org/ignite/', None),
 }
 
 latex_documents = [

@@ -82,6 +82,26 @@ class BatchedANIDataset(Dataset):
     This is already a dataset of batches, so when iterated, a batch rather
     than a single data point will be yielded.
 
+    Since each batch might contain molecules of very different sizes, putting
+    the whole batch into a single tensor would require adding ghost atoms to
+    pad everything to the size of the largest molecule. As a result, huge
+    amount of computation would be wasted on ghost atoms. To avoid this issue,
+    the input of each batch, i.e. species and coordinates, are further divided
+    into chunks according to some heuristics, so that each chunk would only
+    have molecules of similar size, to minimize the padding required.
+
+    So, when iterating on this dataset, a tuple will be yeilded. The first
+    element of this tuple is a list of (species, coordinates) pairs. Each pair
+    is a chunk of molecules of similar size. The second element of this tuple
+    would be a dictonary, where the keys are those specified in the argument
+    :attr:`properties`, and values are a single tensor of the whole batch
+    (properties are not splitted into chunks).
+
+    Splitting batch into chunks leads to some inconvenience on training,
+    especially when using high level libraries like ``ignite``. To overcome
+    this inconvenience, :class:`torchani.ignite.Container` is created for
+    working with ignite.
+
     Arguments:
         path (str): Path to hdf5 files. If :attr:`path` is a file, then that
             file would be loaded using `pyanitools.py`_. If :attr:`path` is
