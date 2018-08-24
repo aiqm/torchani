@@ -8,6 +8,7 @@ TorchANI
 .. autoclass:: torchani.ANIModel
 .. autoclass:: torchani.Ensemble
 .. autoclass:: torchani.EnergyShifter
+    :members:
 
 
 Datasets

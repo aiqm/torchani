@@ -13,7 +13,7 @@ class ANIModel(torch.nn.ModuleList):
     Arguments:
         modules (sequence): Modules for each atom types. Atom types are
             distinguished by their order in :attr:`modules`, which means, for
-            example ``modules[0]`` must be the module for atom type 0.
+            example ``modules[i]`` must be the module for atom type ``i``.
             Different atom types can share a module by putting the same
             reference in :attr:`modules`.
         reducer (:class:`collections.abc.Callable`): The callable that reduce
