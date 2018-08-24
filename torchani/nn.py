@@ -3,47 +3,37 @@ from . import utils
 
 
 class ANIModel(torch.nn.ModuleList):
+    """ANI model that compute properties from species and AEVs.
+
+    Different atom types might have different modules, when computing
+    properties, for each atom, the module for its corresponding atom type will
+    be applied to its AEV, after that, outputs of modules will be reduced along
+    different atoms to obtain molecular properties.
+
+    Arguments:
+        modules (sequence): Modules for each atom types. Atom types are
+            distinguished by their order in :attr:`modules`, which means, for
+            example ``modules[0]`` must be the module for atom type 0.
+            Different atom types can share a module by putting the same
+            reference in :attr:`modules`.
+        reducer (:class:`collections.abc.Callable`): The callable that reduce
+            atomic outputs into molecular outputs. It must have signature
+            ``(tensor, dim)->tensor``.
+        padding_fill (float): The value to fill output of padding atoms.
+            Padding values will participate in reducing, so this value should
+            be appropriately chosen so that it has no effect on the result. For
+            example, if the reducer is :func:`torch.sum`, then
+            :attr:`padding_fill` should be 0, and if the reducer is
+            :func:`torch.min`, then :attr:`padding_fill` should be
+            :obj:`math.inf`.
+    """
 
     def __init__(self, modules, reducer=torch.sum, padding_fill=0):
-        """
-        Parameters
-        ----------
-        modules : seq(torch.nn.Module)
-            Modules for all species.
-        reducer : function
-            Function of (input, dim)->output that reduce the input tensor along
-            the given dimension to get an output tensor. This function will be
-            called with the per atom output tensor with internal shape as input
-            , and desired reduction dimension as dim, and should reduce the
-            input into the tensor containing desired output.
-        padding_fill : float
-            Default value used to fill padding atoms
-        """
         super(ANIModel, self).__init__(modules)
         self.reducer = reducer
         self.padding_fill = padding_fill
 
     def forward(self, species_aev):
-        """Compute output from aev
-
-        Parameters
-        ----------
-        (species, aev)
-        species : torch.Tensor
-            Tensor storing the species for each atom.
-        aev : torch.Tensor
-            Pytorch tensor of shape (conformations, atoms, aev_length) storing
-            the computed AEVs.
-
-        Returns
-        -------
-        (species, output)
-        species : torch.Tensor
-            Tensor storing the species for each atom.
-        output : torch.Tensor
-            Pytorch tensor of shape (conformations, output_length) for the
-            output of each conformation.
-        """
         species, aev = species_aev
         species_ = species.flatten()
         present_species = utils.present_species(species)
@@ -60,8 +50,9 @@ class ANIModel(torch.nn.ModuleList):
 
 
 class Ensemble(torch.nn.ModuleList):
+    """Compute the average output of an ensemeble of modules."""
 
-    def forward(self, species_aev):
-        outputs = [x(species_aev)[1] for x in self]
-        species, _ = species_aev
+    def forward(self, species_input):
+        outputs = [x(species_input)[1] for x in self]
+        species, _ = species_input
         return species, sum(outputs) / len(outputs)
