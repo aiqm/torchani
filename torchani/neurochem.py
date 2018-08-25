@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+"""Tools for loading NeuroChem input files."""
+
 import pkg_resources
 import torch
 import os
@@ -5,12 +8,15 @@ import bz2
 import lark
 import struct
 from collections.abc import Mapping
-from .models import ANIModel, Ensemble
+from .nn import ANIModel, Ensemble
 from .utils import EnergyShifter
 from .aev import AEVComputer
 
 
 class Constants(Mapping):
+    """NeuroChem constants. Objects of this class can be used as arguments
+    to :class:`torchani.AEVComputer`, like ``torchani.AEVComputer(**consts)``.
+    """
 
     def __init__(self, filename):
         self.filename = filename
@@ -57,12 +63,14 @@ class Constants(Mapping):
         return getattr(self, item)
 
     def species_to_tensor(self, species):
+        """Convert species from squence of strings to 1D tensor"""
         rev = [self.rev_species[s] for s in species]
         return torch.tensor(rev, dtype=torch.long)
 
 
 def load_sae(filename):
-    """Load self energies from NeuroChem sae file"""
+    """Returns an object of :class:`EnergyShifter` with self energies from
+    NeuroChem sae file"""
     self_energies = []
     with open(filename) as f:
         for i in f:
@@ -75,20 +83,8 @@ def load_sae(filename):
 
 
 def load_atomic_network(filename):
-    """Load atomic network from NeuroChem's .nnf, .wparam and .bparam files
-
-    Parameters
-    ----------
-    filename : string
-        The file name for the `.nnf` file that store network
-        hyperparameters. The `.bparam` and `.wparam` must be
-        in the same directory
-
-    Returns
-    -------
-    torch.nn.Sequential
-        The loaded atomic network
-    """
+    """Returns an instance of :class:`torch.nn.Sequential` with hyperparameters
+    and parameters loaded NeuroChem's .nnf, .wparam and .bparam files."""
 
     def decompress_nnf(buffer):
         while buffer[0] != b'='[0]:
@@ -227,15 +223,33 @@ def load_atomic_network(filename):
         return torch.nn.Sequential(*layers)
 
 
-def load_model(species, from_):
+def load_model(species, dir):
+    """Returns an instance of :class:`torchani.ANIModel` loaded from
+    NeuroChem's network directory.
+
+    Arguments:
+        species (:class:`collections.abc.Sequence`): Sequence of strings for
+            chemical symbols of each supported atom type in correct order.
+        dir (str): String for directory storing network configurations.
+    """
     models = []
     for i in species:
-        filename = os.path.join(from_, 'ANN-{}.nnf'.format(i))
+        filename = os.path.join(dir, 'ANN-{}.nnf'.format(i))
         models.append(load_atomic_network(filename))
     return ANIModel(models)
 
 
 def load_model_ensemble(species, prefix, count):
+    """Returns an instance of :class:`torchani.Ensemble` loaded from
+    NeuroChem's network directories beginning with the given prefix.
+
+    Arguments:
+        species (:class:`collections.abc.Sequence`): Sequence of strings for
+            chemical symbols of each supported atom type in correct order.
+        prefix (str): Prefix of paths of directory that networks configurations
+            are stored.
+        count (int): Number of models in the ensemble.
+    """
     models = []
     for i in range(count):
         network_dir = os.path.join('{}{}'.format(prefix, i), 'networks')
@@ -244,6 +258,21 @@ def load_model_ensemble(species, prefix, count):
 
 
 class Buildins:
+    """Container for all builtin stuffs.
+
+    Attributes:
+        const_file (:class:`str`): Path to the builtin constant file.
+        consts (:class:`Constants`): Constants loaded from builtin constant
+            file.
+        aev_computer (:class:`torchani.AEVComputer`): AEV computer with builtin
+            constants.
+        sae_file (:class:`str`): Path to the builtin self atomic energy file.
+        energy_shifter (:class:`torchani.EnergyShifter`): AEV computer with
+            builtin constants.
+        ensemble_size (:class:`int`): Number of models in model ensemble.
+        ensemble_prefix (:class:`str`): Prefix of directories of models.
+        models (:class:`torchani.Ensemble`): Ensemble of models.
+    """
 
     def __init__(self):
         self.const_file = pkg_resources.resource_filename(
@@ -264,4 +293,6 @@ class Buildins:
                                           self.ensemble_size)
 
 
-buildins = Buildins()
+class Trainer:
+    """NeuroChem training configurations"""
+    pass

@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+"""Tools for loading, shuffling, and batching ANI datasets"""
+
 from torch.utils.data import Dataset
 from os.path import join, isfile, isdir
 import os
@@ -74,6 +77,56 @@ def split_batch(natoms, species, coordinates):
 
 
 class BatchedANIDataset(Dataset):
+    """Load data from hdf5 files, create minibatches, and convert to tensors.
+
+    This is already a dataset of batches, so when iterated, a batch rather
+    than a single data point will be yielded.
+
+    Since each batch might contain molecules of very different sizes, putting
+    the whole batch into a single tensor would require adding ghost atoms to
+    pad everything to the size of the largest molecule. As a result, huge
+    amount of computation would be wasted on ghost atoms. To avoid this issue,
+    the input of each batch, i.e. species and coordinates, are further divided
+    into chunks according to some heuristics, so that each chunk would only
+    have molecules of similar size, to minimize the padding required.
+
+    So, when iterating on this dataset, a tuple will be yeilded. The first
+    element of this tuple is a list of (species, coordinates) pairs. Each pair
+    is a chunk of molecules of similar size. The second element of this tuple
+    would be a dictonary, where the keys are those specified in the argument
+    :attr:`properties`, and values are a single tensor of the whole batch
+    (properties are not splitted into chunks).
+
+    Splitting batch into chunks leads to some inconvenience on training,
+    especially when using high level libraries like ``ignite``. To overcome
+    this inconvenience, :class:`torchani.ignite.Container` is created for
+    working with ignite.
+
+    Arguments:
+        path (str): Path to hdf5 files. If :attr:`path` is a file, then that
+            file would be loaded using `pyanitools.py`_. If :attr:`path` is
+            a directory, then all files with suffix `.h5` or `.hdf5` will be
+            loaded.
+        species_tensor_converter (:class:`collections.abc.Callable`): A
+            callable that convert species in the format of list of strings
+            to 1D tensor.
+        batch_size (int): Number of different 3D structures in a single
+            minibatch.
+        shuffle (bool): Whether to shuffle the whole dataset.
+        properties (list): List of keys in the dataset to be loaded.
+            ``'species'`` and ``'coordinates'`` are always loaded and need not
+            to be specified here.
+        transform (list): List of :class:`collections.abc.Callable` that
+            transform the data. Callables must take species, coordinates,
+            and properties of the whole dataset as arguments, and return
+            the transformed species, coordinates, and properties.
+        dtype (:class:`torch.dtype`): dtype of coordinates and properties to
+            to convert the dataset to.
+        device (:class:`torch.dtype`): device to put tensors when iterating.
+
+    .. _pyanitools.py:
+        https://github.com/isayev/ASE_ANI/blob/master/lib/pyanitools.py
+    """
 
     def __init__(self, path, species_tensor_converter, batch_size,
                  shuffle=True, properties=['energies'], transform=(),
