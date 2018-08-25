@@ -52,15 +52,14 @@ writer = tensorboardX.SummaryWriter(log_dir=parser.log)
 start = timeit.default_timer()
 
 nnp = model.get_or_create_model(parser.model_checkpoint, device=device)
-shift_energy = torchani.buildins.energy_shifter
 training = torchani.data.BatchedANIDataset(
     parser.training_path, model.consts.species_to_tensor,
     parser.batch_size, device=device,
-    transform=[shift_energy.subtract_from_dataset])
+    transform=[model.shift_energy.subtract_from_dataset])
 validation = torchani.data.BatchedANIDataset(
     parser.validation_path, model.consts.species_to_tensor,
     parser.batch_size, device=device,
-    transform=[shift_energy.subtract_from_dataset])
+    transform=[model.shift_energy.subtract_from_dataset])
 container = torchani.ignite.Container({'energies': nnp})
 
 parser.optim_args = json.loads(parser.optim_args)

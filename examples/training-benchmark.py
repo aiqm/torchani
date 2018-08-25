@@ -22,11 +22,10 @@ parser = parser.parse_args()
 # set up benchmark
 device = torch.device(parser.device)
 nnp = model.get_or_create_model('/tmp/model.pt', device=device)
-shift_energy = torchani.buildins.energy_shifter
 dataset = torchani.data.BatchedANIDataset(
     parser.dataset_path, model.consts.species_to_tensor,
     parser.batch_size, device=device,
-    transform=[shift_energy.subtract_from_dataset])
+    transform=[model.shift_energy.subtract_from_dataset])
 container = torchani.ignite.Container({'energies': nnp})
 optimizer = torch.optim.Adam(nnp.parameters())
 
@@ -66,16 +65,16 @@ def time_func(key, func):
 
 
 # enable timers
-nnp[0].radial_subaev_terms = time_func('radial terms',
-                                       nnp[0].radial_subaev_terms)
-nnp[0].angular_subaev_terms = time_func('angular terms',
-                                        nnp[0].angular_subaev_terms)
-nnp[0].terms_and_indices = time_func('terms and indices',
-                                     nnp[0].terms_and_indices)
-nnp[0].combinations = time_func('combinations', nnp[0].combinations)
-nnp[0].compute_mask_r = time_func('mask_r', nnp[0].compute_mask_r)
-nnp[0].compute_mask_a = time_func('mask_a', nnp[0].compute_mask_a)
-nnp[0].assemble = time_func('assemble', nnp[0].assemble)
+nnp[0]._radial_subaev_terms = time_func('radial terms',
+                                        nnp[0]._radial_subaev_terms)
+nnp[0]._angular_subaev_terms = time_func('angular terms',
+                                         nnp[0]._angular_subaev_terms)
+nnp[0]._terms_and_indices = time_func('terms and indices',
+                                      nnp[0]._terms_and_indices)
+nnp[0]._combinations = time_func('combinations', nnp[0]._combinations)
+nnp[0]._compute_mask_r = time_func('mask_r', nnp[0]._compute_mask_r)
+nnp[0]._compute_mask_a = time_func('mask_a', nnp[0]._compute_mask_a)
+nnp[0]._assemble = time_func('assemble', nnp[0]._assemble)
 nnp[0].forward = time_func('total', nnp[0].forward)
 nnp[1].forward = time_func('forward', nnp[1].forward)
 

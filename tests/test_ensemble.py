@@ -15,9 +15,10 @@ class TestEnsemble(unittest.TestCase):
         self.conformations = 20
 
     def _test_molecule(self, coordinates, species):
+        buildins = torchani.neurochem.Buildins()
         coordinates = torch.tensor(coordinates, requires_grad=True)
-        aev = torchani.buildins.aev_computer
-        ensemble = torchani.buildins.models
+        aev = buildins.aev_computer
+        ensemble = buildins.models
         models = [torch.nn.Sequential(aev, m) for m in ensemble]
         ensemble = torch.nn.Sequential(aev, ensemble)
 
