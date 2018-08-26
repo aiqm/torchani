@@ -317,6 +317,7 @@ class Trainer:
     def __init__(self, filename, device=torch.device('cuda'),
                  tqdm=False, tensorboard=None):
         self.filename = filename
+        self.device = device
         if tqdm:
             import tqdm
             self.tqdm = tqdm.tqdm
@@ -465,8 +466,10 @@ class Trainer:
         self.sae_file = os.path.join(dir, params['atomEnergyFile'])
         self.shift_energy = load_sae(self.sae_file)
         del params['atomEnergyFile']
-        self.model_checkpoint = os.path.join(dir, params['ntwkStoreDir'],
-                                             'model.pt')
+        network_dir = os.path.join(dir, params['ntwkStoreDir'])
+        if not os.path.exists(network_dir):
+            os.makedirs(network_dir)
+        self.model_checkpoint = os.path.join(network_dir, 'model.pt')
         del params['ntwkStoreDir']
         self.max_nonimprove = params['tolr']
         del params['tolr']
@@ -515,7 +518,8 @@ class Trainer:
                 i = o
             atomic_nets[atom_type] = torch.nn.Sequential(*modules)
         self.model = ANIModel([atomic_nets[s] for s in self.consts.species])
-        self.container = Container({'energies': self.model})
+        self.nnp = torch.nn.Sequential(self.aev_computer, self.model)
+        self.container = Container({'energies': self.nnp}).to(self.device)
 
         # losses
         def l2():
@@ -599,7 +603,7 @@ class Trainer:
                 else:
                     trainer.state.no_improve_count += 1
 
-                if trainer.state.no_improve_count > self.early_stopping:
+                if trainer.state.no_improve_count > self.max_nonimprove:
                     trainer.terminate()
 
             if self.tensorboard is not None:
@@ -607,33 +611,36 @@ class Trainer:
                 def log_per_epoch(trainer):
                     elapsed = round(timeit.default_timer() - start, 2)
                     epoch = trainer.state.epoch
-                    self.writer.add_scalar('time_vs_epoch', elapsed, epoch)
-                    self.writer.add_scalar('learning_rate_vs_epoch', lr, epoch)
-                    self.writer.add_scalar('validation_rmse_vs_epoch',
-                                           trainer.state.rmse, epoch)
-                    self.writer.add_scalar('validation_mae_vs_epoch',
-                                           trainer.state.mae, epoch)
-                    self.writer.add_scalar('best_validation_rmse_vs_epoch',
-                                           self.best_validation_rmse, epoch)
-                    self.writer.add_scalar('no_improve_count_vs_epoch',
-                                           trainer.state.no_improve_count,
-                                           epoch)
+                    self.tensorboard.add_scalar('time_vs_epoch', elapsed,
+                                                epoch)
+                    self.tensorboard.add_scalar('learning_rate_vs_epoch', lr,
+                                                epoch)
+                    self.tensorboard.add_scalar('validation_rmse_vs_epoch',
+                                                trainer.state.rmse, epoch)
+                    self.tensorboard.add_scalar('validation_mae_vs_epoch',
+                                                trainer.state.mae, epoch)
+                    self.tensorboard.add_scalar(
+                        'best_validation_rmse_vs_epoch',
+                        self.best_validation_rmse, epoch)
+                    self.tensorboard.add_scalar('no_improve_count_vs_epoch',
+                                                trainer.state.no_improve_count,
+                                                epoch)
 
                     # compute training RMSE and MAE
                     if epoch % self.training_eval_every == 1:
                         training_rmse, training_mae = \
                             self.evaluate(self.training_set)
-                        self.writer.add_scalar('training_rmse_vs_epoch',
-                                               training_rmse, epoch)
-                        self.writer.add_scalar('training_mae_vs_epoch',
-                                               training_mae, epoch)
+                        self.tensorboard.add_scalar('training_rmse_vs_epoch',
+                                                    training_rmse, epoch)
+                        self.tensorboard.add_scalar('training_mae_vs_epoch',
+                                                    training_mae, epoch)
 
                 @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
                 def log_loss(trainer):
                     iteration = trainer.state.iteration
                     loss = trainer.state.output
-                    self.writer.add_scalar('loss_vs_iteration',
-                                           loss, iteration)
+                    self.tensorboard.add_scalar('loss_vs_iteration',
+                                                loss, iteration)
 
         lr = self.init_lr
 
@@ -649,12 +656,12 @@ class Trainer:
             if trainer.state.mae < 1.0:
                 trainer.terminate()
 
-        trainer.run(self.train_set, max_epochs=math.inf)
+        trainer.run(self.training_set, max_epochs=math.inf)
 
         while lr > self.min_lr:
             optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
             trainer = ignite.engine.create_supervised_trainer(
                 self.container, optimizer, self.exp_loss)
             decorate(trainer)
-            trainer.run(self.train_set, max_epochs=math.inf)
+            trainer.run(self.training_set, max_epochs=math.inf)
             lr *= self.lr_decay

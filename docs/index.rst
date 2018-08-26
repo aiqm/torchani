@@ -39,6 +39,8 @@ NeuroChem Importers
 .. autofunction:: torchani.neurochem.load_model
 .. autofunction:: torchani.neurochem.load_model_ensemble
 .. autoclass:: torchani.neurochem.Buildins
+.. autoclass:: torchani.neurochem.Trainer
+    :members:
 
 
 Ignite Helpers
