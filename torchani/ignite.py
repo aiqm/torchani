@@ -113,3 +113,28 @@ class TransformedLoss(_Loss):
 def RMSEMetric(key):
     """Create RMSE metric on key."""
     return DictMetric(key, RootMeanSquaredError())
+
+
+class MaxAbsoluteError(Metric):
+    """
+    Calculates the max absolute error.
+
+    - `update` must receive output of the form `(y_pred, y)`.
+    """
+    def reset(self):
+        self._max_of_absolute_errors = 0.0
+
+    def update(self, output):
+        y_pred, y = output
+        absolute_errors = torch.abs(y_pred - y.view_as(y_pred))
+        batch_max = absolute_errors.max().item()
+        if batch_max > self._max_of_absolute_errors:
+            self._max_of_absolute_errors = batch_max
+
+    def compute(self):
+        return self._max_of_absolute_errors
+
+
+def MAEMetric(key):
+    """Create max absolute error metric on key."""
+    return DictMetric(key, MaxAbsoluteError())

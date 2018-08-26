@@ -9,6 +9,7 @@ TorchANI
 .. autoclass:: torchani.Ensemble
 .. autoclass:: torchani.EnergyShifter
     :members:
+.. autoclass:: torchani.nn.Gaussian
 
 
 Datasets
@@ -38,6 +39,8 @@ NeuroChem Importers
 .. autofunction:: torchani.neurochem.load_model
 .. autofunction:: torchani.neurochem.load_model_ensemble
 .. autoclass:: torchani.neurochem.Buildins
+.. autoclass:: torchani.neurochem.Trainer
+    :members:
 
 
 Ignite Helpers
@@ -52,3 +55,5 @@ Ignite Helpers
 .. autofunction:: torchani.ignite.MSELoss
 .. autoclass:: torchani.ignite.DictMetric
 .. autofunction:: torchani.ignite.RMSEMetric
+.. autoclass:: torchani.ignite.MaxAbsoluteError
+.. autofunction:: torchani.ignite.MAEMetric
