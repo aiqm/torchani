@@ -9,6 +9,7 @@ TorchANI
 .. autoclass:: torchani.Ensemble
 .. autoclass:: torchani.EnergyShifter
     :members:
+.. autoclass:: torchani.nn.Gaussian
 
 
 Datasets
@@ -52,3 +53,5 @@ Ignite Helpers
 .. autofunction:: torchani.ignite.MSELoss
 .. autoclass:: torchani.ignite.DictMetric
 .. autofunction:: torchani.ignite.RMSEMetric
+.. autoclass:: torchani.ignite.MaxAbsoluteError
+.. autofunction:: torchani.ignite.MAEMetric

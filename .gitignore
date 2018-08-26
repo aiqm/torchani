@@ -17,3 +17,7 @@ benchmark_xyz
 *checkpoint*
 *.pt
 /runs
+/quicktest.py
+/*.ipt
+/*.params
+/*.dat

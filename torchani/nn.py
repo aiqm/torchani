@@ -56,3 +56,9 @@ class Ensemble(torch.nn.ModuleList):
         outputs = [x(species_input)[1] for x in self]
         species, _ = species_input
         return species, sum(outputs) / len(outputs)
+
+
+class Gaussian(torch.nn.Module):
+    """Gaussian activation"""
+    def forward(self, x):
+        return torch.exp(-x*x)
