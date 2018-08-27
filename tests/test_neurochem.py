@@ -71,6 +71,11 @@ class TestNeuroChem(unittest.TestCase):
         self.assertListEqual(list(O[6].weight.shape), [1, 96])
         self.assertEqual(len(O), 7)
 
+        self.assertEqual(trainer.init_lr, 0.001)
+        self.assertEqual(trainer.min_lr, 1e-5)
+        self.assertEqual(trainer.max_nonimprove, 1)
+        self.assertEqual(trainer.lr_decay, 0.1)
+
         trainer.load_data(dspath, dspath)
         trainer.run()
 
