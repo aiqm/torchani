@@ -522,7 +522,7 @@ class Trainer:
 
         # losses
         def l2():
-            return sum([c * w.norm(2) for c, w in l2reg])
+            return sum([c * w ** 2 for c, w in l2reg])
         self.mse_loss = TransformedLoss(MSELoss('energies'),
                                         lambda x: x + l2())
         self.exp_loss = TransformedLoss(
