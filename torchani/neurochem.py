@@ -509,8 +509,7 @@ class Trainer:
                 if 'l2norm' in layer:
                     if layer['l2norm'] == 1:
                         c = layer['l2valu']
-                        for w in module.parameters():
-                            l2reg.append((c, w))
+                        l2reg.append((c, module.weight))
                     del layer['l2norm']
                     del layer['l2valu']
                 if len(layer) > 0:
