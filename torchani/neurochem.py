@@ -511,11 +511,11 @@ class Trainer:
                         # NB: The "L2" implemented in NeuroChem is actually not
                         # L2 but weight decay. The difference of these two is:
                         # https://arxiv.org/pdf/1711.05101.pdf
-                        # There is a pull request on github/pytorch implementing
-                        # AdamW, etc.:
+                        # There is a pull request on github/pytorch
+                        # implementing AdamW, etc.:
                         # https://github.com/pytorch/pytorch/pull/4429
-                        # There is no plan to support the "L2" settings in input
-                        # file before AdamW get merged into pytorch.
+                        # There is no plan to support the "L2" settings in
+                        # input file before AdamW get merged into pytorch.
                         raise NotImplementedError('L2 not supported yet')
                         l2reg.append((0.5 * layer['l2valu'], module))
                     del layer['l2norm']
