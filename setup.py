@@ -17,7 +17,11 @@ setup_attrs = {
         'h5py',
     ],
     'test_suite': 'nose.collector',
-    'tests_require': ['nose'],
+    'tests_require': [
+        'nose',
+        'tensorboardX',
+        'tqdm',
+    ],
 }
 
 setup(**setup_attrs)
