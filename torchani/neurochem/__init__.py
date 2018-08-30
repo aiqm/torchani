@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tools for loading NeuroChem input files."""
+"""Tools for loading/running NeuroChem input files."""
 
 import pkg_resources
 import torch
@@ -12,11 +12,11 @@ import ignite
 import math
 import timeit
 from collections.abc import Mapping
-from .nn import ANIModel, Ensemble, Gaussian
-from .utils import EnergyShifter
-from .aev import AEVComputer
-from .ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MAEMetric
-from .data import BatchedANIDataset
+from ..nn import ANIModel, Ensemble, Gaussian
+from ..utils import EnergyShifter
+from ..aev import AEVComputer
+from ..ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MAEMetric
+from ..data import BatchedANIDataset
 
 
 class Constants(Mapping):
@@ -281,19 +281,20 @@ class Buildins:
     """
 
     def __init__(self):
+        parent_name = '.'.join(__name__.split('.')[:-1])
         self.const_file = pkg_resources.resource_filename(
-            __name__,
+            parent_name,
             'resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')
         self.consts = Constants(self.const_file)
         self.aev_computer = AEVComputer(**self.consts)
 
         self.sae_file = pkg_resources.resource_filename(
-            __name__, 'resources/ani-1x_dft_x8ens/sae_linfit.dat')
+            parent_name, 'resources/ani-1x_dft_x8ens/sae_linfit.dat')
         self.energy_shifter = load_sae(self.sae_file)
 
         self.ensemble_size = 8
         self.ensemble_prefix = pkg_resources.resource_filename(
-            __name__, 'resources/ani-1x_dft_x8ens/train')
+            parent_name, 'resources/ani-1x_dft_x8ens/train')
         self.models = load_model_ensemble(self.consts.species,
                                           self.ensemble_prefix,
                                           self.ensemble_size)
