@@ -23,7 +23,7 @@ nnp = torch.nn.Sequential(
     buildins.aev_computer,
     buildins.models[0],
     buildins.energy_shifter
-)
+).to(device)
 
 
 # load XYZ files
@@ -54,8 +54,8 @@ class XYZ:
                 atom_count -= 1
                 if atom_count == 0:
                     state = 'ready'
-                    species = buildins.consts.species_to_tensor(species)
-                    coordinates = torch.tensor(coordinates)
+                    species = buildins.consts.species_to_tensor(species).to(device)
+                    coordinates = torch.tensor(coordinates, device=device)
                     self.mols.append((species, coordinates))
                     coordinates = []
                     species = []
