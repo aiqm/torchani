@@ -508,8 +508,16 @@ class Trainer:
                 del layer['activation']
                 if 'l2norm' in layer:
                     if layer['l2norm'] == 1:
-                        c = layer['l2valu']
-                        l2reg.append((c, module.weight))
+                        # NB: The "L2" implemented in NeuroChem is actually not
+                        # L2 but weight decay. The difference of these two is:
+                        # https://arxiv.org/pdf/1711.05101.pdf
+                        # There is a pull request on github/pytorch
+                        # implementing AdamW, etc.:
+                        # https://github.com/pytorch/pytorch/pull/4429
+                        # There is no plan to support the "L2" settings in
+                        # input file before AdamW get merged into pytorch.
+                        raise NotImplementedError('L2 not supported yet')
+                        l2reg.append((0.5 * layer['l2valu'], module))
                     del layer['l2norm']
                     del layer['l2valu']
                 if len(layer) > 0:
@@ -522,7 +530,7 @@ class Trainer:
 
         # losses
         def l2():
-            return sum([c * w.norm(2) for c, w in l2reg])
+            return sum([c * (m.weight ** 2).sum() for c, m in l2reg])
         self.mse_loss = TransformedLoss(MSELoss('energies'),
                                         lambda x: x + l2())
         self.exp_loss = TransformedLoss(
