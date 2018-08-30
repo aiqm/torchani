@@ -54,7 +54,8 @@ class XYZ:
                 atom_count -= 1
                 if atom_count == 0:
                     state = 'ready'
-                    species = buildins.consts.species_to_tensor(species).to(device)
+                    species = buildins.consts.species_to_tensor(species) \
+                                      .to(device)
                     coordinates = torch.tensor(coordinates, device=device)
                     self.mols.append((species, coordinates))
                     coordinates = []
@@ -68,6 +69,9 @@ class XYZ:
 
 
 xyz = XYZ(parser.filename)
+
+print(len(xyz), 'conformations')
+print()
 
 # test batch mode
 print('[Batch mode]')

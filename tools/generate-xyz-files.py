@@ -1,15 +1,10 @@
 from ase import Atoms
-from ase.calculators.tip3p import TIP3P, rOH, angleHOH
 from ase.md import Langevin
 import ase.units as units
-import numpy
-import h5py
 from rdkit import Chem
 from rdkit.Chem import AllChem
 # from asap3 import EMT
 from ase.calculators.emt import EMT
-from multiprocessing import Pool
-from tqdm import tqdm, trange
 import argparse
 
 
