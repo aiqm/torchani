@@ -28,8 +28,8 @@ Utilities
 .. autofunction:: torchani.utils.strip_redundant_padding
 
 
-NeuroChem Importers
-===================
+NeuroChem Utils
+===============
 
 .. automodule:: torchani.neurochem
 .. autoclass:: torchani.neurochem.Constants
@@ -41,6 +41,7 @@ NeuroChem Importers
 .. autoclass:: torchani.neurochem.Buildins
 .. autoclass:: torchani.neurochem.Trainer
     :members:
+.. automodule:: torchani.neurochem.trainer
 
 
 Ignite Helpers
