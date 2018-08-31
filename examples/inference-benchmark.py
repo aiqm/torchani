@@ -18,11 +18,11 @@ parser = parser.parse_args()
 
 # set up benchmark
 device = torch.device(parser.device)
-buildins = torchani.neurochem.Buildins()
+builtins = torchani.neurochem.Builtins()
 nnp = torch.nn.Sequential(
-    buildins.aev_computer,
-    buildins.models[0],
-    buildins.energy_shifter
+    builtins.aev_computer,
+    builtins.models[0],
+    builtins.energy_shifter
 ).to(device)
 
 
@@ -54,7 +54,7 @@ class XYZ:
                 atom_count -= 1
                 if atom_count == 0:
                     state = 'ready'
-                    species = buildins.consts.species_to_tensor(species) \
+                    species = builtins.consts.species_to_tensor(species) \
                                       .to(device)
                     coordinates = torch.tensor(coordinates, device=device)
                     self.mols.append((species, coordinates))
