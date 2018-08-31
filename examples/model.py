@@ -3,10 +3,10 @@ import torchani
 import os
 
 
-buildins = torchani.neurochem.Buildins()
-consts = buildins.consts
-aev_computer = buildins.aev_computer
-shift_energy = buildins.energy_shifter
+builtins = torchani.neurochem.Builtins()
+consts = builtins.consts
+aev_computer = builtins.aev_computer
+shift_energy = builtins.energy_shifter
 
 
 def atomic():

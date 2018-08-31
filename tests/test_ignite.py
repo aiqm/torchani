@@ -16,12 +16,12 @@ threshold = 1e-5
 class TestIgnite(unittest.TestCase):
 
     def testIgnite(self):
-        buildins = torchani.neurochem.Buildins()
-        aev_computer = buildins.aev_computer
-        nnp = copy.deepcopy(buildins.models[0])
-        shift_energy = buildins.energy_shifter
+        builtins = torchani.neurochem.Builtins()
+        aev_computer = builtins.aev_computer
+        nnp = copy.deepcopy(builtins.models[0])
+        shift_energy = builtins.energy_shifter
         ds = torchani.data.BatchedANIDataset(
-            path, buildins.consts.species_to_tensor, batchsize,
+            path, builtins.consts.species_to_tensor, batchsize,
             transform=[shift_energy.subtract_from_dataset])
         ds = torch.utils.data.Subset(ds, [0])
 

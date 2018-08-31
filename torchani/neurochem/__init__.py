@@ -263,7 +263,7 @@ def load_model_ensemble(species, prefix, count):
     return Ensemble(models)
 
 
-class Buildins:
+class Builtins:
     """Container for all builtin stuffs.
 
     Attributes:
