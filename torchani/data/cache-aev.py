@@ -36,7 +36,7 @@ if __name__ == '__main__':
     aev_computer = aev.AEVComputer(**consts).to(device)
     dataset = BatchedANIDataset(parser.dataset, consts.species_to_tensor,
                                 parser.batchsize, shuffle=parser.shuffle,
-                                properties = [], device=device)
+                                properties=[], device=device)
     if parser.tqdm:
         import tqdm
         indices = tqdm.trange(len(dataset))
@@ -44,9 +44,9 @@ if __name__ == '__main__':
         indices = range(len(dataset))
 
     for i in indices:
-        i, _ = dataset[i]
-        aevs = [aev_computer(j) for j in i]
-        aevs = [(x.cpu(), y.cpu()) for x,y in aevs]
-        filename = os.path.join(parser.output, '{}')
+        input_, _ = dataset[i]
+        aevs = [aev_computer(j) for j in input_]
+        aevs = [(x.cpu(), y.cpu()) for x, y in aevs]
+        filename = os.path.join(parser.output, '{}'.format(i))
         with open(filename, 'wb') as f:
             pickle.dump(aevs, f)
