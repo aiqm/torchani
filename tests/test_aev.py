@@ -11,8 +11,8 @@ N = 97
 class TestAEV(unittest.TestCase):
 
     def setUp(self):
-        buildins = torchani.neurochem.Buildins()
-        self.aev_computer = buildins.aev_computer
+        builtins = torchani.neurochem.Builtins()
+        self.aev_computer = builtins.aev_computer
         self.radial_length = self.aev_computer.radial_length()
         self.tolerance = 1e-5
 

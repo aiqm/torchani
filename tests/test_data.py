@@ -6,8 +6,8 @@ import unittest
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, '../dataset')
 batch_size = 256
-buildins = torchani.neurochem.Buildins()
-consts = buildins.consts
+builtins = torchani.neurochem.Builtins()
+consts = builtins.consts
 
 
 class TestData(unittest.TestCase):

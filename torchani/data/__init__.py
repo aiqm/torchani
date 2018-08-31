@@ -6,7 +6,7 @@ from os.path import join, isfile, isdir
 import os
 from ._pyanitools import anidataloader
 import torch
-from . import utils
+from .. import utils
 
 
 def chunk_counts(counts, split):
