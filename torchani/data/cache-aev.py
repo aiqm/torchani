@@ -48,9 +48,8 @@ if __name__ == '__main__':
     aev_computer = aev.AEVComputer(**consts).to(device)
     dataset = BatchedANIDataset(parser.dataset, consts.species_to_tensor,
                                 parser.batchsize, shuffle=parser.shuffle,
-                                properties=parser.properties,
-                                dtype=getattr(torch, parser.dtype),
-                                device=device)
+                                properties=parser.properties, device=device,
+                                dtype=getattr(torch, parser.dtype))
 
     # dump out the dataset
     filename = os.path.join(parser.output, 'dataset')
