@@ -51,17 +51,17 @@ if __name__ == '__main__':
                                 properties=parser.properties,
                                 dtype=getattr(torch, parser.dtype),
                                 device=device)
-    if parser.tqdm:
-        import tqdm
-        indices = tqdm.trange(len(dataset))
-    else:
-        indices = range(len(dataset))
 
     # dump out the dataset
     filename = os.path.join(parser.output, 'dataset')
     with open(filename, 'wb') as f:
         pickle.dump(dataset, f)
 
+    if parser.tqdm:
+        import tqdm
+        indices = tqdm.trange(len(dataset))
+    else:
+        indices = range(len(dataset))
     for i in indices:
         input_, _ = dataset[i]
         aevs = [aev_computer(j) for j in input_]
