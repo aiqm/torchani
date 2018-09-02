@@ -30,7 +30,7 @@ steps:
       - python examples/energy_force.py
       - python tools/training-benchmark.py ./dataset/ani_gdb_s01.h5
       - python tools/neurochem-test.py ./dataset/ani_gdb_s01.h5
-      - python tools/inference-benchmark.py --tqdm examples/xyz_files/CH4-5.xyz
+      - python tools/inference-benchmark.py --tqdm ./xyz_files/CH4-5.xyz
       - python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.ipt  dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5
       - python -m torchani.data.cache_aev tmp dataset/ani_gdb_s01.h5 256
 
