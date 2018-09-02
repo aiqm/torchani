@@ -3,6 +3,7 @@ import torchani
 import torch
 import os
 import timeit
+import tqdm
 
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -14,6 +15,8 @@ parser.add_argument('filename',
 parser.add_argument('-d', '--device',
                     help='Device of modules and tensors',
                     default=('cuda' if torch.cuda.is_available() else 'cpu'))
+parser.add_argument('--tqdm', dest='tqdm', action='store_true',
+                    help='Whether to use tqdm to display progress')
 parser = parser.parse_args()
 
 # set up benchmark
@@ -88,6 +91,8 @@ print()
 # test single mode
 print('[Single mode]')
 start = timeit.default_timer()
+if parser.tqdm:
+    xyz = tqdm.tqdm(xyz)
 for species, coordinates in xyz:
     species = species.unsqueeze(0)
     coordinates = torch.tensor(coordinates.unsqueeze(0), requires_grad=True)
