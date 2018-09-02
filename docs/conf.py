@@ -1,4 +1,5 @@
 import torchani  # noqa: F401
+import sphinx_gallery
 import sphinx_rtd_theme
 
 project = 'TorchANI'
@@ -14,6 +15,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
+    'sphinx_gallery.gen_gallery',
 ]
 
 templates_path = ['_templates']
@@ -25,6 +27,11 @@ pygments_style = 'sphinx'
 html_theme = 'sphinx_rtd_theme'
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 htmlhelp_basename = 'TorchANIdoc'
+
+sphinx_gallery_conf = {
+     'examples_dirs': '../examples',
+     'gallery_dirs': 'examples',
+}
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/', None),
