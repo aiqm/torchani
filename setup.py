@@ -21,6 +21,7 @@ setup_attrs = {
         'nose',
         'tensorboardX',
         'tqdm',
+        'sphinx_rtd_theme',
     ],
 }
 
