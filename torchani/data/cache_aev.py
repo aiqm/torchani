@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""AEVs for a dataset can be precomputed by invoking
+``python -m torchani.data.cache_aev``, this would dump the dataset and
+computed aevs. Use the ``-h`` option for help.
+"""
+
 import os
 import torch
 from .. import aev, neurochem
@@ -18,6 +24,12 @@ if __name__ == '__main__':
     parser.add_argument('--constfile',
                         help='Path of the constant file `.params`',
                         default=builtin.const_file)
+    parser.add_argument('--properties', nargs='+',
+                        help='Output properties to load.`',
+                        default=['energies'])
+    parser.add_argument('--dtype',
+                        help='Data type',
+                        default=str(torch.get_default_dtype()).split('.')[1])
     default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
     parser.add_argument('-d', '--device', help='Device for training',
                         default=default_device)
@@ -36,13 +48,19 @@ if __name__ == '__main__':
     aev_computer = aev.AEVComputer(**consts).to(device)
     dataset = BatchedANIDataset(parser.dataset, consts.species_to_tensor,
                                 parser.batchsize, shuffle=parser.shuffle,
-                                properties=[], device=device)
+                                properties=parser.properties, device=device,
+                                dtype=getattr(torch, parser.dtype))
+
+    # dump out the dataset
+    filename = os.path.join(parser.output, 'dataset')
+    with open(filename, 'wb') as f:
+        pickle.dump(dataset, f)
+
     if parser.tqdm:
         import tqdm
         indices = tqdm.trange(len(dataset))
     else:
         indices = range(len(dataset))
-
     for i in indices:
         input_, _ = dataset[i]
         aevs = [aev_computer(j) for j in input_]
