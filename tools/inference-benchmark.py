@@ -1,7 +1,6 @@
 import argparse
 import torchani
 import torch
-import os
 import timeit
 import tqdm
 

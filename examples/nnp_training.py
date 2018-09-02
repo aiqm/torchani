@@ -26,7 +26,10 @@ import sys
 # serious training.
 
 # training and validation set
-path = os.path.dirname(os.path.realpath(torchani.__file__))
+try:
+    path = os.path.dirname(os.path.realpath(__file__))
+except NameError:
+    path = os.getcwd()
 training_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
 validation_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
 
@@ -54,8 +57,8 @@ log = 'runs'
 ###############################################################################
 # Now let's read our constants and self energies from constant files and
 # construct AEV computer.
-const_file = os.path.join(path, 'resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
-sae_file = os.path.join(path, 'resources/ani-1x_dft_x8ens/sae_linfit.dat')  # noqa: E501
+const_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
+sae_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/sae_linfit.dat')  # noqa: E501
 consts = torchani.neurochem.Constants(const_file)
 aev_computer = torchani.AEVComputer(**consts)
 energy_shifter = torchani.neurochem.load_sae(sae_file)

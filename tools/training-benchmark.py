@@ -37,6 +37,8 @@ def atomic():
         torch.nn.Linear(64, 1)
     )
     return model
+
+
 model = torchani.ANIModel([atomic() for _ in range(4)])
 
 
