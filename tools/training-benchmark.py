@@ -2,7 +2,6 @@ import torch
 import ignite
 import torchani
 import timeit
-import model
 import tqdm
 import argparse
 
@@ -21,11 +20,37 @@ parser = parser.parse_args()
 
 # set up benchmark
 device = torch.device(parser.device)
-nnp = model.get_or_create_model('/tmp/model.pt', device=device)
+builtins = torchani.neurochem.Builtins()
+consts = builtins.consts
+aev_computer = builtins.aev_computer
+shift_energy = builtins.energy_shifter
+
+
+def atomic():
+    model = torch.nn.Sequential(
+        torch.nn.Linear(384, 128),
+        torch.nn.CELU(0.1),
+        torch.nn.Linear(128, 128),
+        torch.nn.CELU(0.1),
+        torch.nn.Linear(128, 64),
+        torch.nn.CELU(0.1),
+        torch.nn.Linear(64, 1)
+    )
+    return model
+model = torchani.ANIModel([atomic() for _ in range(4)])
+
+
+class Flatten(torch.nn.Module):
+    def forward(self, x):
+        return x[0], x[1].flatten()
+
+
+nnp = torch.nn.Sequential(aev_computer, model, Flatten()).to(device)
+
 dataset = torchani.data.BatchedANIDataset(
-    parser.dataset_path, model.consts.species_to_tensor,
+    parser.dataset_path, consts.species_to_tensor,
     parser.batch_size, device=device,
-    transform=[model.shift_energy.subtract_from_dataset])
+    transform=[shift_energy.subtract_from_dataset])
 container = torchani.ignite.Container({'energies': nnp})
 optimizer = torch.optim.Adam(nnp.parameters())
 
