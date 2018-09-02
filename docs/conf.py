@@ -1,5 +1,4 @@
 import torchani  # noqa: F401
-import sphinx_gallery
 import sphinx_rtd_theme
 
 project = 'TorchANI'
@@ -31,7 +30,7 @@ htmlhelp_basename = 'TorchANIdoc'
 sphinx_gallery_conf = {
      'examples_dirs': '../examples',
      'gallery_dirs': 'examples',
-     'filename_pattern': '.*\.py'
+     'filename_pattern': r'.*\.py'
 }
 
 intersphinx_mapping = {

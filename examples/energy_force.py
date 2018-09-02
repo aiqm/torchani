@@ -4,13 +4,14 @@ Computing Energy and Force Using Builtin Models
 ===============================================
 
 TorchANI has a model ensemble trained by NeuroChem on the `ANI-1x dataset`_.
-These models are shipped with TorchANI and can be used directly. To begin with,
-let's first import the modules we will use:
+These models are shipped with TorchANI and can be used directly.
 
 .. _ANI-1x dataset:
   https://aip.scitation.org/doi/abs/10.1063/1.5023802
 """
 
+###############################################################################
+# To begin with, let's first import the modules we will use:
 import torch
 import torchani
 

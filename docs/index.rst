@@ -2,6 +2,10 @@
 Welcome to TorchANI's documentation!
 ====================================
 
+Use NeuroChem Trainer to Train Neural Network Potential From NeuroChem Input File
+
+Precompute AEVs to Improve Training Performance
+
 .. automodule:: torchani
 
 .. toctree::
@@ -15,6 +19,7 @@ Welcome to TorchANI's documentation!
     :caption: Examples
 
     examples/energy_force
+    examples/nnp_training
 
 .. toctree::
     :maxdepth: 2
