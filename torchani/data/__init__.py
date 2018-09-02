@@ -132,11 +132,7 @@ class BatchedANIDataset(Dataset):
                  shuffle=True, properties=['energies'], transform=(),
                  dtype=torch.get_default_dtype(), device=torch.device('cpu')):
         super(BatchedANIDataset, self).__init__()
-        self.path = path
-        self.batch_size = batch_size
-        self.shuffle = shuffle
         self.properties = properties
-        self.dtype = dtype
         self.device = device
 
         # get name of files storing data
