@@ -31,9 +31,9 @@ steps:
       - python examples/training-benchmark.py ./dataset/ani_gdb_s01.h5  # run twice to test if checkpoint is working
       - python examples/energy_force.py
       - python examples/neurochem-test.py ./dataset/ani_gdb_s01.h5
-      - python examples/inference-benchmark.py examples/xyz_files/CH4-5.xyz
-      - python -m torchani.neurochem.trainer tests/test_data/inputtrain.ipt  dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5
-      - python -m torchani.data.cache-aev tmp dataset/ani_gdb_s01.h5 256
+      - python examples/inference-benchmark.py --tqdm examples/xyz_files/CH4-5.xyz
+      - python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.ipt  dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5
+      - python -m torchani.data.cache_aev tmp dataset/ani_gdb_s01.h5 256
 
   Docs:
     image: '${{BuildTorchANI}}'
