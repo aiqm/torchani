@@ -15,6 +15,7 @@ setup_attrs = {
         'pytorch-ignite',
         'lark-parser',
         'h5py',
+        'sphinx_rtd_theme',
     ],
     'test_suite': 'nose.collector',
     'tests_require': [
