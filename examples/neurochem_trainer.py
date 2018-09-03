@@ -73,5 +73,5 @@ print(' '.join(cmd))
 # Now let's invoke this command to see what we get. Again, we redirect stderr
 # to stdout simplify for sphinx-gallery to be able to capture it when
 # generating this document:
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE  # noqa: E402
 print(Popen(cmd, stderr=PIPE).stderr.read().decode('utf-8'))
