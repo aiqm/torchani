@@ -5,9 +5,11 @@ import unittest
 
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, '../dataset')
+dataset_path2 = os.path.join(path, '../dataset/')
 batch_size = 256
 builtins = torchani.neurochem.Builtins()
 consts = builtins.consts
+aev_computer = builtins.aev_computer
 
 
 class TestData(unittest.TestCase):
@@ -73,6 +75,18 @@ class TestData(unittest.TestCase):
                 species, _ = input
                 non_padding = (species >= 0)[:, -1].nonzero()
                 self.assertGreater(non_padding.numel(), 0)
+
+    def testAEVFactory(self):
+        tmpdir = os.path.join(os.getcwd(), 'tmp')
+        if not os.path.exists(tmpdir):
+            os.makedirs(tmpdir)
+        aev_factory = torchani.data.AEVFactory(aev_computer, tmpdir,
+                                               self.ds)
+        aevs_nocache = [x for x, _ in aev_factory]
+        aevs_cached = [x for x, _ in aev_factory]
+        for (s1, a1), (s2, a2) in zip(aevs_nocache, aevs_cached):
+            self._assertTensorEqual(s1, s2)
+            self._assertTensorEqual(a1, a2)
 
 
 if __name__ == '__main__':

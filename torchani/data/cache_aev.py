@@ -7,8 +7,7 @@ computed aevs. Use the ``-h`` option for help.
 import os
 import torch
 from .. import aev, neurochem
-from . import BatchedANIDataset
-import pickle
+from . import BatchedANIDataset, AEVFactory
 
 
 if __name__ == '__main__':
@@ -51,20 +50,10 @@ if __name__ == '__main__':
                                 properties=parser.properties, device=device,
                                 dtype=getattr(torch, parser.dtype))
 
-    # dump out the dataset
-    filename = os.path.join(parser.output, 'dataset')
-    with open(filename, 'wb') as f:
-        pickle.dump(dataset, f)
-
+    # iterate through aev factory once to prepare for cache
+    aev_factory = AEVFactory(aev_computer, parser.output, dataset)
     if parser.tqdm:
         import tqdm
-        indices = tqdm.trange(len(dataset))
-    else:
-        indices = range(len(dataset))
-    for i in indices:
-        input_, _ = dataset[i]
-        aevs = [aev_computer(j) for j in input_]
-        aevs = [(x.cpu(), y.cpu()) for x, y in aevs]
-        filename = os.path.join(parser.output, '{}'.format(i))
-        with open(filename, 'wb') as f:
-            pickle.dump(aevs, f)
+        aev_factory = tqdm.tqdm(aev_factory)
+    for i in aev_factory:
+        pass

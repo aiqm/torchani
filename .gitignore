@@ -6,7 +6,7 @@ __pycache__
 a.out
 /test.py
 /.vscode
-/build
+/build*
 /.eggs
 /torchani.egg-info
 /*.h5

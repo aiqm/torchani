@@ -7,6 +7,7 @@ import os
 from ._pyanitools import anidataloader
 import torch
 from .. import utils
+import pickle
 
 
 def chunk_counts(counts, split):
@@ -217,3 +218,106 @@ class BatchedANIDataset(Dataset):
 
     def __len__(self):
         return len(self.batches)
+
+
+def _disk_cache_loader(index_queue, tensor_queue, dataset, disk_cache,
+                       aev_computer):
+    """Get index, load if already cached, otherwise compute and cache."""
+    while True:
+        index = index_queue.get()
+        if disk_cache is not None:
+            aev_path = os.path.join(disk_cache, str(index))
+        if disk_cache is not None and os.path.isfile(aev_path):
+            with open(aev_path, 'rb') as f:
+                species_aevs = pickle.load(f)
+        else:
+            input_, _ = dataset[index]
+            species_aevs = [aev_computer(j) for j in input_]
+            species_aevs = [(x.cpu(), y.cpu()) for x, y in species_aevs]
+            with open(aev_path, 'wb') as f:
+                pickle.dump(species_aevs, f)
+        for x, y in species_aevs:
+            x.share_memory_()
+            y.share_memory_()
+        tensor_queue.put(species_aevs)
+
+
+class AEVFactory:
+    """Build a factory for AEV.
+
+    The computation of AEV is the most time consuming part during training.
+    Since during training, the AEV never changes, it is not hard to see that:
+
+    - The computation of AEV and training of neural network can be overlapped.
+    - If we have a fast enough storage (this is usually the case for good
+      SSDs, but not for HDD), we could cache the computed AEVs into disk and
+      load it rather than compute it from scratch everytime we use it.
+
+    These two observations motivate this AEV factory that use multiprocessing
+    to boost the computation of AEV.
+
+    Arguments:
+        aev_computer (:class:`torchani.AEVComputer`): The AEV computer used to
+            compute AEVs. Can be ``None`` if all the AEVs has been computed and
+            cached before.
+        disk_cache (str): Directory storing disk caches. Set to ``None`` to
+            disable disk caching.
+        dataset (:class:`BatchedANIDataset`): The original dataset. Can be
+            ``None`` if already in disk cache.
+        in_memory_size (int): Number of batches stored in host memory.
+    """
+
+    def __init__(self, aev_computer=None, disk_cache=None, dataset=None,
+                 in_memory_size=64):
+        self.current = 0
+        self.aev_computer = aev_computer
+        self.disk_cache = disk_cache
+
+        # if disk cache is enabled, first dump the whole dataset if we have
+        # not already done so. If dataset is not given, then try to load from
+        # disk cache.
+        if disk_cache is not None:
+            dataset_path = os.path.join(disk_cache, 'dataset')
+            if dataset is not None:
+                if not os.path.isfile(dataset_path):
+                    with open(dataset_path, 'wb') as f:
+                        pickle.dump(dataset, f)
+            else:
+                with open(dataset_path, 'rb') as f:
+                    dataset = pickle.load(f)
+        self.dataset = dataset
+
+        # initialize queues and processes
+        self.tensor_queue = torch.multiprocessing.Queue()
+        self.index_queue = torch.multiprocessing.Queue()
+        self.in_memory_size = in_memory_size
+        if len(dataset) < in_memory_size:
+            self.in_memory_size = len(dataset)
+        for i in range(in_memory_size):
+            self.index_queue.put(i)
+        self.loader = torch.multiprocessing.Process(
+            target=_disk_cache_loader,
+            args=(self.index_queue, self.tensor_queue, dataset, disk_cache,
+                  aev_computer)
+        )
+        self.loader.start()
+
+    def __iter__(self):
+        if self.current != 0:
+            raise ValueError('Only one iterator of AEVFactory is allowed')
+        else:
+            return self
+
+    def __next__(self):
+        if self.current < len(self.dataset):
+            self.current += 1
+            new_idx = (self.current + self.in_memory_size) % len(self.dataset)
+            self.index_queue.put(new_idx)
+            species_aevs = self.tensor_queue.get()
+            species_aevs = [(x.to(self.dataset.device), y.to(self.dataset.device))
+                            for x, y in species_aevs]
+            _, output = self.dataset[self.current - 1]
+            return species_aevs, output
+        else:
+            self.current = 0
+            raise StopIteration
