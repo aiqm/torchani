@@ -23,7 +23,10 @@ import sys
 # , we set both training set and validation set the ``ani_gdb_s01.h5`` in
 # TorchANI's repository. This allows this program to finish very quick, because
 # that dataset is very small. But this is wrong and should be avoided for any
-# serious training.
+# serious training. These paths assumes the user run this script under the
+# ``examples`` directory of TorchANI's repository. If you download this script,
+# you should manually set the path of these files in your system before this
+# script can run successfully.
 
 # training and validation set
 try:
@@ -66,7 +69,7 @@ energy_shifter = torchani.neurochem.load_sae(sae_file)
 
 ###############################################################################
 # Now let's define atomic neural networks. Here in this demo, we use the same
-# size of neural network for all atom types, but his is not necessary.
+# size of neural network for all atom types, but this is not necessary.
 def atomic():
     model = torch.nn.Sequential(
         torch.nn.Linear(384, 128),
