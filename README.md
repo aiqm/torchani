@@ -18,7 +18,11 @@ After installing the correct PyTorch, all you need is clone the repository and d
 pip install .
 ```
 
-After TorchANI has been installed, you can build the documents by running `sphinx-build docs build`.
+After TorchANI has been installed, you can build the documents by running `sphinx-build docs build`. But make sure you
+install dependencies:
+```bash
+pip install sphinx sphinx-gallery pillow matplotlib sphinx_rtd_theme
+```
 
 # Paper
 
