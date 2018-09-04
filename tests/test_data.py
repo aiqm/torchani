@@ -2,10 +2,11 @@ import os
 import torch
 import torchani
 import unittest
+from torchani.data.cache_aev import cache_aev
 
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, '../dataset')
-dataset_path2 = os.path.join(path, '../dataset/')
+dataset_path2 = os.path.join(path, '../dataset/ani_gdb_s01.h5')
 batch_size = 256
 builtins = torchani.neurochem.Builtins()
 consts = builtins.consts
@@ -20,7 +21,7 @@ class TestData(unittest.TestCase):
                                                   batch_size)
 
     def _assertTensorEqual(self, t1, t2):
-        self.assertEqual((t1-t2).abs().max(), 0)
+        self.assertEqual((t1-t2).abs().max().item(), 0)
 
     def testSplitBatch(self):
         species1 = torch.randint(4, (5, 4), dtype=torch.long)
@@ -80,9 +81,18 @@ class TestData(unittest.TestCase):
         tmpdir = os.path.join(os.getcwd(), 'tmp')
         if not os.path.exists(tmpdir):
             os.makedirs(tmpdir)
-        aev_factory = torchani.data.AEVCacheLoader(tmpdir)
-        for k in aev_factory:
-            pass #TODO
+        cache_aev(tmpdir, dataset_path2, 64, enable_tqdm=False)
+        loader = torchani.data.AEVCacheLoader(tmpdir)
+        ds = loader.dataset
+        aev_computer_dev = aev_computer.to(loader.dataset.device)
+        for (species_aevs, _), (species_coordinates, _) in zip(loader, ds):
+            print('outer loop')
+            for (s1, a), (s2, c) in zip(species_aevs, species_coordinates):
+                print(s1.shape, s2.shape)
+                self._assertTensorEqual(s1, s2)
+                s2, a2 = aev_computer_dev((s2, c))
+                self._assertTensorEqual(s1, s2)
+                self._assertTensorEqual(a, a2)
 
 if __name__ == '__main__':
     unittest.main()

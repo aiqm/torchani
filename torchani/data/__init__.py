@@ -220,7 +220,7 @@ class BatchedANIDataset(Dataset):
         return len(self.batches)
 
 
-def _disk_cache_loader(index_queue, tensor_queue, disk_cache):
+def _disk_cache_loader(index_queue, tensor_queue, disk_cache, device):
     """Get index and load from disk cache."""
     while True:
         index = index_queue.get()
@@ -261,7 +261,8 @@ class AEVCacheLoader:
             self.index_queue.put(i)
         self.loader = torch.multiprocessing.Process(
             target=_disk_cache_loader,
-            args=(self.index_queue, self.tensor_queue, disk_cache)
+            args=(self.index_queue, self.tensor_queue, disk_cache,
+                  self.dataset.device)
         )
         self.loader.start()
 
@@ -277,7 +278,8 @@ class AEVCacheLoader:
             new_idx = (self.current + self.in_memory_size) % len(self.dataset)
             self.index_queue.put(new_idx)
             species_aevs = self.tensor_queue.get()
-            species_aevs = [(x.to(self.dataset.device), y.to(self.dataset.device))
+            species_aevs = [(x.to(self.dataset.device),
+                             y.to(self.dataset.device))
                             for x, y in species_aevs]
             _, output = self.dataset[self.current - 1]
             return species_aevs, output
@@ -286,4 +288,4 @@ class AEVCacheLoader:
             raise StopIteration
 
     def __del__(self):
-        self.loader.join()
+        self.loader.terminate()
