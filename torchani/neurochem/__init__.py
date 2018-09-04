@@ -673,3 +673,7 @@ class Trainer:
             decorate(trainer)
             trainer.run(self.training_set, max_epochs=math.inf)
             lr *= self.lr_decay
+
+
+__all__ = ['Constants', 'load_sae', 'load_model', 'load_model_ensemble',
+           'Trainer']

@@ -122,3 +122,6 @@ class EnergyShifter(torch.nn.Module):
         species, energies = species_energies
         sae = self.sae(species).to(energies.dtype).to(energies.device)
         return species, energies + sae
+
+
+__all__ = ['pad_and_batch', 'present_species', 'strip_redundant_padding']

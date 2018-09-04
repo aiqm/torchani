@@ -288,3 +288,6 @@ class AEVCacheLoader:
 
     def __del__(self):
         self.loader.terminate()
+
+
+__all__ = ['BatchedANIDataset', 'AEVCacheLoader']
