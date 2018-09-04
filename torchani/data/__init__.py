@@ -267,12 +267,11 @@ class AEVCacheLoader:
 
     def __iter__(self):
         if self.current != 0:
-            raise ValueError('Only one iterator of AEVFactory is allowed')
+            raise ValueError('Only one iterator of AEVCacheLoader is allowed')
         else:
             return self
 
     def __next__(self):
-        print('next')
         if self.current < len(self.dataset):
             self.current += 1
             new_idx = (self.current + self.in_memory_size) % len(self.dataset)
