@@ -90,10 +90,10 @@ class BatchedANIDataset(Dataset):
     into chunks according to some heuristics, so that each chunk would only
     have molecules of similar size, to minimize the padding required.
 
-    So, when iterating on this dataset, a tuple will be yeilded. The first
+    So, when iterating on this dataset, a tuple will be yielded. The first
     element of this tuple is a list of (species, coordinates) pairs. Each pair
     is a chunk of molecules of similar size. The second element of this tuple
-    would be a dictonary, where the keys are those specified in the argument
+    would be a dictionary, where the keys are those specified in the argument
     :attr:`properties`, and values are a single tensor of the whole batch
     (properties are not splitted into chunks).
 
