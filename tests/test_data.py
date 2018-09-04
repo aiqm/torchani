@@ -92,5 +92,6 @@ class TestData(unittest.TestCase):
                 self._assertTensorEqual(s1, s2)
                 self._assertTensorEqual(a, a2)
 
+
 if __name__ == '__main__':
     unittest.main()

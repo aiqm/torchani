@@ -273,14 +273,14 @@ class AEVCacheLoader:
 
     def __next__(self):
         if self.current < len(self.dataset):
-            self.current += 1
-            new_idx = (self.current + self.in_memory_size - 1) % len(self.dataset)
+            new_idx = (self.current + self.in_memory_size) % len(self.dataset)
             self.index_queue.put(new_idx)
             species_aevs = self.tensor_queue.get()
             species_aevs = [(x.to(self.dataset.device),
                              y.to(self.dataset.device))
                             for x, y in species_aevs]
-            _, output = self.dataset[self.current - 1]
+            _, output = self.dataset[self.current]
+            self.current += 1
             return species_aevs, output
         else:
             self.current = 0
