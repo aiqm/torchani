@@ -85,12 +85,13 @@ class TestData(unittest.TestCase):
         loader = torchani.data.AEVCacheLoader(tmpdir)
         ds = loader.dataset
         aev_computer_dev = aev_computer.to(loader.dataset.device)
-        for (species_aevs, _), (species_coordinates, _) in zip(loader, ds):
-            for (s1, a), (s2, c) in zip(species_aevs, species_coordinates):
-                self._assertTensorEqual(s1, s2)
-                s2, a2 = aev_computer_dev((s2, c))
-                self._assertTensorEqual(s1, s2)
-                self._assertTensorEqual(a, a2)
+        for _ in range(3):
+            for (species_aevs, _), (species_coordinates, _) in zip(loader, ds):
+                for (s1, a), (s2, c) in zip(species_aevs, species_coordinates):
+                    self._assertTensorEqual(s1, s2)
+                    s2, a2 = aev_computer_dev((s2, c))
+                    self._assertTensorEqual(s1, s2)
+                    self._assertTensorEqual(a, a2)
 
 
 if __name__ == '__main__':
