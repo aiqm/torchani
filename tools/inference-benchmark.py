@@ -1,12 +1,9 @@
 import argparse
 import torchani
 import torch
-import os
 import timeit
 import tqdm
 
-
-path = os.path.dirname(os.path.realpath(__file__))
 
 # parse command line arguments
 parser = argparse.ArgumentParser()

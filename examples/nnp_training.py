@@ -1,71 +1,161 @@
+# -*- coding: utf-8 -*-
+"""
+Train Your Own Neural Network Potential
+=======================================
+
+This example shows how to use TorchANI train your own neural network potential.
+"""
+
+###############################################################################
+# To begin with, let's first import the modules we will use:
 import torch
 import ignite
 import torchani
-import model
 import tqdm
 import timeit
 import tensorboardX
-import math
-import argparse
-import json
+import os
+import sys
 
-# parse command line arguments
-parser = argparse.ArgumentParser()
-parser.add_argument('training_path',
-                    help='Path of the training set, can be a hdf5 file \
-                          or a directory containing hdf5 files')
-parser.add_argument('validation_path',
-                    help='Path of the validation set, can be a hdf5 file \
-                          or a directory containing hdf5 files')
-parser.add_argument('--model_checkpoint',
-                    help='Checkpoint file for model',
-                    default='model.pt')
-parser.add_argument('-m', '--max_epochs',
-                    help='Maximum number of epoches',
-                    default=300, type=int)
-parser.add_argument('--training_rmse_every',
-                    help='Compute training RMSE every epoches',
-                    default=20, type=int)
-parser.add_argument('-d', '--device',
-                    help='Device of modules and tensors',
-                    default=('cuda' if torch.cuda.is_available() else 'cpu'))
-parser.add_argument('--batch_size',
-                    help='Number of conformations of each batch',
-                    default=1024, type=int)
-parser.add_argument('--log',
-                    help='Log directory for tensorboardX',
-                    default=None)
-parser.add_argument('--optimizer',
-                    help='Optimizer used to train the model',
-                    default='Adam')
-parser.add_argument('--optim_args',
-                    help='Arguments to optimizers, in the format of json',
-                    default='{}')
-parser.add_argument('--early_stopping',
-                    help='Stop after epoches of no improvements',
-                    default=math.inf, type=int)
-parser = parser.parse_args()
 
-# set up the training
-device = torch.device(parser.device)
-writer = tensorboardX.SummaryWriter(log_dir=parser.log)
-start = timeit.default_timer()
+###############################################################################
+# Now let's setup training hyperparameters. Note that here for our demo purpose
+# , we set both training set and validation set the ``ani_gdb_s01.h5`` in
+# TorchANI's repository. This allows this program to finish very quick, because
+# that dataset is very small. But this is wrong and should be avoided for any
+# serious training. These paths assumes the user run this script under the
+# ``examples`` directory of TorchANI's repository. If you download this script,
+# you should manually set the path of these files in your system before this
+# script can run successfully.
 
-nnp = model.get_or_create_model(parser.model_checkpoint, device=device)
+# training and validation set
+try:
+    path = os.path.dirname(os.path.realpath(__file__))
+except NameError:
+    path = os.getcwd()
+training_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+validation_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+
+# checkpoint file to save model when validation RMSE improves
+model_checkpoint = 'model.pt'
+
+# max epochs to run the training
+max_epochs = 20
+
+# Compute training RMSE every this steps. Since the training set is usually
+# huge and the loss funcition does not directly gives us RMSE, we need to
+# check the training RMSE to see overfitting.
+training_rmse_every = 5
+
+# device to run the training
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# batch size
+batch_size = 1024
+
+# log directory for tensorboardX
+log = 'runs'
+
+
+###############################################################################
+# Now let's read our constants and self energies from constant files and
+# construct AEV computer.
+const_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
+sae_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/sae_linfit.dat')  # noqa: E501
+consts = torchani.neurochem.Constants(const_file)
+aev_computer = torchani.AEVComputer(**consts)
+energy_shifter = torchani.neurochem.load_sae(sae_file)
+
+
+###############################################################################
+# Now let's define atomic neural networks. Here in this demo, we use the same
+# size of neural network for all atom types, but this is not necessary.
+def atomic():
+    model = torch.nn.Sequential(
+        torch.nn.Linear(384, 128),
+        torch.nn.CELU(0.1),
+        torch.nn.Linear(128, 128),
+        torch.nn.CELU(0.1),
+        torch.nn.Linear(128, 64),
+        torch.nn.CELU(0.1),
+        torch.nn.Linear(64, 1)
+    )
+    return model
+
+
+model = torchani.ANIModel([atomic() for _ in range(4)])
+print(model)
+
+
+###############################################################################
+# The output energy tensor has shape ``(N, 1)`` where ``N`` is the number of
+# different structures in each minibatch. However, in the dataset, the label
+# has shape ``(N,)``. To make it possible to subtract these two tensors, we
+# need to flatten the output tensor.
+class Flatten(torch.nn.Module):
+    def forward(self, x):
+        return x[0], x[1].flatten()
+
+
+model = torch.nn.Sequential(aev_computer, model, Flatten())
+
+###############################################################################
+# If checkpoint from previous training exists, then load it.
+if os.path.isfile(model_checkpoint):
+    model.load_state_dict(torch.load(model_checkpoint))
+else:
+    torch.save(model.state_dict(), model_checkpoint)
+model.to(device)
+
+
+###############################################################################
+# Now setup tensorboardX.
+writer = tensorboardX.SummaryWriter(log_dir=log)
+
+###############################################################################
+# Now load training and validation datasets into memory. Note that we need to
+# subtracting energies by the self energies of all atoms for each molecule.
+# This makes the range of energies in a reasonable range. The second argument
+# defines how to convert species as a list of string to tensor, that is, for
+# all supported chemical symbols, which is correspond to ``0``, which
+# correspond to ``1``, etc.
 training = torchani.data.BatchedANIDataset(
-    parser.training_path, model.consts.species_to_tensor,
-    parser.batch_size, device=device,
-    transform=[model.shift_energy.subtract_from_dataset])
+    training_path, consts.species_to_tensor, batch_size, device=device,
+    transform=[energy_shifter.subtract_from_dataset])
+
 validation = torchani.data.BatchedANIDataset(
-    parser.validation_path, model.consts.species_to_tensor,
-    parser.batch_size, device=device,
-    transform=[model.shift_energy.subtract_from_dataset])
-container = torchani.ignite.Container({'energies': nnp})
+    validation_path, consts.species_to_tensor, batch_size, device=device,
+    transform=[energy_shifter.subtract_from_dataset])
 
-parser.optim_args = json.loads(parser.optim_args)
-optimizer = getattr(torch.optim, parser.optimizer)
-optimizer = optimizer(nnp.parameters(), **parser.optim_args)
-
+###############################################################################
+# When iterating the dataset, we will get pairs of input and output
+# ``(species_coordinates, properties)``, where ``species_coordinates`` is the
+# input and ``properties`` is the output.
+#
+# ``species_coordinates`` is a list of species-coordinate pairs, with shape
+# ``(N, Na)`` and ``(N, Na, 3)``. The reason for getting this type is, when
+# loading the dataset and generating minibatches, the whole dataset are
+# shuffled and each minibatch contains structures of molecules with a wide
+# range of number of atoms. Molecules of different number of atoms are batched
+# into single by padding. The way padding works is: adding ghost atoms, with
+# species 'X', and do computations as if they were normal atoms. But when
+# computing AEVs, atoms with species `X` would be ignored. To avoid computation
+# wasting on padding atoms, minibatches are further splitted into chunks. Each
+# chunk contains structures of molecules of similar size, which minimize the
+# total number of padding atoms required to add. The input list
+# ``species_coordinates`` contains chunks of that minibatch we are getting. The
+# batching and chunking happens automatically, so the user does not need to
+# worry how to construct chunks, but the user need to compute the energies for
+# each chunk and concat them into single tensor.
+#
+# The output, i.e. ``properties`` is a dictionary holding each property. This
+# allows us to extend TorchANI in the future to training forces and properties.
+#
+# We have tools to deal with these data types at :attr:`torchani.ignite` that
+# allow us to easily combine the dataset with pytorch ignite. These tools can
+# be used as follows:
+container = torchani.ignite.Container({'energies': model})
+optimizer = torch.optim.Adam(model.parameters())
 trainer = ignite.engine.create_supervised_trainer(
     container, optimizer, torchani.ignite.MSELoss('energies'))
 evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
@@ -73,19 +163,12 @@ evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
     })
 
 
-def hartree2kcal(x):
-    return 627.509 * x
-
-
-@trainer.on(ignite.engine.Events.STARTED)
-def initialize(trainer):
-    trainer.state.best_validation_rmse = math.inf
-    trainer.state.no_improve_count = 0
-
-
+###############################################################################
+# Now let's register some event handlers to work with tqdm to display progress:
 @trainer.on(ignite.engine.Events.EPOCH_STARTED)
 def init_tqdm(trainer):
-    trainer.state.tqdm = tqdm.tqdm(total=len(training), desc='epoch')
+    trainer.state.tqdm = tqdm.tqdm(total=len(training),
+                                   file=sys.stdout, desc='epoch')
 
 
 @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
@@ -96,6 +179,12 @@ def update_tqdm(trainer):
 @trainer.on(ignite.engine.Events.EPOCH_COMPLETED)
 def finalize_tqdm(trainer):
     trainer.state.tqdm.close()
+
+
+###############################################################################
+# And some event handlers to compute validation and training metrics:
+def hartree2kcal(x):
+    return 627.509 * x
 
 
 @trainer.on(ignite.engine.Events.EPOCH_STARTED)
@@ -111,30 +200,18 @@ def validation_and_checkpoint(trainer):
         metrics = evaluator.state.metrics
         rmse = hartree2kcal(metrics['RMSE'])
         writer.add_scalar(name, rmse, trainer.state.epoch)
-        return rmse
 
     # compute validation RMSE
-    rmse = evaluate(validation, 'validation_rmse_vs_epoch')
+    evaluate(validation, 'validation_rmse_vs_epoch')
 
     # compute training RMSE
-    if trainer.state.epoch % parser.training_rmse_every == 1:
+    if trainer.state.epoch % training_rmse_every == 1:
         evaluate(training, 'training_rmse_vs_epoch')
 
-    # handle best validation RMSE
-    if rmse < trainer.state.best_validation_rmse:
-        trainer.state.no_improve_count = 0
-        trainer.state.best_validation_rmse = rmse
-        writer.add_scalar('best_validation_rmse_vs_epoch', rmse,
-                          trainer.state.epoch)
-        torch.save(nnp.state_dict(), parser.model_checkpoint)
-    else:
-        trainer.state.no_improve_count += 1
-    writer.add_scalar('no_improve_count_vs_epoch',
-                      trainer.state.no_improve_count,
-                      trainer.state.epoch)
 
-    if trainer.state.no_improve_count > parser.early_stopping:
-            trainer.terminate()
+###############################################################################
+# Also some to log elapsed time:
+start = timeit.default_timer()
 
 
 @trainer.on(ignite.engine.Events.EPOCH_STARTED)
@@ -143,10 +220,14 @@ def log_time(trainer):
     writer.add_scalar('time_vs_epoch', elapsed, trainer.state.epoch)
 
 
+###############################################################################
+# Also log the loss per iteration:
 @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
-def log_loss_and_time(trainer):
+def log_loss(trainer):
     iteration = trainer.state.iteration
     writer.add_scalar('loss_vs_iteration', trainer.state.output, iteration)
 
 
-trainer.run(training, max_epochs=parser.max_epochs)
+###############################################################################
+# And finally, we are ready to run:
+trainer.run(training, max_epochs)

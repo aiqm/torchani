@@ -1,61 +1,34 @@
-TorchANI
-========
+====================================
+Welcome to TorchANI's documentation!
+====================================
+
+Precompute AEVs to Improve Training Performance
 
 .. automodule:: torchani
 
-.. autoclass:: torchani.AEVComputer
-    :members:
-.. autoclass:: torchani.ANIModel
-.. autoclass:: torchani.Ensemble
-.. autoclass:: torchani.EnergyShifter
-    :members:
-.. autoclass:: torchani.nn.Gaussian
+.. toctree::
+    :maxdepth: 2
+    :caption: Getting Started
 
+    start
 
-Datasets
-========
+.. toctree::
+    :maxdepth: 2
+    :caption: Examples
 
-.. automodule:: torchani.data
-.. autoclass:: torchani.data.BatchedANIDataset
-.. automodule:: torchani.data.cache_aev
+    examples/energy_force
+    examples/nnp_training
+    examples/neurochem_trainer
 
+.. toctree::
+    :maxdepth: 2
+    :caption: TorchANI's API
 
-Utilities
-=========
+    api
 
-.. automodule:: torchani.utils
-.. autofunction:: torchani.utils.pad_and_batch
-.. autofunction:: torchani.utils.present_species
-.. autofunction:: torchani.utils.strip_redundant_padding
+Indices and tables
+==================
 
-
-NeuroChem Utils
-===============
-
-.. automodule:: torchani.neurochem
-.. autoclass:: torchani.neurochem.Constants
-    :members:
-.. autofunction:: torchani.neurochem.load_sae
-.. autofunction:: torchani.neurochem.load_atomic_network
-.. autofunction:: torchani.neurochem.load_model
-.. autofunction:: torchani.neurochem.load_model_ensemble
-.. autoclass:: torchani.neurochem.Builtins
-.. autoclass:: torchani.neurochem.Trainer
-    :members:
-.. automodule:: torchani.neurochem.trainer
-
-
-Ignite Helpers
-==============
-
-.. automodule:: torchani.ignite
-.. autoclass:: torchani.ignite.Container
-    :members:
-.. autoclass:: torchani.ignite.DictLoss
-.. autoclass:: torchani.ignite.PerAtomDictLoss
-.. autoclass:: torchani.ignite.TransformedLoss
-.. autofunction:: torchani.ignite.MSELoss
-.. autoclass:: torchani.ignite.DictMetric
-.. autofunction:: torchani.ignite.RMSEMetric
-.. autoclass:: torchani.ignite.MaxAbsoluteError
-.. autofunction:: torchani.ignite.MAEMetric
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
