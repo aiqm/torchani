@@ -7,6 +7,7 @@ import os
 from ._pyanitools import anidataloader
 import torch
 from .. import utils
+import pickle
 
 
 def chunk_counts(counts, split):
@@ -217,3 +218,76 @@ class BatchedANIDataset(Dataset):
 
     def __len__(self):
         return len(self.batches)
+
+
+def _disk_cache_loader(index_queue, tensor_queue, disk_cache, device):
+    """Get index and load from disk cache."""
+    while True:
+        index = index_queue.get()
+        aev_path = os.path.join(disk_cache, str(index))
+        with open(aev_path, 'rb') as f:
+            tensor_queue.put(pickle.load(f))
+
+
+class AEVCacheLoader:
+    """Build a factory for AEV.
+
+    The computation of AEV is the most time consuming part during training.
+    Since during training, the AEV never changes, it is not hard to see that,
+    If we have a fast enough storage (this is usually the case for good SSDs,
+    but not for HDD), we could cache the computed AEVs into disk and load it
+    rather than compute it from scratch everytime we use it.
+
+    Arguments:
+        disk_cache (str): Directory storing disk caches.
+    """
+
+    def __init__(self, disk_cache=None, in_memory_size=64):
+        self.current = 0
+        self.disk_cache = disk_cache
+
+        # load dataset from disk cache
+        dataset_path = os.path.join(disk_cache, 'dataset')
+        with open(dataset_path, 'rb') as f:
+            self.dataset = pickle.load(f)
+        # initialize queues and processes
+        self.tensor_queue = torch.multiprocessing.Queue()
+        self.index_queue = torch.multiprocessing.Queue()
+        self.in_memory_size = in_memory_size
+        if len(self.dataset) < in_memory_size:
+            self.in_memory_size = len(self.dataset)
+        for i in range(in_memory_size):
+            self.index_queue.put(i)
+        self.loader = torch.multiprocessing.Process(
+            target=_disk_cache_loader,
+            args=(self.index_queue, self.tensor_queue, disk_cache,
+                  self.dataset.device)
+        )
+        self.loader.start()
+
+    def __iter__(self):
+        if self.current != 0:
+            raise ValueError('Only one iterator of AEVCacheLoader is allowed')
+        else:
+            return self
+
+    def __next__(self):
+        if self.current < len(self.dataset):
+            new_idx = (self.current + self.in_memory_size) % len(self.dataset)
+            self.index_queue.put(new_idx)
+            species_aevs = self.tensor_queue.get()
+            species_aevs = [(x.to(self.dataset.device),
+                             y.to(self.dataset.device))
+                            for x, y in species_aevs]
+            _, output = self.dataset[self.current]
+            self.current += 1
+            return species_aevs, output
+        else:
+            self.current = 0
+            raise StopIteration
+
+    def __del__(self):
+        self.loader.terminate()
+
+
+__all__ = ['BatchedANIDataset', 'AEVCacheLoader']

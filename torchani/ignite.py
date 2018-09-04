@@ -138,3 +138,7 @@ class MaxAbsoluteError(Metric):
 def MAEMetric(key):
     """Create max absolute error metric on key."""
     return DictMetric(key, MaxAbsoluteError())
+
+
+__all__ = ['Container', 'MSELoss', 'TransformedLoss', 'RMSEMetric',
+           'MAEMetric']
