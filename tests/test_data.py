@@ -86,9 +86,7 @@ class TestData(unittest.TestCase):
         ds = loader.dataset
         aev_computer_dev = aev_computer.to(loader.dataset.device)
         for (species_aevs, _), (species_coordinates, _) in zip(loader, ds):
-            print('outer loop')
             for (s1, a), (s2, c) in zip(species_aevs, species_coordinates):
-                print(s1.shape, s2.shape)
                 self._assertTensorEqual(s1, s2)
                 s2, a2 = aev_computer_dev((s2, c))
                 self._assertTensorEqual(s1, s2)

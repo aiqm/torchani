@@ -250,7 +250,6 @@ class AEVCacheLoader:
         dataset_path = os.path.join(disk_cache, 'dataset')
         with open(dataset_path, 'rb') as f:
             self.dataset = pickle.load(f)
-
         # initialize queues and processes
         self.tensor_queue = torch.multiprocessing.Queue()
         self.index_queue = torch.multiprocessing.Queue()
@@ -275,7 +274,7 @@ class AEVCacheLoader:
     def __next__(self):
         if self.current < len(self.dataset):
             self.current += 1
-            new_idx = (self.current + self.in_memory_size) % len(self.dataset)
+            new_idx = (self.current + self.in_memory_size - 1) % len(self.dataset)
             self.index_queue.put(new_idx)
             species_aevs = self.tensor_queue.get()
             species_aevs = [(x.to(self.dataset.device),
