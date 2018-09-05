@@ -6,8 +6,10 @@ from os.path import join, isfile, isdir
 import os
 from ._pyanitools import anidataloader
 import torch
-from .. import utils
+from .. import utils, neurochem, aev
 import pickle
+
+default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 def chunk_counts(counts, split):
@@ -131,7 +133,7 @@ class BatchedANIDataset(Dataset):
 
     def __init__(self, path, species_tensor_converter, batch_size,
                  shuffle=True, properties=['energies'], transform=(),
-                 dtype=torch.get_default_dtype(), device=torch.device('cpu')):
+                 dtype=torch.get_default_dtype(), device=default_device):
         super(BatchedANIDataset, self).__init__()
         self.properties = properties
         self.device = device
@@ -256,7 +258,7 @@ class AEVCacheLoader:
         self.in_memory_size = in_memory_size
         if len(self.dataset) < in_memory_size:
             self.in_memory_size = len(self.dataset)
-        for i in range(in_memory_size):
+        for i in range(self.in_memory_size):
             self.index_queue.put(i)
         self.loader = torch.multiprocessing.Process(
             target=_disk_cache_loader,
@@ -289,5 +291,52 @@ class AEVCacheLoader:
     def __del__(self):
         self.loader.terminate()
 
+    def __len__(self):
+        return len(self.dataset)
 
-__all__ = ['BatchedANIDataset', 'AEVCacheLoader']
+
+builtin = neurochem.Builtins()
+
+
+def cache_aev(output, dataset_path, batchsize, device=default_device,
+              constfile=builtin.const_file, subtract_sae=False,
+              sae_file=builtin.sae_file, enable_tqdm=True, **kwargs):
+    # if output directory does not exist, then create it
+    if not os.path.exists(output):
+        os.makedirs(output)
+
+    device = torch.device(device)
+    consts = neurochem.Constants(constfile)
+    aev_computer = aev.AEVComputer(**consts).to(device)
+
+    if subtract_sae:
+        energy_shifter = neurochem.load_sae(sae_file)
+        transform = (energy_shifter.subtract_from_dataset,)
+    else:
+        transform = ()
+
+    dataset = BatchedANIDataset(
+        dataset_path, consts.species_to_tensor, batchsize,
+        device=device, transform=transform, **kwargs
+    )
+
+    # dump out the dataset
+    filename = os.path.join(output, 'dataset')
+    with open(filename, 'wb') as f:
+        pickle.dump(dataset, f)
+
+    if enable_tqdm:
+        import tqdm
+        indices = tqdm.trange(len(dataset))
+    else:
+        indices = range(len(dataset))
+    for i in indices:
+        input_, _ = dataset[i]
+        aevs = [aev_computer(j) for j in input_]
+        aevs = [(x.cpu(), y.cpu()) for x, y in aevs]
+        filename = os.path.join(output, '{}'.format(i))
+        with open(filename, 'wb') as f:
+            pickle.dump(aevs, f)
+
+
+__all__ = ['BatchedANIDataset', 'AEVCacheLoader', 'cache_aev']

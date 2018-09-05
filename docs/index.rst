@@ -2,8 +2,6 @@
 Welcome to TorchANI's documentation!
 ====================================
 
-Precompute AEVs to Improve Training Performance
-
 .. automodule:: torchani
 
 .. toctree::
@@ -18,6 +16,7 @@ Precompute AEVs to Improve Training Performance
 
     examples/energy_force
     examples/nnp_training
+    examples/cache_aev
     examples/neurochem_trainer
 
 .. toctree::
