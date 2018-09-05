@@ -37,4 +37,5 @@ steps:
   Docs:
     image: '${{BuildTorchANI}}'
     commands:
+      - find . -name '*.pt' -delete
       - sphinx-build docs build
