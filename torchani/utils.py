@@ -151,4 +151,5 @@ class EnergyShifter(torch.nn.Module):
         return species, energies + sae
 
 
-__all__ = ['pad', 'pad_coordinates', 'present_species', 'strip_redundant_padding']
+__all__ = ['pad', 'pad_coordinates', 'present_species',
+           'strip_redundant_padding']
