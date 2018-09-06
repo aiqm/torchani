@@ -1,7 +1,33 @@
 import torch
 
 
-def pad_and_batch(species_coordinates):
+def pad(species):
+    """Put different species together into single tensor.
+
+    If the species are from molecules of different number of total atoms, then
+    ghost atoms with atom type -1 will be added to make it fit into the same
+    shape.
+
+    Arguments:
+        species (:class:`collections.abc.Sequence`): sequence of species.
+            Species must be of shape ``(N, A)``, where ``N`` is the number of
+            3D structures, ``A`` is the number of atoms.
+
+    Returns:
+        :class:`torch.Tensor`: species batched together.
+    """
+    max_atoms = max([s.shape[1] for s in species])
+    padded_species = []
+    for s in species:
+        natoms = s.shape[1]
+        if natoms < max_atoms:
+            padding = torch.full((s.shape[0], max_atoms - natoms), -1,
+                                 dtype=torch.long, device=s.device)
+            s = torch.cat([s, padding], dim=1)
+        padded_species.append(s)
+    return torch.cat(padded_species)
+
+def pad_coordinates(species_coordinates):
     """Put different species and coordinates together into single tensor.
 
     If the species and coordinates are from molecules of different number of
@@ -124,4 +150,4 @@ class EnergyShifter(torch.nn.Module):
         return species, energies + sae
 
 
-__all__ = ['pad_and_batch', 'present_species', 'strip_redundant_padding']
+__all__ = ['pad_coordinates', 'present_species', 'strip_redundant_padding']

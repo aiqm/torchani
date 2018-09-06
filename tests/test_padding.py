@@ -10,7 +10,7 @@ class TestPadAndBatch(unittest.TestCase):
         coordinates1 = torch.zeros(5, 4, 3)
         species2 = torch.LongTensor([3, 2, 0, 1, 0])
         coordinates2 = torch.zeros(2, 5, 3)
-        species, coordinates = torchani.utils.pad_and_batch([
+        species, coordinates = torchani.utils.pad_coordinates([
             (species1, coordinates1),
             (species2, coordinates2),
         ])
@@ -33,7 +33,7 @@ class TestPadAndBatch(unittest.TestCase):
         coordinates1 = torch.zeros(5, 4, 3)
         species2 = torch.LongTensor([3, 2, 0, 1, 0])
         coordinates2 = torch.zeros(2, 5, 3)
-        species, coordinates = torchani.utils.pad_and_batch([
+        species, coordinates = torchani.utils.pad_coordinates([
             (species1, coordinates1),
             (species2, coordinates2),
         ])
@@ -62,7 +62,7 @@ class TestPadAndBatch(unittest.TestCase):
         coordinates1 = torch.zeros(5, 4, 3)
         species2 = torch.LongTensor([3, 2, 0, 1, 0])
         coordinates2 = torch.zeros(2, 5, 3)
-        species, coordinates = torchani.utils.pad_and_batch([
+        species, coordinates = torchani.utils.pad_coordinates([
             (species1, coordinates1),
             (species2, coordinates2),
         ])
@@ -97,13 +97,13 @@ class TestStripRedundantPadding(unittest.TestCase):
         coordinates1 = torch.randn(5, 4, 3)
         species2 = torch.randint(4, (2, 5), dtype=torch.long)
         coordinates2 = torch.randn(2, 5, 3)
-        species12, coordinates12 = torchani.utils.pad_and_batch([
+        species12, coordinates12 = torchani.utils.pad_coordinates([
             (species1, coordinates1),
             (species2, coordinates2),
         ])
         species3 = torch.randint(4, (2, 10), dtype=torch.long)
         coordinates3 = torch.randn(2, 10, 3)
-        species123, coordinates123 = torchani.utils.pad_and_batch([
+        species123, coordinates123 = torchani.utils.pad_coordinates([
             (species1, coordinates1),
             (species2, coordinates2),
             (species3, coordinates3),

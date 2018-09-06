@@ -22,22 +22,19 @@ class Container(torch.nn.ModuleDict):
     def __init__(self, modules):
         super(Container, self).__init__(modules)
 
-    def forward(self, species_coordinates):
+    def forward(self, species_x):
         """Takes sequence of species, coordinates pair as input, and returns
         computed properties as a dictionary. Same property from different
-        chunks will be concatenated to form a single tensor for a batch. The
-        input, i.e. species and coordinates of chunks, will also be batched by
-        :func:`torchani.utils.pad_and_batch` and copied to output.
+        chunks will be concatenated to form a single tensor for a batch.
         """
         results = {k: [] for k in self}
-        for sc in species_coordinates:
+        for sx in species_x:
             for k in self:
-                _, result = self[k](sc)
+                _, result = self[k](sx)
                 results[k].append(result)
         for k in self:
             results[k] = torch.cat(results[k])
-        results['species'], results['coordinates'] = \
-            utils.pad_and_batch(species_coordinates)
+        results['species'] = utils.pad([s for s, _ in species_x])
         return results
 
 
