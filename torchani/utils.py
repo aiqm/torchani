@@ -27,6 +27,7 @@ def pad(species):
         padded_species.append(s)
     return torch.cat(padded_species)
 
+
 def pad_coordinates(species_coordinates):
     """Put different species and coordinates together into single tensor.
 
@@ -150,4 +151,4 @@ class EnergyShifter(torch.nn.Module):
         return species, energies + sae
 
 
-__all__ = ['pad_coordinates', 'present_species', 'strip_redundant_padding']
+__all__ = ['pad', 'pad_coordinates', 'present_species', 'strip_redundant_padding']
