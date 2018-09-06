@@ -3,7 +3,7 @@ import torch
 import torchani
 
 
-class TestPadAndBatch(unittest.TestCase):
+class TestPaddings(unittest.TestCase):
 
     def testVectorSpecies(self):
         species1 = torch.LongTensor([0, 2, 3, 1])
@@ -79,6 +79,29 @@ class TestPadAndBatch(unittest.TestCase):
         ])
         self.assertEqual((species - expected_species).abs().max().item(), 0)
         self.assertEqual(coordinates.abs().max().item(), 0)
+
+    def testPadSpecies(self):
+        species1 = torch.LongTensor([
+            [0, 2, 3, 1],
+            [0, 2, 3, 1],
+            [0, 2, 3, 1],
+            [0, 2, 3, 1],
+            [0, 2, 3, 1],
+        ])
+        species2 = torch.LongTensor([3, 2, 0, 1, 0]).expand(2, 5)
+        species = torchani.utils.pad([species1, species2])
+        self.assertEqual(species.shape[0], 7)
+        self.assertEqual(species.shape[1], 5)
+        expected_species = torch.LongTensor([
+            [0, 2, 3, 1, -1],
+            [0, 2, 3, 1, -1],
+            [0, 2, 3, 1, -1],
+            [0, 2, 3, 1, -1],
+            [0, 2, 3, 1, -1],
+            [3, 2, 0, 1, 0],
+            [3, 2, 0, 1, 0],
+        ])
+        self.assertEqual((species - expected_species).abs().max().item(), 0)
 
     def testPresentSpecies(self):
         species = torch.LongTensor([0, 1, 1, 0, 3, 7, -1, -1])
