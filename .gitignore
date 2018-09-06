@@ -21,3 +21,5 @@ benchmark_xyz
 /*.params
 /*.dat
 /tmp
+*_cache
+

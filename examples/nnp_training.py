@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+.. _training-example:
+
 Train Your Own Neural Network Potential
 =======================================
 
@@ -83,8 +85,15 @@ def atomic():
     return model
 
 
-model = torchani.ANIModel([atomic() for _ in range(4)])
-print(model)
+nn = torchani.ANIModel([atomic() for _ in range(4)])
+print(nn)
+
+###############################################################################
+# If checkpoint from previous training exists, then load it.
+if os.path.isfile(model_checkpoint):
+    nn.load_state_dict(torch.load(model_checkpoint))
+else:
+    torch.save(nn.state_dict(), model_checkpoint)
 
 
 ###############################################################################
@@ -97,15 +106,7 @@ class Flatten(torch.nn.Module):
         return x[0], x[1].flatten()
 
 
-model = torch.nn.Sequential(aev_computer, model, Flatten())
-
-###############################################################################
-# If checkpoint from previous training exists, then load it.
-if os.path.isfile(model_checkpoint):
-    model.load_state_dict(torch.load(model_checkpoint))
-else:
-    torch.save(model.state_dict(), model_checkpoint)
-model.to(device)
+model = torch.nn.Sequential(aev_computer, nn, Flatten()).to(device)
 
 
 ###############################################################################
@@ -207,6 +208,9 @@ def validation_and_checkpoint(trainer):
     # compute training RMSE
     if trainer.state.epoch % training_rmse_every == 1:
         evaluate(training, 'training_rmse_vs_epoch')
+
+    # checkpoint model
+    torch.save(nn.state_dict(), model_checkpoint)
 
 
 ###############################################################################
