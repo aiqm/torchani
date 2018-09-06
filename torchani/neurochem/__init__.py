@@ -16,7 +16,6 @@ from ..nn import ANIModel, Ensemble, Gaussian
 from ..utils import EnergyShifter
 from ..aev import AEVComputer
 from ..ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MAEMetric
-from ..data import BatchedANIDataset
 
 
 class Constants(Mapping):
@@ -302,6 +301,9 @@ class Builtins:
 
 def hartree2kcal(x):
     return 627.509 * x
+
+
+from ..data import BatchedANIDataset  # noqa: E402
 
 
 class Trainer:
@@ -676,4 +678,4 @@ class Trainer:
 
 
 __all__ = ['Constants', 'load_sae', 'load_model', 'load_model_ensemble',
-           'Trainer']
+           'Builtins', 'Trainer']
