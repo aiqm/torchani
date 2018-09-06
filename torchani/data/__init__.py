@@ -161,7 +161,7 @@ class BatchedANIDataset(Dataset):
                 for i in properties:
                     p = torch.from_numpy(m[i]).to(torch.double)
                     properties[i].append(p)
-        species, coordinates = utils.pad_and_batch(species_coordinates)
+        species, coordinates = utils.pad_coordinates(species_coordinates)
         for i in properties:
             properties[i] = torch.cat(properties[i])
 
