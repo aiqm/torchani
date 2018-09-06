@@ -185,13 +185,3 @@ def log_loss(trainer):
 
 
 trainer.run(training, max_epochs)
-
-###############################################################################
-# In the end, we explicitly close the opened loader's process. If the loading
-# processes are not closed, these processes would prevent the whole program
-# from terminating. The closing of loading process can be done automatically
-# when an :class:`torchani.data.AEVCacheLoader` object is garbage collected,
-# but here since our cache loader objects are in global scope, it won't be
-# garbage collected, se we need to terminate these processes manually.
-training.__del__()
-validation.__del__()

@@ -200,7 +200,7 @@ class BatchedANIDataset(Dataset):
                 .index_select(0, indices)
             properties_batch = {
                 k: properties[k][start:end, ...].index_select(0, indices)
-                for k in properties
+                .to(self.device) for k in properties
             }
             # further split batch into chunks
             species_coordinates = split_batch(natoms_batch, species_batch,
@@ -213,22 +213,10 @@ class BatchedANIDataset(Dataset):
         species_coordinates, properties = self.batches[idx]
         species_coordinates = [(s.to(self.device), c.to(self.device))
                                for s, c in species_coordinates]
-        properties = {
-            k: properties[k].to(self.device) for k in properties
-        }
         return species_coordinates, properties
 
     def __len__(self):
         return len(self.batches)
-
-
-def _disk_cache_loader(index_queue, tensor_queue, disk_cache, device):
-    """Get index and load from disk cache."""
-    while True:
-        index = index_queue.get()
-        aev_path = os.path.join(disk_cache, str(index))
-        with open(aev_path, 'rb') as f:
-            tensor_queue.put(pickle.load(f))
 
 
 class AEVCacheLoader:
@@ -244,52 +232,22 @@ class AEVCacheLoader:
         disk_cache (str): Directory storing disk caches.
     """
 
-    def __init__(self, disk_cache=None, in_memory_size=64):
-        self.current = 0
+    def __init__(self, disk_cache=None):
         self.disk_cache = disk_cache
 
         # load dataset from disk cache
         dataset_path = os.path.join(disk_cache, 'dataset')
         with open(dataset_path, 'rb') as f:
             self.dataset = pickle.load(f)
-        # initialize queues and processes
-        self.tensor_queue = torch.multiprocessing.Queue()
-        self.index_queue = torch.multiprocessing.Queue()
-        self.in_memory_size = in_memory_size
-        if len(self.dataset) < in_memory_size:
-            self.in_memory_size = len(self.dataset)
-        for i in range(self.in_memory_size):
-            self.index_queue.put(i)
-        self.loader = torch.multiprocessing.Process(
-            target=_disk_cache_loader,
-            args=(self.index_queue, self.tensor_queue, disk_cache,
-                  self.dataset.device)
-        )
-        self.loader.start()
 
-    def __iter__(self):
-        if self.current != 0:
-            raise ValueError('Only one iterator of AEVCacheLoader is allowed')
-        else:
-            return self
-
-    def __next__(self):
-        if self.current < len(self.dataset):
-            new_idx = (self.current + self.in_memory_size) % len(self.dataset)
-            self.index_queue.put(new_idx)
-            species_aevs = self.tensor_queue.get()
-            species_aevs = [(x.to(self.dataset.device),
-                             y.to(self.dataset.device))
-                            for x, y in species_aevs]
-            _, output = self.dataset[self.current]
-            self.current += 1
-            return species_aevs, output
-        else:
-            self.current = 0
-            raise StopIteration
-
-    def __del__(self):
-        self.loader.terminate()
+    def __getitem__(self, index):
+        if index >= self.__len__():
+            raise IndexError()
+        aev_path = os.path.join(self.disk_cache, str(index))
+        with open(aev_path, 'rb') as f:
+            species_aevs = pickle.load(f)
+        _, output = self.dataset.batches[index]
+        return species_aevs, output
 
     def __len__(self):
         return len(self.dataset)
@@ -333,7 +291,6 @@ def cache_aev(output, dataset_path, batchsize, device=default_device,
     for i in indices:
         input_, _ = dataset[i]
         aevs = [aev_computer(j) for j in input_]
-        aevs = [(x.cpu(), y.cpu()) for x, y in aevs]
         filename = os.path.join(output, '{}'.format(i))
         with open(filename, 'wb') as f:
             pickle.dump(aevs, f)
