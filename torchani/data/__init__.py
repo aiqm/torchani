@@ -199,8 +199,8 @@ class BatchedANIDataset(Dataset):
             coordinates_batch = coordinates[start:end, ...] \
                 .index_select(0, indices)
             properties_batch = {
-                k: properties[k][start:end, ...].index_select(0, indices).to(self.device)
-                for k in properties
+                k: properties[k][start:end, ...].index_select(0, indices)
+                .to(self.device) for k in properties
             }
             # further split batch into chunks
             species_coordinates = split_batch(natoms_batch, species_batch,
@@ -246,8 +246,6 @@ class AEVCacheLoader:
         aev_path = os.path.join(self.disk_cache, str(index))
         with open(aev_path, 'rb') as f:
             species_aevs = pickle.load(f)
-        species_aevs = [(x, y.to(self.dataset.device))
-                        for x, y in species_aevs]
         _, output = self.dataset.batches[index]
         return species_aevs, output
 
@@ -293,7 +291,6 @@ def cache_aev(output, dataset_path, batchsize, device=default_device,
     for i in indices:
         input_, _ = dataset[i]
         aevs = [aev_computer(j) for j in input_]
-        aevs = [(x, y.cpu()) for x, y in aevs]
         filename = os.path.join(output, '{}'.format(i))
         with open(filename, 'wb') as f:
             pickle.dump(aevs, f)
