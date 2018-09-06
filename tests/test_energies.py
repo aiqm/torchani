@@ -37,7 +37,7 @@ class TestEnergies(unittest.TestCase):
                 coordinates, species, _, _, e, _ = pickle.load(f)
                 species_coordinates.append((species, coordinates))
                 energies.append(e)
-        species, coordinates = torchani.utils.pad_and_batch(
+        species, coordinates = torchani.utils.pad_coordinates(
             species_coordinates)
         energies = torch.cat(energies)
         _, energies_ = self.model((species, coordinates))

@@ -39,7 +39,7 @@ class TestForce(unittest.TestCase):
                 coordinates = torch.tensor(coordinates, requires_grad=True)
                 species_coordinates.append((species, coordinates))
                 coordinates_forces.append((coordinates, forces))
-        species, coordinates = torchani.utils.pad_and_batch(
+        species, coordinates = torchani.utils.pad_coordinates(
             species_coordinates)
         _, energies = self.model((species, coordinates))
         energies = energies.sum()

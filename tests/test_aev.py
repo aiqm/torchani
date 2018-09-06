@@ -44,7 +44,7 @@ class TestAEV(unittest.TestCase):
                 coordinates, species, radial, angular, _, _ = pickle.load(f)
                 species_coordinates.append((species, coordinates))
                 radial_angular.append((radial, angular))
-        species, coordinates = torchani.utils.pad_and_batch(
+        species, coordinates = torchani.utils.pad_coordinates(
             species_coordinates)
         _, aev = self.aev_computer((species, coordinates))
         start = 0
