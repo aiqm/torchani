@@ -95,19 +95,7 @@ if os.path.isfile(model_checkpoint):
 else:
     torch.save(nn.state_dict(), model_checkpoint)
 
-
-###############################################################################
-# The output energy tensor has shape ``(N, 1)`` where ``N`` is the number of
-# different structures in each minibatch. However, in the dataset, the label
-# has shape ``(N,)``. To make it possible to subtract these two tensors, we
-# need to flatten the output tensor.
-class Flatten(torch.nn.Module):
-    def forward(self, x):
-        return x[0], x[1].flatten()
-
-
-model = torch.nn.Sequential(aev_computer, nn, Flatten()).to(device)
-
+model = torch.nn.Sequential(aev_computer, nn).to(device)
 
 ###############################################################################
 # Now setup tensorboardX.
