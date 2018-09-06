@@ -304,6 +304,7 @@ def hartree2kcal(x):
 
 
 from ..data import BatchedANIDataset  # noqa: E402
+from ..data import AEVCacheLoader  # noqa: E402
 
 
 class Trainer:
@@ -315,12 +316,14 @@ class Trainer:
         tqdm (bool): whether to enable tqdm
         tensorboard (str): Directory to store tensorboard log file, set to\
             ``None`` to disable tensorboardX.
+        aev_caching (bool): Whether to use AEV caching.
     """
 
     def __init__(self, filename, device=torch.device('cuda'),
-                 tqdm=False, tensorboard=None):
+                 tqdm=False, tensorboard=None, aev_caching=False):
         self.filename = filename
         self.device = device
+        self.aev_caching = aev_caching
         if tqdm:
             import tqdm
             self.tqdm = tqdm.tqdm
@@ -528,7 +531,10 @@ class Trainer:
                 i = o
             atomic_nets[atom_type] = torch.nn.Sequential(*modules)
         self.model = ANIModel([atomic_nets[s] for s in self.consts.species])
-        self.nnp = torch.nn.Sequential(self.aev_computer, self.model)
+        if self.aev_caching:
+            self.nnp = self.model
+        else:
+            self.nnp = torch.nn.Sequential(self.aev_computer, self.model)
         self.container = Container({'energies': self.nnp}).to(self.device)
 
         # losses
@@ -561,15 +567,23 @@ class Trainer:
         return hartree2kcal(metrics['RMSE']), hartree2kcal(metrics['MAE'])
 
     def load_data(self, training_path, validation_path):
-        """Load training and validation dataset from file"""
-        self.training_set = BatchedANIDataset(
-            training_path, self.consts.species_to_tensor,
-            self.training_batch_size, device=self.device,
-            transform=[self.shift_energy.subtract_from_dataset])
-        self.validation_set = BatchedANIDataset(
-            validation_path, self.consts.species_to_tensor,
-            self.validation_batch_size, device=self.device,
-            transform=[self.shift_energy.subtract_from_dataset])
+        """Load training and validation dataset from file.
+
+        If AEV caching is enabled, then the arguments are path to the cache
+        directory, otherwise it should be path to the dataset.
+        """
+        if self.aev_caching:
+            self.training_set = AEVCacheLoader(training_path)
+            self.validation_set = AEVCacheLoader(validation_path)
+        else:
+            self.training_set = BatchedANIDataset(
+                training_path, self.consts.species_to_tensor,
+                self.training_batch_size, device=self.device,
+                transform=[self.shift_energy.subtract_from_dataset])
+            self.validation_set = BatchedANIDataset(
+                validation_path, self.consts.species_to_tensor,
+                self.validation_batch_size, device=self.device,
+                transform=[self.shift_energy.subtract_from_dataset])
 
     def run(self):
         """Run the training"""

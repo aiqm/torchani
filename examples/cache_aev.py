@@ -92,15 +92,10 @@ else:
     torch.save(nn.state_dict(), model_checkpoint)
 
 
-class Flatten(torch.nn.Module):
-    def forward(self, x):
-        return x[0], x[1].flatten()
-
-
 ###############################################################################
 # Except that at here we do not include aev computer into our pipeline, because
 # the cache loader will load computed AEVs from disk.
-model = torch.nn.Sequential(nn, Flatten()).to(device)
+model = nn.to(device)
 
 ###############################################################################
 # This part is also a line by line copy
