@@ -219,7 +219,7 @@ class BatchedANIDataset(Dataset):
         return len(self.batches)
 
 
-class AEVCacheLoader:
+class AEVCacheLoader(Dataset):
     """Build a factory for AEV.
 
     The computation of AEV is the most time consuming part during training.
@@ -233,6 +233,7 @@ class AEVCacheLoader:
     """
 
     def __init__(self, disk_cache=None):
+        super(AEVCacheLoader, self).__init__()
         self.disk_cache = disk_cache
 
         # load dataset from disk cache
@@ -241,12 +242,10 @@ class AEVCacheLoader:
             self.dataset = pickle.load(f)
 
     def __getitem__(self, index):
-        if index >= self.__len__():
-            raise IndexError()
+        _, output = self.dataset.batches[index]
         aev_path = os.path.join(self.disk_cache, str(index))
         with open(aev_path, 'rb') as f:
             species_aevs = pickle.load(f)
-        _, output = self.dataset.batches[index]
         return species_aevs, output
 
     def __len__(self):
