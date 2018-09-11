@@ -28,10 +28,13 @@ if __name__ == '__main__':
                         default=None)
     parser.add_argument('--cache-aev', dest='cache_aev', action='store_true',
                         help='Whether to cache AEV', default=None)
+    parser.add_argument('--checkpoint_name',
+                        help='Name of checkpoint file',
+                        default='model.pt')
     parser = parser.parse_args()
 
     d = torch.device(parser.device)
     trainer = Trainer(parser.config_path, d, parser.tqdm, parser.tensorboard,
-                      parser.cache_aev)
+                      parser.cache_aev, parser.checkpoint_name)
     trainer.load_data(parser.training_path, parser.validation_path)
     trainer.run()
