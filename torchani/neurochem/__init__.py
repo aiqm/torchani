@@ -314,16 +314,20 @@ class Trainer:
         filename (str): Input file name
         device (:class:`torch.device`): device to train the model
         tqdm (bool): whether to enable tqdm
-        tensorboard (str): Directory to store tensorboard log file, set to\
+        tensorboard (str): Directory to store tensorboard log file, set to
             ``None`` to disable tensorboardX.
         aev_caching (bool): Whether to use AEV caching.
+        checkpoint_name (str): Name of the checkpoint file, checkpoints will be
+            stored in the network directory with this file name.
     """
 
-    def __init__(self, filename, device=torch.device('cuda'),
-                 tqdm=False, tensorboard=None, aev_caching=False):
+    def __init__(self, filename, device=torch.device('cuda'), tqdm=False,
+                 tensorboard=None, aev_caching=False,
+                 checkpoint_name='model.pt'):
         self.filename = filename
         self.device = device
         self.aev_caching = aev_caching
+        self.checkpoint_name = checkpoint_name
         if tqdm:
             import tqdm
             self.tqdm = tqdm.tqdm
@@ -475,7 +479,7 @@ class Trainer:
         network_dir = os.path.join(dir, params['ntwkStoreDir'])
         if not os.path.exists(network_dir):
             os.makedirs(network_dir)
-        self.model_checkpoint = os.path.join(network_dir, 'model.pt')
+        self.model_checkpoint = os.path.join(network_dir, self.checkpoint_name)
         del params['ntwkStoreDir']
         self.max_nonimprove = params['tolr']
         del params['tolr']
