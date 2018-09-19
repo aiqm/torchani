@@ -50,7 +50,7 @@ class ANIModel(torch.nn.ModuleList):
 
 
 class Ensemble(torch.nn.ModuleList):
-    """Compute the average output of an ensemeble of modules."""
+    """Compute the average output of an ensemble of modules."""
 
     def forward(self, species_input):
         outputs = [x(species_input)[1] for x in self]
