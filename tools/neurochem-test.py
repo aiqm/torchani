@@ -29,6 +29,8 @@ parser.add_argument('--sae_file',
 parser.add_argument('--network_dir',
                     help='Directory or prefix of directories storing networks',
                     default=builtins.ensemble_prefix + '0/networks')
+parser.add_argument('--compare_with',
+                    help='The TorchANI model to compare with', default=None)
 parser = parser.parse_args()
 
 # load modules and datasets
@@ -61,7 +63,7 @@ def hartree2kcal(x):
     return 627.509 * x
 
 
-for dataset in datasets:
+def evaluate(dataset, container):
     evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
         'RMSE': torchani.ignite.RMSEMetric('energies')
     })
@@ -69,3 +71,14 @@ for dataset in datasets:
     metrics = evaluator.state.metrics
     rmse = hartree2kcal(metrics['RMSE'])
     print(rmse, 'kcal/mol')
+
+
+for dataset in datasets:
+    evaluate(dataset, container)
+
+
+if parser.compare_with is not None:
+    nn.load_state_dict(torch.load(parser.compare_with))
+    print('TorchANI results:')
+    for dataset in datasets:
+        evaluate(dataset, container)
