@@ -8,9 +8,15 @@ TorchANI is a pytorch implementation of ANI. It is currently under alpha release
 
 TorchANI requires the master branch of PyTorch, which means:
 
-* The pytorch installed by `pip install` or `conda install` would not work.
-* You need to compile install the latest pytorch, see [official instructions](https://github.com/pytorch/pytorch#from-source).
-* Some update to TorchANI might require the user to recompile install the latest PyTorch. Before submitting a bug report, make sure you are running the latest PyTorch.
+You need to install the latest preview version of pytorch\
+For install
+```bash
+conda install pytorch-nightly -c pytorch
+```
+For update
+```bash
+conda update pytorch-nightly
+``` 
 
 After installing the correct PyTorch, all you need is clone the repository and do:
 
