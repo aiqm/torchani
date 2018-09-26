@@ -8,29 +8,24 @@ TorchANI is a pytorch implementation of ANI. It is currently under alpha release
 
 # Install
 
-TorchANI requires the master branch of PyTorch, which means:
+TorchANI requires the latest preview version of PyTorch. You can install PyTorch by
 
-You need to install the latest preview version of pytorch\
-For install
 ```bash
 conda install pytorch-nightly -c pytorch
 ```
-For update
+If you updated TorchANI, you may also need to update PyTorch:
+
 ```bash
 conda update pytorch-nightly
 ```
 
-After installing the correct PyTorch, all you need is clone the repository and do:
+After installing the correct PyTorch, you can install TorchANI by:
 
 ```bash
-pip install .
+pip install torchani
 ```
 
-After TorchANI has been installed, you can build the documents by running `sphinx-build docs build`. But make sure you
-install dependencies:
-```bash
-pip install sphinx sphinx-gallery pillow matplotlib sphinx_rtd_theme
-```
+See also [PyTorch's official site](https://pytorch.org/get-started/locally/) for instructions of installing latest preview version of PyTorch.
 
 # Paper
 
@@ -39,6 +34,24 @@ The original ANI-1 paper is:
 * Smith JS, Isayev O, Roitberg AE. ANI-1: an extensible neural network potential with DFT accuracy at force field computational cost. Chemical science. 2017;8(4):3192-203.
 
 We are planning a seperate paper for TorchANI, it will be available when we are ready for beta release of TorchANI.
+
+See also: [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI)
+
+# Develop
+
+To install TorchANI from GitHub:
+
+```bash
+git clone https://github.com/aiqm/torchani.git
+cd torchani
+pip install -e .
+```
+
+After TorchANI has been installed, you can build the documents by running `sphinx-build docs build`. But make sure you
+install dependencies:
+```bash
+pip install sphinx sphinx-gallery pillow matplotlib sphinx_rtd_theme
+```
 
 # Note to TorchANI developers
 
