@@ -22,6 +22,18 @@ setup_attrs = {
         'tensorboardX',
         'tqdm',
     ],
+    'extras_require': {
+        'docs': [
+            'sphinx',
+            'sphinx_rtd_theme',
+            'sphinx-gallery',
+            'pillow',
+            'matplotlib',
+            'sphinx_rtd_theme'
+            'tqdm',
+            'tensorboardX',
+        ],
+    },
 }
 
 setup(**setup_attrs)
