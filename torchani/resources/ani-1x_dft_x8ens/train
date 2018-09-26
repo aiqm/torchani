@@ -1,0 +1,2 @@
+this is a dummy file that makes it possible to do
+pkg_resources.resource_filename(parent_name, 'resources/ani-1x_dft_x8ens/train')
