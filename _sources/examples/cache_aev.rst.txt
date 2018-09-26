@@ -1,0 +1,358 @@
+.. note::
+    :class: sphx-glr-download-link-note
+
+    Click :ref:`here <sphx_glr_download_examples_cache_aev.py>` to download the full example code
+.. rst-class:: sphx-glr-example-title
+
+.. _sphx_glr_examples_cache_aev.py:
+
+
+Use Disk Cache of AEV to Boost Training
+=======================================
+
+In the previous :ref:`training-example` example, AEVs are computed everytime
+when needed. This is not very efficient because the AEVs actually never change
+during training. If one has a good SSD, it would be beneficial to cache these
+AEVs.  This example shows how to use disk cache to boost training
+
+
+Most part of the codes in this example are line by line copy of
+:ref:`training-example`.
+
+
+
+.. code-block:: python
+
+    import torch
+    import ignite
+    import torchani
+    import tqdm
+    import timeit
+    import tensorboardX
+    import os
+    import sys
+
+
+    # training and validation set
+    try:
+        path = os.path.dirname(os.path.realpath(__file__))
+    except NameError:
+        path = os.getcwd()
+    training_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+    validation_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+
+    # checkpoint file to save model when validation RMSE improves
+    model_checkpoint = 'model.pt'
+
+    # max epochs to run the training
+    max_epochs = 20
+
+    # Compute training RMSE every this steps. Since the training set is usually
+    # huge and the loss funcition does not directly gives us RMSE, we need to
+    # check the training RMSE to see overfitting.
+    training_rmse_every = 5
+
+    # device to run the training
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    # batch size
+    batch_size = 1024
+
+    # log directory for tensorboardX
+    log = 'runs'
+
+
+
+
+
+
+
+Here, there is no need to manually construct aev computer and energy shifter,
+but we do need to generate a disk cache for datasets
+
+
+
+.. code-block:: python
+
+    const_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
+    sae_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/sae_linfit.dat')  # noqa: E501
+    training_cache = './training_cache'
+    validation_cache = './validation_cache'
+
+    # If the cache dirs already exists, then we assume these data has already been
+    # cached and skip the generation part.
+    if not os.path.exists(training_cache):
+        torchani.data.cache_aev(training_cache, training_path, batch_size, device,
+                                const_file, True, sae_file)
+    if not os.path.exists(validation_cache):
+        torchani.data.cache_aev(validation_cache, validation_path, batch_size,
+                                device, const_file, True, sae_file)
+
+
+
+
+
+
+
+
+The codes that define the network are also the same
+
+
+
+.. code-block:: python
+
+    def atomic():
+        model = torch.nn.Sequential(
+            torch.nn.Linear(384, 128),
+            torch.nn.CELU(0.1),
+            torch.nn.Linear(128, 128),
+            torch.nn.CELU(0.1),
+            torch.nn.Linear(128, 64),
+            torch.nn.CELU(0.1),
+            torch.nn.Linear(64, 1)
+        )
+        return model
+
+
+    nn = torchani.ANIModel([atomic() for _ in range(4)])
+    print(nn)
+
+    if os.path.isfile(model_checkpoint):
+        nn.load_state_dict(torch.load(model_checkpoint))
+    else:
+        torch.save(nn.state_dict(), model_checkpoint)
+
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    ANIModel(
+      (0): Sequential(
+        (0): Linear(in_features=384, out_features=128, bias=True)
+        (1): CELU(alpha=0.1)
+        (2): Linear(in_features=128, out_features=128, bias=True)
+        (3): CELU(alpha=0.1)
+        (4): Linear(in_features=128, out_features=64, bias=True)
+        (5): CELU(alpha=0.1)
+        (6): Linear(in_features=64, out_features=1, bias=True)
+      )
+      (1): Sequential(
+        (0): Linear(in_features=384, out_features=128, bias=True)
+        (1): CELU(alpha=0.1)
+        (2): Linear(in_features=128, out_features=128, bias=True)
+        (3): CELU(alpha=0.1)
+        (4): Linear(in_features=128, out_features=64, bias=True)
+        (5): CELU(alpha=0.1)
+        (6): Linear(in_features=64, out_features=1, bias=True)
+      )
+      (2): Sequential(
+        (0): Linear(in_features=384, out_features=128, bias=True)
+        (1): CELU(alpha=0.1)
+        (2): Linear(in_features=128, out_features=128, bias=True)
+        (3): CELU(alpha=0.1)
+        (4): Linear(in_features=128, out_features=64, bias=True)
+        (5): CELU(alpha=0.1)
+        (6): Linear(in_features=64, out_features=1, bias=True)
+      )
+      (3): Sequential(
+        (0): Linear(in_features=384, out_features=128, bias=True)
+        (1): CELU(alpha=0.1)
+        (2): Linear(in_features=128, out_features=128, bias=True)
+        (3): CELU(alpha=0.1)
+        (4): Linear(in_features=128, out_features=64, bias=True)
+        (5): CELU(alpha=0.1)
+        (6): Linear(in_features=64, out_features=1, bias=True)
+      )
+    )
+
+
+Except that at here we do not include aev computer into our pipeline, because
+the cache loader will load computed AEVs from disk.
+
+
+
+.. code-block:: python
+
+    model = nn.to(device)
+
+
+
+
+
+
+
+This part is also a line by line copy
+
+
+
+.. code-block:: python
+
+    writer = tensorboardX.SummaryWriter(log_dir=log)
+
+
+
+
+
+
+
+Here we don't need to construct :class:`torchani.data.BatchedANIDataset`
+object, but instead an object of :class:`torchani.data.AEVCacheLoader`
+
+
+
+.. code-block:: python
+
+    training = torchani.data.AEVCacheLoader(training_cache)
+    validation = torchani.data.AEVCacheLoader(validation_cache)
+
+
+
+
+
+
+
+The rest of the code are again the same
+
+
+
+.. code-block:: python
+
+    training = torchani.data.AEVCacheLoader(training_cache)
+    container = torchani.ignite.Container({'energies': model})
+    optimizer = torch.optim.Adam(model.parameters())
+    trainer = ignite.engine.create_supervised_trainer(
+        container, optimizer, torchani.ignite.MSELoss('energies'))
+    evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
+            'RMSE': torchani.ignite.RMSEMetric('energies')
+        })
+
+
+    @trainer.on(ignite.engine.Events.EPOCH_STARTED)
+    def init_tqdm(trainer):
+        trainer.state.tqdm = tqdm.tqdm(total=len(training),
+                                       file=sys.stdout, desc='epoch')
+
+
+    @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
+    def update_tqdm(trainer):
+        trainer.state.tqdm.update(1)
+
+
+    @trainer.on(ignite.engine.Events.EPOCH_COMPLETED)
+    def finalize_tqdm(trainer):
+        trainer.state.tqdm.close()
+
+
+    def hartree2kcal(x):
+        return 627.509 * x
+
+
+    @trainer.on(ignite.engine.Events.EPOCH_STARTED)
+    def validation_and_checkpoint(trainer):
+        def evaluate(dataset, name):
+            evaluator = ignite.engine.create_supervised_evaluator(
+                container,
+                metrics={
+                    'RMSE': torchani.ignite.RMSEMetric('energies')
+                }
+            )
+            evaluator.run(dataset)
+            metrics = evaluator.state.metrics
+            rmse = hartree2kcal(metrics['RMSE'])
+            writer.add_scalar(name, rmse, trainer.state.epoch)
+
+        # compute validation RMSE
+        evaluate(validation, 'validation_rmse_vs_epoch')
+
+        # compute training RMSE
+        if trainer.state.epoch % training_rmse_every == 1:
+            evaluate(training, 'training_rmse_vs_epoch')
+
+        # checkpoint model
+        torch.save(nn.state_dict(), model_checkpoint)
+
+
+    start = timeit.default_timer()
+
+
+    @trainer.on(ignite.engine.Events.EPOCH_STARTED)
+    def log_time(trainer):
+        elapsed = round(timeit.default_timer() - start, 2)
+        writer.add_scalar('time_vs_epoch', elapsed, trainer.state.epoch)
+
+
+    @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
+    def log_loss(trainer):
+        iteration = trainer.state.iteration
+        writer.add_scalar('loss_vs_iteration', trainer.state.output, iteration)
+
+
+    trainer.run(training, max_epochs)
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:02,  3.78it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  5.21it/s]    epoch: 100%|##########| 11/11 [00:00<00:00,  7.08it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.74it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  9.03it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 11.88it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.67it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.93it/s]    epoch:  91%|######### | 10/11 [00:00<00:00, 11.56it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 27.63it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.45it/s]    epoch:  45%|####5     | 5/11 [00:00<00:00,  8.62it/s]    epoch:  91%|######### | 10/11 [00:00<00:00, 11.32it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 27.68it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.82it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  9.17it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 12.06it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:02,  3.78it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  5.21it/s]    epoch: 100%|##########| 11/11 [00:00<00:00,  7.08it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  7.02it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  9.44it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 12.39it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.61it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.90it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 11.72it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.78it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  9.09it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 11.92it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  7.21it/s]    epoch:  45%|####5     | 5/11 [00:00<00:00,  9.54it/s]    epoch:  91%|######### | 10/11 [00:00<00:00, 12.39it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 28.69it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:02,  3.81it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  5.23it/s]    epoch: 100%|##########| 11/11 [00:00<00:00,  7.11it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.86it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  9.19it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 12.09it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  7.09it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  9.49it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 12.41it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.94it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  9.33it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 12.24it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.96it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  9.30it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 12.18it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:02,  3.75it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  5.17it/s]    epoch: 100%|##########| 11/11 [00:00<00:00,  7.03it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  7.22it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  9.62it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 12.57it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  7.02it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  9.41it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 12.25it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.00it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.07it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 10.69it/s]
+    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  7.24it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  9.66it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 12.57it/s]
+
+
+**Total running time of the script:** ( 0 minutes  8.355 seconds)
+
+
+.. _sphx_glr_download_examples_cache_aev.py:
+
+
+.. only :: html
+
+ .. container:: sphx-glr-footer
+    :class: sphx-glr-footer-example
+
+
+
+  .. container:: sphx-glr-download
+
+     :download:`Download Python source code: cache_aev.py <cache_aev.py>`
+
+
+
+  .. container:: sphx-glr-download
+
+     :download:`Download Jupyter notebook: cache_aev.ipynb <cache_aev.ipynb>`
+
+
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.readthedocs.io>`_

@@ -1,0 +1,378 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>torchani.utils &mdash; TorchANI 0.1alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/gallery.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> TorchANI
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../start.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
+</ul>
+<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.data">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.utils">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ignite">Ignite Helpers</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TorchANI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>torchani.utils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for torchani.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torch</span>
+
+
+<div class="viewcode-block" id="pad"><a class="viewcode-back" href="../../api.html#torchani.pad">[docs]</a><span class="k">def</span> <span class="nf">pad</span><span class="p">(</span><span class="n">species</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Put different species together into single tensor.</span>
+
+<span class="sd">    If the species are from molecules of different number of total atoms, then</span>
+<span class="sd">    ghost atoms with atom type -1 will be added to make it fit into the same</span>
+<span class="sd">    shape.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        species (:class:`collections.abc.Sequence`): sequence of species.</span>
+<span class="sd">            Species must be of shape ``(N, A)``, where ``N`` is the number of</span>
+<span class="sd">            3D structures, ``A`` is the number of atoms.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        :class:`torch.Tensor`: species batched together.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">max_atoms</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">species</span><span class="p">])</span>
+    <span class="n">padded_species</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">species</span><span class="p">:</span>
+        <span class="n">natoms</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">natoms</span> <span class="o">&lt;</span> <span class="n">max_atoms</span><span class="p">:</span>
+            <span class="n">padding</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">s</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">max_atoms</span> <span class="o">-</span> <span class="n">natoms</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                                 <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">s</span><span class="p">,</span> <span class="n">padding</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">padded_species</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">padded_species</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pad_coordinates"><a class="viewcode-back" href="../../api.html#torchani.pad_coordinates">[docs]</a><span class="k">def</span> <span class="nf">pad_coordinates</span><span class="p">(</span><span class="n">species_coordinates</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Put different species and coordinates together into single tensor.</span>
+
+<span class="sd">    If the species and coordinates are from molecules of different number of</span>
+<span class="sd">    total atoms, then ghost atoms with atom type -1 and coordinate (0, 0, 0)</span>
+<span class="sd">    will be added to make it fit into the same shape.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        species_coordinates (:class:`collections.abc.Sequence`): sequence of</span>
+<span class="sd">            pairs of species and coordinates. Species must be of shape</span>
+<span class="sd">            ``(N, A)`` and coordinates must be of shape ``(N, A, 3)``, where</span>
+<span class="sd">            ``N`` is the number of 3D structures, ``A`` is the number of atoms.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (:class:`torch.Tensor`, :class:`torch.Tensor`): Species, and</span>
+<span class="sd">        coordinates batched together.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">max_atoms</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">species_coordinates</span><span class="p">])</span>
+    <span class="n">species</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">coordinates</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">species_coordinates</span><span class="p">:</span>
+        <span class="n">natoms</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">natoms</span> <span class="o">&lt;</span> <span class="n">max_atoms</span><span class="p">:</span>
+            <span class="n">padding</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">s</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">max_atoms</span> <span class="o">-</span> <span class="n">natoms</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                                 <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">s</span><span class="p">,</span> <span class="n">padding</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">padding</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">c</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">max_atoms</span> <span class="o">-</span> <span class="n">natoms</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span>
+                                 <span class="n">dtype</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">c</span><span class="p">,</span> <span class="n">padding</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">max_atoms</span><span class="p">)</span>
+        <span class="n">species</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">species</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="present_species"><a class="viewcode-back" href="../../api.html#torchani.present_species">[docs]</a><span class="k">def</span> <span class="nf">present_species</span><span class="p">(</span><span class="n">species</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Given a vector of species of atoms, compute the unique species present.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        species (:class:`torch.Tensor`): 1D vector of shape ``(atoms,)``</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        :class:`torch.Tensor`: 1D vector storing present atom types sorted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">present_species</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="nb">sorted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">present_species</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">present_species</span> <span class="o">=</span> <span class="n">present_species</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">return</span> <span class="n">present_species</span></div>
+
+
+<div class="viewcode-block" id="strip_redundant_padding"><a class="viewcode-back" href="../../api.html#torchani.strip_redundant_padding">[docs]</a><span class="k">def</span> <span class="nf">strip_redundant_padding</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Strip trailing padding atoms.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        species (:class:`torch.Tensor`): Long tensor of shape</span>
+<span class="sd">            ``(conformations, atoms)``.</span>
+<span class="sd">        coordinates (:class:`torch.Tensor`): Tensor of shape</span>
+<span class="sd">            ``(conformations, atoms, 3)``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (:class:`torch.Tensor`, :class:`torch.Tensor`): species and coordinates</span>
+<span class="sd">        with redundant padding atoms stripped.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">non_padding</span> <span class="o">=</span> <span class="p">(</span><span class="n">species</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+    <span class="n">species</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">non_padding</span><span class="p">)</span>
+    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">non_padding</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span></div>
+
+
+<div class="viewcode-block" id="EnergyShifter"><a class="viewcode-back" href="../../api.html#torchani.EnergyShifter">[docs]</a><span class="k">class</span> <span class="nc">EnergyShifter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Helper class for adding and subtracting self atomic energies</span>
+
+<span class="sd">    This is a subclass of :class:`torch.nn.Module`, so it can be used directly</span>
+<span class="sd">    in a pipeline as ``[input-&gt;AEVComputer-&gt;ANIModel-&gt;EnergyShifter-&gt;output]``.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        self_energies (:class:`collections.abc.Sequence`): Sequence of floating</span>
+<span class="sd">            numbers for the self energy of each atom type. The numbers should</span>
+<span class="sd">            be in order, i.e. ``self_energies[i]`` should be atom type ``i``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">self_energies</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">EnergyShifter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">self_energies</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">self_energies</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;self_energies&#39;</span><span class="p">,</span> <span class="n">self_energies</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EnergyShifter.sae"><a class="viewcode-back" href="../../api.html#torchani.EnergyShifter.sae">[docs]</a>    <span class="k">def</span> <span class="nf">sae</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute self energies for molecules.</span>
+
+<span class="sd">        Padding atoms will be automatically excluded.</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            species (:class:`torch.Tensor`): Long tensor in shape</span>
+<span class="sd">                ``(conformations, atoms)``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            :class:`torch.Tensor`: 1D vector in shape ``(conformations,)``</span>
+<span class="sd">            for molecular self energies.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">self_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_energies</span><span class="p">[</span><span class="n">species</span><span class="p">]</span>
+        <span class="n">self_energies</span><span class="p">[</span><span class="n">species</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">self_energies</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EnergyShifter.subtract_from_dataset"><a class="viewcode-back" href="../../api.html#torchani.EnergyShifter.subtract_from_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">subtract_from_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">properties</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Transformer for :class:`torchani.data.BatchedANIDataset` that</span>
+<span class="sd">        subtract self energies.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">energies</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">energies</span><span class="o">.</span><span class="n">device</span>
+        <span class="n">energies</span> <span class="o">=</span> <span class="n">energies</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">double</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sae</span><span class="p">(</span><span class="n">species</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">energies</span>
+        <span class="k">return</span> <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">properties</span></div>
+
+<div class="viewcode-block" id="EnergyShifter.forward"><a class="viewcode-back" href="../../api.html#torchani.EnergyShifter.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_energies</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;(species, molecular energies)-&gt;(species, molecular energies + sae)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">species</span><span class="p">,</span> <span class="n">energies</span> <span class="o">=</span> <span class="n">species_energies</span>
+        <span class="n">sae</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sae</span><span class="p">(</span><span class="n">species</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">energies</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">energies</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">species</span><span class="p">,</span> <span class="n">energies</span> <span class="o">+</span> <span class="n">sae</span></div></div>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;pad&#39;</span><span class="p">,</span> <span class="s1">&#39;pad_coordinates&#39;</span><span class="p">,</span> <span class="s1">&#39;present_species&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;strip_redundant_padding&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Roitberg Group.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1alpha',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

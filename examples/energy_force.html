@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Computing Energy and Force Using Builtin Models &mdash; TorchANI 0.1alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Train Your Own Neural Network Potential" href="nnp_training.html" />
+    <link rel="prev" title="Installation" href="../start.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TorchANI
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../start.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
+</ul>
+<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.data">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.utils">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ignite">Ignite Helpers</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TorchANI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Computing Energy and Force Using Builtin Models</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/examples/energy_force.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-energy-force-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+</div>
+<div class="sphx-glr-example-title section" id="computing-energy-and-force-using-builtin-models">
+<span id="sphx-glr-examples-energy-force-py"></span><h1>Computing Energy and Force Using Builtin Models<a class="headerlink" href="#computing-energy-and-force-using-builtin-models" title="Permalink to this headline">¶</a></h1>
+<p>TorchANI has a model ensemble trained by NeuroChem on the <a class="reference external" href="https://aip.scitation.org/doi/abs/10.1063/1.5023802">ANI-1x dataset</a>.
+These models are shipped with TorchANI and can be used directly.</p>
+<p>To begin with, let’s first import the modules we will use:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torchani</span>
+</pre></div>
+</div>
+<p>Let’s now manually specify the device we want TorchANI to run:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Let’s now load the built-in models and create a pipeline of AEV computer,
+neural networks, and energy shifter. This pipeline will first compute AEV,
+then use all models in the ensemble to compute molecular energies, and take
+the average of these energies to obtain a final output. The reason we need an
+energy shifter in the end is that the output of these networks is not the
+total energy but the total energy subtracted by a self energy for each atom.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">builtin</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">Builtins</span><span class="p">()</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+  <span class="n">builtin</span><span class="o">.</span><span class="n">aev_computer</span><span class="p">,</span>
+  <span class="n">builtin</span><span class="o">.</span><span class="n">models</span><span class="p">,</span>
+  <span class="n">builtin</span><span class="o">.</span><span class="n">energy_shifter</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Now let’s define the coordinate and species. If you just want to compute the
+energy and force for a single structure like in this example, you need to
+make the coordinate tensor has shape <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">Na,</span> <span class="pre">3)</span></code> and species has shape
+<code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">Na)</span></code>, where <code class="docutils literal notranslate"><span class="pre">Na</span></code> is the number of atoms in the molecule, the
+preceding <code class="docutils literal notranslate"><span class="pre">1</span></code> in the shape is here to support batch processing like in
+training. If you have <code class="docutils literal notranslate"><span class="pre">N</span></code> different structures to compute, then make it
+<code class="docutils literal notranslate"><span class="pre">N</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[[</span><span class="mf">0.03192167</span><span class="p">,</span>  <span class="mf">0.00638559</span><span class="p">,</span>  <span class="mf">0.01301679</span><span class="p">],</span>
+                             <span class="p">[</span><span class="o">-</span><span class="mf">0.83140486</span><span class="p">,</span>  <span class="mf">0.39370209</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.26395324</span><span class="p">],</span>
+                             <span class="p">[</span><span class="o">-</span><span class="mf">0.66518241</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.84461308</span><span class="p">,</span>  <span class="mf">0.20759389</span><span class="p">],</span>
+                             <span class="p">[</span><span class="mf">0.45554739</span><span class="p">,</span>   <span class="mf">0.54289633</span><span class="p">,</span>  <span class="mf">0.81170881</span><span class="p">],</span>
+                             <span class="p">[</span><span class="mf">0.66091919</span><span class="p">,</span>  <span class="o">-</span><span class="mf">0.16799635</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.91037834</span><span class="p">]]],</span>
+                           <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+<span class="n">species</span> <span class="o">=</span> <span class="n">builtin</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">(</span><span class="s1">&#39;CHHHH&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now let’s compute energy and force:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">energy</span> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span>
+<span class="n">derivative</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">energy</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">coordinates</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">force</span> <span class="o">=</span> <span class="o">-</span><span class="n">derivative</span>
+</pre></div>
+</div>
+<p>And print to see the result:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <span class="n">energy</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <span class="n">force</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.459022521972656
+Force: tensor([[ 0.0306, -0.1316, -0.0527],
+        [-0.1293,  0.1639, -0.0774],
+        [ 0.0856, -0.0429,  0.0408],
+        [ 0.0268,  0.0060,  0.0381],
+        [-0.0138,  0.0046,  0.0511]])
+</pre></div>
+</div>
+<p><strong>Total running time of the script:</strong> ( 0 minutes  1.617 seconds)</p>
+<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-energy-force-py">
+<div class="sphx-glr-download docutils container">
+<a class="reference download internal" download="" href="../_downloads/8760c39bb413f755f960d84100d39c43/energy_force.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">energy_force.py</span></code></a></div>
+<div class="sphx-glr-download docutils container">
+<a class="reference download internal" download="" href="../_downloads/75e732e91d1a5a32da05b7c8a4651eac/energy_force.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">energy_force.ipynb</span></code></a></div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="nnp_training.html" class="btn btn-neutral float-right" title="Train Your Own Neural Network Potential" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../start.html" class="btn btn-neutral" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Roitberg Group.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.1alpha',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

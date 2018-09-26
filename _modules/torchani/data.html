@@ -1,0 +1,521 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>torchani.data &mdash; TorchANI 0.1alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/gallery.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> TorchANI
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../start.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
+</ul>
+<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.data">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.utils">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ignite">Ignite Helpers</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TorchANI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>torchani.data</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for torchani.data</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Tools for loading, shuffling, and batching ANI datasets&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="k">import</span> <span class="n">Dataset</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="k">import</span> <span class="n">join</span><span class="p">,</span> <span class="n">isfile</span><span class="p">,</span> <span class="n">isdir</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">._pyanitools</span> <span class="k">import</span> <span class="n">anidataloader</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">utils</span><span class="p">,</span> <span class="n">neurochem</span><span class="p">,</span> <span class="n">aev</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="n">default_device</span> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span>
+
+
+<span class="k">def</span> <span class="nf">chunk_counts</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">split</span><span class="p">):</span>
+    <span class="n">split</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">split</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+    <span class="n">count_chunks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">split</span><span class="p">:</span>
+        <span class="n">count_chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="n">chunk_conformations</span> <span class="o">=</span> <span class="p">[</span><span class="nb">sum</span><span class="p">([</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">x</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">count_chunks</span><span class="p">]</span>
+    <span class="n">chunk_maxatoms</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">count_chunks</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">chunk_conformations</span><span class="p">,</span> <span class="n">chunk_maxatoms</span>
+
+
+<span class="k">def</span> <span class="nf">split_cost</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">split</span><span class="p">):</span>
+    <span class="n">split_min_cost</span> <span class="o">=</span> <span class="mi">40000</span>
+    <span class="n">cost</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">chunk_conformations</span><span class="p">,</span> <span class="n">chunk_maxatoms</span> <span class="o">=</span> <span class="n">chunk_counts</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">split</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">conformations</span><span class="p">,</span> <span class="n">maxatoms</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">chunk_conformations</span><span class="p">,</span> <span class="n">chunk_maxatoms</span><span class="p">):</span>
+        <span class="n">cost</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="n">conformations</span> <span class="o">*</span> <span class="n">maxatoms</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">split_min_cost</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cost</span>
+
+
+<span class="k">def</span> <span class="nf">split_batch</span><span class="p">(</span><span class="n">natoms</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">):</span>
+    <span class="c1"># count number of conformation by natoms</span>
+    <span class="n">natoms</span> <span class="o">=</span> <span class="n">natoms</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">natoms</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">counts</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">counts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">counts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">counts</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="c1"># find best split using greedy strategy</span>
+    <span class="n">split</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">cost</span> <span class="o">=</span> <span class="n">split_cost</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">split</span><span class="p">)</span>
+    <span class="n">improved</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">while</span> <span class="n">improved</span><span class="p">:</span>
+        <span class="n">improved</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">cycle_split</span> <span class="o">=</span> <span class="n">split</span>
+        <span class="n">cycle_cost</span> <span class="o">=</span> <span class="n">cost</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">split</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">split</span> <span class="o">+</span> <span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">split_cost</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">c</span> <span class="o">&lt;</span> <span class="n">cycle_cost</span><span class="p">:</span>
+                    <span class="n">improved</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">cycle_cost</span> <span class="o">=</span> <span class="n">c</span>
+                    <span class="n">cycle_split</span> <span class="o">=</span> <span class="n">s</span>
+        <span class="k">if</span> <span class="n">improved</span><span class="p">:</span>
+            <span class="n">split</span> <span class="o">=</span> <span class="n">cycle_split</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">cycle_cost</span>
+    <span class="c1"># do split</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">species_coordinates</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">chunk_conformations</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">chunk_counts</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">split</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">chunk_conformations</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">species</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">i</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">species</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+        <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">strip_redundant_padding</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+        <span class="n">species_coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">s</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">end</span>
+    <span class="k">return</span> <span class="n">species_coordinates</span>
+
+
+<div class="viewcode-block" id="BatchedANIDataset"><a class="viewcode-back" href="../../api.html#torchani.data.BatchedANIDataset">[docs]</a><span class="k">class</span> <span class="nc">BatchedANIDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Load data from hdf5 files, create minibatches, and convert to tensors.</span>
+
+<span class="sd">    This is already a dataset of batches, so when iterated, a batch rather</span>
+<span class="sd">    than a single data point will be yielded.</span>
+
+<span class="sd">    Since each batch might contain molecules of very different sizes, putting</span>
+<span class="sd">    the whole batch into a single tensor would require adding ghost atoms to</span>
+<span class="sd">    pad everything to the size of the largest molecule. As a result, huge</span>
+<span class="sd">    amount of computation would be wasted on ghost atoms. To avoid this issue,</span>
+<span class="sd">    the input of each batch, i.e. species and coordinates, are further divided</span>
+<span class="sd">    into chunks according to some heuristics, so that each chunk would only</span>
+<span class="sd">    have molecules of similar size, to minimize the padding required.</span>
+
+<span class="sd">    So, when iterating on this dataset, a tuple will be yielded. The first</span>
+<span class="sd">    element of this tuple is a list of (species, coordinates) pairs. Each pair</span>
+<span class="sd">    is a chunk of molecules of similar size. The second element of this tuple</span>
+<span class="sd">    would be a dictionary, where the keys are those specified in the argument</span>
+<span class="sd">    :attr:`properties`, and values are a single tensor of the whole batch</span>
+<span class="sd">    (properties are not splitted into chunks).</span>
+
+<span class="sd">    Splitting batch into chunks leads to some inconvenience on training,</span>
+<span class="sd">    especially when using high level libraries like ``ignite``. To overcome</span>
+<span class="sd">    this inconvenience, :class:`torchani.ignite.Container` is created for</span>
+<span class="sd">    working with ignite.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        path (str): Path to hdf5 files. If :attr:`path` is a file, then that</span>
+<span class="sd">            file would be loaded using `pyanitools.py`_. If :attr:`path` is</span>
+<span class="sd">            a directory, then all files with suffix `.h5` or `.hdf5` will be</span>
+<span class="sd">            loaded.</span>
+<span class="sd">        species_tensor_converter (:class:`collections.abc.Callable`): A</span>
+<span class="sd">            callable that convert species in the format of list of strings</span>
+<span class="sd">            to 1D tensor.</span>
+<span class="sd">        batch_size (int): Number of different 3D structures in a single</span>
+<span class="sd">            minibatch.</span>
+<span class="sd">        shuffle (bool): Whether to shuffle the whole dataset.</span>
+<span class="sd">        properties (list): List of keys in the dataset to be loaded.</span>
+<span class="sd">            ``&#39;species&#39;`` and ``&#39;coordinates&#39;`` are always loaded and need not</span>
+<span class="sd">            to be specified here.</span>
+<span class="sd">        transform (list): List of :class:`collections.abc.Callable` that</span>
+<span class="sd">            transform the data. Callables must take species, coordinates,</span>
+<span class="sd">            and properties of the whole dataset as arguments, and return</span>
+<span class="sd">            the transformed species, coordinates, and properties.</span>
+<span class="sd">        dtype (:class:`torch.dtype`): dtype of coordinates and properties to</span>
+<span class="sd">            to convert the dataset to.</span>
+<span class="sd">        device (:class:`torch.dtype`): device to put tensors when iterating.</span>
+
+<span class="sd">    .. _pyanitools.py:</span>
+<span class="sd">        https://github.com/isayev/ASE_ANI/blob/master/lib/pyanitools.py</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">species_tensor_converter</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span>
+                 <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">properties</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">],</span> <span class="n">transform</span><span class="o">=</span><span class="p">(),</span>
+                 <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">get_default_dtype</span><span class="p">(),</span> <span class="n">device</span><span class="o">=</span><span class="n">default_device</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BatchedANIDataset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="n">properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+
+        <span class="c1"># get name of files storing data</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.h5&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.hdf5&#39;</span><span class="p">)):</span>
+                    <span class="n">files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">path</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Bad path&#39;</span><span class="p">)</span>
+
+        <span class="c1"># load full dataset</span>
+        <span class="n">species_coordinates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">anidataloader</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="n">species_tensor_converter</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">])</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;coordinates&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+                <span class="n">species_coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">s</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+                    <span class="n">p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">double</span><span class="p">)</span>
+                    <span class="n">properties</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">pad_coordinates</span><span class="p">(</span><span class="n">species_coordinates</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+            <span class="n">properties</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">properties</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="c1"># shuffle if required</span>
+        <span class="n">conformations</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">shuffle</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="n">conformations</span><span class="p">)</span>
+            <span class="n">species</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+            <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+                <span class="n">properties</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+
+        <span class="c1"># do transformations on data</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">transform</span><span class="p">:</span>
+            <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">properties</span> <span class="o">=</span> <span class="n">t</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span>
+                                                 <span class="n">properties</span><span class="p">)</span>
+
+        <span class="c1"># convert to desired dtype</span>
+        <span class="n">species</span> <span class="o">=</span> <span class="n">species</span>
+        <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">properties</span><span class="p">:</span>
+            <span class="n">properties</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="c1"># split into minibatches, and strip redundant padding</span>
+        <span class="n">natoms</span> <span class="o">=</span> <span class="p">(</span><span class="n">species</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">batches</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">num_batches</span> <span class="o">=</span> <span class="p">(</span><span class="n">conformations</span> <span class="o">+</span> <span class="n">batch_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">batch_size</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_batches</span><span class="p">):</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">batch_size</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">conformations</span><span class="p">)</span>
+            <span class="n">natoms_batch</span> <span class="o">=</span> <span class="n">natoms</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+            <span class="c1"># sort batch by number of atoms to prepare for splitting</span>
+            <span class="n">natoms_batch</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">natoms_batch</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="n">species_batch</span> <span class="o">=</span> <span class="n">species</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+            <span class="n">coordinates_batch</span> <span class="o">=</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> \
+                <span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+            <span class="n">properties_batch</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">k</span><span class="p">:</span> <span class="n">properties</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">properties</span>
+            <span class="p">}</span>
+            <span class="c1"># further split batch into chunks</span>
+            <span class="n">species_coordinates</span> <span class="o">=</span> <span class="n">split_batch</span><span class="p">(</span><span class="n">natoms_batch</span><span class="p">,</span> <span class="n">species_batch</span><span class="p">,</span>
+                                              <span class="n">coordinates_batch</span><span class="p">)</span>
+            <span class="n">batch</span> <span class="o">=</span> <span class="n">species_coordinates</span><span class="p">,</span> <span class="n">properties_batch</span>
+            <span class="n">batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batches</span> <span class="o">=</span> <span class="n">batches</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="n">species_coordinates</span><span class="p">,</span> <span class="n">properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batches</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">species_coordinates</span> <span class="o">=</span> <span class="p">[(</span><span class="n">s</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">),</span> <span class="n">c</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">))</span>
+                               <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">species_coordinates</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">species_coordinates</span><span class="p">,</span> <span class="n">properties</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batches</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AEVCacheLoader"><a class="viewcode-back" href="../../api.html#torchani.data.AEVCacheLoader">[docs]</a><span class="k">class</span> <span class="nc">AEVCacheLoader</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Build a factory for AEV.</span>
+
+<span class="sd">    The computation of AEV is the most time consuming part during training.</span>
+<span class="sd">    Since during training, the AEV never changes, it is not hard to see that,</span>
+<span class="sd">    If we have a fast enough storage (this is usually the case for good SSDs,</span>
+<span class="sd">    but not for HDD), we could cache the computed AEVs into disk and load it</span>
+<span class="sd">    rather than compute it from scratch everytime we use it.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        disk_cache (str): Directory storing disk caches.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">disk_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AEVCacheLoader</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">disk_cache</span> <span class="o">=</span> <span class="n">disk_cache</span>
+
+        <span class="c1"># load dataset from disk cache</span>
+        <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">disk_cache</span><span class="p">,</span> <span class="s1">&#39;dataset&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">batches</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">aev_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">disk_cache</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">aev_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">species_aevs</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">species_aevs</span><span class="p">,</span> <span class="n">output</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span></div>
+
+
+<span class="n">builtin</span> <span class="o">=</span> <span class="n">neurochem</span><span class="o">.</span><span class="n">Builtins</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">cache_aev</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">,</span> <span class="n">batchsize</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">default_device</span><span class="p">,</span>
+              <span class="n">constfile</span><span class="o">=</span><span class="n">builtin</span><span class="o">.</span><span class="n">const_file</span><span class="p">,</span> <span class="n">subtract_sae</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+              <span class="n">sae_file</span><span class="o">=</span><span class="n">builtin</span><span class="o">.</span><span class="n">sae_file</span><span class="p">,</span> <span class="n">enable_tqdm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># if output directory does not exist, then create it</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">consts</span> <span class="o">=</span> <span class="n">neurochem</span><span class="o">.</span><span class="n">Constants</span><span class="p">(</span><span class="n">constfile</span><span class="p">)</span>
+    <span class="n">aev_computer</span> <span class="o">=</span> <span class="n">aev</span><span class="o">.</span><span class="n">AEVComputer</span><span class="p">(</span><span class="o">**</span><span class="n">consts</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">subtract_sae</span><span class="p">:</span>
+        <span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">neurochem</span><span class="o">.</span><span class="n">load_sae</span><span class="p">(</span><span class="n">sae_file</span><span class="p">)</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="p">(</span><span class="n">energy_shifter</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">,)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">BatchedANIDataset</span><span class="p">(</span>
+        <span class="n">dataset_path</span><span class="p">,</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">batchsize</span><span class="p">,</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span>
+
+    <span class="c1"># dump out the dataset</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="s1">&#39;dataset&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">enable_tqdm</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">tqdm</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">trange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+        <span class="n">input_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">aevs</span> <span class="o">=</span> <span class="p">[</span><span class="n">aev_computer</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">input_</span><span class="p">]</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">aevs</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;BatchedANIDataset&#39;</span><span class="p">,</span> <span class="s1">&#39;AEVCacheLoader&#39;</span><span class="p">,</span> <span class="s1">&#39;cache_aev&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Roitberg Group.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1alpha',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

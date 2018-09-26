@@ -1,0 +1,1752 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Train Neural Network Potential From NeuroChem Input File &mdash; TorchANI 0.1alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="TorchANI" href="../api.html" />
+    <link rel="prev" title="Use Disk Cache of AEV to Boost Training" href="cache_aev.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TorchANI
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../start.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Train Neural Network Potential From NeuroChem Input File</a></li>
+</ul>
+<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.data">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.utils">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ignite">Ignite Helpers</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TorchANI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Train Neural Network Potential From NeuroChem Input File</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/examples/neurochem_trainer.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-neurochem-trainer-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+</div>
+<div class="sphx-glr-example-title section" id="train-neural-network-potential-from-neurochem-input-file">
+<span id="sphx-glr-examples-neurochem-trainer-py"></span><h1>Train Neural Network Potential From NeuroChem Input File<a class="headerlink" href="#train-neural-network-potential-from-neurochem-input-file" title="Permalink to this headline">¶</a></h1>
+<p>This example shows how to use TorchANI’s NeuroChem trainer to read and run
+NeuroChem’s training config file to train a neural network potential.</p>
+<p>To begin with, let’s first import the modules we will use:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchani</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">tqdm</span>
+</pre></div>
+</div>
+<p>Now let’s setup path for the dataset and NeuroChem input file. Note that
+these paths assumes the user run this script under the <code class="docutils literal notranslate"><span class="pre">examples</span></code> directory
+of TorchANI’s repository. If you download this script, you should manually
+set the path of these files in your system before this script can run
+successfully. Also note that here for our demo purpose, we set both training
+set and validation set the <code class="docutils literal notranslate"><span class="pre">ani_gdb_s01.h5</span></code> in TorchANI’s repository. This
+allows this program to finish very quick, because that dataset is very small.
+But this is wrong and should be avoided for any serious training.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+<span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+<span class="n">cfg_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../tests/test_data/inputtrain.ipt&#39;</span><span class="p">)</span>
+<span class="n">training_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
+<span class="n">validation_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We also need to set the device to run the training:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">device_str</span> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span>
+<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_str</span><span class="p">)</span>
+
+
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">cfg_path</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="s1">&#39;runs&#39;</span><span class="p">)</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">load_data</span><span class="p">(</span><span class="n">training_path</span><span class="p">,</span> <span class="n">validation_path</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Once everything is set up, running NeuroChem is very easy. We simplify need a
+<code class="docutils literal notranslate"><span class="pre">trainer.run()</span></code>. But here, in order for sphinx-gallery to be able to
+capture the output of tqdm, let’s do some hacking first to make tqdm to print
+its progressbar to stdout.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">my_tqdm</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+
+
+<span class="n">trainer</span><span class="o">.</span><span class="n">tqdm</span> <span class="o">=</span> <span class="n">my_tqdm</span>
+</pre></div>
+</div>
+<p>Now, let’s go!</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">trainer</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:01,  2.66it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 10.51it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.88it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.46it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.42it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.25it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.46it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.33it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.34it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.82it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.31it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.72it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.07it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.79it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  8.77it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.60it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.65it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.45it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.92it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.80it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.05it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.51it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.43it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.16it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.45it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.25it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.84it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.11it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.31it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.40it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.59it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.51it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.98it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.30it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.72it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.68it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.97it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.80it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.95it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.54it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  6.07it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00,  8.12it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.40it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.16it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.93it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.88it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.95it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.45it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.66it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.12it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.95it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.65it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.57it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.93it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.82it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.05it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.60it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.39it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.45it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.24it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.55it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.96it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.40it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.92it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.68it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.90it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.91it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.76it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.52it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.01it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.13it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.90it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.79it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.81it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.98it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.03it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.03it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.75it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  8.72it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.31it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  6.27it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00,  8.38it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.06it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.98it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.30it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.96it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.90it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.21it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.64it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.48it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.82it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.83it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.58it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.16it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.84it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.38it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.86it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.97it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.87it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.75it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.81it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.26it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.53it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.35it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.82it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.62it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.62it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.43it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.49it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.30it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.42it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.21it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.62it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.35it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.42it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.19it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.44it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.43it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.00it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.70it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  5.59it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 17.98it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.77it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.55it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.79it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.78it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.53it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.53it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.88it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.97it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.09it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.81it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.74it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.57it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.69it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.58it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.62it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.27it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.96it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.71it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.91it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.43it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.46it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.25it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.98it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.72it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.52it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.26it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.41it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.80it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.81it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.36it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.73it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.88it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.98it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.42it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.83it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.81it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.81it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.51it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  5.48it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00,  7.35it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.95it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.82it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.21it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.78it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.17it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.92it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.83it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.68it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.41it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.68it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.34it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.87it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.69it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.41it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.34it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.07it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.59it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.42it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.64it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.43it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.89it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.81it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.80it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.58it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  8.96it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.57it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.68it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.46it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.36it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.13it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.20it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.22it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.60it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.44it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.47it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.14it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.81it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.67it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  4.55it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 15.70it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.64it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.39it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.44it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.18it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.41it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.18it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.08it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.76it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.67it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.63it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.72it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.52it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.93it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.94it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.69it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.46it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.58it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.99it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.75it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.60it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.94it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.36it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.98it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.82it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.62it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.34it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.75it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.55it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.98it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.92it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.15it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 26.86it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.84it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.70it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  8.20it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 10.57it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  8.06it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 10.44it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  4.79it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00,  6.44it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.09it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.25it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.40it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.55it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.89it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.89it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.79it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.81it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.34it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.38it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.25it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.41it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.98it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.01it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.34it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.68it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.39it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.22it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.08it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.85it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.66it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.44it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.66it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.47it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.75it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.58it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.02it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 26.87it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.38it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.51it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.77it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.57it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.90it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.77it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.88it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.36it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.98it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.74it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  5.94it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00,  7.97it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.93it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.81it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.95it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.84it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.80it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.32it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.94it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.01it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.85it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.62it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.57it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.24it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.30it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 26.19it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.73it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 26.21it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.68it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.52it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.45it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.71it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.76it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.58it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.84it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.78it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.30it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.57it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.57it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.38it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.18it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.30it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.41it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.69it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.96it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.69it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.68it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 27.49it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.03it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.82it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  5.92it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00,  7.89it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.52it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.28it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.80it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.84it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.50it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.23it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.51it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.24it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.75it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 26.78it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.92it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.16it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.48it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.24it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.26it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.95it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.93it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.76it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.14it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.30it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.17it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.97it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.62it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.88it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.20it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.75it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.11it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.80it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.23it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.71it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.54it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.43it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.24it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.05it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.85it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.66it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.01it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.62it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  5.85it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00,  7.84it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.58it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.38it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.48it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.47it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.64it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.08it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.89it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.70it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  8.85it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.49it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.86it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.69it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.81it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.68it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.28it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.43it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.38it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.89it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.84it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.67it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.95it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.81it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.58it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.09it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.87it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.66it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.63it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.40it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.15it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.78it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.77it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.83it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.51it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.28it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.70it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.55it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.65it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.45it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  5.73it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00,  7.71it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.05it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.78it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.43it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.15it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.41it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.49it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.65it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.76it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.43it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.13it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.12it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.75it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.79it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.12it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  8.79it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.39it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.36it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.52it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.23it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.86it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.82it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.62it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.56it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.24it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.80it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.66it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.60it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.41it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.42it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.21it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.80it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.12it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.39it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.65it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.23it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.14it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.54it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.35it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  5.72it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00,  7.64it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  8.82it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.50it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.28it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.86it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.81it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.79it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.13it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.39it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.89it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.42it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.44it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.47it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.70it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.54it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.45it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.26it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.29it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.89it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.66it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.87it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.61it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.13it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.81it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 26.00it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.99it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.86it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.75it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.55it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.72it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.56it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.44it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.66it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.36it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.61it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00, 10.00it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.90it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.47it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.17it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  5.47it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 17.85it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.75it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.59it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.68it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.23it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.59it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.99it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.16it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.67it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.89it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.20it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.98it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.78it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.89it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.20it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.86it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.67it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.22it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.04it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.09it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.79it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.97it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.77it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.36it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.09it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.62it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.42it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.80it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.69it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.29it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.25it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.68it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.54it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.52it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.34it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.60it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.24it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.16it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.53it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  5.90it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 18.79it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.59it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.25it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  8.85it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.75it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.52it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.22it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.47it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.25it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.48it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.59it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.79it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.60it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.85it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.63it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.57it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.62it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.10it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.95it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.18it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.54it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.70it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.24it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.86it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.84it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.97it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.79it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.44it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.56it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.63it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.24it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.40it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.10it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.20it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.37it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.28it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 26.98it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.32it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 27.42it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  5.56it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00,  7.48it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.16it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.04it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.35it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.87it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.42it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.77it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.39it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.23it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.11it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.78it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.98it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.98it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.36it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.60it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.06it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.60it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.33it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 26.09it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.96it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.77it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.75it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.64it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.68it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.17it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.29it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.03it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.64it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.47it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.53it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.72it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.66it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.45it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.86it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.70it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.65it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.51it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.21it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.85it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  6.01it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00,  8.05it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.03it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.00it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.51it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.94it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.08it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 26.06it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.35it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.30it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.82it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.82it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  8.75it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.26it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.03it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.70it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.86it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.75it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.49it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.87it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.64it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.98it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 17.28it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.57it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.67it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 27.30it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.90it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.78it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.86it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.69it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.49it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.22it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 18.11it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 27.24it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.78it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 26.61it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.92it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.78it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  8.70it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.93it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  5.66it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 18.52it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.64it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.91it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.92it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.98it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.38it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.26it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.31it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.00it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.18it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.38it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.74it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.49it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.28it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.85it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.89it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.97it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.14it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.31it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.07it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 11.64it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.53it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 26.12it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.81it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 25.39it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.32it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 23.98it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.55it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.56it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.91it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.74it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 15.94it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.38it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.43it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.70it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.47it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.27it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.95it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.94it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  5.89it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|####      | 2/5 [00:00&lt;00:00, 16.24it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 24.65it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00, 10.14it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00,  9.73it/s]
+epoch: 100%|##########| 5/5 [00:00&lt;00:00, 12.55it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|##        | 1/5 [00:00&lt;00:00, 10.24it/s]
+</pre></div>
+</div>
+<p>Alternatively, you can run NeuroChem trainer directly using command line.
+There is no need for programming. Just run the following command for help
+<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">torchani.neurochem.trainer</span> <span class="pre">-h</span></code> for usage. For this demo, the
+equivalent command is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;python&#39;</span><span class="p">,</span> <span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;torchani.neurochem.trainer&#39;</span><span class="p">,</span> <span class="s1">&#39;-d&#39;</span><span class="p">,</span> <span class="n">device_str</span><span class="p">,</span>
+       <span class="s1">&#39;--tqdm&#39;</span><span class="p">,</span> <span class="s1">&#39;--tensorboard&#39;</span><span class="p">,</span> <span class="s1">&#39;runs&#39;</span><span class="p">,</span> <span class="n">cfg_path</span><span class="p">,</span> <span class="n">training_path</span><span class="p">,</span>
+       <span class="n">validation_path</span><span class="p">]</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>python -m torchani.neurochem.trainer -d cuda --tqdm --tensorboard runs /home/gaoxiang/torchani/examples/../tests/test_data/inputtrain.ipt /home/gaoxiang/torchani/examples/../dataset/ani_gdb_s01.h5 /home/gaoxiang/torchani/examples/../dataset/ani_gdb_s01.h5
+</pre></div>
+</div>
+<p>Now let’s invoke this command to see what we get. Again, we redirect stderr
+to stdout simplify for sphinx-gallery to be able to capture it when
+generating this document:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <span class="n">Popen</span><span class="p">,</span> <span class="n">PIPE</span>  <span class="c1"># noqa: E402</span>
+<span class="k">print</span><span class="p">(</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">PIPE</span><span class="p">)</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|██        | 1/5 [00:00&lt;00:01,  3.05it/s]
+epoch: 100%|██████████| 5/5 [00:00&lt;00:00,  4.21it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|██        | 1/5 [00:00&lt;00:00,  9.58it/s]
+epoch: 100%|██████████| 5/5 [00:00&lt;00:00, 12.38it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|██        | 1/5 [00:00&lt;00:00,  9.77it/s]
+epoch: 100%|██████████| 5/5 [00:00&lt;00:00, 25.07it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|██        | 1/5 [00:00&lt;00:00,  9.75it/s]
+epoch: 100%|██████████| 5/5 [00:00&lt;00:00, 12.56it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|██        | 1/5 [00:00&lt;00:00,  9.64it/s]
+epoch: 100%|██████████| 5/5 [00:00&lt;00:00, 12.44it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|████      | 2/5 [00:00&lt;00:00, 15.71it/s]
+epoch: 100%|██████████| 5/5 [00:00&lt;00:00, 24.21it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|██        | 1/5 [00:00&lt;00:00,  9.75it/s]
+epoch: 100%|██████████| 5/5 [00:00&lt;00:00, 12.49it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|██        | 1/5 [00:00&lt;00:00,  9.91it/s]
+epoch: 100%|██████████| 5/5 [00:00&lt;00:00, 12.66it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|██        | 1/5 [00:00&lt;00:00,  9.95it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|██        | 1/5 [00:00&lt;00:00,  9.98it/s]
+epoch: 100%|██████████| 5/5 [00:00&lt;00:00, 12.86it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|██        | 1/5 [00:00&lt;00:00,  9.91it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  40%|████      | 2/5 [00:00&lt;00:00, 16.38it/s]
+epoch: 100%|██████████| 5/5 [00:00&lt;00:00, 24.90it/s]
+
+epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch:  20%|██        | 1/5 [00:00&lt;00:00, 10.89it/s]
+</pre></div>
+</div>
+<p><strong>Total running time of the script:</strong> ( 1 minutes  20.533 seconds)</p>
+<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-neurochem-trainer-py">
+<div class="sphx-glr-download docutils container">
+<a class="reference download internal" download="" href="../_downloads/fae17a027c4fb17fa45d09838690a90d/neurochem_trainer.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">neurochem_trainer.py</span></code></a></div>
+<div class="sphx-glr-download docutils container">
+<a class="reference download internal" download="" href="../_downloads/8cdd61df0e25fceb6d5517c2d04ff1f2/neurochem_trainer.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">neurochem_trainer.ipynb</span></code></a></div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../api.html" class="btn btn-neutral float-right" title="TorchANI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="cache_aev.html" class="btn btn-neutral" title="Use Disk Cache of AEV to Boost Training" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Roitberg Group.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.1alpha',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

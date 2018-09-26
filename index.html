@@ -1,0 +1,276 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Welcome to TorchANI’s documentation! &mdash; TorchANI 0.1alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="start.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="#" class="icon icon-home"> TorchANI
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="start.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
+</ul>
+<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.data">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.utils">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.ignite">Ignite Helpers</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">TorchANI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Welcome to TorchANI’s documentation!</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-torchani">
+<span id="welcome-to-torchani-s-documentation"></span><h1>Welcome to TorchANI’s documentation!<a class="headerlink" href="#module-torchani" title="Permalink to this headline">¶</a></h1>
+<p>TorchANI is a PyTorch implementation of <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI</a>, created and maintained by
+the <a class="reference external" href="https://roitberg.chem.ufl.edu/">Roitberg group</a>.  TorchANI contains classes like
+<a class="reference internal" href="api.html#torchani.AEVComputer" title="torchani.AEVComputer"><code class="xref py py-class docutils literal notranslate"><span class="pre">AEVComputer</span></code></a>, <a class="reference internal" href="api.html#torchani.ANIModel" title="torchani.ANIModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">ANIModel</span></code></a>, and <a class="reference internal" href="api.html#torchani.EnergyShifter" title="torchani.EnergyShifter"><code class="xref py py-class docutils literal notranslate"><span class="pre">EnergyShifter</span></code></a> that can
+be pipelined to compute molecular energies from the 3D coordinates of
+molecules.  It also include tools to: deal with ANI datasets(e.g. <a class="reference external" href="https://www.nature.com/articles/sdata2017193">ANI-1</a>,
+<a class="reference external" href="https://aip.scitation.org/doi/abs/10.1063/1.5023802">ANI-1x</a>, <a class="reference external" href="https://doi.org/10.26434/chemrxiv.6744440.v1">ANI-1ccx</a>, etc.) at <a class="reference internal" href="api.html#module-torchani.data" title="torchani.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.data</span></code></a>, import various file
+formats of NeuroChem at <a class="reference internal" href="api.html#module-torchani.neurochem" title="torchani.neurochem"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.neurochem</span></code></a>, help working with ignite
+at <a class="reference internal" href="api.html#module-torchani.ignite" title="torchani.ignite"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.ignite</span></code></a>, and more at <a class="reference internal" href="api.html#module-torchani.utils" title="torchani.utils"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.utils</span></code></a>.</p>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="start.html">Installation</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.data">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.utils">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.ignite">Ignite Helpers</a></li>
+</ul>
+</div>
+<div class="section" id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="start.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Roitberg Group.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1alpha',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

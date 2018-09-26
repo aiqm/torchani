@@ -1,0 +1,922 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>torchani.neurochem &mdash; TorchANI 0.1alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/gallery.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> TorchANI
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../start.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
+</ul>
+<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.data">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.utils">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ignite">Ignite Helpers</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TorchANI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>torchani.neurochem</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for torchani.neurochem</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Tools for loading/running NeuroChem input files.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pkg_resources</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">bz2</span>
+<span class="kn">import</span> <span class="nn">lark</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">ignite</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">timeit</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="k">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span> <span class="nn">..nn</span> <span class="k">import</span> <span class="n">ANIModel</span><span class="p">,</span> <span class="n">Ensemble</span><span class="p">,</span> <span class="n">Gaussian</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">EnergyShifter</span>
+<span class="kn">from</span> <span class="nn">..aev</span> <span class="k">import</span> <span class="n">AEVComputer</span>
+<span class="kn">from</span> <span class="nn">..ignite</span> <span class="k">import</span> <span class="n">Container</span><span class="p">,</span> <span class="n">MSELoss</span><span class="p">,</span> <span class="n">TransformedLoss</span><span class="p">,</span> <span class="n">RMSEMetric</span><span class="p">,</span> <span class="n">MAEMetric</span>
+
+
+<div class="viewcode-block" id="Constants"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Constants">[docs]</a><span class="k">class</span> <span class="nc">Constants</span><span class="p">(</span><span class="n">Mapping</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;NeuroChem constants. Objects of this class can be used as arguments</span>
+<span class="sd">    to :class:`torchani.AEVComputer`, like ``torchani.AEVComputer(**consts)``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)]</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Rcr&#39;</span> <span class="ow">or</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Rca&#39;</span><span class="p">:</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
+                    <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;EtaR&#39;</span><span class="p">,</span> <span class="s1">&#39;ShfR&#39;</span><span class="p">,</span> <span class="s1">&#39;Zeta&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;ShfZ&#39;</span><span class="p">,</span> <span class="s1">&#39;EtaA&#39;</span><span class="p">,</span> <span class="s1">&#39;ShfA&#39;</span><span class="p">]:</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                            <span class="s1">&#39;[&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+                    <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Atyp&#39;</span><span class="p">:</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                            <span class="s1">&#39;[&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">species</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unable to parse const file&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">species</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rev_species</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">species</span><span class="p">)):</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">species</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rev_species</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="s1">&#39;Rcr&#39;</span>
+        <span class="k">yield</span> <span class="s1">&#39;Rca&#39;</span>
+        <span class="k">yield</span> <span class="s1">&#39;EtaR&#39;</span>
+        <span class="k">yield</span> <span class="s1">&#39;ShfR&#39;</span>
+        <span class="k">yield</span> <span class="s1">&#39;EtaA&#39;</span>
+        <span class="k">yield</span> <span class="s1">&#39;Zeta&#39;</span>
+        <span class="k">yield</span> <span class="s1">&#39;ShfA&#39;</span>
+        <span class="k">yield</span> <span class="s1">&#39;ShfZ&#39;</span>
+        <span class="k">yield</span> <span class="s1">&#39;num_species&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">8</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Constants.species_to_tensor"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Constants.species_to_tensor">[docs]</a>    <span class="k">def</span> <span class="nf">species_to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert species from squence of strings to 1D tensor&quot;&quot;&quot;</span>
+        <span class="n">rev</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rev_species</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">species</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">rev</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="load_sae"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_sae">[docs]</a><span class="k">def</span> <span class="nf">load_sae</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns an object of :class:`EnergyShifter` with self energies from</span>
+<span class="sd">    NeuroChem sae file&quot;&quot;&quot;</span>
+    <span class="n">self_energies</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)]</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">self_energies</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+    <span class="n">self_energies</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">self_energies</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">EnergyShifter</span><span class="p">(</span><span class="n">self_energies</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_activation</span><span class="p">(</span><span class="n">activation_index</span><span class="p">):</span>
+    <span class="c1"># Activation defined in:</span>
+    <span class="c1"># https://github.com/Jussmith01/NeuroChem/blob/master/src-atomicnnplib/cunetwork/cuannlayer_t.cu#L868</span>
+    <span class="k">if</span> <span class="n">activation_index</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="n">activation_index</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>  <span class="c1"># Gaussian</span>
+        <span class="k">return</span> <span class="n">Gaussian</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">activation_index</span> <span class="o">==</span> <span class="mi">9</span><span class="p">:</span>  <span class="c1"># CELU</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">CELU</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s1">&#39;Unexpected activation </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">activation_index</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="load_atomic_network"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_atomic_network">[docs]</a><span class="k">def</span> <span class="nf">load_atomic_network</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns an instance of :class:`torch.nn.Sequential` with hyperparameters</span>
+<span class="sd">    and parameters loaded NeuroChem&#39;s .nnf, .wparam and .bparam files.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">decompress_nnf</span><span class="p">(</span><span class="n">buffer</span><span class="p">):</span>
+        <span class="k">while</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="sa">b</span><span class="s1">&#39;=&#39;</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">buffer</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">buffer</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="k">return</span> <span class="n">bz2</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">buffer</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">parse_nnf</span><span class="p">(</span><span class="n">nnf_file</span><span class="p">):</span>
+        <span class="c1"># parse input file</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">lark</span><span class="o">.</span><span class="n">Lark</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        identifier : CNAME</span>
+
+<span class="s1">        inputsize : &quot;inputsize&quot; &quot;=&quot; INT &quot;;&quot;</span>
+
+<span class="s1">        assign : identifier &quot;=&quot; value &quot;;&quot;</span>
+
+<span class="s1">        layer : &quot;layer&quot; &quot;[&quot; assign * &quot;]&quot;</span>
+
+<span class="s1">        atom_net : &quot;atom_net&quot; WORD &quot;$&quot; layer * &quot;$&quot;</span>
+
+<span class="s1">        start: inputsize atom_net</span>
+
+<span class="s1">        value : INT</span>
+<span class="s1">              | FLOAT</span>
+<span class="s1">              | &quot;FILE&quot; &quot;:&quot; FILENAME &quot;[&quot; INT &quot;]&quot;</span>
+
+<span class="s1">        FILENAME : (&quot;_&quot;|&quot;-&quot;|&quot;.&quot;|LETTER|DIGIT)+</span>
+
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.SIGNED_NUMBER</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.LETTER</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.WORD</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.DIGIT</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.INT</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.FLOAT</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.CNAME</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.WS</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">gnore WS</span>
+<span class="s1">        &#39;&#39;&#39;</span><span class="p">)</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">nnf_file</span><span class="p">)</span>
+
+        <span class="c1"># execute parse tree</span>
+        <span class="k">class</span> <span class="nc">TreeExec</span><span class="p">(</span><span class="n">lark</span><span class="o">.</span><span class="n">Transformer</span><span class="p">):</span>
+
+            <span class="k">def</span> <span class="nf">identifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+                <span class="k">return</span> <span class="n">v</span>
+
+            <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;FILENAME&#39;</span><span class="p">:</span>
+                        <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">value</span>
+                    <span class="k">elif</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;INT&#39;</span><span class="p">:</span>
+                        <span class="n">v</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;FLOAT&#39;</span><span class="p">:</span>
+                        <span class="n">v</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unexpected type&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">([</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">([</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;length of value can only be 1 or 2&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">v</span>
+
+            <span class="k">def</span> <span class="nf">assign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span>
+
+            <span class="k">def</span> <span class="nf">layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">atom_net</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="n">layers</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">return</span> <span class="n">layers</span>
+
+            <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">layer_setups</span> <span class="o">=</span> <span class="n">TreeExec</span><span class="p">()</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">layer_setups</span>
+
+    <span class="k">def</span> <span class="nf">load_param_file</span><span class="p">(</span><span class="n">linear</span><span class="p">,</span> <span class="n">in_size</span><span class="p">,</span> <span class="n">out_size</span><span class="p">,</span> <span class="n">wfn</span><span class="p">,</span> <span class="n">bfn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load `.wparam` and `.bparam` files&quot;&quot;&quot;</span>
+        <span class="n">wsize</span> <span class="o">=</span> <span class="n">in_size</span> <span class="o">*</span> <span class="n">out_size</span>
+        <span class="n">fw</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">wfn</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">f&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">wsize</span><span class="p">),</span> <span class="n">fw</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">w</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">out_size</span><span class="p">,</span> <span class="n">in_size</span><span class="p">)</span>
+        <span class="n">linear</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">w</span>
+        <span class="n">fw</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">fb</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">bfn</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">f&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">out_size</span><span class="p">),</span> <span class="n">fb</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">out_size</span><span class="p">)</span>
+        <span class="n">linear</span><span class="o">.</span><span class="n">bias</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">b</span>
+        <span class="n">fb</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">networ_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">buffer</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">buffer</span> <span class="o">=</span> <span class="n">decompress_nnf</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+        <span class="n">layer_setups</span> <span class="o">=</span> <span class="n">parse_nnf</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">layer_setups</span><span class="p">:</span>
+            <span class="c1"># construct linear layer and load parameters</span>
+            <span class="n">in_size</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;blocksize&#39;</span><span class="p">]</span>
+            <span class="n">out_size</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span>
+            <span class="n">wfn</span><span class="p">,</span> <span class="n">wsz</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span>
+            <span class="n">bfn</span><span class="p">,</span> <span class="n">bsz</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;biases&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">in_size</span> <span class="o">*</span> <span class="n">out_size</span> <span class="o">!=</span> <span class="n">wsz</span> <span class="ow">or</span> <span class="n">out_size</span> <span class="o">!=</span> <span class="n">bsz</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;bad parameter shape&#39;</span><span class="p">)</span>
+            <span class="n">layer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_size</span><span class="p">,</span> <span class="n">out_size</span><span class="p">)</span>
+            <span class="n">wfn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">networ_dir</span><span class="p">,</span> <span class="n">wfn</span><span class="p">)</span>
+            <span class="n">bfn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">networ_dir</span><span class="p">,</span> <span class="n">bfn</span><span class="p">)</span>
+            <span class="n">load_param_file</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">in_size</span><span class="p">,</span> <span class="n">out_size</span><span class="p">,</span> <span class="n">wfn</span><span class="p">,</span> <span class="n">bfn</span><span class="p">)</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+            <span class="n">activation</span> <span class="o">=</span> <span class="n">_get_activation</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;activation&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">activation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">activation</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load_model"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_model">[docs]</a><span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="nb">dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns an instance of :class:`torchani.ANIModel` loaded from</span>
+<span class="sd">    NeuroChem&#39;s network directory.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        species (:class:`collections.abc.Sequence`): Sequence of strings for</span>
+<span class="sd">            chemical symbols of each supported atom type in correct order.</span>
+<span class="sd">        dir (str): String for directory storing network configurations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">species</span><span class="p">:</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="s1">&#39;ANN-</span><span class="si">{}</span><span class="s1">.nnf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">load_atomic_network</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">ANIModel</span><span class="p">(</span><span class="n">models</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load_model_ensemble"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_model_ensemble">[docs]</a><span class="k">def</span> <span class="nf">load_model_ensemble</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns an instance of :class:`torchani.Ensemble` loaded from</span>
+<span class="sd">    NeuroChem&#39;s network directories beginning with the given prefix.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        species (:class:`collections.abc.Sequence`): Sequence of strings for</span>
+<span class="sd">            chemical symbols of each supported atom type in correct order.</span>
+<span class="sd">        prefix (str): Prefix of paths of directory that networks configurations</span>
+<span class="sd">            are stored.</span>
+<span class="sd">        count (int): Number of models in the ensemble.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">):</span>
+        <span class="n">network_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">i</span><span class="p">),</span> <span class="s1">&#39;networks&#39;</span><span class="p">)</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">load_model</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">network_dir</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">Ensemble</span><span class="p">(</span><span class="n">models</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Builtins"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Builtins">[docs]</a><span class="k">class</span> <span class="nc">Builtins</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Container for all builtin stuffs.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        const_file (:class:`str`): Path to the builtin constant file.</span>
+<span class="sd">        consts (:class:`Constants`): Constants loaded from builtin constant</span>
+<span class="sd">            file.</span>
+<span class="sd">        aev_computer (:class:`torchani.AEVComputer`): AEV computer with builtin</span>
+<span class="sd">            constants.</span>
+<span class="sd">        sae_file (:class:`str`): Path to the builtin self atomic energy file.</span>
+<span class="sd">        energy_shifter (:class:`torchani.EnergyShifter`): AEV computer with</span>
+<span class="sd">            builtin constants.</span>
+<span class="sd">        ensemble_size (:class:`int`): Number of models in model ensemble.</span>
+<span class="sd">        ensemble_prefix (:class:`str`): Prefix of directories of models.</span>
+<span class="sd">        models (:class:`torchani.Ensemble`): Ensemble of models.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parent_name</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="vm">__name__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">const_file</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span>
+            <span class="n">parent_name</span><span class="p">,</span>
+            <span class="s1">&#39;resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consts</span> <span class="o">=</span> <span class="n">Constants</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">const_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span> <span class="o">=</span> <span class="n">AEVComputer</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span>
+            <span class="n">parent_name</span><span class="p">,</span> <span class="s1">&#39;resources/ani-1x_dft_x8ens/sae_linfit.dat&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">load_sae</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_prefix</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span>
+            <span class="n">parent_name</span><span class="p">,</span> <span class="s1">&#39;resources/ani-1x_dft_x8ens/train&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="n">load_model_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_prefix</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">hartree2kcal</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mf">627.509</span> <span class="o">*</span> <span class="n">x</span>
+
+
+<span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">BatchedANIDataset</span>  <span class="c1"># noqa: E402</span>
+<span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">AEVCacheLoader</span>  <span class="c1"># noqa: E402</span>
+
+
+<div class="viewcode-block" id="Trainer"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer">[docs]</a><span class="k">class</span> <span class="nc">Trainer</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Train with NeuroChem training configurations.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        filename (str): Input file name</span>
+<span class="sd">        device (:class:`torch.device`): device to train the model</span>
+<span class="sd">        tqdm (bool): whether to enable tqdm</span>
+<span class="sd">        tensorboard (str): Directory to store tensorboard log file, set to</span>
+<span class="sd">            ``None`` to disable tensorboardX.</span>
+<span class="sd">        aev_caching (bool): Whether to use AEV caching.</span>
+<span class="sd">        checkpoint_name (str): Name of the checkpoint file, checkpoints will be</span>
+<span class="sd">            stored in the network directory with this file name.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">),</span> <span class="n">tqdm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">tensorboard</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aev_caching</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">checkpoint_name</span><span class="o">=</span><span class="s1">&#39;model.pt&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aev_caching</span> <span class="o">=</span> <span class="n">aev_caching</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_name</span> <span class="o">=</span> <span class="n">checkpoint_name</span>
+        <span class="k">if</span> <span class="n">tqdm</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">tqdm</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tqdm</span> <span class="o">=</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tqdm</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">tensorboard</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">tensorboardX</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span> <span class="o">=</span> <span class="n">tensorboardX</span><span class="o">.</span><span class="n">SummaryWriter</span><span class="p">(</span><span class="n">log_dir</span><span class="o">=</span><span class="n">tensorboard</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training_eval_every</span> <span class="o">=</span> <span class="mi">20</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">network_setup</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_construct</span><span class="p">(</span><span class="n">network_setup</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">txt</span><span class="p">):</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">lark</span><span class="o">.</span><span class="n">Lark</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">        identifier : CNAME</span>
+
+<span class="s1">        outer_assign : identifier &quot;=&quot; value</span>
+<span class="s1">        params : outer_assign *</span>
+
+<span class="s1">        inner_assign : identifier &quot;=&quot; value &quot;;&quot;</span>
+<span class="s1">        input_size : &quot;inputsize&quot; &quot;=&quot; INT &quot;;&quot;</span>
+
+<span class="s1">        layer : &quot;layer&quot; &quot;[&quot; inner_assign * &quot;]&quot;</span>
+
+<span class="s1">        atom_type : WORD</span>
+
+<span class="s1">        atom_net : &quot;atom_net&quot; atom_type &quot;$&quot; layer * &quot;$&quot;</span>
+
+<span class="s1">        network_setup: &quot;network_setup&quot; &quot;{&quot; input_size atom_net * &quot;}&quot;</span>
+
+<span class="s1">        start: params network_setup params</span>
+
+<span class="s1">        value : INT</span>
+<span class="s1">              | FLOAT</span>
+<span class="s1">              | STRING_VALUE</span>
+
+<span class="s1">        STRING_VALUE : (&quot;_&quot;|&quot;-&quot;|&quot;.&quot;|&quot;/&quot;|LETTER)(&quot;_&quot;|&quot;-&quot;|&quot;.&quot;|&quot;/&quot;|LETTER|DIGIT)*</span>
+
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.SIGNED_NUMBER</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.LETTER</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.WORD</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.DIGIT</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.INT</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.FLOAT</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.CNAME</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.WS</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">gnore WS</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">gnore /!.*/</span>
+<span class="s1">        &#39;&#39;&#39;</span><span class="p">)</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span>
+
+        <span class="k">class</span> <span class="nc">TreeExec</span><span class="p">(</span><span class="n">lark</span><span class="o">.</span><span class="n">Transformer</span><span class="p">):</span>
+
+            <span class="k">def</span> <span class="nf">identifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+                <span class="k">return</span> <span class="n">v</span>
+
+            <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;STRING_VALUE&#39;</span><span class="p">:</span>
+                        <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">value</span>
+                    <span class="k">elif</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;INT&#39;</span><span class="p">:</span>
+                        <span class="n">v</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;FLOAT&#39;</span><span class="p">:</span>
+                        <span class="n">v</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unexpected type&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;length of value can only be 1 or 2&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">v</span>
+
+            <span class="k">def</span> <span class="nf">outer_assign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span>
+
+            <span class="n">inner_assign</span> <span class="o">=</span> <span class="n">outer_assign</span>
+
+            <span class="k">def</span> <span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">v</span>
+
+            <span class="k">def</span> <span class="nf">network_setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="n">intput_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">atomic_nets</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+                <span class="k">return</span> <span class="n">intput_size</span><span class="p">,</span> <span class="n">atomic_nets</span>
+
+            <span class="k">def</span> <span class="nf">layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">atom_net</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="n">atom_type</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">layers</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">return</span> <span class="n">atom_type</span><span class="p">,</span> <span class="n">layers</span>
+
+            <span class="k">def</span> <span class="nf">atom_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+            <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="n">network_setup</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">del</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">network_setup</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">v</span><span class="p">))</span>
+
+            <span class="k">def</span> <span class="nf">input_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="k">return</span> <span class="n">TreeExec</span><span class="p">()</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_construct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">network_setup</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="nb">dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
+
+        <span class="c1"># delete ignored params</span>
+        <span class="k">def</span> <span class="nf">del_if_exists</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">assert_param</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">params</span> <span class="ow">and</span> <span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">key</span> <span class="o">+</span> <span class="s1">&#39; not supported yet&#39;</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="n">del_if_exists</span><span class="p">(</span><span class="s1">&#39;gpuid&#39;</span><span class="p">)</span>
+        <span class="n">del_if_exists</span><span class="p">(</span><span class="s1">&#39;nkde&#39;</span><span class="p">)</span>
+        <span class="n">del_if_exists</span><span class="p">(</span><span class="s1">&#39;fmult&#39;</span><span class="p">)</span>
+        <span class="n">del_if_exists</span><span class="p">(</span><span class="s1">&#39;cmult&#39;</span><span class="p">)</span>
+        <span class="n">del_if_exists</span><span class="p">(</span><span class="s1">&#39;decrate&#39;</span><span class="p">)</span>
+        <span class="n">del_if_exists</span><span class="p">(</span><span class="s1">&#39;mu&#39;</span><span class="p">)</span>
+        <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;pbc&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;force&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;moment&#39;</span><span class="p">,</span> <span class="s1">&#39;ADAM&#39;</span><span class="p">)</span>
+        <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;runtype&#39;</span><span class="p">,</span> <span class="s1">&#39;ANNP_CREATE_HDNN_AND_TRAIN&#39;</span><span class="p">)</span>
+        <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;adptlrn&#39;</span><span class="p">,</span> <span class="s1">&#39;OFF&#39;</span><span class="p">)</span>
+        <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;tmax&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;nmax&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;ntwshr&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># load parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">const_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sflparamsfile&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consts</span> <span class="o">=</span> <span class="n">Constants</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">const_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span> <span class="o">=</span> <span class="n">AEVComputer</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sflparamsfile&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;atomEnergyFile&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shift_energy</span> <span class="o">=</span> <span class="n">load_sae</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;atomEnergyFile&#39;</span><span class="p">]</span>
+        <span class="n">network_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ntwkStoreDir&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">network_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">network_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_checkpoint</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">network_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_name</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ntwkStoreDir&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_nonimprove</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;tolr&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;tolr&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_lr</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;eta&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;eta&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lr_decay</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;emult&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;emult&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_lr</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;tcrit&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;tcrit&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">training_batch_size</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;tbtchsz&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;tbtchsz&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validation_batch_size</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;vbtchsz&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;vbtchsz&#39;</span><span class="p">]</span>
+
+        <span class="c1"># construct networks</span>
+        <span class="n">input_size</span><span class="p">,</span> <span class="n">network_setup</span> <span class="o">=</span> <span class="n">network_setup</span>
+        <span class="k">if</span> <span class="n">input_size</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span><span class="o">.</span><span class="n">aev_length</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;AEV size and input size does not match&#39;</span><span class="p">)</span>
+        <span class="n">l2reg</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">atomic_nets</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">atom_type</span> <span class="ow">in</span> <span class="n">network_setup</span><span class="p">:</span>
+            <span class="n">layers</span> <span class="o">=</span> <span class="n">network_setup</span><span class="p">[</span><span class="n">atom_type</span><span class="p">]</span>
+            <span class="n">modules</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">input_size</span>
+            <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
+                <span class="n">o</span> <span class="o">=</span> <span class="n">layer</span><span class="p">[</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span>
+                <span class="k">del</span> <span class="n">layer</span><span class="p">[</span><span class="s1">&#39;nodes&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">layer</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unsupported layer type&#39;</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">layer</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
+                <span class="n">module</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span>
+                <span class="n">modules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+                <span class="n">activation</span> <span class="o">=</span> <span class="n">_get_activation</span><span class="p">(</span><span class="n">layer</span><span class="p">[</span><span class="s1">&#39;activation&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">activation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">modules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">activation</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">layer</span><span class="p">[</span><span class="s1">&#39;activation&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s1">&#39;l2norm&#39;</span> <span class="ow">in</span> <span class="n">layer</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">layer</span><span class="p">[</span><span class="s1">&#39;l2norm&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="c1"># NB: The &quot;L2&quot; implemented in NeuroChem is actually not</span>
+                        <span class="c1"># L2 but weight decay. The difference of these two is:</span>
+                        <span class="c1"># https://arxiv.org/pdf/1711.05101.pdf</span>
+                        <span class="c1"># There is a pull request on github/pytorch</span>
+                        <span class="c1"># implementing AdamW, etc.:</span>
+                        <span class="c1"># https://github.com/pytorch/pytorch/pull/4429</span>
+                        <span class="c1"># There is no plan to support the &quot;L2&quot; settings in</span>
+                        <span class="c1"># input file before AdamW get merged into pytorch.</span>
+                        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;L2 not supported yet&#39;</span><span class="p">)</span>
+                        <span class="n">l2reg</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">layer</span><span class="p">[</span><span class="s1">&#39;l2valu&#39;</span><span class="p">],</span> <span class="n">module</span><span class="p">))</span>
+                    <span class="k">del</span> <span class="n">layer</span><span class="p">[</span><span class="s1">&#39;l2norm&#39;</span><span class="p">]</span>
+                    <span class="k">del</span> <span class="n">layer</span><span class="p">[</span><span class="s1">&#39;l2valu&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unrecognized parameter in layer setup&#39;</span><span class="p">)</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="n">o</span>
+            <span class="n">atomic_nets</span><span class="p">[</span><span class="n">atom_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">modules</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">ANIModel</span><span class="p">([</span><span class="n">atomic_nets</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aev_caching</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nnp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nnp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">({</span><span class="s1">&#39;energies&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">nnp</span><span class="p">})</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="c1"># losses</span>
+        <span class="k">def</span> <span class="nf">l2</span><span class="p">():</span>
+            <span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="n">c</span> <span class="o">*</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">l2reg</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mse_loss</span> <span class="o">=</span> <span class="n">TransformedLoss</span><span class="p">(</span><span class="n">MSELoss</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">),</span>
+                                        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="n">l2</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exp_loss</span> <span class="o">=</span> <span class="n">TransformedLoss</span><span class="p">(</span>
+            <span class="n">MSELoss</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">),</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">l2</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unrecognized parameter&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_epoch</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_iteration</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">best_validation_rmse</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span>
+
+<div class="viewcode-block" id="Trainer.evaluate"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer.evaluate">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Evaluate on given dataset to compute RMSE and MAE.&quot;&quot;&quot;</span>
+        <span class="n">evaluator</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">create_supervised_evaluator</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+            <span class="n">metrics</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;RMSE&#39;</span><span class="p">:</span> <span class="n">RMSEMetric</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;MAE&#39;</span><span class="p">:</span> <span class="n">MAEMetric</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">),</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">evaluator</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">metrics</span>
+        <span class="k">return</span> <span class="n">hartree2kcal</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;RMSE&#39;</span><span class="p">]),</span> <span class="n">hartree2kcal</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;MAE&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Trainer.load_data"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer.load_data">[docs]</a>    <span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training_path</span><span class="p">,</span> <span class="n">validation_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load training and validation dataset from file.</span>
+
+<span class="sd">        If AEV caching is enabled, then the arguments are path to the cache</span>
+<span class="sd">        directory, otherwise it should be path to the dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aev_caching</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training_set</span> <span class="o">=</span> <span class="n">AEVCacheLoader</span><span class="p">(</span><span class="n">training_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validation_set</span> <span class="o">=</span> <span class="n">AEVCacheLoader</span><span class="p">(</span><span class="n">validation_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training_set</span> <span class="o">=</span> <span class="n">BatchedANIDataset</span><span class="p">(</span>
+                <span class="n">training_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">training_batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_energy</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validation_set</span> <span class="o">=</span> <span class="n">BatchedANIDataset</span><span class="p">(</span>
+                <span class="n">validation_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">validation_batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_energy</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Trainer.run"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run the training&quot;&quot;&quot;</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">decorate</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+
+            <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">STARTED</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+                <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">no_improve_count</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_epoch</span>
+                <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iteration</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_iteration</span>
+
+            <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">COMPLETED</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">global_epoch</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">global_iteration</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iteration</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tqdm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
+                <span class="k">def</span> <span class="nf">init_tqdm</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+                    <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">tqdm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span>
+                        <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_set</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;epoch&#39;</span><span class="p">)</span>
+
+                <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">ITERATION_COMPLETED</span><span class="p">)</span>
+                <span class="k">def</span> <span class="nf">update_tqdm</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+                    <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">tqdm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+                <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_COMPLETED</span><span class="p">)</span>
+                <span class="k">def</span> <span class="nf">finalize_tqdm</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+                    <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">tqdm</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+            <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">validation_and_checkpoint</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+                <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">rmse</span><span class="p">,</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">mae</span> <span class="o">=</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">validation_set</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">rmse</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_validation_rmse</span><span class="p">:</span>
+                    <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">no_improve_count</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">best_validation_rmse</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">rmse</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_checkpoint</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">no_improve_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="k">if</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">no_improve_count</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_nonimprove</span><span class="p">:</span>
+                    <span class="n">trainer</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
+                <span class="k">def</span> <span class="nf">log_per_epoch</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+                    <span class="n">elapsed</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                    <span class="n">epoch</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;time_vs_epoch&#39;</span><span class="p">,</span> <span class="n">elapsed</span><span class="p">,</span>
+                                                <span class="n">epoch</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;learning_rate_vs_epoch&#39;</span><span class="p">,</span> <span class="n">lr</span><span class="p">,</span>
+                                                <span class="n">epoch</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;validation_rmse_vs_epoch&#39;</span><span class="p">,</span>
+                                                <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">rmse</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;validation_mae_vs_epoch&#39;</span><span class="p">,</span>
+                                                <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">mae</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span>
+                        <span class="s1">&#39;best_validation_rmse_vs_epoch&#39;</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">best_validation_rmse</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;no_improve_count_vs_epoch&#39;</span><span class="p">,</span>
+                                                <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">no_improve_count</span><span class="p">,</span>
+                                                <span class="n">epoch</span><span class="p">)</span>
+
+                    <span class="c1"># compute training RMSE and MAE</span>
+                    <span class="k">if</span> <span class="n">epoch</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_eval_every</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">training_rmse</span><span class="p">,</span> <span class="n">training_mae</span> <span class="o">=</span> \
+                            <span class="bp">self</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_set</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;training_rmse_vs_epoch&#39;</span><span class="p">,</span>
+                                                    <span class="n">training_rmse</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;training_mae_vs_epoch&#39;</span><span class="p">,</span>
+                                                    <span class="n">training_mae</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span>
+
+                <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">ITERATION_COMPLETED</span><span class="p">)</span>
+                <span class="k">def</span> <span class="nf">log_loss</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+                    <span class="n">iteration</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iteration</span>
+                    <span class="n">loss</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">output</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;loss_vs_iteration&#39;</span><span class="p">,</span>
+                                                <span class="n">loss</span><span class="p">,</span> <span class="n">iteration</span><span class="p">)</span>
+
+        <span class="n">lr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_lr</span>
+
+        <span class="c1"># training using mse loss first until the validation MAE decrease</span>
+        <span class="c1"># to &lt; 1 Hartree</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
+        <span class="n">trainer</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">create_supervised_trainer</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mse_loss</span><span class="p">)</span>
+        <span class="n">decorate</span><span class="p">(</span><span class="n">trainer</span><span class="p">)</span>
+
+        <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">terminate_if_smaller_enough</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">mae</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+                <span class="n">trainer</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+
+        <span class="n">trainer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_set</span><span class="p">,</span> <span class="n">max_epochs</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="n">lr</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_lr</span><span class="p">:</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
+            <span class="n">trainer</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">create_supervised_trainer</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_loss</span><span class="p">)</span>
+            <span class="n">decorate</span><span class="p">(</span><span class="n">trainer</span><span class="p">)</span>
+            <span class="n">trainer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_set</span><span class="p">,</span> <span class="n">max_epochs</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+            <span class="n">lr</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lr_decay</span></div></div>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Constants&#39;</span><span class="p">,</span> <span class="s1">&#39;load_sae&#39;</span><span class="p">,</span> <span class="s1">&#39;load_model&#39;</span><span class="p">,</span> <span class="s1">&#39;load_model_ensemble&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;Builtins&#39;</span><span class="p">,</span> <span class="s1">&#39;Trainer&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Roitberg Group.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1alpha',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

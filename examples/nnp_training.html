@@ -1,0 +1,603 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Train Your Own Neural Network Potential &mdash; TorchANI 0.1alpha documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Use Disk Cache of AEV to Boost Training" href="cache_aev.html" />
+    <link rel="prev" title="Computing Energy and Force Using Builtin Models" href="energy_force.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TorchANI
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../start.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
+</ul>
+<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.data">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.utils">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ignite">Ignite Helpers</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TorchANI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Train Your Own Neural Network Potential</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/examples/nnp_training.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-nnp-training-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+</div>
+<div class="sphx-glr-example-title section" id="train-your-own-neural-network-potential">
+<span id="training-example"></span><span id="sphx-glr-examples-nnp-training-py"></span><h1>Train Your Own Neural Network Potential<a class="headerlink" href="#train-your-own-neural-network-potential" title="Permalink to this headline">¶</a></h1>
+<p>This example shows how to use TorchANI train your own neural network potential.</p>
+<p>To begin with, let’s first import the modules we will use:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">ignite</span>
+<span class="kn">import</span> <span class="nn">torchani</span>
+<span class="kn">import</span> <span class="nn">tqdm</span>
+<span class="kn">import</span> <span class="nn">timeit</span>
+<span class="kn">import</span> <span class="nn">tensorboardX</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+</pre></div>
+</div>
+<p>Now let’s setup training hyperparameters. Note that here for our demo purpose
+, we set both training set and validation set the <code class="docutils literal notranslate"><span class="pre">ani_gdb_s01.h5</span></code> in
+TorchANI’s repository. This allows this program to finish very quick, because
+that dataset is very small. But this is wrong and should be avoided for any
+serious training. These paths assumes the user run this script under the
+<code class="docutils literal notranslate"><span class="pre">examples</span></code> directory of TorchANI’s repository. If you download this script,
+you should manually set the path of these files in your system before this
+script can run successfully.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># training and validation set</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+<span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+<span class="n">training_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
+<span class="n">validation_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
+
+<span class="c1"># checkpoint file to save model when validation RMSE improves</span>
+<span class="n">model_checkpoint</span> <span class="o">=</span> <span class="s1">&#39;model.pt&#39;</span>
+
+<span class="c1"># max epochs to run the training</span>
+<span class="n">max_epochs</span> <span class="o">=</span> <span class="mi">20</span>
+
+<span class="c1"># Compute training RMSE every this steps. Since the training set is usually</span>
+<span class="c1"># huge and the loss funcition does not directly gives us RMSE, we need to</span>
+<span class="c1"># check the training RMSE to see overfitting.</span>
+<span class="n">training_rmse_every</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="c1"># device to run the training</span>
+<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+
+<span class="c1"># batch size</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1024</span>
+
+<span class="c1"># log directory for tensorboardX</span>
+<span class="n">log</span> <span class="o">=</span> <span class="s1">&#39;runs&#39;</span>
+</pre></div>
+</div>
+<p>Now let’s read our constants and self energies from constant files and
+construct AEV computer.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">const_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+<span class="n">sae_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_dft_x8ens/sae_linfit.dat&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+<span class="n">consts</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">Constants</span><span class="p">(</span><span class="n">const_file</span><span class="p">)</span>
+<span class="n">aev_computer</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">AEVComputer</span><span class="p">(</span><span class="o">**</span><span class="n">consts</span><span class="p">)</span>
+<span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">load_sae</span><span class="p">(</span><span class="n">sae_file</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now let’s define atomic neural networks. Here in this demo, we use the same
+size of neural network for all atom types, but this is not necessary.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">atomic</span><span class="p">():</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">384</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">CELU</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">CELU</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">CELU</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span>
+
+
+<span class="n">nn</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ANIModel</span><span class="p">([</span><span class="n">atomic</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)])</span>
+<span class="k">print</span><span class="p">(</span><span class="n">nn</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>ANIModel(
+  (0): Sequential(
+    (0): Linear(in_features=384, out_features=128, bias=True)
+    (1): CELU(alpha=0.1)
+    (2): Linear(in_features=128, out_features=128, bias=True)
+    (3): CELU(alpha=0.1)
+    (4): Linear(in_features=128, out_features=64, bias=True)
+    (5): CELU(alpha=0.1)
+    (6): Linear(in_features=64, out_features=1, bias=True)
+  )
+  (1): Sequential(
+    (0): Linear(in_features=384, out_features=128, bias=True)
+    (1): CELU(alpha=0.1)
+    (2): Linear(in_features=128, out_features=128, bias=True)
+    (3): CELU(alpha=0.1)
+    (4): Linear(in_features=128, out_features=64, bias=True)
+    (5): CELU(alpha=0.1)
+    (6): Linear(in_features=64, out_features=1, bias=True)
+  )
+  (2): Sequential(
+    (0): Linear(in_features=384, out_features=128, bias=True)
+    (1): CELU(alpha=0.1)
+    (2): Linear(in_features=128, out_features=128, bias=True)
+    (3): CELU(alpha=0.1)
+    (4): Linear(in_features=128, out_features=64, bias=True)
+    (5): CELU(alpha=0.1)
+    (6): Linear(in_features=64, out_features=1, bias=True)
+  )
+  (3): Sequential(
+    (0): Linear(in_features=384, out_features=128, bias=True)
+    (1): CELU(alpha=0.1)
+    (2): Linear(in_features=128, out_features=128, bias=True)
+    (3): CELU(alpha=0.1)
+    (4): Linear(in_features=128, out_features=64, bias=True)
+    (5): CELU(alpha=0.1)
+    (6): Linear(in_features=64, out_features=1, bias=True)
+  )
+)
+</pre></div>
+</div>
+<p>If checkpoint from previous training exists, then load it.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">model_checkpoint</span><span class="p">):</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_checkpoint</span><span class="p">))</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">model_checkpoint</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">nn</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now setup tensorboardX.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">writer</span> <span class="o">=</span> <span class="n">tensorboardX</span><span class="o">.</span><span class="n">SummaryWriter</span><span class="p">(</span><span class="n">log_dir</span><span class="o">=</span><span class="n">log</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now load training and validation datasets into memory. Note that we need to
+subtracting energies by the self energies of all atoms for each molecule.
+This makes the range of energies in a reasonable range. The second argument
+defines how to convert species as a list of string to tensor, that is, for
+all supported chemical symbols, which is correspond to <code class="docutils literal notranslate"><span class="pre">0</span></code>, which
+correspond to <code class="docutils literal notranslate"><span class="pre">1</span></code>, etc.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">training</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">BatchedANIDataset</span><span class="p">(</span>
+    <span class="n">training_path</span><span class="p">,</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="n">energy_shifter</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">])</span>
+
+<span class="n">validation</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">BatchedANIDataset</span><span class="p">(</span>
+    <span class="n">validation_path</span><span class="p">,</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="n">energy_shifter</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>When iterating the dataset, we will get pairs of input and output
+<code class="docutils literal notranslate"><span class="pre">(species_coordinates,</span> <span class="pre">properties)</span></code>, where <code class="docutils literal notranslate"><span class="pre">species_coordinates</span></code> is the
+input and <code class="docutils literal notranslate"><span class="pre">properties</span></code> is the output.</p>
+<p><code class="docutils literal notranslate"><span class="pre">species_coordinates</span></code> is a list of species-coordinate pairs, with shape
+<code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">Na)</span></code> and <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">Na,</span> <span class="pre">3)</span></code>. The reason for getting this type is, when
+loading the dataset and generating minibatches, the whole dataset are
+shuffled and each minibatch contains structures of molecules with a wide
+range of number of atoms. Molecules of different number of atoms are batched
+into single by padding. The way padding works is: adding ghost atoms, with
+species ‘X’, and do computations as if they were normal atoms. But when
+computing AEVs, atoms with species <cite>X</cite> would be ignored. To avoid computation
+wasting on padding atoms, minibatches are further splitted into chunks. Each
+chunk contains structures of molecules of similar size, which minimize the
+total number of padding atoms required to add. The input list
+<code class="docutils literal notranslate"><span class="pre">species_coordinates</span></code> contains chunks of that minibatch we are getting. The
+batching and chunking happens automatically, so the user does not need to
+worry how to construct chunks, but the user need to compute the energies for
+each chunk and concat them into single tensor.</p>
+<p>The output, i.e. <code class="docutils literal notranslate"><span class="pre">properties</span></code> is a dictionary holding each property. This
+allows us to extend TorchANI in the future to training forces and properties.</p>
+<p>We have tools to deal with these data types at <a class="reference internal" href="../api.html#module-torchani.ignite" title="torchani.ignite"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.ignite</span></code></a> that
+allow us to easily combine the dataset with pytorch ignite. These tools can
+be used as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">container</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ignite</span><span class="o">.</span><span class="n">Container</span><span class="p">({</span><span class="s1">&#39;energies&#39;</span><span class="p">:</span> <span class="n">model</span><span class="p">})</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">create_supervised_trainer</span><span class="p">(</span>
+    <span class="n">container</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ignite</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">))</span>
+<span class="n">evaluator</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">create_supervised_evaluator</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;RMSE&#39;</span><span class="p">:</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ignite</span><span class="o">.</span><span class="n">RMSEMetric</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">)</span>
+    <span class="p">})</span>
+</pre></div>
+</div>
+<p>Now let’s register some event handlers to work with tqdm to display progress:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@trainer.on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">init_tqdm</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+    <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">tqdm</span> <span class="o">=</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">training</span><span class="p">),</span>
+                                   <span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;epoch&#39;</span><span class="p">)</span>
+
+
+<span class="nd">@trainer.on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">ITERATION_COMPLETED</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">update_tqdm</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+    <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">tqdm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="nd">@trainer.on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_COMPLETED</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">finalize_tqdm</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+    <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">tqdm</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>And some event handlers to compute validation and training metrics:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">hartree2kcal</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mf">627.509</span> <span class="o">*</span> <span class="n">x</span>
+
+
+<span class="nd">@trainer.on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">validation_and_checkpoint</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">evaluator</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">create_supervised_evaluator</span><span class="p">(</span>
+            <span class="n">container</span><span class="p">,</span>
+            <span class="n">metrics</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;RMSE&#39;</span><span class="p">:</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ignite</span><span class="o">.</span><span class="n">RMSEMetric</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">evaluator</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">metrics</span>
+        <span class="n">rmse</span> <span class="o">=</span> <span class="n">hartree2kcal</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s1">&#39;RMSE&#39;</span><span class="p">])</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">rmse</span><span class="p">,</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+
+    <span class="c1"># compute validation RMSE</span>
+    <span class="n">evaluate</span><span class="p">(</span><span class="n">validation</span><span class="p">,</span> <span class="s1">&#39;validation_rmse_vs_epoch&#39;</span><span class="p">)</span>
+
+    <span class="c1"># compute training RMSE</span>
+    <span class="k">if</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span> <span class="o">%</span> <span class="n">training_rmse_every</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">evaluate</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="s1">&#39;training_rmse_vs_epoch&#39;</span><span class="p">)</span>
+
+    <span class="c1"># checkpoint model</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">model_checkpoint</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Also some to log elapsed time:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">start</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span>
+
+
+<span class="nd">@trainer.on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">log_time</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+    <span class="n">elapsed</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;time_vs_epoch&#39;</span><span class="p">,</span> <span class="n">elapsed</span><span class="p">,</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Also log the loss per iteration:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@trainer.on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">ITERATION_COMPLETED</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">log_loss</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+    <span class="n">iteration</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iteration</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;loss_vs_iteration&#39;</span><span class="p">,</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">iteration</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And finally, we are ready to run:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">trainer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:03,  3.32it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:01,  4.59it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00,  6.26it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.25it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.37it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 11.02it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  5.84it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  7.86it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 10.38it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  5.92it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  7.99it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 10.51it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.37it/s]
+epoch:  45%|####5     | 5/11 [00:00&lt;00:00,  8.50it/s]
+epoch:  91%|######### | 10/11 [00:00&lt;00:00, 11.15it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 27.04it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:02,  3.46it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:01,  4.77it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00,  6.50it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.34it/s]
+epoch:  45%|####5     | 5/11 [00:00&lt;00:00,  8.40it/s]
+epoch:  91%|######### | 10/11 [00:00&lt;00:00, 11.08it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 26.67it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.14it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.27it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 10.90it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.23it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.35it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 10.98it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.09it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.18it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 10.79it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:02,  3.39it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:01,  4.67it/s]
+epoch:  91%|######### | 10/11 [00:00&lt;00:00,  6.34it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 20.01it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  5.86it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  7.94it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 10.46it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.42it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.63it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 11.34it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.47it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.67it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 11.36it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.54it/s]
+epoch:  45%|####5     | 5/11 [00:00&lt;00:00,  8.73it/s]
+epoch:  91%|######### | 10/11 [00:00&lt;00:00, 11.49it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 28.10it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:03,  2.81it/s]
+epoch:  45%|####5     | 5/11 [00:00&lt;00:01,  3.90it/s]
+epoch:  91%|######### | 10/11 [00:00&lt;00:00,  5.35it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 18.28it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.28it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.42it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 11.14it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.63it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.93it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 11.77it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.40it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.64it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 11.36it/s]
+
+epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
+epoch:   9%|9         | 1/11 [00:00&lt;00:01,  5.98it/s]
+epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.03it/s]
+epoch: 100%|##########| 11/11 [00:00&lt;00:00, 10.58it/s]
+</pre></div>
+</div>
+<p><strong>Total running time of the script:</strong> ( 0 minutes  8.700 seconds)</p>
+<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-nnp-training-py">
+<div class="sphx-glr-download docutils container">
+<a class="reference download internal" download="" href="../_downloads/33f9e4ffb75eb6016e4e338c8a07059c/nnp_training.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">nnp_training.py</span></code></a></div>
+<div class="sphx-glr-download docutils container">
+<a class="reference download internal" download="" href="../_downloads/f624360f37776cb2367290b30580c520/nnp_training.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">nnp_training.ipynb</span></code></a></div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="cache_aev.html" class="btn btn-neutral float-right" title="Use Disk Cache of AEV to Boost Training" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="energy_force.html" class="btn btn-neutral" title="Computing Energy and Force Using Builtin Models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Roitberg Group.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.1alpha',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
