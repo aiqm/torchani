@@ -1,12 +1,9 @@
 Installation
 ============
 
-The installation of TorchANI is very simple. You just need to clone the git
-repository and do ``pip install .`` like when you install other software.
-But keep in mind that TorchANI requires master branch of PyTorch. If you do
-not have master branch PyTorch installed, you should install it before
-installing TorchANI. Refer to PyTorch's `official instruction`_ to compile
-install PyTorch.
+TorchANI requires the latest preview version of PyTorch. If you are using anaconda, you can install PyTorch by ``conda install pytorch-nightly -c pytorch``. You can also refer to `the official site of PyTorch`_ for instructions of installing latest preview version of PyTorch.
 
-.. _official instruction:
-    https://github.com/pytorch/pytorch#from-source
+After installing PyTorch, you can then install TorchANI by ``pip install torchani``.
+
+.. _the official site of PyTorch:
+    https://pytorch.org/get-started/locally/
