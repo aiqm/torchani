@@ -1,6 +1,6 @@
 # TorchANI
 
-[![Codefresh build status]( https://g.codefresh.io/api/badges/build?repoOwner=zasdfgbnm&repoName=torchani&branch=master&pipelineName=torchani&accountName=zasdfgbnm&key=eyJhbGciOiJIUzI1NiJ9.NTk5ZmEwNzI2MTNhNTMwMDAxNTY4MmJm.nnVU1i-VQQSzPcsGxKnMC0wT-y9C2i8xuBZvUjlubYg&type=cf-1)]( https://g.codefresh.io/repositories/zasdfgbnm/torchani/builds?filter=trigger:build;branch:master;service:5b53d92fff9e565ae1f3a5b5~torchani)
+[![Codefresh build status]( https://g.codefresh.io/api/badges/pipeline/zasdfgbnm/aiqm%2Ftorchani%2Ftorchani?branch=master&type=cf-1)]( https://g.codefresh.io/repositories/aiqm/torchani/builds?filter=trigger:build;branch:master;service:5babc52a8a90dc40a407b05f~torchani)
 
 TorchANI is a pytorch implementation of ANI. It is currently under alpha release, which means, the API is not stable yet. If you find a bug of TorchANI, or have some feature request, feel free to open an issue on GitHub, or send us a pull request.
 
@@ -16,7 +16,7 @@ conda install pytorch-nightly -c pytorch
 For update
 ```bash
 conda update pytorch-nightly
-``` 
+```
 
 After installing the correct PyTorch, all you need is clone the repository and do:
 
