@@ -65,6 +65,7 @@ def pad_coordinates(species_coordinates):
     return torch.cat(species), torch.cat(coordinates)
 
 
+# @torch.jit.script
 def present_species(species):
     """Given a vector of species of atoms, compute the unique species present.
 
@@ -80,6 +81,7 @@ def present_species(species):
     return present_species
 
 
+@torch.jit.script
 def strip_redundant_padding(species, coordinates):
     """Strip trailing padding atoms.
 
@@ -99,7 +101,7 @@ def strip_redundant_padding(species, coordinates):
     return species, coordinates
 
 
-class EnergyShifter(torch.nn.Module):
+class EnergyShifter(torch.jit.ScriptModule):
     """Helper class for adding and subtracting self atomic energies
 
     This is a subclass of :class:`torch.nn.Module`, so it can be used directly
@@ -116,6 +118,7 @@ class EnergyShifter(torch.nn.Module):
         self_energies = torch.tensor(self_energies, dtype=torch.double)
         self.register_buffer('self_energies', self_energies)
 
+    # @torch.jit.script_method
     def sae(self, species):
         """Compute self energies for molecules.
 
@@ -143,6 +146,7 @@ class EnergyShifter(torch.nn.Module):
         properties['energies'] = energies
         return species, coordinates, properties
 
+    # @torch.jit.script_method
     def forward(self, species_energies):
         """(species, molecular energies)->(species, molecular energies + sae)
         """
