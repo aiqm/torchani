@@ -195,6 +195,7 @@ class AEVComputer(torch.jit.ScriptModule):
         return radial_terms, angular_terms, indices_r, indices_a
 
     def _combinations(self, tensor, dim=0):
+        # type: (Tensor, int) -> Tuple[Tensor, Tensor]
         # TODO: remove this when combinations is merged into PyTorch
         # https://github.com/pytorch/pytorch/pull/9393
         n = tensor.shape[dim]
@@ -217,7 +218,7 @@ class AEVComputer(torch.jit.ScriptModule):
                   torch.arange(self.num_species, device=self.EtaR.device))
         return mask_r
 
-    # @torch.jit.script_method
+    @torch.jit.script_method
     def _compute_mask_a(self, species, indices_a, present_species):
         """Get mask of angular terms for each supported species from indices"""
         species_a = species.gather(-1, indices_a)
@@ -280,7 +281,7 @@ class AEVComputer(torch.jit.ScriptModule):
 
     # @torch.jit.script_method
     def forward(self, species_coordinates):
-        # type: ((Tensor, Tensor)) -> (Tensor, Tensor)
+        # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
         """Compute AEVs
 
         Arguments:
