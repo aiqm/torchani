@@ -157,9 +157,9 @@ def load_atomic_network(filename):
                     v = v[0]
                     if v.type == 'FILENAME':
                         v = v.value
-                    elif v.type == 'SIGNED_INT':
+                    elif v.type == 'SIGNED_INT' or v.type == 'INT':
                         v = int(v.value)
-                    elif v.type == 'SIGNED_FLOAT':
+                    elif v.type == 'SIGNED_FLOAT' or v.type == 'FLOAT':
                         v = float(v.value)
                     else:
                         raise ValueError('unexpected type')
@@ -395,9 +395,9 @@ class Trainer:
                     v = v[0]
                     if v.type == 'STRING_VALUE':
                         v = v.value
-                    elif v.type == 'SIGNED_INT':
+                    elif v.type == 'SIGNED_INT' or v.type == 'INT':
                         v = int(v.value)
-                    elif v.type == 'SIGNED_FLOAT':
+                    elif v.type == 'SIGNED_FLOAT' or v.type == 'FLOAT':
                         v = float(v.value)
                     else:
                         raise ValueError('unexpected type')
