@@ -126,8 +126,8 @@ def load_atomic_network(filename):
 
         start: inputsize atom_net
 
-        value : INT
-              | FLOAT
+        value : SIGNED_INT
+              | SIGNED_FLOAT
               | "FILE" ":" FILENAME "[" INT "]"
 
         FILENAME : ("_"|"-"|"."|LETTER|DIGIT)+
@@ -137,7 +137,8 @@ def load_atomic_network(filename):
         %import common.WORD
         %import common.DIGIT
         %import common.INT
-        %import common.FLOAT
+        %import common.SIGNED_INT
+        %import common.SIGNED_FLOAT
         %import common.CNAME
         %import common.WS
         %ignore WS
@@ -156,9 +157,9 @@ def load_atomic_network(filename):
                     v = v[0]
                     if v.type == 'FILENAME':
                         v = v.value
-                    elif v.type == 'INT':
+                    elif v.type == 'SIGNED_INT' or v.type == 'INT':
                         v = int(v.value)
-                    elif v.type == 'FLOAT':
+                    elif v.type == 'SIGNED_FLOAT' or v.type == 'FLOAT':
                         v = float(v.value)
                     else:
                         raise ValueError('unexpected type')
@@ -363,8 +364,8 @@ class Trainer:
 
         start: params network_setup params
 
-        value : INT
-              | FLOAT
+        value : SIGNED_INT
+              | SIGNED_FLOAT
               | STRING_VALUE
 
         STRING_VALUE : ("_"|"-"|"."|"/"|LETTER)("_"|"-"|"."|"/"|LETTER|DIGIT)*
@@ -374,7 +375,8 @@ class Trainer:
         %import common.WORD
         %import common.DIGIT
         %import common.INT
-        %import common.FLOAT
+        %import common.SIGNED_INT
+        %import common.SIGNED_FLOAT
         %import common.CNAME
         %import common.WS
         %ignore WS
@@ -393,9 +395,9 @@ class Trainer:
                     v = v[0]
                     if v.type == 'STRING_VALUE':
                         v = v.value
-                    elif v.type == 'INT':
+                    elif v.type == 'SIGNED_INT' or v.type == 'INT':
                         v = int(v.value)
-                    elif v.type == 'FLOAT':
+                    elif v.type == 'SIGNED_FLOAT' or v.type == 'FLOAT':
                         v = float(v.value)
                     else:
                         raise ValueError('unexpected type')
