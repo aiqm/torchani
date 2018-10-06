@@ -200,13 +200,7 @@ class AEVComputer(torch.jit.ScriptModule):
         # https://github.com/pytorch/pytorch/pull/9393
         n = tensor.shape[dim]
         r = torch.arange(n, dtype=torch.long, device=tensor.device)
-        grid_x, grid_y = torch.meshgrid([r, r])
-        index1 = grid_y.masked_select(
-            torch.triu(torch.ones(n, n, device=tensor.device),
-                       diagonal=1) == 1)
-        index2 = grid_x.masked_select(
-            torch.triu(torch.ones(n, n, device=tensor.device),
-                       diagonal=1) == 1)
+        index1, index2 = torch.combinations(r).unbind(-1)
         return tensor.index_select(dim, index1), \
             tensor.index_select(dim, index2)
 
