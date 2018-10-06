@@ -145,7 +145,7 @@ class AEVComputer(torch.jit.ScriptModule):
         # dimension vector
         return ret.flatten(start_dim=-4)
 
-    # @torch.jit.script_method
+    @torch.jit.script_method
     def _terms_and_indices(self, species, coordinates):
         """Returns radial and angular subAEV terms, these terms will be sorted
         according to their distances to central atoms, and only these within
@@ -200,12 +200,16 @@ class AEVComputer(torch.jit.ScriptModule):
         return tensor.index_select(dim, index1), \
             tensor.index_select(dim, index2)
 
-    # @torch.jit.script_method
+    @torch.jit.script_method
     def _compute_mask_r(self, species, indices_r):
         """Get mask of radial terms for each supported species from indices"""
         species_r = species.gather(-1, indices_r)
         mask_r = (species_r.unsqueeze(-1) ==
-                  torch.arange(self.num_species, device=self.EtaR.device))
+                  torch.arange(self.num_species, dtype=torch.long,
+                  # TODO: this dtype can be removed, but JIT seems to have a bug
+                  # that makes arange generate tensors of wrong dtype. Fix this
+                  # bug and remove the dtype here
+                               device=self.EtaR.device))
         return mask_r
 
     @torch.jit.script_method
