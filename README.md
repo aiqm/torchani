@@ -16,7 +16,7 @@ conda install pytorch-nightly -c pytorch
 If you updated TorchANI, you may also need to update PyTorch:
 
 ```bash
-conda update pytorch-nightly
+conda update pytorch-nightly -c pytorch
 ```
 
 After installing the correct PyTorch, you can install TorchANI by:
