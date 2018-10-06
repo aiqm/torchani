@@ -269,7 +269,7 @@ class AEVComputer(torch.jit.ScriptModule):
 
         return radial_aevs, torch.cat(angular_aevs, dim=2)
 
-    # @torch.jit.script_method
+    @torch.jit.script_method
     def forward(self, species_coordinates):
         # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
         """Compute AEVs
