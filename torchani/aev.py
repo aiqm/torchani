@@ -105,7 +105,7 @@ class AEVComputer(torch.jit.ScriptModule):
         # dimension vector
         return ret.flatten(start_dim=-2)
 
-    # @torch.jit.script_method
+    @torch.jit.script_method
     def _angular_subaev_terms(self, vectors1, vectors2):
         """Compute the angular subAEV terms of the center atom given neighbor pairs.
 
@@ -194,7 +194,8 @@ class AEVComputer(torch.jit.ScriptModule):
         # (conformations, atoms, pairs)
         return radial_terms, angular_terms, indices_r, indices_a
 
-    def _combinations(self, tensor, dim=0):
+    @torch.jit.script_method
+    def _combinations(self, tensor, dim):
         # type: (Tensor, int) -> Tuple[Tensor, Tensor]
         # TODO: remove this when combinations is merged into PyTorch
         # https://github.com/pytorch/pytorch/pull/9393
