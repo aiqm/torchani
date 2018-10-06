@@ -22,7 +22,7 @@ class TestForce(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
-                coordinates = torch.tensor(coordinates, requires_grad=True)
+                coordinates.requires_grad_(True)
                 _, energies = self.model((species, coordinates))
                 derivative = torch.autograd.grad(energies.sum(),
                                                  coordinates)[0]
@@ -36,7 +36,7 @@ class TestForce(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
-                coordinates = torch.tensor(coordinates, requires_grad=True)
+                coordinates.requires_grad_(True)
                 species_coordinates.append((species, coordinates))
                 coordinates_forces.append((coordinates, forces))
         species, coordinates = torchani.utils.pad_coordinates(
