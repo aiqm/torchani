@@ -16,7 +16,7 @@ class TestEnsemble(unittest.TestCase):
 
     def _test_molecule(self, coordinates, species):
         builtins = torchani.neurochem.Builtins()
-        coordinates = torch.tensor(coordinates, requires_grad=True)
+        coordinates.requires_grad_(True)
         aev = builtins.aev_computer
         ensemble = builtins.models
         models = [torch.nn.Sequential(aev, m) for m in ensemble]
