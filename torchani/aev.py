@@ -155,11 +155,7 @@ class AEVComputer(torch.nn.Module):
         """Shape (conformations, atoms, atoms) storing Rij distances"""
 
         padding_mask = (species == -1).unsqueeze(1)
-        distances = torch.where(
-            padding_mask,
-            torch.tensor(math.inf, dtype=self.EtaR.dtype,
-                         device=self.EtaR.device),
-            distances)
+        distances = distances.masked_fill(padding_mask, math.inf)
 
         distances, indices = distances.sort(-1)
 
@@ -172,11 +168,10 @@ class AEVComputer(torch.nn.Module):
         radial_terms = self._radial_subaev_terms(distances)
 
         indices_a = indices.index_select(-1, inRca)
-        new_shape = list(indices_a.shape) + [3]
 
         # TODO: remove this workaround when gather support broadcasting
         # https://github.com/pytorch/pytorch/pull/9532
-        _indices_a = indices_a.unsqueeze(-1).expand(*new_shape)
+        _indices_a = indices_a.unsqueeze(-1).expand(-1, -1, -1, 3)
         vec = vec.gather(-2, _indices_a)
 
         vec = self._combinations(vec, -2)
