@@ -34,3 +34,9 @@ from . import data
 
 __all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble',
            'ignite', 'utils', 'neurochem', 'data']
+
+try:
+    from . import ase
+    __all__.append('ase')
+except:
+    pass
