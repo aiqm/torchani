@@ -36,7 +36,7 @@ __all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble',
            'ignite', 'utils', 'neurochem', 'data']
 
 try:
-    from . import ase
+    from . import ase  # noqa: F401
     __all__.append('ase')
-except:
+except ImportError:
     pass
