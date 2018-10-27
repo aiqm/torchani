@@ -65,7 +65,11 @@ class AEVComputer(torch.nn.Module):
         ShfZ (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
             equation (4) in the `ANI paper`_.
         num_species (int): Number of supported atom types.
-        neighborlist_computer (:class:`collections.abc.Callable`): The callable
+        neighborlist_computer (:class:`collections.abc.Callable`): initial
+            value of :attr:`neighborlist`
+
+    Attributes:
+        neighborlist (:class:`collections.abc.Callable`): The callable
             (species:Tensor, coordinates:Tensor, cutoff:float)
             -> Tuple[Tensor, Tensor, Tensor] that returns the species,
             distances and relative coordinates of neighbor atoms. The input
