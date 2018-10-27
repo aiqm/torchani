@@ -13,7 +13,7 @@ import math
 import timeit
 from collections.abc import Mapping
 from ..nn import ANIModel, Ensemble, Gaussian
-from ..utils import EnergyShifter
+from ..utils import EnergyShifter, ChemicalSymbolsToInts
 from ..aev import AEVComputer
 from ..ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MAEMetric
 
@@ -21,6 +21,10 @@ from ..ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MAEMetric
 class Constants(Mapping):
     """NeuroChem constants. Objects of this class can be used as arguments
     to :class:`torchani.AEVComputer`, like ``torchani.AEVComputer(**consts)``.
+
+    Attributes:
+        species_to_tensor (:class:`ChemicalSymbolsToInts`): call to convert
+            string chemical symbols to 1d long tensor.
     """
 
     def __init__(self, filename):
@@ -45,10 +49,7 @@ class Constants(Mapping):
                 except Exception:
                     raise ValueError('unable to parse const file')
         self.num_species = len(self.species)
-        self.rev_species = {}
-        for i in range(len(self.species)):
-            s = self.species[i]
-            self.rev_species[s] = i
+        self.species_to_tensor = ChemicalSymbolsToInts(self.species)
 
     def __iter__(self):
         yield 'Rcr'
@@ -66,11 +67,6 @@ class Constants(Mapping):
 
     def __getitem__(self, item):
         return getattr(self, item)
-
-    def species_to_tensor(self, species):
-        """Convert species from squence of strings to 1D tensor"""
-        rev = [self.rev_species[s] for s in species]
-        return torch.tensor(rev, dtype=torch.long)
 
 
 def load_sae(filename):
