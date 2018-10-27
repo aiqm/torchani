@@ -38,6 +38,7 @@ intersphinx_mapping = {
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
     'torch': ('https://pytorch.org/docs/master/', None),
     'ignite': ('https://pytorch.org/ignite/', None),
+    'ase': ('https://wiki.fysik.dtu.dk/ase/', None),
 }
 
 latex_documents = [

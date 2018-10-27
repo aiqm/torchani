@@ -45,6 +45,13 @@ NeuroChem
 .. automodule:: torchani.neurochem.trainer
 
 
+ASE Interface
+=============
+
+.. automodule:: torchani.ase
+.. autoclass:: torchani.ase.NeighborList
+    :members:
+
 Ignite Helpers
 ==============
 

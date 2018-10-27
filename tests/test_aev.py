@@ -56,5 +56,12 @@ class TestAEV(unittest.TestCase):
             self._assertAEVEqual(expected_radial, expected_angular, aev_)
 
 
+class TestAEVASENeighborList(TestAEV):
+
+    def setUp(self):
+        super(TestAEVASENeighborList, self).setUp()
+        self.aev_computer.neighborlist = torchani.ase.NeighborList()
+
+
 if __name__ == '__main__':
     unittest.main()
