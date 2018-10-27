@@ -9,6 +9,8 @@ import math
 import torch
 import ase.neighborlist
 from . import utils
+import ase.calculators.calculator
+import ase.units
 
 
 class NeighborList:
@@ -80,3 +82,48 @@ class NeighborList:
         return neighbor_species.permute(0, 2, 1), \
             neighbor_distances.permute(0, 2, 1), \
             neighbor_vecs.permute(0, 2, 1, 3)
+
+
+class Calculator(ase.calculators.calculator.Calculator):
+    """TorchANI calculator for ASE
+
+    Arguments:
+        species (:class:`collections.abc.Sequence` of :class:`str`):
+            sequence of all supported species, in order.
+        aev_computer (:class:`torchani.AEVComputer`): AEV computer.
+        model (:class:`torchani.ANIModel` or :class:`torchani.Ensemble`):
+            neural network potential models.
+        energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter.
+    """
+
+    def __init__(self, species, aev_computer, model, energy_shifter):
+        self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
+        self.aev_computer = aev_computer
+        self.model = model
+        self.energy_shifter = energy_shifter
+
+        self.device = self.aev_computer.EtaR.device
+        self.dtype = self.aev_computer.EtaR.dtype
+
+        self.whole = torch.nn.Sequential(
+            self.aev_computer,
+            self.model,
+            self.energy_shifter
+        )
+
+    def calculate(self, atoms=None, properties=['energy'],
+                  system_changes=ase.calculators.calculator.all_changes):
+        super(Calculator, self).calculate(atoms, properties, system_changes)
+        self.aev_computer.neighbor_list = NeighborList(
+            cell=self.atoms.get_cell(), pbc=self.atoms.get_pbc())
+        species = self.species_to_tensor(self.atoms.get_chemical_symbols())
+        coordinates = self.atoms.get_positions(wrap=True).unsqueeze(0)
+        coordinates = torch.tensor(coordinates,
+                                   device=self.device,
+                                   dtype=self.dtype,
+                                   requires_grad=('forces' in properties))
+        _, energy = self.whole((species, coordinates)) * ase.units.Hartree
+        self.results['energy'] = energy.item()
+        if 'forces' in properties:
+            forces = -torch.autograd.grad(energy.squeeze(), coordinates)[0]
+            self.results['forces'] = forces.item()
