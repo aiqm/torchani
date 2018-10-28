@@ -15,7 +15,6 @@ the ASE interface of TorchANI as energy calculator.
 # To begin with, let's first import the modules we will use:
 from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
-from ase.io.trajectory import Trajectory
 from ase import units
 import torchani
 
