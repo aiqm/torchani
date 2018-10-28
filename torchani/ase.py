@@ -26,7 +26,6 @@ class NeighborList:
         self.cell = cell
 
     def __call__(self, species, coordinates, cutoff):
-        coordinates = coordinates.detach()
         conformations = species.shape[0]
         max_atoms = species.shape[1]
         neighbor_species = []
@@ -41,7 +40,7 @@ class NeighborList:
             atoms = s.shape[0]
             atoms_object = ase.Atoms(
                 ['He'] * atoms,  # chemical symbols are not important here
-                positions=c.numpy(),
+                positions=c.detach().numpy(),
                 pbc=self.pbc,
                 cell=self.cell)
             idx1, idx2 = ase.neighborlist.neighbor_list(
