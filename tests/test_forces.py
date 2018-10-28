@@ -17,11 +17,17 @@ class TestForce(unittest.TestCase):
         nnp = builtins.models[0]
         self.model = torch.nn.Sequential(self.aev_computer, nnp)
 
+    def transform(self, x):
+        return x
+
     def testIsomers(self):
         for i in range(N):
             datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
+                coordinates = self.transform(coordinates)
+                species = self.transform(species)
+                forces = self.transform(forces)
                 coordinates.requires_grad_(True)
                 _, energies = self.model((species, coordinates))
                 derivative = torch.autograd.grad(energies.sum(),
@@ -36,6 +42,9 @@ class TestForce(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
+                coordinates = self.transform(coordinates)
+                species = self.transform(species)
+                forces = self.transform(forces)
                 coordinates.requires_grad_(True)
                 species_coordinates.append((species, coordinates))
                 coordinates_forces.append((coordinates, forces))
@@ -55,6 +64,10 @@ class TestForceASEComputer(TestForce):
     def setUp(self):
         super(TestForceASEComputer, self).setUp()
         self.aev_computer.neighborlist = torchani.ase.NeighborList()
+
+    def transform(self, x):
+        """To reduce the size of test cases for faster test speed"""
+        return x[:3, ...]
 
 
 if __name__ == '__main__':
