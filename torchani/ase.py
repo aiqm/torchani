@@ -22,8 +22,10 @@ class NeighborList:
     """
 
     def __init__(self, cell=None, pbc=None):
-        self.pbc = pbc
-        self.cell = cell
+        # wrap `cell` and `pbc` with `ase.Atoms`
+        a = ase.Atoms('He', [[0, 0, 0]], cell=cell, pbc=pbc)
+        self.pbc = a.get_pbc()
+        self.cell = a.get_cell(complete=True)
 
     def __call__(self, species, coordinates, cutoff):
         conformations = species.shape[0]
@@ -39,18 +41,23 @@ class NeighborList:
             c = c.squeeze()
             atoms = s.shape[0]
             atoms_object = ase.Atoms(
-                'C'*atoms,  # chemical symbols are not important here
+                ['He'] * atoms,  # chemical symbols are not important here
                 positions=c.detach().numpy(),
                 pbc=self.pbc,
                 cell=self.cell)
-            idx1, idx2 = ase.neighborlist.neighbor_list(
-                'ij', atoms_object, cutoff)
+            idx1, idx2, shift = ase.neighborlist.neighbor_list(
+                'ijS', atoms_object, cutoff)
             # NB: The absolute distance and distance vectors computed by
             # `neighbor_list`can not be used since it does not preserve
             # gradient information
             idx1 = torch.from_numpy(idx1).to(coordinates.device)
             idx2 = torch.from_numpy(idx2).to(coordinates.device)
             D = c.index_select(0, idx2) - c.index_select(0, idx1)
+            shift = torch.from_numpy(shift).to(coordinates.device) \
+                         .to(coordinates.dtype)
+            cell = torch.from_numpy(self.cell).to(coordinates.device) \
+                        .to(coordinates.dtype)
+            D += shift @ cell
             d = D.norm(2, -1)
             neighbor_species1 = []
             neighbor_distances1 = []
@@ -97,7 +104,10 @@ class Calculator(ase.calculators.calculator.Calculator):
         energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter.
     """
 
+    implemented_properties = ['energy', 'forces']
+
     def __init__(self, species, aev_computer, model, energy_shifter):
+        super(Calculator, self).__init__()
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
         self.aev_computer = aev_computer
         self.model = model
@@ -115,16 +125,16 @@ class Calculator(ase.calculators.calculator.Calculator):
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=ase.calculators.calculator.all_changes):
         super(Calculator, self).calculate(atoms, properties, system_changes)
-        self.aev_computer.neighbor_list = NeighborList(
-            cell=self.atoms.get_cell(), pbc=self.atoms.get_pbc())
+        self.aev_computer.neighborlist = NeighborList(
+            cell=self.atoms.get_cell(complete=True), pbc=self.atoms.get_pbc())
         species = self.species_to_tensor(self.atoms.get_chemical_symbols())
-        coordinates = self.atoms.get_positions(wrap=True).unsqueeze(0)
-        coordinates = torch.tensor(coordinates,
-                                   device=self.device,
-                                   dtype=self.dtype,
-                                   requires_grad=('forces' in properties))
-        _, energy = self.whole((species, coordinates)) * ase.units.Hartree
+        species = species.unsqueeze(0)
+        coordinates = torch.tensor(self.atoms.get_positions(wrap=True))
+        coordinates = coordinates.unsqueeze(0).to(self.device).to(self.dtype) \
+                                 .requires_grad_('forces' in properties)
+        _, energy = self.whole((species, coordinates))
+        energy *= ase.units.Hartree
         self.results['energy'] = energy.item()
         if 'forces' in properties:
             forces = -torch.autograd.grad(energy.squeeze(), coordinates)[0]
-            self.results['forces'] = forces.item()
+            self.results['forces'] = forces.squeeze().numpy()
