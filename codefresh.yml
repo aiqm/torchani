@@ -21,16 +21,18 @@ steps:
       - python setup.py test
       # - python2 setup.py test
 
-  Examples:
+  Tools:
     image: '${{BuildTorchANI}}'
     commands:
       - rm -rf *.pt
-      - python examples/nnp_training.py dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5
-      - python examples/nnp_training.py dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5  # run twice to test if checkpoint is working
-      - python examples/energy_force.py
       - python tools/training-benchmark.py ./dataset/ani_gdb_s01.h5
       - python tools/neurochem-test.py ./dataset/ani_gdb_s01.h5
       - python tools/inference-benchmark.py --tqdm ./xyz_files/CH4-5.xyz
+
+  ModuleMain:
+    image: '${{BuildTorchANI}}'
+    commands:
+      - rm -rf *.pt
       - python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.ipt  dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5
       - python -m torchani.data.cache_aev tmp dataset/ani_gdb_s01.h5 256
 
@@ -38,4 +40,4 @@ steps:
     image: '${{BuildTorchANI}}'
     commands:
       - find . -name '*.pt' -delete
-      - sphinx-build -D plot_gallery=0 docs build
+      - sphinx-build docs build
