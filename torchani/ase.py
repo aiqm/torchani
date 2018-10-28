@@ -22,8 +22,10 @@ class NeighborList:
     """
 
     def __init__(self, cell=None, pbc=None):
-        self.pbc = pbc
-        self.cell = cell
+        # wrap `cell` and `pbc` with `ase.Atoms`
+        a = ase.Atoms('He', [[0, 0, 0]], cell=cell, pbc=pbc)
+        self.pbc = a.get_pbc()
+        self.cell = a.get_cell(complete=True)
 
     def __call__(self, species, coordinates, cutoff):
         conformations = species.shape[0]
@@ -50,12 +52,12 @@ class NeighborList:
             # gradient information
             idx1 = torch.from_numpy(idx1).to(coordinates.device)
             idx2 = torch.from_numpy(idx2).to(coordinates.device)
+            D = c.index_select(0, idx2) - c.index_select(0, idx1)
             shift = torch.from_numpy(shift).to(coordinates.device) \
                          .to(coordinates.dtype)
             cell = torch.from_numpy(self.cell).to(coordinates.device) \
                         .to(coordinates.dtype)
-            D = c.index_select(0, idx2) - c.index_select(0, idx1) \
-                + shift @ cell
+            D += shift @ cell
             d = D.norm(2, -1)
             neighbor_species1 = []
             neighbor_distances1 = []
@@ -124,7 +126,7 @@ class Calculator(ase.calculators.calculator.Calculator):
                   system_changes=ase.calculators.calculator.all_changes):
         super(Calculator, self).calculate(atoms, properties, system_changes)
         self.aev_computer.neighborlist = NeighborList(
-            cell=self.atoms.get_cell(), pbc=self.atoms.get_pbc())
+            cell=self.atoms.get_cell(complete=True), pbc=self.atoms.get_pbc())
         species = self.species_to_tensor(self.atoms.get_chemical_symbols())
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions(wrap=True))
