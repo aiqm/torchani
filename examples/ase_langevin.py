@@ -33,9 +33,9 @@ atoms.set_calculator(calculator)
 
 ###############################################################################
 # We want to run MD with constant energy using the Langevin algorithm
-# with a time step of 5 fs, the temperature 1500K and the friction
+# with a time step of 5 fs, the temperature 50K and the friction
 # coefficient to 0.02 atomic units.
-dyn = Langevin(atoms, 5 * units.fs, 1500 * units.kB, 0.002)
+dyn = Langevin(atoms, 5 * units.fs, 50 * units.kB, 0.002)
 
 
 ###############################################################################
@@ -51,11 +51,6 @@ def printenergy(a=atoms):  # store a reference to atoms in the definition.
 dyn.attach(printenergy, interval=50)
 
 ###############################################################################
-# We also want to save the positions of all atoms after every 100th time step:
-traj = Trajectory('/tmp/moldyn3.traj', 'w', atoms)
-dyn.attach(traj.write, interval=50)
-
-###############################################################################
 # Now run the dynamics:
 printenergy()
-dyn.run(5000)
+dyn.run(500)
