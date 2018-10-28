@@ -14,10 +14,10 @@ class TestEnergies(unittest.TestCase):
     def setUp(self):
         self.tolerance = 5e-5
         builtins = torchani.neurochem.Builtins()
-        aev_computer = builtins.aev_computer
+        self.aev_computer = builtins.aev_computer
         nnp = builtins.models[0]
         shift_energy = builtins.energy_shifter
-        self.model = torch.nn.Sequential(aev_computer, nnp, shift_energy)
+        self.model = torch.nn.Sequential(self.aev_computer, nnp, shift_energy)
 
     def testIsomers(self):
         for i in range(N):
@@ -43,6 +43,13 @@ class TestEnergies(unittest.TestCase):
         _, energies_ = self.model((species, coordinates))
         max_diff = (energies - energies_).abs().max().item()
         self.assertLess(max_diff, self.tolerance)
+
+
+class TestEnergiesASEComputer(TestEnergies):
+
+    def setUp(self):
+        super(TestEnergiesASEComputer, self).setUp()
+        self.aev_computer.neighborlist = torchani.ase.NeighborList()
 
 
 if __name__ == '__main__':

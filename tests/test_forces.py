@@ -13,9 +13,9 @@ class TestForce(unittest.TestCase):
     def setUp(self):
         self.tolerance = 1e-5
         builtins = torchani.neurochem.Builtins()
-        aev_computer = builtins.aev_computer
+        self.aev_computer = builtins.aev_computer
         nnp = builtins.models[0]
-        self.model = torch.nn.Sequential(aev_computer, nnp)
+        self.model = torch.nn.Sequential(self.aev_computer, nnp)
 
     def testIsomers(self):
         for i in range(N):
@@ -48,6 +48,13 @@ class TestForce(unittest.TestCase):
                                              retain_graph=True)[0]
             max_diff = (forces + derivative).abs().max().item()
             self.assertLess(max_diff, self.tolerance)
+
+
+class TestForceASEComputer(TestForce):
+
+    def setUp(self):
+        super(TestForceASEComputer, self).setUp()
+        self.aev_computer.neighborlist = torchani.ase.NeighborList()
 
 
 if __name__ == '__main__':
