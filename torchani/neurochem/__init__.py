@@ -282,6 +282,7 @@ class Builtins:
             parent_name,
             'resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')
         self.consts = Constants(self.const_file)
+        self.species = self.consts.species
         self.aev_computer = AEVComputer(**self.consts)
 
         self.sae_file = pkg_resources.resource_filename(

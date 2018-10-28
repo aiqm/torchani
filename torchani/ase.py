@@ -26,6 +26,7 @@ class NeighborList:
         self.cell = cell
 
     def __call__(self, species, coordinates, cutoff):
+        coordinates = coordinates.detach()
         conformations = species.shape[0]
         max_atoms = species.shape[1]
         neighbor_species = []
@@ -39,7 +40,7 @@ class NeighborList:
             c = c.squeeze()
             atoms = s.shape[0]
             atoms_object = ase.Atoms(
-                'C'*atoms,  # chemical symbols are not important here
+                ['He'] * atoms,  # chemical symbols are not important here
                 positions=c.numpy(),
                 pbc=self.pbc,
                 cell=self.cell)
@@ -96,7 +97,10 @@ class Calculator(ase.calculators.calculator.Calculator):
         energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter.
     """
 
+    implemented_properties = ['energy', 'forces']
+
     def __init__(self, species, aev_computer, model, energy_shifter):
+        super(Calculator, self).__init__()
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
         self.aev_computer = aev_computer
         self.model = model
@@ -114,16 +118,16 @@ class Calculator(ase.calculators.calculator.Calculator):
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=ase.calculators.calculator.all_changes):
         super(Calculator, self).calculate(atoms, properties, system_changes)
-        self.aev_computer.neighbor_list = NeighborList(
+        self.aev_computer.neighborlist = NeighborList(
             cell=self.atoms.get_cell(), pbc=self.atoms.get_pbc())
         species = self.species_to_tensor(self.atoms.get_chemical_symbols())
-        coordinates = self.atoms.get_positions(wrap=True).unsqueeze(0)
-        coordinates = torch.tensor(coordinates,
-                                   device=self.device,
-                                   dtype=self.dtype,
-                                   requires_grad=('forces' in properties))
-        _, energy = self.whole((species, coordinates)) * ase.units.Hartree
+        species = species.unsqueeze(0)
+        coordinates = torch.tensor(self.atoms.get_positions(wrap=True))
+        coordinates = coordinates.unsqueeze(0).to(self.device).to(self.dtype) \
+                                 .requires_grad_('forces' in properties)
+        _, energy = self.whole((species, coordinates))
+        energy *= ase.units.Hartree
         self.results['energy'] = energy.item()
         if 'forces' in properties:
             forces = -torch.autograd.grad(energy.squeeze(), coordinates)[0]
-            self.results['forces'] = forces.item()
+            self.results['forces'] = forces.squeeze().numpy()
