@@ -44,14 +44,15 @@ class NeighborList:
                 positions=c.numpy(),
                 pbc=self.pbc,
                 cell=self.cell)
-            idx1, idx2, d, D = ase.neighborlist.neighbor_list(
-                'ijdD', atoms_object, cutoff)
+            idx1, idx2 = ase.neighborlist.neighbor_list(
+                'ij', atoms_object, cutoff)
+            # NB: The absolute distance and distance vectors computed by
+            # `neighbor_list`can not be used since it does not preserve
+            # gradient information
             idx1 = torch.from_numpy(idx1).to(coordinates.device)
             idx2 = torch.from_numpy(idx2).to(coordinates.device)
-            d = torch.from_numpy(d).to(coordinates.device) \
-                .to(coordinates.dtype)
-            D = torch.from_numpy(D).to(coordinates.device) \
-                .to(coordinates.dtype)
+            D = c.index_select(0, idx2) - c.index_select(0, idx1)
+            d = D.norm(2, -1)
             neighbor_species1 = []
             neighbor_distances1 = []
             neighbor_vecs1 = []
