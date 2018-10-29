@@ -64,4 +64,4 @@ dyn.attach(printenergy, interval=500)
 # Now run the dynamics:
 print("Beginning dynamics...")
 printenergy()
-dyn.run(5000)
+dyn.run(500)
