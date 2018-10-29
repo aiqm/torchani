@@ -17,8 +17,8 @@ def get_numeric_force(atoms, eps):
 
 class TestASE(unittest.TestCase):
 
-    def testForceWithPBCEnabled(self):
-        atoms = Diamond(symbol="C", pbc=True)
+    def _testForce(self, pbc):
+        atoms = Diamond(symbol="C", pbc=pbc)
         builtin = torchani.neurochem.Builtins()
         calculator = torchani.ase.Calculator(
             builtin.species, builtin.aev_computer,
@@ -30,7 +30,14 @@ class TestASE(unittest.TestCase):
         fn = get_numeric_force(atoms, 0.001)
         df = (f - fn).abs().max()
         avgf = f.abs().mean()
-        self.assertLess(df / avgf, 0.1)
+        if avgf > 0:
+            self.assertLess(df / avgf, 0.1)
+
+    def testForceWithPBCEnabled(self):
+        self._testForce(True)
+
+    def testForceWithPBCDisabled(self):
+        self._testForce(False)
 
 
 if __name__ == '__main__':

@@ -213,6 +213,8 @@ class AEVComputer(torch.nn.Module):
         # TODO: remove this when combinations is merged into PyTorch
         # https://github.com/pytorch/pytorch/pull/9393
         n = tensor.shape[dim]
+        if n == 0:
+            return tensor, tensor
         r = torch.arange(n, dtype=torch.long, device=tensor.device)
         grid_x, grid_y = torch.meshgrid([r, r])
         index1 = grid_y.masked_select(
