@@ -11,6 +11,7 @@ import ase.neighborlist
 from . import utils
 import ase.calculators.calculator
 import ase.units
+import copy
 
 
 class NeighborList:
@@ -102,14 +103,20 @@ class Calculator(ase.calculators.calculator.Calculator):
         model (:class:`torchani.ANIModel` or :class:`torchani.Ensemble`):
             neural network potential models.
         energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter.
+        _default_neighborlist (bool): Whether to ignore pbc setting and always
+            use default neighborlist computer. This is for internal use only.
     """
 
     implemented_properties = ['energy', 'forces']
 
-    def __init__(self, species, aev_computer, model, energy_shifter):
+    def __init__(self, species, aev_computer, model, energy_shifter,
+                 _default_neighborlist=False):
         super(Calculator, self).__init__()
+        self._default_neighborlist = _default_neighborlist
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
-        self.aev_computer = aev_computer
+        # aev_computer.neighborlist will be changed later, so we need a copy to
+        # make sure we do not change the original object
+        self.aev_computer = copy.copy(aev_computer)
         self.model = model
         self.energy_shifter = energy_shifter
 
@@ -125,8 +132,10 @@ class Calculator(ase.calculators.calculator.Calculator):
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=ase.calculators.calculator.all_changes):
         super(Calculator, self).calculate(atoms, properties, system_changes)
-        self.aev_computer.neighborlist = NeighborList(
-            cell=self.atoms.get_cell(complete=True), pbc=self.atoms.get_pbc())
+        if not self._default_neighborlist:
+            self.aev_computer.neighborlist = NeighborList(
+                cell=self.atoms.get_cell(complete=True),
+                pbc=self.atoms.get_pbc())
         species = self.species_to_tensor(self.atoms.get_chemical_symbols())
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions(wrap=True))
