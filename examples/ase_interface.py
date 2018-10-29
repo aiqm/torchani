@@ -35,6 +35,13 @@ calculator = torchani.ase.Calculator(builtin.species, builtin.aev_computer,
                                      builtin.models, builtin.energy_shifter)
 atoms.set_calculator(calculator)
 
+###############################################################################
+# Now let's minimize the structure:
+print("Begin minimizing...")
+opt = BFGS(atoms)
+opt.run(fmax=0.001)
+print()
+
 
 ###############################################################################
 # Now create a callback function that print interesting physical quantities:
@@ -47,21 +54,14 @@ def printenergy(a=atoms):
 
 
 ###############################################################################
-# Now let's minimize the structure:
-printenergy()
-opt = BFGS(atoms)
-opt.attach(printenergy, interval=50)
-opt.run(5000)
-
-###############################################################################
 # We want to run MD with constant energy using the Langevin algorithm
-# with a time step of 5 fs, the temperature 50K and the friction
+# with a time step of 1 fs, the temperature 300K and the friction
 # coefficient to 0.02 atomic units.
-dyn = Langevin(atoms, 1 * units.fs, 50 * units.kB, 0.2)
-
-dyn.attach(printenergy, interval=1)
+dyn = Langevin(atoms, 1 * units.fs, 300 * units.kB, 0.2)
+dyn.attach(printenergy, interval=500)
 
 ###############################################################################
 # Now run the dynamics:
+print("Beginning dynamics...")
 printenergy()
 dyn.run(5000)
