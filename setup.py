@@ -22,6 +22,7 @@ setup_attrs = {
         'tensorboardX',
         'tqdm',
         'ase',
+        'coverage',
     ],
 }
 
