@@ -1,26 +1,28 @@
 queue:
   name: Hosted Linux Preview
-  timeoutInMinutes: 30
 
 variables:
   python.version: '3.7'
 
 
-steps:
+jobs:
+- job: Run scripts in tools/
+  timeoutInMinutes: 30
+  steps:
 
-- task: UsePythonVersion@0
-  displayName: 'Use Python $(python.version)'
-  inputs:
-    versionSpec: '$(python.version)'
+  - task: UsePythonVersion@0
+    displayName: 'Use Python $(python.version)'
+    inputs:
+      versionSpec: '$(python.version)'
 
-- script: 'azure/install_dependencies.sh && pip install .'
-  displayName: 'Install dependencies'
+  - script: 'azure/install_dependencies.sh && pip install .'
+    displayName: 'Install dependencies'
 
-- script: 'python tools/training-benchmark.py ./dataset/ani_gdb_s01.h5'
-  displayName: Training Benchmark
+  - script: 'python tools/training-benchmark.py ./dataset/ani_gdb_s01.h5'
+    displayName: Training Benchmark
 
-- script: 'python tools/neurochem-test.py ./dataset/ani_gdb_s01.h5'
-  displayName: NeuroChem Test
+  - script: 'python tools/neurochem-test.py ./dataset/ani_gdb_s01.h5'
+    displayName: NeuroChem Test
 
-- script: 'python tools/inference-benchmark.py --tqdm ./xyz_files/CH4-5.xyz'
-  displayName: Inference Benchmark
+  - script: 'python tools/inference-benchmark.py --tqdm ./xyz_files/CH4-5.xyz'
+    displayName: Inference Benchmark
