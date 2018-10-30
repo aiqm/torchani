@@ -1,10 +1,10 @@
 queue:
   name: Hosted Linux Preview
+  timeoutInMinutes: 30
 
 variables:
   python.version: '3.7'
 
-timeoutInMinutes: 30
 
 steps:
 
