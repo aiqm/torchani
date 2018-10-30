@@ -4,7 +4,7 @@ queue:
   name: Hosted Linux Preview
 
 variables:
-  python.version: '3.5, 3.6, 3.7'
+  python.version: '3.7'
 
 steps:
 
