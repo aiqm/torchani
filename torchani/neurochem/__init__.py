@@ -526,10 +526,9 @@ class Trainer:
                         # There is no plan to support the "L2" settings in
                         # input file before AdamW get merged into pytorch.
                         raise NotImplementedError('L2 not supported yet')
-                        l2reg.append((0.5 * layer['l2valu'], module))
                     del layer['l2norm']
                     del layer['l2valu']
-                if len(layer) > 0:
+                if layer:
                     raise ValueError('unrecognized parameter in layer setup')
                 i = o
             atomic_nets[atom_type] = torch.nn.Sequential(*modules)
@@ -549,7 +548,7 @@ class Trainer:
             MSELoss('energies'),
             lambda x: 0.5 * (torch.exp(2 * x) - 1) + l2())
 
-        if len(params) > 0:
+        if params:
             raise ValueError('unrecognized parameter')
 
         self.global_epoch = 0

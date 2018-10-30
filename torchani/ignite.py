@@ -91,8 +91,7 @@ def MSELoss(key, per_atom=True):
     """Create MSE loss on the specified key."""
     if per_atom:
         return PerAtomDictLoss(key, torch.nn.MSELoss(reduction='none'))
-    else:
-        return DictLoss(key, torch.nn.MSELoss())
+    return DictLoss(key, torch.nn.MSELoss())
 
 
 class TransformedLoss(_Loss):
