@@ -1,7 +1,8 @@
 language: python
 python:
   - "3.6"
-  - "3.7"
+  - "3.7-dev"
+  - "3.8-dev"
 
 install:
   - pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
