@@ -18,8 +18,9 @@ steps:
     image: '${{BuildTorchANI}}'
     commands:
       - find . -name '*.pyc' -delete
-      - python setup.py test
+      - python setup.py nosetests
       # - python2 setup.py test
+      - codecov
 
   Tools:
     image: '${{BuildTorchANI}}'
