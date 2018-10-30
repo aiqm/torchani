@@ -6,6 +6,8 @@ python:
 install:
   - pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html && pip install flake8 sphinx sphinx_rtd_theme tqdm matplotlib pillow tensorboardX sphinx-gallery ase codecov nose
 
+script: python --version
+
 jobs:
   include:
     - stage: flake8
