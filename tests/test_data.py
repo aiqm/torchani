@@ -58,8 +58,8 @@ class TestData(unittest.TestCase):
 
     def testTensorShape(self):
         for i in self.ds:
-            input, output = i
-            species, coordinates = torchani.utils.pad_coordinates(input)
+            input_, output = i
+            species, coordinates = torchani.utils.pad_coordinates(input_)
             energies = output['energies']
             self.assertEqual(len(species.shape), 2)
             self.assertLessEqual(species.shape[0], batch_size)
@@ -72,8 +72,8 @@ class TestData(unittest.TestCase):
 
     def testNoUnnecessaryPadding(self):
         for i in self.ds:
-            for input in i[0]:
-                species, _ = input
+            for input_ in i[0]:
+                species, _ = input_
                 non_padding = (species >= 0)[:, -1].nonzero()
                 self.assertGreater(non_padding.numel(), 0)
 
