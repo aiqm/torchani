@@ -58,7 +58,7 @@ def printenergy(a=atoms):
 # with a time step of 1 fs, the temperature 300K and the friction
 # coefficient to 0.02 atomic units.
 dyn = Langevin(atoms, 1 * units.fs, 300 * units.kB, 0.2)
-dyn.attach(printenergy, interval=500)
+dyn.attach(printenergy, interval=50)
 
 ###############################################################################
 # Now run the dynamics:
