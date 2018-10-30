@@ -1,0 +1,18 @@
+queue:
+  name: Hosted Linux Preview
+
+variables:
+  python.version: '3.7'
+
+steps:
+
+- task: UsePythonVersion@0
+  displayName: 'Use Python $(python.version)'
+  inputs:
+    versionSpec: '$(python.version)'
+
+- script: 'azure/install_dependencies.sh && pip install sphinx sphinx_rtd_theme tqdm matplotlib pillow tensorboardX sphinx-gallery ase'
+  displayName: 'Install dependencies'
+
+- script: 'sphinx-build docs build'
+  displayName: Documents
