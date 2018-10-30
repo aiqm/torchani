@@ -13,10 +13,9 @@ steps:
   inputs:
     versionSpec: '$(python.version)'
 
-- script: 'python -m pip install --upgrade pip'
+- script: 'python -m pip install --upgrade pip && pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html && pip install flake8 sphinx sphinx_rtd_theme tqdm matplotlib pillow tensorboardX sphinx-gallery ase codecov nose'
   displayName: 'Install dependencies'
 
 - script: 'pip install flake8 && flake8'
   displayName: Flake8
-  enabled: false
-  continueOnError: true
+  continueOnError: false
