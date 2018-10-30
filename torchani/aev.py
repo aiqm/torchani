@@ -16,10 +16,10 @@ def default_neighborlist(species, coordinates, cutoff):
     """Default neighborlist computer"""
 
     vec = coordinates.unsqueeze(2) - coordinates.unsqueeze(1)
-    """Shape (conformations, atoms, atoms, 3) storing Rij vectors"""
+    # vec has hape (conformations, atoms, atoms, 3) storing Rij vectors
 
     distances = vec.norm(2, -1)
-    """Shape (conformations, atoms, atoms) storing Rij distances"""
+    # distances has shape (conformations, atoms, atoms) storing Rij distances
 
     padding_mask = (species == -1).unsqueeze(1)
     distances = distances.masked_fill(padding_mask, math.inf)
@@ -267,7 +267,8 @@ class AEVComputer(torch.nn.Module):
             radial_terms.unsqueeze(-2) *
             mask_r.unsqueeze(-1).type(radial_terms.dtype)
         ).sum(-3)
-        """shape (conformations, atoms, present species, radial_length)"""
+        # present_radial_aevs has shape
+        # (conformations, atoms, present species, radial_length)
         radial_aevs = present_radial_aevs.flatten(start_dim=2)
 
         # assemble angular subaev
