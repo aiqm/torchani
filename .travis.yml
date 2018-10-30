@@ -8,11 +8,18 @@ install:
 
 jobs:
   include:
-    - script: flake8 .
-    - script: python setup.py nosetests
-    - script: python tools/training-benchmark.py ./dataset/ani_gdb_s01.h5
-    - script: python tools/neurochem-test.py ./dataset/ani_gdb_s01.h5
-    - script: python tools/inference-benchmark.py --tqdm ./xyz_files/CH4-5.xyz
-    - script: python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.ipt  dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5
-    - script: python -m torchani.data.cache_aev tmp dataset/ani_gdb_s01.h5 256
-    - script: sphinx-build docs build
+    - stage: flake8
+      script: flake8 .
+    - stage: unit test
+      script: python setup.py nosetests
+    - stage: tools
+      script:
+        - python tools/training-benchmark.py ./dataset/ani_gdb_s01.h5
+        - python tools/neurochem-test.py ./dataset/ani_gdb_s01.h5
+        - python tools/inference-benchmark.py --tqdm ./xyz_files/CH4-5.xyz
+    - stage: runnable submodules
+      script:
+        - python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.ipt  dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5
+        - python -m torchani.data.cache_aev tmp dataset/ani_gdb_s01.h5 256
+    - stage: docs
+      script: sphinx-build docs build
