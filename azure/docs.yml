@@ -4,6 +4,8 @@ queue:
 variables:
   python.version: '3.7'
 
+timeoutInMinutes: 300
+
 steps:
 
 - task: UsePythonVersion@0
