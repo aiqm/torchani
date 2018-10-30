@@ -101,11 +101,11 @@ def load_atomic_network(filename):
     """Returns an instance of :class:`torch.nn.Sequential` with hyperparameters
     and parameters loaded NeuroChem's .nnf, .wparam and .bparam files."""
 
-    def decompress_nnf(buffer):
-        while buffer[0] != b'='[0]:
-            buffer = buffer[1:]
-        buffer = buffer[2:]
-        return bz2.decompress(buffer)[:-1].decode('ascii').strip()
+    def decompress_nnf(buffer_):
+        while buffer_[0] != b'='[0]:
+            buffer_ = buffer_[1:]
+        buffer_ = buffer_[2:]
+        return bz2.decompress(buffer_)[:-1].decode('ascii').strip()
 
     def parse_nnf(nnf_file):
         # parse input file
@@ -200,9 +200,9 @@ def load_atomic_network(filename):
     networ_dir = os.path.dirname(filename)
 
     with open(filename, 'rb') as f:
-        buffer = f.read()
-        buffer = decompress_nnf(buffer)
-        layer_setups = parse_nnf(buffer)
+        buffer_ = f.read()
+        buffer_ = decompress_nnf(buffer_)
+        layer_setups = parse_nnf(buffer_)
 
         layers = []
         for s in layer_setups:
@@ -225,18 +225,18 @@ def load_atomic_network(filename):
         return torch.nn.Sequential(*layers)
 
 
-def load_model(species, dir):
+def load_model(species, dir_):
     """Returns an instance of :class:`torchani.ANIModel` loaded from
     NeuroChem's network directory.
 
     Arguments:
         species (:class:`collections.abc.Sequence`): Sequence of strings for
             chemical symbols of each supported atom type in correct order.
-        dir (str): String for directory storing network configurations.
+        dir_ (str): String for directory storing network configurations.
     """
     models = []
     for i in species:
-        filename = os.path.join(dir, 'ANN-{}.nnf'.format(i))
+        filename = os.path.join(dir_, 'ANN-{}.nnf'.format(i))
         models.append(load_atomic_network(filename))
     return ANIModel(models)
 
@@ -439,7 +439,7 @@ class Trainer:
         return TreeExec().transform(tree)
 
     def _construct(self, network_setup, params):
-        dir = os.path.dirname(os.path.abspath(self.filename))
+        dir_ = os.path.dirname(os.path.abspath(self.filename))
 
         # delete ignored params
         def del_if_exists(key):
@@ -468,14 +468,14 @@ class Trainer:
         assert_param('ntwshr', 0)
 
         # load parameters
-        self.const_file = os.path.join(dir, params['sflparamsfile'])
+        self.const_file = os.path.join(dir_, params['sflparamsfile'])
         self.consts = Constants(self.const_file)
         self.aev_computer = AEVComputer(**self.consts)
         del params['sflparamsfile']
-        self.sae_file = os.path.join(dir, params['atomEnergyFile'])
+        self.sae_file = os.path.join(dir_, params['atomEnergyFile'])
         self.shift_energy = load_sae(self.sae_file)
         del params['atomEnergyFile']
-        network_dir = os.path.join(dir, params['ntwkStoreDir'])
+        network_dir = os.path.join(dir_, params['ntwkStoreDir'])
         if not os.path.exists(network_dir):
             os.makedirs(network_dir)
         self.model_checkpoint = os.path.join(network_dir, self.checkpoint_name)
