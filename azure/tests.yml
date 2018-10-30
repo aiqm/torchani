@@ -16,3 +16,6 @@ steps:
 
 - script: 'python setup.py nosetests'
   displayName: Unit tests
+
+- script: 'codecov -t $(codecov.token)'
+  displayName: Upload coverage

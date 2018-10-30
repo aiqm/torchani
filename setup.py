@@ -11,8 +11,8 @@ setup_attrs = {
     'packages': find_packages(),
     'include_package_data': True,
     'install_requires': [
-        'torch_nightly',
-        'pytorch-ignite',
+        # 'torch-nightly',
+        # 'pytorch-ignite',
         'lark-parser',
         'h5py',
     ],
