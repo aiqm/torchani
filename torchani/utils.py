@@ -161,8 +161,7 @@ class ChemicalSymbolsToInts:
 
     def __init__(self, all_species):
         self.rev_species = {}
-        for i in range(len(all_species)):
-            s = all_species[i]
+        for i, s in enumerate(all_species):
             self.rev_species[s] = i
 
     def __call__(self, species):
