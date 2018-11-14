@@ -151,5 +151,24 @@ class EnergyShifter(torch.nn.Module):
         return species, energies + sae
 
 
+class ChemicalSymbolsToInts:
+    """Helper that can be called to convert chemical symbol string to integers
+
+    Arguments:
+        all_species (:class:`collections.abc.Sequence` of :class:`str`):
+            sequence of all supported species, in order.
+    """
+
+    def __init__(self, all_species):
+        self.rev_species = {}
+        for i, s in enumerate(all_species):
+            self.rev_species[s] = i
+
+    def __call__(self, species):
+        """Convert species from squence of strings to 1D tensor"""
+        rev = [self.rev_species[s] for s in species]
+        return torch.tensor(rev, dtype=torch.long)
+
+
 __all__ = ['pad', 'pad_coordinates', 'present_species',
-           'strip_redundant_padding']
+           'strip_redundant_padding', 'ChemicalSymbolsToInts']

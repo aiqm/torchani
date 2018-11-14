@@ -13,7 +13,7 @@ import math
 import timeit
 from collections.abc import Mapping
 from ..nn import ANIModel, Ensemble, Gaussian
-from ..utils import EnergyShifter
+from ..utils import EnergyShifter, ChemicalSymbolsToInts
 from ..aev import AEVComputer
 from ..ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MAEMetric
 
@@ -21,6 +21,10 @@ from ..ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MAEMetric
 class Constants(Mapping):
     """NeuroChem constants. Objects of this class can be used as arguments
     to :class:`torchani.AEVComputer`, like ``torchani.AEVComputer(**consts)``.
+
+    Attributes:
+        species_to_tensor (:class:`ChemicalSymbolsToInts`): call to convert
+            string chemical symbols to 1d long tensor.
     """
 
     def __init__(self, filename):
@@ -32,7 +36,7 @@ class Constants(Mapping):
                     name = line[0]
                     value = line[1]
                     if name == 'Rcr' or name == 'Rca':
-                        setattr(self, name, torch.tensor(float(value)))
+                        setattr(self, name, float(value))
                     elif name in ['EtaR', 'ShfR', 'Zeta',
                                   'ShfZ', 'EtaA', 'ShfA']:
                         value = [float(x.strip()) for x in value.replace(
@@ -45,10 +49,7 @@ class Constants(Mapping):
                 except Exception:
                     raise ValueError('unable to parse const file')
         self.num_species = len(self.species)
-        self.rev_species = {}
-        for i in range(len(self.species)):
-            s = self.species[i]
-            self.rev_species[s] = i
+        self.species_to_tensor = ChemicalSymbolsToInts(self.species)
 
     def __iter__(self):
         yield 'Rcr'
@@ -66,11 +67,6 @@ class Constants(Mapping):
 
     def __getitem__(self, item):
         return getattr(self, item)
-
-    def species_to_tensor(self, species):
-        """Convert species from squence of strings to 1D tensor"""
-        rev = [self.rev_species[s] for s in species]
-        return torch.tensor(rev, dtype=torch.long)
 
 
 def load_sae(filename):
@@ -105,11 +101,11 @@ def load_atomic_network(filename):
     """Returns an instance of :class:`torch.nn.Sequential` with hyperparameters
     and parameters loaded NeuroChem's .nnf, .wparam and .bparam files."""
 
-    def decompress_nnf(buffer):
-        while buffer[0] != b'='[0]:
-            buffer = buffer[1:]
-        buffer = buffer[2:]
-        return bz2.decompress(buffer)[:-1].decode('ascii').strip()
+    def decompress_nnf(buffer_):
+        while buffer_[0] != b'='[0]:
+            buffer_ = buffer_[1:]
+        buffer_ = buffer_[2:]
+        return bz2.decompress(buffer_)[:-1].decode('ascii').strip()
 
     def parse_nnf(nnf_file):
         # parse input file
@@ -204,9 +200,9 @@ def load_atomic_network(filename):
     networ_dir = os.path.dirname(filename)
 
     with open(filename, 'rb') as f:
-        buffer = f.read()
-        buffer = decompress_nnf(buffer)
-        layer_setups = parse_nnf(buffer)
+        buffer_ = f.read()
+        buffer_ = decompress_nnf(buffer_)
+        layer_setups = parse_nnf(buffer_)
 
         layers = []
         for s in layer_setups:
@@ -229,18 +225,18 @@ def load_atomic_network(filename):
         return torch.nn.Sequential(*layers)
 
 
-def load_model(species, dir):
+def load_model(species, dir_):
     """Returns an instance of :class:`torchani.ANIModel` loaded from
     NeuroChem's network directory.
 
     Arguments:
         species (:class:`collections.abc.Sequence`): Sequence of strings for
             chemical symbols of each supported atom type in correct order.
-        dir (str): String for directory storing network configurations.
+        dir_ (str): String for directory storing network configurations.
     """
     models = []
     for i in species:
-        filename = os.path.join(dir, 'ANN-{}.nnf'.format(i))
+        filename = os.path.join(dir_, 'ANN-{}.nnf'.format(i))
         models.append(load_atomic_network(filename))
     return ANIModel(models)
 
@@ -286,6 +282,7 @@ class Builtins:
             parent_name,
             'resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')
         self.consts = Constants(self.const_file)
+        self.species = self.consts.species
         self.aev_computer = AEVComputer(**self.consts)
 
         self.sae_file = pkg_resources.resource_filename(
@@ -442,7 +439,7 @@ class Trainer:
         return TreeExec().transform(tree)
 
     def _construct(self, network_setup, params):
-        dir = os.path.dirname(os.path.abspath(self.filename))
+        dir_ = os.path.dirname(os.path.abspath(self.filename))
 
         # delete ignored params
         def del_if_exists(key):
@@ -471,14 +468,14 @@ class Trainer:
         assert_param('ntwshr', 0)
 
         # load parameters
-        self.const_file = os.path.join(dir, params['sflparamsfile'])
+        self.const_file = os.path.join(dir_, params['sflparamsfile'])
         self.consts = Constants(self.const_file)
         self.aev_computer = AEVComputer(**self.consts)
         del params['sflparamsfile']
-        self.sae_file = os.path.join(dir, params['atomEnergyFile'])
+        self.sae_file = os.path.join(dir_, params['atomEnergyFile'])
         self.shift_energy = load_sae(self.sae_file)
         del params['atomEnergyFile']
-        network_dir = os.path.join(dir, params['ntwkStoreDir'])
+        network_dir = os.path.join(dir_, params['ntwkStoreDir'])
         if not os.path.exists(network_dir):
             os.makedirs(network_dir)
         self.model_checkpoint = os.path.join(network_dir, self.checkpoint_name)
@@ -529,10 +526,9 @@ class Trainer:
                         # There is no plan to support the "L2" settings in
                         # input file before AdamW get merged into pytorch.
                         raise NotImplementedError('L2 not supported yet')
-                        l2reg.append((0.5 * layer['l2valu'], module))
                     del layer['l2norm']
                     del layer['l2valu']
-                if len(layer) > 0:
+                if layer:
                     raise ValueError('unrecognized parameter in layer setup')
                 i = o
             atomic_nets[atom_type] = torch.nn.Sequential(*modules)
@@ -552,7 +548,7 @@ class Trainer:
             MSELoss('energies'),
             lambda x: 0.5 * (torch.exp(2 * x) - 1) + l2())
 
-        if len(params) > 0:
+        if params:
             raise ValueError('unrecognized parameter')
 
         self.global_epoch = 0

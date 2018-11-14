@@ -11,8 +11,8 @@ setup_attrs = {
     'packages': find_packages(),
     'include_package_data': True,
     'install_requires': [
-        'torch',
-        'pytorch-ignite',
+        # 'torch-nightly',
+        # 'pytorch-ignite',
         'lark-parser',
         'h5py',
     ],
@@ -21,6 +21,8 @@ setup_attrs = {
         'nose',
         'tensorboardX',
         'tqdm',
+        'ase',
+        'coverage',
     ],
 }
 

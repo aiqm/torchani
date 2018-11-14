@@ -1,0 +1,22 @@
+queue:
+  name: Hosted Linux Preview
+  timeoutInMinutes: 300
+
+variables:
+  python.version: '3.7'
+
+steps:
+
+- task: UsePythonVersion@0
+  displayName: 'Use Python $(python.version)'
+  inputs:
+    versionSpec: '$(python.version)'
+
+- script: 'azure/install_dependencies.sh && pip install .'
+  displayName: 'Install dependencies'
+
+- script: 'python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.ipt  dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5'
+  displayName: NeuroChem Trainer
+
+- script: 'python -m torchani.data.cache_aev tmp dataset/ani_gdb_s01.h5 256'
+  displayName: Cache AEV

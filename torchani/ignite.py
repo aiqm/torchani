@@ -50,8 +50,8 @@ class DictLoss(_Loss):
         self.key = key
         self.loss = loss
 
-    def forward(self, input, other):
-        return self.loss(input[self.key], other[self.key])
+    def forward(self, input_, other):
+        return self.loss(input_[self.key], other[self.key])
 
 
 class PerAtomDictLoss(DictLoss):
@@ -60,9 +60,9 @@ class PerAtomDictLoss(DictLoss):
     by the caller. Currently the only reduce operation supported is averaging.
     """
 
-    def forward(self, input, other):
-        loss = self.loss(input[self.key], other[self.key])
-        num_atoms = (input['species'] >= 0).sum(dim=1)
+    def forward(self, input_, other):
+        loss = self.loss(input_[self.key], other[self.key])
+        num_atoms = (input_['species'] >= 0).sum(dim=1)
         loss /= num_atoms.to(loss.dtype).to(loss.device)
         n = loss.numel()
         return loss.sum() / n
@@ -91,8 +91,7 @@ def MSELoss(key, per_atom=True):
     """Create MSE loss on the specified key."""
     if per_atom:
         return PerAtomDictLoss(key, torch.nn.MSELoss(reduction='none'))
-    else:
-        return DictLoss(key, torch.nn.MSELoss())
+    return DictLoss(key, torch.nn.MSELoss())
 
 
 class TransformedLoss(_Loss):
@@ -103,8 +102,8 @@ class TransformedLoss(_Loss):
         self.origin = origin
         self.transform = transform
 
-    def forward(self, input, other):
-        return self.transform(self.origin(input, other))
+    def forward(self, input_, other):
+        return self.transform(self.origin(input_, other))
 
 
 def RMSEMetric(key):

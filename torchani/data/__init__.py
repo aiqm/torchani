@@ -38,7 +38,7 @@ def split_batch(natoms, species, coordinates):
     natoms = natoms.tolist()
     counts = []
     for i in natoms:
-        if len(counts) == 0:
+        if not counts:
             counts.append([i, 1])
             continue
         if i == counts[-1][0]:
