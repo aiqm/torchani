@@ -210,8 +210,6 @@ class AEVComputer(torch.nn.Module):
         return radial_terms, angular_terms, species_
 
     def _combinations(self, tensor, dim=0):
-        # TODO: remove this when combinations is merged into PyTorch
-        # https://github.com/pytorch/pytorch/pull/9393
         n = tensor.shape[dim]
         if n == 0:
             return tensor, tensor
