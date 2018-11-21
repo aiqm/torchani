@@ -443,7 +443,7 @@ class Trainer:
 
     def _construct_from_yaml(self):
         import yaml
-        config = yaml.load(open(self.filename, 'r'))
+        config = yaml.safe_load(open(self.filename, 'r'))
         dir_ = os.path.dirname(os.path.abspath(self.filename))
 
         # delete ignored params
