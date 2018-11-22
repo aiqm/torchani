@@ -337,12 +337,13 @@ class Trainer:
             self.training_eval_every = 20
         else:
             self.tensorboard = None
-        if filename.endswith('.yaml') or filename.endswith('.yml'):
-            self._construct_from_yaml()
-        else:
-            with open(filename, 'r') as f:
+
+        with open(filename, 'r') as f:
+            if filename.endswith('.yaml') or filename.endswith('.yml'):
+                network_setup, params = self._parse_yaml(f)
+            else:
                 network_setup, params = self._parse(f.read())
-                self._construct(network_setup, params)
+            self._construct(network_setup, params)
 
     def _parse(self, txt):
         parser = lark.Lark(r'''
@@ -441,127 +442,13 @@ class Trainer:
 
         return TreeExec().transform(tree)
 
-    def _construct_from_yaml(self):
+    def _parse_yaml(self, f):
         import yaml
-        config = yaml.safe_load(open(self.filename, 'r'))
-        dir_ = os.path.dirname(os.path.abspath(self.filename))
-
-        # delete ignored params
-        def del_if_exists(key):
-            if key in config:
-                del config[key]
-
-        def assert_param(key, value):
-            if key in config and config[key] != value:
-                raise NotImplementedError(key + ' not supported yet')
-            del config[key]
-
-        del_if_exists('gpuid')
-        del_if_exists('nkde')
-        del_if_exists('fmult')
-        del_if_exists('cmult')
-        del_if_exists('decrate')
-        del_if_exists('mu')
-        assert_param('pbc', 0)
-        assert_param('force', 0)
-        assert_param('energy', 1)
-        assert_param('moment', 'ADAM')
-        assert_param('runtype', 'ANNP_CREATE_HDNN_AND_TRAIN')
-        assert_param('adptlrn', 'OFF')
-        assert_param('tmax', 0)
-        assert_param('nmax', 0)
-        assert_param('ntwshr', 0)
-
-        # load parameters
-        self.const_file = os.path.join(dir_, config['sflparamsfile'])
-        self.consts = Constants(self.const_file)
-        self.aev_computer = AEVComputer(**self.consts)
-        del config['sflparamsfile']
-        self.sae_file = os.path.join(dir_, config['atomEnergyFile'])
-        self.shift_energy = load_sae(self.sae_file)
-        del config['atomEnergyFile']
-        network_dir = os.path.join(dir_, config['ntwkStoreDir'])
-        if not os.path.exists(network_dir):
-            os.makedirs(network_dir)
-        self.model_checkpoint = os.path.join(network_dir, self.checkpoint_name)
-        del config['ntwkStoreDir']
-        self.max_nonimprove = config['tolr']
-        del config['tolr']
-        self.init_lr = config['eta']
-        del config['eta']
-        self.lr_decay = config['emult']
-        del config['emult']
-        self.min_lr = config['tcrit']
-        del config['tcrit']
-        self.training_batch_size = config['tbtchsz']
-        del config['tbtchsz']
-        self.validation_batch_size = config['vbtchsz']
-        del config['vbtchsz']
-
-        # construct networks
-        input_size = config['network_setup']['inputsize']
-        atom_nets = config['network_setup']['atom_net']
-        if input_size != self.aev_computer.aev_length():
-            raise ValueError('AEV size and input size does not match')
-        l2reg = []
-        atomic_nets = {}
-        for atom_type in atom_nets:
-            layers = atom_nets[atom_type]['layers']
-            modules = []
-            i = input_size
-            for layer in layers:
-                o = layer['nodes']
-                del layer['nodes']
-                if layer['type'] != 0:
-                    raise ValueError('Unsupported layer type')
-                del layer['type']
-                module = torch.nn.Linear(i, o)
-                modules.append(module)
-                activation = _get_activation(layer['activation'])
-                if activation is not None:
-                    modules.append(activation)
-                del layer['activation']
-                if 'l2norm' in layer:
-                    if layer['l2norm'] == 1:
-                        # NB: The "L2" implemented in NeuroChem is actually not
-                        # L2 but weight decay. The difference of these two is:
-                        # https://arxiv.org/pdf/1711.05101.pdf
-                        # There is a pull request on github/pytorch
-                        # implementing AdamW, etc.:
-                        # https://github.com/pytorch/pytorch/pull/4429
-                        # There is no plan to support the "L2" settings in
-                        # input file before AdamW get merged into pytorch.
-                        raise NotImplementedError('L2 not supported yet')
-                    del layer['l2norm']
-                    del layer['l2valu']
-                if layer:
-                    raise ValueError('unrecognized parameter in layer setup')
-                i = o
-            atomic_nets[atom_type] = torch.nn.Sequential(*modules)
-
-        del config['network_setup']
-        self.model = ANIModel([atomic_nets[s] for s in self.consts.species])
-        if self.aev_caching:
-            self.nnp = self.model
-        else:
-            self.nnp = torch.nn.Sequential(self.aev_computer, self.model)
-        self.container = Container({'energies': self.nnp}).to(self.device)
-
-        # losses
-        def l2():
-            return sum([c * (m.weight ** 2).sum() for c, m in l2reg])
-        self.mse_loss = TransformedLoss(MSELoss('energies'),
-                                        lambda x: x + l2())
-        self.exp_loss = TransformedLoss(
-            MSELoss('energies'),
-            lambda x: 0.5 * (torch.exp(2 * x) - 1) + l2())
-
-        if config:
-            raise ValueError('unrecognized parameter')
-
-        self.global_epoch = 0
-        self.global_iteration = 0
-        self.best_validation_rmse = math.inf
+        params = yaml.safe_load(f)
+        network_setup = params['network_setup']
+        del params['network_setup']
+        network_setup = (network_setup['inputsize'], network_setup['atom_net'])
+        return network_setup, params
 
     def _construct(self, network_setup, params):
         dir_ = os.path.dirname(os.path.abspath(self.filename))
