@@ -337,8 +337,12 @@ class Trainer:
             self.training_eval_every = 20
         else:
             self.tensorboard = None
+
         with open(filename, 'r') as f:
-            network_setup, params = self._parse(f.read())
+            if filename.endswith('.yaml') or filename.endswith('.yml'):
+                network_setup, params = self._parse_yaml(f)
+            else:
+                network_setup, params = self._parse(f.read())
             self._construct(network_setup, params)
 
     def _parse(self, txt):
@@ -437,6 +441,14 @@ class Trainer:
                 return v[0].value
 
         return TreeExec().transform(tree)
+
+    def _parse_yaml(self, f):
+        import yaml
+        params = yaml.safe_load(f)
+        network_setup = params['network_setup']
+        del params['network_setup']
+        network_setup = (network_setup['inputsize'], network_setup['atom_net'])
+        return network_setup, params
 
     def _construct(self, network_setup, params):
         dir_ = os.path.dirname(os.path.abspath(self.filename))

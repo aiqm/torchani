@@ -18,5 +18,8 @@ steps:
 - script: 'python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.ipt  dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5'
   displayName: NeuroChem Trainer
 
+- script: 'python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.yaml  dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5'
+  displayName: NeuroChem Trainer YAML config
+
 - script: 'python -m torchani.data.cache_aev tmp dataset/ani_gdb_s01.h5 256'
   displayName: Cache AEV
