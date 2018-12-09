@@ -21,7 +21,7 @@ class TestEnergies(unittest.TestCase):
 
     def testIsomers(self):
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/{}'.format(i))
+            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, energies, _ = pickle.load(f)
                 _, energies_ = self.model((species, coordinates))
@@ -32,7 +32,7 @@ class TestEnergies(unittest.TestCase):
         species_coordinates = []
         energies = []
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/{}'.format(i))
+            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, e, _ = pickle.load(f)
                 species_coordinates.append((species, coordinates))

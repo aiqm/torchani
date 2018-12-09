@@ -8,7 +8,7 @@ import torchani
 import pickle
 from torchani import buildin_const_file, buildin_sae_file, \
     buildin_network_dir
-import torchani.training.pyanitools
+import json
 
 path = os.path.dirname(os.path.realpath(__file__))
 conv_au_ev = 27.21138505
@@ -79,7 +79,7 @@ for i in [1, 2, 3, 4]:
         radial, angular, energies, forces = ncaev(coordinates, data['species'])
         pickleobj = (coordinates, species, radial, angular, energies, forces)
         dumpfile = os.path.join(
-            path, '../tests/test_data/ANI1_subset/{}'.format(mol_count))
+            path, '../tests/test_data/{}'.format(mol_count))
         with open(dumpfile, 'wb') as f:
             pickle.dump(pickleobj, f, protocol=2)
         mol_count += 1

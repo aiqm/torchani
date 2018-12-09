@@ -34,7 +34,7 @@ class TestEnsemble(unittest.TestCase):
 
     def testGDB(self):
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/{}'.format(i))
+            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, _ = pickle.load(f)
                 self._test_molecule(coordinates, species)

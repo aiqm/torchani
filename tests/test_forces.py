@@ -22,7 +22,7 @@ class TestForce(unittest.TestCase):
 
     def testIsomers(self):
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/{}'.format(i))
+            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
                 coordinates = self.transform(coordinates)
@@ -39,7 +39,7 @@ class TestForce(unittest.TestCase):
         species_coordinates = []
         coordinates_forces = []
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/{}'.format(i))
+            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
                 coordinates = self.transform(coordinates)

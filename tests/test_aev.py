@@ -28,7 +28,7 @@ class TestAEV(unittest.TestCase):
 
     def testIsomers(self):
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/{}'.format(i))
+            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, expected_radial, expected_angular, _, _ \
                     = pickle.load(f)
@@ -39,7 +39,7 @@ class TestAEV(unittest.TestCase):
         species_coordinates = []
         radial_angular = []
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/{}'.format(i))
+            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, radial, angular, _, _ = pickle.load(f)
                 species_coordinates.append((species, coordinates))
