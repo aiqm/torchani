@@ -1,20 +1,17 @@
-import torch
 import os
 import ase
 import pyNeuroChem
 import ase_interface
 import numpy
-import torchani
 import pickle
-from torchani import buildin_const_file, buildin_sae_file, \
-    buildin_network_dir
 import json
+import pyanitools
 
 path = os.path.dirname(os.path.realpath(__file__))
 conv_au_ev = 27.21138505
 
 
-class NeuroChem (torchani.aev.AEVComputer):
+class NeuroChem(torch.nn.Module):
 
     def __init__(self, const_file=buildin_const_file,
                  sae_file=buildin_sae_file,
@@ -65,21 +62,27 @@ mol_count = 0
 
 
 species_indices = {consts.species[i]: i for i in range(len(aev.species))}
-for i in [1, 2, 3, 4]:
-    data_file = os.path.join(
-        path, '../dataset/ani_gdb_s0{}.h5'.format(i))
-    adl = torchani.training.pyanitools.anidataloader(data_file)
-    for data in adl:
-        coordinates = data['coordinates'][:10, :]
-        coordinates = torch.from_numpy(coordinates).type(ncaev.EtaR.dtype)
-        species = torch.tensor([species_indices[i] for i in data['species']],
-                               dtype=torch.long, device=torch.device('cpu')) \
-                       .expand(10, -1)
-        smiles = ''.join(data['smiles'])
-        radial, angular, energies, forces = ncaev(coordinates, data['species'])
-        pickleobj = (coordinates, species, radial, angular, energies, forces)
-        dumpfile = os.path.join(
-            path, '../tests/test_data/{}'.format(mol_count))
-        with open(dumpfile, 'wb') as f:
-            pickle.dump(pickleobj, f, protocol=2)
-        mol_count += 1
+
+with open(os.path.join(path, 'result.json')) as f:
+    d = json.load(f)
+    print(d)
+
+
+# for i in [1, 2, 3, 4]:
+#     data_file = os.path.join(
+#         path, '../dataset/ani_gdb_s0{}.h5'.format(i))
+#     adl = torchani.training.pyanitools.anidataloader(data_file)
+#     for data in adl:
+#         coordinates = data['coordinates'][:10, :]
+#         coordinates = torch.from_numpy(coordinates).type(ncaev.EtaR.dtype)
+#         species = torch.tensor([species_indices[i] for i in data['species']],
+#                                dtype=torch.long, device=torch.device('cpu')) \
+#                        .expand(10, -1)
+#         smiles = ''.join(data['smiles'])
+#         radial, angular, energies, forces = ncaev(coordinates, data['species'])
+#         pickleobj = (coordinates, species, radial, angular, energies, forces)
+#         dumpfile = os.path.join(
+#             path, '../tests/test_data/{}'.format(mol_count))
+#         with open(dumpfile, 'wb') as f:
+#             pickle.dump(pickleobj, f, protocol=2)
+#         mol_count += 1
