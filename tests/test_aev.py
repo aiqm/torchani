@@ -32,6 +32,10 @@ class TestAEV(unittest.TestCase):
             with open(datafile, 'rb') as f:
                 coordinates, species, expected_radial, expected_angular, _, _ \
                     = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates)
+                species = torch.from_numpy(species)
+                expected_radial = torch.from_numpy(expected_radial)
+                expected_angular = torch.from_numpy(expected_angular)
                 _, aev = self.aev_computer((species, coordinates))
                 self._assertAEVEqual(expected_radial, expected_angular, aev)
 
@@ -42,6 +46,10 @@ class TestAEV(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, radial, angular, _, _ = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates)
+                species = torch.from_numpy(species)
+                radial = torch.from_numpy(radial)
+                angular = torch.from_numpy(angular)
                 species_coordinates.append((species, coordinates))
                 radial_angular.append((radial, angular))
         species, coordinates = torchani.utils.pad_coordinates(

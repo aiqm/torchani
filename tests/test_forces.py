@@ -25,6 +25,9 @@ class TestForce(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates)
+                species = torch.from_numpy(species)
+                forces = torch.from_numpy(forces)
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 forces = self.transform(forces)
@@ -42,6 +45,9 @@ class TestForce(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates)
+                species = torch.from_numpy(species)
+                forces = torch.from_numpy(forces)
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 forces = self.transform(forces)

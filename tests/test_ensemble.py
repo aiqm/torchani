@@ -37,6 +37,8 @@ class TestEnsemble(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, _ = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates)
+                species = torch.from_numpy(species)
                 self._test_molecule(coordinates, species)
 
 

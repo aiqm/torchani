@@ -24,6 +24,9 @@ class TestEnergies(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, energies, _ = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates)
+                species = torch.from_numpy(species)
+                energies = torch.from_numpy(energies)
                 _, energies_ = self.model((species, coordinates))
                 max_diff = (energies - energies_).abs().max().item()
                 self.assertLess(max_diff, self.tolerance)
@@ -35,6 +38,9 @@ class TestEnergies(unittest.TestCase):
             datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, e, _ = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates)
+                species = torch.from_numpy(species)
+                e = torch.from_numpy(e)
                 species_coordinates.append((species, coordinates))
                 energies.append(e)
         species, coordinates = torchani.utils.pad_coordinates(
