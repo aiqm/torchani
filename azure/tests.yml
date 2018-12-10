@@ -1,6 +1,6 @@
 queue:
   name: Hosted Linux Preview
-  timeoutInMinutes: 600
+  timeoutInMinutes: 6000
 
 variables:
   python.version: '3.7'
