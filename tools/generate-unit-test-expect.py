@@ -28,6 +28,7 @@ for i in [1, 2, 3, 4]:
 # generate expect for NIST
 mol_count = 0
 with open(os.path.join(path, 'diverse_test_set/result.json')) as f:
+    pickle_objects = []
     for i in tqdm.tqdm(json.load(f), desc='NIST'):
         atoms = i['atoms']
         natoms = len(atoms)
@@ -37,8 +38,10 @@ with open(os.path.join(path, 'diverse_test_set/result.json')) as f:
             species.append(atype)
             coordinates.append([x, y, z])
         pickleobj = neurochem(numpy.array(coordinates), species)
-        dumpfile = os.path.join(
-            path, '../tests/test_data/NIST/{}'.format(mol_count))
-        with open(dumpfile, 'wb') as f:
-            pickle.dump(pickleobj, f)
+        pickle_objects.append(pickleobj)
         mol_count += 1
+
+    dumpfile = os.path.join(
+        path, '../tests/test_data/NIST/all')
+    with open(dumpfile, 'wb') as f:
+        pickle.dump(pickle_objects, f)
