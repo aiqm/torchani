@@ -3,5 +3,5 @@
 ## Download all 3d structures from NIST
 
 ```
-scrapy runspider download.py -o result.json
+scrapy runspider nist.py -o result.json
 ```

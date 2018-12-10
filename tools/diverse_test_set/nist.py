@@ -1,7 +1,8 @@
 import scrapy
 
-
-urltemplate = "https://webbook.nist.gov/cgi/cbook.cgi?Value={}-{}&VType=MW&Formula=C*H*N*O*&NoIon=on&MatchIso=on"  # noqa: E501
+species = ['H', 'C', 'N', 'O']
+formula = ''.join([x + '*' for x in species])
+urltemplate = "https://webbook.nist.gov/cgi/cbook.cgi?Value={}-{}&VType=MW&Formula=" + formula + "&NoIon=on&MatchIso=on"  # noqa: E501
 min_weight = 0
 max_weight = 9999999
 
@@ -58,6 +59,13 @@ class NISTSpider(scrapy.Spider):
             count = int(lines[0].split()[0])
             lines = lines[1: count + 1]
             lines = [x.split()[:4] for x in lines]
-            lines = [(atype, float(x), float(y), float(z))
-                     for x, y, z, atype in lines]
-            yield {'id': nist_id, 'size': count, 'atoms': lines}
+            # double check if it contain unexpected elements
+            good = True
+            atoms = []
+            for x, y, z, atype in lines:
+                if atype not in species:
+                    good = False
+                    break
+                atoms.append((atype, float(x), float(y), float(z)))
+            if good:
+                yield {'id': nist_id, 'size': count, 'atoms': atoms}
