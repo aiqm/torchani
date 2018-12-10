@@ -2,7 +2,7 @@ import os
 import pickle
 import pyanitools
 import numpy
-from neurochem_calculator import NeuroChem, path, species_indices
+from neurochem_calculator import NeuroChem, path
 import json
 import tqdm
 

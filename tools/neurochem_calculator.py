@@ -6,9 +6,9 @@ import numpy
 
 path = os.path.dirname(os.path.realpath(__file__))
 builtin_path = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/')
-const_file=os.path.join(builtin_path, 'rHCNO-5.2R_16-3.5A_a4-8.params')
-sae_file=os.path.join(builtin_path, 'sae_linfit.dat')
-network_dir=os.path.join(builtin_path, 'train0/networks/')
+const_file = os.path.join(builtin_path, 'rHCNO-5.2R_16-3.5A_a4-8.params')
+sae_file = os.path.join(builtin_path, 'sae_linfit.dat')
+network_dir = os.path.join(builtin_path, 'train0/networks/')
 radial_length = 64
 conv_au_ev = 27.21138505
 all_species = ['H', 'C', 'N', 'O']
@@ -49,6 +49,7 @@ class NeuroChem:
         forces = numpy.stack(forces)
         species = numpy.array([species_indices[i] for i in species])
         species = species.reshape(1, -1)
-        species = numpy.broadcast_to(species, (coordinates.shape[0], species.shape[1]))
+        species = numpy.broadcast_to(species,
+                                     (coordinates.shape[0], species.shape[1]))
         return coordinates, species, self._get_radial_part(aevs), \
             self._get_angular_part(aevs), energies, forces

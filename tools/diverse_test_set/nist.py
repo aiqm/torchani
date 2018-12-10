@@ -49,7 +49,7 @@ class NISTSpider(scrapy.Spider):
                 url3d = 'https://webbook.nist.gov/cgi/cbook.cgi?Str3File=' + nist_id  # noqa: E501
                 yield scrapy.Request(
                     url=url3d,
-                    callback=lambda x: self.parse_sdf(x, nist_id))
+                    callback=lambda x, n=nist_id: self.parse_sdf(x, n))
 
     def parse_sdf(self, response, nist_id):
         if response.text:
