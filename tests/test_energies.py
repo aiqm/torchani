@@ -3,6 +3,7 @@ import torchani
 import unittest
 import os
 import pickle
+import math
 
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -49,6 +50,19 @@ class TestEnergies(unittest.TestCase):
         _, energies_ = self.model((species, coordinates))
         max_diff = (energies - energies_).abs().max().item()
         self.assertLess(max_diff, self.tolerance)
+
+    def testNIST(self):
+        datafile = os.path.join(path, 'test_data/NIST/all')
+        with open(datafile, 'rb') as f:
+            data = pickle.load(f)
+            for coordinates, species, _, _, e, _ in data:
+                coordinates = torch.from_numpy(coordinates).to(torch.float)
+                species = torch.from_numpy(species)
+                energies = torch.from_numpy(e).to(torch.float)
+                _, energies_ = self.model((species, coordinates))
+                natoms = coordinates.shape[1]
+                max_diff = (energies - energies_).abs().max().item()
+                self.assertLess(max_diff / math.sqrt(natoms), self.tolerance)
 
 
 class TestEnergiesASEComputer(TestEnergies):

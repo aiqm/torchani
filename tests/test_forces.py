@@ -64,6 +64,21 @@ class TestForce(unittest.TestCase):
             max_diff = (forces + derivative).abs().max().item()
             self.assertLess(max_diff, self.tolerance)
 
+    def testNIST(self):
+        datafile = os.path.join(path, 'test_data/NIST/all')
+        with open(datafile, 'rb') as f:
+            data = pickle.load(f)
+            for coordinates, species, _, _, _, forces in data:
+                coordinates = torch.from_numpy(coordinates).to(torch.float) \
+                                   .requires_grad_(True)
+                species = torch.from_numpy(species)
+                forces = torch.from_numpy(forces).to(torch.float)
+                _, energies = self.model((species, coordinates))
+                derivative = torch.autograd.grad(energies.sum(),
+                                                 coordinates)[0]
+                max_diff = (forces + derivative).abs().max().item()
+                self.assertLess(max_diff, self.tolerance)
+
 
 class TestForceASEComputer(TestForce):
 
