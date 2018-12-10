@@ -12,7 +12,7 @@ steps:
   inputs:
     versionSpec: '$(python.version)'
 
-- script: 'azure/install_dependencies.sh'
+- script: 'rm -rf .git && rm -rf tests/test_data/NIST && azure/install_dependencies.sh'
   displayName: 'Install dependencies'
 
 - script: 'pip install flake8 && flake8 .'
