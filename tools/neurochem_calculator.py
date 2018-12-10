@@ -49,6 +49,6 @@ class NeuroChem:
         forces = numpy.stack(forces)
         species = numpy.array([species_indices[i] for i in species])
         species = species.reshape(1, -1)
-        species = numpy.broadcast_to(coordinates.shape[0], (10, species.shape[1]))
+        species = numpy.broadcast_to(species, (coordinates.shape[0], species.shape[1]))
         return coordinates, species, self._get_radial_part(aevs), \
             self._get_angular_part(aevs), energies, forces
