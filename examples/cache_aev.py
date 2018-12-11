@@ -15,11 +15,10 @@ AEVs.  This example shows how to use disk cache to boost training
 import torch
 import ignite
 import torchani
-import tqdm
 import timeit
 import tensorboardX
 import os
-import sys
+import ignite.contrib.handlers
 
 
 # training and validation set
@@ -119,20 +118,10 @@ evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
     })
 
 
-@trainer.on(ignite.engine.Events.EPOCH_STARTED)
-def init_tqdm(trainer):
-    trainer.state.tqdm = tqdm.tqdm(total=len(training),
-                                   file=sys.stdout, desc='epoch')
-
-
-@trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
-def update_tqdm(trainer):
-    trainer.state.tqdm.update(1)
-
-
-@trainer.on(ignite.engine.Events.EPOCH_COMPLETED)
-def finalize_tqdm(trainer):
-    trainer.state.tqdm.close()
+###############################################################################
+# Let's add a progress bar for the trainer
+pbar = ignite.contrib.handlers.ProgressBar()
+pbar.attach(trainer)
 
 
 def hartree2kcal(x):
