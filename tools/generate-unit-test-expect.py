@@ -5,6 +5,7 @@ import numpy
 from neurochem_calculator import NeuroChem, path
 import json
 import tqdm
+import random
 
 
 neurochem = NeuroChem()
@@ -26,10 +27,13 @@ for i in [1, 2, 3, 4]:
 
 
 # generate expect for NIST
+keep_ratio = 0.1  # reduce the size of generated file by discarding
 mol_count = 0
 with open(os.path.join(path, 'diverse_test_set/result.json')) as f:
     pickle_objects = []
     for i in tqdm.tqdm(json.load(f), desc='NIST'):
+        if random.random() > keep_ratio:
+            continue
         atoms = i['atoms']
         natoms = len(atoms)
         species = []
