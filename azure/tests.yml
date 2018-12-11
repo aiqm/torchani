@@ -1,6 +1,6 @@
 queue:
   name: Hosted Ubuntu 1604
-  timeoutInMinutes: 300
+  timeoutInMinutes: 6000
 
 variables:
   python.version: '3.7'
