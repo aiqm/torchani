@@ -1,7 +1,9 @@
+import os
 import unittest
 import torch
 import torchani
 import copy
+import pickle
 from ase.optimize import BFGS
 
 
@@ -14,8 +16,8 @@ class TestStructureOptimization(unittest.TestCase):
         self.tolerance = 1e-6
         self.builtin = torchani.neurochem.Builtins()
         self.calculator = torchani.ase.Calculator(
-            builtin.species, builtin.aev_computer, builtin.models,
-            builtin.energy_shifter)
+            self.builtin.species, self.builtin.aev_computer,
+            self.builtin.models, self.builtin.energy_shifter)
 
     def testRMSE(self):
         datafile = os.path.join(path, 'test_data/NeuroChemOptimized/all')
