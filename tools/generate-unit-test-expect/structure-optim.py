@@ -25,6 +25,7 @@ with open(os.path.join(path, 'nist-dataset/result.json')) as f:
         mol.set_calculator(calc())
         opt = BFGS(mol, logfile='/dev/null')
         opt.run()
+        mol.set_calculator(None)
         pickle_objects.append(mol)
         mol_count += 1
 
