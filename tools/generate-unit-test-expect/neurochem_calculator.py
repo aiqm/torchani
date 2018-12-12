@@ -5,7 +5,7 @@ import ase_interface
 import numpy
 
 path = os.path.dirname(os.path.realpath(__file__))
-builtin_path = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/')
+builtin_path = os.path.join(path, '../../torchani/resources/ani-1x_dft_x8ens/')
 const_file = os.path.join(builtin_path, 'rHCNO-5.2R_16-3.5A_a4-8.params')
 sae_file = os.path.join(builtin_path, 'sae_linfit.dat')
 network_dir = os.path.join(builtin_path, 'train0/networks/')
@@ -13,12 +13,16 @@ radial_length = 64
 conv_au_ev = 27.21138505
 all_species = ['H', 'C', 'N', 'O']
 species_indices = {all_species[i]: i for i in range(len(all_species))}
+nc = pyNeuroChem.molecule(const_file, sae_file, network_dir, 0)
+
+
+def calc():
+    calc = ase_interface.ANI(False)
+    calc.setnc(nc)
+    return calc
 
 
 class NeuroChem:
-
-    def __init__(self):
-        self.nc = pyNeuroChem.molecule(const_file, sae_file, network_dir, 0)
 
     def _get_radial_part(self, fullaev):
         return fullaev[:, :, :radial_length]
@@ -29,8 +33,7 @@ class NeuroChem:
     def _per_conformation(self, coordinates, species):
         atoms = coordinates.shape[0]
         mol = ase.Atoms(''.join(species), positions=coordinates)
-        mol.set_calculator(ase_interface.ANI(False))
-        mol.calc.setnc(self.nc)
+        mol.set_calculator(calc())
         energy = mol.get_potential_energy() / conv_au_ev
         aevs = [mol.calc.nc.atomicenvironments(j) for j in range(atoms)]
         force = mol.get_forces() / conv_au_ev
