@@ -5,8 +5,8 @@ project = 'TorchANI'
 copyright = '2018, Roitberg Group'
 author = 'Xiang Gao'
 
-version = '0.1'
-release = '0.1alpha'
+version = torchani.__version__
+release = torchani.__version__
 
 extensions = [
     'sphinx.ext.autodoc',
