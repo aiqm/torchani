@@ -3,6 +3,7 @@ import torchani
 import unittest
 import os
 import pickle
+import random
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
@@ -17,14 +18,20 @@ class TestForce(unittest.TestCase):
         nnp = builtins.models[0]
         self.model = torch.nn.Sequential(self.aev_computer, nnp)
 
+    def random_skip(self):
+        return False
+
     def transform(self, x):
         return x
 
     def testIsomers(self):
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/{}'.format(i))
+            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates)
+                species = torch.from_numpy(species)
+                forces = torch.from_numpy(forces)
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 forces = self.transform(forces)
@@ -39,9 +46,12 @@ class TestForce(unittest.TestCase):
         species_coordinates = []
         coordinates_forces = []
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/{}'.format(i))
+            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates)
+                species = torch.from_numpy(species)
+                forces = torch.from_numpy(forces)
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 forces = self.transform(forces)
@@ -58,6 +68,23 @@ class TestForce(unittest.TestCase):
             max_diff = (forces + derivative).abs().max().item()
             self.assertLess(max_diff, self.tolerance)
 
+    def testNIST(self):
+        datafile = os.path.join(path, 'test_data/NIST/all')
+        with open(datafile, 'rb') as f:
+            data = pickle.load(f)
+            for coordinates, species, _, _, _, forces in data:
+                if self.random_skip():
+                    continue
+                coordinates = torch.from_numpy(coordinates).to(torch.float) \
+                                   .requires_grad_(True)
+                species = torch.from_numpy(species)
+                forces = torch.from_numpy(forces).to(torch.float)
+                _, energies = self.model((species, coordinates))
+                derivative = torch.autograd.grad(energies.sum(),
+                                                 coordinates)[0]
+                max_diff = (forces + derivative).abs().max().item()
+                self.assertLess(max_diff, self.tolerance)
+
 
 class TestForceASEComputer(TestForce):
 
@@ -67,7 +94,11 @@ class TestForceASEComputer(TestForce):
 
     def transform(self, x):
         """To reduce the size of test cases for faster test speed"""
-        return x[:3, ...]
+        return x[:2, ...]
+
+    def random_skip(self):
+        """To reduce the size of test cases for faster test speed"""
+        return random.random() < 0.95
 
 
 if __name__ == '__main__':
