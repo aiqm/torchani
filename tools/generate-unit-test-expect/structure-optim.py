@@ -1,3 +1,9 @@
+import os
+import pickle
+import json
+import tqdm
+import random
+import ase
 from ase.optimize import BFGS
 from neurochem_calculator import calc, path
 
