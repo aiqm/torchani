@@ -22,7 +22,7 @@ with open(os.path.join(path, 'nist-dataset/result.json')) as f:
             species.append(atype)
             coordinates.append([x, y, z])
         mol = ase.Atoms(species, positions=coordinates)
-        mol.set_calculator(calc)
+        mol.set_calculator(calc())
         opt = BFGS(mol)
         opt.run()
         pickle_objects.append(mol)

@@ -14,8 +14,12 @@ conv_au_ev = 27.21138505
 all_species = ['H', 'C', 'N', 'O']
 species_indices = {all_species[i]: i for i in range(len(all_species))}
 nc = pyNeuroChem.molecule(const_file, sae_file, network_dir, 0)
-calc = ase_interface.ANI(False)
-calc.setnc(nc)
+
+
+def calc():
+    calc = ase_interface.ANI(False)
+    calc.setnc(nc)
+    return calc
 
 
 class NeuroChem:
@@ -29,7 +33,7 @@ class NeuroChem:
     def _per_conformation(self, coordinates, species):
         atoms = coordinates.shape[0]
         mol = ase.Atoms(''.join(species), positions=coordinates)
-        mol.set_calculator(calc)
+        mol.set_calculator(calc())
         energy = mol.get_potential_energy() / conv_au_ev
         aevs = [mol.calc.nc.atomicenvironments(j) for j in range(atoms)]
         force = mol.get_forces() / conv_au_ev
