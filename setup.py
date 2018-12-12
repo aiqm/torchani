@@ -2,7 +2,6 @@ from setuptools import setup, find_packages
 
 setup_attrs = {
     'name': 'torchani',
-    'version': '0.1',
     'description': 'PyTorch implementation of ANI',
     'url': 'https://github.com/zasdfgbnm/torchani',
     'author': 'Xiang Gao',
@@ -10,6 +9,8 @@ setup_attrs = {
     'license': 'MIT',
     'packages': find_packages(),
     'include_package_data': True,
+    'use_scm_version': True,
+    'setup_requires': ['setuptools_scm'],
     'install_requires': [
         'torch-nightly',
         'pytorch-ignite-nightly',
