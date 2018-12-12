@@ -5,7 +5,7 @@ import ase_interface
 import numpy
 
 path = os.path.dirname(os.path.realpath(__file__))
-builtin_path = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/')
+builtin_path = os.path.join(path, '../../torchani/resources/ani-1x_dft_x8ens/')
 const_file = os.path.join(builtin_path, 'rHCNO-5.2R_16-3.5A_a4-8.params')
 sae_file = os.path.join(builtin_path, 'sae_linfit.dat')
 network_dir = os.path.join(builtin_path, 'train0/networks/')
