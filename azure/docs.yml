@@ -12,7 +12,7 @@ steps:
   inputs:
     versionSpec: '$(python.version)'
 
-- script: 'rm -rf .git && rm -rf tests/test_data/NIST && azure/install_dependencies.sh && pip install sphinx sphinx_rtd_theme matplotlib pillow sphinx-gallery && pip install .'
+- script: 'azure/install_dependencies.sh && pip install sphinx sphinx_rtd_theme matplotlib pillow sphinx-gallery && pip install .'
   displayName: 'Install dependencies'
 
 - script: 'sphinx-build docs build'
