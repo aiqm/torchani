@@ -3,6 +3,7 @@ import torchani
 import unittest
 import os
 import pickle
+import random
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
@@ -16,6 +17,9 @@ class TestForce(unittest.TestCase):
         self.aev_computer = builtins.aev_computer
         nnp = builtins.models[0]
         self.model = torch.nn.Sequential(self.aev_computer, nnp)
+
+    def random_skip(self):
+        return False
 
     def transform(self, x):
         return x
@@ -69,6 +73,8 @@ class TestForce(unittest.TestCase):
         with open(datafile, 'rb') as f:
             data = pickle.load(f)
             for coordinates, species, _, _, _, forces in data:
+                if self.random_skip():
+                    continue
                 coordinates = torch.from_numpy(coordinates).to(torch.float) \
                                    .requires_grad_(True)
                 species = torch.from_numpy(species)
@@ -88,7 +94,11 @@ class TestForceASEComputer(TestForce):
 
     def transform(self, x):
         """To reduce the size of test cases for faster test speed"""
-        return x[:3, ...]
+        return x[:2, ...]
+
+    def random_skip(self):
+        """To reduce the size of test cases for faster test speed"""
+        return random.random() < 0.95
 
 
 if __name__ == '__main__':
