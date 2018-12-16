@@ -15,7 +15,7 @@ steps:
 - script: 'azure/install_dependencies.sh && pip install sphinx sphinx_rtd_theme matplotlib pillow sphinx-gallery && pip install .'
   displayName: 'Install dependencies'
 
-- script: 'sphinx-build docs build'
+- script: 'sphinx-build -D plot_gallery=0 docs build'
   displayName: Build documents
 
 - script: 'echo $(deploy_privatekey) > ~/.ssh/id_rsa && echo $(deploy_pubkey) > ~/.ssh/id_rsa.pub'
