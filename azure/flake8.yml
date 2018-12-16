@@ -2,6 +2,12 @@ queue:
   name: Hosted Ubuntu 1604
   timeoutInMinutes: 10
 
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+
 variables:
   python.version: '3.7'
 
