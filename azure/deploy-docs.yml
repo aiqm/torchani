@@ -1,0 +1,31 @@
+queue:
+  name: Hosted Ubuntu 1604
+  timeoutInMinutes: 300
+
+variables:
+  python.version: '3.7'
+
+steps:
+
+- task: UsePythonVersion@0
+  displayName: 'Use Python $(python.version)'
+  inputs:
+    versionSpec: '$(python.version)'
+
+- script: 'azure/install_dependencies.sh && pip install sphinx sphinx_rtd_theme matplotlib pillow sphinx-gallery && pip install .'
+  displayName: 'Install dependencies'
+
+- script: 'sphinx-build docs build'
+  displayName: Build documents
+
+- script: 'echo $(deploy_privatekey) > ~/.ssh/id_rsa && echo $(deploy_pubkey) > ~/.ssh/id_rsa.pub'
+  displayName: Set up deploy keys
+
+- script: 'git clone git@github.com:aiqm/torchani-test-repo.git deploy_dir -b gh-pages'
+  displayName: Clone old gh-pages
+
+- script: 'rm -rf deploy_dir/* && cp -r build/* deploy_dir'
+  displayName: Copy new files
+
+- script: 'cd deploy_dir && git add . && git commit -m "update" && git push'
+  displayName: Deploy
