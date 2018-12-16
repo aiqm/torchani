@@ -1,9 +1,17 @@
 queue:
   name: Hosted Ubuntu 1604
-  timeoutInMinutes: 300
+  timeoutInMinutes: 6000
 
 variables:
   python.version: '3.7'
+
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+
+pr: none
 
 steps:
 
@@ -18,14 +26,17 @@ steps:
 - script: 'sphinx-build docs build'
   displayName: Build documents
 
-- script: 'echo $(deploy_privatekey) > ~/.ssh/id_rsa && echo $(deploy_pubkey) > ~/.ssh/id_rsa.pub'
+- script: 'mkdir -p ~/.ssh && echo $(deploy_privatekey) | base64 -d > ~/.ssh/id_rsa && chmod 0600 ~/.ssh/id_rsa && echo $(deploy_pubkey) > ~/.ssh/id_rsa.pub'
   displayName: Set up deploy keys
 
-- script: 'git clone git@github.com:aiqm/torchani-test-repo.git deploy_dir -b gh-pages'
-  displayName: Clone old gh-pages
+- script: 'ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts && git config --global user.email "zasdfgbnm-bot@example.com" && git config --global user.name "zasdfgbnm-bot"'
+  displayName: Set up github
+
+- script: 'git clone git@github.com:aiqm/torchani.git deploy_dir -b gh-pages'
+  displayName: Clone gh-pages repository
 
 - script: 'rm -rf deploy_dir/* && cp -r build/* deploy_dir'
-  displayName: Copy new files
+  displayName: Replace with new files
 
 - script: 'cd deploy_dir && git add . && git commit -m "update" && git push'
   displayName: Deploy
