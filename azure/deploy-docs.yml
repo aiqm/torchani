@@ -24,7 +24,7 @@ steps:
 - script: 'cat ~/.ssh/id_rsa.pub'
   displayName: Display
 
-- script: 'git clone git@github.com:aiqm/torchani-test-repo.git deploy_dir -b gh-pages'
+- script: 'ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts && git clone git@github.com:aiqm/torchani-test-repo.git deploy_dir -b gh-pages'
   displayName: Clone old gh-pages
 
 - script: 'rm -rf deploy_dir/* && cp -r build/* deploy_dir'
