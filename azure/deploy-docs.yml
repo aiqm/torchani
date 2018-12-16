@@ -18,7 +18,7 @@ steps:
 - script: 'sphinx-build -D plot_gallery=0 docs build'
   displayName: Build documents
 
-- script: 'mkdir -p ~/.ssh && echo $(deploy_privatekey) | base64 -d > ~/.ssh/id_rsa && echo $(deploy_pubkey) > ~/.ssh/id_rsa.pub'
+- script: 'mkdir -p ~/.ssh && echo $(deploy_privatekey) | base64 -d > ~/.ssh/id_rsa && chmod 0600 ~/.ssh/id_rsa && echo $(deploy_pubkey) > ~/.ssh/id_rsa.pub'
   displayName: Set up deploy keys
 
 - script: 'cat ~/.ssh/id_rsa.pub'
