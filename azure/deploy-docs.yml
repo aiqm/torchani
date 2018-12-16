@@ -21,6 +21,9 @@ steps:
 - script: 'mkdir -p ~/.ssh && echo $(deploy_privatekey) | base64 -d > ~/.ssh/id_rsa && echo $(deploy_pubkey) > ~/.ssh/id_rsa.pub'
   displayName: Set up deploy keys
 
+- script: 'cat ~/.ssh/id_rsa.pub'
+  displayName: Display
+
 - script: 'git clone git@github.com:aiqm/torchani-test-repo.git deploy_dir -b gh-pages'
   displayName: Clone old gh-pages
 
