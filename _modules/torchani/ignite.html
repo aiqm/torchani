@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.ignite &mdash; TorchANI 0.1alpha documentation</title>
+  <title>torchani.ignite &mdash; TorchANI 0.2.dev31+g6dba0be documentation</title>
   
 
   
@@ -57,7 +57,7 @@
             
             
               <div class="version">
-                0.1
+                0.2.dev31+g6dba0be
               </div>
             
           
@@ -98,6 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.data">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 
@@ -170,6 +171,7 @@
 <span class="kn">from</span> <span class="nn">torch.nn.modules.loss</span> <span class="k">import</span> <span class="n">_Loss</span>
 <span class="kn">from</span> <span class="nn">ignite.metrics.metric</span> <span class="k">import</span> <span class="n">Metric</span>
 <span class="kn">from</span> <span class="nn">ignite.metrics</span> <span class="k">import</span> <span class="n">RootMeanSquaredError</span>
+<span class="kn">from</span> <span class="nn">ignite.contrib.metrics.regression</span> <span class="k">import</span> <span class="n">MaximumAbsoluteError</span>
 
 
 <div class="viewcode-block" id="Container"><a class="viewcode-back" href="../../api.html#torchani.ignite.Container">[docs]</a><span class="k">class</span> <span class="nc">Container</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">):</span>
@@ -214,8 +216,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="nb">input</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">],</span> <span class="n">other</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">])</span></div>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">input_</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">],</span> <span class="n">other</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="PerAtomDictLoss"><a class="viewcode-back" href="../../api.html#torchani.ignite.PerAtomDictLoss">[docs]</a><span class="k">class</span> <span class="nc">PerAtomDictLoss</span><span class="p">(</span><span class="n">DictLoss</span><span class="p">):</span>
@@ -224,9 +226,9 @@
 <span class="sd">    by the caller. Currently the only reduce operation supported is averaging.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="nb">input</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">],</span> <span class="n">other</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">])</span>
-        <span class="n">num_atoms</span> <span class="o">=</span> <span class="p">(</span><span class="nb">input</span><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">input_</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">],</span> <span class="n">other</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">])</span>
+        <span class="n">num_atoms</span> <span class="o">=</span> <span class="p">(</span><span class="n">input_</span><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">loss</span> <span class="o">/=</span> <span class="n">num_atoms</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="n">n</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">loss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">n</span></div>
@@ -255,8 +257,7 @@
     <span class="sd">&quot;&quot;&quot;Create MSE loss on the specified key.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">per_atom</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">PerAtomDictLoss</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">))</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">DictLoss</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">())</span></div>
+    <span class="k">return</span> <span class="n">DictLoss</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="TransformedLoss"><a class="viewcode-back" href="../../api.html#torchani.ignite.TransformedLoss">[docs]</a><span class="k">class</span> <span class="nc">TransformedLoss</span><span class="p">(</span><span class="n">_Loss</span><span class="p">):</span>
@@ -267,8 +268,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">other</span><span class="p">))</span></div>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">(</span><span class="n">input_</span><span class="p">,</span> <span class="n">other</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="RMSEMetric"><a class="viewcode-back" href="../../api.html#torchani.ignite.RMSEMetric">[docs]</a><span class="k">def</span> <span class="nf">RMSEMetric</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
@@ -276,29 +277,9 @@
     <span class="k">return</span> <span class="n">DictMetric</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">RootMeanSquaredError</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="MaxAbsoluteError"><a class="viewcode-back" href="../../api.html#torchani.ignite.MaxAbsoluteError">[docs]</a><span class="k">class</span> <span class="nc">MaxAbsoluteError</span><span class="p">(</span><span class="n">Metric</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Calculates the max absolute error.</span>
-
-<span class="sd">    - `update` must receive output of the form `(y_pred, y)`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_max_of_absolute_errors</span> <span class="o">=</span> <span class="mf">0.0</span>
-
-    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">):</span>
-        <span class="n">y_pred</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">output</span>
-        <span class="n">absolute_errors</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y_pred</span> <span class="o">-</span> <span class="n">y</span><span class="o">.</span><span class="n">view_as</span><span class="p">(</span><span class="n">y_pred</span><span class="p">))</span>
-        <span class="n">batch_max</span> <span class="o">=</span> <span class="n">absolute_errors</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">batch_max</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_of_absolute_errors</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_max_of_absolute_errors</span> <span class="o">=</span> <span class="n">batch_max</span>
-
-    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_of_absolute_errors</span></div>
-
-
 <div class="viewcode-block" id="MAEMetric"><a class="viewcode-back" href="../../api.html#torchani.ignite.MAEMetric">[docs]</a><span class="k">def</span> <span class="nf">MAEMetric</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Create max absolute error metric on key.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">DictMetric</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">MaxAbsoluteError</span><span class="p">())</span></div>
+    <span class="k">return</span> <span class="n">DictMetric</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">MaximumAbsoluteError</span><span class="p">())</span></div>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Container&#39;</span><span class="p">,</span> <span class="s1">&#39;MSELoss&#39;</span><span class="p">,</span> <span class="s1">&#39;TransformedLoss&#39;</span><span class="p">,</span> <span class="s1">&#39;RMSEMetric&#39;</span><span class="p">,</span>
@@ -315,7 +296,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Roitberg Group.
+        &copy; Copyright 2018, Roitberg Group
 
     </p>
   </div>
@@ -334,21 +315,14 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../',
-            VERSION:'0.1alpha',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
 
   
 

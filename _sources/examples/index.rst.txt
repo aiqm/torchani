@@ -48,6 +48,26 @@ Examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example is modified from the official `home page` and `Constant temperature MD`_ to use th...">
+
+.. only:: html
+
+    .. figure:: /examples/images/thumb/sphx_glr_ase_interface_thumb.png
+
+        :ref:`sphx_glr_examples_ase_interface.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/ase_interface
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI train your own neural network potential. ">
 
 .. only:: html
@@ -99,13 +119,13 @@ Examples
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Python source code: examples_python.zip <//home/gaoxiang/torchani/docs/examples/examples_python.zip>`
+    :download:`Download all examples in Python source code: examples_python.zip <//home/vsts/work/1/s/docs/examples/examples_python.zip>`
 
 
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Jupyter notebooks: examples_jupyter.zip <//home/gaoxiang/torchani/docs/examples/examples_jupyter.zip>`
+    :download:`Download all examples in Jupyter notebooks: examples_jupyter.zip <//home/vsts/work/1/s/docs/examples/examples_jupyter.zip>`
 
 
 .. only:: html

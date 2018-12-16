@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; TorchANI 0.1alpha documentation</title>
+  <title>Index &mdash; TorchANI 0.2.dev31+g6dba0be documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                0.1
+                0.2.dev31+g6dba0be
               </div>
             
           
@@ -99,6 +99,7 @@
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.data">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 
@@ -175,6 +176,7 @@
  | <a href="#G"><strong>G</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
@@ -218,12 +220,18 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#torchani.ase.Calculator.calculate">calculate() (torchani.ase.Calculator method)</a>
+</li>
+      <li><a href="api.html#torchani.ase.Calculator">Calculator (class in torchani.ase)</a>
+</li>
+      <li><a href="api.html#torchani.utils.ChemicalSymbolsToInts">ChemicalSymbolsToInts (class in torchani.utils)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#torchani.neurochem.Builtins.const_file">const_file (torchani.neurochem.Builtins attribute)</a>
 </li>
       <li><a href="api.html#torchani.neurochem.Constants">Constants (class in torchani.neurochem)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#torchani.neurochem.Builtins.consts">consts (torchani.neurochem.Builtins attribute)</a>
 </li>
       <li><a href="api.html#torchani.ignite.Container">Container (class in torchani.ignite)</a>
@@ -308,13 +316,23 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#torchani.ignite.MAEMetric">MAEMetric() (in module torchani.ignite)</a>
 </li>
-      <li><a href="api.html#torchani.ignite.MaxAbsoluteError">MaxAbsoluteError (class in torchani.ignite)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#torchani.neurochem.Builtins.models">models (torchani.neurochem.Builtins attribute)</a>
 </li>
       <li><a href="api.html#torchani.ignite.MSELoss">MSELoss() (in module torchani.ignite)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#torchani.ase.NeighborList">NeighborList (class in torchani.ase)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#torchani.AEVComputer.neighborlist">neighborlist (torchani.AEVComputer attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -360,7 +378,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.neurochem.Constants.species_to_tensor">species_to_tensor() (torchani.neurochem.Constants method)</a>
+      <li><a href="api.html#torchani.neurochem.Constants.species_to_tensor">species_to_tensor (torchani.neurochem.Constants attribute)</a>
 </li>
       <li><a href="api.html#torchani.utils.strip_redundant_padding">strip_redundant_padding() (in module torchani.utils)</a>
 </li>
@@ -373,6 +391,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="index.html#module-torchani">torchani (module)</a>
+</li>
+      <li><a href="api.html#module-torchani.ase">torchani.ase (module)</a>
 </li>
       <li><a href="api.html#module-torchani.data">torchani.data (module)</a>
 </li>
@@ -407,7 +427,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Roitberg Group.
+        &copy; Copyright 2018, Roitberg Group
 
     </p>
   </div>
@@ -426,21 +446,14 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.1alpha',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
 
   
 

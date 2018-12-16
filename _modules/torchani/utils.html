@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.utils &mdash; TorchANI 0.1alpha documentation</title>
+  <title>torchani.utils &mdash; TorchANI 0.2.dev31+g6dba0be documentation</title>
   
 
   
@@ -57,7 +57,7 @@
             
             
               <div class="version">
-                0.1
+                0.2.dev31+g6dba0be
               </div>
             
           
@@ -98,6 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.data">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 
@@ -315,8 +316,27 @@
         <span class="k">return</span> <span class="n">species</span><span class="p">,</span> <span class="n">energies</span> <span class="o">+</span> <span class="n">sae</span></div></div>
 
 
+<div class="viewcode-block" id="ChemicalSymbolsToInts"><a class="viewcode-back" href="../../api.html#torchani.ChemicalSymbolsToInts">[docs]</a><span class="k">class</span> <span class="nc">ChemicalSymbolsToInts</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Helper that can be called to convert chemical symbol string to integers</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        all_species (:class:`collections.abc.Sequence` of :class:`str`):</span>
+<span class="sd">            sequence of all supported species, in order.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_species</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rev_species</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_species</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rev_species</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert species from squence of strings to 1D tensor&quot;&quot;&quot;</span>
+        <span class="n">rev</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rev_species</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">species</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">rev</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span></div>
+
+
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;pad&#39;</span><span class="p">,</span> <span class="s1">&#39;pad_coordinates&#39;</span><span class="p">,</span> <span class="s1">&#39;present_species&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;strip_redundant_padding&#39;</span><span class="p">]</span>
+           <span class="s1">&#39;strip_redundant_padding&#39;</span><span class="p">,</span> <span class="s1">&#39;ChemicalSymbolsToInts&#39;</span><span class="p">]</span>
 </pre></div>
 
            </div>
@@ -329,7 +349,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Roitberg Group.
+        &copy; Copyright 2018, Roitberg Group
 
     </p>
   </div>
@@ -348,21 +368,14 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../',
-            VERSION:'0.1alpha',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
 
   
 

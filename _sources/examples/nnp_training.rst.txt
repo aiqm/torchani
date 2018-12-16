@@ -24,11 +24,10 @@ To begin with, let's first import the modules we will use:
     import torch
     import ignite
     import torchani
-    import tqdm
     import timeit
     import tensorboardX
     import os
-    import sys
+    import ignite.contrib.handlers
 
 
 
@@ -283,26 +282,14 @@ be used as follows:
 
 
 
-Now let's register some event handlers to work with tqdm to display progress:
+Let's add a progress bar for the trainer
 
 
 
 .. code-block:: python
 
-    @trainer.on(ignite.engine.Events.EPOCH_STARTED)
-    def init_tqdm(trainer):
-        trainer.state.tqdm = tqdm.tqdm(total=len(training),
-                                       file=sys.stdout, desc='epoch')
-
-
-    @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
-    def update_tqdm(trainer):
-        trainer.state.tqdm.update(1)
-
-
-    @trainer.on(ignite.engine.Events.EPOCH_COMPLETED)
-    def finalize_tqdm(trainer):
-        trainer.state.tqdm.close()
+    pbar = ignite.contrib.handlers.ProgressBar()
+    pbar.attach(trainer)
 
 
 
@@ -402,35 +389,9 @@ And finally, we are ready to run:
 
 
 
-.. rst-class:: sphx-glr-script-out
-
- Out:
-
- .. code-block:: none
-
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:03,  3.32it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:01,  4.59it/s]    epoch: 100%|##########| 11/11 [00:00<00:00,  6.26it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.25it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.37it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 11.02it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  5.84it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  7.86it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 10.38it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  5.92it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  7.99it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 10.51it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.37it/s]    epoch:  45%|####5     | 5/11 [00:00<00:00,  8.50it/s]    epoch:  91%|######### | 10/11 [00:00<00:00, 11.15it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 27.04it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:02,  3.46it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:01,  4.77it/s]    epoch: 100%|##########| 11/11 [00:00<00:00,  6.50it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.34it/s]    epoch:  45%|####5     | 5/11 [00:00<00:00,  8.40it/s]    epoch:  91%|######### | 10/11 [00:00<00:00, 11.08it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 26.67it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.14it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.27it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 10.90it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.23it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.35it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 10.98it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.09it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.18it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 10.79it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:02,  3.39it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:01,  4.67it/s]    epoch:  91%|######### | 10/11 [00:00<00:00,  6.34it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 20.01it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  5.86it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  7.94it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 10.46it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.42it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.63it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 11.34it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.47it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.67it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 11.36it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.54it/s]    epoch:  45%|####5     | 5/11 [00:00<00:00,  8.73it/s]    epoch:  91%|######### | 10/11 [00:00<00:00, 11.49it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 28.10it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:03,  2.81it/s]    epoch:  45%|####5     | 5/11 [00:00<00:01,  3.90it/s]    epoch:  91%|######### | 10/11 [00:00<00:00,  5.35it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 18.28it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.28it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.42it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 11.14it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.63it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.93it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 11.77it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  6.40it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.64it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 11.36it/s]
-    epoch:   0%|          | 0/11 [00:00<?, ?it/s]    epoch:   9%|9         | 1/11 [00:00<00:01,  5.98it/s]    epoch:  55%|#####4    | 6/11 [00:00<00:00,  8.03it/s]    epoch: 100%|##########| 11/11 [00:00<00:00, 10.58it/s]
 
 
-**Total running time of the script:** ( 0 minutes  8.700 seconds)
+**Total running time of the script:** ( 1 minutes  15.315 seconds)
 
 
 .. _sphx_glr_download_examples_nnp_training.py:

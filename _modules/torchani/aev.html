@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.aev &mdash; TorchANI 0.1alpha documentation</title>
+  <title>torchani.aev &mdash; TorchANI 0.2.dev31+g6dba0be documentation</title>
   
 
   
@@ -57,7 +57,7 @@
             
             
               <div class="version">
-                0.1
+                0.2.dev31+g6dba0be
               </div>
             
           
@@ -98,6 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.data">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 
@@ -176,14 +177,46 @@
     <span class="p">)</span>
 
 
+<span class="k">def</span> <span class="nf">default_neighborlist</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Default neighborlist computer&quot;&quot;&quot;</span>
+
+    <span class="n">vec</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># vec has hape (conformations, atoms, atoms, 3) storing Rij vectors</span>
+
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># distances has shape (conformations, atoms, atoms) storing Rij distances</span>
+
+    <span class="n">padding_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">species</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span><span class="n">padding_mask</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+
+    <span class="n">distances</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">min_distances</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">end_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">in_cutoff</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_distances</span> <span class="o">&lt;=</span> <span class="n">cutoff</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">indices</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">in_cutoff</span><span class="p">)</span>
+
+    <span class="c1"># TODO: remove this workaround after gather support broadcasting</span>
+    <span class="n">atoms</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">species_</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">neighbor_species</span> <span class="o">=</span> <span class="n">species_</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+
+    <span class="n">neighbor_distances</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">in_cutoff</span><span class="p">)</span>
+
+    <span class="c1"># TODO: remove this workaround when gather support broadcasting</span>
+    <span class="c1"># https://github.com/pytorch/pytorch/pull/9532</span>
+    <span class="n">indices_</span> <span class="o">=</span> <span class="n">indices</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">neighbor_coordinates</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">indices_</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">neighbor_species</span><span class="p">,</span> <span class="n">neighbor_distances</span><span class="p">,</span> <span class="n">neighbor_coordinates</span>
+
+
 <div class="viewcode-block" id="AEVComputer"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer">[docs]</a><span class="k">class</span> <span class="nc">AEVComputer</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;The AEV computer that takes coordinates as input and outputs aevs.</span>
 
 <span class="sd">    Arguments:</span>
-<span class="sd">        Rcr (:class:`torch.Tensor`): The scalar tensor of :math:`R_C` in</span>
-<span class="sd">            equation (2) when used at equation (3) in the `ANI paper`_.</span>
-<span class="sd">        Rca (:class:`torch.Tensor`): The scalar tensor of :math:`R_C` in</span>
-<span class="sd">            equation (2) when used at equation (4) in the `ANI paper`_.</span>
+<span class="sd">        Rcr (float): :math:`R_C` in equation (2) when used at equation (3)</span>
+<span class="sd">            in the `ANI paper`_.</span>
+<span class="sd">        Rca (float): :math:`R_C` in equation (2) when used at equation (4)</span>
+<span class="sd">            in the `ANI paper`_.</span>
 <span class="sd">        EtaR (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in</span>
 <span class="sd">            equation (3) in the `ANI paper`_.</span>
 <span class="sd">        ShfR (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in</span>
@@ -197,16 +230,30 @@
 <span class="sd">        ShfZ (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in</span>
 <span class="sd">            equation (4) in the `ANI paper`_.</span>
 <span class="sd">        num_species (int): Number of supported atom types.</span>
+<span class="sd">        neighborlist_computer (:class:`collections.abc.Callable`): initial</span>
+<span class="sd">            value of :attr:`neighborlist`</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        neighborlist (:class:`collections.abc.Callable`): The callable</span>
+<span class="sd">            (species:Tensor, coordinates:Tensor, cutoff:float)</span>
+<span class="sd">            -&gt; Tuple[Tensor, Tensor, Tensor] that returns the species,</span>
+<span class="sd">            distances and relative coordinates of neighbor atoms. The input</span>
+<span class="sd">            species and coordinates tensor have the same shape convention as</span>
+<span class="sd">            the input of :class:`AEVComputer`. The returned neighbor</span>
+<span class="sd">            species and coordinates tensor must have shape ``(C, A, N)`` and</span>
+<span class="sd">            ``(C, A, N, 3)`` correspoindingly, where ``C`` is the number of</span>
+<span class="sd">            conformations in a chunk, ``A`` is the number of atoms, and ``N``</span>
+<span class="sd">            is the maximum number of neighbors that an atom could have.</span>
 
 <span class="sd">    .. _ANI paper:</span>
 <span class="sd">        http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Rcr</span><span class="p">,</span> <span class="n">Rca</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span>
-                 <span class="n">num_species</span><span class="p">):</span>
+                 <span class="n">num_species</span><span class="p">,</span> <span class="n">neighborlist_computer</span><span class="o">=</span><span class="n">default_neighborlist</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">AEVComputer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;Rcr&#39;</span><span class="p">,</span> <span class="n">Rcr</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;Rca&#39;</span><span class="p">,</span> <span class="n">Rca</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span> <span class="o">=</span> <span class="n">Rcr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span> <span class="o">=</span> <span class="n">Rca</span>
         <span class="c1"># convert constant tensors to a ready-to-broadcast shape</span>
         <span class="c1"># shape convension (..., EtaR, ShfR)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;EtaR&#39;</span><span class="p">,</span> <span class="n">EtaR</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
@@ -218,6 +265,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;ShfZ&#39;</span><span class="p">,</span> <span class="n">ShfZ</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span> <span class="o">=</span> <span class="n">num_species</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighborlist</span> <span class="o">=</span> <span class="n">neighborlist_computer</span>
 
 <div class="viewcode-block" id="AEVComputer.radial_sublength"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer.radial_sublength">[docs]</a>    <span class="k">def</span> <span class="nf">radial_sublength</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns the length of radial subaev of a single species&quot;&quot;&quot;</span>
@@ -311,37 +359,10 @@
 <span class="sd">        cutoff radius are valid. The returned indices stores the source of data</span>
 <span class="sd">        before sorting.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">vec</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="sd">&quot;&quot;&quot;Shape (conformations, atoms, atoms, 3) storing Rij vectors&quot;&quot;&quot;</span>
-
-        <span class="n">distances</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="sd">&quot;&quot;&quot;Shape (conformations, atoms, atoms) storing Rij distances&quot;&quot;&quot;</span>
-
-        <span class="n">padding_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">species</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">distances</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-            <span class="n">padding_mask</span><span class="p">,</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
-                         <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
-            <span class="n">distances</span><span class="p">)</span>
-
-        <span class="n">distances</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">min_distances</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">end_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">inRcr</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_distances</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]</span>
-        <span class="n">inRca</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_distances</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]</span>
-
-        <span class="n">distances</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">inRcr</span><span class="p">)</span>
-        <span class="n">indices_r</span> <span class="o">=</span> <span class="n">indices</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">inRcr</span><span class="p">)</span>
+        <span class="n">max_cutoff</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span><span class="p">])</span>
+        <span class="n">species_</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighborlist</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span>
+                                                     <span class="n">max_cutoff</span><span class="p">)</span>
         <span class="n">radial_terms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_radial_subaev_terms</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
-
-        <span class="n">indices_a</span> <span class="o">=</span> <span class="n">indices</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">inRca</span><span class="p">)</span>
-        <span class="n">new_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">indices_a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
-
-        <span class="c1"># TODO: remove this workaround when gather support broadcasting</span>
-        <span class="c1"># https://github.com/pytorch/pytorch/pull/9532</span>
-        <span class="n">_indices_a</span> <span class="o">=</span> <span class="n">indices_a</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">*</span><span class="n">new_shape</span><span class="p">)</span>
-        <span class="n">vec</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">_indices_a</span><span class="p">)</span>
 
         <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combinations</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">angular_terms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_angular_subaev_terms</span><span class="p">(</span><span class="o">*</span><span class="n">vec</span><span class="p">)</span>
@@ -351,12 +372,14 @@
         <span class="c1"># (conformations, atoms, pairs, ``self.angular_sublength()``)</span>
         <span class="c1"># (conformations, atoms, neighbors)</span>
         <span class="c1"># (conformations, atoms, pairs)</span>
-        <span class="k">return</span> <span class="n">radial_terms</span><span class="p">,</span> <span class="n">angular_terms</span><span class="p">,</span> <span class="n">indices_r</span><span class="p">,</span> <span class="n">indices_a</span>
+        <span class="k">return</span> <span class="n">radial_terms</span><span class="p">,</span> <span class="n">angular_terms</span><span class="p">,</span> <span class="n">species_</span>
 
     <span class="k">def</span> <span class="nf">_combinations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         <span class="c1"># TODO: remove this when combinations is merged into PyTorch</span>
         <span class="c1"># https://github.com/pytorch/pytorch/pull/9393</span>
         <span class="n">n</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">tensor</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">tensor</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="n">grid_x</span><span class="p">,</span> <span class="n">grid_y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">([</span><span class="n">r</span><span class="p">,</span> <span class="n">r</span><span class="p">])</span>
         <span class="n">index1</span> <span class="o">=</span> <span class="n">grid_y</span><span class="o">.</span><span class="n">masked_select</span><span class="p">(</span>
@@ -368,16 +391,14 @@
         <span class="k">return</span> <span class="n">tensor</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">index1</span><span class="p">),</span> \
             <span class="n">tensor</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">index2</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_compute_mask_r</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">indices_r</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_compute_mask_r</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_r</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get mask of radial terms for each supported species from indices&quot;&quot;&quot;</span>
-        <span class="n">species_r</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">indices_r</span><span class="p">)</span>
         <span class="n">mask_r</span> <span class="o">=</span> <span class="p">(</span><span class="n">species_r</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span>
                   <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_species</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">device</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">mask_r</span>
 
-    <span class="k">def</span> <span class="nf">_compute_mask_a</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">indices_a</span><span class="p">,</span> <span class="n">present_species</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_compute_mask_a</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_a</span><span class="p">,</span> <span class="n">present_species</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get mask of angular terms for each supported species from indices&quot;&quot;&quot;</span>
-        <span class="n">species_a</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">indices_a</span><span class="p">)</span>
         <span class="n">species_a1</span><span class="p">,</span> <span class="n">species_a2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combinations</span><span class="p">(</span><span class="n">species_a</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">mask_a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">species_a1</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">present_species</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">mask_a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">species_a2</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">present_species</span><span class="p">)</span>
@@ -411,7 +432,8 @@
             <span class="n">radial_terms</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span>
             <span class="n">mask_r</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">radial_terms</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span>
-        <span class="sd">&quot;&quot;&quot;shape (conformations, atoms, present species, radial_length)&quot;&quot;&quot;</span>
+        <span class="c1"># present_radial_aevs has shape</span>
+        <span class="c1"># (conformations, atoms, present species, radial_length)</span>
         <span class="n">radial_aevs</span> <span class="o">=</span> <span class="n">present_radial_aevs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="c1"># assemble angular subaev</span>
@@ -452,14 +474,10 @@
 
         <span class="n">present_species</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">present_species</span><span class="p">(</span><span class="n">species</span><span class="p">)</span>
 
-        <span class="c1"># TODO: remove this workaround after gather support broadcasting</span>
-        <span class="n">atoms</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">species_</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">radial_terms</span><span class="p">,</span> <span class="n">angular_terms</span><span class="p">,</span> <span class="n">indices_r</span><span class="p">,</span> <span class="n">indices_a</span> <span class="o">=</span> \
+        <span class="n">radial_terms</span><span class="p">,</span> <span class="n">angular_terms</span><span class="p">,</span> <span class="n">species_</span> <span class="o">=</span> \
             <span class="bp">self</span><span class="o">.</span><span class="n">_terms_and_indices</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">)</span>
-        <span class="n">mask_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_mask_r</span><span class="p">(</span><span class="n">species_</span><span class="p">,</span> <span class="n">indices_r</span><span class="p">)</span>
-        <span class="n">mask_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_mask_a</span><span class="p">(</span><span class="n">species_</span><span class="p">,</span> <span class="n">indices_a</span><span class="p">,</span> <span class="n">present_species</span><span class="p">)</span>
+        <span class="n">mask_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_mask_r</span><span class="p">(</span><span class="n">species_</span><span class="p">)</span>
+        <span class="n">mask_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_mask_a</span><span class="p">(</span><span class="n">species_</span><span class="p">,</span> <span class="n">present_species</span><span class="p">)</span>
 
         <span class="n">radial</span><span class="p">,</span> <span class="n">angular</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assemble</span><span class="p">(</span><span class="n">radial_terms</span><span class="p">,</span> <span class="n">angular_terms</span><span class="p">,</span>
                                          <span class="n">present_species</span><span class="p">,</span> <span class="n">mask_r</span><span class="p">,</span> <span class="n">mask_a</span><span class="p">)</span>
@@ -477,7 +495,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Roitberg Group.
+        &copy; Copyright 2018, Roitberg Group
 
     </p>
   </div>
@@ -496,21 +514,14 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../',
-            VERSION:'0.1alpha',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
 
   
 

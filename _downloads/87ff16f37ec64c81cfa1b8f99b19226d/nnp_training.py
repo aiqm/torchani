@@ -13,11 +13,10 @@ This example shows how to use TorchANI train your own neural network potential.
 import torch
 import ignite
 import torchani
-import tqdm
 import timeit
 import tensorboardX
 import os
-import sys
+import ignite.contrib.handlers
 
 
 ###############################################################################
@@ -153,21 +152,9 @@ evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
 
 
 ###############################################################################
-# Now let's register some event handlers to work with tqdm to display progress:
-@trainer.on(ignite.engine.Events.EPOCH_STARTED)
-def init_tqdm(trainer):
-    trainer.state.tqdm = tqdm.tqdm(total=len(training),
-                                   file=sys.stdout, desc='epoch')
-
-
-@trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
-def update_tqdm(trainer):
-    trainer.state.tqdm.update(1)
-
-
-@trainer.on(ignite.engine.Events.EPOCH_COMPLETED)
-def finalize_tqdm(trainer):
-    trainer.state.tqdm.close()
+# Let's add a progress bar for the trainer
+pbar = ignite.contrib.handlers.ProgressBar()
+pbar.attach(trainer)
 
 
 ###############################################################################

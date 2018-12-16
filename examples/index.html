@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Examples &mdash; TorchANI 0.1alpha documentation</title>
+  <title>Examples &mdash; TorchANI 0.2.dev31+g6dba0be documentation</title>
   
 
   
@@ -57,7 +57,7 @@
             
             
               <div class="version">
-                0.1
+                0.2.dev31+g6dba0be
               </div>
             
           
@@ -98,6 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.data">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 
@@ -177,13 +178,19 @@
 </div>
 </div><div class="toctree-wrapper compound">
 </div>
-<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI train your own neural network potential. "><div class="figure" id="id3">
+<div class="sphx-glr-thumbcontainer" tooltip="This example is modified from the official `home page` and `Constant temperature MD`_ to use th..."><div class="figure" id="id3">
+<img alt="../_images/sphx_glr_ase_interface_thumb.png" src="../_images/sphx_glr_ase_interface_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="ase_interface.html#sphx-glr-examples-ase-interface-py"><span class="std std-ref">Structure minimization and constant temperature MD using ASE interface</span></a></span></p>
+</div>
+</div><div class="toctree-wrapper compound">
+</div>
+<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI train your own neural network potential. "><div class="figure" id="id4">
 <img alt="../_images/sphx_glr_nnp_training_thumb.png" src="../_images/sphx_glr_nnp_training_thumb.png" />
 <p class="caption"><span class="caption-text"><a class="reference internal" href="nnp_training.html#sphx-glr-examples-nnp-training-py"><span class="std std-ref">Train Your Own Neural Network Potential</span></a></span></p>
 </div>
 </div><div class="toctree-wrapper compound">
 </div>
-<div class="sphx-glr-thumbcontainer" tooltip="In the previous :ref:`training-example` example, AEVs are computed everytime when needed. This ..."><div class="figure" id="id4">
+<div class="sphx-glr-thumbcontainer" tooltip="In the previous :ref:`training-example` example, AEVs are computed everytime when needed. This ..."><div class="figure" id="id5">
 <img alt="../_images/sphx_glr_cache_aev_thumb.png" src="../_images/sphx_glr_cache_aev_thumb.png" />
 <p class="caption"><span class="caption-text"><a class="reference internal" href="cache_aev.html#sphx-glr-examples-cache-aev-py"><span class="std std-ref">Use Disk Cache of AEV to Boost Training</span></a></span></p>
 </div>
@@ -191,9 +198,9 @@
 </div>
 <div style='clear:both'></div><div class="sphx-glr-footer class sphx-glr-footer-gallery docutils container">
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/4131c97bcb91c23af360ba58f477fda3/examples_python.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">examples_python.zip</span></code></a></div>
+<a class="reference download internal" download="" href="../_downloads/d5073b285d702e9ed5ea85c9fe0009db/examples_python.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">examples_python.zip</span></code></a></div>
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/58633d389af7ec937ee0161445a5bc70/examples_jupyter.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Jupyter</span> <span class="pre">notebooks:</span> <span class="pre">examples_jupyter.zip</span></code></a></div>
+<a class="reference download internal" download="" href="../_downloads/4a580cc263a290aac0534242a2d1a989/examples_jupyter.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Jupyter</span> <span class="pre">notebooks:</span> <span class="pre">examples_jupyter.zip</span></code></a></div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
@@ -209,7 +216,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Roitberg Group.
+        &copy; Copyright 2018, Roitberg Group
 
     </p>
   </div>
@@ -228,21 +235,14 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'0.1alpha',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
 
   
 

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Use Disk Cache of AEV to Boost Training &mdash; TorchANI 0.1alpha documentation</title>
+  <title>Use Disk Cache of AEV to Boost Training &mdash; TorchANI 0.2.dev31+g6dba0be documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                0.1
+                0.2.dev31+g6dba0be
               </div>
             
           
@@ -100,6 +100,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.data">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 
@@ -180,11 +181,10 @@ AEVs.  This example shows how to use disk cache to boost training</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">ignite</span>
 <span class="kn">import</span> <span class="nn">torchani</span>
-<span class="kn">import</span> <span class="nn">tqdm</span>
 <span class="kn">import</span> <span class="nn">timeit</span>
 <span class="kn">import</span> <span class="nn">tensorboardX</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">ignite.contrib.handlers</span>
 
 
 <span class="c1"># training and validation set</span>
@@ -321,22 +321,11 @@ object, but instead an object of <a class="reference internal" href="../api.html
 <span class="n">evaluator</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">create_supervised_evaluator</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">{</span>
         <span class="s1">&#39;RMSE&#39;</span><span class="p">:</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ignite</span><span class="o">.</span><span class="n">RMSEMetric</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">)</span>
     <span class="p">})</span>
-
-
-<span class="nd">@trainer.on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">init_tqdm</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
-    <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">tqdm</span> <span class="o">=</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">training</span><span class="p">),</span>
-                                   <span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;epoch&#39;</span><span class="p">)</span>
-
-
-<span class="nd">@trainer.on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">ITERATION_COMPLETED</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">update_tqdm</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
-    <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">tqdm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-
-
-<span class="nd">@trainer.on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_COMPLETED</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">finalize_tqdm</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
-    <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">tqdm</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Let’s add a progress bar for the trainer</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pbar</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">contrib</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">ProgressBar</span><span class="p">()</span>
+<span class="n">pbar</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">trainer</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">hartree2kcal</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
@@ -386,117 +375,12 @@ object, but instead an object of <a class="reference internal" href="../api.html
 <span class="n">trainer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:02,  3.78it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  5.21it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00,  7.08it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.74it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  9.03it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 11.88it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.67it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.93it/s]
-epoch:  91%|######### | 10/11 [00:00&lt;00:00, 11.56it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 27.63it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.45it/s]
-epoch:  45%|####5     | 5/11 [00:00&lt;00:00,  8.62it/s]
-epoch:  91%|######### | 10/11 [00:00&lt;00:00, 11.32it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 27.68it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.82it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  9.17it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 12.06it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:02,  3.78it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  5.21it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00,  7.08it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  7.02it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  9.44it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 12.39it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.61it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.90it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 11.72it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.78it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  9.09it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 11.92it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  7.21it/s]
-epoch:  45%|####5     | 5/11 [00:00&lt;00:00,  9.54it/s]
-epoch:  91%|######### | 10/11 [00:00&lt;00:00, 12.39it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 28.69it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:02,  3.81it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  5.23it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00,  7.11it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.86it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  9.19it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 12.09it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  7.09it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  9.49it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 12.41it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.94it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  9.33it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 12.24it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.96it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  9.30it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 12.18it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:02,  3.75it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  5.17it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00,  7.03it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  7.22it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  9.62it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 12.57it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  7.02it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  9.41it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 12.25it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  6.00it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  8.07it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 10.69it/s]
-
-epoch:   0%|          | 0/11 [00:00&lt;?, ?it/s]
-epoch:   9%|9         | 1/11 [00:00&lt;00:01,  7.24it/s]
-epoch:  55%|#####4    | 6/11 [00:00&lt;00:00,  9.66it/s]
-epoch: 100%|##########| 11/11 [00:00&lt;00:00, 12.57it/s]
-</pre></div>
-</div>
-<p><strong>Total running time of the script:</strong> ( 0 minutes  8.355 seconds)</p>
+<p><strong>Total running time of the script:</strong> ( 0 minutes  40.824 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-cache-aev-py">
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/1074b88fbb41534603a6b5cc008c31c7/cache_aev.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">cache_aev.py</span></code></a></div>
+<a class="reference download internal" download="" href="../_downloads/311b5974c6d185c0a90551632a35df71/cache_aev.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">cache_aev.py</span></code></a></div>
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/99b78e4c8d9a65ba8fd7ae6badd46a2d/cache_aev.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">cache_aev.ipynb</span></code></a></div>
+<a class="reference download internal" download="" href="../_downloads/6b9dd4105317b7c2f30a9557daf9d69a/cache_aev.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">cache_aev.ipynb</span></code></a></div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
@@ -521,7 +405,7 @@ epoch: 100%|##########| 11/11 [00:00&lt;00:00, 12.57it/s]
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Roitberg Group.
+        &copy; Copyright 2018, Roitberg Group
 
     </p>
   </div>
@@ -540,21 +424,14 @@ epoch: 100%|##########| 11/11 [00:00&lt;00:00, 12.57it/s]
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../',
-            VERSION:'0.1alpha',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../_static/jquery.js"></script>
-      <script type="text/javascript" src="../_static/underscore.js"></script>
-      <script type="text/javascript" src="../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
 
   
 

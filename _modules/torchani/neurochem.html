@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.neurochem &mdash; TorchANI 0.1alpha documentation</title>
+  <title>torchani.neurochem &mdash; TorchANI 0.2.dev31+g6dba0be documentation</title>
   
 
   
@@ -57,7 +57,7 @@
             
             
               <div class="version">
-                0.1
+                0.2.dev31+g6dba0be
               </div>
             
           
@@ -98,6 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.data">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 
@@ -177,7 +178,7 @@
 <span class="kn">import</span> <span class="nn">timeit</span>
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="k">import</span> <span class="n">Mapping</span>
 <span class="kn">from</span> <span class="nn">..nn</span> <span class="k">import</span> <span class="n">ANIModel</span><span class="p">,</span> <span class="n">Ensemble</span><span class="p">,</span> <span class="n">Gaussian</span>
-<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">EnergyShifter</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">EnergyShifter</span><span class="p">,</span> <span class="n">ChemicalSymbolsToInts</span>
 <span class="kn">from</span> <span class="nn">..aev</span> <span class="k">import</span> <span class="n">AEVComputer</span>
 <span class="kn">from</span> <span class="nn">..ignite</span> <span class="k">import</span> <span class="n">Container</span><span class="p">,</span> <span class="n">MSELoss</span><span class="p">,</span> <span class="n">TransformedLoss</span><span class="p">,</span> <span class="n">RMSEMetric</span><span class="p">,</span> <span class="n">MAEMetric</span>
 
@@ -185,6 +186,10 @@
 <div class="viewcode-block" id="Constants"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Constants">[docs]</a><span class="k">class</span> <span class="nc">Constants</span><span class="p">(</span><span class="n">Mapping</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;NeuroChem constants. Objects of this class can be used as arguments</span>
 <span class="sd">    to :class:`torchani.AEVComputer`, like ``torchani.AEVComputer(**consts)``.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        species_to_tensor (:class:`ChemicalSymbolsToInts`): call to convert</span>
+<span class="sd">            string chemical symbols to 1d long tensor.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
@@ -196,7 +201,7 @@
                     <span class="n">name</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">value</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Rcr&#39;</span> <span class="ow">or</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Rca&#39;</span><span class="p">:</span>
-                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
                     <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;EtaR&#39;</span><span class="p">,</span> <span class="s1">&#39;ShfR&#39;</span><span class="p">,</span> <span class="s1">&#39;Zeta&#39;</span><span class="p">,</span>
                                   <span class="s1">&#39;ShfZ&#39;</span><span class="p">,</span> <span class="s1">&#39;EtaA&#39;</span><span class="p">,</span> <span class="s1">&#39;ShfA&#39;</span><span class="p">]:</span>
                         <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
@@ -209,10 +214,7 @@
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unable to parse const file&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">species</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rev_species</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">species</span><span class="p">)):</span>
-            <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">species</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rev_species</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">species_to_tensor</span> <span class="o">=</span> <span class="n">ChemicalSymbolsToInts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">species</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">yield</span> <span class="s1">&#39;Rcr&#39;</span>
@@ -229,12 +231,7 @@
         <span class="k">return</span> <span class="mi">8</span>
 
     <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
-
-<div class="viewcode-block" id="Constants.species_to_tensor"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Constants.species_to_tensor">[docs]</a>    <span class="k">def</span> <span class="nf">species_to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Convert species from squence of strings to 1D tensor&quot;&quot;&quot;</span>
-        <span class="n">rev</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rev_species</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">species</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">rev</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="load_sae"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_sae">[docs]</a><span class="k">def</span> <span class="nf">load_sae</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
@@ -269,11 +266,11 @@
     <span class="sd">&quot;&quot;&quot;Returns an instance of :class:`torch.nn.Sequential` with hyperparameters</span>
 <span class="sd">    and parameters loaded NeuroChem&#39;s .nnf, .wparam and .bparam files.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">decompress_nnf</span><span class="p">(</span><span class="n">buffer</span><span class="p">):</span>
-        <span class="k">while</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="sa">b</span><span class="s1">&#39;=&#39;</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-            <span class="n">buffer</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-        <span class="n">buffer</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
-        <span class="k">return</span> <span class="n">bz2</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">buffer</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">decompress_nnf</span><span class="p">(</span><span class="n">buffer_</span><span class="p">):</span>
+        <span class="k">while</span> <span class="n">buffer_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="sa">b</span><span class="s1">&#39;=&#39;</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">buffer_</span> <span class="o">=</span> <span class="n">buffer_</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">buffer_</span> <span class="o">=</span> <span class="n">buffer_</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="k">return</span> <span class="n">bz2</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">buffer_</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">parse_nnf</span><span class="p">(</span><span class="n">nnf_file</span><span class="p">):</span>
         <span class="c1"># parse input file</span>
@@ -290,8 +287,8 @@
 
 <span class="s1">        start: inputsize atom_net</span>
 
-<span class="s1">        value : INT</span>
-<span class="s1">              | FLOAT</span>
+<span class="s1">        value : SIGNED_INT</span>
+<span class="s1">              | SIGNED_FLOAT</span>
 <span class="s1">              | &quot;FILE&quot; &quot;:&quot; FILENAME &quot;[&quot; INT &quot;]&quot;</span>
 
 <span class="s1">        FILENAME : (&quot;_&quot;|&quot;-&quot;|&quot;.&quot;|LETTER|DIGIT)+</span>
@@ -301,7 +298,8 @@
 <span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.WORD</span>
 <span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.DIGIT</span>
 <span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.INT</span>
-<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.FLOAT</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.SIGNED_INT</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.SIGNED_FLOAT</span>
 <span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.CNAME</span>
 <span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.WS</span>
 <span class="s1">        </span><span class="si">%i</span><span class="s1">gnore WS</span>
@@ -320,9 +318,9 @@
                     <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;FILENAME&#39;</span><span class="p">:</span>
                         <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">value</span>
-                    <span class="k">elif</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;INT&#39;</span><span class="p">:</span>
+                    <span class="k">elif</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;SIGNED_INT&#39;</span> <span class="ow">or</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;INT&#39;</span><span class="p">:</span>
                         <span class="n">v</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;FLOAT&#39;</span><span class="p">:</span>
+                    <span class="k">elif</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;SIGNED_FLOAT&#39;</span> <span class="ow">or</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;FLOAT&#39;</span><span class="p">:</span>
                         <span class="n">v</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unexpected type&#39;</span><span class="p">)</span>
@@ -367,9 +365,9 @@
     <span class="n">networ_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
 
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">buffer</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-        <span class="n">buffer</span> <span class="o">=</span> <span class="n">decompress_nnf</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
-        <span class="n">layer_setups</span> <span class="o">=</span> <span class="n">parse_nnf</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+        <span class="n">buffer_</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">buffer_</span> <span class="o">=</span> <span class="n">decompress_nnf</span><span class="p">(</span><span class="n">buffer_</span><span class="p">)</span>
+        <span class="n">layer_setups</span> <span class="o">=</span> <span class="n">parse_nnf</span><span class="p">(</span><span class="n">buffer_</span><span class="p">)</span>
 
         <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">layer_setups</span><span class="p">:</span>
@@ -392,18 +390,18 @@
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="load_model"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_model">[docs]</a><span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="nb">dir</span><span class="p">):</span>
+<div class="viewcode-block" id="load_model"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_model">[docs]</a><span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">dir_</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns an instance of :class:`torchani.ANIModel` loaded from</span>
 <span class="sd">    NeuroChem&#39;s network directory.</span>
 
 <span class="sd">    Arguments:</span>
 <span class="sd">        species (:class:`collections.abc.Sequence`): Sequence of strings for</span>
 <span class="sd">            chemical symbols of each supported atom type in correct order.</span>
-<span class="sd">        dir (str): String for directory storing network configurations.</span>
+<span class="sd">        dir_ (str): String for directory storing network configurations.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">species</span><span class="p">:</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="s1">&#39;ANN-</span><span class="si">{}</span><span class="s1">.nnf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_</span><span class="p">,</span> <span class="s1">&#39;ANN-</span><span class="si">{}</span><span class="s1">.nnf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
         <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">load_atomic_network</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">ANIModel</span><span class="p">(</span><span class="n">models</span><span class="p">)</span></div>
 
@@ -449,6 +447,7 @@
             <span class="n">parent_name</span><span class="p">,</span>
             <span class="s1">&#39;resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">consts</span> <span class="o">=</span> <span class="n">Constants</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">const_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">species</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span> <span class="o">=</span> <span class="n">AEVComputer</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span>
@@ -503,8 +502,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">training_eval_every</span> <span class="o">=</span> <span class="mi">20</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">network_setup</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.yaml&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.yml&#39;</span><span class="p">):</span>
+                <span class="n">network_setup</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_yaml</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">network_setup</span><span class="p">,</span> <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_construct</span><span class="p">(</span><span class="n">network_setup</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">txt</span><span class="p">):</span>
@@ -527,8 +530,8 @@
 
 <span class="s1">        start: params network_setup params</span>
 
-<span class="s1">        value : INT</span>
-<span class="s1">              | FLOAT</span>
+<span class="s1">        value : SIGNED_INT</span>
+<span class="s1">              | SIGNED_FLOAT</span>
 <span class="s1">              | STRING_VALUE</span>
 
 <span class="s1">        STRING_VALUE : (&quot;_&quot;|&quot;-&quot;|&quot;.&quot;|&quot;/&quot;|LETTER)(&quot;_&quot;|&quot;-&quot;|&quot;.&quot;|&quot;/&quot;|LETTER|DIGIT)*</span>
@@ -538,7 +541,8 @@
 <span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.WORD</span>
 <span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.DIGIT</span>
 <span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.INT</span>
-<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.FLOAT</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.SIGNED_INT</span>
+<span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.SIGNED_FLOAT</span>
 <span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.CNAME</span>
 <span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.WS</span>
 <span class="s1">        </span><span class="si">%i</span><span class="s1">gnore WS</span>
@@ -557,9 +561,9 @@
                     <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;STRING_VALUE&#39;</span><span class="p">:</span>
                         <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">value</span>
-                    <span class="k">elif</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;INT&#39;</span><span class="p">:</span>
+                    <span class="k">elif</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;SIGNED_INT&#39;</span> <span class="ow">or</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;INT&#39;</span><span class="p">:</span>
                         <span class="n">v</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;FLOAT&#39;</span><span class="p">:</span>
+                    <span class="k">elif</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;SIGNED_FLOAT&#39;</span> <span class="ow">or</span> <span class="n">v</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;FLOAT&#39;</span><span class="p">:</span>
                         <span class="n">v</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unexpected type&#39;</span><span class="p">)</span>
@@ -603,8 +607,16 @@
 
         <span class="k">return</span> <span class="n">TreeExec</span><span class="p">()</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">_parse_yaml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">yaml</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">network_setup</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;network_setup&#39;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;network_setup&#39;</span><span class="p">]</span>
+        <span class="n">network_setup</span> <span class="o">=</span> <span class="p">(</span><span class="n">network_setup</span><span class="p">[</span><span class="s1">&#39;inputsize&#39;</span><span class="p">],</span> <span class="n">network_setup</span><span class="p">[</span><span class="s1">&#39;atom_net&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">network_setup</span><span class="p">,</span> <span class="n">params</span>
+
     <span class="k">def</span> <span class="nf">_construct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">network_setup</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-        <span class="nb">dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
+        <span class="n">dir_</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
 
         <span class="c1"># delete ignored params</span>
         <span class="k">def</span> <span class="nf">del_if_exists</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
@@ -633,14 +645,14 @@
         <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;ntwshr&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># load parameters</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">const_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sflparamsfile&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">const_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sflparamsfile&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">consts</span> <span class="o">=</span> <span class="n">Constants</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">const_file</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span> <span class="o">=</span> <span class="n">AEVComputer</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">)</span>
         <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sflparamsfile&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;atomEnergyFile&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;atomEnergyFile&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shift_energy</span> <span class="o">=</span> <span class="n">load_sae</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span><span class="p">)</span>
         <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;atomEnergyFile&#39;</span><span class="p">]</span>
-        <span class="n">network_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ntwkStoreDir&#39;</span><span class="p">])</span>
+        <span class="n">network_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ntwkStoreDir&#39;</span><span class="p">])</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">network_dir</span><span class="p">):</span>
             <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">network_dir</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_checkpoint</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">network_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_name</span><span class="p">)</span>
@@ -691,10 +703,9 @@
                         <span class="c1"># There is no plan to support the &quot;L2&quot; settings in</span>
                         <span class="c1"># input file before AdamW get merged into pytorch.</span>
                         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;L2 not supported yet&#39;</span><span class="p">)</span>
-                        <span class="n">l2reg</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">layer</span><span class="p">[</span><span class="s1">&#39;l2valu&#39;</span><span class="p">],</span> <span class="n">module</span><span class="p">))</span>
                     <span class="k">del</span> <span class="n">layer</span><span class="p">[</span><span class="s1">&#39;l2norm&#39;</span><span class="p">]</span>
                     <span class="k">del</span> <span class="n">layer</span><span class="p">[</span><span class="s1">&#39;l2valu&#39;</span><span class="p">]</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">layer</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unrecognized parameter in layer setup&#39;</span><span class="p">)</span>
                 <span class="n">i</span> <span class="o">=</span> <span class="n">o</span>
             <span class="n">atomic_nets</span><span class="p">[</span><span class="n">atom_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">modules</span><span class="p">)</span>
@@ -714,7 +725,7 @@
             <span class="n">MSELoss</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">),</span>
             <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">l2</span><span class="p">())</span>
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">params</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unrecognized parameter&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">global_epoch</span> <span class="o">=</span> <span class="mi">0</span>
@@ -873,7 +884,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, Roitberg Group.
+        &copy; Copyright 2018, Roitberg Group
 
     </p>
   </div>
@@ -892,21 +903,14 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../',
-            VERSION:'0.1alpha',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
 
   
 

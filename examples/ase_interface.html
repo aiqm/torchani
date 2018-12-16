@@ -1,0 +1,310 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 0.2.dev31+g6dba0be documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> TorchANI
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2.dev31+g6dba0be
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../start.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
+</ul>
+<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.data">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.utils">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ase">ASE Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ignite">Ignite Helpers</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TorchANI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Structure minimization and constant temperature MD using ASE interface</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/examples/ase_interface.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-ase-interface-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+</div>
+<div class="sphx-glr-example-title section" id="structure-minimization-and-constant-temperature-md-using-ase-interface">
+<span id="sphx-glr-examples-ase-interface-py"></span><h1>Structure minimization and constant temperature MD using ASE interface<a class="headerlink" href="#structure-minimization-and-constant-temperature-md-using-ase-interface" title="Permalink to this headline">¶</a></h1>
+<p>This example is modified from the official <cite>home page</cite> and
+<a class="reference external" href="https://wiki.fysik.dtu.dk/ase/tutorials/md/md.html#constant-temperature-md">Constant temperature MD</a> to use the ASE interface of TorchANI as energy
+calculator.</p>
+<p>To begin with, let’s first import the modules we will use:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ase.lattice.cubic</span> <span class="kn">import</span> <span class="n">Diamond</span>
+<span class="kn">from</span> <span class="nn">ase.md.langevin</span> <span class="kn">import</span> <span class="n">Langevin</span>
+<span class="kn">from</span> <span class="nn">ase.optimize</span> <span class="kn">import</span> <span class="n">BFGS</span>
+<span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">units</span>
+<span class="kn">import</span> <span class="nn">torchani</span>
+</pre></div>
+</div>
+<p>Now let’s set up a crystal</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">atoms</span> <span class="o">=</span> <span class="n">Diamond</span><span class="p">(</span><span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="n">pbc</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">),</span> <span class="s2">&quot;atoms in the cell&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>8 atoms in the cell
+</pre></div>
+</div>
+<p>Now let’s create a calculator from builtin models:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">builtin</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">Builtins</span><span class="p">()</span>
+<span class="n">calculator</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ase</span><span class="o">.</span><span class="n">Calculator</span><span class="p">(</span><span class="n">builtin</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">builtin</span><span class="o">.</span><span class="n">aev_computer</span><span class="p">,</span>
+                                     <span class="n">builtin</span><span class="o">.</span><span class="n">models</span><span class="p">,</span> <span class="n">builtin</span><span class="o">.</span><span class="n">energy_shifter</span><span class="p">)</span>
+<span class="n">atoms</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calculator</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now let’s minimize the structure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="s2">&quot;Begin minimizing...&quot;</span><span class="p">)</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">BFGS</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">fmax</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
+<span class="k">print</span><span class="p">()</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Begin minimizing...
+      Step     Time          Energy         fmax
+BFGS:    0 08:27:10    -8344.289062        0.0000
+</pre></div>
+</div>
+<p>Now create a callback function that print interesting physical quantities:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">printenergy</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">atoms</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Function to print the potential, kinetic and total energy.&quot;&quot;&quot;</span>
+    <span class="n">epot</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">ekin</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">get_kinetic_energy</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Energy per atom: Epot = </span><span class="si">%.3f</span><span class="s1">eV  Ekin = </span><span class="si">%.3f</span><span class="s1">eV (T=</span><span class="si">%3.0f</span><span class="s1">K)  &#39;</span>
+          <span class="s1">&#39;Etot = </span><span class="si">%.3f</span><span class="s1">eV&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">epot</span><span class="p">,</span> <span class="n">ekin</span><span class="p">,</span> <span class="n">ekin</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.5</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">kB</span><span class="p">),</span> <span class="n">epot</span> <span class="o">+</span> <span class="n">ekin</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>We want to run MD with constant energy using the Langevin algorithm
+with a time step of 1 fs, the temperature 300K and the friction
+coefficient to 0.02 atomic units.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dyn</span> <span class="o">=</span> <span class="n">Langevin</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span> <span class="mi">300</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">kB</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
+<span class="n">dyn</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">printenergy</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now run the dynamics:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="s2">&quot;Beginning dynamics...&quot;</span><span class="p">)</span>
+<span class="n">printenergy</span><span class="p">()</span>
+<span class="n">dyn</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Beginning dynamics...
+Energy per atom: Epot = -1043.036eV  Ekin = 0.000eV (T=  0K)  Etot = -1043.036eV
+Energy per atom: Epot = -1043.011eV  Ekin = 0.026eV (T=202K)  Etot = -1042.985eV
+Energy per atom: Epot = -1043.003eV  Ekin = 0.029eV (T=221K)  Etot = -1042.974eV
+Energy per atom: Epot = -1043.007eV  Ekin = 0.039eV (T=299K)  Etot = -1042.968eV
+Energy per atom: Epot = -1042.995eV  Ekin = 0.024eV (T=186K)  Etot = -1042.971eV
+Energy per atom: Epot = -1043.007eV  Ekin = 0.029eV (T=227K)  Etot = -1042.978eV
+Energy per atom: Epot = -1043.007eV  Ekin = 0.039eV (T=305K)  Etot = -1042.968eV
+Energy per atom: Epot = -1043.001eV  Ekin = 0.033eV (T=255K)  Etot = -1042.968eV
+Energy per atom: Epot = -1042.999eV  Ekin = 0.039eV (T=298K)  Etot = -1042.960eV
+Energy per atom: Epot = -1042.998eV  Ekin = 0.029eV (T=226K)  Etot = -1042.969eV
+Energy per atom: Epot = -1042.994eV  Ekin = 0.052eV (T=405K)  Etot = -1042.942eV
+</pre></div>
+</div>
+<p><strong>Total running time of the script:</strong> ( 1 minutes  50.644 seconds)</p>
+<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-ase-interface-py">
+<div class="sphx-glr-download docutils container">
+<a class="reference download internal" download="" href="../_downloads/93c3677ffa6b2842ce34153b0479a93a/ase_interface.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">ase_interface.py</span></code></a></div>
+<div class="sphx-glr-download docutils container">
+<a class="reference download internal" download="" href="../_downloads/dde6824e0e523baeced914a8cca5387b/ase_interface.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">ase_interface.ipynb</span></code></a></div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Roitberg Group
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

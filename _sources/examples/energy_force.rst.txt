@@ -138,7 +138,7 @@ And print to see the result:
             [-0.0138,  0.0046,  0.0511]])
 
 
-**Total running time of the script:** ( 0 minutes  1.617 seconds)
+**Total running time of the script:** ( 0 minutes  1.923 seconds)
 
 
 .. _sphx_glr_download_examples_energy_force.py:
