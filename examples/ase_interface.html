@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 0.2.dev32+gfaebfff documentation</title>
+  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 0.2.dev33+g1d7b3ff documentation</title>
   
 
   
@@ -28,7 +28,9 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="TorchANI" href="../api.html" />
+    <link rel="prev" title="Train Neural Network Potential From NeuroChem Input File" href="neurochem_trainer.html" /> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -57,7 +59,7 @@
             
             
               <div class="version">
-                0.2.dev32+gfaebfff
+                0.2.dev33+g1d7b3ff
               </div>
             
           
@@ -86,11 +88,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../start.html">Installation</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training.html">Train Your Own Neural Network Potential</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Structure minimization and constant temperature MD using ASE interface</a></li>
 </ul>
 <p class="caption"><span class="caption-text">TorchANI's API</span></p>
 <ul>
@@ -207,7 +210,7 @@ calculator.</p>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Begin minimizing...
       Step     Time          Energy         fmax
-BFGS:    0 15:59:36    -8344.289062        0.0000
+BFGS:    0 01:11:14    -8344.289062        0.0000
 </pre></div>
 </div>
 <p>Now create a callback function that print interesting physical quantities:</p>
@@ -235,19 +238,19 @@ coefficient to 0.02 atomic units.</p>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Beginning dynamics...
 Energy per atom: Epot = -1043.036eV  Ekin = 0.000eV (T=  0K)  Etot = -1043.036eV
-Energy per atom: Epot = -1043.006eV  Ekin = 0.017eV (T=131K)  Etot = -1042.989eV
-Energy per atom: Epot = -1043.005eV  Ekin = 0.023eV (T=176K)  Etot = -1042.982eV
-Energy per atom: Epot = -1042.992eV  Ekin = 0.030eV (T=234K)  Etot = -1042.962eV
-Energy per atom: Epot = -1043.006eV  Ekin = 0.035eV (T=274K)  Etot = -1042.971eV
-Energy per atom: Epot = -1043.006eV  Ekin = 0.036eV (T=276K)  Etot = -1042.970eV
-Energy per atom: Epot = -1042.993eV  Ekin = 0.037eV (T=284K)  Etot = -1042.956eV
-Energy per atom: Epot = -1042.997eV  Ekin = 0.040eV (T=308K)  Etot = -1042.957eV
-Energy per atom: Epot = -1042.999eV  Ekin = 0.029eV (T=223K)  Etot = -1042.970eV
-Energy per atom: Epot = -1043.014eV  Ekin = 0.030eV (T=232K)  Etot = -1042.984eV
-Energy per atom: Epot = -1043.000eV  Ekin = 0.016eV (T=127K)  Etot = -1042.983eV
+Energy per atom: Epot = -1043.017eV  Ekin = 0.016eV (T=122K)  Etot = -1043.001eV
+Energy per atom: Epot = -1042.992eV  Ekin = 0.019eV (T=146K)  Etot = -1042.973eV
+Energy per atom: Epot = -1043.009eV  Ekin = 0.036eV (T=276K)  Etot = -1042.973eV
+Energy per atom: Epot = -1042.975eV  Ekin = 0.035eV (T=274K)  Etot = -1042.939eV
+Energy per atom: Epot = -1042.994eV  Ekin = 0.031eV (T=244K)  Etot = -1042.962eV
+Energy per atom: Epot = -1043.001eV  Ekin = 0.041eV (T=316K)  Etot = -1042.960eV
+Energy per atom: Epot = -1043.004eV  Ekin = 0.030eV (T=232K)  Etot = -1042.974eV
+Energy per atom: Epot = -1042.992eV  Ekin = 0.041eV (T=319K)  Etot = -1042.951eV
+Energy per atom: Epot = -1043.013eV  Ekin = 0.046eV (T=358K)  Etot = -1042.967eV
+Energy per atom: Epot = -1042.980eV  Ekin = 0.036eV (T=280K)  Etot = -1042.944eV
 </pre></div>
 </div>
-<p><strong>Total running time of the script:</strong> ( 1 minutes  42.023 seconds)</p>
+<p><strong>Total running time of the script:</strong> ( 1 minutes  53.124 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-ase-interface-py">
 <div class="sphx-glr-download docutils container">
 <a class="reference download internal" download="" href="../_downloads/93c3677ffa6b2842ce34153b0479a93a/ase_interface.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">ase_interface.py</span></code></a></div>
@@ -262,6 +265,15 @@ Energy per atom: Epot = -1043.000eV  Ekin = 0.016eV (T=127K)  Etot = -1042.983eV
            
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../api.html" class="btn btn-neutral float-right" title="TorchANI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="neurochem_trainer.html" class="btn btn-neutral" title="Train Neural Network Potential From NeuroChem Input File" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>
