@@ -24,5 +24,5 @@ steps:
 # - script: 'python setup.py nosetests'
 #   displayName: Unit tests
 
-- script: 'python setup.py dist && twine upload --repository-url https://test.pypi.org/legacy/ -u $(pypi_username) -p $(pypi_password) dist/*'
+- script: 'python setup.py sdist && twine upload --repository-url https://test.pypi.org/legacy/ -u $(pypi_username) -p $(pypi_password) dist/*'
   displayName: PYPI deploy
