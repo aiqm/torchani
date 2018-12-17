@@ -21,8 +21,8 @@ steps:
 - script: 'azure/install_dependencies.sh && pip install nose coverage'
   displayName: 'Install dependencies'
 
-- script: 'python setup.py nosetests'
-  displayName: Unit tests
+# - script: 'python setup.py nosetests'
+#   displayName: Unit tests
 
 - script: 'echo TODO: deploy to PYPI'
   displayName: PYPI deploy
