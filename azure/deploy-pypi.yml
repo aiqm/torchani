@@ -8,6 +8,8 @@ trigger:
     include:
     - master
 
+pr: none
+
 variables:
   python.version: '3.7'
 
@@ -18,11 +20,14 @@ steps:
   inputs:
     versionSpec: '$(python.version)'
 
-- script: 'azure/install_dependencies.sh && pip install nose coverage'
+- script: 'git describe --exact-match --tags HEAD'
+  displayName: 'Fail build on non-release commits'
+
+- script: 'azure/install_dependencies.sh && pip install nose coverage twine'
   displayName: 'Install dependencies'
 
 - script: 'python setup.py nosetests'
   displayName: Unit tests
 
-- script: 'echo TODO: deploy to PYPI'
+- script: 'python setup.py sdist && twine upload -u $(pypi_username) -p $(pypi_password) dist/*'
   displayName: PYPI deploy
