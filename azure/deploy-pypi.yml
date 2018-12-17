@@ -1,0 +1,28 @@
+queue:
+  name: Hosted Ubuntu 1604
+  timeoutInMinutes: 6000
+
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+
+variables:
+  python.version: '3.7'
+
+steps:
+
+- task: UsePythonVersion@0
+  displayName: 'Use Python $(python.version)'
+  inputs:
+    versionSpec: '$(python.version)'
+
+- script: 'azure/install_dependencies.sh && pip install nose coverage'
+  displayName: 'Install dependencies'
+
+- script: 'python setup.py nosetests'
+  displayName: Unit tests
+
+- script: 'echo TODO: deploy to PYPI'
+  displayName: PYPI deploy
