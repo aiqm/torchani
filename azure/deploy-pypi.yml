@@ -18,11 +18,11 @@ steps:
   inputs:
     versionSpec: '$(python.version)'
 
-- script: 'azure/install_dependencies.sh && pip install nose coverage'
+- script: 'azure/install_dependencies.sh && pip install nose coverage twine'
   displayName: 'Install dependencies'
 
 # - script: 'python setup.py nosetests'
 #   displayName: Unit tests
 
-- script: 'echo TODO: deploy to PYPI'
+- script: 'python setup.py dist && twine upload --repository-url https://test.pypi.org/legacy/ -u $(pypi_username) -p $(pypi_password) dist/*'
   displayName: PYPI deploy
