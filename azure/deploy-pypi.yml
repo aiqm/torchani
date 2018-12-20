@@ -23,11 +23,11 @@ steps:
 - script: 'git describe --exact-match --tags HEAD'
   displayName: 'Fail build on non-release commits'
 
-- script: 'azure/install_dependencies.sh && pip install nose coverage twine'
+- script: 'azure/install_dependencies.sh && pip install nose coverage twine wheel'
   displayName: 'Install dependencies'
 
 - script: 'python setup.py nosetests'
   displayName: Unit tests
 
-- script: 'python setup.py sdist && twine upload -u $(pypi_username) -p $(pypi_password) dist/*'
+- script: 'python setup.py bdist bdist_wheel && twine upload -u $(pypi_username) -p $(pypi_password) dist/*'
   displayName: PYPI deploy
