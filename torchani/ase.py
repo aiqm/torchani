@@ -51,13 +51,11 @@ class NeighborList:
             # NB: The absolute distance and distance vectors computed by
             # `neighbor_list`can not be used since it does not preserve
             # gradient information
-            idx1 = torch.from_numpy(idx1).to(coordinates.device)
-            idx2 = torch.from_numpy(idx2).to(coordinates.device)
+            idx1 = torch.tensor(idx1, device=coordinates.device, dtype=torch.long)
+            idx2 = torch.tensor(idx2, device=coordinates.device, dtype=torch.long)
             D = c.index_select(0, idx2) - c.index_select(0, idx1)
-            shift = torch.from_numpy(shift).to(coordinates.device) \
-                         .to(coordinates.dtype)
-            cell = torch.from_numpy(self.cell).to(coordinates.device) \
-                        .to(coordinates.dtype)
+            shift = torch.tensor(shift, device=coordinates.device, dtype=coordinates.dtype)
+            cell = torch.tensor(self.cell, device=coordinates.device, dtype=coordinates.dtype)
             D += shift @ cell
             d = D.norm(2, -1)
             neighbor_species1 = []
