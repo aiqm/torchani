@@ -8,6 +8,12 @@ import unittest
 import numpy
 import itertools
 import math
+import os
+import pickle
+
+path = os.path.dirname(os.path.realpath(__file__))
+N = 97
+tol = 5e-5
 
 
 def get_numeric_force(atoms, eps):
@@ -41,6 +47,53 @@ class TestASE(unittest.TestCase):
 
     def testForceWithPBCDisabled(self):
         self._testForce(False)
+
+    def testANIDataset(self):
+        builtin = torchani.neurochem.Builtins()
+        calculator = torchani.ase.Calculator(
+            builtin.species, builtin.aev_computer,
+            builtin.models, builtin.energy_shifter)
+        default_neighborlist_calculator = torchani.ase.Calculator(
+            builtin.species, builtin.aev_computer,
+            builtin.models, builtin.energy_shifter, True)
+        nnp = torch.nn.Sequential(
+            builtin.aev_computer,
+            builtin.models,
+            builtin.energy_shifter
+        )
+        for i in range(N):
+            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, _, _, _, _ = pickle.load(f)
+                coordinates = coordinates[0]
+                species = species[0]
+                species_str = [builtin.consts.species[i] for i in species]
+
+                atoms = Atoms(species_str, positions=coordinates)
+                atoms.set_calculator(calculator)
+                energy1 = atoms.get_potential_energy() / units.Hartree
+                forces1 = atoms.get_forces() / units.Hartree
+
+                atoms2 = Atoms(species_str, positions=coordinates)
+                atoms2.set_calculator(default_neighborlist_calculator)
+                energy2 = atoms2.get_potential_energy() / units.Hartree
+                forces2 = atoms2.get_forces() / units.Hartree
+
+                coordinates = torch.tensor(coordinates,
+                                           requires_grad=True).unsqueeze(0)
+                _, energy3 = nnp((torch.from_numpy(species).unsqueeze(0),
+                                  coordinates))
+                forces3 = -torch.autograd.grad(energy3.squeeze(),
+                                               coordinates)[0].numpy()
+                energy3 = energy3.item()
+
+                self.assertLess(abs(energy1 - energy2), tol)
+                self.assertLess(abs(energy1 - energy3), tol)
+
+                diff_f12 = torch.tensor(forces1 - forces2).abs().max().item()
+                self.assertLess(diff_f12, tol)
+                diff_f13 = torch.tensor(forces1 - forces3).abs().max().item()
+                self.assertLess(diff_f13, tol)
 
     def testForceAgainstDefaultNeighborList(self):
         atoms = Diamond(symbol="C", pbc=False)

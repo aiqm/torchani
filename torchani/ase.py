@@ -138,7 +138,7 @@ class Calculator(ase.calculators.calculator.Calculator):
                 pbc=self.atoms.get_pbc())
         species = self.species_to_tensor(self.atoms.get_chemical_symbols())
         species = species.unsqueeze(0)
-        coordinates = torch.tensor(self.atoms.get_positions(wrap=True))
+        coordinates = torch.tensor(self.atoms.get_positions())
         coordinates = coordinates.unsqueeze(0).to(self.device).to(self.dtype) \
                                  .requires_grad_('forces' in properties)
         _, energy = self.whole((species, coordinates))
