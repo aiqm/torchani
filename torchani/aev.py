@@ -4,6 +4,7 @@ import math
 from . import utils
 
 
+@torch.jit.script
 def _cutoff_cosine(distances, cutoff):
     return torch.where(
         distances <= cutoff,
@@ -12,6 +13,7 @@ def _cutoff_cosine(distances, cutoff):
     )
 
 
+@torch.jit.script
 def default_neighborlist(species, coordinates, cutoff):
     """Default neighborlist computer"""
 
