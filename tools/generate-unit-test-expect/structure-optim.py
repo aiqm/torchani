@@ -11,7 +11,7 @@ keep_ratio = 0.01  # reduce the size of generated file by discarding
 mol_count = 0
 with open(os.path.join(path, 'nist-dataset/result.json')) as f:
     pickle_objects = []
-    for i in tqdm.tqdm(json.load(f), desc='NIST'):
+    for i in tqdm.tqdm(json.load(f), desc='Optim'):
         if random.random() > keep_ratio:
             continue
         atoms = i['atoms']
