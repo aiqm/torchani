@@ -115,7 +115,7 @@ class TestASE(unittest.TestCase):
             e1 = a.get_potential_energy()
             a.set_calculator(default_neighborlist_calculator)
             e2 = a.get_potential_energy()
-            self.assertEqual(e1, e2)
+            self.assertLess(abs(e1 - e2), tol)
 
         dyn.attach(test_energy, interval=1)
         dyn.run(500)
