@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation &mdash; TorchANI 0.2.1 documentation</title>
+  <title>Installation &mdash; TorchANI 0.2.2 documentation</title>
   
 
   
@@ -59,7 +59,7 @@
             
             
               <div class="version">
-                0.2.1
+                0.2.2
               </div>
             
           
@@ -169,8 +169,24 @@
             
   <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>TorchANI requires the latest preview version of PyTorch. If you are using anaconda, you can install PyTorch by <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">pytorch-nightly</span> <span class="pre">-c</span> <span class="pre">pytorch</span></code>. You can also refer to <a class="reference external" href="https://pytorch.org/get-started/locally/">the official site of PyTorch</a> for instructions of installing latest preview version of PyTorch.</p>
-<p>After installing PyTorch, you can then install TorchANI by <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">torchani</span></code>.</p>
+<p>TorchANI requires the latest preview version of PyTorch. You can install PyTorch by the following commands (assuming cuda10):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install numpy torchvision_nightly
+pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
+</pre></div>
+</div>
+<p>If you updated TorchANI, you may also need to update PyTorch:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install --upgrade torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
+</pre></div>
+</div>
+<p>After installing the correct PyTorch, you can install TorchANI by:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install torchani
+</pre></div>
+</div>
+<p>See also <a class="reference external" href="https://pytorch.org/get-started/locally/">PyTorch’s official site</a> for instructions of installing latest preview version of PyTorch.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Please install nightly PyTorch through <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> instead of <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span></code>. If your PyTorch is installed through <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span></code>, then <cite>pip</cite> would mistakenly recognize the package name as <cite>torch</cite> instead of <cite>torch-nightly</cite>, which would cause dependency issue when installing TorchANI.</p>
+</div>
 </div>
 
 
@@ -218,7 +234,8 @@
         <script type="text/javascript" src="_static/jquery.js"></script>
         <script type="text/javascript" src="_static/underscore.js"></script>
         <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
 
   
