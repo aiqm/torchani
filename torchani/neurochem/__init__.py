@@ -308,7 +308,7 @@ class BuiltinsAbstract:
                                           self.ensemble_size)
 
 class Builtins(BuiltinsAbstract):
-    """Container for all builtin stuffs.
+    """Container for the builtin ANI-1x model.
 
     Attributes:
         const_file (:class:`str`): Path to the builtin constant file.
@@ -339,7 +339,7 @@ class Builtins(BuiltinsAbstract):
 
 
 class BuiltinsANI1CCX(BuiltinsAbstract):
-    """Container for all builtin stuffs.
+    """Container for the builtin ANI-1ccx model.
 
     Attributes:
         const_file (:class:`str`): Path to the builtin constant file.
