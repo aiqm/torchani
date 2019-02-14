@@ -258,6 +258,7 @@ def load_model_ensemble(species, prefix, count):
         models.append(load_model(species, network_dir))
     return Ensemble(models)
 
+
 class BuiltinsAbstract:
     """Base class for loading ANI neural network from configuration files.
 
@@ -267,7 +268,7 @@ class BuiltinsAbstract:
         sae_file_path (:class:`str`): Path to sae file for ANI model(s).
         ensemble_size (:class:`int`): Number of models in model ensemble.
         ensemble_prefix_path (:class:`str`): Path to prefix of directories of
-            models. 
+            models.
 
     Attributes:
         const_file (:class:`str`): Path to the builtin constant file.
@@ -307,6 +308,7 @@ class BuiltinsAbstract:
                                           self.ensemble_prefix,
                                           self.ensemble_size)
 
+
 class Builtins(BuiltinsAbstract):
     """Container for the builtin ANI-1x model.
 
@@ -325,11 +327,12 @@ class Builtins(BuiltinsAbstract):
     """
     def __init__(self):
         parent_name = '.'.join(__name__.split('.')[:-1])
-        const_file_path = 'resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params'
+        const_file_path = 'resources/ani-1x_dft_x8ens'\
+            '/rHCNO-5.2R_16-3.5A_a4-8.params'
         sae_file_path = 'resources/ani-1x_dft_x8ens/sae_linfit.dat'
         ensemble_size = 8
         ensemble_prefix_path = 'resources/ani-1x_dft_x8ens/train'
-        super(Builtins,self).__init__(
+        super(Builtins, self).__init__(
             parent_name,
             const_file_path,
             sae_file_path,
@@ -356,17 +359,19 @@ class BuiltinsANI1CCX(BuiltinsAbstract):
     """
     def __init__(self):
         parent_name = '.'.join(__name__.split('.')[:-1])
-        const_file_path = 'resources/ani-1ccx_8x/rHCNO-5.2R_16-3.5A_a4-8.params'
+        const_file_path = 'resources/ani-1ccx_8x'\
+            '/rHCNO-5.2R_16-3.5A_a4-8.params'
         sae_file_path = 'resources/ani-1ccx_8x/sae_linfit.dat'
         ensemble_size = 8
         ensemble_prefix_path = 'resources/ani-1ccx_8x/train'
-        super(BuiltinsANI1CCX,self).__init__(
+        super(BuiltinsANI1CCX, self).__init__(
             parent_name,
             const_file_path,
             sae_file_path,
             ensemble_size,
             ensemble_prefix_path
         )
+
 
 def hartree2kcal(x):
     return 627.509 * x
