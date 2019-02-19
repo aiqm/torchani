@@ -30,9 +30,7 @@ print(len(atoms), "atoms in the cell")
 
 ###############################################################################
 # Now let's create a calculator from builtin models:
-builtin = torchani.neurochem.Builtins()
-calculator = torchani.ase.Calculator(builtin.species, builtin.aev_computer,
-                                     builtin.models, builtin.energy_shifter)
+calculator = torchani.models.ANI1ccx().ase()
 atoms.set_calculator(calculator)
 
 ###############################################################################
