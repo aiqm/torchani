@@ -327,11 +327,11 @@ class Builtins(BuiltinsAbstract):
     """
     def __init__(self):
         parent_name = '.'.join(__name__.split('.')[:-1])
-        const_file_path = 'resources/ani-1x_dft_x8ens'\
+        const_file_path = 'resources/ani-1x_8x'\
             '/rHCNO-5.2R_16-3.5A_a4-8.params'
-        sae_file_path = 'resources/ani-1x_dft_x8ens/sae_linfit.dat'
+        sae_file_path = 'resources/ani-1x_8x/sae_linfit.dat'
         ensemble_size = 8
-        ensemble_prefix_path = 'resources/ani-1x_dft_x8ens/train'
+        ensemble_prefix_path = 'resources/ani-1x_8x/train'
         super(Builtins, self).__init__(
             parent_name,
             const_file_path,

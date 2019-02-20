@@ -10,6 +10,16 @@ TorchANI
 .. autoclass:: torchani.nn.Gaussian
 
 
+Model Zoo
+=========
+
+.. automodule:: torchani.models
+.. autoclass:: torchani.models.ANI1x
+    :members:
+.. autoclass:: torchani.models.ANI1ccx
+    :members:
+
+
 Datasets
 ========
 
@@ -54,7 +64,6 @@ ASE Interface
 .. autoclass:: torchani.ase.NeighborList
     :members:
 .. autoclass:: torchani.ase.Calculator
-    :members:
 
 Ignite Helpers
 ==============

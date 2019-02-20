@@ -31,6 +31,7 @@ from . import ignite
 from . import utils
 from . import neurochem
 from . import data
+from . import models
 from pkg_resources import get_distribution, DistributionNotFound
 
 try:
@@ -40,7 +41,7 @@ except DistributionNotFound:
     pass
 
 __all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble',
-           'ignite', 'utils', 'neurochem', 'data']
+           'ignite', 'utils', 'neurochem', 'data', 'models']
 
 try:
     from . import ase  # noqa: F401
