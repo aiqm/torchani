@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.neurochem &mdash; TorchANI 0.2.2 documentation</title>
+  <title>torchani.neurochem &mdash; TorchANI 0.3 documentation</title>
   
 
   
@@ -17,33 +17,36 @@
   
 
   
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/gallery.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
-
-  
-  <script src="../../_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -57,7 +60,7 @@
             
             
               <div class="version">
-                0.2.2
+                0.3
               </div>
             
           
@@ -87,15 +90,17 @@
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
 </ul>
 <p class="caption"><span class="caption-text">TorchANI's API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.models">Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.data">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
@@ -425,8 +430,16 @@
     <span class="k">return</span> <span class="n">Ensemble</span><span class="p">(</span><span class="n">models</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Builtins"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Builtins">[docs]</a><span class="k">class</span> <span class="nc">Builtins</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Container for all builtin stuffs.</span>
+<span class="k">class</span> <span class="nc">BuiltinsAbstract</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Base class for loading ANI neural network from configuration files.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        parent_name (:class:`str`): Base path that other paths are relative to.</span>
+<span class="sd">        const_file_path (:class:`str`): Path to constant file for ANI model(s).</span>
+<span class="sd">        sae_file_path (:class:`str`): Path to sae file for ANI model(s).</span>
+<span class="sd">        ensemble_size (:class:`int`): Number of models in model ensemble.</span>
+<span class="sd">        ensemble_prefix_path (:class:`str`): Path to prefix of directories of</span>
+<span class="sd">            models.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        const_file (:class:`str`): Path to the builtin constant file.</span>
@@ -441,26 +454,94 @@
 <span class="sd">        ensemble_prefix (:class:`str`): Prefix of directories of models.</span>
 <span class="sd">        models (:class:`torchani.Ensemble`): Ensemble of models.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">parent_name</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="vm">__name__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">parent_name</span><span class="p">,</span>
+            <span class="n">const_file_path</span><span class="p">,</span>
+            <span class="n">sae_file_path</span><span class="p">,</span>
+            <span class="n">ensemble_size</span><span class="p">,</span>
+            <span class="n">ensemble_prefix_path</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">const_file</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span>
             <span class="n">parent_name</span><span class="p">,</span>
-            <span class="s1">&#39;resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params&#39;</span><span class="p">)</span>
+            <span class="n">const_file_path</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">consts</span> <span class="o">=</span> <span class="n">Constants</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">const_file</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">species</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span> <span class="o">=</span> <span class="n">AEVComputer</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span>
-            <span class="n">parent_name</span><span class="p">,</span> <span class="s1">&#39;resources/ani-1x_dft_x8ens/sae_linfit.dat&#39;</span><span class="p">)</span>
+            <span class="n">parent_name</span><span class="p">,</span>
+            <span class="n">sae_file_path</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">load_sae</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span> <span class="o">=</span> <span class="n">ensemble_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_prefix</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span>
-            <span class="n">parent_name</span><span class="p">,</span> <span class="s1">&#39;resources/ani-1x_dft_x8ens/train&#39;</span><span class="p">)</span>
+            <span class="n">parent_name</span><span class="p">,</span>
+            <span class="n">ensemble_prefix_path</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="n">load_model_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span><span class="p">,</span>
                                           <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_prefix</span><span class="p">,</span>
-                                          <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span><span class="p">)</span></div>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Builtins"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Builtins">[docs]</a><span class="k">class</span> <span class="nc">Builtins</span><span class="p">(</span><span class="n">BuiltinsAbstract</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Container for the builtin ANI-1x model.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        const_file (:class:`str`): Path to the builtin constant file.</span>
+<span class="sd">        consts (:class:`Constants`): Constants loaded from builtin constant</span>
+<span class="sd">            file.</span>
+<span class="sd">        aev_computer (:class:`torchani.AEVComputer`): AEV computer with builtin</span>
+<span class="sd">            constants.</span>
+<span class="sd">        sae_file (:class:`str`): Path to the builtin self atomic energy file.</span>
+<span class="sd">        energy_shifter (:class:`torchani.EnergyShifter`): AEV computer with</span>
+<span class="sd">            builtin constants.</span>
+<span class="sd">        ensemble_size (:class:`int`): Number of models in model ensemble.</span>
+<span class="sd">        ensemble_prefix (:class:`str`): Prefix of directories of models.</span>
+<span class="sd">        models (:class:`torchani.Ensemble`): Ensemble of models.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parent_name</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="vm">__name__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">const_file_path</span> <span class="o">=</span> <span class="s1">&#39;resources/ani-1x_8x&#39;</span>\
+            <span class="s1">&#39;/rHCNO-5.2R_16-3.5A_a4-8.params&#39;</span>
+        <span class="n">sae_file_path</span> <span class="o">=</span> <span class="s1">&#39;resources/ani-1x_8x/sae_linfit.dat&#39;</span>
+        <span class="n">ensemble_size</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="n">ensemble_prefix_path</span> <span class="o">=</span> <span class="s1">&#39;resources/ani-1x_8x/train&#39;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Builtins</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">parent_name</span><span class="p">,</span>
+            <span class="n">const_file_path</span><span class="p">,</span>
+            <span class="n">sae_file_path</span><span class="p">,</span>
+            <span class="n">ensemble_size</span><span class="p">,</span>
+            <span class="n">ensemble_prefix_path</span>
+        <span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">BuiltinsANI1CCX</span><span class="p">(</span><span class="n">BuiltinsAbstract</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Container for the builtin ANI-1ccx model.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        const_file (:class:`str`): Path to the builtin constant file.</span>
+<span class="sd">        consts (:class:`Constants`): Constants loaded from builtin constant</span>
+<span class="sd">            file.</span>
+<span class="sd">        aev_computer (:class:`torchani.AEVComputer`): AEV computer with builtin</span>
+<span class="sd">            constants.</span>
+<span class="sd">        sae_file (:class:`str`): Path to the builtin self atomic energy file.</span>
+<span class="sd">        energy_shifter (:class:`torchani.EnergyShifter`): AEV computer with</span>
+<span class="sd">            builtin constants.</span>
+<span class="sd">        ensemble_size (:class:`int`): Number of models in model ensemble.</span>
+<span class="sd">        ensemble_prefix (:class:`str`): Prefix of directories of models.</span>
+<span class="sd">        models (:class:`torchani.Ensemble`): Ensemble of models.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parent_name</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="vm">__name__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">const_file_path</span> <span class="o">=</span> <span class="s1">&#39;resources/ani-1ccx_8x&#39;</span>\
+            <span class="s1">&#39;/rHCNO-5.2R_16-3.5A_a4-8.params&#39;</span>
+        <span class="n">sae_file_path</span> <span class="o">=</span> <span class="s1">&#39;resources/ani-1ccx_8x/sae_linfit.dat&#39;</span>
+        <span class="n">ensemble_size</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="n">ensemble_prefix_path</span> <span class="o">=</span> <span class="s1">&#39;resources/ani-1ccx_8x/train&#39;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BuiltinsANI1CCX</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">parent_name</span><span class="p">,</span>
+            <span class="n">const_file_path</span><span class="p">,</span>
+            <span class="n">sae_file_path</span><span class="p">,</span>
+            <span class="n">ensemble_size</span><span class="p">,</span>
+            <span class="n">ensemble_prefix_path</span>
+        <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">hartree2kcal</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
@@ -902,27 +983,16 @@
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-
-  
-
-  <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Train Your Own Neural Network Potential &mdash; TorchANI 0.2.2 documentation</title>
+  <title>Train Your Own Neural Network Potential &mdash; TorchANI 0.3 documentation</title>
   
 
   
@@ -17,35 +17,38 @@
   
 
   
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Use Disk Cache of AEV to Boost Training" href="cache_aev.html" />
-    <link rel="prev" title="Computing Energy and Force Using Builtin Models" href="energy_force.html" /> 
-
-  
-  <script src="../_static/js/modernizr.min.js"></script>
-
+    <link rel="prev" title="Construct Model From NeuroChem Files" href="load_from_neurochem.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -59,7 +62,7 @@
             
             
               <div class="version">
-                0.2.2
+                0.3
               </div>
             
           
@@ -89,15 +92,17 @@
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Train Your Own Neural Network Potential</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
 </ul>
 <p class="caption"><span class="caption-text">TorchANI's API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.models">Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.data">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
@@ -223,8 +228,8 @@ script can run successfully.</p>
 </div>
 <p>Now let’s read our constants and self energies from constant files and
 construct AEV computer.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">const_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
-<span class="n">sae_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_dft_x8ens/sae_linfit.dat&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">const_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+<span class="n">sae_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/sae_linfit.dat&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
 <span class="n">consts</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">Constants</span><span class="p">(</span><span class="n">const_file</span><span class="p">)</span>
 <span class="n">aev_computer</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">AEVComputer</span><span class="p">(</span><span class="o">**</span><span class="n">consts</span><span class="p">)</span>
 <span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">load_sae</span><span class="p">(</span><span class="n">sae_file</span><span class="p">)</span>
@@ -295,8 +300,10 @@ size of neural network for all atom types, but this is not necessary.</p>
     <span class="n">nn</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_checkpoint</span><span class="p">))</span>
 <span class="k">else</span><span class="p">:</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">model_checkpoint</span><span class="p">)</span>
-
-<span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">nn</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Let’s now create a pipeline of AEV Computer –&gt; Neural Networks.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">nn</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now setup tensorboardX.</p>
@@ -406,7 +413,7 @@ be used as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">trainer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>Total running time of the script:</strong> ( 1 minutes  19.825 seconds)</p>
+<p><strong>Total running time of the script:</strong> ( 1 minutes  21.646 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-nnp-training-py">
 <div class="sphx-glr-download docutils container">
 <a class="reference download internal" download="" href="../_downloads/87ff16f37ec64c81cfa1b8f99b19226d/nnp_training.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">nnp_training.py</span></code></a></div>
@@ -427,7 +434,7 @@ be used as follows:</p>
         <a href="cache_aev.html" class="btn btn-neutral float-right" title="Use Disk Cache of AEV to Boost Training" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="energy_force.html" class="btn btn-neutral" title="Computing Energy and Force Using Builtin Models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="load_from_neurochem.html" class="btn btn-neutral float-left" title="Construct Model From NeuroChem Files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -453,27 +460,16 @@ be used as follows:</p>
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-
-  
-
-  <script type="text/javascript" src="../_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

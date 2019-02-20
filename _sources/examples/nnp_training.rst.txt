@@ -92,8 +92,8 @@ construct AEV computer.
 
 .. code-block:: python
 
-    const_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
-    sae_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/sae_linfit.dat')  # noqa: E501
+    const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
+    sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')  # noqa: E501
     consts = torchani.neurochem.Constants(const_file)
     aev_computer = torchani.AEVComputer(**consts)
     energy_shifter = torchani.neurochem.load_sae(sae_file)
@@ -188,6 +188,18 @@ If checkpoint from previous training exists, then load it.
         nn.load_state_dict(torch.load(model_checkpoint))
     else:
         torch.save(nn.state_dict(), model_checkpoint)
+
+
+
+
+
+
+
+Let's now create a pipeline of AEV Computer --> Neural Networks.
+
+
+
+.. code-block:: python
 
     model = torch.nn.Sequential(aev_computer, nn).to(device)
 
@@ -391,7 +403,7 @@ And finally, we are ready to run:
 
 
 
-**Total running time of the script:** ( 1 minutes  19.825 seconds)
+**Total running time of the script:** ( 1 minutes  21.646 seconds)
 
 
 .. _sphx_glr_download_examples_nnp_training.py:

@@ -8,7 +8,7 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI has a model ensemble trained by NeuroChem on the `ANI-1x dataset`_. These models are s...">
+    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI has a model zoo trained by NeuroChem. These models are shipped with TorchANI and can b...">
 
 .. only:: html
 
@@ -25,6 +25,26 @@ Examples
    :hidden:
 
    /examples/energy_force
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example is modified from the official `home page` and `Constant temperature MD`_ to use th...">
+
+.. only:: html
+
+    .. figure:: /examples/images/thumb/sphx_glr_ase_interface_thumb.png
+
+        :ref:`sphx_glr_examples_ase_interface.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/ase_interface
 
 .. raw:: html
 
@@ -48,13 +68,13 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example is modified from the official `home page` and `Constant temperature MD`_ to use th...">
+    <div class="sphx-glr-thumbcontainer" tooltip="This tutorial illustrates how to manually load model from `NeuroChem files`_.">
 
 .. only:: html
 
-    .. figure:: /examples/images/thumb/sphx_glr_ase_interface_thumb.png
+    .. figure:: /examples/images/thumb/sphx_glr_load_from_neurochem_thumb.png
 
-        :ref:`sphx_glr_examples_ase_interface.py`
+        :ref:`sphx_glr_examples_load_from_neurochem.py`
 
 .. raw:: html
 
@@ -64,7 +84,7 @@ Examples
 .. toctree::
    :hidden:
 
-   /examples/ase_interface
+   /examples/load_from_neurochem
 
 .. raw:: html
 

@@ -15,10 +15,11 @@ Welcome to TorchANI's documentation!
     :caption: Examples
 
     examples/energy_force
+    examples/ase_interface
+    examples/load_from_neurochem
     examples/nnp_training
     examples/cache_aev
     examples/neurochem_trainer
-    examples/ase_interface
 
 .. toctree::
     :maxdepth: 2

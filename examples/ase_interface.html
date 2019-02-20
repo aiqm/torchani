@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 0.2.2 documentation</title>
+  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 0.3 documentation</title>
   
 
   
@@ -17,35 +17,38 @@
   
 
   
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="TorchANI" href="../api.html" />
-    <link rel="prev" title="Train Neural Network Potential From NeuroChem Input File" href="neurochem_trainer.html" /> 
-
-  
-  <script src="../_static/js/modernizr.min.js"></script>
-
+    <link rel="next" title="Construct Model From NeuroChem Files" href="load_from_neurochem.html" />
+    <link rel="prev" title="Computing Energy and Force Using Models Inside Model Zoo" href="energy_force.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -59,7 +62,7 @@
             
             
               <div class="version">
-                0.2.2
+                0.3
               </div>
             
           
@@ -89,15 +92,17 @@
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Structure minimization and constant temperature MD using ASE interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training.html">Train Your Own Neural Network Potential</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Structure minimization and constant temperature MD using ASE interface</a></li>
 </ul>
 <p class="caption"><span class="caption-text">TorchANI's API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.models">Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.data">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
@@ -194,9 +199,7 @@ calculator.</p>
 </pre></div>
 </div>
 <p>Now let’s create a calculator from builtin models:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">builtin</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">Builtins</span><span class="p">()</span>
-<span class="n">calculator</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ase</span><span class="o">.</span><span class="n">Calculator</span><span class="p">(</span><span class="n">builtin</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">builtin</span><span class="o">.</span><span class="n">aev_computer</span><span class="p">,</span>
-                                     <span class="n">builtin</span><span class="o">.</span><span class="n">models</span><span class="p">,</span> <span class="n">builtin</span><span class="o">.</span><span class="n">energy_shifter</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">calculator</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1ccx</span><span class="p">()</span><span class="o">.</span><span class="n">ase</span><span class="p">()</span>
 <span class="n">atoms</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calculator</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -210,7 +213,7 @@ calculator.</p>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Begin minimizing...
       Step     Time          Energy         fmax
-BFGS:    0 21:13:28    -8344.289062        0.0000
+BFGS:    0 18:17:18    -8311.226562        0.0000
 </pre></div>
 </div>
 <p>Now create a callback function that print interesting physical quantities:</p>
@@ -237,20 +240,20 @@ coefficient to 0.02 atomic units.</p>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Beginning dynamics...
-Energy per atom: Epot = -1043.036eV  Ekin = 0.000eV (T=  0K)  Etot = -1043.036eV
-Energy per atom: Epot = -1043.006eV  Ekin = 0.026eV (T=203K)  Etot = -1042.980eV
-Energy per atom: Epot = -1043.013eV  Ekin = 0.030eV (T=230K)  Etot = -1042.983eV
-Energy per atom: Epot = -1043.008eV  Ekin = 0.054eV (T=415K)  Etot = -1042.954eV
-Energy per atom: Epot = -1042.976eV  Ekin = 0.061eV (T=473K)  Etot = -1042.914eV
-Energy per atom: Epot = -1042.980eV  Ekin = 0.039eV (T=305K)  Etot = -1042.941eV
-Energy per atom: Epot = -1043.012eV  Ekin = 0.029eV (T=226K)  Etot = -1042.983eV
-Energy per atom: Epot = -1043.017eV  Ekin = 0.037eV (T=286K)  Etot = -1042.980eV
-Energy per atom: Epot = -1043.015eV  Ekin = 0.030eV (T=234K)  Etot = -1042.985eV
-Energy per atom: Epot = -1042.997eV  Ekin = 0.018eV (T=137K)  Etot = -1042.980eV
-Energy per atom: Epot = -1043.002eV  Ekin = 0.036eV (T=277K)  Etot = -1042.966eV
+Energy per atom: Epot = -1038.903eV  Ekin = 0.000eV (T=  0K)  Etot = -1038.903eV
+Energy per atom: Epot = -1038.879eV  Ekin = 0.018eV (T=136K)  Etot = -1038.862eV
+Energy per atom: Epot = -1038.868eV  Ekin = 0.013eV (T=104K)  Etot = -1038.855eV
+Energy per atom: Epot = -1038.876eV  Ekin = 0.031eV (T=242K)  Etot = -1038.845eV
+Energy per atom: Epot = -1038.883eV  Ekin = 0.037eV (T=285K)  Etot = -1038.846eV
+Energy per atom: Epot = -1038.860eV  Ekin = 0.028eV (T=213K)  Etot = -1038.832eV
+Energy per atom: Epot = -1038.862eV  Ekin = 0.020eV (T=157K)  Etot = -1038.842eV
+Energy per atom: Epot = -1038.871eV  Ekin = 0.018eV (T=142K)  Etot = -1038.853eV
+Energy per atom: Epot = -1038.874eV  Ekin = 0.024eV (T=189K)  Etot = -1038.850eV
+Energy per atom: Epot = -1038.863eV  Ekin = 0.043eV (T=330K)  Etot = -1038.821eV
+Energy per atom: Epot = -1038.862eV  Ekin = 0.035eV (T=270K)  Etot = -1038.827eV
 </pre></div>
 </div>
-<p><strong>Total running time of the script:</strong> ( 2 minutes  17.146 seconds)</p>
+<p><strong>Total running time of the script:</strong> ( 2 minutes  20.371 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-ase-interface-py">
 <div class="sphx-glr-download docutils container">
 <a class="reference download internal" download="" href="../_downloads/93c3677ffa6b2842ce34153b0479a93a/ase_interface.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">ase_interface.py</span></code></a></div>
@@ -268,10 +271,10 @@ Energy per atom: Epot = -1043.002eV  Ekin = 0.036eV (T=277K)  Etot = -1042.966eV
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../api.html" class="btn btn-neutral float-right" title="TorchANI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="load_from_neurochem.html" class="btn btn-neutral float-right" title="Construct Model From NeuroChem Files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="neurochem_trainer.html" class="btn btn-neutral" title="Train Neural Network Potential From NeuroChem Input File" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="energy_force.html" class="btn btn-neutral float-left" title="Computing Energy and Force Using Models Inside Model Zoo" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -297,27 +300,16 @@ Energy per atom: Epot = -1043.002eV  Ekin = 0.036eV (T=277K)  Etot = -1042.966eV
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-
-  
-
-  <script type="text/javascript" src="../_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

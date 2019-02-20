@@ -1,0 +1,315 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>torchani.models &mdash; TorchANI 0.3 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/gallery.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> TorchANI
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../start.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
+</ul>
+<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.models">Model Zoo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.data">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.utils">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ase">ASE Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ignite">Ignite Helpers</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TorchANI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>torchani.models</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for torchani.models</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;The ANI model zoo that stores public ANI models.</span>
+
+<span class="sd">Currently the model zoo has two models: ANI-1x and ANI-1ccx. The corresponding</span>
+<span class="sd">classes of these two models are :class:`ANI1x` and :class:`ANI1ccx`. These</span>
+<span class="sd">classes share the same API. To use the builtin models, you simply need to</span>
+<span class="sd">create an object of its corresponding class. These classes are subclasses of</span>
+<span class="sd">:class:`torch.nn.Module`, and could be used directly. Below is an example of</span>
+<span class="sd">how to use these models:</span>
+
+<span class="sd">.. code:: python</span>
+
+<span class="sd">    model = torchani.models.ANI1x()</span>
+<span class="sd">    # compute energy using ANI-1x model ensemble</span>
+<span class="sd">    _, energies = model((species, coordinates))</span>
+<span class="sd">    model.ase()  # get ASE Calculator using this ensemble</span>
+<span class="sd">    # convert atom species from string to long tensor</span>
+<span class="sd">    model.species_to_tensor(&#39;CHHHH&#39;)</span>
+
+<span class="sd">    model0 = model[0]  # get the first model in the ensemble</span>
+<span class="sd">    # compute energy using the first model in the ANI-1x model ensemble</span>
+<span class="sd">    _, energies = model0((species, coordinates))</span>
+<span class="sd">    model0.ase()  # get ASE Calculator using this model</span>
+<span class="sd">    # convert atom species from string to long tensor</span>
+<span class="sd">    model0.species_to_tensor(&#39;CHHHH&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">neurochem</span>
+
+
+<span class="k">class</span> <span class="nc">BuiltinModels</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builtin_class</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BuiltinModels</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">builtins</span> <span class="o">=</span> <span class="n">builtin_class</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">builtins</span><span class="o">.</span><span class="n">aev_computer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neural_networks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">builtins</span><span class="o">.</span><span class="n">models</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy_shifter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">builtins</span><span class="o">.</span><span class="n">energy_shifter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">species_to_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">builtins</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_coordinates</span><span class="p">):</span>
+        <span class="n">species_aevs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span><span class="p">(</span><span class="n">species_coordinates</span><span class="p">)</span>
+        <span class="n">species_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neural_networks</span><span class="p">(</span><span class="n">species_aevs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_shifter</span><span class="p">(</span><span class="n">species_energies</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">neural_networks</span><span class="p">[</span><span class="n">index</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">energy_shifter</span>
+        <span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">ase</span><span class="p">():</span>
+            <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">ase</span>
+            <span class="k">return</span> <span class="n">ase</span><span class="o">.</span><span class="n">Calculator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">builtins</span><span class="o">.</span><span class="n">species</span><span class="p">,</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span><span class="p">,</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">neural_networks</span><span class="p">[</span><span class="n">index</span><span class="p">],</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">energy_shifter</span><span class="p">)</span>
+
+        <span class="n">ret</span><span class="o">.</span><span class="n">ase</span> <span class="o">=</span> <span class="n">ase</span>
+        <span class="n">ret</span><span class="o">.</span><span class="n">species_to_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">builtins</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neural_networks</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">ase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get an ASE Calculator using this model&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">ase</span>
+        <span class="k">return</span> <span class="n">ase</span><span class="o">.</span><span class="n">Calculator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">builtins</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span><span class="p">,</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">neural_networks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy_shifter</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ANI1x"><a class="viewcode-back" href="../../api.html#torchani.models.ANI1x">[docs]</a><span class="k">class</span> <span class="nc">ANI1x</span><span class="p">(</span><span class="n">BuiltinModels</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The ANI-1x model as in `ani-1x_8x on GitHub`_ and</span>
+<span class="sd">    `Active Learning Paper`_.</span>
+
+<span class="sd">    .. _ani-1x_8x on GitHub:</span>
+<span class="sd">        https://github.com/isayev/ASE_ANI/tree/master/ani_models/ani-1x_8x</span>
+
+<span class="sd">    .. _Active Learning Paper:</span>
+<span class="sd">        https://aip.scitation.org/doi/abs/10.1063/1.5023802</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ANI1x</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">neurochem</span><span class="o">.</span><span class="n">Builtins</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ANI1ccx"><a class="viewcode-back" href="../../api.html#torchani.models.ANI1ccx">[docs]</a><span class="k">class</span> <span class="nc">ANI1ccx</span><span class="p">(</span><span class="n">BuiltinModels</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The ANI-1x model as in `ani-1ccx_8x on GitHub`_ and</span>
+<span class="sd">    `Transfer Learning Paper`_.</span>
+
+<span class="sd">    .. _ani-1ccx_8x on GitHub:</span>
+<span class="sd">        https://github.com/isayev/ASE_ANI/tree/master/ani_models/ani-1ccx_8x</span>
+
+<span class="sd">    .. _Transfer Learning Paper:</span>
+<span class="sd">        https://doi.org/10.26434/chemrxiv.6744440.v1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ANI1ccx</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">neurochem</span><span class="o">.</span><span class="n">BuiltinsANI1CCX</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Roitberg Group
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,654 @@
+.. note::
+    :class: sphx-glr-download-link-note
+
+    Click :ref:`here <sphx_glr_download_examples_load_from_neurochem.py>` to download the full example code
+.. rst-class:: sphx-glr-example-title
+
+.. _sphx_glr_examples_load_from_neurochem.py:
+
+
+Construct Model From NeuroChem Files
+====================================
+
+This tutorial illustrates how to manually load model from `NeuroChem files`_.
+
+.. _NeuroChem files:
+    https://github.com/isayev/ASE_ANI/tree/master/ani_models
+
+
+
+To begin with, let's first import the modules we will use:
+
+
+
+.. code-block:: python
+
+    import os
+    import torch
+    import torchani
+    import ase
+
+
+
+
+
+
+
+
+Now let's read constants from constant file and construct AEV computer.
+
+
+
+.. code-block:: python
+
+    try:
+        path = os.path.dirname(os.path.realpath(__file__))
+    except NameError:
+        path = os.getcwd()
+    const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
+    consts = torchani.neurochem.Constants(const_file)
+    aev_computer = torchani.AEVComputer(**consts)
+
+
+
+
+
+
+
+Now let's read self energies and construct energy shifter.
+
+
+
+.. code-block:: python
+
+    sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')  # noqa: E501
+    energy_shifter = torchani.neurochem.load_sae(sae_file)
+
+
+
+
+
+
+
+Now let's read a whole ensemble of models.
+
+
+
+.. code-block:: python
+
+    model_prefix = os.path.join(path, '../torchani/resources/ani-1x_8x/train')  # noqa: E501
+    ensemble = torchani.neurochem.load_model_ensemble(consts.species, model_prefix, 8)  # noqa: E501
+
+
+
+
+
+
+
+Or alternatively a single model.
+
+
+
+.. code-block:: python
+
+    model_dir = os.path.join(path, '../torchani/resources/ani-1x_8x/train0/networks')  # noqa: E501
+    model = torchani.neurochem.load_model(consts.species, model_dir)
+
+
+
+
+
+
+
+You can create the pipeline of computing energies:
+(Coordinates) -[AEVComputer]-> (AEV) -[Neural Network]->
+(Raw energies) -[EnergyShifter]-> (Final energies)
+From using either the ensemble or a single model:
+
+
+
+.. code-block:: python
+
+    nnp1 = torch.nn.Sequential(aev_computer, ensemble, energy_shifter)
+    nnp2 = torch.nn.Sequential(aev_computer, model, energy_shifter)
+    print(nnp1)
+    print(nnp2)
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    Sequential(
+      (0): AEVComputer()
+      (1): Ensemble(
+        (0): ANIModel(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=160, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=160, out_features=128, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=128, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (1): Sequential(
+            (0): Linear(in_features=384, out_features=144, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=144, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (2): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (3): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+        )
+        (1): ANIModel(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=160, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=160, out_features=128, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=128, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (1): Sequential(
+            (0): Linear(in_features=384, out_features=144, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=144, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (2): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (3): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+        )
+        (2): ANIModel(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=160, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=160, out_features=128, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=128, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (1): Sequential(
+            (0): Linear(in_features=384, out_features=144, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=144, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (2): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (3): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+        )
+        (3): ANIModel(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=160, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=160, out_features=128, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=128, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (1): Sequential(
+            (0): Linear(in_features=384, out_features=144, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=144, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (2): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (3): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+        )
+        (4): ANIModel(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=160, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=160, out_features=128, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=128, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (1): Sequential(
+            (0): Linear(in_features=384, out_features=144, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=144, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (2): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (3): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+        )
+        (5): ANIModel(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=160, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=160, out_features=128, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=128, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (1): Sequential(
+            (0): Linear(in_features=384, out_features=144, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=144, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (2): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (3): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+        )
+        (6): ANIModel(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=160, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=160, out_features=128, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=128, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (1): Sequential(
+            (0): Linear(in_features=384, out_features=144, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=144, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (2): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (3): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+        )
+        (7): ANIModel(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=160, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=160, out_features=128, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=128, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (1): Sequential(
+            (0): Linear(in_features=384, out_features=144, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=144, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (2): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+          (3): Sequential(
+            (0): Linear(in_features=384, out_features=128, bias=True)
+            (1): CELU(alpha=0.1)
+            (2): Linear(in_features=128, out_features=112, bias=True)
+            (3): CELU(alpha=0.1)
+            (4): Linear(in_features=112, out_features=96, bias=True)
+            (5): CELU(alpha=0.1)
+            (6): Linear(in_features=96, out_features=1, bias=True)
+          )
+        )
+      )
+      (2): EnergyShifter()
+    )
+    Sequential(
+      (0): AEVComputer()
+      (1): ANIModel(
+        (0): Sequential(
+          (0): Linear(in_features=384, out_features=160, bias=True)
+          (1): CELU(alpha=0.1)
+          (2): Linear(in_features=160, out_features=128, bias=True)
+          (3): CELU(alpha=0.1)
+          (4): Linear(in_features=128, out_features=96, bias=True)
+          (5): CELU(alpha=0.1)
+          (6): Linear(in_features=96, out_features=1, bias=True)
+        )
+        (1): Sequential(
+          (0): Linear(in_features=384, out_features=144, bias=True)
+          (1): CELU(alpha=0.1)
+          (2): Linear(in_features=144, out_features=112, bias=True)
+          (3): CELU(alpha=0.1)
+          (4): Linear(in_features=112, out_features=96, bias=True)
+          (5): CELU(alpha=0.1)
+          (6): Linear(in_features=96, out_features=1, bias=True)
+        )
+        (2): Sequential(
+          (0): Linear(in_features=384, out_features=128, bias=True)
+          (1): CELU(alpha=0.1)
+          (2): Linear(in_features=128, out_features=112, bias=True)
+          (3): CELU(alpha=0.1)
+          (4): Linear(in_features=112, out_features=96, bias=True)
+          (5): CELU(alpha=0.1)
+          (6): Linear(in_features=96, out_features=1, bias=True)
+        )
+        (3): Sequential(
+          (0): Linear(in_features=384, out_features=128, bias=True)
+          (1): CELU(alpha=0.1)
+          (2): Linear(in_features=128, out_features=112, bias=True)
+          (3): CELU(alpha=0.1)
+          (4): Linear(in_features=112, out_features=96, bias=True)
+          (5): CELU(alpha=0.1)
+          (6): Linear(in_features=96, out_features=1, bias=True)
+        )
+      )
+      (2): EnergyShifter()
+    )
+
+
+You can also create an ASE calculator using the ensemble or single model:
+
+
+
+.. code-block:: python
+
+    calculator1 = torchani.ase.Calculator(consts.species, aev_computer,
+                                          ensemble, energy_shifter)
+    calculator2 = torchani.ase.Calculator(consts.species, aev_computer,
+                                          model, energy_shifter)
+    print(calculator1)
+    print(calculator1)
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    <torchani.ase.Calculator object at 0x7ff4a92890f0>
+    <torchani.ase.Calculator object at 0x7ff4a92890f0>
+
+
+Now let's define a methane molecule
+
+
+
+.. code-block:: python
+
+    coordinates = torch.tensor([[[0.03192167,  0.00638559,  0.01301679],
+                                 [-0.83140486,  0.39370209, -0.26395324],
+                                 [-0.66518241, -0.84461308,  0.20759389],
+                                 [0.45554739,   0.54289633,  0.81170881],
+                                 [0.66091919,  -0.16799635, -0.91037834]]],
+                               requires_grad=True)
+    species = consts.species_to_tensor('CHHHH').unsqueeze(0)
+    methane = ase.Atoms('CHHHH', positions=coordinates.squeeze().detach().numpy())
+
+
+
+
+
+
+
+Now let's compute energies using the ensemble directly:
+
+
+
+.. code-block:: python
+
+    _, energy = nnp1((species, coordinates))
+    derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
+    force = -derivative
+    print('Energy:', energy.item())
+    print('Force:', force.squeeze())
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    Energy: -40.459022521972656
+    Force: tensor([[ 0.0306, -0.1316, -0.0527],
+            [-0.1293,  0.1639, -0.0774],
+            [ 0.0856, -0.0429,  0.0408],
+            [ 0.0268,  0.0060,  0.0381],
+            [-0.0138,  0.0046,  0.0511]])
+
+
+And using the ASE interface of the ensemble:
+
+
+
+.. code-block:: python
+
+    methane.set_calculator(calculator1)
+    print('Energy:', methane.get_potential_energy() / ase.units.Hartree)
+    print('Force:', methane.get_forces() / ase.units.Hartree)
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    Energy: -40.459021232362076
+    Force: [[ 0.03062528 -0.13160464 -0.05265213]
+     [-0.12927511  0.16388638 -0.07736805]
+     [ 0.08563147 -0.04288927  0.04082096]
+     [ 0.02681221  0.00601405  0.03809875]
+     [-0.01379385  0.00459348  0.05110048]]
+
+
+We can do the same thing with the single model:
+
+
+
+.. code-block:: python
+
+    _, energy = nnp2((species, coordinates))
+    derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
+    force = -derivative
+    print('Energy:', energy.item())
+    print('Force:', force.squeeze())
+
+    methane.set_calculator(calculator2)
+    print('Energy:', methane.get_potential_energy() / ase.units.Hartree)
+    print('Force:', methane.get_forces() / ase.units.Hartree)
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    Energy: -40.462799072265625
+    Force: tensor([[ 0.0561, -0.1270, -0.0541],
+            [-0.1401,  0.1552, -0.0753],
+            [ 0.0753, -0.0374,  0.0395],
+            [ 0.0242,  0.0024,  0.0334],
+            [-0.0156,  0.0068,  0.0565]])
+    Energy: -40.46279844543873
+    Force: [[ 0.05614971 -0.12697162 -0.05413407]
+     [-0.14007534  0.15523377 -0.07533838]
+     [ 0.07532089 -0.03744112  0.0394967 ]
+     [ 0.02423101  0.00235088  0.03344232]
+     [-0.01562626  0.00682809  0.05653343]]
+
+
+**Total running time of the script:** ( 0 minutes  3.192 seconds)
+
+
+.. _sphx_glr_download_examples_load_from_neurochem.py:
+
+
+.. only :: html
+
+ .. container:: sphx-glr-footer
+    :class: sphx-glr-footer-example
+
+
+
+  .. container:: sphx-glr-download
+
+     :download:`Download Python source code: load_from_neurochem.py <load_from_neurochem.py>`
+
+
+
+  .. container:: sphx-glr-download
+
+     :download:`Download Jupyter notebook: load_from_neurochem.ipynb <load_from_neurochem.ipynb>`
+
+
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.readthedocs.io>`_

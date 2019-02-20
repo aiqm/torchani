@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Examples &mdash; TorchANI 0.2.2 documentation</title>
+  <title>Examples &mdash; TorchANI 0.3 documentation</title>
   
 
   
@@ -17,33 +17,36 @@
   
 
   
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
-
-  
-  <script src="../_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -57,7 +60,7 @@
             
             
               <div class="version">
-                0.2.2
+                0.3
               </div>
             
           
@@ -87,15 +90,17 @@
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Builtin Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training.html">Train Your Own Neural Network Potential</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
 </ul>
 <p class="caption"><span class="caption-text">TorchANI's API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">TorchANI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.models">Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.data">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
@@ -167,31 +172,37 @@
             
   <div class="section" id="examples">
 <h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
-<div class="sphx-glr-thumbcontainer" tooltip="TorchANI has a model ensemble trained by NeuroChem on the `ANI-1x dataset`_. These models are s..."><div class="figure" id="id1">
+<div class="sphx-glr-thumbcontainer" tooltip="TorchANI has a model zoo trained by NeuroChem. These models are shipped with TorchANI and can b..."><div class="figure" id="id1">
 <img alt="../_images/sphx_glr_energy_force_thumb.png" src="../_images/sphx_glr_energy_force_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="energy_force.html#sphx-glr-examples-energy-force-py"><span class="std std-ref">Computing Energy and Force Using Builtin Models</span></a></span></p>
+<p class="caption"><span class="caption-text"><a class="reference internal" href="energy_force.html#sphx-glr-examples-energy-force-py"><span class="std std-ref">Computing Energy and Force Using Models Inside Model Zoo</span></a></span></p>
 </div>
 </div><div class="toctree-wrapper compound">
 </div>
-<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI&#x27;s NeuroChem trainer to read and run NeuroChem&#x27;s training..."><div class="figure" id="id2">
-<img alt="../_images/sphx_glr_neurochem_trainer_thumb.png" src="../_images/sphx_glr_neurochem_trainer_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="neurochem_trainer.html#sphx-glr-examples-neurochem-trainer-py"><span class="std std-ref">Train Neural Network Potential From NeuroChem Input File</span></a></span></p>
-</div>
-</div><div class="toctree-wrapper compound">
-</div>
-<div class="sphx-glr-thumbcontainer" tooltip="This example is modified from the official `home page` and `Constant temperature MD`_ to use th..."><div class="figure" id="id3">
+<div class="sphx-glr-thumbcontainer" tooltip="This example is modified from the official `home page` and `Constant temperature MD`_ to use th..."><div class="figure" id="id2">
 <img alt="../_images/sphx_glr_ase_interface_thumb.png" src="../_images/sphx_glr_ase_interface_thumb.png" />
 <p class="caption"><span class="caption-text"><a class="reference internal" href="ase_interface.html#sphx-glr-examples-ase-interface-py"><span class="std std-ref">Structure minimization and constant temperature MD using ASE interface</span></a></span></p>
 </div>
 </div><div class="toctree-wrapper compound">
 </div>
-<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI train your own neural network potential. "><div class="figure" id="id4">
+<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI&#x27;s NeuroChem trainer to read and run NeuroChem&#x27;s training..."><div class="figure" id="id3">
+<img alt="../_images/sphx_glr_neurochem_trainer_thumb.png" src="../_images/sphx_glr_neurochem_trainer_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="neurochem_trainer.html#sphx-glr-examples-neurochem-trainer-py"><span class="std std-ref">Train Neural Network Potential From NeuroChem Input File</span></a></span></p>
+</div>
+</div><div class="toctree-wrapper compound">
+</div>
+<div class="sphx-glr-thumbcontainer" tooltip="This tutorial illustrates how to manually load model from `NeuroChem files`_."><div class="figure" id="id4">
+<img alt="../_images/sphx_glr_load_from_neurochem_thumb.png" src="../_images/sphx_glr_load_from_neurochem_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="load_from_neurochem.html#sphx-glr-examples-load-from-neurochem-py"><span class="std std-ref">Construct Model From NeuroChem Files</span></a></span></p>
+</div>
+</div><div class="toctree-wrapper compound">
+</div>
+<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI train your own neural network potential. "><div class="figure" id="id5">
 <img alt="../_images/sphx_glr_nnp_training_thumb.png" src="../_images/sphx_glr_nnp_training_thumb.png" />
 <p class="caption"><span class="caption-text"><a class="reference internal" href="nnp_training.html#sphx-glr-examples-nnp-training-py"><span class="std std-ref">Train Your Own Neural Network Potential</span></a></span></p>
 </div>
 </div><div class="toctree-wrapper compound">
 </div>
-<div class="sphx-glr-thumbcontainer" tooltip="In the previous :ref:`training-example` example, AEVs are computed everytime when needed. This ..."><div class="figure" id="id5">
+<div class="sphx-glr-thumbcontainer" tooltip="In the previous :ref:`training-example` example, AEVs are computed everytime when needed. This ..."><div class="figure" id="id6">
 <img alt="../_images/sphx_glr_cache_aev_thumb.png" src="../_images/sphx_glr_cache_aev_thumb.png" />
 <p class="caption"><span class="caption-text"><a class="reference internal" href="cache_aev.html#sphx-glr-examples-cache-aev-py"><span class="std std-ref">Use Disk Cache of AEV to Boost Training</span></a></span></p>
 </div>
@@ -234,27 +245,16 @@
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-
-  
-
-  <script type="text/javascript" src="../_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

@@ -73,8 +73,8 @@ but we do need to generate a disk cache for datasets
 
 .. code-block:: python
 
-    const_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
-    sae_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/sae_linfit.dat')  # noqa: E501
+    const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
+    sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')  # noqa: E501
     training_cache = './training_cache'
     validation_cache = './validation_cache'
 
@@ -300,7 +300,7 @@ Let's add a progress bar for the trainer
 
 
 
-**Total running time of the script:** ( 0 minutes  38.168 seconds)
+**Total running time of the script:** ( 0 minutes  40.435 seconds)
 
 
 .. _sphx_glr_download_examples_cache_aev.py:
