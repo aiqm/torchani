@@ -61,8 +61,8 @@ log = 'runs'
 ###############################################################################
 # Now let's read our constants and self energies from constant files and
 # construct AEV computer.
-const_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
-sae_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/sae_linfit.dat')  # noqa: E501
+const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
+sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')  # noqa: E501
 consts = torchani.neurochem.Constants(const_file)
 aev_computer = torchani.AEVComputer(**consts)
 energy_shifter = torchani.neurochem.load_sae(sae_file)
@@ -94,6 +94,8 @@ if os.path.isfile(model_checkpoint):
 else:
     torch.save(nn.state_dict(), model_checkpoint)
 
+###############################################################################
+# Let's now create a pipeline of AEV Computer --> Neural Networks.
 model = torch.nn.Sequential(aev_computer, nn).to(device)
 
 ###############################################################################
