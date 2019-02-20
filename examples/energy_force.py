@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Computing Energy and Force Using Builtin Models
-===============================================
+Computing Energy and Force Using Models Inside Model Zoo
+========================================================
 
-TorchANI has a model ensemble trained by NeuroChem on the `ANI-1x dataset`_.
-These models are shipped with TorchANI and can be used directly.
-
-.. _ANI-1x dataset:
-  https://aip.scitation.org/doi/abs/10.1063/1.5023802
+TorchANI has a model zoo trained by NeuroChem. These models are shipped with
+TorchANI and can be used directly.
 """
 
 ###############################################################################
@@ -20,18 +17,12 @@ import torchani
 device = torch.device('cpu')
 
 ###############################################################################
-# Let's now load the built-in models and create a pipeline of AEV computer,
-# neural networks, and energy shifter. This pipeline will first compute AEV,
-# then use all models in the ensemble to compute molecular energies, and take
-# the average of these energies to obtain a final output. The reason we need an
-# energy shifter in the end is that the output of these networks is not the
-# total energy but the total energy subtracted by a self energy for each atom.
-builtin = torchani.neurochem.Builtins()
-model = torch.nn.Sequential(
-  builtin.aev_computer,
-  builtin.models,
-  builtin.energy_shifter
-)
+# Let's now load the built-in ANI-1ccx models. The builtin ANI-1ccx contains 8
+# models trained with diffrent initialization. Predicting the energy and force
+# using the average of the 8 models outperform using a single model, so it is
+# always recommended to use an ensemble, unless the speed of computation is an
+# issue in your application.
+model = torchani.models.ANI1ccx()
 
 ###############################################################################
 # Now let's define the coordinate and species. If you just want to compute the
@@ -47,7 +38,7 @@ coordinates = torch.tensor([[[0.03192167,  0.00638559,  0.01301679],
                              [0.45554739,   0.54289633,  0.81170881],
                              [0.66091919,  -0.16799635, -0.91037834]]],
                            requires_grad=True, device=device)
-species = builtin.consts.species_to_tensor('CHHHH').to(device).unsqueeze(0)
+species = model.species_to_tensor('CHHHH').to(device).unsqueeze(0)
 
 ###############################################################################
 # Now let's compute energy and force:
