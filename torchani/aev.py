@@ -2,10 +2,11 @@ import torch
 import itertools
 import math
 from . import utils
+from typing import Tuple
 
 
 @torch.jit.script
-def _cutoff_cosine(distances, cutoff):
+def _cutoff_cosine(distances, cutoff:float):
     return torch.where(
         distances <= cutoff,
         0.5 * torch.cos(math.pi * distances / cutoff) + 0.5,
@@ -14,7 +15,7 @@ def _cutoff_cosine(distances, cutoff):
 
 
 @torch.jit.script
-def default_neighborlist(species, coordinates, cutoff):
+def default_neighborlist(species, coordinates, cutoff:float):
     """Default neighborlist computer"""
 
     vec = coordinates.unsqueeze(2) - coordinates.unsqueeze(1)
@@ -46,7 +47,7 @@ def default_neighborlist(species, coordinates, cutoff):
     return neighbor_species, neighbor_distances, neighbor_coordinates
 
 
-class AEVComputer(torch.nn.Module):
+class AEVComputer(torch.jit.ScriptModule):
     r"""The AEV computer that takes coordinates as input and outputs aevs.
 
     Arguments:
@@ -85,6 +86,7 @@ class AEVComputer(torch.nn.Module):
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
     """
+    __constants__ = ['Rcr', 'Rca', 'num_species']
 
     def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ,
                  num_species, neighborlist_computer=default_neighborlist):
@@ -126,6 +128,7 @@ class AEVComputer(torch.nn.Module):
         """Returns the length of full aev"""
         return self.radial_length() + self.angular_length()
 
+    @torch.jit.script_method
     def _radial_subaev_terms(self, distances):
         """Compute the radial subAEV terms of the center atom given neighbors
 
@@ -151,6 +154,7 @@ class AEVComputer(torch.nn.Module):
         # dimension vector
         return ret.flatten(start_dim=-2)
 
+    @torch.jit.script_method
     def _angular_subaev_terms(self, vectors1, vectors2):
         """Compute the angular subAEV terms of the center atom given neighbor pairs.
 
@@ -190,13 +194,14 @@ class AEVComputer(torch.nn.Module):
         # dimension vector
         return ret.flatten(start_dim=-4)
 
+    @torch.jit.script_method
     def _terms_and_indices(self, species, coordinates):
         """Returns radial and angular subAEV terms, these terms will be sorted
         according to their distances to central atoms, and only these within
         cutoff radius are valid. The returned indices stores the source of data
         before sorting.
         """
-        max_cutoff = max([self.Rcr, self.Rca])
+        max_cutoff = max(self.Rcr, self.Rca)
         species_, distances, vec = self.neighborlist(species, coordinates,
                                                      max_cutoff)
         radial_terms = self._radial_subaev_terms(distances)
@@ -211,7 +216,8 @@ class AEVComputer(torch.nn.Module):
         # (conformations, atoms, pairs)
         return radial_terms, angular_terms, species_
 
-    def _combinations(self, tensor, dim=0):
+    @torch.jit.script_method
+    def _combinations(self, tensor, dim:int=0):
         n = tensor.shape[dim]
         if n == 0:
             return tensor, tensor
@@ -220,12 +226,14 @@ class AEVComputer(torch.nn.Module):
         return tensor.index_select(dim, index1), \
             tensor.index_select(dim, index2)
 
+    @torch.jit.script_method
     def _compute_mask_r(self, species_r):
         """Get mask of radial terms for each supported species from indices"""
         mask_r = (species_r.unsqueeze(-1) ==
                   torch.arange(self.num_species, device=self.EtaR.device))
         return mask_r
 
+    @torch.jit.script_method
     def _compute_mask_a(self, species_a, present_species):
         """Get mask of angular terms for each supported species from indices"""
         species_a1, species_a2 = self._combinations(species_a, -1)
@@ -236,6 +244,7 @@ class AEVComputer(torch.nn.Module):
         mask_a = (mask + mask_rev) > 0
         return mask_a
 
+    # @torch.jit.script_method
     def _assemble(self, radial_terms, angular_terms, present_species,
                   mask_r, mask_a):
         """Returns radial and angular AEV computed from terms according
@@ -285,7 +294,8 @@ class AEVComputer(torch.nn.Module):
 
         return radial_aevs, torch.cat(angular_aevs, dim=2)
 
-    def forward(self, species_coordinates):
+    @torch.jit.script_method
+    def forward(self, species_coordinates:Tuple[torch.Tensor, torch.Tensor]):
         """Compute AEVs
 
         Arguments:
