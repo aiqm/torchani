@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """Helpers for working with ignite."""
-
+from __future__ import absolute_import
 import torch
 from . import utils
 from torch.nn.modules.loss import _Loss
-from ignite.metrics.metric import Metric
-from ignite.metrics import RootMeanSquaredError
+from ignite.metrics import Metric, RootMeanSquaredError
 from ignite.contrib.metrics.regression import MaximumAbsoluteError
 
 

@@ -1,0 +1,29 @@
+queue:
+  name: Hosted Ubuntu 1604
+  timeoutInMinutes: 30
+
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+
+variables:
+  python.version: '2.7'
+
+
+steps:
+
+- task: UsePythonVersion@0
+  displayName: 'Use Python $(python.version)'
+  inputs:
+    versionSpec: '$(python.version)'
+
+- script: 'azure/install_dependencies.sh && pip install .'
+  displayName: 'Install dependencies'
+
+- script: 'python2 examples/energy_force.py'
+  displayName: Energy and Force Example
+
+- script: 'python2 examples/ase_interface.py'
+  displayName: ASE Interface Example
