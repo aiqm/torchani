@@ -11,7 +11,7 @@ import itertools
 import ignite
 import math
 import timeit
-import _six
+import _six  # noqa:F401
 import collections
 import sys
 from ..nn import ANIModel, Ensemble, Gaussian
@@ -383,7 +383,6 @@ if sys.version_info[0] > 2:
     from ..data import BatchedANIDataset  # noqa: E402
     from ..data import AEVCacheLoader  # noqa: E402
 
-
     class Trainer:
         """Train with NeuroChem training configurations.
 
@@ -394,13 +393,13 @@ if sys.version_info[0] > 2:
             tensorboard (str): Directory to store tensorboard log file, set to
                 ``None`` to disable tensorboardX.
             aev_caching (bool): Whether to use AEV caching.
-            checkpoint_name (str): Name of the checkpoint file, checkpoints will be
-                stored in the network directory with this file name.
+            checkpoint_name (str): Name of the checkpoint file, checkpoints
+                will be stored in the network directory with this file name.
         """
 
         def __init__(self, filename, device=torch.device('cuda'), tqdm=False,
-                    tensorboard=None, aev_caching=False,
-                    checkpoint_name='model.pt'):
+                     tensorboard=None, aev_caching=False,
+                     checkpoint_name='model.pt'):
             self.filename = filename
             self.device = device
             self.aev_caching = aev_caching
@@ -412,7 +411,8 @@ if sys.version_info[0] > 2:
                 self.tqdm = None
             if tensorboard is not None:
                 import tensorboardX
-                self.tensorboard = tensorboardX.SummaryWriter(log_dir=tensorboard)
+                self.tensorboard = tensorboardX.SummaryWriter(
+                    log_dir=tensorboard)
                 self.training_eval_every = 20
             else:
                 self.tensorboard = None
@@ -448,7 +448,8 @@ if sys.version_info[0] > 2:
                 | SIGNED_FLOAT
                 | STRING_VALUE
 
-            STRING_VALUE : ("_"|"-"|"."|"/"|LETTER)("_"|"-"|"."|"/"|LETTER|DIGIT)*
+            STRING_VALUE : ("_"|"-"|"."|"/"|LETTER)
+                ("_"|"-"|"."|"/"|LETTER|DIGIT)*
 
             %import common.SIGNED_NUMBER
             %import common.LETTER
@@ -526,7 +527,8 @@ if sys.version_info[0] > 2:
             params = yaml.safe_load(f)
             network_setup = params['network_setup']
             del params['network_setup']
-            network_setup = (network_setup['inputsize'], network_setup['atom_net'])
+            network_setup = (network_setup['inputsize'],
+                             network_setup['atom_net'])
             return network_setup, params
 
         def _construct(self, network_setup, params):
@@ -569,7 +571,8 @@ if sys.version_info[0] > 2:
             network_dir = os.path.join(dir_, params['ntwkStoreDir'])
             if not os.path.exists(network_dir):
                 os.makedirs(network_dir)
-            self.model_checkpoint = os.path.join(network_dir, self.checkpoint_name)
+            self.model_checkpoint = os.path.join(network_dir,
+                                                 self.checkpoint_name)
             del params['ntwkStoreDir']
             self.max_nonimprove = params['tolr']
             del params['tolr']
@@ -608,8 +611,9 @@ if sys.version_info[0] > 2:
                     del layer['activation']
                     if 'l2norm' in layer:
                         if layer['l2norm'] == 1:
-                            # NB: The "L2" implemented in NeuroChem is actually not
-                            # L2 but weight decay. The difference of these two is:
+                            # NB: The "L2" implemented in NeuroChem is actually
+                            # not L2 but weight decay. The difference of these
+                            # two is:
                             # https://arxiv.org/pdf/1711.05101.pdf
                             # There is a pull request on github/pytorch
                             # implementing AdamW, etc.:
@@ -620,10 +624,12 @@ if sys.version_info[0] > 2:
                         del layer['l2norm']
                         del layer['l2valu']
                     if layer:
-                        raise ValueError('unrecognized parameter in layer setup')
+                        raise ValueError(
+                            'unrecognized parameter in layer setup')
                     i = o
                 atomic_nets[atom_type] = torch.nn.Sequential(*modules)
-            self.model = ANIModel([atomic_nets[s] for s in self.consts.species])
+            self.model = ANIModel([atomic_nets[s]
+                                   for s in self.consts.species])
             if self.aev_caching:
                 self.nnp = self.model
             else:
@@ -716,7 +722,8 @@ if sys.version_info[0] > 2:
                     if trainer.state.rmse < self.best_validation_rmse:
                         trainer.state.no_improve_count = 0
                         self.best_validation_rmse = trainer.state.rmse
-                        torch.save(self.model.state_dict(), self.model_checkpoint)
+                        torch.save(self.model.state_dict(),
+                                   self.model_checkpoint)
                     else:
                         trainer.state.no_improve_count += 1
 
@@ -730,8 +737,8 @@ if sys.version_info[0] > 2:
                         epoch = trainer.state.epoch
                         self.tensorboard.add_scalar('time_vs_epoch', elapsed,
                                                     epoch)
-                        self.tensorboard.add_scalar('learning_rate_vs_epoch', lr,
-                                                    epoch)
+                        self.tensorboard.add_scalar('learning_rate_vs_epoch',
+                                                    lr, epoch)
                         self.tensorboard.add_scalar('validation_rmse_vs_epoch',
                                                     trainer.state.rmse, epoch)
                         self.tensorboard.add_scalar('validation_mae_vs_epoch',
@@ -739,18 +746,18 @@ if sys.version_info[0] > 2:
                         self.tensorboard.add_scalar(
                             'best_validation_rmse_vs_epoch',
                             self.best_validation_rmse, epoch)
-                        self.tensorboard.add_scalar('no_improve_count_vs_epoch',
-                                                    trainer.state.no_improve_count,
-                                                    epoch)
+                        self.tensorboard.add_scalar(
+                            'no_improve_count_vs_epoch',
+                            trainer.state.no_improve_count, epoch)
 
                         # compute training RMSE and MAE
                         if epoch % self.training_eval_every == 1:
                             training_rmse, training_mae = \
                                 self.evaluate(self.training_set)
-                            self.tensorboard.add_scalar('training_rmse_vs_epoch',
-                                                        training_rmse, epoch)
-                            self.tensorboard.add_scalar('training_mae_vs_epoch',
-                                                        training_mae, epoch)
+                            self.tensorboard.add_scalar(
+                                'training_rmse_vs_epoch', training_rmse, epoch)
+                            self.tensorboard.add_scalar(
+                                'training_mae_vs_epoch', training_mae, epoch)
 
                     @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
                     def log_loss(trainer):
