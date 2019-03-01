@@ -1,6 +1,6 @@
 import torch
 import itertools
-import _six  # noqa:F401
+from . import _six  # noqa:F401
 import math
 from . import utils
 

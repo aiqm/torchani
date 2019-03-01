@@ -1,4 +1,5 @@
 import math
 
 
-math.inf = float('inf')
+if not hasattr(math, 'inf'):
+    math.inf = float('inf')

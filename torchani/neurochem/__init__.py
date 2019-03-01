@@ -11,7 +11,7 @@ import itertools
 import ignite
 import math
 import timeit
-import _six  # noqa:F401
+from . import _six  # noqa:F401
 import collections
 import sys
 from ..nn import ANIModel, Ensemble, Gaussian
