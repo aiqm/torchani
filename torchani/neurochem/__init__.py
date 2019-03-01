@@ -448,8 +448,7 @@ if sys.version_info[0] > 2:
                 | SIGNED_FLOAT
                 | STRING_VALUE
 
-            STRING_VALUE : ("_"|"-"|"."|"/"|LETTER)
-                ("_"|"-"|"."|"/"|LETTER|DIGIT)*
+            STRING_VALUE : ("_"|"-"|"."|"/"|LETTER)("_"|"-"|"."|"/"|LETTER|DIGIT)*
 
             %import common.SIGNED_NUMBER
             %import common.LETTER
@@ -462,7 +461,7 @@ if sys.version_info[0] > 2:
             %import common.WS
             %ignore WS
             %ignore /!.*/
-            ''')
+            ''')  # noqa: E501
             tree = parser.parse(txt)
 
             class TreeExec(lark.Transformer):
