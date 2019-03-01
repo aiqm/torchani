@@ -19,7 +19,7 @@ steps:
   inputs:
     versionSpec: '$(python.version)'
 
-- script: 'azure/install_dependencies.sh && pip install .'
+- script: 'azure/install_dependencies.sh && pip install future && pip install .'
   displayName: 'Install dependencies'
 
 - script: 'python2 examples/energy_force.py'
