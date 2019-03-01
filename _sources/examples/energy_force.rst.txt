@@ -20,6 +20,7 @@ To begin with, let's first import the modules we will use:
 
 .. code-block:: python
 
+    from __future__ import print_function
     import torch
     import torchani
 
@@ -129,7 +130,7 @@ And print to see the result:
             [-0.0187,  0.0049,  0.0521]])
 
 
-**Total running time of the script:** ( 0 minutes  1.885 seconds)
+**Total running time of the script:** ( 0 minutes  2.127 seconds)
 
 
 .. _sphx_glr_download_examples_energy_force.py:

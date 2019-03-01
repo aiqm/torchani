@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.ase &mdash; TorchANI 0.3 documentation</title>
+  <title>torchani.ase &mdash; TorchANI 0.3.1 documentation</title>
   
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                0.3
+                0.3.1
               </div>
             
           
@@ -176,6 +176,7 @@
 <span class="sd">    https://wiki.fysik.dtu.dk/ase</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">ase.neighborlist</span>
@@ -231,7 +232,7 @@
                                  <span class="n">dtype</span><span class="o">=</span><span class="n">coordinates</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
             <span class="n">cell</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cell</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">coordinates</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
                                 <span class="n">dtype</span><span class="o">=</span><span class="n">coordinates</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-            <span class="n">D</span> <span class="o">+=</span> <span class="n">shift</span> <span class="o">@</span> <span class="n">cell</span>
+            <span class="n">D</span> <span class="o">+=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">shift</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span>
             <span class="n">d</span> <span class="o">=</span> <span class="n">D</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">neighbor_species1</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">neighbor_distances1</span> <span class="o">=</span> <span class="p">[]</span>

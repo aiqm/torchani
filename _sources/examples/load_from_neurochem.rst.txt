@@ -501,8 +501,8 @@ You can also create an ASE calculator using the ensemble or single model:
 
  .. code-block:: none
 
-    <torchani.ase.Calculator object at 0x7ff4a92890f0>
-    <torchani.ase.Calculator object at 0x7ff4a92890f0>
+    <torchani.ase.Calculator object at 0x7f88a3850c50>
+    <torchani.ase.Calculator object at 0x7f88a3850c50>
 
 
 Now let's define a methane molecule
@@ -623,7 +623,7 @@ We can do the same thing with the single model:
      [-0.01562626  0.00682809  0.05653343]]
 
 
-**Total running time of the script:** ( 0 minutes  3.192 seconds)
+**Total running time of the script:** ( 0 minutes  3.275 seconds)
 
 
 .. _sphx_glr_download_examples_load_from_neurochem.py:
