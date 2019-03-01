@@ -16,6 +16,7 @@ calculator.
 
 ###############################################################################
 # To begin with, let's first import the modules we will use:
+from __future__ import print_function
 from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
 from ase.optimize import BFGS
