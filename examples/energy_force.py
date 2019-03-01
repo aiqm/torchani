@@ -9,6 +9,7 @@ TorchANI and can be used directly.
 
 ###############################################################################
 # To begin with, let's first import the modules we will use:
+from __future__ import print_function
 import torch
 import torchani
 
