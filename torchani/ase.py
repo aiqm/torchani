@@ -15,7 +15,7 @@ import ase.units
 import copy
 
 
-class NeighborList:
+class NeighborList(torch.nn.Module):
     """ASE neighborlist computer
 
     Arguments:
@@ -29,7 +29,7 @@ class NeighborList:
         self.pbc = a.get_pbc()
         self.cell = a.get_cell(complete=True)
 
-    def __call__(self, species, coordinates, cutoff):
+    def forward(self, species, coordinates, cutoff):
         conformations = species.shape[0]
         max_atoms = species.shape[1]
         neighbor_species = []
