@@ -230,9 +230,9 @@ class AEVComputer(torch.nn.Module):
         species_a1, species_a2 = self._combinations(species_a, -1)
         mask_a1 = (species_a1.unsqueeze(-1) == present_species).unsqueeze(-1)
         mask_a2 = (species_a2.unsqueeze(-1).unsqueeze(-1) == present_species)
-        mask = mask_a1 * mask_a2
+        mask = mask_a1 & mask_a2
         mask_rev = mask.permute(0, 1, 2, 4, 3)
-        mask_a = (mask + mask_rev) > 0
+        mask_a = mask | mask_rev
         return mask_a
 
     def _assemble(self, radial_terms, angular_terms, present_species,
