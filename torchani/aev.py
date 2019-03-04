@@ -266,12 +266,14 @@ class AEVComputer(torch.nn.Module):
         # assemble angular subaev
         rev_indices = self.EtaR.new_full((self.num_species,),
                                          -1, dtype=torch.int64)
-        rev_indices[present_species] = torch.arange(present_species.numel())
+        rev_indices[present_species] = torch.arange(present_species.numel(),
+                                                    device=self.EtaR.device)
         angular_aevs = []
         zero_angular_subaev = self.EtaR.new_zeros(
             conformations, atoms, self.angular_sublength())
         for s1, s2 in torch.combinations(
-                torch.arange(self.num_species), 2, with_replacement=True):
+                torch.arange(self.num_species, device=self.EtaR.device),
+                2, with_replacement=True):
             i1 = rev_indices[s1].item()
             i2 = rev_indices[s2].item()
             if i1 >= 0 and i2 >= 0:
