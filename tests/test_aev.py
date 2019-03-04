@@ -97,7 +97,9 @@ class TestAEVASENeighborList(TestAEV):
 
     def setUp(self):
         super(TestAEVASENeighborList, self).setUp()
-        self.aev_computer.neighborlist = torchani.ase.NeighborList()
+        builtins = torchani.neurochem.Builtins()
+        self.aev_computer = torchani.AEVComputer(**builtins.consts,
+            neighborlist_computer=torchani.ase.NeighborList())
 
     def transform(self, x):
         """To reduce the size of test cases for faster test speed"""

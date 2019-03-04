@@ -106,24 +106,29 @@ class AEVComputer(torch.jit.ScriptModule):
         self.num_species = num_species
         self.neighborlist = neighborlist_computer
 
+    @torch.jit.script_method
     def radial_sublength(self):
         """Returns the length of radial subaev of a single species"""
         return self.EtaR.numel() * self.ShfR.numel()
 
+    @torch.jit.script_method
     def radial_length(self):
         """Returns the length of full radial aev"""
         return self.num_species * self.radial_sublength()
 
+    @torch.jit.script_method
     def angular_sublength(self):
         """Returns the length of angular subaev of a single species"""
         return self.EtaA.numel() * self.Zeta.numel() * self.ShfA.numel() * \
             self.ShfZ.numel()
 
+    @torch.jit.script_method
     def angular_length(self):
         """Returns the length of full angular aev"""
         s = self.num_species
         return (s * (s + 1)) // 2 * self.angular_sublength()
 
+    @torch.jit.script_method
     def aev_length(self):
         """Returns the length of full aev"""
         return self.radial_length() + self.angular_length()
@@ -194,7 +199,7 @@ class AEVComputer(torch.jit.ScriptModule):
         # dimension vector
         return ret.flatten(start_dim=-4)
 
-    @torch.jit.script_method
+    # @torch.jit.script_method
     def _terms_and_indices(self, species, coordinates):
         """Returns radial and angular subAEV terms, these terms will be sorted
         according to their distances to central atoms, and only these within
@@ -226,7 +231,7 @@ class AEVComputer(torch.jit.ScriptModule):
         return tensor.index_select(dim, index1), \
             tensor.index_select(dim, index2)
 
-    @torch.jit.script_method
+    # @torch.jit.script_method
     def _compute_mask_r(self, species_r):
         """Get mask of radial terms for each supported species from indices"""
         mask_r = (species_r.unsqueeze(-1) ==

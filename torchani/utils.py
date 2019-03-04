@@ -67,7 +67,7 @@ def pad_coordinates(species_coordinates):
 
 
 @torch.jit.script
-def present_species(species: LongTensor):
+def present_species(species):
     """Given a vector of species of atoms, compute the unique species present.
 
     Arguments:
@@ -77,7 +77,7 @@ def present_species(species: LongTensor):
         :class:`torch.Tensor`: 1D vector storing present atom types sorted.
     """
     present_species, _ = species.flatten()._unique(sorted=True)
-    if present_species[0].item() == -1:
+    if int(present_species[0]) == -1:
         present_species = present_species[1:]
     return present_species
 
