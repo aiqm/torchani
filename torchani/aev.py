@@ -1,3 +1,4 @@
+from __future__ import division
 import torch
 import itertools
 from . import _six  # noqa:F401
