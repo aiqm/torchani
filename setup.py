@@ -28,7 +28,7 @@ setup_attrs = {
     ],
 }
 
-if sys.version[0] < 3:
+if sys.version_info[0] < 3:
     setup_attrs['install_requires'].append('typing')
 
 setup(**setup_attrs)
