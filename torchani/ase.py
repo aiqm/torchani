@@ -138,7 +138,8 @@ class Calculator(ase.calculators.calculator.Calculator):
         super(Calculator, self).calculate(atoms, properties, system_changes)
         if not self._default_neighborlist:
             self.aev_computer.neighborlist.pbc = self.atoms.get_pbc()
-            self.aev_computer.neighborlist.cell = self.atoms.get_cell(complete=True)
+            self.aev_computer.neighborlist.cell = \
+                self.atoms.get_cell(complete=True)
         species = self.species_to_tensor(self.atoms.get_chemical_symbols())
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions())
