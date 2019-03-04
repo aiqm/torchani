@@ -25,6 +25,7 @@ class NeighborList(torch.nn.Module):
 
     def __init__(self, cell=None, pbc=None):
         # wrap `cell` and `pbc` with `ase.Atoms`
+        super(NeighborList, self).__init__()
         a = ase.Atoms('He', [[0, 0, 0]], cell=cell, pbc=pbc)
         self.pbc = a.get_pbc()
         self.cell = a.get_cell(complete=True)
