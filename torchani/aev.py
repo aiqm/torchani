@@ -1,5 +1,4 @@
 import torch
-import itertools
 from . import _six  # noqa:F401
 import math
 from . import utils
@@ -265,13 +264,14 @@ class AEVComputer(torch.nn.Module):
         radial_aevs = present_radial_aevs.flatten(start_dim=2)
 
         # assemble angular subaev
-        rev_indices = self.EtaR.new_full((self.num_species,), -1, dtype=torch.int64)
+        rev_indices = self.EtaR.new_full((self.num_species,),
+                                         -1, dtype=torch.int64)
         rev_indices[present_species] = torch.arange(present_species.numel())
         angular_aevs = []
         zero_angular_subaev = self.EtaR.new_zeros(
             conformations, atoms, self.angular_sublength())
         for s1, s2 in torch.combinations(
-            torch.arange(self.num_species), 2, with_replacement=True):
+                torch.arange(self.num_species), 2, with_replacement=True):
             i1 = rev_indices[s1].item()
             i2 = rev_indices[s2].item()
             if i1 >= 0 and i2 >= 0:
