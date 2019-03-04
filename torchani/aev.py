@@ -203,11 +203,6 @@ class AEVComputer(torch.nn.Module):
         vec = self._combinations(vec, -2)
         angular_terms = self._angular_subaev_terms(*vec)
 
-        # Returned tensors has shape:
-        # (conformations, atoms, neighbors, ``self.radial_sublength()``)
-        # (conformations, atoms, pairs, ``self.angular_sublength()``)
-        # (conformations, atoms, neighbors)
-        # (conformations, atoms, pairs)
         return radial_terms, angular_terms, species_
 
     def _combinations(self, tensor, dim=0):
