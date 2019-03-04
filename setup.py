@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+import sys
 
 setup_attrs = {
     'name': 'torchani',
@@ -26,5 +27,8 @@ setup_attrs = {
         'coverage',
     ],
 }
+
+if sys.version[0] < 3:
+    setup_attrs['install_requires'].append('typing')
 
 setup(**setup_attrs)
