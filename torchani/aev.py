@@ -200,7 +200,7 @@ class AEVComputer(torch.jit.ScriptModule):
         # dimension vector
         return ret.flatten(start_dim=-4)
 
-    # @torch.jit.script_method
+    @torch.jit.script_method
     def _terms_and_indices(self, species, coordinates):
         """Returns radial and angular subAEV terms, these terms will be sorted
         according to their distances to central atoms, and only these within
