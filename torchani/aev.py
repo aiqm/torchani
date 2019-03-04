@@ -138,7 +138,7 @@ def _compute_mask_r(species_r, num_species):
     # type: (Tensor, int) -> Tensor
     """Get mask of radial terms for each supported species from indices"""
     mask_r = (species_r.unsqueeze(-1) ==
-                torch.arange(num_species, device=species_r.device))
+              torch.arange(num_species, device=species_r.device))
     return mask_r
 
 
