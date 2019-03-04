@@ -1,5 +1,4 @@
 import torch
-from torch import LongTensor
 
 
 def pad(species):

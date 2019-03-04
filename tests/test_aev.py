@@ -98,7 +98,8 @@ class TestAEVASENeighborList(TestAEV):
     def setUp(self):
         super(TestAEVASENeighborList, self).setUp()
         builtins = torchani.neurochem.Builtins()
-        self.aev_computer = torchani.AEVComputer(**builtins.consts,
+        self.aev_computer = torchani.AEVComputer(
+            **builtins.consts,
             neighborlist_computer=torchani.ase.NeighborList())
 
     def transform(self, x):

@@ -4,10 +4,12 @@ from . import _six  # noqa:F401
 import math
 from . import utils
 from typing import Tuple
+from torch import Tensor
 
 
 @torch.jit.script
-def _cutoff_cosine(distances, cutoff:float):
+def _cutoff_cosine(distances, cutoff):
+    # type: (Tensor, float) -> Tensor
     return torch.where(
         distances <= cutoff,
         0.5 * torch.cos(math.pi * distances / cutoff) + 0.5,
@@ -16,7 +18,8 @@ def _cutoff_cosine(distances, cutoff:float):
 
 
 @torch.jit.script
-def default_neighborlist(species, coordinates, cutoff:float):
+def default_neighborlist(species, coordinates, cutoff):
+    # type: (Tensor, Tensor, float) -> Tensor, Tensor, Tensor
     """Default neighborlist computer"""
 
     vec = coordinates.unsqueeze(2) - coordinates.unsqueeze(1)
@@ -223,7 +226,8 @@ class AEVComputer(torch.jit.ScriptModule):
         return radial_terms, angular_terms, species_
 
     @torch.jit.script_method
-    def _combinations(self, tensor, dim:int=0):
+    def _combinations(self, tensor, dim=0):
+        # type: (Tensor, int) -> Tensor, Tensor
         n = tensor.shape[dim]
         if n == 0:
             return tensor, tensor
@@ -301,7 +305,7 @@ class AEVComputer(torch.jit.ScriptModule):
         return radial_aevs, torch.cat(angular_aevs, dim=2)
 
     @torch.jit.script_method
-    def forward(self, species_coordinates:Tuple[torch.Tensor, torch.Tensor]):
+    def forward(self, species_coordinates):
         """Compute AEVs
 
         Arguments:
@@ -315,6 +319,7 @@ class AEVComputer(torch.jit.ScriptModule):
             unchanged, and AEVs is a tensor of shape
             ``(C, A, self.aev_length())``
         """
+        # type: (Tuple[Tensor, Tensor]) -> Tensor, Tensor
         species, coordinates = species_coordinates
 
         present_species = utils.present_species(species)
