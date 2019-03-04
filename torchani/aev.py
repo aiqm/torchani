@@ -236,7 +236,7 @@ class AEVComputer(torch.jit.ScriptModule):
         return tensor.index_select(dim, index1), \
             tensor.index_select(dim, index2)
 
-    # @torch.jit.script_method
+    @torch.jit.script_method
     def _compute_mask_r(self, species_r):
         """Get mask of radial terms for each supported species from indices"""
         mask_r = (species_r.unsqueeze(-1) ==
