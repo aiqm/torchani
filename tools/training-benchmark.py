@@ -92,10 +92,10 @@ def time_func(key, func):
 
 
 # enable timers
-nnp[0]._radial_subaev_terms = time_func('radial terms',
-                                        nnp[0]._radial_subaev_terms)
-nnp[0]._angular_subaev_terms = time_func('angular terms',
-                                         nnp[0]._angular_subaev_terms)
+torchani.aev._radial_subaev_terms = time_func(
+    'radial terms', torchani.aev._radial_subaev_terms)
+torchani.aev._angular_subaev_terms = time_func(
+    'angular terms', torchani.aev._angular_subaev_terms)
 nnp[0]._terms_and_indices = time_func('terms and indices',
                                       nnp[0]._terms_and_indices)
 nnp[0]._combinations = time_func('combinations', nnp[0]._combinations)

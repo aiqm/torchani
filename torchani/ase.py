@@ -15,7 +15,7 @@ import ase.units
 import copy
 
 
-class NeighborList:
+class NeighborList(torch.nn.Module):
     """ASE neighborlist computer
 
     Arguments:
@@ -25,11 +25,12 @@ class NeighborList:
 
     def __init__(self, cell=None, pbc=None):
         # wrap `cell` and `pbc` with `ase.Atoms`
+        super(NeighborList, self).__init__()
         a = ase.Atoms('He', [[0, 0, 0]], cell=cell, pbc=pbc)
         self.pbc = a.get_pbc()
         self.cell = a.get_cell(complete=True)
 
-    def __call__(self, species, coordinates, cutoff):
+    def forward(self, species, coordinates, cutoff):
         conformations = species.shape[0]
         max_atoms = species.shape[1]
         neighbor_species = []
@@ -136,9 +137,9 @@ class Calculator(ase.calculators.calculator.Calculator):
                   system_changes=ase.calculators.calculator.all_changes):
         super(Calculator, self).calculate(atoms, properties, system_changes)
         if not self._default_neighborlist:
-            self.aev_computer.neighborlist = NeighborList(
-                cell=self.atoms.get_cell(complete=True),
-                pbc=self.atoms.get_pbc())
+            self.aev_computer.neighborlist.pbc = self.atoms.get_pbc()
+            self.aev_computer.neighborlist.cell = \
+                self.atoms.get_cell(complete=True)
         species = self.species_to_tensor(self.atoms.get_chemical_symbols())
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions())
