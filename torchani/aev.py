@@ -19,7 +19,7 @@ def _cutoff_cosine(distances, cutoff):
 
 @torch.jit.script
 def default_neighborlist(species, coordinates, cutoff):
-    # type: (Tensor, Tensor, float) -> Tensor, Tensor, Tensor
+    # type: (Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor]
     """Default neighborlist computer"""
 
     vec = coordinates.unsqueeze(2) - coordinates.unsqueeze(1)
@@ -227,7 +227,7 @@ class AEVComputer(torch.jit.ScriptModule):
 
     @torch.jit.script_method
     def _combinations(self, tensor, dim=0):
-        # type: (Tensor, int) -> Tensor, Tensor
+        # type: (Tensor, int) -> Tuple[Tensor, Tensor]
         n = tensor.shape[dim]
         if n == 0:
             return tensor, tensor
@@ -318,7 +318,7 @@ class AEVComputer(torch.jit.ScriptModule):
             unchanged, and AEVs is a tensor of shape
             ``(C, A, self.aev_length())``
         """
-        # type: (Tuple[Tensor, Tensor]) -> Tensor, Tensor
+        # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
         species, coordinates = species_coordinates
 
         present_species = utils.present_species(species)
