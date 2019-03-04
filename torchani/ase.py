@@ -5,6 +5,7 @@
     https://wiki.fysik.dtu.dk/ase
 """
 
+from __future__ import absolute_import
 import math
 import torch
 import ase.neighborlist
@@ -60,7 +61,7 @@ class NeighborList:
                                  dtype=coordinates.dtype)
             cell = torch.tensor(self.cell, device=coordinates.device,
                                 dtype=coordinates.dtype)
-            D += shift @ cell
+            D += torch.mm(shift, cell)
             d = D.norm(2, -1)
             neighbor_species1 = []
             neighbor_distances1 = []
