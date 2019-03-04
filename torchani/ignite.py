@@ -31,7 +31,7 @@ class Container(torch.nn.ModuleDict):
         results = {k: [] for k in self}
         for sx in species_x:
             for k in self:
-                _, result = self[k](sx)
+                _, result = self[k](tuple(sx))
                 results[k].append(result)
         for k in self:
             results[k] = torch.cat(results[k])
