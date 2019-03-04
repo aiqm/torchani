@@ -270,8 +270,8 @@ class AEVComputer(torch.nn.Module):
         angular_aevs = []
         zero_angular_subaev = self.EtaR.new_zeros(
             conformations, atoms, self.angular_sublength())
-        for s1, s2 in itertools.combinations_with_replacement(
-                                        range(self.num_species), 2):
+        for s1, s2 in torch.combinations(
+            torch.arange(self.num_species), 2, with_replacement=True):
             i1 = rev_indices[s1].item()
             i2 = rev_indices[s2].item()
             if i1 >= 0 and i2 >= 0:
