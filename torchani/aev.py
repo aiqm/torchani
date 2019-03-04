@@ -231,7 +231,7 @@ class AEVComputer(torch.jit.ScriptModule):
         n = tensor.shape[dim]
         if n == 0:
             return tensor, tensor
-        r = torch.arange(n, dtype=torch.long, device=tensor.device)
+        r = torch.arange(n, device=tensor.device)
         index1, index2 = torch.combinations(r).unbind(-1)
         return tensor.index_select(dim, index1), \
             tensor.index_select(dim, index2)
@@ -288,9 +288,8 @@ class AEVComputer(torch.jit.ScriptModule):
         rev_indices = {present_species[i].item(): i
                        for i in range(len(present_species))}
         angular_aevs = []
-        zero_angular_subaev = torch.zeros(
-            conformations, atoms, self.angular_sublength(),
-            dtype=self.EtaR.dtype, device=self.EtaR.device)
+        zero_angular_subaev = self.EtaR.new_zeros(
+            conformations, atoms, self.angular_sublength())
         for s1, s2 in itertools.combinations_with_replacement(
                                         range(self.num_species), 2):
             if s1 in rev_indices and s2 in rev_indices:
