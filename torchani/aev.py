@@ -3,9 +3,13 @@ import itertools
 from . import _six  # noqa:F401
 import math
 from . import utils
+from torch import Tensor
+from typing import Tuple
 
 
+@torch.jit.script
 def _cutoff_cosine(distances, cutoff):
+    # type: (Tensor, float) -> Tensor
     return torch.where(
         distances <= cutoff,
         0.5 * torch.cos(math.pi * distances / cutoff) + 0.5,
@@ -13,7 +17,79 @@ def _cutoff_cosine(distances, cutoff):
     )
 
 
+@torch.jit.script
+def _radial_subaev_terms(Rcr, EtaR, ShfR, distances):
+    # type: (float, Tensor, Tensor, Tensor) -> Tensor
+    """Compute the radial subAEV terms of the center atom given neighbors
+
+    This correspond to equation (3) in the `ANI paper`_. This function just
+    compute the terms. The sum in the equation is not computed.
+    The input tensor have shape (conformations, atoms, N), where ``N``
+    is the number of neighbor atoms within the cutoff radius and output
+    tensor should have shape
+    (conformations, atoms, ``self.radial_sublength()``)
+
+    .. _ANI paper:
+        http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
+    """
+    distances = distances.unsqueeze(-1).unsqueeze(-1)
+    fc = _cutoff_cosine(distances, Rcr)
+    # Note that in the equation in the paper there is no 0.25
+    # coefficient, but in NeuroChem there is such a coefficient.
+    # We choose to be consistent with NeuroChem instead of the paper here.
+    ret = 0.25 * torch.exp(-EtaR * (distances - ShfR)**2) * fc
+    # At this point, ret now have shape
+    # (conformations, atoms, N, ?, ?) where ? depend on constants.
+    # We then should flat the last 4 dimensions to view the subAEV as one
+    # dimension vector
+    return ret.flatten(start_dim=-2)
+
+
+@torch.jit.script
+def _angular_subaev_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
+    # type: (float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
+    """Compute the angular subAEV terms of the center atom given neighbor pairs.
+
+    This correspond to equation (4) in the `ANI paper`_. This function just
+    compute the terms. The sum in the equation is not computed.
+    The input tensor have shape (conformations, atoms, N), where N
+    is the number of neighbor atom pairs within the cutoff radius and
+    output tensor should have shape
+    (conformations, atoms, ``self.angular_sublength()``)
+
+    .. _ANI paper:
+        http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
+    """
+    vectors1 = vectors1.unsqueeze(
+        -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+    vectors2 = vectors2.unsqueeze(
+        -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+    distances1 = vectors1.norm(2, dim=-5)
+    distances2 = vectors2.norm(2, dim=-5)
+
+    # 0.95 is multiplied to the cos values to prevent acos from
+    # returning NaN.
+    cos_angles = 0.95 * \
+        torch.nn.functional.cosine_similarity(
+            vectors1, vectors2, dim=-5)
+    angles = torch.acos(cos_angles)
+
+    fcj1 = _cutoff_cosine(distances1, Rca)
+    fcj2 = _cutoff_cosine(distances2, Rca)
+    factor1 = ((1 + torch.cos(angles - ShfZ)) / 2) ** Zeta
+    factor2 = torch.exp(-EtaA *
+                        ((distances1 + distances2) / 2 - ShfA) ** 2)
+    ret = 2 * factor1 * factor2 * fcj1 * fcj2
+    # At this point, ret now have shape
+    # (conformations, atoms, N, ?, ?, ?, ?) where ? depend on constants.
+    # We then should flat the last 4 dimensions to view the subAEV as one
+    # dimension vector
+    return ret.flatten(start_dim=-4)
+
+
+@torch.jit.script
 def default_neighborlist(species, coordinates, cutoff):
+    # type: (Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor]
     """Default neighborlist computer"""
 
     vec = coordinates.unsqueeze(2) - coordinates.unsqueeze(1)
@@ -125,70 +201,6 @@ class AEVComputer(torch.nn.Module):
         """Returns the length of full aev"""
         return self.radial_length() + self.angular_length()
 
-    def _radial_subaev_terms(self, distances):
-        """Compute the radial subAEV terms of the center atom given neighbors
-
-        This correspond to equation (3) in the `ANI paper`_. This function just
-        compute the terms. The sum in the equation is not computed.
-        The input tensor have shape (conformations, atoms, N), where ``N``
-        is the number of neighbor atoms within the cutoff radius and output
-        tensor should have shape
-        (conformations, atoms, ``self.radial_sublength()``)
-
-        .. _ANI paper:
-            http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
-        """
-        distances = distances.unsqueeze(-1).unsqueeze(-1)
-        fc = _cutoff_cosine(distances, self.Rcr)
-        # Note that in the equation in the paper there is no 0.25
-        # coefficient, but in NeuroChem there is such a coefficient.
-        # We choose to be consistent with NeuroChem instead of the paper here.
-        ret = 0.25 * torch.exp(-self.EtaR * (distances - self.ShfR)**2) * fc
-        # At this point, ret now have shape
-        # (conformations, atoms, N, ?, ?) where ? depend on constants.
-        # We then should flat the last 4 dimensions to view the subAEV as one
-        # dimension vector
-        return ret.flatten(start_dim=-2)
-
-    def _angular_subaev_terms(self, vectors1, vectors2):
-        """Compute the angular subAEV terms of the center atom given neighbor pairs.
-
-        This correspond to equation (4) in the `ANI paper`_. This function just
-        compute the terms. The sum in the equation is not computed.
-        The input tensor have shape (conformations, atoms, N), where N
-        is the number of neighbor atom pairs within the cutoff radius and
-        output tensor should have shape
-        (conformations, atoms, ``self.angular_sublength()``)
-
-        .. _ANI paper:
-            http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
-        """
-        vectors1 = vectors1.unsqueeze(
-            -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-        vectors2 = vectors2.unsqueeze(
-            -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-        distances1 = vectors1.norm(2, dim=-5)
-        distances2 = vectors2.norm(2, dim=-5)
-
-        # 0.95 is multiplied to the cos values to prevent acos from
-        # returning NaN.
-        cos_angles = 0.95 * \
-            torch.nn.functional.cosine_similarity(
-                vectors1, vectors2, dim=-5)
-        angles = torch.acos(cos_angles)
-
-        fcj1 = _cutoff_cosine(distances1, self.Rca)
-        fcj2 = _cutoff_cosine(distances2, self.Rca)
-        factor1 = ((1 + torch.cos(angles - self.ShfZ)) / 2) ** self.Zeta
-        factor2 = torch.exp(-self.EtaA *
-                            ((distances1 + distances2) / 2 - self.ShfA) ** 2)
-        ret = 2 * factor1 * factor2 * fcj1 * fcj2
-        # At this point, ret now have shape
-        # (conformations, atoms, N, ?, ?, ?, ?) where ? depend on constants.
-        # We then should flat the last 4 dimensions to view the subAEV as one
-        # dimension vector
-        return ret.flatten(start_dim=-4)
-
     def _terms_and_indices(self, species, coordinates):
         """Returns radial and angular subAEV terms, these terms will be sorted
         according to their distances to central atoms, and only these within
@@ -198,16 +210,11 @@ class AEVComputer(torch.nn.Module):
         max_cutoff = max(self.Rcr, self.Rca)
         species_, distances, vec = self.neighborlist(species, coordinates,
                                                      max_cutoff)
-        radial_terms = self._radial_subaev_terms(distances)
+        radial_terms = _radial_subaev_terms(self.Rcr, self.EtaR, self.ShfR, distances)
 
         vec = self._combinations(vec, -2)
-        angular_terms = self._angular_subaev_terms(*vec)
+        angular_terms = _angular_subaev_terms(self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA, *vec)
 
-        # Returned tensors has shape:
-        # (conformations, atoms, neighbors, ``self.radial_sublength()``)
-        # (conformations, atoms, pairs, ``self.angular_sublength()``)
-        # (conformations, atoms, neighbors)
-        # (conformations, atoms, pairs)
         return radial_terms, angular_terms, species_
 
     def _combinations(self, tensor, dim=0):
