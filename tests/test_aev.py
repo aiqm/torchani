@@ -14,7 +14,7 @@ class TestAEV(unittest.TestCase):
     def setUp(self):
         builtins = torchani.neurochem.Builtins()
         self.aev_computer = builtins.aev_computer
-        self.radial_length = self.aev_computer.radial_length()
+        self.radial_length = self.aev_computer.radial_length
         self.tolerance = 1e-5
 
     def random_skip(self):
