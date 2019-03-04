@@ -210,10 +210,12 @@ class AEVComputer(torch.nn.Module):
         max_cutoff = max(self.Rcr, self.Rca)
         species_, distances, vec = self.neighborlist(species, coordinates,
                                                      max_cutoff)
-        radial_terms = _radial_subaev_terms(self.Rcr, self.EtaR, self.ShfR, distances)
+        radial_terms = _radial_subaev_terms(self.Rcr, self.EtaR,
+                                            self.ShfR, distances)
 
         vec = self._combinations(vec, -2)
-        angular_terms = _angular_subaev_terms(self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA, *vec)
+        angular_terms = _angular_subaev_terms(self.Rca, self.ShfZ, self.EtaA,
+                                              self.Zeta, self.ShfA, *vec)
 
         return radial_terms, angular_terms, species_
 
