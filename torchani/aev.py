@@ -195,7 +195,7 @@ class AEVComputer(torch.nn.Module):
         cutoff radius are valid. The returned indices stores the source of data
         before sorting.
         """
-        max_cutoff = max([self.Rcr, self.Rca])
+        max_cutoff = max(self.Rcr, self.Rca)
         species_, distances, vec = self.neighborlist(species, coordinates,
                                                      max_cutoff)
         radial_terms = self._radial_subaev_terms(distances)
