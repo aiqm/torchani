@@ -173,7 +173,7 @@ def _assemble(radial_terms, angular_terms, present_species,
         mask_a (:class:`torch.Tensor`): shape (conformations, atoms,
             pairs, present species, present species)
     """
-    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, int, int) -> Tuple[Tensor, Tensor]
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, int, int) -> Tuple[Tensor, Tensor]  # noqa: E501
 
     conformations = radial_terms.shape[0]
     atoms = radial_terms.shape[1]
@@ -202,7 +202,8 @@ def _assemble(radial_terms, angular_terms, present_species,
             i1 = rev_indices[s1].item()
             i2 = rev_indices[s2].item()
             if i1 >= 0 and i2 >= 0:
-                mask = mask_a[:, :, :, i1, i2].unsqueeze(-1).type(radial_terms.dtype)
+                mask = mask_a[:, :, :, i1, i2].unsqueeze(-1) \
+                                              .type(radial_terms.dtype)
                 subaev = (angular_terms * mask).sum(-2)
             else:
                 subaev = zero_angular_subaev
