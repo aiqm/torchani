@@ -240,7 +240,7 @@ def _assemble(radial_terms, angular_terms, present_species,
 @torch.jit.script
 def _compute_aev(num_species, angular_sublength, Rcr, EtaR, ShfR, Rca, ShfZ,
                  EtaA, Zeta, ShfA, species, species_, distances, vec):
-    # type: (int, int, float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tuple[Tensor, Tensor]  # noqa: E501
+    # type: (int, int, float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tuple[Tensor, Tensor]  # noqa: E501
 
     present_species = utils.present_species(species)
 
