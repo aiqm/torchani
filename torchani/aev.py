@@ -256,7 +256,7 @@ def _compute_aev(num_species, angular_sublength, Rcr, EtaR, ShfR, Rca, ShfZ,
     return species, fullaev
 
 
-class AEVComputer(torch.jit.Module):
+class AEVComputer(torch.nn.Module):
     r"""The AEV computer that takes coordinates as input and outputs aevs.
 
     Arguments:
