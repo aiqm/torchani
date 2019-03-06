@@ -121,24 +121,25 @@ def default_neighborlist(species, coordinates, cutoff):
     return neighbor_species, neighbor_distances, neighbor_coordinates
 
 
-# @torch.jit.script
+@torch.jit.script
 def _combinations(tensor, dim=0):
     # type: (Tensor, int) -> Tuple[Tensor, Tensor]
     n = tensor.shape[dim]
     if n == 0:
         return tensor, tensor
-    r = torch.arange(n, device=tensor.device)
+    r = torch.arange(n, dtype=torch.long, device=tensor.device)
     index1, index2 = torch.combinations(r).unbind(-1)
     return tensor.index_select(dim, index1), \
         tensor.index_select(dim, index2)
 
 
-# @torch.jit.script
+@torch.jit.script
 def _compute_mask_r(species_r, num_species):
     # type: (Tensor, int) -> Tensor
     """Get mask of radial terms for each supported species from indices"""
     mask_r = (species_r.unsqueeze(-1) ==
-              torch.arange(num_species, device=species_r.device))
+              torch.arange(num_species, dtype=torch.long,
+                           device=species_r.device))
     return mask_r
 
 
@@ -172,41 +173,45 @@ def _assemble(radial_terms, angular_terms, present_species,
         mask_a (:class:`torch.Tensor`): shape (conformations, atoms,
             pairs, present species, present species)
     """
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, int, int) -> Tuple[Tensor, Tensor]
+
     conformations = radial_terms.shape[0]
     atoms = radial_terms.shape[1]
 
     # assemble radial subaev
     present_radial_aevs = (
         radial_terms.unsqueeze(-2) *
-        mask_r.unsqueeze(-1).type(radial_terms.dtype)
+        mask_r.unsqueeze(-1).to(radial_terms.dtype)
     ).sum(-3)
     # present_radial_aevs has shape
     # (conformations, atoms, present species, radial_length)
     radial_aevs = present_radial_aevs.flatten(start_dim=2)
 
     # assemble angular subaev
-    rev_indices = present_species.new_full((num_species,), -1)
+    rev_indices = torch.full((num_species,), -1, dtype=present_species.dtype,
+                             device=present_species.device)
     rev_indices[present_species] = torch.arange(present_species.numel(),
+                                                dtype=torch.long,
                                                 device=radial_terms.device)
     angular_aevs = []
-    zero_angular_subaev = radial_terms.new_zeros(
-        conformations, atoms, angular_sublength)
-    for s1, s2 in torch.combinations(
-            torch.arange(num_species, device=radial_terms.device),
-            2, with_replacement=True):
-        i1 = rev_indices[s1].item()
-        i2 = rev_indices[s2].item()
-        if i1 >= 0 and i2 >= 0:
-            mask = mask_a[..., i1, i2].unsqueeze(-1).type(radial_terms.dtype)
-            subaev = (angular_terms * mask).sum(-2)
-        else:
-            subaev = zero_angular_subaev
-        angular_aevs.append(subaev)
+    zero_angular_subaev = torch.zeros(conformations, atoms, angular_sublength,
+                                      dtype=torch.long,
+                                      device=radial_terms.device)
+    for s1 in range(num_species):
+        for s2 in range(s1, num_species):
+            i1 = rev_indices[s1].item()
+            i2 = rev_indices[s2].item()
+            if i1 >= 0 and i2 >= 0:
+                mask = mask_a[:, :, :, i1, i2].unsqueeze(-1).type(radial_terms.dtype)
+                subaev = (angular_terms * mask).sum(-2)
+            else:
+                subaev = zero_angular_subaev
+            angular_aevs.append(subaev)
 
     return radial_aevs, torch.cat(angular_aevs, dim=2)
 
 
-class AEVComputer(torch.nn.Module):
+class AEVComputer(torch.jit.ScriptModule):
     r"""The AEV computer that takes coordinates as input and outputs aevs.
 
     Arguments:
@@ -245,6 +250,9 @@ class AEVComputer(torch.nn.Module):
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
     """
+    __constants__ = ['Rcr', 'Rca', 'num_species', 'radial_sublength',
+                     'radial_length', 'angular_sublength', 'angular_length',
+                     'aev_length']
 
     def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ,
                  num_species, neighborlist_computer=default_neighborlist):
@@ -277,6 +285,7 @@ class AEVComputer(torch.nn.Module):
         # The length of full aev
         self.aev_length = self.radial_length + self.angular_length
 
+    @torch.jit.script_method
     def _terms_and_indices(self, species, coordinates):
         """Returns radial and angular subAEV terms, these terms will be sorted
         according to their distances to central atoms, and only these within
@@ -295,6 +304,7 @@ class AEVComputer(torch.nn.Module):
 
         return radial_terms, angular_terms, species_
 
+    @torch.jit.script_method
     def forward(self, species_coordinates):
         """Compute AEVs
 
@@ -309,6 +319,8 @@ class AEVComputer(torch.nn.Module):
             unchanged, and AEVs is a tensor of shape
             ``(C, A, self.aev_length())``
         """
+        # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
+
         species, coordinates = species_coordinates
 
         present_species = utils.present_species(species)
