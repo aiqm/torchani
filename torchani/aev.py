@@ -88,6 +88,37 @@ def _angular_subaev_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
 
 
 @torch.jit.script
+def _combinations(tensor, dim=0):
+    # type: (Tensor, int) -> Tuple[Tensor, Tensor]
+    n = tensor.shape[dim]
+    if n == 0:
+        return tensor, tensor
+    r = torch.arange(n, dtype=torch.long, device=tensor.device)
+    index1, index2 = torch.combinations(r).unbind(-1)
+    return tensor.index_select(dim, index1), \
+        tensor.index_select(dim, index2)
+
+
+@torch.jit.script
+def _terms_and_indices(Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA, distances, vec):
+    """Returns radial and angular subAEV terms, these terms will be sorted
+    according to their distances to central atoms, and only these within
+    cutoff radius are valid. The returned indices stores the source of data
+    before sorting.
+    """
+    # type: (float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tuple[Tensor, Tensor]  # noqa: E501
+
+    radial_terms = _radial_subaev_terms(Rcr, EtaR,
+                                        ShfR, distances)
+
+    vec = _combinations(vec, -2)
+    angular_terms = _angular_subaev_terms(Rca, ShfZ, EtaA,
+                                          Zeta, ShfA, *vec)
+
+    return radial_terms, angular_terms
+
+
+@torch.jit.script
 def default_neighborlist(species, coordinates, cutoff):
     # type: (Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor]
     """Default neighborlist computer"""
@@ -119,18 +150,6 @@ def default_neighborlist(species, coordinates, cutoff):
     indices_ = indices.unsqueeze(-1).expand(-1, -1, -1, 3)
     neighbor_coordinates = vec.gather(-2, indices_)
     return neighbor_species, neighbor_distances, neighbor_coordinates
-
-
-@torch.jit.script
-def _combinations(tensor, dim=0):
-    # type: (Tensor, int) -> Tuple[Tensor, Tensor]
-    n = tensor.shape[dim]
-    if n == 0:
-        return tensor, tensor
-    r = torch.arange(n, dtype=torch.long, device=tensor.device)
-    index1, index2 = torch.combinations(r).unbind(-1)
-    return tensor.index_select(dim, index1), \
-        tensor.index_select(dim, index2)
 
 
 @torch.jit.script
@@ -289,25 +308,6 @@ class AEVComputer(torch.jit.ScriptModule):
         self.aev_length = self.radial_length + self.angular_length
 
     @torch.jit.script_method
-    def _terms_and_indices(self, species, coordinates):
-        """Returns radial and angular subAEV terms, these terms will be sorted
-        according to their distances to central atoms, and only these within
-        cutoff radius are valid. The returned indices stores the source of data
-        before sorting.
-        """
-        max_cutoff = max(self.Rcr, self.Rca)
-        species_, distances, vec = self.neighborlist(species, coordinates,
-                                                     max_cutoff)
-        radial_terms = _radial_subaev_terms(self.Rcr, self.EtaR,
-                                            self.ShfR, distances)
-
-        vec = _combinations(vec, -2)
-        angular_terms = _angular_subaev_terms(self.Rca, self.ShfZ, self.EtaA,
-                                              self.Zeta, self.ShfA, *vec)
-
-        return radial_terms, angular_terms, species_
-
-    @torch.jit.script_method
     def forward(self, species_coordinates):
         """Compute AEVs
 
@@ -328,8 +328,13 @@ class AEVComputer(torch.jit.ScriptModule):
 
         present_species = utils.present_species(species)
 
-        radial_terms, angular_terms, species_ = \
-            self._terms_and_indices(species, coordinates)
+        max_cutoff = max(self.Rcr, self.Rca)
+        species_, distances, vec = self.neighborlist(species, coordinates,
+                                                     max_cutoff)
+
+        radial_terms, angular_terms = _terms_and_indices(
+            self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA,
+            self.Zeta, self.ShfA, distances, vec)
         mask_r = _compute_mask_r(species_, self.num_species)
         mask_a = _compute_mask_a(species_, present_species)
 
