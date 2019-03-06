@@ -96,12 +96,12 @@ torchani.aev._radial_subaev_terms = time_func(
     'radial terms', torchani.aev._radial_subaev_terms)
 torchani.aev._angular_subaev_terms = time_func(
     'angular terms', torchani.aev._angular_subaev_terms)
-torchani.aev._terms_and_indices = time_func('terms and indices',
-                                      torchani.aev._terms_and_indices)
-torchani.aev._compute_mask_r = time_func('mask_r',
-                                         torchani.aev._compute_mask_r)
-torchani.aev._compute_mask_a = time_func('mask_a',
-                                         torchani.aev._compute_mask_a)
+torchani.aev._terms_and_indices = time_func(
+    'terms and indices', torchani.aev._terms_and_indices)
+torchani.aev._compute_mask_r = time_func(
+    'mask_r', torchani.aev._compute_mask_r)
+torchani.aev._compute_mask_a = time_func(
+    'mask_a', torchani.aev._compute_mask_a)
 torchani.aev._assemble = time_func('assemble', torchani.aev._assemble)
 nnp[0].forward = time_func('total', nnp[0].forward)
 nnp[1].forward = time_func('forward', nnp[1].forward)

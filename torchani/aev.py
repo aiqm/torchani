@@ -100,7 +100,8 @@ def _combinations(tensor, dim=0):
 
 
 @torch.jit.script
-def _terms_and_indices(Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA, distances, vec):
+def _terms_and_indices(Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA,
+                       distances, vec):
     """Returns radial and angular subAEV terms, these terms will be sorted
     according to their distances to central atoms, and only these within
     cutoff radius are valid. The returned indices stores the source of data
@@ -217,6 +218,9 @@ def _assemble(radial_terms, angular_terms, present_species,
                                       dtype=radial_terms.dtype,
                                       device=radial_terms.device)
     for s1 in range(num_species):
+        # TODO: make PyTorch support range(start, end) and
+        # range(start, end, step) and remove the workaround
+        # below. The inner for loop should be:
         # for s2 in range(s1, num_species):
         for s2 in range(num_species - s1):
             s2 += s1
@@ -233,7 +237,26 @@ def _assemble(radial_terms, angular_terms, present_species,
     return radial_aevs, torch.cat(angular_aevs, dim=2)
 
 
-class AEVComputer(torch.jit.ScriptModule):
+@torch.jit.script
+def _compute_aev(num_species, angular_sublength, Rcr, EtaR, ShfR, Rca, ShfZ,
+                 EtaA, Zeta, ShfA, species, species_, distances, vec):
+    # type: (int, int, float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tuple[Tensor, Tensor]  # noqa: E501
+
+    present_species = utils.present_species(species)
+
+    radial_terms, angular_terms = _terms_and_indices(
+        Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA, distances, vec)
+    mask_r = _compute_mask_r(species_, num_species)
+    mask_a = _compute_mask_a(species_, present_species)
+
+    radial, angular = _assemble(radial_terms, angular_terms,
+                                present_species, mask_r, mask_a,
+                                num_species, angular_sublength)
+    fullaev = torch.cat([radial, angular], dim=2)
+    return species, fullaev
+
+
+class AEVComputer(torch.jit.Module):
     r"""The AEV computer that takes coordinates as input and outputs aevs.
 
     Arguments:
@@ -307,7 +330,7 @@ class AEVComputer(torch.jit.ScriptModule):
         # The length of full aev
         self.aev_length = self.radial_length + self.angular_length
 
-    @torch.jit.script_method
+    # @torch.jit.script_method
     def forward(self, species_coordinates):
         """Compute AEVs
 
@@ -325,21 +348,10 @@ class AEVComputer(torch.jit.ScriptModule):
         # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
 
         species, coordinates = species_coordinates
-
-        present_species = utils.present_species(species)
-
         max_cutoff = max(self.Rcr, self.Rca)
         species_, distances, vec = self.neighborlist(species, coordinates,
                                                      max_cutoff)
-
-        radial_terms, angular_terms = _terms_and_indices(
-            self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA,
-            self.Zeta, self.ShfA, distances, vec)
-        mask_r = _compute_mask_r(species_, self.num_species)
-        mask_a = _compute_mask_a(species_, present_species)
-
-        radial, angular = _assemble(radial_terms, angular_terms,
-                                    present_species, mask_r, mask_a,
-                                    self.num_species, self.angular_sublength)
-        fullaev = torch.cat([radial, angular], dim=2)
-        return species, fullaev
+        return _compute_aev(
+            self.num_species, self.angular_sublength, self.Rcr, self.EtaR,
+            self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA,
+            species, species_, distances, vec)
