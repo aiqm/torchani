@@ -195,7 +195,7 @@ def _assemble(radial_terms, angular_terms, present_species,
                                                 device=radial_terms.device)
     angular_aevs = []
     zero_angular_subaev = torch.zeros(conformations, atoms, angular_sublength,
-                                      dtype=torch.long,
+                                      dtype=radial_terms.dtype,
                                       device=radial_terms.device)
     for s1 in range(num_species):
         for s2 in range(s1, num_species):
