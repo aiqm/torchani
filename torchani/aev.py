@@ -155,7 +155,7 @@ def _compute_mask_a(species_a, present_species):
     return mask_a
 
 
-# @torch.jit.script
+@torch.jit.script
 def _assemble(radial_terms, angular_terms, present_species,
               mask_r, mask_a, num_species, angular_sublength):
     """Returns radial and angular AEV computed from terms according
@@ -198,12 +198,14 @@ def _assemble(radial_terms, angular_terms, present_species,
                                       dtype=radial_terms.dtype,
                                       device=radial_terms.device)
     for s1 in range(num_species):
-        for s2 in range(s1, num_species):
-            i1 = rev_indices[s1].item()
-            i2 = rev_indices[s2].item()
+        # for s2 in range(s1, num_species):
+        for s2 in range(num_species - s1):
+            s2 += s1
+            i1 = int(rev_indices[s1])
+            i2 = int(rev_indices[s2])
             if i1 >= 0 and i2 >= 0:
                 mask = mask_a[:, :, :, i1, i2].unsqueeze(-1) \
-                                              .type(radial_terms.dtype)
+                                              .to(radial_terms.dtype)
                 subaev = (angular_terms * mask).sum(-2)
             else:
                 subaev = zero_angular_subaev
