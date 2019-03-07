@@ -92,17 +92,6 @@ def time_func(key, func):
 
 
 # enable timers
-torchani.aev._radial_subaev_terms = time_func(
-    'radial terms', torchani.aev._radial_subaev_terms)
-torchani.aev._angular_subaev_terms = time_func(
-    'angular terms', torchani.aev._angular_subaev_terms)
-nnp[0]._terms_and_indices = time_func('terms and indices',
-                                      nnp[0]._terms_and_indices)
-torchani.aev._compute_mask_r = time_func('mask_r',
-                                         torchani.aev._compute_mask_r)
-torchani.aev._compute_mask_a = time_func('mask_a',
-                                         torchani.aev._compute_mask_a)
-torchani.aev._assemble = time_func('assemble', torchani.aev._assemble)
 nnp[0].forward = time_func('total', nnp[0].forward)
 nnp[1].forward = time_func('forward', nnp[1].forward)
 
@@ -110,12 +99,6 @@ nnp[1].forward = time_func('forward', nnp[1].forward)
 start = timeit.default_timer()
 trainer.run(dataset, max_epochs=1)
 elapsed = round(timeit.default_timer() - start, 2)
-print('Radial terms:', timers['radial terms'])
-print('Angular terms:', timers['angular terms'])
-print('Terms and indices:', timers['terms and indices'])
-print('Mask R:', timers['mask_r'])
-print('Mask A:', timers['mask_a'])
-print('Assemble:', timers['assemble'])
 print('Total AEV:', timers['total'])
 print('NN:', timers['forward'])
 print('Epoch time:', elapsed)
