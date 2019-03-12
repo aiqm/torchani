@@ -76,7 +76,7 @@ def present_species(species):
         :class:`torch.Tensor`: 1D vector storing present atom types sorted.
     """
     present_species, _ = species.flatten()._unique(sorted=True)
-    if int(present_species[0]) == -1:
+    if present_species[0].item() == -1:
         present_species = present_species[1:]
     return present_species
 
