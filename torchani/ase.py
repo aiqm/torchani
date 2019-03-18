@@ -107,6 +107,8 @@ class Calculator(ase.calculators.calculator.Calculator):
         model (:class:`torchani.ANIModel` or :class:`torchani.Ensemble`):
             neural network potential models.
         energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter.
+        dtype (:class:`torchani.EnergyShifter`): data type to use,
+            by dafault ``torch.float64``.
         _default_neighborlist (bool): Whether to ignore pbc setting and always
             use default neighborlist computer. This is for internal use only.
     """
@@ -114,7 +116,7 @@ class Calculator(ase.calculators.calculator.Calculator):
     implemented_properties = ['energy', 'forces']
 
     def __init__(self, species, aev_computer, model, energy_shifter,
-                 _default_neighborlist=False):
+                 dtype=torch.float64, _default_neighborlist=False):
         super(Calculator, self).__init__()
         self._default_neighborlist = _default_neighborlist
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
@@ -125,13 +127,13 @@ class Calculator(ase.calculators.calculator.Calculator):
         self.energy_shifter = energy_shifter
 
         self.device = self.aev_computer.EtaR.device
-        self.dtype = self.aev_computer.EtaR.dtype
+        self.dtype = dtype
 
         self.whole = torch.nn.Sequential(
             self.aev_computer,
             self.model,
             self.energy_shifter
-        )
+        ).to(dtype)
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=ase.calculators.calculator.all_changes):
