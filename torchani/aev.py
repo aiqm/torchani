@@ -5,7 +5,6 @@ import math
 from . import utils
 from torch import Tensor
 from typing import Tuple
-import copy
 
 
 @torch.jit.script
