@@ -5,6 +5,7 @@ import math
 from . import utils
 from torch import Tensor
 from typing import Tuple
+import copy
 
 
 @torch.jit.script
@@ -329,6 +330,21 @@ class AEVComputer(torch.nn.Module):
             // 2 * self.angular_sublength
         # The length of full aev
         self.aev_length = self.radial_length + self.angular_length
+
+    def __getstate__(self):
+        # FIXME: ScriptModule is not pickable, so deep copy does not work
+        # this is a workaround for pickling object of AEVComputer
+        d = copy.copy(self.__dict__)
+        if d['_modules']['neighborlist'] is default_neighborlist:
+            d['_modules']['neighborlist'] = 'default_neighborlist'
+        return d
+
+    def __setstate__(self, d):
+        # FIXME: ScriptModule is not pickable, so deep copy does not work
+        # this is a workaround for pickling object of AEVComputer
+        if d['_modules']['neighborlist'] == 'default_neighborlist':
+            d['_modules']['neighborlist'] = default_neighborlist
+        self.__dict__ = d
 
     # @torch.jit.script_method
     def forward(self, species_coordinates):
