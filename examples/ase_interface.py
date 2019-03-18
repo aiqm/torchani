@@ -36,10 +36,10 @@ calculator = torchani.models.ANI1ccx().ase()
 ###############################################################################
 # .. note::
 #     Regardless of the dtype you use in your model, when converting it to ASE
-#     calculator, it always automatically the dtype to ``torch.float64``. The reason
-#     for this behavior is, at many cases, the rounding error is too large for
-#     structure minimization. If you insist on using ``torch.float32``, do the
-#     following instead:
+#     calculator, it always automatically the dtype to ``torch.float64``. The
+#     reason for this behavior is, at many cases, the rounding error is too
+#     large for structure minimization. If you insist on using
+#     ``torch.float32``, do the following instead:
 #
 #     .. code-block:: python
 #
