@@ -122,9 +122,9 @@ class Calculator(ase.calculators.calculator.Calculator):
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
         # aev_computer.neighborlist will be changed later, so we need a copy to
         # make sure we do not change the original object
-        self.aev_computer = copy.copy(aev_computer)
-        self.model = model
-        self.energy_shifter = energy_shifter
+        self.aev_computer = copy.deepcopy(aev_computer)
+        self.model = copy.deepcopy(model)
+        self.energy_shifter = copy.deepcopy(energy_shifter)
 
         self.device = self.aev_computer.EtaR.device
         self.dtype = dtype
