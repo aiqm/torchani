@@ -64,8 +64,8 @@ def _angular_subaev_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
         -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
     vectors2 = vectors2.unsqueeze(
         -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-    distances1 = vectors1.norm(2, dim=-5)
-    distances2 = vectors2.norm(2, dim=-5)
+    distances1 = vectors1.norm(2, dim=-5).clamp(min=1e-9)
+    distances2 = vectors2.norm(2, dim=-5).clamp(min=1e-9)
 
     # 0.95 is multiplied to the cos values to prevent acos from
     # returning NaN.
@@ -127,7 +127,7 @@ def default_neighborlist(species, coordinates, cutoff):
     vec = coordinates.unsqueeze(2) - coordinates.unsqueeze(1)
     # vec has hape (conformations, atoms, atoms, 3) storing Rij vectors
 
-    distances = vec.norm(2, -1)
+    distances = vec.norm(2, -1).clamp(min=1e-9)
     # distances has shape (conformations, atoms, atoms) storing Rij distances
 
     padding_mask = (species == -1).unsqueeze(1)
