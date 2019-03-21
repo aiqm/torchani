@@ -10,11 +10,12 @@ from typing import Tuple
 @torch.jit.script
 def _cutoff_cosine(distances, cutoff):
     # type: (Tensor, float) -> Tensor
-    return torch.where(
+    ret = torch.where(
         distances <= cutoff,
         0.5 * torch.cos(math.pi * distances / cutoff) + 0.5,
         torch.zeros_like(distances)
     )
+    return ret
 
 
 @torch.jit.script
@@ -64,8 +65,8 @@ def _angular_subaev_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
         -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
     vectors2 = vectors2.unsqueeze(
         -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-    distances1 = vectors1.norm(2, dim=-5).clamp(min=1e-9)
-    distances2 = vectors2.norm(2, dim=-5).clamp(min=1e-9)
+    distances1 = vectors1.norm(2, dim=-5)
+    distances2 = vectors2.norm(2, dim=-5)
 
     # 0.95 is multiplied to the cos values to prevent acos from
     # returning NaN.
@@ -84,6 +85,7 @@ def _angular_subaev_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
     # (conformations, atoms, N, ?, ?, ?, ?) where ? depend on constants.
     # We then should flat the last 4 dimensions to view the subAEV as one
     # dimension vector
+
     return ret.flatten(start_dim=-4)
 
 
@@ -115,7 +117,6 @@ def _terms_and_indices(Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA,
     vec = _combinations(vec, -2)
     angular_terms = _angular_subaev_terms(Rca, ShfZ, EtaA,
                                           Zeta, ShfA, *vec)
-
     return radial_terms, angular_terms
 
 
@@ -127,7 +128,7 @@ def default_neighborlist(species, coordinates, cutoff):
     vec = coordinates.unsqueeze(2) - coordinates.unsqueeze(1)
     # vec has hape (conformations, atoms, atoms, 3) storing Rij vectors
 
-    distances = vec.norm(2, -1).clamp(min=1e-9)
+    distances = vec.norm(2, -1)
     # distances has shape (conformations, atoms, atoms) storing Rij distances
 
     padding_mask = (species == -1).unsqueeze(1)

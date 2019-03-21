@@ -65,8 +65,6 @@ class TestForce(unittest.TestCase):
         for coordinates, forces in coordinates_forces:
             derivative = torch.autograd.grad(energies, coordinates,
                                              retain_graph=True)[0]
-            print(forces)
-            print(derivative)
             max_diff = (forces + derivative).abs().max().item()
             self.assertLess(max_diff, self.tolerance)
 
