@@ -33,9 +33,9 @@ def do_benchmark(model):
     for i in dataset:
         coordinates = torch.tensor(i['coordinates'],
             dtype=torch.float64, requires_grad=True)
-        energies = i['energies']
+        energies = torch.tensor(i['energies'], dtype=torch.float64)
         species = model.species_to_tensor(i['species'])
-        forces = i['forces']
+        forces = torch.tensor(i['forces'], dtype=torch.float64)
 
 
 for model in [ani1x, ani1ccx]:
