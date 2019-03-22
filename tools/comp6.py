@@ -12,6 +12,7 @@ HARTREE2KCAL = 627.509
 # parse command line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('dir', help='Path to the COMP6 directory')
+parser.add_argument('-b', '--batchsize', type=int, default=2048)
 parser.add_argument('-d', '--device',
                     help='Device of modules and tensors',
                     default=('cuda' if torch.cuda.is_available() else 'cpu'))
@@ -30,6 +31,26 @@ def recursive_h5_files(base):
             yield from anidataloader(path)
         elif os.path.isdir(path):
             yield from recursive_h5_files(path)
+
+
+def by_batch(it):
+    for i in it:
+        # read
+        coordinates = torch.tensor(
+            i['coordinates'], dtype=torch.float64, device=parser.device,
+            requires_grad=True)
+        species = model.species_to_tensor(i['species']) \
+                       .unsqueeze(0).expand(coordinates.shape[0], -1)
+        energies = torch.tensor(i['energies'], dtype=torch.float64,
+                                device=parser.device)
+        forces = torch.tensor(i['forces'], dtype=torch.float64,
+                              device=parser.device)
+        yield from zip(
+            torch.split(coordinates, parser.batchsize),
+            torch.split(species, parser.batchsize),
+            torch.split(energies, parser.batchsize),
+            torch.split(forces, parser.batchsize),
+        )
 
 
 class Averager:
@@ -53,24 +74,14 @@ def relative_energies(energies):
 
 
 def do_benchmark(model):
-    dataset = recursive_h5_files(parser.dir)
+    dataset = by_batch(recursive_h5_files(parser.dir))
     mae_averager_energy = Averager()
     mae_averager_relative_energy = Averager()
     mae_averager_force = Averager()
     rmse_averager_energy = Averager()
     rmse_averager_relative_energy = Averager()
     rmse_averager_force = Averager()
-    for i in tqdm.tqdm(dataset):
-        # read
-        coordinates = torch.tensor(
-            i['coordinates'], dtype=torch.float64, device=parser.device,
-            requires_grad=True)
-        species = model.species_to_tensor(i['species']) \
-                       .unsqueeze(0).expand(coordinates.shape[0], -1)
-        energies = torch.tensor(i['energies'], dtype=torch.float64,
-                                device=parser.device)
-        forces = torch.tensor(i['forces'], dtype=torch.float64,
-                              device=parser.device)
+    for coordinates, species, energies, forces in tqdm.tqdm(dataset):
         # compute
         _, energies2 = model((species, coordinates))
         forces2, = torch.autograd.grad(energies2.sum(), coordinates)
