@@ -30,8 +30,8 @@ try:
 except NameError:
     path = os.getcwd()
 cfg_path = os.path.join(path, '../tests/test_data/inputtrain.ipt')
-training_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
-validation_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+training_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
+validation_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 
 ###############################################################################
 # We also need to set the device to run the training:
