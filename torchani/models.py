@@ -76,7 +76,7 @@ class BuiltinModels(torch.nn.Module):
 
         See also :method:`torchani.neurochem.Constant.species_to_tensor`"""
         return self.builtins.consts.species_to_tensor(*args, **kwargs) \
-            .to(self.device)
+            .to(self.aev_computer.ShfR.device)
 
 
 class ANI1x(BuiltinModels):
