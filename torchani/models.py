@@ -38,8 +38,6 @@ class BuiltinModels(torch.nn.Module):
         self.aev_computer = self.builtins.aev_computer
         self.neural_networks = self.builtins.models
         self.energy_shifter = self.builtins.energy_shifter
-        self.species_to_tensor.__doc__ = \
-            self.builtins.consts.species_to_tensor.__doc__
 
     def forward(self, species_coordinates):
         species_aevs = self.aev_computer(species_coordinates)
@@ -74,6 +72,9 @@ class BuiltinModels(torch.nn.Module):
                               self.neural_networks, self.energy_shifter)
 
     def species_to_tensor(self, *args, **kwargs):
+        """Convert species from strings to tensor.
+
+        See also :method:`torchani.neurochem.Constant.species_to_tensor`"""
         return self.builtins.consts.species_to_tensor(*args, **kwargs) \
             .to(self.device)
 
