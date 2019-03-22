@@ -26,7 +26,6 @@ how to use these models:
 """
 
 import torch
-import functools
 from . import neurochem
 
 
