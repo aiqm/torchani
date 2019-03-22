@@ -22,7 +22,6 @@ parser = parser.parse_args()
 
 # run benchmark
 ani1x = torchani.models.ANI1x().to(dtype).to(parser.device)
-ani1ccx = torchani.models.ANI1ccx().to(dtype).to(parser.device)
 
 
 def recursive_h5_files(base):
@@ -110,12 +109,9 @@ def do_benchmark(model):
         * HARTREE2KCAL
     mae_force = mae_averager_force.compute() * HARTREE2KCAL
     rmse_force = math.sqrt(rmse_averager_force.compute()) * HARTREE2KCAL
-    print(type(model).__name__)
     print("Energy:", mae_energy, rmse_energy)
     print("Relative Energy:", mae_relative_energy, rmse_relative_energy)
     print("Forces:", mae_force, rmse_force)
 
 
-for model in [ani1x, ani1ccx]:
-    do_benchmark(model)
-    print()
+do_benchmark(ani1x)
