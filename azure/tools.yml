@@ -30,3 +30,6 @@ steps:
 
 - script: 'python tools/inference-benchmark.py --tqdm ./dataset/xyz_files/CH4-5.xyz'
   displayName: Inference Benchmark
+
+- script: 'python tools/comp6.py ./dataset/COMP6/COMP6v1/s66x8'
+  displayName: COMP6 Benchmark
