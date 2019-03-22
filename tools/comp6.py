@@ -17,8 +17,8 @@ parser.add_argument('-d', '--device',
 parser = parser.parse_args()
 
 # run benchmark
-ani1x = torchani.models.ANI1x().to(torch.float64)
-ani1ccx = torchani.models.ANI1ccx().to(torch.float64)
+ani1x = torchani.models.ANI1x().to(torch.float64).to(parser.device)
+ani1ccx = torchani.models.ANI1ccx().to(torch.float64).to(parser.device)
 
 
 def recursive_h5_files(base):
@@ -62,11 +62,14 @@ def do_benchmark(model):
     for i in dataset:
         # read
         coordinates = torch.tensor(
-            i['coordinates'], dtype=torch.float64, requires_grad=True)
+            i['coordinates'], dtype=torch.float64, device=parser.device,
+            requires_grad=True)
         species = model.species_to_tensor(i['species']) \
                        .unsqueeze(0).expand(coordinates.shape[0], -1)
-        energies = torch.tensor(i['energies'], dtype=torch.float64)
-        forces = torch.tensor(i['forces'], dtype=torch.float64)
+        energies = torch.tensor(i['energies'], dtype=torch.float64,
+                                device=parser.device)
+        forces = torch.tensor(i['forces'], dtype=torch.float64,
+                              device=parser.device)
         # compute
         _, energies2 = model((species, coordinates))
         forces2, = torch.autograd.grad(energies2.sum(), coordinates)
