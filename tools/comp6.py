@@ -4,6 +4,7 @@ import torchani
 from torchani.data._pyanitools import anidataloader
 import argparse
 import math
+import tqdm
 
 
 HARTREE2KCAL = 627.509
@@ -59,7 +60,7 @@ def do_benchmark(model):
     rmse_averager_energy = Averager()
     rmse_averager_relative_energy = Averager()
     rmse_averager_force = Averager()
-    for i in dataset:
+    for i in tqdm.tqdm(dataset):
         # read
         coordinates = torch.tensor(
             i['coordinates'], dtype=torch.float64, device=parser.device,
