@@ -74,8 +74,8 @@ def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
     cos_angles = 0.95 * torch.nn.functional.cosine_similarity(vectors1, vectors2, dim=-5)
     angles = torch.acos(cos_angles)
 
-    fcj1 = _cutoff_cosine(distances1, Rca)
-    fcj2 = _cutoff_cosine(distances2, Rca)
+    fcj1 = cutoff_cosine(distances1, Rca)
+    fcj2 = cutoff_cosine(distances2, Rca)
     factor1 = ((1 + torch.cos(angles - ShfZ)) / 2) ** Zeta
     factor2 = torch.exp(-EtaA * s((distances1 + distances2) / 2 - ShfA) ** 2)
     ret = 2 * factor1 * factor2 * fcj1 * fcj2
