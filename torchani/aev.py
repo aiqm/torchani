@@ -7,6 +7,10 @@ from torch import Tensor
 from typing import Tuple
 
 
+def repeat2(tensor, count, dim=0):
+    return tensor
+
+
 # @torch.jit.script
 def cutoff_cosine(distances, cutoff):
     # type: (Tensor, float) -> Tensor
@@ -60,25 +64,20 @@ def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
     """
-    vectors1 = vectors1.unsqueeze(
-        -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-    vectors2 = vectors2.unsqueeze(
-        -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+    vectors1 = vectors1.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+    vectors2 = vectors2.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
     distances1 = vectors1.norm(2, dim=-5)
     distances2 = vectors2.norm(2, dim=-5)
 
     # 0.95 is multiplied to the cos values to prevent acos from
     # returning NaN.
-    cos_angles = 0.95 * \
-        torch.nn.functional.cosine_similarity(
-            vectors1, vectors2, dim=-5)
+    cos_angles = 0.95 * torch.nn.functional.cosine_similarity(vectors1, vectors2, dim=-5)
     angles = torch.acos(cos_angles)
 
     fcj1 = _cutoff_cosine(distances1, Rca)
     fcj2 = _cutoff_cosine(distances2, Rca)
     factor1 = ((1 + torch.cos(angles - ShfZ)) / 2) ** Zeta
-    factor2 = torch.exp(-EtaA *
-                        ((distances1 + distances2) / 2 - ShfA) ** 2)
+    factor2 = torch.exp(-EtaA * s((distances1 + distances2) / 2 - ShfA) ** 2)
     ret = 2 * factor1 * factor2 * fcj1 * fcj2
     # At this point, ret now have shape
     # (conformations, atoms, N, ?, ?, ?, ?) where ? depend on constants.
@@ -181,6 +180,7 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
     return molecule_index, atom_index1, atom_index2, shifts
 
 
+# torch.jit.script
 def triu_index(num_species):
     species = torch.arange(num_species)
     species1, species2 = torch.combinations(species, r=2, with_replacement=True)
@@ -191,8 +191,51 @@ def triu_index(num_species):
     return ret
 
 
-def triple_by_molecule(molecule_index, atom_index1, atom_index2):
+# torch.jit.script
+def convert_pair_index(index):
+    """Let's say we have a pair:
+    index: 0 1 2 3 4 5 6 7 8 9 ...
+    elem1: 0 0 1 0 1 2 0 1 2 3 ...
+    elem2: 1 2 2 3 3 3 4 4 4 4 ...
+    This function convert index back to elem1 and elem2
+    """
     pass
+
+
+# torch.jit.script
+def triple_by_molecule(molecule_index, atom_index1, atom_index2):
+    # convert representation from pair to central-other
+    n = molecule_index.shape[0]
+    mi = molecule_index.repeat(2)
+    ai1 = torch.cat([atom_index1, atom_index2])
+    ai2 = torch.cat([atom_index2, atom_index1])
+
+    # sort and compute unique key
+    m_ac, rev_indices, counts = torch.stack([mi, ai1], dim=1).unique(dim=0, sorted=True, return_inverse=True, return_counts=True)
+    uniqued_molecule_index, uniqued_central_atom_index = m_ac
+
+    # do local combinations within unique key, assuming sorted
+    pair_sizes = counts * (counts - 1) // 2
+    total_size = pair_sizes.sum()
+    molecule_index = repeat2(uniqued_molecule_index, pair_sizes)
+    central_atom_index = repeat2(uniqued_central_atom_index, pair_sizes)
+    cumsum = repeat2(torch.cumsum(pair_sizes) - pair_sizes[0], pair_sizes)
+    sorted_local_pair_index = torch.arange(total_size, device=molecule_index.device) - cumsum
+    sorted_local_index1, sorted_local_index2 = convert_pair_index(sorted_local_pair_index)
+    sorted_local_index1 += cumsum
+    sorted_local_index2 += cumsum
+
+    # unsort result from last part
+    argsort = rev_indices.argsort()
+    local_index1 = argsort[sorted_local_index1]
+    local_index2 = argsort[sorted_local_index2]
+
+    # compute mapping between representation of central-other to pair
+    sign1 = torch.where(local_index1 < n, torch.ones_like(local_index1), -torch.ones_like(local_index1))
+    sign2 = torch.where(local_index2 < n, torch.ones_like(local_index2), -torch.ones_like(local_index2))
+    pair_index1 = torch.where(local_index1 < n, local_index1, local_index1 - n)
+    pair_index1 = torch.where(local_index2 < n, local_index2, local_index2 - n)
+    return molecule_index, central_atom_index, pair_index1, pair_index2, sign1, sign2
 
 
 # torch.jit.script
@@ -277,21 +320,18 @@ class AEVComputer(torch.nn.Module):
         self.constants = self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
         self.num_species = num_species
-        self.neighborlist = neighborlist_computer
-
         # The length of radial subaev of a single species
         self.radial_sublength = self.EtaR.numel() * self.ShfR.numel()
         # The length of full radial aev
         self.radial_length = self.num_species * self.radial_sublength
         # The length of angular subaev of a single species
-        self.angular_sublength = self.EtaA.numel() * self.Zeta.numel() * \
-            self.ShfA.numel() * self.ShfZ.numel()
+        self.angular_sublength = self.EtaA.numel() * self.Zeta.numel() * self.ShfA.numel() * self.ShfZ.numel()
         # The length of full angular aev
-        self.angular_length = (self.num_species * (self.num_species + 1)) \
-            // 2 * self.angular_sublength
+        self.angular_length = (self.num_species * (self.num_species + 1)) // 2 * self.angular_sublength
         # The length of full aev
         self.aev_length = self.radial_length + self.angular_length
         self.sizes = self.num_species, self.radial_sublength, self.radial_length, self.angular_sublength, self.angular_length, self.aev_length
+
         self.register_buffer('triu_index', triu_index(num_species).to(self.EtaR.device))
 
     # @torch.jit.script_method
