@@ -19,14 +19,20 @@ steps:
   inputs:
     versionSpec: '$(python.version)'
 
+- script: 'git submodule update --init'
+  displayName: 'Fetch submodules'
+
 - script: 'azure/install_dependencies.sh && pip install .'
   displayName: 'Install dependencies'
 
-- script: 'python tools/training-benchmark.py ./dataset/ani_gdb_s01.h5'
+- script: 'python tools/training-benchmark.py ./dataset/ani1-up_to_gdb4/ani_gdb_s01.h5'
   displayName: Training Benchmark
 
-- script: 'python tools/neurochem-test.py ./dataset/ani_gdb_s01.h5'
+- script: 'python tools/neurochem-test.py ./dataset/ani1-up_to_gdb4/ani_gdb_s01.h5'
   displayName: NeuroChem Test
 
-- script: 'python tools/inference-benchmark.py --tqdm ./xyz_files/CH4-5.xyz'
+- script: 'python tools/inference-benchmark.py --tqdm ./dataset/xyz_files/CH4-5.xyz'
   displayName: Inference Benchmark
+
+- script: 'python tools/comp6.py ./dataset/COMP6/COMP6v1/s66x8'
+  displayName: COMP6 Benchmark
