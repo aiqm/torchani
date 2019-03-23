@@ -51,12 +51,13 @@ class BuiltinModels(torch.nn.Module):
             self.energy_shifter
         )
 
-        def ase():
+        def ase(**kwargs):
             from . import ase
             return ase.Calculator(self.builtins.species,
                                   self.aev_computer,
                                   self.neural_networks[index],
-                                  self.energy_shifter)
+                                  self.energy_shifter,
+                                  **kwargs)
 
         ret.ase = ase
         ret.species_to_tensor = self.builtins.consts.species_to_tensor
@@ -65,11 +66,12 @@ class BuiltinModels(torch.nn.Module):
     def __len__(self):
         return len(self.neural_networks)
 
-    def ase(self):
+    def ase(self, **kwargs):
         """Get an ASE Calculator using this model"""
         from . import ase
         return ase.Calculator(self.builtins.species, self.aev_computer,
-                              self.neural_networks, self.energy_shifter)
+                              self.neural_networks, self.energy_shifter,
+                              **kwargs)
 
 
 class ANI1x(BuiltinModels):
