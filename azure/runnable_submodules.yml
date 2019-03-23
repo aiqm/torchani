@@ -21,11 +21,11 @@ steps:
 - script: 'azure/install_dependencies.sh && pip install .'
   displayName: 'Install dependencies'
 
-- script: 'python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.ipt  dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5'
+- script: 'python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.ipt  dataset/ani1-up_to_gdb4/ani_gdb_s01.h5 dataset/ani1-up_to_gdb4/ani_gdb_s01.h5'
   displayName: NeuroChem Trainer
 
-- script: 'python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.yaml  dataset/ani_gdb_s01.h5 dataset/ani_gdb_s01.h5'
+- script: 'python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.yaml  dataset/ani1-up_to_gdb4/ani_gdb_s01.h5 dataset/ani1-up_to_gdb4/ani_gdb_s01.h5'
   displayName: NeuroChem Trainer YAML config
 
-- script: 'python -m torchani.data.cache_aev tmp dataset/ani_gdb_s01.h5 256'
+- script: 'python -m torchani.data.cache_aev tmp dataset/ani1-up_to_gdb4/ani_gdb_s01.h5 256'
   displayName: Cache AEV

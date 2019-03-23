@@ -6,7 +6,7 @@ import unittest
 
 path = os.path.dirname(os.path.realpath(__file__))
 iptpath = os.path.join(path, 'test_data/inputtrain.ipt')
-dspath = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 
 
 class TestNeuroChem(unittest.TestCase):

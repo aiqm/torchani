@@ -5,8 +5,8 @@ import unittest
 from torchani.data.cache_aev import cache_aev
 
 path = os.path.dirname(os.path.realpath(__file__))
-dataset_path = os.path.join(path, '../dataset')
-dataset_path2 = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+dataset_path = os.path.join(path, '../dataset/ani1-up_to_gdb4')
+dataset_path2 = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 batch_size = 256
 builtins = torchani.neurochem.Builtins()
 consts = builtins.consts

@@ -1,14 +1,10 @@
 # Written by Roman Zubatyuk and Justin S. Smith
 import h5py
 import numpy as np
-import platform
 import os
 
 
-PY_VERSION = int(platform.python_version().split('.')[0]) > 3
-
-
-class datapacker(object):
+class datapacker:
     def __init__(self, store_file, mode='w-', complib='gzip', complevel=6):
         """Wrapper to store arrays within HFD5 file
         """
@@ -40,7 +36,7 @@ class datapacker(object):
         self.store.close()
 
 
-class anidataloader(object):
+class anidataloader:
 
     ''' Contructor '''
 

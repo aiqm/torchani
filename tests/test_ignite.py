@@ -8,7 +8,7 @@ import torchani
 import torchani.ignite
 
 path = os.path.dirname(os.path.realpath(__file__))
-path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 batchsize = 4
 threshold = 1e-5
 
