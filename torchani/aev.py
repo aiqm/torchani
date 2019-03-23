@@ -198,8 +198,22 @@ def convert_pair_index(index):
     elem1: 0 0 1 0 1 2 0 1 2 3 ...
     elem2: 1 2 2 3 3 3 4 4 4 4 ...
     This function convert index back to elem1 and elem2
+
+    To implement this, divide it into groups, the first group contains 1
+    elements, the second contains 2 elements, ..., the nth group contains
+    n elements.
+
+    Let's say we want to compute the elem1 and elem2 for index i. We first find
+    the number of complete groups contained in index 0, 1, ..., i - 1
+    (all inclusive, not including i), then i will be in the next group. Let's
+    say there are N complete groups, then these N groups contains
+    N * (N + 1) / 2 elements, solving for the largest N that satisfies
+    N * (N + 1) / 2 <= i, will get the N we want.
     """
-    pass
+    n = (torch.sqrt(1.0 + 8.0 * index.to(torch.float)) - 1.0) / 2.0
+    n = torch.floor(n).to(torch.long)
+    num_elems = n * (n + 1) / 2
+    return index - num_elems, n + 1
 
 
 # torch.jit.script
