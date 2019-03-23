@@ -46,7 +46,7 @@ def radial_terms(Rcr, EtaR, ShfR, distances):
 
 
 # @torch.jit.script
-def angular_subaev_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
+def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
     # type: (float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
     """Compute the angular subAEV terms of the center atom given neighbor pairs.
 
@@ -181,12 +181,22 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
     return molecule_index, atom_index1, atom_index2, shifts
 
 
-def triple_by_molecule(molecule_index):
+def triu_index(num_species):
+    species = torch.arange(num_species)
+    species1, species2 = torch.combinations(species, r=2, with_replacement=True)
+    pair_index = torch.arange(species1.shape[0])
+    ret = torch.zeros(num_species, num_species, dtype=torch.long)
+    ret[species1, species2] = pair_index
+    ret[species2, species1] = pair_index
+    return ret
+
+
+def triple_by_molecule(molecule_index, atom_index1, atom_index2):
     pass
 
 
 # torch.jit.script
-def compute_aev(species, coordinates, cell, pbc_switch, constants, sizes):
+def compute_aev(species, coordinates, cell, pbc_switch, triu_index, constants, sizes):
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     num_species, radial_sublength, radial_length, angular_sublength, angular_length, aev_length = sizes
     num_molecules = species.shape[0]
@@ -210,8 +220,15 @@ def compute_aev(species, coordinates, cell, pbc_switch, constants, sizes):
     radial_aev = radial_aev.reshape(num_molecules, num_atoms, radial_length)
 
     # compute angular aev
+    molecule_index, central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(molecule_index, atom_index1, atom_index2)
+    vec1 = vec.index_select(0, pair_index1) * sign1
+    vec2 = vec.index_select(0, pair_index2) * sign2
+    species1 = species2[pair_index1]
+    species2 = species2[pair_index2]
+    angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec1, vec2)
     angular_aev = torch.zeros(num_molecules, num_atoms, angular_length // angular_sublength, angular_sublength)
-
+    angular_aev = angular_aev.reshape(num_molecules, num_atoms, angular_length)
+    angular_aev[molecule_index, central_atom_index, triu_index[species1, species2]] += angular_terms_
     return torch.cat([radial_aev, angular_aev], dim=-1)
 
 
@@ -236,20 +253,6 @@ class AEVComputer(torch.nn.Module):
         ShfZ (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
             equation (4) in the `ANI paper`_.
         num_species (int): Number of supported atom types.
-        neighborlist_computer (:class:`collections.abc.Callable`): initial
-            value of :attr:`neighborlist`
-
-    Attributes:
-        neighborlist (:class:`collections.abc.Callable`): The callable
-            (species:Tensor, coordinates:Tensor, cutoff:float)
-            -> Tuple[Tensor, Tensor, Tensor] that returns the species,
-            distances and relative coordinates of neighbor atoms. The input
-            species and coordinates tensor have the same shape convention as
-            the input of :class:`AEVComputer`. The returned neighbor
-            species and coordinates tensor must have shape ``(C, A, N)`` and
-            ``(C, A, N, 3)`` correspoindingly, where ``C`` is the number of
-            conformations in a chunk, ``A`` is the number of atoms, and ``N``
-            is the maximum number of neighbors that an atom could have.
 
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
@@ -258,8 +261,7 @@ class AEVComputer(torch.nn.Module):
                      'radial_length', 'angular_sublength', 'angular_length',
                      'aev_length']
 
-    def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ,
-                 num_species, neighborlist_computer=default_neighborlist):
+    def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species):
         super(AEVComputer, self).__init__()
         self.Rcr = Rcr
         self.Rca = Rca
@@ -290,6 +292,7 @@ class AEVComputer(torch.nn.Module):
         # The length of full aev
         self.aev_length = self.radial_length + self.angular_length
         self.sizes = self.num_species, self.radial_sublength, self.radial_length, self.angular_sublength, self.angular_length, self.aev_length
+        self.register_buffer('triu_index', triu_index(num_species).to(self.EtaR.device))
 
     # @torch.jit.script_method
     def forward(self, species_coordinates):
@@ -308,4 +311,4 @@ class AEVComputer(torch.nn.Module):
         """
         # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
         species, coordinates = species_coordinates
-        return species, compute_aev(species, coordinates, self.constants, self.sizes)
+        return species, compute_aev(species, coordinates, self.triu_index, self.constants, self.sizes)
