@@ -119,7 +119,7 @@ def _terms_and_indices(Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA,
     return radial_terms, angular_terms
 
 
-@torch.jit.script
+# @torch.jit.script
 def default_neighborlist(species, coordinates, cutoff):
     # type: (Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor]
     """Default neighborlist computer"""

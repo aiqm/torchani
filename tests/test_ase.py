@@ -17,7 +17,7 @@ tol = 5e-5
 
 
 def get_numeric_force(atoms, eps):
-    fn = torch.zeros((len(atoms), 3))
+    fn = torch.zeros((len(atoms), 3), dtype=torch.double)
     for i in range(len(atoms)):
         for j in range(3):
             fn[i, j] = numeric_force(atoms, i, j, eps)
@@ -55,7 +55,7 @@ class TestASE(unittest.TestCase):
             builtin.models, builtin.energy_shifter)
         default_neighborlist_calculator = torchani.ase.Calculator(
             builtin.species, builtin.aev_computer,
-            builtin.models, builtin.energy_shifter, True)
+            builtin.models, builtin.energy_shifter, _default_neighborlist=True)
         nnp = torch.nn.Sequential(
             builtin.aev_computer,
             builtin.models,
@@ -104,7 +104,7 @@ class TestASE(unittest.TestCase):
             builtin.models, builtin.energy_shifter)
         default_neighborlist_calculator = torchani.ase.Calculator(
             builtin.species, builtin.aev_computer,
-            builtin.models, builtin.energy_shifter, True)
+            builtin.models, builtin.energy_shifter, _default_neighborlist=True)
 
         atoms.set_calculator(calculator)
         dyn = Langevin(atoms, 5 * units.fs, 50 * units.kB, 0.002)
