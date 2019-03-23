@@ -181,6 +181,10 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
     return molecule_index, atom_index1, atom_index2, shifts
 
 
+def triple_by_molecule(molecule_index):
+    pass
+
+
 # torch.jit.script
 def compute_aev(species, coordinates, cell, pbc_switch, constants, sizes):
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
@@ -204,6 +208,11 @@ def compute_aev(species, coordinates, cell, pbc_switch, constants, sizes):
     radial_aev[molecule_index, atom_index1, species2, :] += radial_terms_
     radial_aev[molecule_index, atom_index2, species1, :] += radial_terms_
     radial_aev = radial_aev.reshape(num_molecules, num_atoms, radial_length)
+
+    # compute angular aev
+    angular_aev = torch.zeros(num_molecules, num_atoms, angular_length // angular_sublength, angular_sublength)
+
+    return torch.cat([radial_aev, angular_aev], dim=-1)
 
 
 class AEVComputer(torch.nn.Module):
@@ -298,4 +307,5 @@ class AEVComputer(torch.nn.Module):
             ``(C, A, self.aev_length())``
         """
         # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
-        return compute_aev(species, distances, self.constants, self.sizes)
+        species, coordinates = species_coordinates
+        return species, compute_aev(species, coordinates, self.constants, self.sizes)
