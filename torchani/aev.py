@@ -154,6 +154,104 @@ def default_neighborlist(species, coordinates, cutoff):
 
 
 @torch.jit.script
+def compute_shifts(cell, cutoff, pbc_switch):
+    """Compute the shifts of unit cell along the given cell vectors to make it
+    large enough to contain all pairs of neighbor atoms with PBC under
+    consideration
+
+    Arguments:
+        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three
+        vectors defining unit cell:
+            tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])
+        cutoff (float): the cutoff inside which atoms are considered pairs
+        pbc_switch (:class:`torch.Tensor`): boolean vector of size 3 storing
+            if pbc is enabled for that direction.
+
+    Returns:
+        :class:`torch.Tensor`: long tensor of shifts. the center cell and
+            symmetric cells are not included.
+    """
+    # type: (Tensor, float, Tensor) -> Tensor
+    reciprocal_cell = cell.inverse().t()
+    inv_distances = reciprocal_cell.norm(2, -1)
+    num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
+    num_repeats = torch.where(pbc_switch, num_repeats, torch.zeros_like(num_repeats))
+    r1 = torch.arange(1, num_repeats[0] + 1)
+    r2 = torch.arange(1, num_repeats[1] + 1)
+    r3 = torch.arange(1, num_repeats[2] + 1)
+    o = torch.zeros(1)
+    return torch.cat([
+        torch.cartesian_prod(r1, r2, r3),
+        torch.cartesian_prod(r1, r2, o),
+        torch.cartesian_prod(r1, r2, -r3),
+        torch.cartesian_prod(r1, o, r3),
+        torch.cartesian_prod(r1, o, o),
+        torch.cartesian_prod(r1, o, -r3),
+        torch.cartesian_prod(r1, -r2, r3),
+        torch.cartesian_prod(r1, -r2, o),
+        torch.cartesian_prod(r1, -r2, -r3),
+        torch.cartesian_prod(o, r2, r3),
+        torch.cartesian_prod(o, r2, o),
+        torch.cartesian_prod(o, r2, -r3),
+        torch.cartesian_prod(o, o, r3),
+    ])
+
+
+@torch.jit.script
+def neighbor_pairs(species, coordinates, cell, shifts, cutoff):
+    """Compute pairs of atoms that are neighbors
+
+    Arguments:
+        species (:class:`torch.Tensor`): long tensor of shape (molecules, atoms)
+            for atom species.
+        coordinates (:class:`torch.Tensor`): tensor of shape (molecules, atoms, 3)
+            for atom coordinates.
+        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three vectors
+            defining unit cell: tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])
+        cutoff (float): the cutoff inside which atoms are considered pairs
+        shifts (:class:`torch.Tensor`): tensor of shifts
+
+    Returns:
+        :class:`torch.Tensor`: long tensor of
+    """
+    # type: (Tensor, Tensor, Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor, Tensor]
+
+    coordinates = coordinates.detach()
+    cell = cell.detach()
+    num_atoms = species.shape[1]
+    all_atoms = torch.arange(num_atoms)
+
+    # Step 2: center cell
+    p1_center, p2_center = torch.combinations(all_atoms).unbind(-1)
+    shifts_center = torch.zeros(p1_center.shape[0], 3, dtype=torch.long)
+
+    # Step 3: cells with shifts
+    # shape convention (shift index, molecule index, atom index, 3)
+    num_shifts = shifts.shape[0]
+    all_shifts = torch.arange(num_shifts)
+    s = shifts.unsqueeze(1).unsqueeze(1)
+    shift_index, p1, p2 = torch.cartesian_prod(all_shifts, all_atoms, all_atoms).unbind(-1)
+    shifts_outide = shifts.index_select(0, shift_index)
+
+    # Step 4: combine results for all cells
+    shifts_all = torch.cat([shifts_center, shifts_outide])
+    p1_all = torch.cat([p1_center, p1])
+    p2_all = torch.cat([p2_center, p2])
+    shift_values = torch.mm(shifts_all.to(cell.dtype), cell)
+
+    # step 5, compute distances, and find all pairs within cutoff
+    distances = (coordinates.index_select(1, p1_all) - coordinates.index_select(1, p2_all) + shift_values).norm(2, -1)
+    padding_mask = (species.index_select(1, p1_all) == -1) | (species.index_select(1, p2_all) == -1)
+    distances.masked_fill_(padding_mask, math.inf)
+    in_cutoff = (distances <= cutoff).nonzero()
+    molecule_index, pair_index = in_cutoff.unbind(1)
+    atom_index1 = p1[pair_index]
+    atom_index2 = p2[pair_index]
+    shifts = shifts_all.index_select(0, pair_index)
+    return molecule_index, atom_index1, atom_index2, shifts
+
+
+@torch.jit.script
 def _compute_mask_r(species_r, num_species):
     # type: (Tensor, int) -> Tensor
     """Get mask of radial terms for each supported species from indices"""
