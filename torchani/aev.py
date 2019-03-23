@@ -120,7 +120,7 @@ def _terms_and_indices(Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA,
 
 
 @torch.jit.script
-def default_neighborlist(species, coordinates, cutoff):
+def default_neighborlist2(species, coordinates, cutoff):
     # type: (Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor]
     """Default neighborlist computer"""
 
@@ -153,7 +153,7 @@ def default_neighborlist(species, coordinates, cutoff):
     return neighbor_species, neighbor_distances, neighbor_coordinates
 
 
-@torch.jit.script
+# @torch.jit.script
 def compute_shifts(cell, cutoff, pbc_switch):
     """Compute the shifts of unit cell along the given cell vectors to make it
     large enough to contain all pairs of neighbor atoms with PBC under
@@ -176,10 +176,10 @@ def compute_shifts(cell, cutoff, pbc_switch):
     inv_distances = reciprocal_cell.norm(2, -1)
     num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
     num_repeats = torch.where(pbc_switch, num_repeats, torch.zeros_like(num_repeats))
-    r1 = torch.arange(1, num_repeats[0] + 1)
-    r2 = torch.arange(1, num_repeats[1] + 1)
-    r3 = torch.arange(1, num_repeats[2] + 1)
-    o = torch.zeros(1)
+    r1 = torch.arange(1, num_repeats[0] + 1, device=cell.device)
+    r2 = torch.arange(1, num_repeats[1] + 1, device=cell.device)
+    r3 = torch.arange(1, num_repeats[2] + 1, device=cell.device)
+    o = torch.zeros(1, dtype=torch.long, device=cell.device)
     return torch.cat([
         torch.cartesian_prod(r1, r2, r3),
         torch.cartesian_prod(r1, r2, o),
@@ -197,39 +197,35 @@ def compute_shifts(cell, cutoff, pbc_switch):
     ])
 
 
-@torch.jit.script
-def neighbor_pairs(species, coordinates, cell, shifts, cutoff):
+# @torch.jit.script
+def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
     """Compute pairs of atoms that are neighbors
 
     Arguments:
-        species (:class:`torch.Tensor`): long tensor of shape (molecules, atoms)
-            for atom species.
-        coordinates (:class:`torch.Tensor`): tensor of shape (molecules, atoms, 3)
-            for atom coordinates.
+        padding_mask (:class:`torch.Tensor`): boolean tensor of shape
+            (molecules, atoms) for padding mask. 1 == is padding.
+        coordinates (:class:`torch.Tensor`): tensor of shape
+            (molecules, atoms, 3) for atom coordinates.
         cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three vectors
             defining unit cell: tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])
         cutoff (float): the cutoff inside which atoms are considered pairs
-        shifts (:class:`torch.Tensor`): tensor of shifts
-
-    Returns:
-        :class:`torch.Tensor`: long tensor of
+        shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts
     """
     # type: (Tensor, Tensor, Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor, Tensor]
 
     coordinates = coordinates.detach()
     cell = cell.detach()
-    num_atoms = species.shape[1]
-    all_atoms = torch.arange(num_atoms)
+    num_atoms = padding_mask.shape[1]
+    all_atoms = torch.arange(num_atoms, device=cell.device)
 
     # Step 2: center cell
     p1_center, p2_center = torch.combinations(all_atoms).unbind(-1)
-    shifts_center = torch.zeros(p1_center.shape[0], 3, dtype=torch.long)
+    shifts_center = shifts.new_zeros(p1_center.shape[0], 3)
 
     # Step 3: cells with shifts
     # shape convention (shift index, molecule index, atom index, 3)
     num_shifts = shifts.shape[0]
-    all_shifts = torch.arange(num_shifts)
-    s = shifts.unsqueeze(1).unsqueeze(1)
+    all_shifts = torch.arange(num_shifts, device=cell.device)
     shift_index, p1, p2 = torch.cartesian_prod(all_shifts, all_atoms, all_atoms).unbind(-1)
     shifts_outide = shifts.index_select(0, shift_index)
 
@@ -241,14 +237,38 @@ def neighbor_pairs(species, coordinates, cell, shifts, cutoff):
 
     # step 5, compute distances, and find all pairs within cutoff
     distances = (coordinates.index_select(1, p1_all) - coordinates.index_select(1, p2_all) + shift_values).norm(2, -1)
-    padding_mask = (species.index_select(1, p1_all) == -1) | (species.index_select(1, p2_all) == -1)
+    padding_mask = (padding_mask.index_select(1, p1_all)) | (padding_mask.index_select(1, p2_all))
     distances.masked_fill_(padding_mask, math.inf)
     in_cutoff = (distances <= cutoff).nonzero()
     molecule_index, pair_index = in_cutoff.unbind(1)
-    atom_index1 = p1[pair_index]
-    atom_index2 = p2[pair_index]
+    atom_index1 = p1_all[pair_index]
+    atom_index2 = p2_all[pair_index]
     shifts = shifts_all.index_select(0, pair_index)
     return molecule_index, atom_index1, atom_index2, shifts
+
+
+# @torch.jit.script
+def default_neighborlist(species, coordinates, cutoff):
+    # type: (Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor]
+    num_molecules = species.shape[0]
+    num_atoms = species.shape[1]
+    shifts = torch.empty(0, 3, dtype=torch.long, device=species.device)
+    cell = torch.empty(3, 3, device=species.device)
+    molecule_index, atom_index1, atom_index2, _ = neighbor_pairs(species == -1, coordinates, cell, shifts, cutoff)
+
+    neighbor_species = torch.full((num_molecules, num_atoms, num_atoms), -1, dtype=torch.long, device=species.device)
+    neighbor_species[molecule_index, atom_index1, atom_index2] = species[molecule_index, atom_index2]
+    neighbor_species[molecule_index, atom_index2, atom_index1] = species[molecule_index, atom_index1]
+
+    neighbor_coordinates = torch.empty(num_molecules, num_atoms, num_atoms, 3, device=species.device)
+    neighbor_coordinates[molecule_index, atom_index1, atom_index2, :] = coordinates[molecule_index, atom_index1, :] - coordinates[molecule_index, atom_index2, :]
+    neighbor_coordinates[molecule_index, atom_index2, atom_index1, :] = coordinates[molecule_index, atom_index2, :] - coordinates[molecule_index, atom_index1, :]
+
+    neighbor_distances = torch.empty(num_molecules, num_atoms, num_atoms, device=species.device)
+    neighbor_distances[molecule_index, atom_index1, atom_index2] = neighbor_coordinates[molecule_index, atom_index1, atom_index2, :].norm(2, -1)
+    neighbor_distances[molecule_index, atom_index2, atom_index1] = neighbor_coordinates[molecule_index, atom_index2, atom_index1, :].norm(2, -1)
+
+    return neighbor_species, neighbor_distances, neighbor_coordinates
 
 
 @torch.jit.script
@@ -335,7 +355,7 @@ def _assemble(radial_terms, angular_terms, present_species,
     return radial_aevs, torch.cat(angular_aevs, dim=2)
 
 
-@torch.jit.script
+# @torch.jit.script
 def _compute_aev(num_species, angular_sublength, Rcr, EtaR, ShfR, Rca, ShfZ,
                  EtaA, Zeta, ShfA, species, species_, distances, vec):
     # type: (int, int, float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tuple[Tensor, Tensor]  # noqa: E501
@@ -344,6 +364,7 @@ def _compute_aev(num_species, angular_sublength, Rcr, EtaR, ShfR, Rca, ShfZ,
 
     radial_terms, angular_terms = _terms_and_indices(
         Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA, distances, vec)
+    print(angular_terms)
     mask_r = _compute_mask_r(species_, num_species)
     mask_a = _compute_mask_a(species_, present_species)
 
