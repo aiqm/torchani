@@ -13,6 +13,7 @@ from . import utils
 import ase.calculators.calculator
 import ase.units
 import copy
+import numpy
 
 
 class Calculator(ase.calculators.calculator.Calculator):
@@ -33,7 +34,6 @@ class Calculator(ase.calculators.calculator.Calculator):
 
     def __init__(self, species, aev_computer, model, energy_shifter, dtype=torch.float64):
         super(Calculator, self).__init__()
-        self._default_neighborlist = _default_neighborlist
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
         # aev_computer.neighborlist will be changed later, so we need a copy to
         # make sure we do not change the original object
@@ -56,8 +56,9 @@ class Calculator(ase.calculators.calculator.Calculator):
         cell = torch.tensor(self.atoms.get_cell(complete=True),
                             requires_grad=True, dtype=self.dtype,
                             device=self.device)
-        pbc = torch.tensor(self.atoms.get_pbc(), dtype=self.uint8,
+        pbc = torch.tensor(self.atoms.get_pbc().astype(numpy.uint8), dtype=torch.uint8,
                            device=self.device)
+        # print(cell, pbc)
         species = self.species_to_tensor(self.atoms.get_chemical_symbols())
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions())
