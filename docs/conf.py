@@ -28,9 +28,9 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 htmlhelp_basename = 'TorchANIdoc'
 
 sphinx_gallery_conf = {
-     'examples_dirs': '../examples',
-     'gallery_dirs': 'examples',
-     'filename_pattern': r'.*\.py'
+    'examples_dirs': '../examples',
+    'gallery_dirs': 'examples',
+    'filename_pattern': r'.*\.py'
 }
 
 intersphinx_mapping = {
