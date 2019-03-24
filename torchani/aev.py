@@ -369,22 +369,42 @@ class AEVComputer(torch.nn.Module):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
     # @torch.jit.script_method
-    def forward(self, species_coordinates):
+    def forward(self, input):
         """Compute AEVs
 
         Arguments:
-            species_coordinates (tuple): Two tensors: species and coordinates.
+            input (tuple): Can be one of the following two cases:
+
+                If you don't care about periodic boundary conditions at all,
+                then input can be a tuple of two tensors: species and coordinates.
                 species must have shape ``(C, A)`` and coordinates must have
                 shape ``(C, A, 3)``, where ``C`` is the number of molecules
                 in a chunk, and ``A`` is the number of atoms.
+
+                If you want to apply periodic boundary conditions, then the input
+                would be a tuple of four tensors: species, coordinates, cell, pbc
+                where species and coordinates are the same as described above, cell
+                is a tensor of shape (3, 3) of the three vectors defining unit cell:
+
+                .. code-block:: python
+
+                    tensor([[x1, y1, z1],
+                            [x2, y2, z2],
+                            [x3, y3, z3]])
+
+                and pbc is boolean vector of size 3 storing if pbc is enabled
+                for that direction.
 
         Returns:
             tuple: Species and AEVs. species are the species from the input
             unchanged, and AEVs is a tensor of shape
             ``(C, A, self.aev_length())``
         """
-        # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
-        species, coordinates = species_coordinates
-        cell = torch.eye(3, dtype=self.EtaR.dtype, device=self.EtaR.device)
-        pbc = torch.zeros(3, dtype=torch.uint8, device=self.EtaR.device)
+        if len(input) == 2:
+            species, coordinates = input
+            cell = torch.eye(3, dtype=self.EtaR.dtype, device=self.EtaR.device)
+            pbc = torch.zeros(3, dtype=torch.uint8, device=self.EtaR.device)
+        else:
+            assert len(input) == 4
+            species, coordinates, cell, pbc = input
         return species, compute_aev(species, coordinates, cell, pbc, self.triu_index, self.constants(), self.sizes)

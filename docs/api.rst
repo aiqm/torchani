@@ -61,8 +61,6 @@ ASE Interface
 =============
 
 .. automodule:: torchani.ase
-.. autoclass:: torchani.ase.NeighborList
-    :members:
 .. autoclass:: torchani.ase.Calculator
 
 Ignite Helpers
