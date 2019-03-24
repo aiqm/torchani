@@ -350,7 +350,6 @@ class AEVComputer(torch.nn.Module):
         self.register_buffer('Zeta', Zeta.view(1, -1, 1, 1))
         self.register_buffer('ShfA', ShfA.view(1, 1, -1, 1))
         self.register_buffer('ShfZ', ShfZ.view(1, 1, 1, -1))
-        self.constants = self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
         self.num_species = num_species
         # The length of radial subaev of a single species
@@ -366,6 +365,9 @@ class AEVComputer(torch.nn.Module):
         self.sizes = self.num_species, self.radial_sublength, self.radial_length, self.angular_sublength, self.angular_length, self.aev_length
 
         self.register_buffer('triu_index', triu_index(num_species))
+
+    def constants(self):
+        return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
     # @torch.jit.script_method
     def forward(self, species_coordinates):
@@ -386,4 +388,4 @@ class AEVComputer(torch.nn.Module):
         species, coordinates = species_coordinates
         cell = torch.eye(3, dtype=self.EtaR.dtype, device=self.EtaR.device)
         pbc = torch.zeros(3, dtype=torch.uint8, device=self.EtaR.device)
-        return species, compute_aev(species, coordinates, cell, pbc, self.triu_index, self.constants, self.sizes)
+        return species, compute_aev(species, coordinates, cell, pbc, self.triu_index, self.constants(), self.sizes)
