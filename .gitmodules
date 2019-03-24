@@ -1,0 +1,3 @@
+[submodule "dataset/COMP6"]
+	path = dataset/COMP6
+	url = https://github.com/isayev/COMP6.git

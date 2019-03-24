@@ -18,6 +18,9 @@ steps:
   inputs:
     versionSpec: '$(python.version)'
 
+- script: 'git submodule update --init'
+  displayName: 'Fetch submodules'
+
 - script: 'azure/install_dependencies.sh && pip install nose coverage codecov'
   displayName: 'Install dependencies'
 
