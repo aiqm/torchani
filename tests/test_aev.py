@@ -122,8 +122,8 @@ class TestPBC(unittest.TestCase):
         species = torch.tensor([[0, 0]])
         cell = torch.eye(3, dtype=torch.double) * 10
         pbc = torch.ones(3, dtype=torch.uint8)
-        shifts = torchani.aev.compute_shifts(cell, pbc, 1)
-        print(shifts)
+        allshifts = torchani.aev.compute_shifts(cell, pbc, 1)
+        # print(shifts)
 
         xyz1 = torch.tensor([0.1, 0.1, 0.1])
         xyz2s = [
@@ -138,8 +138,8 @@ class TestPBC(unittest.TestCase):
 
         for xyz2 in xyz2s:
             coordinates = torch.stack([xyz1, xyz2]).to(torch.double).unsqueeze(0)
-            molecule_index, atom_index1, atom_index2, shifts = torchani.aev.neighbor_pairs(species == -1, coordinates, cell, shifts, 1)
-            print(molecule_index, atom_index1, atom_index2, shifts)
+            molecule_index, atom_index1, atom_index2, shifts = torchani.aev.neighbor_pairs(species == -1, coordinates, cell, allshifts, 1)
+            # print(molecule_index, atom_index1, atom_index2, shifts)
             self.assertEqual(molecule_index.tolist(), [0])
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
