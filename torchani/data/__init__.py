@@ -53,7 +53,7 @@ def split_batch(natoms, species, coordinates):
         improved = False
         cycle_split = split
         cycle_cost = cost
-        for i in range(len(counts)-1):
+        for i in range(len(counts) - 1):
             if i not in split:
                 s = sorted(split + [i])
                 c = split_cost(counts, s)

@@ -61,4 +61,4 @@ class Ensemble(torch.nn.ModuleList):
 class Gaussian(torch.nn.Module):
     """Gaussian activation"""
     def forward(self, x):
-        return torch.exp(-x*x)
+        return torch.exp(- x * x)

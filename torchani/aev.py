@@ -77,8 +77,7 @@ def _angular_subaev_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
     fcj1 = _cutoff_cosine(distances1, Rca)
     fcj2 = _cutoff_cosine(distances2, Rca)
     factor1 = ((1 + torch.cos(angles - ShfZ)) / 2) ** Zeta
-    factor2 = torch.exp(-EtaA *
-                        ((distances1 + distances2) / 2 - ShfA) ** 2)
+    factor2 = torch.exp(-EtaA * ((distances1 + distances2) / 2 - ShfA) ** 2)
     ret = 2 * factor1 * factor2 * fcj1 * fcj2
     # At this point, ret now have shape
     # (conformations, atoms, N, ?, ?, ?, ?) where ? depend on constants.
@@ -157,9 +156,7 @@ def default_neighborlist(species, coordinates, cutoff):
 def _compute_mask_r(species_r, num_species):
     # type: (Tensor, int) -> Tensor
     """Get mask of radial terms for each supported species from indices"""
-    mask_r = (species_r.unsqueeze(-1) ==
-              torch.arange(num_species, dtype=torch.long,
-                           device=species_r.device))
+    mask_r = (species_r.unsqueeze(-1) == torch.arange(num_species, dtype=torch.long, device=species_r.device))
     return mask_r
 
 
@@ -199,10 +196,7 @@ def _assemble(radial_terms, angular_terms, present_species,
     atoms = radial_terms.shape[1]
 
     # assemble radial subaev
-    present_radial_aevs = (
-        radial_terms.unsqueeze(-2) *
-        mask_r.unsqueeze(-1).to(radial_terms.dtype)
-    ).sum(-3)
+    present_radial_aevs = (radial_terms.unsqueeze(-2) * mask_r.unsqueeze(-1).to(radial_terms.dtype)).sum(-3)
     # present_radial_aevs has shape
     # (conformations, atoms, present species, radial_length)
     radial_aevs = present_radial_aevs.flatten(start_dim=2)

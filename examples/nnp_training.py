@@ -148,7 +148,9 @@ container = torchani.ignite.Container({'energies': model})
 optimizer = torch.optim.Adam(model.parameters())
 trainer = ignite.engine.create_supervised_trainer(
     container, optimizer, torchani.ignite.MSELoss('energies'))
-evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
+evaluator = ignite.engine.create_supervised_evaluator(
+    container,
+    metrics={
         'RMSE': torchani.ignite.RMSEMetric('energies')
     })
 
