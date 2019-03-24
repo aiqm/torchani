@@ -26,8 +26,8 @@ def get_numeric_force(atoms, eps):
 
 class TestASE(unittest.TestCase):
 
-    def _testForce(self, pbc):
-        atoms = Diamond(symbol="C", pbc=pbc)
+    def testWithNumericalForceWithPBCEnabled(self):
+        atoms = Diamond(symbol="C", pbc=True)
         builtin = torchani.neurochem.Builtins()
         calculator = torchani.ase.Calculator(
             builtin.species, builtin.aev_computer,
@@ -41,33 +41,6 @@ class TestASE(unittest.TestCase):
         avgf = f.abs().mean()
         if avgf > 0:
             self.assertLess(df / avgf, 0.1)
-
-    def testForceWithPBCEnabled(self):
-        self._testForce(True)
-
-    def testForceWithPBCDisabled(self):
-        self._testForce(False)
-
-    def testTranslationalInvariancePBC(self):
-        atoms = Atoms('CH4', [[0, 0, 0],
-                              [1, 0, 0],
-                              [0, 1, 0],
-                              [0, 0, 1],
-                              [0, 1, 1]],
-                      cell=[2, 2, 2], pbc=True)
-
-        builtin = torchani.neurochem.Builtins()
-        calculator = torchani.ase.Calculator(
-            builtin.species, builtin.aev_computer,
-            builtin.models, builtin.energy_shifter)
-        atoms.set_calculator(calculator)
-        e = atoms.get_potential_energy()
-
-        for _ in range(100):
-            positions = atoms.get_positions()
-            translation = (numpy.random.rand(3) - 0.5) * 2
-            atoms.set_positions(positions + translation)
-            self.assertEqual(e, atoms.get_potential_energy())
 
     def assertTensorEqual(self, a, b):
         self.assertLess((a - b).abs().max().item(), 1e-6)

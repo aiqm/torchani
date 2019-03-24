@@ -93,19 +93,30 @@ class TestAEV(unittest.TestCase):
                 self._assertAEVEqual(radial, angular, aev)
 
 
-class TestAEVASENeighborList(TestAEV):
+class TestPBC(unittest.TestCase):
 
     def setUp(self):
-        super(TestAEVASENeighborList, self).setUp()
-        self.aev_computer.neighborlist = torchani.ase.NeighborList()
+        self.builtin = torchani.neurochem.Builtins()
+        self.aev_computer = self.builtin.aev_computer.to(torch.double)
 
-    def transform(self, x):
-        """To reduce the size of test cases for faster test speed"""
-        return x[:2, ...]
+    def testTranslationalInvariancePBC(self):
+        coordinates = torch.tensor(
+            [[[0, 0, 0],
+              [1, 0, 0],
+              [0, 1, 0],
+              [0, 0, 1],
+              [0, 1, 1]]],
+            dtype=torch.double, requires_grad=True)
+        cell = torch.eye(3, dtype=torch.double) * 2
+        species = torch.tensor([[1, 0, 0, 0, 0]], dtype=torch.long)
+        pbc = torch.ones(3, dtype=torch.uint8)
 
-    def random_skip(self):
-        """To reduce the size of test cases for faster test speed"""
-        return random.random() < 0.95
+        _, aev = self.aev_computer((species, coordinates, cell, pbc))
+
+        for _ in range(100):
+            translation = torch.randn(3, dtype=torch.double)
+            _, aev2 = self.aev_computer((species, coordinates + translation, cell, pbc))
+            self.assertTrue(torch.allclose(aev, aev2))
 
 
 if __name__ == '__main__':
