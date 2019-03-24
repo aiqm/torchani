@@ -21,7 +21,7 @@ class TestData(unittest.TestCase):
                                                   batch_size)
 
     def _assertTensorEqual(self, t1, t2):
-        self.assertEqual((t1-t2).abs().max().item(), 0)
+        self.assertEqual((t1 - t2).abs().max().item(), 0)
 
     def testSplitBatch(self):
         species1 = torch.randint(4, (5, 4), dtype=torch.long)
@@ -45,8 +45,8 @@ class TestData(unittest.TestCase):
                 self.assertNotEqual(last[-1], n[0])
             conformations = s.shape[0]
             self.assertGreater(conformations, 0)
-            s_ = species[start:start+conformations, ...]
-            c_ = coordinates[start:start+conformations, ...]
+            s_ = species[start:(start + conformations), ...]
+            c_ = coordinates[start:(start + conformations), ...]
             s_, c_ = torchani.utils.strip_redundant_padding(s_, c_)
             self._assertTensorEqual(s, s_)
             self._assertTensorEqual(c, c_)

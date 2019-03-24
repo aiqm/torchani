@@ -74,7 +74,7 @@ class TestAEV(unittest.TestCase):
         for expected_radial, expected_angular in radial_angular:
             conformations = expected_radial.shape[0]
             atoms = expected_radial.shape[1]
-            aev_ = aev[start:start+conformations, 0:atoms]
+            aev_ = aev[start:(start + conformations), 0:atoms]
             start += conformations
             self._assertAEVEqual(expected_radial, expected_angular, aev_)
 

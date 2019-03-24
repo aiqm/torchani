@@ -52,8 +52,8 @@ log = 'runs'
 ###############################################################################
 # Here, there is no need to manually construct aev computer and energy shifter,
 # but we do need to generate a disk cache for datasets
-const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
-sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')  # noqa: E501
+const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')
+sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')
 training_cache = './training_cache'
 validation_cache = './validation_cache'
 
@@ -113,7 +113,9 @@ container = torchani.ignite.Container({'energies': model})
 optimizer = torch.optim.Adam(model.parameters())
 trainer = ignite.engine.create_supervised_trainer(
     container, optimizer, torchani.ignite.MSELoss('energies'))
-evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
+evaluator = ignite.engine.create_supervised_evaluator(
+    container,
+    metrics={
         'RMSE': torchani.ignite.RMSEMetric('energies')
     })
 
