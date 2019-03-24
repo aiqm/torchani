@@ -45,32 +45,6 @@ class TestASE(unittest.TestCase):
     def assertTensorEqual(self, a, b):
         self.assertLess((a - b).abs().max().item(), 1e-6)
 
-    def testPBCConnersSeeEachOther(self):
-        species = torch.tensor([[0, 0]])
-        neighborlist = torchani.ase.NeighborList(cell=[10, 10, 10], pbc=True)
-
-        xyz1 = torch.tensor([0.1, 0.1, 0.1])
-        xyz2s = [
-            torch.tensor([9.9, 0.0, 0.0]),
-            torch.tensor([0.0, 9.9, 0.0]),
-            torch.tensor([0.0, 0.0, 9.9]),
-            torch.tensor([9.9, 9.9, 0.0]),
-            torch.tensor([0.0, 9.9, 9.9]),
-            torch.tensor([9.9, 0.0, 9.9]),
-            torch.tensor([9.9, 9.9, 9.9]),
-        ]
-
-        for xyz2 in xyz2s:
-            coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
-            s, _, D = neighborlist(species, coordinates, 1)
-            self.assertListEqual(list(s.shape), [1, 2, 1])
-            neighbor_coordinate = D[0][0].squeeze() + xyz1
-            mirror = xyz2
-            for i in range(3):
-                if mirror[i] > 5:
-                    mirror[i] -= 10
-            self.assertTensorEqual(neighbor_coordinate, mirror)
-
     def testPBCSurfaceSeeEachOther(self):
         species = torch.tensor([[0, 0]])
         neighborlist = torchani.ase.NeighborList(cell=[10, 10, 10], pbc=True)
