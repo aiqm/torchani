@@ -73,7 +73,7 @@ def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
     fcj1 = cutoff_cosine(distances1, Rca)
     fcj2 = cutoff_cosine(distances2, Rca)
     factor1 = ((1 + torch.cos(angles - ShfZ)) / 2) ** Zeta
-    factor2 = torch.exp(-EtaA * s((distances1 + distances2) / 2 - ShfA) ** 2)
+    factor2 = torch.exp(-EtaA * ((distances1 + distances2) / 2 - ShfA) ** 2)
     ret = 2 * factor1 * factor2 * fcj1 * fcj2
     # At this point, ret now have shape
     # (conformations, atoms, N, ?, ?, ?, ?) where ? depend on constants.
@@ -212,6 +212,13 @@ def convert_pair_index(index):
     return index - num_elems, n + 1
 
 
+#torch.jit.script
+def cumsum_from_zero(input_):
+    cumsum = torch.cumsum(input_, dim=0)
+    cumsum = torch.cat([input_.new_tensor([0]), cumsum[:-1]])
+    return cumsum
+
+
 # torch.jit.script
 def triple_by_molecule(molecule_index, atom_index1, atom_index2):
     # convert representation from pair to central-other
@@ -229,9 +236,12 @@ def triple_by_molecule(molecule_index, atom_index1, atom_index2):
     total_size = pair_sizes.sum()
     molecule_index = torch.numpy_repeat(uniqued_molecule_index, pair_sizes)
     central_atom_index = torch.numpy_repeat(uniqued_central_atom_index, pair_sizes)
-    cumsum = torch.numpy_repeat(torch.cumsum(pair_sizes, dim=0) - pair_sizes[0], pair_sizes)
+    cumsum = cumsum_from_zero(pair_sizes)
+    cumsum = torch.numpy_repeat(cumsum, pair_sizes)
     sorted_local_pair_index = torch.arange(total_size, device=molecule_index.device) - cumsum
     sorted_local_index1, sorted_local_index2 = convert_pair_index(sorted_local_pair_index)
+    cumsum = cumsum_from_zero(counts)
+    cumsum = torch.numpy_repeat(cumsum, pair_sizes)
     sorted_local_index1 += cumsum
     sorted_local_index2 += cumsum
 
@@ -244,7 +254,7 @@ def triple_by_molecule(molecule_index, atom_index1, atom_index2):
     sign1 = torch.where(local_index1 < n, torch.ones_like(local_index1), -torch.ones_like(local_index1))
     sign2 = torch.where(local_index2 < n, torch.ones_like(local_index2), -torch.ones_like(local_index2))
     pair_index1 = torch.where(local_index1 < n, local_index1, local_index1 - n)
-    pair_index1 = torch.where(local_index2 < n, local_index2, local_index2 - n)
+    pair_index2 = torch.where(local_index2 < n, local_index2, local_index2 - n)
     return molecule_index, central_atom_index, pair_index1, pair_index2, sign1, sign2
 
 
@@ -274,14 +284,14 @@ def compute_aev(species, coordinates, cell, pbc_switch, triu_index, constants, s
 
     # compute angular aev
     molecule_index, central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(molecule_index, atom_index1, atom_index2)
-    vec1 = vec.index_select(0, pair_index1) * sign1
-    vec2 = vec.index_select(0, pair_index2) * sign2
+    vec1 = vec.index_select(0, pair_index1) * sign1.unsqueeze(1).to(vec.dtype)
+    vec2 = vec.index_select(0, pair_index2) * sign2.unsqueeze(1).to(vec.dtype)
     species1 = species2[pair_index1]
     species2 = species2[pair_index2]
     angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec1, vec2)
     angular_aev = torch.zeros(num_molecules, num_atoms, angular_length // angular_sublength, angular_sublength)
+    angular_aev[molecule_index, central_atom_index, triu_index[species1, species2], :] += angular_terms_
     angular_aev = angular_aev.reshape(num_molecules, num_atoms, angular_length)
-    angular_aev[molecule_index, central_atom_index, triu_index[species1, species2]] += angular_terms_
     return torch.cat([radial_aev, angular_aev], dim=-1)
 
 
@@ -364,3 +374,4 @@ class AEVComputer(torch.nn.Module):
         cell = torch.eye(3, dtype=self.EtaR.dtype, device=self.EtaR.device)
         pbc = torch.zeros(3, dtype=torch.uint8, device=self.EtaR.device)
         return species, compute_aev(species, coordinates, cell, pbc, self.triu_index, self.constants, self.sizes)
+
