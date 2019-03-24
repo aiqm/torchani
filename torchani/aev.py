@@ -264,6 +264,7 @@ def compute_aev(species, coordinates, cell, pbc_switch, triu_index, constants, s
     num_species, radial_sublength, radial_length, angular_sublength, angular_length, aev_length = sizes
     num_molecules = species.shape[0]
     num_atoms = species.shape[1]
+    num_species_pairs = angular_length // angular_sublength
     cutoff = max(Rcr, Rca)
 
     shifts = compute_shifts(cell, pbc_switch, cutoff)
@@ -291,8 +292,10 @@ def compute_aev(species, coordinates, cell, pbc_switch, triu_index, constants, s
     species1 = species2[pair_index1]
     species2 = species2[pair_index2]
     angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec1, vec2)
-    angular_aev = torch.zeros(num_molecules, num_atoms, angular_length // angular_sublength, angular_sublength)
-    angular_aev[molecule_index, central_atom_index, triu_index[species1, species2], :] += angular_terms_
+    angular_aev = torch.zeros(num_molecules * num_atoms * num_species_pairs, angular_sublength)
+    index = (molecule_index * num_atoms + central_atom_index) * num_species_pairs + triu_index[species1, species2]
+    print(triu_index)
+    angular_aev.scatter_add_(0, index.unsqueeze(1).expand(-1, angular_sublength), angular_terms_)
     angular_aev = angular_aev.reshape(num_molecules, num_atoms, angular_length)
     return torch.cat([radial_aev, angular_aev], dim=-1)
 
