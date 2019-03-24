@@ -27,6 +27,7 @@ class TestAEV(unittest.TestCase):
         radial = aev[..., :self.radial_length]
         angular = aev[..., self.radial_length:]
         radial_diff = expected_radial - radial
+        print(torch.stack([expected_radial[0,0,:], radial[0,0,:]], dim=1))
         radial_max_error = torch.max(torch.abs(radial_diff)).item()
         angular_diff = expected_angular - angular
         angular_max_error = torch.max(torch.abs(angular_diff)).item()

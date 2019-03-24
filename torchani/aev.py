@@ -277,9 +277,11 @@ def compute_aev(species, coordinates, cell, pbc_switch, triu_index, constants, s
 
     # compute radial aev
     radial_terms_ = radial_terms(Rcr, EtaR, ShfR, distances)
-    radial_aev = radial_terms_.new_zeros(num_molecules, num_atoms, num_species, radial_sublength)
-    radial_aev[molecule_index, atom_index1, species2, :] += radial_terms_
-    radial_aev[molecule_index, atom_index2, species1, :] += radial_terms_
+    radial_aev = radial_terms_.new_zeros(num_molecules * num_atoms * num_species, radial_sublength)
+    index1 = (molecule_index * num_atoms + atom_index1) * num_species + species2
+    index2 = (molecule_index * num_atoms + atom_index2) * num_species + species1
+    radial_aev.scatter_add_(0, index1.unsqueeze(1).expand(-1, radial_sublength), radial_terms_)
+    radial_aev.scatter_add_(0, index2.unsqueeze(1).expand(-1, radial_sublength), radial_terms_)
     radial_aev = radial_aev.reshape(num_molecules, num_atoms, radial_length)
 
     # compute angular aev
