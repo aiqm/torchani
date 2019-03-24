@@ -301,7 +301,7 @@ def compute_aev(species, coordinates, cell, pbc_switch, triu_index, constants, s
     species1_ = torch.where(sign1 == 1, species2[pair_index1], species1[pair_index1])
     species2_ = torch.where(sign2 == 1, species2[pair_index2], species1[pair_index2])
     angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec1, vec2)
-    angular_aev = torch.zeros(num_molecules * num_atoms * num_species_pairs, angular_sublength)
+    angular_aev = angular_terms_.new_zeros(num_molecules * num_atoms * num_species_pairs, angular_sublength)
     index = (molecule_index * num_atoms + central_atom_index) * num_species_pairs + triu_index[species1_, species2_]
     angular_aev.scatter_add_(0, index.unsqueeze(1).expand(-1, angular_sublength), angular_terms_)
     angular_aev = angular_aev.reshape(num_molecules, num_atoms, angular_length)
