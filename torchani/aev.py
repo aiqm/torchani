@@ -1,8 +1,8 @@
+# flake8: 
 from __future__ import division
 import torch
 from . import _six  # noqa:F401
 import math
-from . import utils
 from torch import Tensor
 from typing import Tuple
 
@@ -212,7 +212,7 @@ def convert_pair_index(index):
     return index - num_elems, n + 1
 
 
-#torch.jit.script
+# torch.jit.script
 def cumsum_from_zero(input_):
     cumsum = torch.cumsum(input_, dim=0)
     cumsum = torch.cat([input_.new_tensor([0]), cumsum[:-1]])
@@ -235,7 +235,6 @@ def triple_by_molecule(molecule_index, atom_index1, atom_index2):
     n = molecule_index.shape[0]
     mi = molecule_index.repeat(2)
     ai1 = torch.cat([atom_index1, atom_index2])
-    ai2 = torch.cat([atom_index2, atom_index1])
 
     # sort and compute unique key
     m_ac, rev_indices, counts = torch.stack([mi, ai1], dim=1).unique(dim=0, sorted=True, return_inverse=True, return_counts=True)
@@ -388,4 +387,3 @@ class AEVComputer(torch.nn.Module):
         cell = torch.eye(3, dtype=self.EtaR.dtype, device=self.EtaR.device)
         pbc = torch.zeros(3, dtype=torch.uint8, device=self.EtaR.device)
         return species, compute_aev(species, coordinates, cell, pbc, self.triu_index, self.constants, self.sizes)
-
