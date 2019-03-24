@@ -7,10 +7,6 @@ from torch import Tensor
 from typing import Tuple
 
 
-def repeat2(tensor, count, dim=0):
-    return tensor
-
-
 # @torch.jit.script
 def cutoff_cosine(distances, cutoff):
     # type: (Tensor, float) -> Tensor
@@ -183,7 +179,7 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
 # torch.jit.script
 def triu_index(num_species):
     species = torch.arange(num_species)
-    species1, species2 = torch.combinations(species, r=2, with_replacement=True)
+    species1, species2 = torch.combinations(species, r=2, with_replacement=True).unbind(-1)
     pair_index = torch.arange(species1.shape[0])
     ret = torch.zeros(num_species, num_species, dtype=torch.long)
     ret[species1, species2] = pair_index
@@ -226,14 +222,14 @@ def triple_by_molecule(molecule_index, atom_index1, atom_index2):
 
     # sort and compute unique key
     m_ac, rev_indices, counts = torch.stack([mi, ai1], dim=1).unique(dim=0, sorted=True, return_inverse=True, return_counts=True)
-    uniqued_molecule_index, uniqued_central_atom_index = m_ac
+    uniqued_molecule_index, uniqued_central_atom_index = m_ac.unbind(1)
 
     # do local combinations within unique key, assuming sorted
     pair_sizes = counts * (counts - 1) // 2
     total_size = pair_sizes.sum()
-    molecule_index = repeat2(uniqued_molecule_index, pair_sizes)
-    central_atom_index = repeat2(uniqued_central_atom_index, pair_sizes)
-    cumsum = repeat2(torch.cumsum(pair_sizes) - pair_sizes[0], pair_sizes)
+    molecule_index = torch.numpy_repeat(uniqued_molecule_index, pair_sizes)
+    central_atom_index = torch.numpy_repeat(uniqued_central_atom_index, pair_sizes)
+    cumsum = torch.numpy_repeat(torch.cumsum(pair_sizes, dim=0) - pair_sizes[0], pair_sizes)
     sorted_local_pair_index = torch.arange(total_size, device=molecule_index.device) - cumsum
     sorted_local_index1, sorted_local_index2 = convert_pair_index(sorted_local_pair_index)
     sorted_local_index1 += cumsum
@@ -271,7 +267,7 @@ def compute_aev(species, coordinates, cell, pbc_switch, triu_index, constants, s
 
     # compute radial aev
     radial_terms_ = radial_terms(Rcr, EtaR, ShfR, distances)
-    radial_aev = torch.zeros(num_molecules, num_atoms, num_species, radial_sublength)
+    radial_aev = radial_terms_.new_zeros(num_molecules, num_atoms, num_species, radial_sublength)
     radial_aev[molecule_index, atom_index1, species2, :] += radial_terms_
     radial_aev[molecule_index, atom_index2, species1, :] += radial_terms_
     radial_aev = radial_aev.reshape(num_molecules, num_atoms, radial_length)
@@ -346,7 +342,7 @@ class AEVComputer(torch.nn.Module):
         self.aev_length = self.radial_length + self.angular_length
         self.sizes = self.num_species, self.radial_sublength, self.radial_length, self.angular_sublength, self.angular_length, self.aev_length
 
-        self.register_buffer('triu_index', triu_index(num_species).to(self.EtaR.device))
+        self.register_buffer('triu_index', triu_index(num_species))
 
     # @torch.jit.script_method
     def forward(self, species_coordinates):
@@ -355,7 +351,7 @@ class AEVComputer(torch.nn.Module):
         Arguments:
             species_coordinates (tuple): Two tensors: species and coordinates.
                 species must have shape ``(C, A)`` and coordinates must have
-                shape ``(C, A, 3)``, where ``C`` is the number of conformations
+                shape ``(C, A, 3)``, where ``C`` is the number of molecules
                 in a chunk, and ``A`` is the number of atoms.
 
         Returns:
@@ -365,4 +361,6 @@ class AEVComputer(torch.nn.Module):
         """
         # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
         species, coordinates = species_coordinates
-        return species, compute_aev(species, coordinates, self.triu_index, self.constants, self.sizes)
+        cell = torch.eye(3, dtype=self.EtaR.dtype, device=self.EtaR.device)
+        pbc = torch.zeros(3, dtype=torch.uint8, device=self.EtaR.device)
+        return species, compute_aev(species, coordinates, cell, pbc, self.triu_index, self.constants, self.sizes)
