@@ -1,4 +1,3 @@
-# flake8: 
 from __future__ import division
 import torch
 from . import _six  # noqa:F401
