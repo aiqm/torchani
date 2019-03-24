@@ -221,6 +221,16 @@ def cumsum_from_zero(input_):
 
 # torch.jit.script
 def triple_by_molecule(molecule_index, atom_index1, atom_index2):
+    """Input: indices for pairs of atoms that are close to each other.
+    each pair only appear once, i.e. only one of the pairs (1, 2) and
+    (2, 1) exists.
+
+    Output: indices for all central atoms and it pairs of neighbors. For
+    example, if input has pair (0, 1), (0, 2), (0, 3), (0, 4), (1, 2),
+    (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), then the output would have
+    central atom 0, 1, 2, 3, 4 and for cental atom 0, its pairs of neighbors
+    are (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
+    """
     # convert representation from pair to central-other
     n = molecule_index.shape[0]
     mi = molecule_index.repeat(2)
