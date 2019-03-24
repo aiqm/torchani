@@ -29,11 +29,9 @@ class TestAEV(unittest.TestCase):
         radial_diff = expected_radial - radial
         radial_max_error = torch.max(torch.abs(radial_diff)).item()
         angular_diff = expected_angular - angular
-        # print(torch.stack([expected_angular[0,1,:], angular[0,1,:]], dim=1))
         angular_max_error = torch.max(torch.abs(angular_diff)).item()
         self.assertLess(radial_max_error, self.tolerance)
         self.assertLess(angular_max_error, self.tolerance)
-        print('success')
 
     def testIsomers(self):
         for i in range(N):
