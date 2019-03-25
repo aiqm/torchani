@@ -202,14 +202,47 @@ class TestPBCSeeEachOther(unittest.TestCase):
 
 class TestAEVOnBoundary(unittest.TestCase):
 
-    def testCorner(self):
-        pass
+    def setUp(self):
+        self.eps = 1e-9
+        cell = ase.geometry.cellpar_to_cell([100, 100, 100 * math.sqrt(2), 90, 45, 90])
+        self.cell = torch.tensor(ase.geometry.complete_cell(cell), dtype=torch.double)
+        self.inv_cell = torch.inverse(self.cell)
+        self.coordinates = torch.tensor([[[0.0, 0.0, 0.0],
+                                          [1.0, -0.1, -0.1],
+                                          [-0.1, 1.0, -0.1],
+                                          [-0.1, -0.1, 1.0],
+                                          [-1.0, -1.0, -1.0]]], dtype=torch.double)
+        self.species = torch.tensor([[1, 0, 0, 0]])
+        self.pbc = torch.ones(3, dtype=torch.uint8)
+        self.v1, self.v2, self.v3 = self.cell
+        self.center_coordinates = self.coordinates + 0.5 * (self.v1 + self.v2 + self.v3)
+        builtin = torchani.neurochem.Builtins()
+        self.aev_computer = builtin.aev_computer.to(torch.double)
+        _, self.aev = self.aev_computer((self.species, self.center_coordinates, self.cell, self.pbc))
 
-    def testSurface(self):
-        pass
+    def assertInCell(self, coordinates):
+        coordinates_cell = coordinates @ self.inv_cell
+        self.assertTrue(torch.allclose(coordinates, coordinates_cell @ self.cell))
+        in_cell = (coordinates_cell >= -self.eps) & (coordinates_cell <= 1 + self.eps)
+        self.assertTrue(in_cell.all())
 
-    def testEdge(self):
-        pass
+    def assertNotInCell(self, coordinates):
+        coordinates_cell = coordinates @ self.inv_cell
+        self.assertTrue(torch.allclose(coordinates, coordinates_cell @ self.cell))
+        in_cell = (coordinates_cell >= -self.eps) & (coordinates_cell <= 1 + self.eps)
+        self.assertFalse(in_cell.all())
+
+    def testCornerSurfaceAndEdge(self):
+        for i, j, k in itertools.product([0, 0.5, 1], repeat=3):
+            if i == 0.5 and j == 0.5 and k == 0.5:
+                continue
+            coordinates = self.coordinates + i * self.v1 + j * self.v2 + k * self.v3
+            self.assertNotInCell(coordinates)
+            coordinates = torchani.utils.map2central(self.cell, coordinates, self.pbc)
+            self.assertInCell(coordinates)
+            _, aev = self.aev_computer((self.species, coordinates, self.cell, self.pbc))
+            self.assertGreater(aev.abs().max().item(), 0)
+            self.assertTrue(torch.allclose(aev, self.aev))
 
 
 if __name__ == '__main__':

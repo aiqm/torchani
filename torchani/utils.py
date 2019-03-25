@@ -126,12 +126,12 @@ def map2central(cell, coordinates, pbc):
     # Step 1: convert coordinates from standard cartesian coordinate to unit
     # cell coordinates
     inv_cell = torch.inverse(cell)
-    coordinates_cell = torch.mm(coordinates, inv_cell)
+    coordinates_cell = torch.matmul(coordinates, inv_cell)
     # Step 2: wrap cell coordinates into [0, 1)
     coordinates_cell -= coordinates_cell.floor() * pbc.to(coordinates_cell.dtype)
     # Step 3: convert from cell coordinates back to standard cartesian
     # coordinate
-    return torch.mm(coordinates_cell, cell)
+    return torch.matmul(coordinates_cell, cell)
 
 
 class EnergyShifter(torch.nn.Module):

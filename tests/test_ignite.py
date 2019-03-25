@@ -22,7 +22,8 @@ class TestIgnite(unittest.TestCase):
         shift_energy = builtins.energy_shifter
         ds = torchani.data.BatchedANIDataset(
             path, builtins.consts.species_to_tensor, batchsize,
-            transform=[shift_energy.subtract_from_dataset])
+            transform=[shift_energy.subtract_from_dataset],
+            device=aev_computer.EtaR.device)
         ds = torch.utils.data.Subset(ds, [0])
 
         class Flatten(torch.nn.Module):
