@@ -95,7 +95,7 @@ class TestAEV(unittest.TestCase):
                 self._assertAEVEqual(radial, angular, aev)
 
 
-class TestPBC(unittest.TestCase):
+class TestPBCSeeEachOther(unittest.TestCase):
 
     def setUp(self):
         self.builtin = torchani.neurochem.Builtins()
@@ -198,6 +198,18 @@ class TestPBC(unittest.TestCase):
         self.assertEqual(molecule_index.tolist(), [0])
         self.assertEqual(atom_index1.tolist(), [0])
         self.assertEqual(atom_index2.tolist(), [1])
+
+
+class TestAEVOnBoundary(unittest.TestCase):
+
+    def testCorner(self):
+        pass
+
+    def testSurface(self):
+        pass
+
+    def testEdge(self):
+        pass
 
 
 if __name__ == '__main__':
