@@ -4,6 +4,9 @@ import unittest
 import os
 import pickle
 import random
+import itertools
+import ase
+import math
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
@@ -123,7 +126,6 @@ class TestPBC(unittest.TestCase):
         cell = torch.eye(3, dtype=torch.double) * 10
         pbc = torch.ones(3, dtype=torch.uint8)
         allshifts = torchani.aev.compute_shifts(cell, pbc, 1)
-        # print(shifts)
 
         xyz1 = torch.tensor([0.1, 0.1, 0.1])
         xyz2s = [
@@ -138,12 +140,65 @@ class TestPBC(unittest.TestCase):
 
         for xyz2 in xyz2s:
             coordinates = torch.stack([xyz1, xyz2]).to(torch.double).unsqueeze(0)
-            molecule_index, atom_index1, atom_index2, shifts = torchani.aev.neighbor_pairs(species == -1, coordinates, cell, allshifts, 1)
-            # print(molecule_index, atom_index1, atom_index2, shifts)
+            molecule_index, atom_index1, atom_index2, _ = torchani.aev.neighbor_pairs(species == -1, coordinates, cell, allshifts, 1)
             self.assertEqual(molecule_index.tolist(), [0])
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
-            #TODO assert shift
+
+    def testPBCSurfaceSeeEachOther(self):
+        cell = torch.eye(3, dtype=torch.double) * 10
+        pbc = torch.ones(3, dtype=torch.uint8)
+        allshifts = torchani.aev.compute_shifts(cell, pbc, 1)
+        species = torch.tensor([[0, 0]])
+
+        for i in range(3):
+            xyz1 = torch.tensor([5.0, 5.0, 5.0], dtype=torch.double)
+            xyz1[i] = 0.1
+            xyz2 = xyz1.clone()
+            xyz2[i] = 9.9
+
+            coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
+            molecule_index, atom_index1, atom_index2, _ = torchani.aev.neighbor_pairs(species == -1, coordinates, cell, allshifts, 1)
+            self.assertEqual(molecule_index.tolist(), [0])
+            self.assertEqual(atom_index1.tolist(), [0])
+            self.assertEqual(atom_index2.tolist(), [1])
+
+    def testPBCEdgesSeeEachOther(self):
+        cell = torch.eye(3, dtype=torch.double) * 10
+        pbc = torch.ones(3, dtype=torch.uint8)
+        allshifts = torchani.aev.compute_shifts(cell, pbc, 1)
+        species = torch.tensor([[0, 0]])
+
+        for i, j in itertools.combinations(range(3), 2):
+            xyz1 = torch.tensor([5.0, 5.0, 5.0], dtype=torch.double)
+            xyz1[i] = 0.1
+            xyz1[j] = 0.1
+            for new_i, new_j in [[0.1, 9.9], [9.9, 0.1], [9.9, 9.9]]:
+                xyz2 = xyz1.clone()
+                xyz2[i] = new_i
+                xyz2[j] = new_i
+
+            coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
+            molecule_index, atom_index1, atom_index2, _ = torchani.aev.neighbor_pairs(species == -1, coordinates, cell, allshifts, 1)
+            self.assertEqual(molecule_index.tolist(), [0])
+            self.assertEqual(atom_index1.tolist(), [0])
+            self.assertEqual(atom_index2.tolist(), [1])
+
+    def testNonRectangularPBCConnersSeeEachOther(self):
+        species = torch.tensor([[0, 0]])
+        cell = ase.geometry.cellpar_to_cell([10, 10, 10 * math.sqrt(2), 90, 45, 90])
+        cell = torch.tensor(ase.geometry.complete_cell(cell), dtype=torch.double)
+        pbc = torch.ones(3, dtype=torch.uint8)
+        allshifts = torchani.aev.compute_shifts(cell, pbc, 1)
+
+        xyz1 = torch.tensor([0.1, 0.1, 0.05], dtype=torch.double)
+        xyz2 = torch.tensor([10.0, 0.1, 0.1], dtype=torch.double)
+
+        coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
+        molecule_index, atom_index1, atom_index2, _ = torchani.aev.neighbor_pairs(species == -1, coordinates, cell, allshifts, 1)
+        self.assertEqual(molecule_index.tolist(), [0])
+        self.assertEqual(atom_index1.tolist(), [0])
+        self.assertEqual(atom_index2.tolist(), [1])
 
 
 if __name__ == '__main__':

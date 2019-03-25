@@ -42,69 +42,6 @@ class TestASE(unittest.TestCase):
         if avgf > 0:
             self.assertLess(df / avgf, 0.1)
 
-    def assertTensorEqual(self, a, b):
-        self.assertLess((a - b).abs().max().item(), 1e-6)
-
-    def testPBCSurfaceSeeEachOther(self):
-        species = torch.tensor([[0, 0]])
-        neighborlist = torchani.ase.NeighborList(cell=[10, 10, 10], pbc=True)
-
-        for i in range(3):
-            xyz1 = torch.tensor([5.0, 5.0, 5.0])
-            xyz1[i] = 0.1
-            xyz2 = xyz1.clone()
-            xyz2[i] = 9.9
-
-            coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
-            s, _, D = neighborlist(species, coordinates, 1)
-            self.assertListEqual(list(s.shape), [1, 2, 1])
-            neighbor_coordinate = D[0][0].squeeze() + xyz1
-            xyz2[i] = -0.1
-            self.assertTensorEqual(neighbor_coordinate, xyz2)
-
-    def testPBCEdgesSeeEachOther(self):
-        species = torch.tensor([[0, 0]])
-        neighborlist = torchani.ase.NeighborList(cell=[10, 10, 10], pbc=True)
-
-        for i, j in itertools.combinations(range(3), 2):
-            xyz1 = torch.tensor([5.0, 5.0, 5.0])
-            xyz1[i] = 0.1
-            xyz1[j] = 0.1
-            for new_i, new_j in [[0.1, 9.9], [9.9, 0.1], [9.9, 9.9]]:
-                xyz2 = xyz1.clone()
-                xyz2[i] = new_i
-                xyz2[j] = new_i
-
-            coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
-            s, _, D = neighborlist(species, coordinates, 1)
-            self.assertListEqual(list(s.shape), [1, 2, 1])
-            neighbor_coordinate = D[0][0].squeeze() + xyz1
-
-            if xyz2[i] > 5:
-                xyz2[i] = -0.1
-            if xyz2[j] > 5:
-                xyz2[j] = -0.1
-
-            self.assertTensorEqual(neighbor_coordinate, xyz2)
-
-    def testNonRectangularPBCConnersSeeEachOther(self):
-        species = torch.tensor([[0, 0]])
-        neighborlist = torchani.ase.NeighborList(
-            cell=[10, 10, 10 * math.sqrt(2), 90, 45, 90], pbc=True)
-
-        xyz1 = torch.tensor([0.1, 0.1, 0.05])
-        xyz2 = torch.tensor([10.0, 0.1, 0.1])
-        mirror = torch.tensor([0.0, 0.1, 0.1])
-
-        coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
-        s, _, D = neighborlist(species, coordinates, 1)
-        self.assertListEqual(list(s.shape), [1, 2, 1])
-        neighbor_coordinate = D[0][0].squeeze() + xyz1
-        for i in range(3):
-            if mirror[i] > 5:
-                mirror[i] -= 10
-        self.assertTensorEqual(neighbor_coordinate, mirror)
-
 
 if __name__ == '__main__':
     unittest.main()
