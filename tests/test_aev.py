@@ -3,7 +3,6 @@ import torchani
 import unittest
 import os
 import pickle
-import random
 import itertools
 import ase
 import math

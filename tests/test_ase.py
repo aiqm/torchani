@@ -1,15 +1,11 @@
 from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
-from ase import units, Atoms
+from ase import units
 from ase.calculators.test import numeric_force
 import torch
 import torchani
 import unittest
-import numpy
-import itertools
-import math
 import os
-import pickle
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97

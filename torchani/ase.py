@@ -6,7 +6,6 @@
 """
 
 from __future__ import absolute_import
-import math
 import torch
 import ase.neighborlist
 from . import utils
