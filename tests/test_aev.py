@@ -101,14 +101,13 @@ class TestAEV(unittest.TestCase):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # Create local copy of aev_computer to avoid interference with other
         # tests.
-        aev_computer = copy.deepcopy(self.aev_computer).to(device)
+        aev_computer = copy.deepcopy(self.aev_computer).to(device).to(torch.float64)
         with open(datafile, 'rb') as f:
             data = pickle.load(f)
             for coordinates, species, _, _, _, _ in data:
                 if self.random_skip():
                     continue
-                coordinates = torch.from_numpy(coordinates).to(torch.float).to(
-                    device)
+                coordinates = torch.from_numpy(coordinates).to(device).to(torch.float64)
                 coordinates.requires_grad_(True)
                 species = torch.from_numpy(species).to(device)
 
