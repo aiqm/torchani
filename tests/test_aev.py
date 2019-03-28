@@ -4,6 +4,7 @@ import unittest
 import os
 import pickle
 import random
+import copy
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
@@ -91,6 +92,43 @@ class TestAEV(unittest.TestCase):
                 angular = torch.from_numpy(angular).to(torch.float)
                 _, aev = self.aev_computer((species, coordinates))
                 self._assertAEVEqual(radial, angular, aev)
+
+    def testGradient(self):
+        """Test validity of autodiff by comparing analytical and numerical
+        gradients.
+        """
+        datafile = os.path.join(path, 'test_data/NIST/all')
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # Create local copy of aev_computer to avoid interference with other
+        # tests.
+        aev_computer = copy.deepcopy(self.aev_computer).to(device)
+        with open(datafile, 'rb') as f:
+            data = pickle.load(f)
+            for coordinates, species, _, _, _, _ in data:
+                if self.random_skip():
+                    continue
+                coordinates = torch.from_numpy(coordinates).to(torch.float).to(
+                    device)
+                coordinates.requires_grad_(True)
+                species = torch.from_numpy(species).to(device)
+
+                # PyTorch gradcheck expects to test a funtion with inputs and
+                # outputs of type torch.Tensor. The numerical estimation of
+                # the deriviate involves making small modifications to the
+                # input and observing how it affects the output. The species
+                # tensor needs to be removed from the input so that gradcheck
+                # does not attempt to estimate the gradient with respect to
+                # species and fail.
+                # Create simple function wrapper to handle this.
+                def aev_forward_wrapper(coords):
+                    # Return only the aev portion of the output.
+                    return aev_computer((species, coords))[1]
+                # Sanity Check: Forward wrapper returns aev without error.
+                aev_forward_wrapper(coordinates)
+                torch.autograd.gradcheck(
+                    aev_forward_wrapper,
+                    coordinates
+                )
 
 
 class TestAEVASENeighborList(TestAEV):
