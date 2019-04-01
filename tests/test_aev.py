@@ -18,8 +18,8 @@ class TestAEV(unittest.TestCase):
         self.radial_length = self.aev_computer.radial_length
         self.tolerance = 1e-5
 
-    def random_skip(self):
-        return False
+    def random_skip(self, prob=0):
+        return random.random() < prob
 
     def transform(self, x):
         return x
@@ -105,7 +105,7 @@ class TestAEV(unittest.TestCase):
         with open(datafile, 'rb') as f:
             data = pickle.load(f)
             for coordinates, species, _, _, _, _ in data:
-                if self.random_skip():
+                if self.random_skip(prob=0.9):
                     continue
                 coordinates = torch.from_numpy(coordinates).to(device).to(torch.float64)
                 coordinates.requires_grad_(True)
