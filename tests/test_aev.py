@@ -105,7 +105,7 @@ class TestAEV(unittest.TestCase):
         with open(datafile, 'rb') as f:
             data = pickle.load(f)
             for coordinates, species, _, _, _, _ in data:
-                if self.random_skip(prob=0.9):
+                if self.random_skip(prob=0.99):
                     continue
                 coordinates = torch.from_numpy(coordinates).to(device).to(torch.float64)
                 coordinates.requires_grad_(True)
