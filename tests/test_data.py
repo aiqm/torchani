@@ -21,7 +21,7 @@ class TestData(unittest.TestCase):
                                                   batch_size)
 
     def _assertTensorEqual(self, t1, t2):
-        self.assertEqual((t1 - t2).abs().max().item(), 0)
+        self.assertLess((t1 - t2).abs().max().item(), 1e-6)
 
     def testSplitBatch(self):
         species1 = torch.randint(4, (5, 4), dtype=torch.long)

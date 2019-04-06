@@ -90,7 +90,6 @@ class TestForceASEComputer(TestForce):
 
     def setUp(self):
         super(TestForceASEComputer, self).setUp()
-        self.aev_computer.neighborlist = torchani.ase.NeighborList()
 
     def transform(self, x):
         """To reduce the size of test cases for faster test speed"""

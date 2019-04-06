@@ -65,7 +65,7 @@ def pad_coordinates(species_coordinates):
     return torch.cat(species), torch.cat(coordinates)
 
 
-@torch.jit.script
+# @torch.jit.script
 def present_species(species):
     """Given a vector of species of atoms, compute the unique species present.
 
@@ -75,7 +75,8 @@ def present_species(species):
     Returns:
         :class:`torch.Tensor`: 1D vector storing present atom types sorted.
     """
-    present_species, _ = species.flatten()._unique(sorted=True)
+    # present_species, _ = species.flatten()._unique(sorted=True)
+    present_species = species.flatten().unique(sorted=True)
     if present_species[0].item() == -1:
         present_species = present_species[1:]
     return present_species
@@ -86,9 +87,9 @@ def strip_redundant_padding(species, coordinates):
 
     Arguments:
         species (:class:`torch.Tensor`): Long tensor of shape
-            ``(conformations, atoms)``.
+            ``(molecules, atoms)``.
         coordinates (:class:`torch.Tensor`): Tensor of shape
-            ``(conformations, atoms, 3)``.
+            ``(molecules, atoms, 3)``.
 
     Returns:
         (:class:`torch.Tensor`, :class:`torch.Tensor`): species and coordinates
@@ -98,6 +99,39 @@ def strip_redundant_padding(species, coordinates):
     species = species.index_select(1, non_padding)
     coordinates = coordinates.index_select(1, non_padding)
     return species, coordinates
+
+
+def map2central(cell, coordinates, pbc):
+    """Map atoms outside the unit cell into the cell using PBC.
+
+    Arguments:
+        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three
+            vectors defining unit cell:
+
+            .. code-block:: python
+
+                tensor([[x1, y1, z1],
+                        [x2, y2, z2],
+                        [x3, y3, z3]])
+
+        coordinates (:class:`torch.Tensor`): Tensor of shape
+            ``(molecules, atoms, 3)``.
+
+        pbc (:class:`torch.Tensor`): boolean vector of size 3 storing
+            if pbc is enabled for that direction.
+
+    Returns:
+        :class:`torch.Tensor`: coordinates of atoms mapped back to unit cell.
+    """
+    # Step 1: convert coordinates from standard cartesian coordinate to unit
+    # cell coordinates
+    inv_cell = torch.inverse(cell)
+    coordinates_cell = torch.matmul(coordinates, inv_cell)
+    # Step 2: wrap cell coordinates into [0, 1)
+    coordinates_cell -= coordinates_cell.floor() * pbc.to(coordinates_cell.dtype)
+    # Step 3: convert from cell coordinates back to standard cartesian
+    # coordinate
+    return torch.matmul(coordinates_cell, cell)
 
 
 class EnergyShifter(torch.nn.Module):
