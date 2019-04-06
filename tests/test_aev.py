@@ -96,6 +96,7 @@ class TestAEV(unittest.TestCase):
                 _, aev = self.aev_computer((species, coordinates))
                 self._assertAEVEqual(radial, angular, aev)
 
+    @unittest.skipIf(not torch.cuda.is_available())
     def testGradient(self):
         """Test validity of autodiff by comparing analytical and numerical
         gradients.
@@ -108,8 +109,6 @@ class TestAEV(unittest.TestCase):
         with open(datafile, 'rb') as f:
             data = pickle.load(f)
             for coordinates, species, _, _, _, _ in data:
-                if self.random_skip(prob=0.99):
-                    continue
                 coordinates = torch.from_numpy(coordinates).to(device).to(torch.float64)
                 coordinates.requires_grad_(True)
                 species = torch.from_numpy(species).to(device)
