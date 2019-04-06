@@ -2,13 +2,12 @@ from __future__ import division
 import torch
 from . import _six  # noqa:F401
 import math
-from . import utils
 from torch import Tensor
 from typing import Tuple
 
 
-@torch.jit.script
-def _cutoff_cosine(distances, cutoff):
+# @torch.jit.script
+def cutoff_cosine(distances, cutoff):
     # type: (Tensor, float) -> Tensor
     return torch.where(
         distances <= cutoff,
@@ -17,8 +16,8 @@ def _cutoff_cosine(distances, cutoff):
     )
 
 
-@torch.jit.script
-def _radial_subaev_terms(Rcr, EtaR, ShfR, distances):
+# @torch.jit.script
+def radial_terms(Rcr, EtaR, ShfR, distances):
     # type: (float, Tensor, Tensor, Tensor) -> Tensor
     """Compute the radial subAEV terms of the center atom given neighbors
 
@@ -33,7 +32,7 @@ def _radial_subaev_terms(Rcr, EtaR, ShfR, distances):
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
     """
     distances = distances.unsqueeze(-1).unsqueeze(-1)
-    fc = _cutoff_cosine(distances, Rcr)
+    fc = cutoff_cosine(distances, Rcr)
     # Note that in the equation in the paper there is no 0.25
     # coefficient, but in NeuroChem there is such a coefficient.
     # We choose to be consistent with NeuroChem instead of the paper here.
@@ -45,8 +44,8 @@ def _radial_subaev_terms(Rcr, EtaR, ShfR, distances):
     return ret.flatten(start_dim=-2)
 
 
-@torch.jit.script
-def _angular_subaev_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
+# @torch.jit.script
+def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
     # type: (float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
     """Compute the angular subAEV terms of the center atom given neighbor pairs.
 
@@ -60,22 +59,18 @@ def _angular_subaev_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
     """
-    vectors1 = vectors1.unsqueeze(
-        -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-    vectors2 = vectors2.unsqueeze(
-        -1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+    vectors1 = vectors1.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+    vectors2 = vectors2.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
     distances1 = vectors1.norm(2, dim=-5)
     distances2 = vectors2.norm(2, dim=-5)
 
     # 0.95 is multiplied to the cos values to prevent acos from
     # returning NaN.
-    cos_angles = 0.95 * \
-        torch.nn.functional.cosine_similarity(
-            vectors1, vectors2, dim=-5)
+    cos_angles = 0.95 * torch.nn.functional.cosine_similarity(vectors1, vectors2, dim=-5)
     angles = torch.acos(cos_angles)
 
-    fcj1 = _cutoff_cosine(distances1, Rca)
-    fcj2 = _cutoff_cosine(distances2, Rca)
+    fcj1 = cutoff_cosine(distances1, Rca)
+    fcj2 = cutoff_cosine(distances2, Rca)
     factor1 = ((1 + torch.cos(angles - ShfZ)) / 2) ** Zeta
     factor2 = torch.exp(-EtaA * ((distances1 + distances2) / 2 - ShfA) ** 2)
     ret = 2 * factor1 * factor2 * fcj1 * fcj2
@@ -86,168 +81,231 @@ def _angular_subaev_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
     return ret.flatten(start_dim=-4)
 
 
-@torch.jit.script
-def _combinations(tensor, dim=0):
-    # type: (Tensor, int) -> Tuple[Tensor, Tensor]
-    n = tensor.shape[dim]
-    if n == 0:
-        return tensor, tensor
-    r = torch.arange(n, dtype=torch.long, device=tensor.device)
-    index1, index2 = torch.combinations(r).unbind(-1)
-    return tensor.index_select(dim, index1), \
-        tensor.index_select(dim, index2)
+# @torch.jit.script
+def compute_shifts(cell, pbc, cutoff):
+    """Compute the shifts of unit cell along the given cell vectors to make it
+    large enough to contain all pairs of neighbor atoms with PBC under
+    consideration
 
+    Arguments:
+        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three
+        vectors defining unit cell:
+            tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])
+        cutoff (float): the cutoff inside which atoms are considered pairs
+        pbc (:class:`torch.Tensor`): boolean vector of size 3 storing
+            if pbc is enabled for that direction.
 
-@torch.jit.script
-def _terms_and_indices(Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA,
-                       distances, vec):
-    """Returns radial and angular subAEV terms, these terms will be sorted
-    according to their distances to central atoms, and only these within
-    cutoff radius are valid. The returned indices stores the source of data
-    before sorting.
+    Returns:
+        :class:`torch.Tensor`: long tensor of shifts. the center cell and
+            symmetric cells are not included.
     """
-    # type: (float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tuple[Tensor, Tensor]  # noqa: E501
-
-    radial_terms = _radial_subaev_terms(Rcr, EtaR,
-                                        ShfR, distances)
-
-    vec = _combinations(vec, -2)
-    angular_terms = _angular_subaev_terms(Rca, ShfZ, EtaA,
-                                          Zeta, ShfA, *vec)
-
-    return radial_terms, angular_terms
+    # type: (Tensor, Tensor, float) -> Tensor
+    reciprocal_cell = cell.inverse().t()
+    inv_distances = reciprocal_cell.norm(2, -1)
+    num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
+    num_repeats = torch.where(pbc, num_repeats, torch.zeros_like(num_repeats))
+    r1 = torch.arange(1, num_repeats[0] + 1, device=cell.device)
+    r2 = torch.arange(1, num_repeats[1] + 1, device=cell.device)
+    r3 = torch.arange(1, num_repeats[2] + 1, device=cell.device)
+    o = torch.zeros(1, dtype=torch.long, device=cell.device)
+    return torch.cat([
+        torch.cartesian_prod(r1, r2, r3),
+        torch.cartesian_prod(r1, r2, o),
+        torch.cartesian_prod(r1, r2, -r3),
+        torch.cartesian_prod(r1, o, r3),
+        torch.cartesian_prod(r1, o, o),
+        torch.cartesian_prod(r1, o, -r3),
+        torch.cartesian_prod(r1, -r2, r3),
+        torch.cartesian_prod(r1, -r2, o),
+        torch.cartesian_prod(r1, -r2, -r3),
+        torch.cartesian_prod(o, r2, r3),
+        torch.cartesian_prod(o, r2, o),
+        torch.cartesian_prod(o, r2, -r3),
+        torch.cartesian_prod(o, o, r3),
+    ])
 
 
 # @torch.jit.script
-def default_neighborlist(species, coordinates, cutoff):
-    # type: (Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor]
-    """Default neighborlist computer"""
-
-    vec = coordinates.unsqueeze(2) - coordinates.unsqueeze(1)
-    # vec has hape (conformations, atoms, atoms, 3) storing Rij vectors
-
-    distances = vec.norm(2, -1)
-    # distances has shape (conformations, atoms, atoms) storing Rij distances
-
-    padding_mask = (species == -1).unsqueeze(1)
-    distances = distances.masked_fill(padding_mask, math.inf)
-
-    distances, indices = distances.sort(-1)
-
-    min_distances, _ = distances.flatten(end_dim=1).min(0)
-    in_cutoff = (min_distances <= cutoff).nonzero().flatten()[1:]
-    indices = indices.index_select(-1, in_cutoff)
-
-    # TODO: remove this workaround after gather support broadcasting
-    atoms = coordinates.shape[1]
-    species_ = species.unsqueeze(1).expand(-1, atoms, -1)
-    neighbor_species = species_.gather(-1, indices)
-
-    neighbor_distances = distances.index_select(-1, in_cutoff)
-
-    # TODO: remove this workaround when gather support broadcasting
-    # https://github.com/pytorch/pytorch/pull/9532
-    indices_ = indices.unsqueeze(-1).expand(-1, -1, -1, 3)
-    neighbor_coordinates = vec.gather(-2, indices_)
-    return neighbor_species, neighbor_distances, neighbor_coordinates
-
-
-@torch.jit.script
-def _compute_mask_r(species_r, num_species):
-    # type: (Tensor, int) -> Tensor
-    """Get mask of radial terms for each supported species from indices"""
-    mask_r = (species_r.unsqueeze(-1) == torch.arange(num_species, dtype=torch.long, device=species_r.device))
-    return mask_r
-
-
-@torch.jit.script
-def _compute_mask_a(species_a, present_species):
-    """Get mask of angular terms for each supported species from indices"""
-    species_a1, species_a2 = _combinations(species_a, -1)
-    mask_a1 = (species_a1.unsqueeze(-1) == present_species).unsqueeze(-1)
-    mask_a2 = (species_a2.unsqueeze(-1).unsqueeze(-1) == present_species)
-    mask = mask_a1 & mask_a2
-    mask_rev = mask.permute(0, 1, 2, 4, 3)
-    mask_a = mask | mask_rev
-    return mask_a
-
-
-@torch.jit.script
-def _assemble(radial_terms, angular_terms, present_species,
-              mask_r, mask_a, num_species, angular_sublength):
-    """Returns radial and angular AEV computed from terms according
-    to the given partition information.
+def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
+    """Compute pairs of atoms that are neighbors
 
     Arguments:
-        radial_terms (:class:`torch.Tensor`): shape (conformations, atoms,
-            neighbors, ``self.radial_sublength()``)
-        angular_terms (:class:`torch.Tensor`): shape (conformations, atoms,
-            pairs, ``self.angular_sublength()``)
-        present_species (:class:`torch.Tensor`):  Long tensor for species
-            of atoms present in the molecules.
-        mask_r (:class:`torch.Tensor`): shape (conformations, atoms,
-            neighbors, supported species)
-        mask_a (:class:`torch.Tensor`): shape (conformations, atoms,
-            pairs, present species, present species)
+        padding_mask (:class:`torch.Tensor`): boolean tensor of shape
+            (molecules, atoms) for padding mask. 1 == is padding.
+        coordinates (:class:`torch.Tensor`): tensor of shape
+            (molecules, atoms, 3) for atom coordinates.
+        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three vectors
+            defining unit cell: tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])
+        cutoff (float): the cutoff inside which atoms are considered pairs
+        shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts
     """
-    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, int, int) -> Tuple[Tensor, Tensor]  # noqa: E501
+    # type: (Tensor, Tensor, Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor, Tensor]
 
-    conformations = radial_terms.shape[0]
-    atoms = radial_terms.shape[1]
+    coordinates = coordinates.detach()
+    cell = cell.detach()
+    num_atoms = padding_mask.shape[1]
+    all_atoms = torch.arange(num_atoms, device=cell.device)
 
-    # assemble radial subaev
-    present_radial_aevs = (radial_terms.unsqueeze(-2) * mask_r.unsqueeze(-1).to(radial_terms.dtype)).sum(-3)
-    # present_radial_aevs has shape
-    # (conformations, atoms, present species, radial_length)
-    radial_aevs = present_radial_aevs.flatten(start_dim=2)
+    # Step 2: center cell
+    p1_center, p2_center = torch.combinations(all_atoms).unbind(-1)
+    shifts_center = shifts.new_zeros(p1_center.shape[0], 3)
 
-    # assemble angular subaev
-    rev_indices = torch.full((num_species,), -1, dtype=present_species.dtype,
-                             device=present_species.device)
-    rev_indices[present_species] = torch.arange(present_species.numel(),
-                                                dtype=torch.long,
-                                                device=radial_terms.device)
-    angular_aevs = []
-    zero_angular_subaev = torch.zeros(conformations, atoms, angular_sublength,
-                                      dtype=radial_terms.dtype,
-                                      device=radial_terms.device)
-    for s1 in range(num_species):
-        # TODO: make PyTorch support range(start, end) and
-        # range(start, end, step) and remove the workaround
-        # below. The inner for loop should be:
-        # for s2 in range(s1, num_species):
-        for s2 in range(num_species - s1):
-            s2 += s1
-            i1 = int(rev_indices[s1])
-            i2 = int(rev_indices[s2])
-            if i1 >= 0 and i2 >= 0:
-                mask = mask_a[:, :, :, i1, i2].unsqueeze(-1) \
-                                              .to(radial_terms.dtype)
-                subaev = (angular_terms * mask).sum(-2)
-            else:
-                subaev = zero_angular_subaev
-            angular_aevs.append(subaev)
+    # Step 3: cells with shifts
+    # shape convention (shift index, molecule index, atom index, 3)
+    num_shifts = shifts.shape[0]
+    all_shifts = torch.arange(num_shifts, device=cell.device)
+    shift_index, p1, p2 = torch.cartesian_prod(all_shifts, all_atoms, all_atoms).unbind(-1)
+    shifts_outide = shifts.index_select(0, shift_index)
 
-    return radial_aevs, torch.cat(angular_aevs, dim=2)
+    # Step 4: combine results for all cells
+    shifts_all = torch.cat([shifts_center, shifts_outide])
+    p1_all = torch.cat([p1_center, p1])
+    p2_all = torch.cat([p2_center, p2])
+    shift_values = torch.mm(shifts_all.to(cell.dtype), cell)
+
+    # step 5, compute distances, and find all pairs within cutoff
+    distances = (coordinates.index_select(1, p1_all) - coordinates.index_select(1, p2_all) + shift_values).norm(2, -1)
+    padding_mask = (padding_mask.index_select(1, p1_all)) | (padding_mask.index_select(1, p2_all))
+    distances.masked_fill_(padding_mask, math.inf)
+    in_cutoff = (distances <= cutoff).nonzero()
+    molecule_index, pair_index = in_cutoff.unbind(1)
+    atom_index1 = p1_all[pair_index]
+    atom_index2 = p2_all[pair_index]
+    shifts = shifts_all.index_select(0, pair_index)
+    return molecule_index, atom_index1, atom_index2, shifts
 
 
-@torch.jit.script
-def _compute_aev(num_species, angular_sublength, Rcr, EtaR, ShfR, Rca, ShfZ,
-                 EtaA, Zeta, ShfA, species, species_, distances, vec):
-    # type: (int, int, float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tuple[Tensor, Tensor]  # noqa: E501
+# torch.jit.script
+def triu_index(num_species):
+    species = torch.arange(num_species)
+    species1, species2 = torch.combinations(species, r=2, with_replacement=True).unbind(-1)
+    pair_index = torch.arange(species1.shape[0])
+    ret = torch.zeros(num_species, num_species, dtype=torch.long)
+    ret[species1, species2] = pair_index
+    ret[species2, species1] = pair_index
+    return ret
 
-    present_species = utils.present_species(species)
 
-    radial_terms, angular_terms = _terms_and_indices(
-        Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA, distances, vec)
-    mask_r = _compute_mask_r(species_, num_species)
-    mask_a = _compute_mask_a(species_, present_species)
+# torch.jit.script
+def convert_pair_index(index):
+    """Let's say we have a pair:
+    index: 0 1 2 3 4 5 6 7 8 9 ...
+    elem1: 0 0 1 0 1 2 0 1 2 3 ...
+    elem2: 1 2 2 3 3 3 4 4 4 4 ...
+    This function convert index back to elem1 and elem2
 
-    radial, angular = _assemble(radial_terms, angular_terms,
-                                present_species, mask_r, mask_a,
-                                num_species, angular_sublength)
-    fullaev = torch.cat([radial, angular], dim=2)
-    return species, fullaev
+    To implement this, divide it into groups, the first group contains 1
+    elements, the second contains 2 elements, ..., the nth group contains
+    n elements.
+
+    Let's say we want to compute the elem1 and elem2 for index i. We first find
+    the number of complete groups contained in index 0, 1, ..., i - 1
+    (all inclusive, not including i), then i will be in the next group. Let's
+    say there are N complete groups, then these N groups contains
+    N * (N + 1) / 2 elements, solving for the largest N that satisfies
+    N * (N + 1) / 2 <= i, will get the N we want.
+    """
+    n = (torch.sqrt(1.0 + 8.0 * index.to(torch.float)) - 1.0) / 2.0
+    n = torch.floor(n).to(torch.long)
+    num_elems = n * (n + 1) / 2
+    return index - num_elems, n + 1
+
+
+# torch.jit.script
+def cumsum_from_zero(input_):
+    cumsum = torch.cumsum(input_, dim=0)
+    cumsum = torch.cat([input_.new_tensor([0]), cumsum[:-1]])
+    return cumsum
+
+
+# torch.jit.script
+def triple_by_molecule(molecule_index, atom_index1, atom_index2):
+    """Input: indices for pairs of atoms that are close to each other.
+    each pair only appear once, i.e. only one of the pairs (1, 2) and
+    (2, 1) exists.
+
+    Output: indices for all central atoms and it pairs of neighbors. For
+    example, if input has pair (0, 1), (0, 2), (0, 3), (0, 4), (1, 2),
+    (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), then the output would have
+    central atom 0, 1, 2, 3, 4 and for cental atom 0, its pairs of neighbors
+    are (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
+    """
+    # convert representation from pair to central-other
+    n = molecule_index.shape[0]
+    mi = molecule_index.repeat(2)
+    ai1 = torch.cat([atom_index1, atom_index2])
+
+    # sort and compute unique key
+    mi_ai1 = torch.stack([mi, ai1], dim=1)
+    m_ac, rev_indices, counts = torch._unique_dim2_temporary_will_remove_soon(mi_ai1, dim=0, sorted=True, return_inverse=True, return_counts=True)
+    uniqued_molecule_index, uniqued_central_atom_index = m_ac.unbind(1)
+
+    # do local combinations within unique key, assuming sorted
+    pair_sizes = counts * (counts - 1) // 2
+    total_size = pair_sizes.sum()
+    molecule_index = torch.repeat_interleave(uniqued_molecule_index, pair_sizes)
+    central_atom_index = torch.repeat_interleave(uniqued_central_atom_index, pair_sizes)
+    cumsum = cumsum_from_zero(pair_sizes)
+    cumsum = torch.repeat_interleave(cumsum, pair_sizes)
+    sorted_local_pair_index = torch.arange(total_size, device=molecule_index.device) - cumsum
+    sorted_local_index1, sorted_local_index2 = convert_pair_index(sorted_local_pair_index)
+    cumsum = cumsum_from_zero(counts)
+    cumsum = torch.repeat_interleave(cumsum, pair_sizes)
+    sorted_local_index1 += cumsum
+    sorted_local_index2 += cumsum
+
+    # unsort result from last part
+    argsort = rev_indices.argsort()
+    local_index1 = argsort[sorted_local_index1]
+    local_index2 = argsort[sorted_local_index2]
+
+    # compute mapping between representation of central-other to pair
+    sign1 = torch.where(local_index1 < n, torch.ones_like(local_index1), -torch.ones_like(local_index1))
+    sign2 = torch.where(local_index2 < n, torch.ones_like(local_index2), -torch.ones_like(local_index2))
+    pair_index1 = torch.where(local_index1 < n, local_index1, local_index1 - n)
+    pair_index2 = torch.where(local_index2 < n, local_index2, local_index2 - n)
+    return molecule_index, central_atom_index, pair_index1, pair_index2, sign1, sign2
+
+
+# torch.jit.script
+def compute_aev(species, coordinates, cell, pbc_switch, triu_index, constants, sizes):
+    Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
+    num_species, radial_sublength, radial_length, angular_sublength, angular_length, aev_length = sizes
+    num_molecules = species.shape[0]
+    num_atoms = species.shape[1]
+    num_species_pairs = angular_length // angular_sublength
+    cutoff = max(Rcr, Rca)
+
+    shifts = compute_shifts(cell, pbc_switch, cutoff)
+    molecule_index, atom_index1, atom_index2, shifts = neighbor_pairs(species == -1, coordinates, cell, shifts, cutoff)
+    species1 = species[molecule_index, atom_index1]
+    species2 = species[molecule_index, atom_index2]
+    shift_values = torch.mm(shifts.to(cell.dtype), cell)
+
+    vec = coordinates[molecule_index, atom_index1, :] - coordinates[molecule_index, atom_index2, :] + shift_values
+    distances = vec.norm(2, -1)
+
+    # compute radial aev
+    radial_terms_ = radial_terms(Rcr, EtaR, ShfR, distances)
+    radial_aev = radial_terms_.new_zeros(num_molecules * num_atoms * num_species, radial_sublength)
+    index1 = (molecule_index * num_atoms + atom_index1) * num_species + species2
+    index2 = (molecule_index * num_atoms + atom_index2) * num_species + species1
+    radial_aev.scatter_add_(0, index1.unsqueeze(1).expand(-1, radial_sublength), radial_terms_)
+    radial_aev.scatter_add_(0, index2.unsqueeze(1).expand(-1, radial_sublength), radial_terms_)
+    radial_aev = radial_aev.reshape(num_molecules, num_atoms, radial_length)
+
+    # compute angular aev
+    molecule_index, central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(molecule_index, atom_index1, atom_index2)
+    vec1 = vec.index_select(0, pair_index1) * sign1.unsqueeze(1).to(vec.dtype)
+    vec2 = vec.index_select(0, pair_index2) * sign2.unsqueeze(1).to(vec.dtype)
+    species1_ = torch.where(sign1 == 1, species2[pair_index1], species1[pair_index1])
+    species2_ = torch.where(sign2 == 1, species2[pair_index2], species1[pair_index2])
+    angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec1, vec2)
+    angular_aev = angular_terms_.new_zeros(num_molecules * num_atoms * num_species_pairs, angular_sublength)
+    index = (molecule_index * num_atoms + central_atom_index) * num_species_pairs + triu_index[species1_, species2_]
+    angular_aev.scatter_add_(0, index.unsqueeze(1).expand(-1, angular_sublength), angular_terms_)
+    angular_aev = angular_aev.reshape(num_molecules, num_atoms, angular_length)
+    return torch.cat([radial_aev, angular_aev], dim=-1)
 
 
 class AEVComputer(torch.nn.Module):
@@ -271,20 +329,6 @@ class AEVComputer(torch.nn.Module):
         ShfZ (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
             equation (4) in the `ANI paper`_.
         num_species (int): Number of supported atom types.
-        neighborlist_computer (:class:`collections.abc.Callable`): initial
-            value of :attr:`neighborlist`
-
-    Attributes:
-        neighborlist (:class:`collections.abc.Callable`): The callable
-            (species:Tensor, coordinates:Tensor, cutoff:float)
-            -> Tuple[Tensor, Tensor, Tensor] that returns the species,
-            distances and relative coordinates of neighbor atoms. The input
-            species and coordinates tensor have the same shape convention as
-            the input of :class:`AEVComputer`. The returned neighbor
-            species and coordinates tensor must have shape ``(C, A, N)`` and
-            ``(C, A, N, 3)`` correspoindingly, where ``C`` is the number of
-            conformations in a chunk, ``A`` is the number of atoms, and ``N``
-            is the maximum number of neighbors that an atom could have.
 
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
@@ -293,8 +337,7 @@ class AEVComputer(torch.nn.Module):
                      'radial_length', 'angular_sublength', 'angular_length',
                      'aev_length']
 
-    def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ,
-                 num_species, neighborlist_computer=default_neighborlist):
+    def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species):
         super(AEVComputer, self).__init__()
         self.Rcr = Rcr
         self.Rca = Rca
@@ -309,43 +352,60 @@ class AEVComputer(torch.nn.Module):
         self.register_buffer('ShfZ', ShfZ.view(1, 1, 1, -1))
 
         self.num_species = num_species
-        self.neighborlist = neighborlist_computer
-
         # The length of radial subaev of a single species
         self.radial_sublength = self.EtaR.numel() * self.ShfR.numel()
         # The length of full radial aev
         self.radial_length = self.num_species * self.radial_sublength
         # The length of angular subaev of a single species
-        self.angular_sublength = self.EtaA.numel() * self.Zeta.numel() * \
-            self.ShfA.numel() * self.ShfZ.numel()
+        self.angular_sublength = self.EtaA.numel() * self.Zeta.numel() * self.ShfA.numel() * self.ShfZ.numel()
         # The length of full angular aev
-        self.angular_length = (self.num_species * (self.num_species + 1)) \
-            // 2 * self.angular_sublength
+        self.angular_length = (self.num_species * (self.num_species + 1)) // 2 * self.angular_sublength
         # The length of full aev
         self.aev_length = self.radial_length + self.angular_length
+        self.sizes = self.num_species, self.radial_sublength, self.radial_length, self.angular_sublength, self.angular_length, self.aev_length
+
+        self.register_buffer('triu_index', triu_index(num_species))
+
+    def constants(self):
+        return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
     # @torch.jit.script_method
-    def forward(self, species_coordinates):
+    def forward(self, input):
         """Compute AEVs
 
         Arguments:
-            species_coordinates (tuple): Two tensors: species and coordinates.
+            input (tuple): Can be one of the following two cases:
+
+                If you don't care about periodic boundary conditions at all,
+                then input can be a tuple of two tensors: species and coordinates.
                 species must have shape ``(C, A)`` and coordinates must have
-                shape ``(C, A, 3)``, where ``C`` is the number of conformations
+                shape ``(C, A, 3)``, where ``C`` is the number of molecules
                 in a chunk, and ``A`` is the number of atoms.
+
+                If you want to apply periodic boundary conditions, then the input
+                would be a tuple of four tensors: species, coordinates, cell, pbc
+                where species and coordinates are the same as described above, cell
+                is a tensor of shape (3, 3) of the three vectors defining unit cell:
+
+                .. code-block:: python
+
+                    tensor([[x1, y1, z1],
+                            [x2, y2, z2],
+                            [x3, y3, z3]])
+
+                and pbc is boolean vector of size 3 storing if pbc is enabled
+                for that direction.
 
         Returns:
             tuple: Species and AEVs. species are the species from the input
             unchanged, and AEVs is a tensor of shape
             ``(C, A, self.aev_length())``
         """
-        # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
-
-        species, coordinates = species_coordinates
-        max_cutoff = max(self.Rcr, self.Rca)
-        species_, distances, vec = self.neighborlist(species, coordinates,
-                                                     max_cutoff)
-        return _compute_aev(
-            self.num_species, self.angular_sublength, self.Rcr, self.EtaR,
-            self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA,
-            species, species_, distances, vec)
+        if len(input) == 2:
+            species, coordinates = input
+            cell = torch.eye(3, dtype=self.EtaR.dtype, device=self.EtaR.device)
+            pbc = torch.zeros(3, dtype=torch.uint8, device=self.EtaR.device)
+        else:
+            assert len(input) == 4
+            species, coordinates, cell, pbc = input
+        return species, compute_aev(species, coordinates, cell, pbc, self.triu_index, self.constants(), self.sizes)

@@ -37,6 +37,7 @@ Utilities
 .. autofunction:: torchani.utils.pad_coordinates
 .. autofunction:: torchani.utils.present_species
 .. autofunction:: torchani.utils.strip_redundant_padding
+.. autofunction:: torchani.utils.map2central
 .. autoclass:: torchani.utils.ChemicalSymbolsToInts
     :members:
 
@@ -61,8 +62,6 @@ ASE Interface
 =============
 
 .. automodule:: torchani.ase
-.. autoclass:: torchani.ase.NeighborList
-    :members:
 .. autoclass:: torchani.ase.Calculator
 
 Ignite Helpers
