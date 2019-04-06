@@ -236,20 +236,21 @@ def triple_by_molecule(molecule_index, atom_index1, atom_index2):
     ai1 = torch.cat([atom_index1, atom_index2])
 
     # sort and compute unique key
-    m_ac, rev_indices, counts = torch.stack([mi, ai1], dim=1).unique(dim=0, sorted=True, return_inverse=True, return_counts=True)
+    mi_ai1 = torch.stack([mi, ai1], dim=1)
+    m_ac, rev_indices, counts = torch._unique_dim2_temporary_will_remove_soon(mi_ai1, dim=0, sorted=True, return_inverse=True, return_counts=True)
     uniqued_molecule_index, uniqued_central_atom_index = m_ac.unbind(1)
 
     # do local combinations within unique key, assuming sorted
     pair_sizes = counts * (counts - 1) // 2
     total_size = pair_sizes.sum()
-    molecule_index = torch.numpy_repeat(uniqued_molecule_index, pair_sizes)
-    central_atom_index = torch.numpy_repeat(uniqued_central_atom_index, pair_sizes)
+    molecule_index = torch.repeat_interleave(uniqued_molecule_index, pair_sizes)
+    central_atom_index = torch.repeat_interleave(uniqued_central_atom_index, pair_sizes)
     cumsum = cumsum_from_zero(pair_sizes)
-    cumsum = torch.numpy_repeat(cumsum, pair_sizes)
+    cumsum = torch.repeat_interleave(cumsum, pair_sizes)
     sorted_local_pair_index = torch.arange(total_size, device=molecule_index.device) - cumsum
     sorted_local_index1, sorted_local_index2 = convert_pair_index(sorted_local_pair_index)
     cumsum = cumsum_from_zero(counts)
-    cumsum = torch.numpy_repeat(cumsum, pair_sizes)
+    cumsum = torch.repeat_interleave(cumsum, pair_sizes)
     sorted_local_index1 += cumsum
     sorted_local_index2 += cumsum
 
