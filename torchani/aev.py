@@ -417,5 +417,5 @@ class AEVComputer(torch.nn.Module):
             assert len(input) == 4
             species, coordinates, cell, pbc = input
             cutoff = max(self.Rcr, self.Rca)
-            shifts = compute_shifts(cell, pbc_switch, cutoff)
+            shifts = compute_shifts(cell, pbc, cutoff)
         return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
