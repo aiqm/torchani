@@ -1,0 +1,15 @@
+
+:orphan:
+
+.. _sphx_glr_examples_sg_execution_times:
+
+Computation times
+=================
+**47:08.234** total execution time for **examples** files:
+
+- **41:53.743**: :ref:`sphx_glr_examples_neurochem_trainer.py` (``neurochem_trainer.py``)
+- **02:28.869**: :ref:`sphx_glr_examples_ase_interface.py` (``ase_interface.py``)
+- **02:01.487**: :ref:`sphx_glr_examples_nnp_training.py` (``nnp_training.py``)
+- **00:40.583**: :ref:`sphx_glr_examples_cache_aev.py` (``cache_aev.py``)
+- **00:01.894**: :ref:`sphx_glr_examples_load_from_neurochem.py` (``load_from_neurochem.py``)
+- **00:01.656**: :ref:`sphx_glr_examples_energy_force.py` (``energy_force.py``)

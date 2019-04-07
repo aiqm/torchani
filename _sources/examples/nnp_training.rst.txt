@@ -13,13 +13,10 @@ Train Your Own Neural Network Potential
 =======================================
 
 This example shows how to use TorchANI train your own neural network potential.
-
-
 To begin with, let's first import the modules we will use:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     import torch
     import ignite
@@ -46,8 +43,7 @@ you should manually set the path of these files in your system before this
 script can run successfully.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
 
     # training and validation set
@@ -55,8 +51,8 @@ script can run successfully.
         path = os.path.dirname(os.path.realpath(__file__))
     except NameError:
         path = os.getcwd()
-    training_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
-    validation_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+    training_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
+    validation_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')  # noqa: E501
 
     # checkpoint file to save model when validation RMSE improves
     model_checkpoint = 'model.pt'
@@ -89,8 +85,7 @@ Now let's read our constants and self energies from constant files and
 construct AEV computer.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
     sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')  # noqa: E501
@@ -109,8 +104,7 @@ Now let's define atomic neural networks. Here in this demo, we use the same
 size of neural network for all atom types, but this is not necessary.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     def atomic():
         model = torch.nn.Sequential(
@@ -181,8 +175,7 @@ size of neural network for all atom types, but this is not necessary.
 If checkpoint from previous training exists, then load it.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     if os.path.isfile(model_checkpoint):
         nn.load_state_dict(torch.load(model_checkpoint))
@@ -198,8 +191,7 @@ If checkpoint from previous training exists, then load it.
 Let's now create a pipeline of AEV Computer --> Neural Networks.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     model = torch.nn.Sequential(aev_computer, nn).to(device)
 
@@ -212,8 +204,7 @@ Let's now create a pipeline of AEV Computer --> Neural Networks.
 Now setup tensorboardX.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     writer = tensorboardX.SummaryWriter(log_dir=log)
 
@@ -231,8 +222,7 @@ all supported chemical symbols, which is correspond to ``0``, which
 correspond to ``1``, etc.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     training = torchani.data.BatchedANIDataset(
         training_path, consts.species_to_tensor, batch_size, device=device,
@@ -276,14 +266,15 @@ allow us to easily combine the dataset with pytorch ignite. These tools can
 be used as follows:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     container = torchani.ignite.Container({'energies': model})
     optimizer = torch.optim.Adam(model.parameters())
     trainer = ignite.engine.create_supervised_trainer(
         container, optimizer, torchani.ignite.MSELoss('energies'))
-    evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
+    evaluator = ignite.engine.create_supervised_evaluator(
+        container,
+        metrics={
             'RMSE': torchani.ignite.RMSEMetric('energies')
         })
 
@@ -297,8 +288,7 @@ be used as follows:
 Let's add a progress bar for the trainer
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     pbar = ignite.contrib.handlers.ProgressBar()
     pbar.attach(trainer)
@@ -313,8 +303,7 @@ Let's add a progress bar for the trainer
 And some event handlers to compute validation and training metrics:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     def hartree2kcal(x):
         return 627.509 * x
@@ -354,8 +343,7 @@ And some event handlers to compute validation and training metrics:
 Also some to log elapsed time:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     start = timeit.default_timer()
 
@@ -375,8 +363,7 @@ Also some to log elapsed time:
 Also log the loss per iteration:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
     def log_loss(trainer):
@@ -393,8 +380,7 @@ Also log the loss per iteration:
 And finally, we are ready to run:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     trainer.run(training, max_epochs)
 
@@ -403,7 +389,10 @@ And finally, we are ready to run:
 
 
 
-**Total running time of the script:** ( 1 minutes  19.631 seconds)
+
+.. rst-class:: sphx-glr-timing
+
+   **Total running time of the script:** ( 2 minutes  1.487 seconds)
 
 
 .. _sphx_glr_download_examples_nnp_training.py:

@@ -33,11 +33,11 @@ model = torchani.models.ANI1ccx()
 # preceding ``1`` in the shape is here to support batch processing like in
 # training. If you have ``N`` different structures to compute, then make it
 # ``N``.
-coordinates = torch.tensor([[[0.03192167,  0.00638559,  0.01301679],
-                             [-0.83140486,  0.39370209, -0.26395324],
-                             [-0.66518241, -0.84461308,  0.20759389],
-                             [0.45554739,   0.54289633,  0.81170881],
-                             [0.66091919,  -0.16799635, -0.91037834]]],
+coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
+                             [-0.83140486, 0.39370209, -0.26395324],
+                             [-0.66518241, -0.84461308, 0.20759389],
+                             [0.45554739, 0.54289633, 0.81170881],
+                             [0.66091919, -0.16799635, -0.91037834]]],
                            requires_grad=True, device=device)
 species = model.species_to_tensor('CHHHH').to(device).unsqueeze(0)
 

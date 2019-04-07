@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Construct Model From NeuroChem Files &mdash; TorchANI 0.3.1 documentation</title>
+  <title>Construct Model From NeuroChem Files &mdash; TorchANI 0.4 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.3.1
+                0.4
               </div>
             
           
@@ -173,21 +173,21 @@
            <div itemprop="articleBody">
             
   <div class="sphx-glr-download-link-note admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-load-from-neurochem-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+<p class="admonition-title">Note</p>
+<p>Click <a class="reference internal" href="#sphx-glr-download-examples-load-from-neurochem-py"><span class="std std-ref">here</span></a> to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="construct-model-from-neurochem-files">
 <span id="sphx-glr-examples-load-from-neurochem-py"></span><h1>Construct Model From NeuroChem Files<a class="headerlink" href="#construct-model-from-neurochem-files" title="Permalink to this headline">¶</a></h1>
 <p>This tutorial illustrates how to manually load model from <a class="reference external" href="https://github.com/isayev/ASE_ANI/tree/master/ani_models">NeuroChem files</a>.</p>
 <p>To begin with, let’s first import the modules we will use:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torchani</span>
 <span class="kn">import</span> <span class="nn">ase</span>
 </pre></div>
 </div>
 <p>Now let’s read constants from constant file and construct AEV computer.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
 <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
@@ -197,17 +197,17 @@
 </pre></div>
 </div>
 <p>Now let’s read self energies and construct energy shifter.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sae_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/sae_linfit.dat&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sae_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/sae_linfit.dat&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
 <span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">load_sae</span><span class="p">(</span><span class="n">sae_file</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now let’s read a whole ensemble of models.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model_prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/train&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model_prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/train&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
 <span class="n">ensemble</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">load_model_ensemble</span><span class="p">(</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">model_prefix</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
 </pre></div>
 </div>
 <p>Or alternatively a single model.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/train0/networks&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/train0/networks&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">model_dir</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -215,10 +215,10 @@
 (Coordinates) -[AEVComputer]-&gt; (AEV) -[Neural Network]-&gt;
 (Raw energies) -[EnergyShifter]-&gt; (Final energies)
 From using either the ensemble or a single model:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">nnp1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">ensemble</span><span class="p">,</span> <span class="n">energy_shifter</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nnp1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">ensemble</span><span class="p">,</span> <span class="n">energy_shifter</span><span class="p">)</span>
 <span class="n">nnp2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">energy_shifter</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="n">nnp1</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="n">nnp2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">nnp1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">nnp2</span><span class="p">)</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
@@ -577,36 +577,36 @@ Sequential(
 </pre></div>
 </div>
 <p>You can also create an ASE calculator using the ensemble or single model:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">calculator1</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ase</span><span class="o">.</span><span class="n">Calculator</span><span class="p">(</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">aev_computer</span><span class="p">,</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">calculator1</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ase</span><span class="o">.</span><span class="n">Calculator</span><span class="p">(</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">aev_computer</span><span class="p">,</span>
                                       <span class="n">ensemble</span><span class="p">,</span> <span class="n">energy_shifter</span><span class="p">)</span>
 <span class="n">calculator2</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ase</span><span class="o">.</span><span class="n">Calculator</span><span class="p">(</span><span class="n">consts</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">aev_computer</span><span class="p">,</span>
                                       <span class="n">model</span><span class="p">,</span> <span class="n">energy_shifter</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="n">calculator1</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="n">calculator1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">calculator1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">calculator1</span><span class="p">)</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.ase.Calculator object at 0x7f88a3850c50&gt;
-&lt;torchani.ase.Calculator object at 0x7f88a3850c50&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.ase.Calculator object at 0x7f283da77b70&gt;
+&lt;torchani.ase.Calculator object at 0x7f283da77b70&gt;
 </pre></div>
 </div>
 <p>Now let’s define a methane molecule</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[[</span><span class="mf">0.03192167</span><span class="p">,</span>  <span class="mf">0.00638559</span><span class="p">,</span>  <span class="mf">0.01301679</span><span class="p">],</span>
-                             <span class="p">[</span><span class="o">-</span><span class="mf">0.83140486</span><span class="p">,</span>  <span class="mf">0.39370209</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.26395324</span><span class="p">],</span>
-                             <span class="p">[</span><span class="o">-</span><span class="mf">0.66518241</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.84461308</span><span class="p">,</span>  <span class="mf">0.20759389</span><span class="p">],</span>
-                             <span class="p">[</span><span class="mf">0.45554739</span><span class="p">,</span>   <span class="mf">0.54289633</span><span class="p">,</span>  <span class="mf">0.81170881</span><span class="p">],</span>
-                             <span class="p">[</span><span class="mf">0.66091919</span><span class="p">,</span>  <span class="o">-</span><span class="mf">0.16799635</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.91037834</span><span class="p">]]],</span>
-                           <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[[</span><span class="mf">0.03192167</span><span class="p">,</span> <span class="mf">0.00638559</span><span class="p">,</span> <span class="mf">0.01301679</span><span class="p">],</span>
+                             <span class="p">[</span><span class="o">-</span><span class="mf">0.83140486</span><span class="p">,</span> <span class="mf">0.39370209</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.26395324</span><span class="p">],</span>
+                             <span class="p">[</span><span class="o">-</span><span class="mf">0.66518241</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.84461308</span><span class="p">,</span> <span class="mf">0.20759389</span><span class="p">],</span>
+                             <span class="p">[</span><span class="mf">0.45554739</span><span class="p">,</span> <span class="mf">0.54289633</span><span class="p">,</span> <span class="mf">0.81170881</span><span class="p">],</span>
+                             <span class="p">[</span><span class="mf">0.66091919</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.16799635</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.91037834</span><span class="p">]]],</span>
+                           <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">species</span> <span class="o">=</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">(</span><span class="s1">&#39;CHHHH&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">methane</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;CHHHH&#39;</span><span class="p">,</span> <span class="n">positions</span><span class="o">=</span><span class="n">coordinates</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 </pre></div>
 </div>
 <p>Now let’s compute energies using the ensemble directly:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">energy</span> <span class="o">=</span> <span class="n">nnp1</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">energy</span> <span class="o">=</span> <span class="n">nnp1</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span>
 <span class="n">derivative</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">energy</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">coordinates</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">force</span> <span class="o">=</span> <span class="o">-</span><span class="n">derivative</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <span class="n">energy</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <span class="n">force</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <span class="n">energy</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <span class="n">force</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
@@ -619,30 +619,30 @@ Force: tensor([[ 0.0306, -0.1316, -0.0527],
 </pre></div>
 </div>
 <p>And using the ASE interface of the ensemble:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">methane</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calculator1</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <span class="n">methane</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span> <span class="o">/</span> <span class="n">ase</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">Hartree</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <span class="n">methane</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()</span> <span class="o">/</span> <span class="n">ase</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">Hartree</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">methane</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calculator1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <span class="n">methane</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span> <span class="o">/</span> <span class="n">ase</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">Hartree</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <span class="n">methane</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()</span> <span class="o">/</span> <span class="n">ase</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">Hartree</span><span class="p">)</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.459021232362076
-Force: [[ 0.03062528 -0.13160464 -0.05265213]
- [-0.12927511  0.16388638 -0.07736805]
- [ 0.08563147 -0.04288927  0.04082096]
- [ 0.02681221  0.00601405  0.03809875]
- [-0.01379385  0.00459348  0.05110048]]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.45902211136144
+Force: [[ 0.03062537 -0.13160468 -0.05265202]
+ [-0.12927519  0.1638864  -0.07736807]
+ [ 0.08563146 -0.04288921  0.04082094]
+ [ 0.02681218  0.00601403  0.03809874]
+ [-0.01379382  0.00459346  0.05110041]]
 </pre></div>
 </div>
 <p>We can do the same thing with the single model:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">energy</span> <span class="o">=</span> <span class="n">nnp2</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">energy</span> <span class="o">=</span> <span class="n">nnp2</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span>
 <span class="n">derivative</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">energy</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">coordinates</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">force</span> <span class="o">=</span> <span class="o">-</span><span class="n">derivative</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <span class="n">energy</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <span class="n">force</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <span class="n">energy</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <span class="n">force</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
 
 <span class="n">methane</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calculator2</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <span class="n">methane</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span> <span class="o">/</span> <span class="n">ase</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">Hartree</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <span class="n">methane</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()</span> <span class="o">/</span> <span class="n">ase</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">Hartree</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <span class="n">methane</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span> <span class="o">/</span> <span class="n">ase</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">Hartree</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <span class="n">methane</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()</span> <span class="o">/</span> <span class="n">ase</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">Hartree</span><span class="p">)</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
@@ -652,20 +652,22 @@ Force: tensor([[ 0.0561, -0.1270, -0.0541],
         [ 0.0753, -0.0374,  0.0395],
         [ 0.0242,  0.0024,  0.0334],
         [-0.0156,  0.0068,  0.0565]])
-Energy: -40.46279844543873
-Force: [[ 0.05614971 -0.12697162 -0.05413407]
- [-0.14007534  0.15523377 -0.07533838]
- [ 0.07532089 -0.03744112  0.0394967 ]
- [ 0.02423101  0.00235088  0.03344232]
- [-0.01562626  0.00682809  0.05653343]]
+Energy: -40.462800369272465
+Force: [[ 0.05614975 -0.12697164 -0.05413397]
+ [-0.14007539  0.15523373 -0.07533837]
+ [ 0.0753209  -0.03744103  0.03949668]
+ [ 0.02423099  0.00235086  0.03344229]
+ [-0.01562624  0.00682808  0.05653338]]
 </pre></div>
 </div>
-<p><strong>Total running time of the script:</strong> ( 0 minutes  3.275 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.894 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-load-from-neurochem-py">
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/7f6b35b5309602cebee6b1fe456b2019/load_from_neurochem.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">load_from_neurochem.py</span></code></a></div>
+<p><a class="reference download internal" download="" href="../_downloads/7f6b35b5309602cebee6b1fe456b2019/load_from_neurochem.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">load_from_neurochem.py</span></code></a></p>
+</div>
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/ae7864714611a1c3a96af2bf710f03c6/load_from_neurochem.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">load_from_neurochem.ipynb</span></code></a></div>
+<p><a class="reference download internal" download="" href="../_downloads/ae7864714611a1c3a96af2bf710f03c6/load_from_neurochem.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">load_from_neurochem.ipynb</span></code></a></p>
+</div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>

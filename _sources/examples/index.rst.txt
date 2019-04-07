@@ -1,5 +1,9 @@
 :orphan:
 
+
+
+.. _sphx_glr_examples:
+
 ========
 Examples
 ========
@@ -88,7 +92,7 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI train your own neural network potential. ">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI train your own neural network potential.">
 
 .. only:: html
 

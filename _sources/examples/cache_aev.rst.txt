@@ -14,14 +14,11 @@ In the previous :ref:`training-example` example, AEVs are computed everytime
 when needed. This is not very efficient because the AEVs actually never change
 during training. If one has a good SSD, it would be beneficial to cache these
 AEVs.  This example shows how to use disk cache to boost training
-
-
 Most part of the codes in this example are line by line copy of
 :ref:`training-example`.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     import torch
     import ignite
@@ -37,8 +34,8 @@ Most part of the codes in this example are line by line copy of
         path = os.path.dirname(os.path.realpath(__file__))
     except NameError:
         path = os.getcwd()
-    training_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
-    validation_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+    training_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
+    validation_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')  # noqa: E501
 
     # checkpoint file to save model when validation RMSE improves
     model_checkpoint = 'model.pt'
@@ -70,11 +67,10 @@ Here, there is no need to manually construct aev computer and energy shifter,
 but we do need to generate a disk cache for datasets
 
 
+.. code-block:: default
 
-.. code-block:: python
-
-    const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
-    sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')  # noqa: E501
+    const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')
+    sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')
     training_cache = './training_cache'
     validation_cache = './validation_cache'
 
@@ -97,8 +93,7 @@ but we do need to generate a disk cache for datasets
 The codes that define the network are also the same
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     def atomic():
         model = torch.nn.Sequential(
@@ -176,8 +171,7 @@ Except that at here we do not include aev computer into our pipeline, because
 the cache loader will load computed AEVs from disk.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     model = nn.to(device)
 
@@ -190,8 +184,7 @@ the cache loader will load computed AEVs from disk.
 This part is also a line by line copy
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     writer = tensorboardX.SummaryWriter(log_dir=log)
 
@@ -205,8 +198,7 @@ Here we don't need to construct :class:`torchani.data.BatchedANIDataset`
 object, but instead an object of :class:`torchani.data.AEVCacheLoader`
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     training = torchani.data.AEVCacheLoader(training_cache)
     validation = torchani.data.AEVCacheLoader(validation_cache)
@@ -220,15 +212,16 @@ object, but instead an object of :class:`torchani.data.AEVCacheLoader`
 The rest of the code are again the same
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     training = torchani.data.AEVCacheLoader(training_cache)
     container = torchani.ignite.Container({'energies': model})
     optimizer = torch.optim.Adam(model.parameters())
     trainer = ignite.engine.create_supervised_trainer(
         container, optimizer, torchani.ignite.MSELoss('energies'))
-    evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
+    evaluator = ignite.engine.create_supervised_evaluator(
+        container,
+        metrics={
             'RMSE': torchani.ignite.RMSEMetric('energies')
         })
 
@@ -242,8 +235,7 @@ The rest of the code are again the same
 Let's add a progress bar for the trainer
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     pbar = ignite.contrib.handlers.ProgressBar()
     pbar.attach(trainer)
@@ -300,7 +292,10 @@ Let's add a progress bar for the trainer
 
 
 
-**Total running time of the script:** ( 0 minutes  38.645 seconds)
+
+.. rst-class:: sphx-glr-timing
+
+   **Total running time of the script:** ( 0 minutes  40.583 seconds)
 
 
 .. _sphx_glr_download_examples_cache_aev.py:

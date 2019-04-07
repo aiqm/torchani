@@ -18,13 +18,10 @@ calculator.
     https://wiki.fysik.dtu.dk/ase/
 .. _Constant temperature MD:
     https://wiki.fysik.dtu.dk/ase/tutorials/md/md.html#constant-temperature-md
-
-
 To begin with, let's first import the modules we will use:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     from __future__ import print_function
     from ase.lattice.cubic import Diamond
@@ -43,8 +40,7 @@ To begin with, let's first import the modules we will use:
 Now let's set up a crystal
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     atoms = Diamond(symbol="C", pbc=True)
     print(len(atoms), "atoms in the cell")
@@ -65,10 +61,32 @@ Now let's set up a crystal
 Now let's create a calculator from builtin models:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     calculator = torchani.models.ANI1ccx().ase()
+
+
+
+
+
+
+
+.. note::
+    Regardless of the dtype you use in your model, when converting it to ASE
+    calculator, it always automatically the dtype to ``torch.float64``. The
+    reason for this behavior is, at many cases, the rounding error is too
+    large for structure minimization. If you insist on using
+    ``torch.float32``, do the following instead:
+
+    .. code-block:: python
+
+        calculator = torchani.models.ANI1ccx().ase(dtype=torch.float32)
+
+Now let's set the calculator for ``atoms``:
+
+
+.. code-block:: default
+
     atoms.set_calculator(calculator)
 
 
@@ -80,8 +98,7 @@ Now let's create a calculator from builtin models:
 Now let's minimize the structure:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     print("Begin minimizing...")
     opt = BFGS(atoms)
@@ -101,14 +118,13 @@ Now let's minimize the structure:
 
     Begin minimizing...
           Step     Time          Energy         fmax
-    BFGS:    0 21:35:32    -8311.226562        0.0000
+    BFGS:    0 06:34:49    -8311.226179        0.0000
 
 
 Now create a callback function that print interesting physical quantities:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     def printenergy(a=atoms):
         """Function to print the potential, kinetic and total energy."""
@@ -129,8 +145,7 @@ with a time step of 1 fs, the temperature 300K and the friction
 coefficient to 0.02 atomic units.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     dyn = Langevin(atoms, 1 * units.fs, 300 * units.kB, 0.2)
     dyn.attach(printenergy, interval=50)
@@ -144,8 +159,7 @@ coefficient to 0.02 atomic units.
 Now run the dynamics:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     print("Beginning dynamics...")
     printenergy()
@@ -162,19 +176,22 @@ Now run the dynamics:
 
     Beginning dynamics...
     Energy per atom: Epot = -1038.903eV  Ekin = 0.000eV (T=  0K)  Etot = -1038.903eV
-    Energy per atom: Epot = -1038.881eV  Ekin = 0.018eV (T=143K)  Etot = -1038.863eV
-    Energy per atom: Epot = -1038.877eV  Ekin = 0.034eV (T=260K)  Etot = -1038.844eV
-    Energy per atom: Epot = -1038.870eV  Ekin = 0.040eV (T=308K)  Etot = -1038.830eV
-    Energy per atom: Epot = -1038.875eV  Ekin = 0.024eV (T=186K)  Etot = -1038.851eV
-    Energy per atom: Epot = -1038.866eV  Ekin = 0.024eV (T=187K)  Etot = -1038.842eV
-    Energy per atom: Epot = -1038.868eV  Ekin = 0.046eV (T=357K)  Etot = -1038.822eV
-    Energy per atom: Epot = -1038.872eV  Ekin = 0.040eV (T=312K)  Etot = -1038.832eV
-    Energy per atom: Epot = -1038.862eV  Ekin = 0.024eV (T=187K)  Etot = -1038.838eV
-    Energy per atom: Epot = -1038.861eV  Ekin = 0.025eV (T=196K)  Etot = -1038.836eV
-    Energy per atom: Epot = -1038.866eV  Ekin = 0.024eV (T=186K)  Etot = -1038.842eV
+    Energy per atom: Epot = -1038.892eV  Ekin = 0.018eV (T=143K)  Etot = -1038.873eV
+    Energy per atom: Epot = -1038.878eV  Ekin = 0.015eV (T=117K)  Etot = -1038.863eV
+    Energy per atom: Epot = -1038.888eV  Ekin = 0.033eV (T=255K)  Etot = -1038.855eV
+    Energy per atom: Epot = -1038.870eV  Ekin = 0.021eV (T=162K)  Etot = -1038.849eV
+    Energy per atom: Epot = -1038.860eV  Ekin = 0.034eV (T=260K)  Etot = -1038.827eV
+    Energy per atom: Epot = -1038.870eV  Ekin = 0.045eV (T=347K)  Etot = -1038.826eV
+    Energy per atom: Epot = -1038.865eV  Ekin = 0.043eV (T=335K)  Etot = -1038.822eV
+    Energy per atom: Epot = -1038.872eV  Ekin = 0.053eV (T=409K)  Etot = -1038.819eV
+    Energy per atom: Epot = -1038.861eV  Ekin = 0.030eV (T=229K)  Etot = -1038.832eV
+    Energy per atom: Epot = -1038.874eV  Ekin = 0.023eV (T=177K)  Etot = -1038.851eV
 
 
-**Total running time of the script:** ( 2 minutes  27.083 seconds)
+
+.. rst-class:: sphx-glr-timing
+
+   **Total running time of the script:** ( 2 minutes  28.869 seconds)
 
 
 .. _sphx_glr_download_examples_ase_interface.py:

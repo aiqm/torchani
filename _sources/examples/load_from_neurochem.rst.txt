@@ -14,14 +14,10 @@ This tutorial illustrates how to manually load model from `NeuroChem files`_.
 
 .. _NeuroChem files:
     https://github.com/isayev/ASE_ANI/tree/master/ani_models
-
-
-
 To begin with, let's first import the modules we will use:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     import os
     import torch
@@ -38,8 +34,7 @@ To begin with, let's first import the modules we will use:
 Now let's read constants from constant file and construct AEV computer.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     try:
         path = os.path.dirname(os.path.realpath(__file__))
@@ -58,8 +53,7 @@ Now let's read constants from constant file and construct AEV computer.
 Now let's read self energies and construct energy shifter.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')  # noqa: E501
     energy_shifter = torchani.neurochem.load_sae(sae_file)
@@ -73,8 +67,7 @@ Now let's read self energies and construct energy shifter.
 Now let's read a whole ensemble of models.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     model_prefix = os.path.join(path, '../torchani/resources/ani-1x_8x/train')  # noqa: E501
     ensemble = torchani.neurochem.load_model_ensemble(consts.species, model_prefix, 8)  # noqa: E501
@@ -88,8 +81,7 @@ Now let's read a whole ensemble of models.
 Or alternatively a single model.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     model_dir = os.path.join(path, '../torchani/resources/ani-1x_8x/train0/networks')  # noqa: E501
     model = torchani.neurochem.load_model(consts.species, model_dir)
@@ -106,8 +98,7 @@ You can create the pipeline of computing energies:
 From using either the ensemble or a single model:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     nnp1 = torch.nn.Sequential(aev_computer, ensemble, energy_shifter)
     nnp2 = torch.nn.Sequential(aev_computer, model, energy_shifter)
@@ -481,8 +472,7 @@ From using either the ensemble or a single model:
 You can also create an ASE calculator using the ensemble or single model:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     calculator1 = torchani.ase.Calculator(consts.species, aev_computer,
                                           ensemble, energy_shifter)
@@ -501,21 +491,20 @@ You can also create an ASE calculator using the ensemble or single model:
 
  .. code-block:: none
 
-    <torchani.ase.Calculator object at 0x7f88a3850c50>
-    <torchani.ase.Calculator object at 0x7f88a3850c50>
+    <torchani.ase.Calculator object at 0x7f283da77b70>
+    <torchani.ase.Calculator object at 0x7f283da77b70>
 
 
 Now let's define a methane molecule
 
 
+.. code-block:: default
 
-.. code-block:: python
-
-    coordinates = torch.tensor([[[0.03192167,  0.00638559,  0.01301679],
-                                 [-0.83140486,  0.39370209, -0.26395324],
-                                 [-0.66518241, -0.84461308,  0.20759389],
-                                 [0.45554739,   0.54289633,  0.81170881],
-                                 [0.66091919,  -0.16799635, -0.91037834]]],
+    coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
+                                 [-0.83140486, 0.39370209, -0.26395324],
+                                 [-0.66518241, -0.84461308, 0.20759389],
+                                 [0.45554739, 0.54289633, 0.81170881],
+                                 [0.66091919, -0.16799635, -0.91037834]]],
                                requires_grad=True)
     species = consts.species_to_tensor('CHHHH').unsqueeze(0)
     methane = ase.Atoms('CHHHH', positions=coordinates.squeeze().detach().numpy())
@@ -529,8 +518,7 @@ Now let's define a methane molecule
 Now let's compute energies using the ensemble directly:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     _, energy = nnp1((species, coordinates))
     derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
@@ -559,8 +547,7 @@ Now let's compute energies using the ensemble directly:
 And using the ASE interface of the ensemble:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     methane.set_calculator(calculator1)
     print('Energy:', methane.get_potential_energy() / ase.units.Hartree)
@@ -576,19 +563,18 @@ And using the ASE interface of the ensemble:
 
  .. code-block:: none
 
-    Energy: -40.459021232362076
-    Force: [[ 0.03062528 -0.13160464 -0.05265213]
-     [-0.12927511  0.16388638 -0.07736805]
-     [ 0.08563147 -0.04288927  0.04082096]
-     [ 0.02681221  0.00601405  0.03809875]
-     [-0.01379385  0.00459348  0.05110048]]
+    Energy: -40.45902211136144
+    Force: [[ 0.03062537 -0.13160468 -0.05265202]
+     [-0.12927519  0.1638864  -0.07736807]
+     [ 0.08563146 -0.04288921  0.04082094]
+     [ 0.02681218  0.00601403  0.03809874]
+     [-0.01379382  0.00459346  0.05110041]]
 
 
 We can do the same thing with the single model:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     _, energy = nnp2((species, coordinates))
     derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
@@ -615,15 +601,18 @@ We can do the same thing with the single model:
             [ 0.0753, -0.0374,  0.0395],
             [ 0.0242,  0.0024,  0.0334],
             [-0.0156,  0.0068,  0.0565]])
-    Energy: -40.46279844543873
-    Force: [[ 0.05614971 -0.12697162 -0.05413407]
-     [-0.14007534  0.15523377 -0.07533838]
-     [ 0.07532089 -0.03744112  0.0394967 ]
-     [ 0.02423101  0.00235088  0.03344232]
-     [-0.01562626  0.00682809  0.05653343]]
+    Energy: -40.462800369272465
+    Force: [[ 0.05614975 -0.12697164 -0.05413397]
+     [-0.14007539  0.15523373 -0.07533837]
+     [ 0.0753209  -0.03744103  0.03949668]
+     [ 0.02423099  0.00235086  0.03344229]
+     [-0.01562624  0.00682808  0.05653338]]
 
 
-**Total running time of the script:** ( 0 minutes  3.275 seconds)
+
+.. rst-class:: sphx-glr-timing
+
+   **Total running time of the script:** ( 0 minutes  1.894 seconds)
 
 
 .. _sphx_glr_download_examples_load_from_neurochem.py:

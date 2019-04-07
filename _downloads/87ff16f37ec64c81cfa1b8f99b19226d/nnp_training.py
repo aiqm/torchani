@@ -34,8 +34,8 @@ try:
     path = os.path.dirname(os.path.realpath(__file__))
 except NameError:
     path = os.getcwd()
-training_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
-validation_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+training_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
+validation_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')  # noqa: E501
 
 # checkpoint file to save model when validation RMSE improves
 model_checkpoint = 'model.pt'
@@ -148,7 +148,9 @@ container = torchani.ignite.Container({'energies': model})
 optimizer = torch.optim.Adam(model.parameters())
 trainer = ignite.engine.create_supervised_trainer(
     container, optimizer, torchani.ignite.MSELoss('energies'))
-evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
+evaluator = ignite.engine.create_supervised_evaluator(
+    container,
+    metrics={
         'RMSE': torchani.ignite.RMSEMetric('energies')
     })
 

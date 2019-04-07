@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.aev &mdash; TorchANI 0.3.1 documentation</title>
+  <title>torchani.aev &mdash; TorchANI 0.4 documentation</title>
   
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                0.3.1
+                0.4
               </div>
             
           
@@ -169,14 +169,17 @@
            <div itemprop="articleBody">
             
   <h1>Source code for torchani.aev</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">itertools</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">_six</span>  <span class="c1"># noqa:F401</span>
 <span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="k">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Tuple</span>
 
 
-<span class="k">def</span> <span class="nf">_cutoff_cosine</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
+<span class="c1"># @torch.jit.script</span>
+<span class="k">def</span> <span class="nf">cutoff_cosine</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
+    <span class="c1"># type: (Tensor, float) -&gt; Tensor</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
         <span class="n">distances</span> <span class="o">&lt;=</span> <span class="n">cutoff</span><span class="p">,</span>
         <span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">distances</span> <span class="o">/</span> <span class="n">cutoff</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span>
@@ -184,36 +187,296 @@
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">default_neighborlist</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Default neighborlist computer&quot;&quot;&quot;</span>
+<span class="c1"># @torch.jit.script</span>
+<span class="k">def</span> <span class="nf">radial_terms</span><span class="p">(</span><span class="n">Rcr</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">distances</span><span class="p">):</span>
+    <span class="c1"># type: (float, Tensor, Tensor, Tensor) -&gt; Tensor</span>
+    <span class="sd">&quot;&quot;&quot;Compute the radial subAEV terms of the center atom given neighbors</span>
 
-    <span class="n">vec</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-    <span class="c1"># vec has hape (conformations, atoms, atoms, 3) storing Rij vectors</span>
+<span class="sd">    This correspond to equation (3) in the `ANI paper`_. This function just</span>
+<span class="sd">    compute the terms. The sum in the equation is not computed.</span>
+<span class="sd">    The input tensor have shape (conformations, atoms, N), where ``N``</span>
+<span class="sd">    is the number of neighbor atoms within the cutoff radius and output</span>
+<span class="sd">    tensor should have shape</span>
+<span class="sd">    (conformations, atoms, ``self.radial_sublength()``)</span>
 
+<span class="sd">    .. _ANI paper:</span>
+<span class="sd">        http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">fc</span> <span class="o">=</span> <span class="n">cutoff_cosine</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">Rcr</span><span class="p">)</span>
+    <span class="c1"># Note that in the equation in the paper there is no 0.25</span>
+    <span class="c1"># coefficient, but in NeuroChem there is such a coefficient.</span>
+    <span class="c1"># We choose to be consistent with NeuroChem instead of the paper here.</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">EtaR</span> <span class="o">*</span> <span class="p">(</span><span class="n">distances</span> <span class="o">-</span> <span class="n">ShfR</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">fc</span>
+    <span class="c1"># At this point, ret now have shape</span>
+    <span class="c1"># (conformations, atoms, N, ?, ?) where ? depend on constants.</span>
+    <span class="c1"># We then should flat the last 4 dimensions to view the subAEV as one</span>
+    <span class="c1"># dimension vector</span>
+    <span class="k">return</span> <span class="n">ret</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+
+
+<span class="c1"># @torch.jit.script</span>
+<span class="k">def</span> <span class="nf">angular_terms</span><span class="p">(</span><span class="n">Rca</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span><span class="p">,</span> <span class="n">vectors1</span><span class="p">,</span> <span class="n">vectors2</span><span class="p">):</span>
+    <span class="c1"># type: (float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -&gt; Tensor</span>
+    <span class="sd">&quot;&quot;&quot;Compute the angular subAEV terms of the center atom given neighbor pairs.</span>
+
+<span class="sd">    This correspond to equation (4) in the `ANI paper`_. This function just</span>
+<span class="sd">    compute the terms. The sum in the equation is not computed.</span>
+<span class="sd">    The input tensor have shape (conformations, atoms, N), where N</span>
+<span class="sd">    is the number of neighbor atom pairs within the cutoff radius and</span>
+<span class="sd">    output tensor should have shape</span>
+<span class="sd">    (conformations, atoms, ``self.angular_sublength()``)</span>
+
+<span class="sd">    .. _ANI paper:</span>
+<span class="sd">        http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">vectors1</span> <span class="o">=</span> <span class="n">vectors1</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">vectors2</span> <span class="o">=</span> <span class="n">vectors2</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">distances1</span> <span class="o">=</span> <span class="n">vectors1</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">distances2</span> <span class="o">=</span> <span class="n">vectors2</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">5</span><span class="p">)</span>
+
+    <span class="c1"># 0.95 is multiplied to the cos values to prevent acos from</span>
+    <span class="c1"># returning NaN.</span>
+    <span class="n">cos_angles</span> <span class="o">=</span> <span class="mf">0.95</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">cosine_similarity</span><span class="p">(</span><span class="n">vectors1</span><span class="p">,</span> <span class="n">vectors2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">angles</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">acos</span><span class="p">(</span><span class="n">cos_angles</span><span class="p">)</span>
+
+    <span class="n">fcj1</span> <span class="o">=</span> <span class="n">cutoff_cosine</span><span class="p">(</span><span class="n">distances1</span><span class="p">,</span> <span class="n">Rca</span><span class="p">)</span>
+    <span class="n">fcj2</span> <span class="o">=</span> <span class="n">cutoff_cosine</span><span class="p">(</span><span class="n">distances2</span><span class="p">,</span> <span class="n">Rca</span><span class="p">)</span>
+    <span class="n">factor1</span> <span class="o">=</span> <span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angles</span> <span class="o">-</span> <span class="n">ShfZ</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="n">Zeta</span>
+    <span class="n">factor2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">EtaA</span> <span class="o">*</span> <span class="p">((</span><span class="n">distances1</span> <span class="o">+</span> <span class="n">distances2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">ShfA</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">factor1</span> <span class="o">*</span> <span class="n">factor2</span> <span class="o">*</span> <span class="n">fcj1</span> <span class="o">*</span> <span class="n">fcj2</span>
+    <span class="c1"># At this point, ret now have shape</span>
+    <span class="c1"># (conformations, atoms, N, ?, ?, ?, ?) where ? depend on constants.</span>
+    <span class="c1"># We then should flat the last 4 dimensions to view the subAEV as one</span>
+    <span class="c1"># dimension vector</span>
+    <span class="k">return</span> <span class="n">ret</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=-</span><span class="mi">4</span><span class="p">)</span>
+
+
+<span class="c1"># @torch.jit.script</span>
+<span class="k">def</span> <span class="nf">compute_shifts</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the shifts of unit cell along the given cell vectors to make it</span>
+<span class="sd">    large enough to contain all pairs of neighbor atoms with PBC under</span>
+<span class="sd">    consideration</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three</span>
+<span class="sd">        vectors defining unit cell:</span>
+<span class="sd">            tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])</span>
+<span class="sd">        cutoff (float): the cutoff inside which atoms are considered pairs</span>
+<span class="sd">        pbc (:class:`torch.Tensor`): boolean vector of size 3 storing</span>
+<span class="sd">            if pbc is enabled for that direction.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        :class:`torch.Tensor`: long tensor of shifts. the center cell and</span>
+<span class="sd">            symmetric cells are not included.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># type: (Tensor, Tensor, float) -&gt; Tensor</span>
+    <span class="n">reciprocal_cell</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
+    <span class="n">inv_distances</span> <span class="o">=</span> <span class="n">reciprocal_cell</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">num_repeats</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">cutoff</span> <span class="o">*</span> <span class="n">inv_distances</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+    <span class="n">num_repeats</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">pbc</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">num_repeats</span><span class="p">))</span>
+    <span class="n">r1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">r2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">r3</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">o</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">r3</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">o</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="o">-</span><span class="n">r3</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">r3</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">o</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="o">-</span><span class="n">r3</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="o">-</span><span class="n">r2</span><span class="p">,</span> <span class="n">r3</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="o">-</span><span class="n">r2</span><span class="p">,</span> <span class="n">o</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="o">-</span><span class="n">r2</span><span class="p">,</span> <span class="o">-</span><span class="n">r3</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">r3</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">o</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="o">-</span><span class="n">r3</span><span class="p">),</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">o</span><span class="p">,</span> <span class="n">r3</span><span class="p">),</span>
+    <span class="p">])</span>
+
+
+<span class="c1"># @torch.jit.script</span>
+<span class="k">def</span> <span class="nf">neighbor_pairs</span><span class="p">(</span><span class="n">padding_mask</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">shifts</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute pairs of atoms that are neighbors</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        padding_mask (:class:`torch.Tensor`): boolean tensor of shape</span>
+<span class="sd">            (molecules, atoms) for padding mask. 1 == is padding.</span>
+<span class="sd">        coordinates (:class:`torch.Tensor`): tensor of shape</span>
+<span class="sd">            (molecules, atoms, 3) for atom coordinates.</span>
+<span class="sd">        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three vectors</span>
+<span class="sd">            defining unit cell: tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])</span>
+<span class="sd">        cutoff (float): the cutoff inside which atoms are considered pairs</span>
+<span class="sd">        shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># type: (Tensor, Tensor, Tensor, Tensor, float) -&gt; Tuple[Tensor, Tensor, Tensor, Tensor]</span>
+
+    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+    <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">padding_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">all_atoms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="c1"># Step 2: center cell</span>
+    <span class="n">p1_center</span><span class="p">,</span> <span class="n">p2_center</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">all_atoms</span><span class="p">)</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">shifts_center</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">p1_center</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: cells with shifts</span>
+    <span class="c1"># shape convention (shift index, molecule index, atom index, 3)</span>
+    <span class="n">num_shifts</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">all_shifts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_shifts</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">shift_index</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">all_shifts</span><span class="p">,</span> <span class="n">all_atoms</span><span class="p">,</span> <span class="n">all_atoms</span><span class="p">)</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">shifts_outide</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shift_index</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: combine results for all cells</span>
+    <span class="n">shifts_all</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">shifts_center</span><span class="p">,</span> <span class="n">shifts_outide</span><span class="p">])</span>
+    <span class="n">p1_all</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">p1_center</span><span class="p">,</span> <span class="n">p1</span><span class="p">])</span>
+    <span class="n">p2_all</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">p2_center</span><span class="p">,</span> <span class="n">p2</span><span class="p">])</span>
+    <span class="n">shift_values</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">shifts_all</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="n">cell</span><span class="p">)</span>
+
+    <span class="c1"># step 5, compute distances, and find all pairs within cutoff</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="p">(</span><span class="n">coordinates</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p1_all</span><span class="p">)</span> <span class="o">-</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p2_all</span><span class="p">)</span> <span class="o">+</span> <span class="n">shift_values</span><span class="p">)</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">padding_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">padding_mask</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p1_all</span><span class="p">))</span> <span class="o">|</span> <span class="p">(</span><span class="n">padding_mask</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p2_all</span><span class="p">))</span>
+    <span class="n">distances</span><span class="o">.</span><span class="n">masked_fill_</span><span class="p">(</span><span class="n">padding_mask</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+    <span class="n">in_cutoff</span> <span class="o">=</span> <span class="p">(</span><span class="n">distances</span> <span class="o">&lt;=</span> <span class="n">cutoff</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+    <span class="n">molecule_index</span><span class="p">,</span> <span class="n">pair_index</span> <span class="o">=</span> <span class="n">in_cutoff</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">atom_index1</span> <span class="o">=</span> <span class="n">p1_all</span><span class="p">[</span><span class="n">pair_index</span><span class="p">]</span>
+    <span class="n">atom_index2</span> <span class="o">=</span> <span class="n">p2_all</span><span class="p">[</span><span class="n">pair_index</span><span class="p">]</span>
+    <span class="n">shifts</span> <span class="o">=</span> <span class="n">shifts_all</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pair_index</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">molecule_index</span><span class="p">,</span> <span class="n">atom_index1</span><span class="p">,</span> <span class="n">atom_index2</span><span class="p">,</span> <span class="n">shifts</span>
+
+
+<span class="c1"># torch.jit.script</span>
+<span class="k">def</span> <span class="nf">triu_index</span><span class="p">(</span><span class="n">num_species</span><span class="p">):</span>
+    <span class="n">species</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_species</span><span class="p">)</span>
+    <span class="n">species1</span><span class="p">,</span> <span class="n">species2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">with_replacement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">pair_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">species1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_species</span><span class="p">,</span> <span class="n">num_species</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+    <span class="n">ret</span><span class="p">[</span><span class="n">species1</span><span class="p">,</span> <span class="n">species2</span><span class="p">]</span> <span class="o">=</span> <span class="n">pair_index</span>
+    <span class="n">ret</span><span class="p">[</span><span class="n">species2</span><span class="p">,</span> <span class="n">species1</span><span class="p">]</span> <span class="o">=</span> <span class="n">pair_index</span>
+    <span class="k">return</span> <span class="n">ret</span>
+
+
+<span class="c1"># torch.jit.script</span>
+<span class="k">def</span> <span class="nf">convert_pair_index</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Let&#39;s say we have a pair:</span>
+<span class="sd">    index: 0 1 2 3 4 5 6 7 8 9 ...</span>
+<span class="sd">    elem1: 0 0 1 0 1 2 0 1 2 3 ...</span>
+<span class="sd">    elem2: 1 2 2 3 3 3 4 4 4 4 ...</span>
+<span class="sd">    This function convert index back to elem1 and elem2</span>
+
+<span class="sd">    To implement this, divide it into groups, the first group contains 1</span>
+<span class="sd">    elements, the second contains 2 elements, ..., the nth group contains</span>
+<span class="sd">    n elements.</span>
+
+<span class="sd">    Let&#39;s say we want to compute the elem1 and elem2 for index i. We first find</span>
+<span class="sd">    the number of complete groups contained in index 0, 1, ..., i - 1</span>
+<span class="sd">    (all inclusive, not including i), then i will be in the next group. Let&#39;s</span>
+<span class="sd">    say there are N complete groups, then these N groups contains</span>
+<span class="sd">    N * (N + 1) / 2 elements, solving for the largest N that satisfies</span>
+<span class="sd">    N * (N + 1) / 2 &lt;= i, will get the N we want.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="mf">8.0</span> <span class="o">*</span> <span class="n">index</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">))</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+    <span class="n">num_elems</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">index</span> <span class="o">-</span> <span class="n">num_elems</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span>
+
+
+<span class="c1"># torch.jit.script</span>
+<span class="k">def</span> <span class="nf">cumsum_from_zero</span><span class="p">(</span><span class="n">input_</span><span class="p">):</span>
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">input_</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">input_</span><span class="o">.</span><span class="n">new_tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">]),</span> <span class="n">cumsum</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+    <span class="k">return</span> <span class="n">cumsum</span>
+
+
+<span class="c1"># torch.jit.script</span>
+<span class="k">def</span> <span class="nf">triple_by_molecule</span><span class="p">(</span><span class="n">molecule_index</span><span class="p">,</span> <span class="n">atom_index1</span><span class="p">,</span> <span class="n">atom_index2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Input: indices for pairs of atoms that are close to each other.</span>
+<span class="sd">    each pair only appear once, i.e. only one of the pairs (1, 2) and</span>
+<span class="sd">    (2, 1) exists.</span>
+
+<span class="sd">    Output: indices for all central atoms and it pairs of neighbors. For</span>
+<span class="sd">    example, if input has pair (0, 1), (0, 2), (0, 3), (0, 4), (1, 2),</span>
+<span class="sd">    (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), then the output would have</span>
+<span class="sd">    central atom 0, 1, 2, 3, 4 and for cental atom 0, its pairs of neighbors</span>
+<span class="sd">    are (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># convert representation from pair to central-other</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">molecule_index</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">mi</span> <span class="o">=</span> <span class="n">molecule_index</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">ai1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">atom_index1</span><span class="p">,</span> <span class="n">atom_index2</span><span class="p">])</span>
+
+    <span class="c1"># sort and compute unique key</span>
+    <span class="n">mi_ai1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">mi</span><span class="p">,</span> <span class="n">ai1</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">m_ac</span><span class="p">,</span> <span class="n">rev_indices</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">_unique_dim2_temporary_will_remove_soon</span><span class="p">(</span><span class="n">mi_ai1</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">sorted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">uniqued_molecule_index</span><span class="p">,</span> <span class="n">uniqued_central_atom_index</span> <span class="o">=</span> <span class="n">m_ac</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># do local combinations within unique key, assuming sorted</span>
+    <span class="n">pair_sizes</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">*</span> <span class="p">(</span><span class="n">counts</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">total_size</span> <span class="o">=</span> <span class="n">pair_sizes</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">molecule_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">uniqued_molecule_index</span><span class="p">,</span> <span class="n">pair_sizes</span><span class="p">)</span>
+    <span class="n">central_atom_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">uniqued_central_atom_index</span><span class="p">,</span> <span class="n">pair_sizes</span><span class="p">)</span>
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="n">cumsum_from_zero</span><span class="p">(</span><span class="n">pair_sizes</span><span class="p">)</span>
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">cumsum</span><span class="p">,</span> <span class="n">pair_sizes</span><span class="p">)</span>
+    <span class="n">sorted_local_pair_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">total_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">molecule_index</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-</span> <span class="n">cumsum</span>
+    <span class="n">sorted_local_index1</span><span class="p">,</span> <span class="n">sorted_local_index2</span> <span class="o">=</span> <span class="n">convert_pair_index</span><span class="p">(</span><span class="n">sorted_local_pair_index</span><span class="p">)</span>
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="n">cumsum_from_zero</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">cumsum</span><span class="p">,</span> <span class="n">pair_sizes</span><span class="p">)</span>
+    <span class="n">sorted_local_index1</span> <span class="o">+=</span> <span class="n">cumsum</span>
+    <span class="n">sorted_local_index2</span> <span class="o">+=</span> <span class="n">cumsum</span>
+
+    <span class="c1"># unsort result from last part</span>
+    <span class="n">argsort</span> <span class="o">=</span> <span class="n">rev_indices</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+    <span class="n">local_index1</span> <span class="o">=</span> <span class="n">argsort</span><span class="p">[</span><span class="n">sorted_local_index1</span><span class="p">]</span>
+    <span class="n">local_index2</span> <span class="o">=</span> <span class="n">argsort</span><span class="p">[</span><span class="n">sorted_local_index2</span><span class="p">]</span>
+
+    <span class="c1"># compute mapping between representation of central-other to pair</span>
+    <span class="n">sign1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">local_index1</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">local_index1</span><span class="p">),</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">local_index1</span><span class="p">))</span>
+    <span class="n">sign2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">local_index2</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">local_index2</span><span class="p">),</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">local_index2</span><span class="p">))</span>
+    <span class="n">pair_index1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">local_index1</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">,</span> <span class="n">local_index1</span><span class="p">,</span> <span class="n">local_index1</span> <span class="o">-</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">pair_index2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">local_index2</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">,</span> <span class="n">local_index2</span><span class="p">,</span> <span class="n">local_index2</span> <span class="o">-</span> <span class="n">n</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">molecule_index</span><span class="p">,</span> <span class="n">central_atom_index</span><span class="p">,</span> <span class="n">pair_index1</span><span class="p">,</span> <span class="n">pair_index2</span><span class="p">,</span> <span class="n">sign1</span><span class="p">,</span> <span class="n">sign2</span>
+
+
+<span class="c1"># torch.jit.script</span>
+<span class="k">def</span> <span class="nf">compute_aev</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc_switch</span><span class="p">,</span> <span class="n">triu_index</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">sizes</span><span class="p">):</span>
+    <span class="n">Rcr</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">Rca</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span> <span class="o">=</span> <span class="n">constants</span>
+    <span class="n">num_species</span><span class="p">,</span> <span class="n">radial_sublength</span><span class="p">,</span> <span class="n">radial_length</span><span class="p">,</span> <span class="n">angular_sublength</span><span class="p">,</span> <span class="n">angular_length</span><span class="p">,</span> <span class="n">aev_length</span> <span class="o">=</span> <span class="n">sizes</span>
+    <span class="n">num_molecules</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">num_species_pairs</span> <span class="o">=</span> <span class="n">angular_length</span> <span class="o">//</span> <span class="n">angular_sublength</span>
+    <span class="n">cutoff</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">Rcr</span><span class="p">,</span> <span class="n">Rca</span><span class="p">)</span>
+
+    <span class="n">shifts</span> <span class="o">=</span> <span class="n">compute_shifts</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">pbc_switch</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">)</span>
+    <span class="n">molecule_index</span><span class="p">,</span> <span class="n">atom_index1</span><span class="p">,</span> <span class="n">atom_index2</span><span class="p">,</span> <span class="n">shifts</span> <span class="o">=</span> <span class="n">neighbor_pairs</span><span class="p">(</span><span class="n">species</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">shifts</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">)</span>
+    <span class="n">species1</span> <span class="o">=</span> <span class="n">species</span><span class="p">[</span><span class="n">molecule_index</span><span class="p">,</span> <span class="n">atom_index1</span><span class="p">]</span>
+    <span class="n">species2</span> <span class="o">=</span> <span class="n">species</span><span class="p">[</span><span class="n">molecule_index</span><span class="p">,</span> <span class="n">atom_index2</span><span class="p">]</span>
+    <span class="n">shift_values</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">shifts</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="n">cell</span><span class="p">)</span>
+
+    <span class="n">vec</span> <span class="o">=</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">molecule_index</span><span class="p">,</span> <span class="n">atom_index1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">molecule_index</span><span class="p">,</span> <span class="n">atom_index2</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">shift_values</span>
     <span class="n">distances</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="c1"># distances has shape (conformations, atoms, atoms) storing Rij distances</span>
 
-    <span class="n">padding_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">species</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">distances</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span><span class="n">padding_mask</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+    <span class="c1"># compute radial aev</span>
+    <span class="n">radial_terms_</span> <span class="o">=</span> <span class="n">radial_terms</span><span class="p">(</span><span class="n">Rcr</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">distances</span><span class="p">)</span>
+    <span class="n">radial_aev</span> <span class="o">=</span> <span class="n">radial_terms_</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">num_molecules</span> <span class="o">*</span> <span class="n">num_atoms</span> <span class="o">*</span> <span class="n">num_species</span><span class="p">,</span> <span class="n">radial_sublength</span><span class="p">)</span>
+    <span class="n">index1</span> <span class="o">=</span> <span class="p">(</span><span class="n">molecule_index</span> <span class="o">*</span> <span class="n">num_atoms</span> <span class="o">+</span> <span class="n">atom_index1</span><span class="p">)</span> <span class="o">*</span> <span class="n">num_species</span> <span class="o">+</span> <span class="n">species2</span>
+    <span class="n">index2</span> <span class="o">=</span> <span class="p">(</span><span class="n">molecule_index</span> <span class="o">*</span> <span class="n">num_atoms</span> <span class="o">+</span> <span class="n">atom_index2</span><span class="p">)</span> <span class="o">*</span> <span class="n">num_species</span> <span class="o">+</span> <span class="n">species1</span>
+    <span class="n">radial_aev</span><span class="o">.</span><span class="n">scatter_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index1</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">radial_sublength</span><span class="p">),</span> <span class="n">radial_terms_</span><span class="p">)</span>
+    <span class="n">radial_aev</span><span class="o">.</span><span class="n">scatter_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index2</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">radial_sublength</span><span class="p">),</span> <span class="n">radial_terms_</span><span class="p">)</span>
+    <span class="n">radial_aev</span> <span class="o">=</span> <span class="n">radial_aev</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_molecules</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">radial_length</span><span class="p">)</span>
 
-    <span class="n">distances</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-
-    <span class="n">min_distances</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">end_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">in_cutoff</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_distances</span> <span class="o">&lt;=</span> <span class="n">cutoff</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]</span>
-    <span class="n">indices</span> <span class="o">=</span> <span class="n">indices</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">in_cutoff</span><span class="p">)</span>
-
-    <span class="c1"># TODO: remove this workaround after gather support broadcasting</span>
-    <span class="n">atoms</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">species_</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">neighbor_species</span> <span class="o">=</span> <span class="n">species_</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
-
-    <span class="n">neighbor_distances</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">in_cutoff</span><span class="p">)</span>
-
-    <span class="c1"># TODO: remove this workaround when gather support broadcasting</span>
-    <span class="c1"># https://github.com/pytorch/pytorch/pull/9532</span>
-    <span class="n">indices_</span> <span class="o">=</span> <span class="n">indices</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-    <span class="n">neighbor_coordinates</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">indices_</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">neighbor_species</span><span class="p">,</span> <span class="n">neighbor_distances</span><span class="p">,</span> <span class="n">neighbor_coordinates</span>
+    <span class="c1"># compute angular aev</span>
+    <span class="n">molecule_index</span><span class="p">,</span> <span class="n">central_atom_index</span><span class="p">,</span> <span class="n">pair_index1</span><span class="p">,</span> <span class="n">pair_index2</span><span class="p">,</span> <span class="n">sign1</span><span class="p">,</span> <span class="n">sign2</span> <span class="o">=</span> <span class="n">triple_by_molecule</span><span class="p">(</span><span class="n">molecule_index</span><span class="p">,</span> <span class="n">atom_index1</span><span class="p">,</span> <span class="n">atom_index2</span><span class="p">)</span>
+    <span class="n">vec1</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pair_index1</span><span class="p">)</span> <span class="o">*</span> <span class="n">sign1</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">vec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">vec2</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pair_index2</span><span class="p">)</span> <span class="o">*</span> <span class="n">sign2</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">vec</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">species1_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sign1</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="n">species2</span><span class="p">[</span><span class="n">pair_index1</span><span class="p">],</span> <span class="n">species1</span><span class="p">[</span><span class="n">pair_index1</span><span class="p">])</span>
+    <span class="n">species2_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sign2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="n">species2</span><span class="p">[</span><span class="n">pair_index2</span><span class="p">],</span> <span class="n">species1</span><span class="p">[</span><span class="n">pair_index2</span><span class="p">])</span>
+    <span class="n">angular_terms_</span> <span class="o">=</span> <span class="n">angular_terms</span><span class="p">(</span><span class="n">Rca</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span><span class="p">,</span> <span class="n">vec1</span><span class="p">,</span> <span class="n">vec2</span><span class="p">)</span>
+    <span class="n">angular_aev</span> <span class="o">=</span> <span class="n">angular_terms_</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">num_molecules</span> <span class="o">*</span> <span class="n">num_atoms</span> <span class="o">*</span> <span class="n">num_species_pairs</span><span class="p">,</span> <span class="n">angular_sublength</span><span class="p">)</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="p">(</span><span class="n">molecule_index</span> <span class="o">*</span> <span class="n">num_atoms</span> <span class="o">+</span> <span class="n">central_atom_index</span><span class="p">)</span> <span class="o">*</span> <span class="n">num_species_pairs</span> <span class="o">+</span> <span class="n">triu_index</span><span class="p">[</span><span class="n">species1_</span><span class="p">,</span> <span class="n">species2_</span><span class="p">]</span>
+    <span class="n">angular_aev</span><span class="o">.</span><span class="n">scatter_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">angular_sublength</span><span class="p">),</span> <span class="n">angular_terms_</span><span class="p">)</span>
+    <span class="n">angular_aev</span> <span class="o">=</span> <span class="n">angular_aev</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_molecules</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">angular_length</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">radial_aev</span><span class="p">,</span> <span class="n">angular_aev</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="AEVComputer"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer">[docs]</a><span class="k">class</span> <span class="nc">AEVComputer</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -237,27 +500,15 @@
 <span class="sd">        ShfZ (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in</span>
 <span class="sd">            equation (4) in the `ANI paper`_.</span>
 <span class="sd">        num_species (int): Number of supported atom types.</span>
-<span class="sd">        neighborlist_computer (:class:`collections.abc.Callable`): initial</span>
-<span class="sd">            value of :attr:`neighborlist`</span>
-
-<span class="sd">    Attributes:</span>
-<span class="sd">        neighborlist (:class:`collections.abc.Callable`): The callable</span>
-<span class="sd">            (species:Tensor, coordinates:Tensor, cutoff:float)</span>
-<span class="sd">            -&gt; Tuple[Tensor, Tensor, Tensor] that returns the species,</span>
-<span class="sd">            distances and relative coordinates of neighbor atoms. The input</span>
-<span class="sd">            species and coordinates tensor have the same shape convention as</span>
-<span class="sd">            the input of :class:`AEVComputer`. The returned neighbor</span>
-<span class="sd">            species and coordinates tensor must have shape ``(C, A, N)`` and</span>
-<span class="sd">            ``(C, A, N, 3)`` correspoindingly, where ``C`` is the number of</span>
-<span class="sd">            conformations in a chunk, ``A`` is the number of atoms, and ``N``</span>
-<span class="sd">            is the maximum number of neighbors that an atom could have.</span>
 
 <span class="sd">    .. _ANI paper:</span>
 <span class="sd">        http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__constants__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Rcr&#39;</span><span class="p">,</span> <span class="s1">&#39;Rca&#39;</span><span class="p">,</span> <span class="s1">&#39;num_species&#39;</span><span class="p">,</span> <span class="s1">&#39;radial_sublength&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;radial_length&#39;</span><span class="p">,</span> <span class="s1">&#39;angular_sublength&#39;</span><span class="p">,</span> <span class="s1">&#39;angular_length&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;aev_length&#39;</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Rcr</span><span class="p">,</span> <span class="n">Rca</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span>
-                 <span class="n">num_species</span><span class="p">,</span> <span class="n">neighborlist_computer</span><span class="o">=</span><span class="n">default_neighborlist</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Rcr</span><span class="p">,</span> <span class="n">Rca</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span> <span class="n">num_species</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">AEVComputer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span> <span class="o">=</span> <span class="n">Rcr</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span> <span class="o">=</span> <span class="n">Rca</span>
@@ -272,216 +523,63 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;ShfZ&#39;</span><span class="p">,</span> <span class="n">ShfZ</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span> <span class="o">=</span> <span class="n">num_species</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">neighborlist</span> <span class="o">=</span> <span class="n">neighborlist_computer</span>
+        <span class="c1"># The length of radial subaev of a single species</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radial_sublength</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfR</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+        <span class="c1"># The length of full radial aev</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radial_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">radial_sublength</span>
+        <span class="c1"># The length of angular subaev of a single species</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angular_sublength</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">EtaA</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Zeta</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfA</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfZ</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+        <span class="c1"># The length of full angular aev</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angular_length</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_species</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_species</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">angular_sublength</span>
+        <span class="c1"># The length of full aev</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aev_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radial_length</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">angular_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">radial_sublength</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">radial_length</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">angular_sublength</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">angular_length</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aev_length</span>
 
-<div class="viewcode-block" id="AEVComputer.radial_sublength"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer.radial_sublength">[docs]</a>    <span class="k">def</span> <span class="nf">radial_sublength</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the length of radial subaev of a single species&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfR</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;triu_index&#39;</span><span class="p">,</span> <span class="n">triu_index</span><span class="p">(</span><span class="n">num_species</span><span class="p">))</span>
 
-<div class="viewcode-block" id="AEVComputer.radial_length"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer.radial_length">[docs]</a>    <span class="k">def</span> <span class="nf">radial_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the length of full radial aev&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">radial_sublength</span><span class="p">()</span></div>
+    <span class="k">def</span> <span class="nf">constants</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfZ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">EtaA</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Zeta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfA</span>
 
-<div class="viewcode-block" id="AEVComputer.angular_sublength"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer.angular_sublength">[docs]</a>    <span class="k">def</span> <span class="nf">angular_sublength</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the length of angular subaev of a single species&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">EtaA</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">Zeta</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfA</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">*</span> \
-            <span class="bp">self</span><span class="o">.</span><span class="n">ShfZ</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span></div>
-
-<div class="viewcode-block" id="AEVComputer.angular_length"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer.angular_length">[docs]</a>    <span class="k">def</span> <span class="nf">angular_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the length of full angular aev&quot;&quot;&quot;</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">s</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">angular_sublength</span><span class="p">()</span></div>
-
-<div class="viewcode-block" id="AEVComputer.aev_length"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer.aev_length">[docs]</a>    <span class="k">def</span> <span class="nf">aev_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the length of full aev&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">radial_length</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">angular_length</span><span class="p">()</span></div>
-
-    <span class="k">def</span> <span class="nf">_radial_subaev_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distances</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the radial subAEV terms of the center atom given neighbors</span>
-
-<span class="sd">        This correspond to equation (3) in the `ANI paper`_. This function just</span>
-<span class="sd">        compute the terms. The sum in the equation is not computed.</span>
-<span class="sd">        The input tensor have shape (conformations, atoms, N), where ``N``</span>
-<span class="sd">        is the number of neighbor atoms within the cutoff radius and output</span>
-<span class="sd">        tensor should have shape</span>
-<span class="sd">        (conformations, atoms, ``self.radial_sublength()``)</span>
-
-<span class="sd">        .. _ANI paper:</span>
-<span class="sd">            http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">distances</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">fc</span> <span class="o">=</span> <span class="n">_cutoff_cosine</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span><span class="p">)</span>
-        <span class="c1"># Note that in the equation in the paper there is no 0.25</span>
-        <span class="c1"># coefficient, but in NeuroChem there is such a coefficient.</span>
-        <span class="c1"># We choose to be consistent with NeuroChem instead of the paper here.</span>
-        <span class="n">ret</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span> <span class="o">*</span> <span class="p">(</span><span class="n">distances</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfR</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">fc</span>
-        <span class="c1"># At this point, ret now have shape</span>
-        <span class="c1"># (conformations, atoms, N, ?, ?) where ? depend on constants.</span>
-        <span class="c1"># We then should flat the last 4 dimensions to view the subAEV as one</span>
-        <span class="c1"># dimension vector</span>
-        <span class="k">return</span> <span class="n">ret</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_angular_subaev_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vectors1</span><span class="p">,</span> <span class="n">vectors2</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Compute the angular subAEV terms of the center atom given neighbor pairs.</span>
-
-<span class="sd">        This correspond to equation (4) in the `ANI paper`_. This function just</span>
-<span class="sd">        compute the terms. The sum in the equation is not computed.</span>
-<span class="sd">        The input tensor have shape (conformations, atoms, N), where N</span>
-<span class="sd">        is the number of neighbor atom pairs within the cutoff radius and</span>
-<span class="sd">        output tensor should have shape</span>
-<span class="sd">        (conformations, atoms, ``self.angular_sublength()``)</span>
-
-<span class="sd">        .. _ANI paper:</span>
-<span class="sd">            http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">vectors1</span> <span class="o">=</span> <span class="n">vectors1</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span>
-            <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">vectors2</span> <span class="o">=</span> <span class="n">vectors2</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span>
-            <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">distances1</span> <span class="o">=</span> <span class="n">vectors1</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">5</span><span class="p">)</span>
-        <span class="n">distances2</span> <span class="o">=</span> <span class="n">vectors2</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">5</span><span class="p">)</span>
-
-        <span class="c1"># 0.95 is multiplied to the cos values to prevent acos from</span>
-        <span class="c1"># returning NaN.</span>
-        <span class="n">cos_angles</span> <span class="o">=</span> <span class="mf">0.95</span> <span class="o">*</span> \
-            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">cosine_similarity</span><span class="p">(</span>
-                <span class="n">vectors1</span><span class="p">,</span> <span class="n">vectors2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">5</span><span class="p">)</span>
-        <span class="n">angles</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">acos</span><span class="p">(</span><span class="n">cos_angles</span><span class="p">)</span>
-
-        <span class="n">fcj1</span> <span class="o">=</span> <span class="n">_cutoff_cosine</span><span class="p">(</span><span class="n">distances1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span><span class="p">)</span>
-        <span class="n">fcj2</span> <span class="o">=</span> <span class="n">_cutoff_cosine</span><span class="p">(</span><span class="n">distances2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span><span class="p">)</span>
-        <span class="n">factor1</span> <span class="o">=</span> <span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angles</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfZ</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">Zeta</span>
-        <span class="n">factor2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">EtaA</span> <span class="o">*</span>
-                            <span class="p">((</span><span class="n">distances1</span> <span class="o">+</span> <span class="n">distances2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfA</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">ret</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">factor1</span> <span class="o">*</span> <span class="n">factor2</span> <span class="o">*</span> <span class="n">fcj1</span> <span class="o">*</span> <span class="n">fcj2</span>
-        <span class="c1"># At this point, ret now have shape</span>
-        <span class="c1"># (conformations, atoms, N, ?, ?, ?, ?) where ? depend on constants.</span>
-        <span class="c1"># We then should flat the last 4 dimensions to view the subAEV as one</span>
-        <span class="c1"># dimension vector</span>
-        <span class="k">return</span> <span class="n">ret</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=-</span><span class="mi">4</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_terms_and_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns radial and angular subAEV terms, these terms will be sorted</span>
-<span class="sd">        according to their distances to central atoms, and only these within</span>
-<span class="sd">        cutoff radius are valid. The returned indices stores the source of data</span>
-<span class="sd">        before sorting.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">max_cutoff</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span><span class="p">])</span>
-        <span class="n">species_</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighborlist</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span>
-                                                     <span class="n">max_cutoff</span><span class="p">)</span>
-        <span class="n">radial_terms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_radial_subaev_terms</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
-
-        <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combinations</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">angular_terms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_angular_subaev_terms</span><span class="p">(</span><span class="o">*</span><span class="n">vec</span><span class="p">)</span>
-
-        <span class="c1"># Returned tensors has shape:</span>
-        <span class="c1"># (conformations, atoms, neighbors, ``self.radial_sublength()``)</span>
-        <span class="c1"># (conformations, atoms, pairs, ``self.angular_sublength()``)</span>
-        <span class="c1"># (conformations, atoms, neighbors)</span>
-        <span class="c1"># (conformations, atoms, pairs)</span>
-        <span class="k">return</span> <span class="n">radial_terms</span><span class="p">,</span> <span class="n">angular_terms</span><span class="p">,</span> <span class="n">species_</span>
-
-    <span class="k">def</span> <span class="nf">_combinations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">tensor</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">tensor</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-        <span class="n">index1</span><span class="p">,</span> <span class="n">index2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">tensor</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">index1</span><span class="p">),</span> \
-            <span class="n">tensor</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">index2</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_compute_mask_r</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_r</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get mask of radial terms for each supported species from indices&quot;&quot;&quot;</span>
-        <span class="n">mask_r</span> <span class="o">=</span> <span class="p">(</span><span class="n">species_r</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span>
-                  <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_species</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">device</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">mask_r</span>
-
-    <span class="k">def</span> <span class="nf">_compute_mask_a</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_a</span><span class="p">,</span> <span class="n">present_species</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get mask of angular terms for each supported species from indices&quot;&quot;&quot;</span>
-        <span class="n">species_a1</span><span class="p">,</span> <span class="n">species_a2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_combinations</span><span class="p">(</span><span class="n">species_a</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">mask_a1</span> <span class="o">=</span> <span class="p">(</span><span class="n">species_a1</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">present_species</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">mask_a2</span> <span class="o">=</span> <span class="p">(</span><span class="n">species_a2</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">present_species</span><span class="p">)</span>
-        <span class="n">mask</span> <span class="o">=</span> <span class="n">mask_a1</span> <span class="o">*</span> <span class="n">mask_a2</span>
-        <span class="n">mask_rev</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-        <span class="n">mask_a</span> <span class="o">=</span> <span class="p">(</span><span class="n">mask</span> <span class="o">+</span> <span class="n">mask_rev</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="k">return</span> <span class="n">mask_a</span>
-
-    <span class="k">def</span> <span class="nf">_assemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">radial_terms</span><span class="p">,</span> <span class="n">angular_terms</span><span class="p">,</span> <span class="n">present_species</span><span class="p">,</span>
-                  <span class="n">mask_r</span><span class="p">,</span> <span class="n">mask_a</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns radial and angular AEV computed from terms according</span>
-<span class="sd">        to the given partition information.</span>
-
-<span class="sd">        Arguments:</span>
-<span class="sd">            radial_terms (:class:`torch.Tensor`): shape (conformations, atoms,</span>
-<span class="sd">                neighbors, ``self.radial_sublength()``)</span>
-<span class="sd">            angular_terms (:class:`torch.Tensor`): shape (conformations, atoms,</span>
-<span class="sd">                pairs, ``self.angular_sublength()``)</span>
-<span class="sd">            present_species (:class:`torch.Tensor`):  Long tensor for species</span>
-<span class="sd">                of atoms present in the molecules.</span>
-<span class="sd">            mask_r (:class:`torch.Tensor`): shape (conformations, atoms,</span>
-<span class="sd">                neighbors, supported species)</span>
-<span class="sd">            mask_a (:class:`torch.Tensor`): shape (conformations, atoms,</span>
-<span class="sd">                pairs, present species, present species)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">conformations</span> <span class="o">=</span> <span class="n">radial_terms</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">atoms</span> <span class="o">=</span> <span class="n">radial_terms</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-
-        <span class="c1"># assemble radial subaev</span>
-        <span class="n">present_radial_aevs</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">radial_terms</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span>
-            <span class="n">mask_r</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">radial_terms</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">)</span>
-        <span class="c1"># present_radial_aevs has shape</span>
-        <span class="c1"># (conformations, atoms, present species, radial_length)</span>
-        <span class="n">radial_aevs</span> <span class="o">=</span> <span class="n">present_radial_aevs</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-        <span class="c1"># assemble angular subaev</span>
-        <span class="n">rev_indices</span> <span class="o">=</span> <span class="p">{</span><span class="n">present_species</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">():</span> <span class="n">i</span>
-                       <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">present_species</span><span class="p">))}</span>
-        <span class="n">angular_aevs</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">zero_angular_subaev</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
-            <span class="n">conformations</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">angular_sublength</span><span class="p">(),</span>
-            <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations_with_replacement</span><span class="p">(</span>
-                                        <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_species</span><span class="p">),</span> <span class="mi">2</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">s1</span> <span class="ow">in</span> <span class="n">rev_indices</span> <span class="ow">and</span> <span class="n">s2</span> <span class="ow">in</span> <span class="n">rev_indices</span><span class="p">:</span>
-                <span class="n">i1</span> <span class="o">=</span> <span class="n">rev_indices</span><span class="p">[</span><span class="n">s1</span><span class="p">]</span>
-                <span class="n">i2</span> <span class="o">=</span> <span class="n">rev_indices</span><span class="p">[</span><span class="n">s2</span><span class="p">]</span>
-                <span class="n">mask</span> <span class="o">=</span> <span class="n">mask_a</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i1</span><span class="p">,</span> <span class="n">i2</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-                <span class="n">subaev</span> <span class="o">=</span> <span class="p">(</span><span class="n">angular_terms</span> <span class="o">*</span> <span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">subaev</span> <span class="o">=</span> <span class="n">zero_angular_subaev</span>
-            <span class="n">angular_aevs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subaev</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">radial_aevs</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">angular_aevs</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-<div class="viewcode-block" id="AEVComputer.forward"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_coordinates</span><span class="p">):</span>
+    <span class="c1"># @torch.jit.script_method</span>
+<div class="viewcode-block" id="AEVComputer.forward"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Compute AEVs</span>
 
 <span class="sd">        Arguments:</span>
-<span class="sd">            species_coordinates (tuple): Two tensors: species and coordinates.</span>
+<span class="sd">            input (tuple): Can be one of the following two cases:</span>
+
+<span class="sd">                If you don&#39;t care about periodic boundary conditions at all,</span>
+<span class="sd">                then input can be a tuple of two tensors: species and coordinates.</span>
 <span class="sd">                species must have shape ``(C, A)`` and coordinates must have</span>
-<span class="sd">                shape ``(C, A, 3)``, where ``C`` is the number of conformations</span>
+<span class="sd">                shape ``(C, A, 3)``, where ``C`` is the number of molecules</span>
 <span class="sd">                in a chunk, and ``A`` is the number of atoms.</span>
+
+<span class="sd">                If you want to apply periodic boundary conditions, then the input</span>
+<span class="sd">                would be a tuple of four tensors: species, coordinates, cell, pbc</span>
+<span class="sd">                where species and coordinates are the same as described above, cell</span>
+<span class="sd">                is a tensor of shape (3, 3) of the three vectors defining unit cell:</span>
+
+<span class="sd">                .. code-block:: python</span>
+
+<span class="sd">                    tensor([[x1, y1, z1],</span>
+<span class="sd">                            [x2, y2, z2],</span>
+<span class="sd">                            [x3, y3, z3]])</span>
+
+<span class="sd">                and pbc is boolean vector of size 3 storing if pbc is enabled</span>
+<span class="sd">                for that direction.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: Species and AEVs. species are the species from the input</span>
 <span class="sd">            unchanged, and AEVs is a tensor of shape</span>
 <span class="sd">            ``(C, A, self.aev_length())``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span> <span class="o">=</span> <span class="n">species_coordinates</span>
-
-        <span class="n">present_species</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">present_species</span><span class="p">(</span><span class="n">species</span><span class="p">)</span>
-
-        <span class="n">radial_terms</span><span class="p">,</span> <span class="n">angular_terms</span><span class="p">,</span> <span class="n">species_</span> <span class="o">=</span> \
-            <span class="bp">self</span><span class="o">.</span><span class="n">_terms_and_indices</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">)</span>
-        <span class="n">mask_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_mask_r</span><span class="p">(</span><span class="n">species_</span><span class="p">)</span>
-        <span class="n">mask_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_mask_a</span><span class="p">(</span><span class="n">species_</span><span class="p">,</span> <span class="n">present_species</span><span class="p">)</span>
-
-        <span class="n">radial</span><span class="p">,</span> <span class="n">angular</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assemble</span><span class="p">(</span><span class="n">radial_terms</span><span class="p">,</span> <span class="n">angular_terms</span><span class="p">,</span>
-                                         <span class="n">present_species</span><span class="p">,</span> <span class="n">mask_r</span><span class="p">,</span> <span class="n">mask_a</span><span class="p">)</span>
-        <span class="n">fullaev</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">radial</span><span class="p">,</span> <span class="n">angular</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">species</span><span class="p">,</span> <span class="n">fullaev</span></div></div>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span> <span class="o">=</span> <span class="nb">input</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">pbc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
+            <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span> <span class="o">=</span> <span class="nb">input</span>
+        <span class="k">return</span> <span class="n">species</span><span class="p">,</span> <span class="n">compute_aev</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">triu_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>

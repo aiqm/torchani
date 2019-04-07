@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Use Disk Cache of AEV to Boost Training &mdash; TorchANI 0.3.1 documentation</title>
+  <title>Use Disk Cache of AEV to Boost Training &mdash; TorchANI 0.4 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.3.1
+                0.4
               </div>
             
           
@@ -173,18 +173,18 @@
            <div itemprop="articleBody">
             
   <div class="sphx-glr-download-link-note admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-cache-aev-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+<p class="admonition-title">Note</p>
+<p>Click <a class="reference internal" href="#sphx-glr-download-examples-cache-aev-py"><span class="std std-ref">here</span></a> to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="use-disk-cache-of-aev-to-boost-training">
 <span id="sphx-glr-examples-cache-aev-py"></span><h1>Use Disk Cache of AEV to Boost Training<a class="headerlink" href="#use-disk-cache-of-aev-to-boost-training" title="Permalink to this headline">¶</a></h1>
 <p>In the previous <a class="reference internal" href="nnp_training.html#training-example"><span class="std std-ref">Train Your Own Neural Network Potential</span></a> example, AEVs are computed everytime
 when needed. This is not very efficient because the AEVs actually never change
 during training. If one has a good SSD, it would be beneficial to cache these
-AEVs.  This example shows how to use disk cache to boost training</p>
-<p>Most part of the codes in this example are line by line copy of
+AEVs.  This example shows how to use disk cache to boost training
+Most part of the codes in this example are line by line copy of
 <a class="reference internal" href="nnp_training.html#training-example"><span class="std std-ref">Train Your Own Neural Network Potential</span></a>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">ignite</span>
 <span class="kn">import</span> <span class="nn">torchani</span>
 <span class="kn">import</span> <span class="nn">timeit</span>
@@ -198,8 +198,8 @@ AEVs.  This example shows how to use disk cache to boost training</p>
     <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
 <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
-<span class="n">training_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
-<span class="n">validation_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
+<span class="n">training_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
+<span class="n">validation_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
 
 <span class="c1"># checkpoint file to save model when validation RMSE improves</span>
 <span class="n">model_checkpoint</span> <span class="o">=</span> <span class="s1">&#39;model.pt&#39;</span>
@@ -224,8 +224,8 @@ AEVs.  This example shows how to use disk cache to boost training</p>
 </div>
 <p>Here, there is no need to manually construct aev computer and energy shifter,
 but we do need to generate a disk cache for datasets</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">const_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
-<span class="n">sae_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/sae_linfit.dat&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">const_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params&#39;</span><span class="p">)</span>
+<span class="n">sae_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/sae_linfit.dat&#39;</span><span class="p">)</span>
 <span class="n">training_cache</span> <span class="o">=</span> <span class="s1">&#39;./training_cache&#39;</span>
 <span class="n">validation_cache</span> <span class="o">=</span> <span class="s1">&#39;./validation_cache&#39;</span>
 
@@ -233,14 +233,14 @@ but we do need to generate a disk cache for datasets</p>
 <span class="c1"># cached and skip the generation part.</span>
 <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">training_cache</span><span class="p">):</span>
     <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cache_aev</span><span class="p">(</span><span class="n">training_cache</span><span class="p">,</span> <span class="n">training_path</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span>
-                            <span class="n">const_file</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="n">sae_file</span><span class="p">)</span>
+                            <span class="n">const_file</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">sae_file</span><span class="p">)</span>
 <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">validation_cache</span><span class="p">):</span>
     <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cache_aev</span><span class="p">(</span><span class="n">validation_cache</span><span class="p">,</span> <span class="n">validation_path</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span>
-                            <span class="n">device</span><span class="p">,</span> <span class="n">const_file</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="n">sae_file</span><span class="p">)</span>
+                            <span class="n">device</span><span class="p">,</span> <span class="n">const_file</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">sae_file</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The codes that define the network are also the same</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">atomic</span><span class="p">():</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">atomic</span><span class="p">():</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">384</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">CELU</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span>
@@ -254,7 +254,7 @@ but we do need to generate a disk cache for datasets</p>
 
 
 <span class="n">nn</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ANIModel</span><span class="p">([</span><span class="n">atomic</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)])</span>
-<span class="k">print</span><span class="p">(</span><span class="n">nn</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">nn</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">model_checkpoint</span><span class="p">):</span>
     <span class="n">nn</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_checkpoint</span><span class="p">))</span>
@@ -305,32 +305,34 @@ but we do need to generate a disk cache for datasets</p>
 </div>
 <p>Except that at here we do not include aev computer into our pipeline, because
 the cache loader will load computed AEVs from disk.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This part is also a line by line copy</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">writer</span> <span class="o">=</span> <span class="n">tensorboardX</span><span class="o">.</span><span class="n">SummaryWriter</span><span class="p">(</span><span class="n">log_dir</span><span class="o">=</span><span class="n">log</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">writer</span> <span class="o">=</span> <span class="n">tensorboardX</span><span class="o">.</span><span class="n">SummaryWriter</span><span class="p">(</span><span class="n">log_dir</span><span class="o">=</span><span class="n">log</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Here we don’t need to construct <a class="reference internal" href="../api.html#torchani.data.BatchedANIDataset" title="torchani.data.BatchedANIDataset"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchani.data.BatchedANIDataset</span></code></a>
 object, but instead an object of <a class="reference internal" href="../api.html#torchani.data.AEVCacheLoader" title="torchani.data.AEVCacheLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchani.data.AEVCacheLoader</span></code></a></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">training</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AEVCacheLoader</span><span class="p">(</span><span class="n">training_cache</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">training</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AEVCacheLoader</span><span class="p">(</span><span class="n">training_cache</span><span class="p">)</span>
 <span class="n">validation</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AEVCacheLoader</span><span class="p">(</span><span class="n">validation_cache</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The rest of the code are again the same</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">training</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AEVCacheLoader</span><span class="p">(</span><span class="n">training_cache</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">training</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">AEVCacheLoader</span><span class="p">(</span><span class="n">training_cache</span><span class="p">)</span>
 <span class="n">container</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ignite</span><span class="o">.</span><span class="n">Container</span><span class="p">({</span><span class="s1">&#39;energies&#39;</span><span class="p">:</span> <span class="n">model</span><span class="p">})</span>
 <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
 <span class="n">trainer</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">create_supervised_trainer</span><span class="p">(</span>
     <span class="n">container</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ignite</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">))</span>
-<span class="n">evaluator</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">create_supervised_evaluator</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">{</span>
+<span class="n">evaluator</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">create_supervised_evaluator</span><span class="p">(</span>
+    <span class="n">container</span><span class="p">,</span>
+    <span class="n">metrics</span><span class="o">=</span><span class="p">{</span>
         <span class="s1">&#39;RMSE&#39;</span><span class="p">:</span> <span class="n">torchani</span><span class="o">.</span><span class="n">ignite</span><span class="o">.</span><span class="n">RMSEMetric</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">)</span>
     <span class="p">})</span>
 </pre></div>
 </div>
 <p>Let’s add a progress bar for the trainer</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pbar</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">contrib</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">ProgressBar</span><span class="p">()</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pbar</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">contrib</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">ProgressBar</span><span class="p">()</span>
 <span class="n">pbar</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">trainer</span><span class="p">)</span>
 
 
@@ -338,7 +340,7 @@ object, but instead an object of <a class="reference internal" href="../api.html
     <span class="k">return</span> <span class="mf">627.509</span> <span class="o">*</span> <span class="n">x</span>
 
 
-<span class="nd">@trainer.on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
+<span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">validation_and_checkpoint</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="n">evaluator</span> <span class="o">=</span> <span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">create_supervised_evaluator</span><span class="p">(</span>
@@ -366,13 +368,13 @@ object, but instead an object of <a class="reference internal" href="../api.html
 <span class="n">start</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span>
 
 
-<span class="nd">@trainer.on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
+<span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">log_time</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
     <span class="n">elapsed</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
     <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;time_vs_epoch&#39;</span><span class="p">,</span> <span class="n">elapsed</span><span class="p">,</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
 
 
-<span class="nd">@trainer.on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">ITERATION_COMPLETED</span><span class="p">)</span>
+<span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">ITERATION_COMPLETED</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">log_loss</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
     <span class="n">iteration</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iteration</span>
     <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;loss_vs_iteration&#39;</span><span class="p">,</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">iteration</span><span class="p">)</span>
@@ -381,12 +383,14 @@ object, but instead an object of <a class="reference internal" href="../api.html
 <span class="n">trainer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>Total running time of the script:</strong> ( 0 minutes  38.645 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  40.583 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-cache-aev-py">
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/311b5974c6d185c0a90551632a35df71/cache_aev.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">cache_aev.py</span></code></a></div>
+<p><a class="reference download internal" download="" href="../_downloads/311b5974c6d185c0a90551632a35df71/cache_aev.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">cache_aev.py</span></code></a></p>
+</div>
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/6b9dd4105317b7c2f30a9557daf9d69a/cache_aev.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">cache_aev.ipynb</span></code></a></div>
+<p><a class="reference download internal" download="" href="../_downloads/6b9dd4105317b7c2f30a9557daf9d69a/cache_aev.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">cache_aev.ipynb</span></code></a></p>
+</div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>

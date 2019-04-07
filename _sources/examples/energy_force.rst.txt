@@ -12,13 +12,10 @@ Computing Energy and Force Using Models Inside Model Zoo
 
 TorchANI has a model zoo trained by NeuroChem. These models are shipped with
 TorchANI and can be used directly.
-
-
 To begin with, let's first import the modules we will use:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     from __future__ import print_function
     import torch
@@ -33,8 +30,7 @@ To begin with, let's first import the modules we will use:
 Let's now manually specify the device we want TorchANI to run:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     device = torch.device('cpu')
 
@@ -51,8 +47,7 @@ always recommended to use an ensemble, unless the speed of computation is an
 issue in your application.
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     model = torchani.models.ANI1ccx()
 
@@ -71,14 +66,13 @@ training. If you have ``N`` different structures to compute, then make it
 ``N``.
 
 
+.. code-block:: default
 
-.. code-block:: python
-
-    coordinates = torch.tensor([[[0.03192167,  0.00638559,  0.01301679],
-                                 [-0.83140486,  0.39370209, -0.26395324],
-                                 [-0.66518241, -0.84461308,  0.20759389],
-                                 [0.45554739,   0.54289633,  0.81170881],
-                                 [0.66091919,  -0.16799635, -0.91037834]]],
+    coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
+                                 [-0.83140486, 0.39370209, -0.26395324],
+                                 [-0.66518241, -0.84461308, 0.20759389],
+                                 [0.45554739, 0.54289633, 0.81170881],
+                                 [0.66091919, -0.16799635, -0.91037834]]],
                                requires_grad=True, device=device)
     species = model.species_to_tensor('CHHHH').to(device).unsqueeze(0)
 
@@ -91,8 +85,7 @@ training. If you have ``N`` different structures to compute, then make it
 Now let's compute energy and force:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     _, energy = model((species, coordinates))
     derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
@@ -107,8 +100,7 @@ Now let's compute energy and force:
 And print to see the result:
 
 
-
-.. code-block:: python
+.. code-block:: default
 
     print('Energy:', energy.item())
     print('Force:', force.squeeze())
@@ -130,7 +122,10 @@ And print to see the result:
             [-0.0187,  0.0049,  0.0521]])
 
 
-**Total running time of the script:** ( 0 minutes  2.127 seconds)
+
+.. rst-class:: sphx-glr-timing
+
+   **Total running time of the script:** ( 0 minutes  1.656 seconds)
 
 
 .. _sphx_glr_download_examples_energy_force.py:

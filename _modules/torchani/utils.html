@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.utils &mdash; TorchANI 0.3.1 documentation</title>
+  <title>torchani.utils &mdash; TorchANI 0.4 documentation</title>
   
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                0.3.1
+                0.4
               </div>
             
           
@@ -236,6 +236,7 @@
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">species</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span></div>
 
 
+<span class="c1"># @torch.jit.script</span>
 <div class="viewcode-block" id="present_species"><a class="viewcode-back" href="../../api.html#torchani.present_species">[docs]</a><span class="k">def</span> <span class="nf">present_species</span><span class="p">(</span><span class="n">species</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Given a vector of species of atoms, compute the unique species present.</span>
 
@@ -245,6 +246,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        :class:`torch.Tensor`: 1D vector storing present atom types sorted.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># present_species, _ = species.flatten()._unique(sorted=True)</span>
     <span class="n">present_species</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="nb">sorted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">present_species</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
         <span class="n">present_species</span> <span class="o">=</span> <span class="n">present_species</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
@@ -256,9 +258,9 @@
 
 <span class="sd">    Arguments:</span>
 <span class="sd">        species (:class:`torch.Tensor`): Long tensor of shape</span>
-<span class="sd">            ``(conformations, atoms)``.</span>
+<span class="sd">            ``(molecules, atoms)``.</span>
 <span class="sd">        coordinates (:class:`torch.Tensor`): Tensor of shape</span>
-<span class="sd">            ``(conformations, atoms, 3)``.</span>
+<span class="sd">            ``(molecules, atoms, 3)``.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        (:class:`torch.Tensor`, :class:`torch.Tensor`): species and coordinates</span>
@@ -268,6 +270,39 @@
     <span class="n">species</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">non_padding</span><span class="p">)</span>
     <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">non_padding</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span></div>
+
+
+<div class="viewcode-block" id="map2central"><a class="viewcode-back" href="../../api.html#torchani.map2central">[docs]</a><span class="k">def</span> <span class="nf">map2central</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">pbc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Map atoms outside the unit cell into the cell using PBC.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three</span>
+<span class="sd">            vectors defining unit cell:</span>
+
+<span class="sd">            .. code-block:: python</span>
+
+<span class="sd">                tensor([[x1, y1, z1],</span>
+<span class="sd">                        [x2, y2, z2],</span>
+<span class="sd">                        [x3, y3, z3]])</span>
+
+<span class="sd">        coordinates (:class:`torch.Tensor`): Tensor of shape</span>
+<span class="sd">            ``(molecules, atoms, 3)``.</span>
+
+<span class="sd">        pbc (:class:`torch.Tensor`): boolean vector of size 3 storing</span>
+<span class="sd">            if pbc is enabled for that direction.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        :class:`torch.Tensor`: coordinates of atoms mapped back to unit cell.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: convert coordinates from standard cartesian coordinate to unit</span>
+    <span class="c1"># cell coordinates</span>
+    <span class="n">inv_cell</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+    <span class="n">coordinates_cell</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">inv_cell</span><span class="p">)</span>
+    <span class="c1"># Step 2: wrap cell coordinates into [0, 1)</span>
+    <span class="n">coordinates_cell</span> <span class="o">-=</span> <span class="n">coordinates_cell</span><span class="o">.</span><span class="n">floor</span><span class="p">()</span> <span class="o">*</span> <span class="n">pbc</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">coordinates_cell</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="c1"># Step 3: convert from cell coordinates back to standard cartesian</span>
+    <span class="c1"># coordinate</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">coordinates_cell</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="EnergyShifter"><a class="viewcode-back" href="../../api.html#torchani.EnergyShifter">[docs]</a><span class="k">class</span> <span class="nc">EnergyShifter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>

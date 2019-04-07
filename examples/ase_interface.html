@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 0.3.1 documentation</title>
+  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 0.4 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.3.1
+                0.4
               </div>
             
           
@@ -173,8 +173,8 @@
            <div itemprop="articleBody">
             
   <div class="sphx-glr-download-link-note admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-ase-interface-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+<p class="admonition-title">Note</p>
+<p>Click <a class="reference internal" href="#sphx-glr-download-examples-ase-interface-py"><span class="std std-ref">here</span></a> to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="structure-minimization-and-constant-temperature-md-using-ase-interface">
 <span id="sphx-glr-examples-ase-interface-py"></span><h1>Structure minimization and constant temperature MD using ASE interface<a class="headerlink" href="#structure-minimization-and-constant-temperature-md-using-ase-interface" title="Permalink to this headline">¶</a></h1>
@@ -182,17 +182,17 @@
 <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/tutorials/md/md.html#constant-temperature-md">Constant temperature MD</a> to use the ASE interface of TorchANI as energy
 calculator.</p>
 <p>To begin with, let’s first import the modules we will use:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
-<span class="kn">from</span> <span class="nn">ase.lattice.cubic</span> <span class="kn">import</span> <span class="n">Diamond</span>
-<span class="kn">from</span> <span class="nn">ase.md.langevin</span> <span class="kn">import</span> <span class="n">Langevin</span>
-<span class="kn">from</span> <span class="nn">ase.optimize</span> <span class="kn">import</span> <span class="n">BFGS</span>
-<span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">units</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">ase.lattice.cubic</span> <span class="k">import</span> <span class="n">Diamond</span>
+<span class="kn">from</span> <span class="nn">ase.md.langevin</span> <span class="k">import</span> <span class="n">Langevin</span>
+<span class="kn">from</span> <span class="nn">ase.optimize</span> <span class="k">import</span> <span class="n">BFGS</span>
+<span class="kn">from</span> <span class="nn">ase</span> <span class="k">import</span> <span class="n">units</span>
 <span class="kn">import</span> <span class="nn">torchani</span>
 </pre></div>
 </div>
 <p>Now let’s set up a crystal</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">atoms</span> <span class="o">=</span> <span class="n">Diamond</span><span class="p">(</span><span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="n">pbc</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="k">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">),</span> <span class="s2">&quot;atoms in the cell&quot;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">atoms</span> <span class="o">=</span> <span class="n">Diamond</span><span class="p">(</span><span class="n">symbol</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="n">pbc</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">),</span> <span class="s2">&quot;atoms in the cell&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
@@ -200,41 +200,55 @@ calculator.</p>
 </pre></div>
 </div>
 <p>Now let’s create a calculator from builtin models:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">calculator</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1ccx</span><span class="p">()</span><span class="o">.</span><span class="n">ase</span><span class="p">()</span>
-<span class="n">atoms</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calculator</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">calculator</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1ccx</span><span class="p">()</span><span class="o">.</span><span class="n">ase</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Regardless of the dtype you use in your model, when converting it to ASE
+calculator, it always automatically the dtype to <code class="docutils literal notranslate"><span class="pre">torch.float64</span></code>. The
+reason for this behavior is, at many cases, the rounding error is too
+large for structure minimization. If you insist on using
+<code class="docutils literal notranslate"><span class="pre">torch.float32</span></code>, do the following instead:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">calculator</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1ccx</span><span class="p">()</span><span class="o">.</span><span class="n">ase</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Now let’s set the calculator for <code class="docutils literal notranslate"><span class="pre">atoms</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">atoms</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calculator</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now let’s minimize the structure:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="s2">&quot;Begin minimizing...&quot;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Begin minimizing...&quot;</span><span class="p">)</span>
 <span class="n">opt</span> <span class="o">=</span> <span class="n">BFGS</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">fmax</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
-<span class="k">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">()</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Begin minimizing...
       Step     Time          Energy         fmax
-BFGS:    0 21:35:32    -8311.226562        0.0000
+BFGS:    0 06:34:49    -8311.226179        0.0000
 </pre></div>
 </div>
 <p>Now create a callback function that print interesting physical quantities:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">printenergy</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">atoms</span><span class="p">):</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">printenergy</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">atoms</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Function to print the potential, kinetic and total energy.&quot;&quot;&quot;</span>
     <span class="n">epot</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
     <span class="n">ekin</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">get_kinetic_energy</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Energy per atom: Epot = </span><span class="si">%.3f</span><span class="s1">eV  Ekin = </span><span class="si">%.3f</span><span class="s1">eV (T=</span><span class="si">%3.0f</span><span class="s1">K)  &#39;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Energy per atom: Epot = </span><span class="si">%.3f</span><span class="s1">eV  Ekin = </span><span class="si">%.3f</span><span class="s1">eV (T=</span><span class="si">%3.0f</span><span class="s1">K)  &#39;</span>
           <span class="s1">&#39;Etot = </span><span class="si">%.3f</span><span class="s1">eV&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">epot</span><span class="p">,</span> <span class="n">ekin</span><span class="p">,</span> <span class="n">ekin</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.5</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">kB</span><span class="p">),</span> <span class="n">epot</span> <span class="o">+</span> <span class="n">ekin</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>We want to run MD with constant energy using the Langevin algorithm
 with a time step of 1 fs, the temperature 300K and the friction
 coefficient to 0.02 atomic units.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dyn</span> <span class="o">=</span> <span class="n">Langevin</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span> <span class="mi">300</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">kB</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dyn</span> <span class="o">=</span> <span class="n">Langevin</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span> <span class="mi">300</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">kB</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
 <span class="n">dyn</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">printenergy</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now run the dynamics:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="s2">&quot;Beginning dynamics...&quot;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Beginning dynamics...&quot;</span><span class="p">)</span>
 <span class="n">printenergy</span><span class="p">()</span>
 <span class="n">dyn</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
 </pre></div>
@@ -242,24 +256,26 @@ coefficient to 0.02 atomic units.</p>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Beginning dynamics...
 Energy per atom: Epot = -1038.903eV  Ekin = 0.000eV (T=  0K)  Etot = -1038.903eV
-Energy per atom: Epot = -1038.881eV  Ekin = 0.018eV (T=143K)  Etot = -1038.863eV
-Energy per atom: Epot = -1038.877eV  Ekin = 0.034eV (T=260K)  Etot = -1038.844eV
-Energy per atom: Epot = -1038.870eV  Ekin = 0.040eV (T=308K)  Etot = -1038.830eV
-Energy per atom: Epot = -1038.875eV  Ekin = 0.024eV (T=186K)  Etot = -1038.851eV
-Energy per atom: Epot = -1038.866eV  Ekin = 0.024eV (T=187K)  Etot = -1038.842eV
-Energy per atom: Epot = -1038.868eV  Ekin = 0.046eV (T=357K)  Etot = -1038.822eV
-Energy per atom: Epot = -1038.872eV  Ekin = 0.040eV (T=312K)  Etot = -1038.832eV
-Energy per atom: Epot = -1038.862eV  Ekin = 0.024eV (T=187K)  Etot = -1038.838eV
-Energy per atom: Epot = -1038.861eV  Ekin = 0.025eV (T=196K)  Etot = -1038.836eV
-Energy per atom: Epot = -1038.866eV  Ekin = 0.024eV (T=186K)  Etot = -1038.842eV
+Energy per atom: Epot = -1038.892eV  Ekin = 0.018eV (T=143K)  Etot = -1038.873eV
+Energy per atom: Epot = -1038.878eV  Ekin = 0.015eV (T=117K)  Etot = -1038.863eV
+Energy per atom: Epot = -1038.888eV  Ekin = 0.033eV (T=255K)  Etot = -1038.855eV
+Energy per atom: Epot = -1038.870eV  Ekin = 0.021eV (T=162K)  Etot = -1038.849eV
+Energy per atom: Epot = -1038.860eV  Ekin = 0.034eV (T=260K)  Etot = -1038.827eV
+Energy per atom: Epot = -1038.870eV  Ekin = 0.045eV (T=347K)  Etot = -1038.826eV
+Energy per atom: Epot = -1038.865eV  Ekin = 0.043eV (T=335K)  Etot = -1038.822eV
+Energy per atom: Epot = -1038.872eV  Ekin = 0.053eV (T=409K)  Etot = -1038.819eV
+Energy per atom: Epot = -1038.861eV  Ekin = 0.030eV (T=229K)  Etot = -1038.832eV
+Energy per atom: Epot = -1038.874eV  Ekin = 0.023eV (T=177K)  Etot = -1038.851eV
 </pre></div>
 </div>
-<p><strong>Total running time of the script:</strong> ( 2 minutes  27.083 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 2 minutes  28.869 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-ase-interface-py">
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/93c3677ffa6b2842ce34153b0479a93a/ase_interface.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">ase_interface.py</span></code></a></div>
+<p><a class="reference download internal" download="" href="../_downloads/93c3677ffa6b2842ce34153b0479a93a/ase_interface.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">ase_interface.py</span></code></a></p>
+</div>
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/dde6824e0e523baeced914a8cca5387b/ase_interface.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">ase_interface.ipynb</span></code></a></div>
+<p><a class="reference download internal" download="" href="../_downloads/dde6824e0e523baeced914a8cca5387b/ase_interface.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">ase_interface.ipynb</span></code></a></p>
+</div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
