@@ -220,7 +220,7 @@ def cumsum_from_zero(input_):
 
 
 # torch.jit.script
-def triple_by_molecule(num_atoms, atom_index1, atom_index2):
+def triple_by_molecule(atom_index1, atom_index2):
     """Input: indices for pairs of atoms that are close to each other.
     each pair only appear once, i.e. only one of the pairs (1, 2) and
     (2, 1) exists.
@@ -293,7 +293,7 @@ def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes
     radial_aev = radial_aev.reshape(num_molecules, num_atoms, radial_length)
 
     # compute angular aev
-    central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(num_atoms, atom_index1, atom_index2)
+    central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(atom_index1, atom_index2)
     vec1 = vec.index_select(0, pair_index1) * sign1.unsqueeze(1).to(vec.dtype)
     vec2 = vec.index_select(0, pair_index2) * sign2.unsqueeze(1).to(vec.dtype)
     species1_ = torch.where(sign1 == 1, species2[pair_index1], species1[pair_index1])
