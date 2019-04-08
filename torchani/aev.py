@@ -234,9 +234,10 @@ def triple_by_molecule(atom_index1, atom_index2):
     # convert representation from pair to central-others
     n = atom_index1.shape[0]
     ai1 = torch.cat([atom_index1, atom_index2])
+    sorted_ai1, rev_indices = ai1.sort()
 
     # sort and compute unique key
-    uniqued_central_atom_index, rev_indices, counts = torch._unique2_temporary_will_remove_soon(ai1, sorted=True, return_inverse=True, return_counts=True)
+    uniqued_central_atom_index, _, counts = torch._unique2_temporary_will_remove_soon(sorted_ai1, sorted=True, return_inverse=False, return_counts=True)
 
     # do local combinations within unique key, assuming sorted
     pair_sizes = counts * (counts - 1) // 2
@@ -252,9 +253,8 @@ def triple_by_molecule(atom_index1, atom_index2):
     sorted_local_index2 += cumsum
 
     # unsort result from last part
-    argsort = rev_indices.argsort()
-    local_index1 = argsort[sorted_local_index1]
-    local_index2 = argsort[sorted_local_index2]
+    local_index1 = rev_indices[sorted_local_index1]
+    local_index2 = rev_indices[sorted_local_index2]
 
     # compute mapping between representation of central-other to pair
     sign1 = torch.where(local_index1 < n, torch.ones_like(local_index1), -torch.ones_like(local_index1))
