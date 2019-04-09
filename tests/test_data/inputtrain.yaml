@@ -2,7 +2,7 @@
 sflparamsfile: 'rHCNO-5.2R_16-3.5A_a4-8.params'
 ntwkStoreDir: 'networks/'
 atomEnergyFile: 'sae_linfit.dat'
-nmax: 0 # Maximum number of iterations (0 = inf)
+nmax: 10 # Maximum number of iterations (0 = inf)
 tolr: 1 # Tolerance - early stopping
 emult: 0.1 # Multiplier by eta after tol switch
 eta: 0.001 # Eta -- Learning rate
