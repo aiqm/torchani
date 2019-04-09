@@ -556,7 +556,6 @@ if sys.version_info[0] > 2:
             assert_param('runtype', 'ANNP_CREATE_HDNN_AND_TRAIN')
             assert_param('adptlrn', 'OFF')
             assert_param('tmax', 0)
-            assert_param('nmax', 0)
             assert_param('ntwshr', 0)
 
             # load parameters
@@ -585,6 +584,8 @@ if sys.version_info[0] > 2:
             del params['tbtchsz']
             self.validation_batch_size = params['vbtchsz']
             del params['vbtchsz']
+            self.nmax = params['nmax']
+            del params['nmax']
 
             # construct networks
             input_size, network_setup = network_setup
@@ -699,6 +700,12 @@ if sys.version_info[0] > 2:
                 def finalize(trainer):
                     self.global_epoch = trainer.state.epoch
                     self.global_iteration = trainer.state.iteration
+
+                if self.nmax > 0:
+                    @trainer.on(ignite.engine.Events.EPOCH_COMPLETED)
+                    def terminate_when_nmax_reaches(trainer):
+                        if trainer.state.epoch >= self.nmax:
+                            trainer.terminate()
 
                 if self.tqdm is not None:
                     @trainer.on(ignite.engine.Events.EPOCH_STARTED)
