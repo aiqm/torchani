@@ -258,8 +258,8 @@ def triple_by_molecule(atom_index1, atom_index2):
     local_index2 = rev_indices[sorted_local_index2]
 
     # compute mapping between representation of central-other to pair
-    sign1 = (local_index1 < n).to(torch.long) * 2 - 1
-    sign2 = (local_index2 < n).to(torch.long) * 2 - 1
+    sign1 = ((local_index1 < n) * 2).to(torch.long) - 1
+    sign2 = ((local_index2 < n) * 2).to(torch.long) - 1
     return central_atom_index, local_index1 % n, local_index2 % n, sign1, sign2
 
 
