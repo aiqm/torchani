@@ -237,7 +237,7 @@ def triple_by_molecule(atom_index1, atom_index2):
     sorted_ai1, rev_indices = ai1.sort()
 
     # sort and compute unique key
-    uniqued_central_atom_index, _, counts = torch._unique2_temporary_will_remove_soon(sorted_ai1, sorted=True, sorted_input=True, return_inverse=False, return_counts=True)
+    uniqued_central_atom_index, counts = torch.unique_consecutive(sorted_ai1, return_counts=True)
 
     # do local combinations within unique key, assuming sorted
     pair_sizes = counts * (counts - 1) // 2
