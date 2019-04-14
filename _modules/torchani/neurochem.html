@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.neurochem &mdash; TorchANI 0.4 documentation</title>
+  <title>torchani.neurochem &mdash; TorchANI 0.4.1 documentation</title>
   
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                0.4
+                0.4.1
               </div>
             
           
@@ -727,7 +727,6 @@
             <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;runtype&#39;</span><span class="p">,</span> <span class="s1">&#39;ANNP_CREATE_HDNN_AND_TRAIN&#39;</span><span class="p">)</span>
             <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;adptlrn&#39;</span><span class="p">,</span> <span class="s1">&#39;OFF&#39;</span><span class="p">)</span>
             <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;tmax&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;nmax&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
             <span class="n">assert_param</span><span class="p">(</span><span class="s1">&#39;ntwshr&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
             <span class="c1"># load parameters</span>
@@ -756,6 +755,8 @@
             <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;tbtchsz&#39;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">validation_batch_size</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;vbtchsz&#39;</span><span class="p">]</span>
             <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;vbtchsz&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nmax</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;nmax&#39;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;nmax&#39;</span><span class="p">]</span>
 
             <span class="c1"># construct networks</span>
             <span class="n">input_size</span><span class="p">,</span> <span class="n">network_setup</span> <span class="o">=</span> <span class="n">network_setup</span>
@@ -870,6 +871,12 @@
                 <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">global_epoch</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">global_iteration</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iteration</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nmax</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_COMPLETED</span><span class="p">)</span>
+                    <span class="k">def</span> <span class="nf">terminate_when_nmax_reaches</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nmax</span><span class="p">:</span>
+                            <span class="n">trainer</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tqdm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ignite</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">)</span>
