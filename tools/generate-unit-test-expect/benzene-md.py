@@ -4,8 +4,6 @@ import ase.optimize
 import ase.md.velocitydistribution
 import ase.md.verlet
 import torchani
-import torch
-import numpy as np
 import os
 from neurochem_calculator import NeuroChem, path
 
@@ -34,6 +32,8 @@ dyn = ase.md.verlet.VelocityVerlet(
 
 counter = 0
 data_dir = os.path.join(path, '../../tests/test_data/benzene-md/')
+
+
 def dump_neurochem_data(molecule):
     global counter
     filename = os.path.join(data_dir, '{}.dat'.format(counter))
@@ -41,6 +41,7 @@ def dump_neurochem_data(molecule):
     with open(filename, 'wb') as f:
         filename.dump(ret, f)
     counter += 1
+
 
 dyn.attach(dump_neurochem_data)
 dyn.run(steps)
