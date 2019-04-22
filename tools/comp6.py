@@ -13,7 +13,7 @@ dtype = torch.float32
 # parse command line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('dir', help='Path to the COMP6 directory')
-parser.add_argument('-b', '--batchatoms', type=int, default=512,
+parser.add_argument('-b', '--batchatoms', type=int, default=4096,
                     help='Maximum number of ATOMs in each batch')
 parser.add_argument('-d', '--device',
                     help='Device of modules and tensors',
@@ -42,8 +42,7 @@ def by_batch(species, coordinates, model):
     coordinates = torch.split(coordinates, batchsize)
     energies = []
     forces = []
-    for s, c in tqdm.tqdm(zip(species, coordinates), total=len(species),
-                          position=1, desc="batch of {}x{}".format(*shape)):
+    for s, c in zip(species, coordinates):
         _, e = model((s, c))
         f, = torch.autograd.grad(e.sum(), c)
         energies.append(e)
