@@ -39,6 +39,7 @@ def dump_neurochem_data(molecule):
     ret = neurochem(molecule)
     with open(filename, 'wb') as f:
         filename.dump(ret, f)
+    counter += 1
 
 dyn.attach(dump_neurochem_data)
 dyn.run(steps)
