@@ -35,6 +35,7 @@ dyn = ase.md.verlet.VelocityVerlet(
 counter = 0
 data_dir = os.path.join(path, '../../tests/test_data/benzene-md/')
 def dump_neurochem_data(molecule):
+    global counter
     filename = os.path.join(data_dir, '{}.dat'.format(counter))
     ret = neurochem(molecule)
     with open(filename, 'wb') as f:
