@@ -65,7 +65,7 @@ class Calculator(ase.calculators.calculator.Calculator):
                                  .requires_grad_('forces' in properties)
         if pbc_enabled:
             coordinates = utils.map2central(cell, coordinates, pbc)
-            self.atoms.set_positions(coordinates.detach().cpu().reshape(-1, 3).numpy())
+            atoms.set_positions(coordinates.detach().cpu().reshape(-1, 3).numpy())
             _, energy = self.whole((species, coordinates, cell, pbc))
         else:
             _, energy = self.whole((species, coordinates))
