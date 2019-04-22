@@ -57,13 +57,17 @@ class Calculator(ase.calculators.calculator.Calculator):
                             device=self.device)
         pbc = torch.tensor(self.atoms.get_pbc().astype(numpy.uint8), dtype=torch.uint8,
                            device=self.device)
-        # print(cell, pbc)
+        pbc_enabled = bool(pbc.any().item())
         species = self.species_to_tensor(self.atoms.get_chemical_symbols()).to(self.device)
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions())
         coordinates = coordinates.unsqueeze(0).to(self.device).to(self.dtype) \
                                  .requires_grad_('forces' in properties)
-        _, energy = self.whole((species, coordinates, cell, pbc))
+        if pbc_enabled:
+            coordinates = utils.map2central(cell, coordinates, pbc)
+            _, energy = self.whole((species, coordinates, cell, pbc))
+        else:
+            _, energy = self.whole((species, coordinates))
         energy *= ase.units.Hartree
         self.results['energy'] = energy.item()
         if 'forces' in properties:
