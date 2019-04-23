@@ -49,7 +49,6 @@ class NeuroChem:
     def __call__(self, args):
         if len(args) == 2:
             return self.from_coordinates_and_species(*args)
-        assert len(args) == 1
         return self.from_atoms_obj(args)
 
     def from_atoms_obj(self, mol):
