@@ -11,6 +11,7 @@ import math
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
+tolerance = 1e-5
 
 
 class TestAEV(unittest.TestCase):
@@ -19,8 +20,7 @@ class TestAEV(unittest.TestCase):
         builtins = torchani.neurochem.Builtins()
         self.aev_computer = builtins.aev_computer
         self.radial_length = self.aev_computer.radial_length
-        self.tolerance = 1e-5
-        self.debug = True
+        self.debug = False
 
     def random_skip(self, prob=0):
         return random.random() < prob
@@ -28,7 +28,7 @@ class TestAEV(unittest.TestCase):
     def transform(self, x):
         return x
 
-    def assertAEVEqual(self, expected_radial, expected_angular, aev):
+    def assertAEVEqual(self, expected_radial, expected_angular, aev, tolerance=tolerance):
         radial = aev[..., :self.radial_length]
         angular = aev[..., self.radial_length:]
         radial_diff = expected_radial - radial
@@ -38,8 +38,8 @@ class TestAEV(unittest.TestCase):
         radial_max_error = torch.max(torch.abs(radial_diff)).item()
         angular_diff = expected_angular - angular
         angular_max_error = torch.max(torch.abs(angular_diff)).item()
-        self.assertLess(radial_max_error, self.tolerance)
-        self.assertLess(angular_max_error, self.tolerance)
+        self.assertLess(radial_max_error, tolerance)
+        self.assertLess(angular_max_error, tolerance)
 
     def testIsomers(self):
         for i in range(N):
