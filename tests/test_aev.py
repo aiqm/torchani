@@ -34,7 +34,7 @@ class TestAEV(unittest.TestCase):
         radial_diff = expected_radial - radial
         if self.debug:
             aid = 1
-            print(torch.stack([expected_radial[0,aid,:], radial[0,aid,:], radial_diff.abs()[0,aid,:]], dim=1))
+            print(torch.stack([expected_radial[0, aid, :], radial[0, aid, :], radial_diff.abs()[0, aid, :]], dim=1))
         radial_max_error = torch.max(torch.abs(radial_diff)).item()
         angular_diff = expected_angular - angular
         angular_max_error = torch.max(torch.abs(angular_diff)).item()
