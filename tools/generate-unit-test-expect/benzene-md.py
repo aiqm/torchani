@@ -44,5 +44,5 @@ def dump_neurochem_data(molecule=molecule):
     counter += 1
 
 
-dyn.attach(dump_neurochem_data)
+dyn.attach(dump_neurochem_data, interval=100)
 dyn.run(steps)
