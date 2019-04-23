@@ -12,6 +12,7 @@ import pickle
 neurochem = NeuroChem()
 
 molecule = ase.io.read('others/Benzene.cif')
+molecule.set_pbc(False)
 
 temp = 300 * ase.units.kB
 stepsize = ase.units.fs
