@@ -42,6 +42,25 @@ class TestEnergies(unittest.TestCase):
                 max_diff = (energies - energies_).abs().max().item()
                 self.assertLess(max_diff, self.tolerance)
 
+    def testBenzeneMD(self):
+        tolerance = 1e-4
+        for i in range(100):
+            datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, _, _, energies, _, cell, pbc \
+                    = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
+                species = torch.from_numpy(species).unsqueeze(0)
+                cell = torch.from_numpy(cell).float()
+                pbc = torch.from_numpy(pbc)
+                coordinates = torchani.utils.map2central(cell, coordinates, pbc)
+                coordinates = self.transform(coordinates)
+                species = self.transform(species)
+                energies = self.transform(energies)
+                _, energies_ = self.model((species, coordinates, cell, pbc))
+                max_diff = (energies - energies_).abs().max().item()
+                self.assertLess(max_diff, tolerance)
+
     def testPadding(self):
         species_coordinates = []
         energies = []

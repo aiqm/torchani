@@ -68,6 +68,28 @@ class TestForce(unittest.TestCase):
             max_diff = (forces + derivative).abs().max().item()
             self.assertLess(max_diff, self.tolerance)
 
+    def testBenzeneMD(self):
+        tolerance = 5e-3
+        for i in range(100):
+            datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, _, _, _, forces, cell, pbc \
+                    = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0).requires_grad_(True)
+                species = torch.from_numpy(species).unsqueeze(0)
+                cell = torch.from_numpy(cell).float()
+                pbc = torch.from_numpy(pbc)
+                forces = torch.from_numpy(forces)
+                coordinates = torchani.utils.map2central(cell, coordinates, pbc)
+                coordinates = self.transform(coordinates)
+                species = self.transform(species)
+                forces = self.transform(forces)
+                _, energies_ = self.model((species, coordinates, cell, pbc))
+                derivative = torch.autograd.grad(energies_.sum(),
+                                                 coordinates)[0]
+                max_diff = (forces + derivative).abs().max().item()
+                self.assertLess(max_diff, tolerance)
+
     def testNIST(self):
         datafile = os.path.join(path, 'test_data/NIST/all')
         with open(datafile, 'rb') as f:

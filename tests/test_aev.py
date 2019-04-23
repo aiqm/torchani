@@ -70,6 +70,7 @@ class TestAEV(unittest.TestCase):
                 expected_angular = torch.from_numpy(expected_angular).float().unsqueeze(0)
                 cell = torch.from_numpy(cell).float()
                 pbc = torch.from_numpy(pbc)
+                coordinates = torchani.utils.map2central(cell, coordinates, pbc)
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 expected_radial = self.transform(expected_radial)
