@@ -27,10 +27,12 @@ class TestAEV(unittest.TestCase):
     def transform(self, x):
         return x
 
-    def _assertAEVEqual(self, expected_radial, expected_angular, aev):
+    def assertAEVEqual(self, expected_radial, expected_angular, aev):
         radial = aev[..., :self.radial_length]
         angular = aev[..., self.radial_length:]
         radial_diff = expected_radial - radial
+        aid = 1
+        print(torch.stack([expected_radial[0,aid,:], radial[0,aid,:]], dim=1))
         radial_max_error = torch.max(torch.abs(radial_diff)).item()
         angular_diff = expected_angular - angular
         angular_max_error = torch.max(torch.abs(angular_diff)).item()
@@ -52,7 +54,7 @@ class TestAEV(unittest.TestCase):
                 expected_radial = self.transform(expected_radial)
                 expected_angular = self.transform(expected_angular)
                 _, aev = self.aev_computer((species, coordinates))
-                self._assertAEVEqual(expected_radial, expected_angular, aev)
+                self.assertAEVEqual(expected_radial, expected_angular, aev)
 
     def testBenzeneMD(self):
         for i in range(100):
@@ -71,7 +73,7 @@ class TestAEV(unittest.TestCase):
                 expected_radial = self.transform(expected_radial)
                 expected_angular = self.transform(expected_angular)
                 _, aev = self.aev_computer((species, coordinates, cell, pbc))
-                self._assertAEVEqual(expected_radial, expected_angular, aev)
+                self.assertAEVEqual(expected_radial, expected_angular, aev)
 
     def testPadding(self):
         species_coordinates = []
@@ -99,7 +101,7 @@ class TestAEV(unittest.TestCase):
             atoms = expected_radial.shape[1]
             aev_ = aev[start:(start + conformations), 0:atoms]
             start += conformations
-            self._assertAEVEqual(expected_radial, expected_angular, aev_)
+            self.assertAEVEqual(expected_radial, expected_angular, aev_)
 
     def testNIST(self):
         datafile = os.path.join(path, 'test_data/NIST/all')
@@ -113,7 +115,7 @@ class TestAEV(unittest.TestCase):
                 radial = torch.from_numpy(radial).to(torch.float)
                 angular = torch.from_numpy(angular).to(torch.float)
                 _, aev = self.aev_computer((species, coordinates))
-                self._assertAEVEqual(radial, angular, aev)
+                self.assertAEVEqual(radial, angular, aev)
 
     @unittest.skipIf(not torch.cuda.is_available(), "Too slow on CPU")
     def testGradient(self):
