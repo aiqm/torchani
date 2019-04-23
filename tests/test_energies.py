@@ -53,6 +53,7 @@ class TestEnergies(unittest.TestCase):
                 species = torch.from_numpy(species).unsqueeze(0)
                 cell = torch.from_numpy(cell).float()
                 pbc = torch.from_numpy(pbc)
+                coordinates = torchani.utils.map2central(cell, coordinates, pbc)
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 energies = self.transform(energies)

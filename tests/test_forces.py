@@ -69,7 +69,7 @@ class TestForce(unittest.TestCase):
             self.assertLess(max_diff, self.tolerance)
 
     def testBenzeneMD(self):
-        tolerance = 8e-6
+        tolerance = 5e-3
         for i in range(100):
             datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
@@ -80,6 +80,7 @@ class TestForce(unittest.TestCase):
                 cell = torch.from_numpy(cell).float()
                 pbc = torch.from_numpy(pbc)
                 forces = torch.from_numpy(forces)
+                coordinates = torchani.utils.map2central(cell, coordinates, pbc)
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 forces = self.transform(forces)
