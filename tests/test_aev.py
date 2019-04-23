@@ -20,6 +20,7 @@ class TestAEV(unittest.TestCase):
         self.aev_computer = builtins.aev_computer
         self.radial_length = self.aev_computer.radial_length
         self.tolerance = 1e-5
+        self.debug = True
 
     def random_skip(self, prob=0):
         return random.random() < prob
@@ -31,8 +32,9 @@ class TestAEV(unittest.TestCase):
         radial = aev[..., :self.radial_length]
         angular = aev[..., self.radial_length:]
         radial_diff = expected_radial - radial
-        aid = 1
-        print(torch.stack([expected_radial[0,aid,:], radial[0,aid,:]], dim=1))
+        if self.debug:
+            aid = 1
+            print(torch.stack([expected_radial[0,aid,:], radial[0,aid,:], radial_diff.abs()[0,aid,:]], dim=1))
         radial_max_error = torch.max(torch.abs(radial_diff)).item()
         angular_diff = expected_angular - angular
         angular_max_error = torch.max(torch.abs(angular_diff)).item()
