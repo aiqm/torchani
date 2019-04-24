@@ -128,19 +128,5 @@ class TestForce(unittest.TestCase):
                 self.assertLess(max_diff, self.tolerance)
 
 
-class TestForceASEComputer(TestForce):
-
-    def setUp(self):
-        super(TestForceASEComputer, self).setUp()
-
-    def transform(self, x):
-        """To reduce the size of test cases for faster test speed"""
-        return x[:2, ...]
-
-    def random_skip(self):
-        """To reduce the size of test cases for faster test speed"""
-        return random.random() < 0.95
-
-
 if __name__ == '__main__':
     unittest.main()
