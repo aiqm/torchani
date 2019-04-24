@@ -5,7 +5,7 @@ import ase_interface
 import numpy
 
 path = os.path.dirname(os.path.realpath(__file__))
-builtin_path = os.path.join(path, '../../torchani/resources/ani-1x_dft_x8ens/')
+builtin_path = os.path.join(path, '../../torchani/resources/ani-1x_8x/')
 const_file = os.path.join(builtin_path, 'rHCNO-5.2R_16-3.5A_a4-8.params')
 sae_file = os.path.join(builtin_path, 'sae_linfit.dat')
 network_dir = os.path.join(builtin_path, 'train0/networks/')
@@ -25,10 +25,16 @@ def calc():
 class NeuroChem:
 
     def _get_radial_part(self, fullaev):
-        return fullaev[:, :, :radial_length]
+        if len(fullaev.shape) == 3:
+            return fullaev[:, :, :radial_length]
+        assert len(fullaev.shape) == 2
+        return fullaev[:, :radial_length]
 
     def _get_angular_part(self, fullaev):
-        return fullaev[:, :, radial_length:]
+        if len(fullaev.shape) == 3:
+            return fullaev[:, :, radial_length:]
+        assert len(fullaev.shape) == 2
+        return fullaev[:, radial_length:]
 
     def _per_conformation(self, coordinates, species):
         atoms = coordinates.shape[0]
@@ -40,7 +46,27 @@ class NeuroChem:
         aevs = numpy.stack(aevs)
         return aevs, energy, force
 
-    def __call__(self, coordinates, species):
+    def __call__(self, args):
+        if len(args) == 2:
+            return self.from_coordinates_and_species(*args)
+        return self.from_atoms_obj(args)
+
+    def from_atoms_obj(self, mol):
+        natoms = len(mol)
+        mol = mol.copy()
+        mol.set_calculator(calc())
+        energy = mol.get_potential_energy() / conv_au_ev
+        aevs = [mol.calc.nc.atomicenvironments(j) for j in range(natoms)]
+        aevs = numpy.stack(aevs)
+        force = mol.get_forces() / conv_au_ev
+        cell = mol.get_cell(complete=True)
+        pbc = mol.get_pbc().astype(numpy.uint8)
+        coordinates = mol.get_positions()
+        species = numpy.array([species_indices[i] for i in mol.get_chemical_symbols()])
+        return coordinates, species, self._get_radial_part(aevs), \
+            self._get_angular_part(aevs), energy, force, cell, pbc
+
+    def from_coordinates_and_species(self, coordinates, species):
         if len(coordinates.shape) == 2:
             coordinates = coordinates.reshape(1, -1, 3)
         conformations = coordinates.shape[0]

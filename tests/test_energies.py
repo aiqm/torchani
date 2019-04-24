@@ -4,7 +4,6 @@ import unittest
 import os
 import pickle
 import math
-import random
 
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -42,6 +41,42 @@ class TestEnergies(unittest.TestCase):
                 max_diff = (energies - energies_).abs().max().item()
                 self.assertLess(max_diff, self.tolerance)
 
+    @unittest.skipIf(True, "WIP")
+    def testBenzeneMD(self):
+        tolerance = 1e-5
+        for i in range(100):
+            datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, _, _, energies, _, cell, pbc \
+                    = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
+                species = torch.from_numpy(species).unsqueeze(0)
+                cell = torch.from_numpy(cell).float()
+                pbc = torch.from_numpy(pbc)
+                coordinates = torchani.utils.map2central(cell, coordinates, pbc)
+                coordinates = self.transform(coordinates)
+                species = self.transform(species)
+                energies = self.transform(energies)
+                _, energies_ = self.model((species, coordinates, cell, pbc))
+                max_diff = (energies - energies_).abs().max().item()
+                self.assertLess(max_diff, tolerance)
+
+    def testTripeptideMD(self):
+        tolerance = 2e-4
+        for i in range(100):
+            datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, _, _, energies, _, _, _ \
+                    = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
+                species = torch.from_numpy(species).unsqueeze(0)
+                coordinates = self.transform(coordinates)
+                species = self.transform(species)
+                energies = self.transform(energies)
+                _, energies_ = self.model((species, coordinates))
+                max_diff = (energies - energies_).abs().max().item()
+                self.assertLess(max_diff, tolerance)
+
     def testPadding(self):
         species_coordinates = []
         energies = []
@@ -78,20 +113,6 @@ class TestEnergies(unittest.TestCase):
                 natoms = coordinates.shape[1]
                 max_diff = (energies - energies_).abs().max().item()
                 self.assertLess(max_diff / math.sqrt(natoms), self.tolerance)
-
-
-class TestEnergiesASEComputer(TestEnergies):
-
-    def setUp(self):
-        super(TestEnergiesASEComputer, self).setUp()
-
-    def transform(self, x):
-        """To reduce the size of test cases for faster test speed"""
-        return x[:2, ...]
-
-    def random_skip(self):
-        """To reduce the size of test cases for faster test speed"""
-        return random.random() < 0.95
 
 
 if __name__ == '__main__':
