@@ -7,7 +7,9 @@ import random
 import copy
 import itertools
 import ase
+import ase.io
 import math
+import numpy
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
@@ -319,6 +321,36 @@ class TestAEVOnBoundary(unittest.TestCase):
             _, aev = self.aev_computer((self.species, coordinates, self.cell, self.pbc))
             self.assertGreater(aev.abs().max().item(), 0)
             self.assertTrue(torch.allclose(aev, self.aev))
+
+
+class TestAEVOnBenzenePBC(unittest.TestCase):
+
+    def setUp(self):
+        builtins = torchani.neurochem.Builtins()
+        self.aev_computer = builtins.aev_computer
+        filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.cif')
+        benzene = ase.io.read(filename)
+        self.cell = torch.tensor(benzene.get_cell(complete=True)).float()
+        self.pbc = torch.tensor(benzene.get_pbc().astype(numpy.uint8), dtype=torch.uint8)
+        species_to_tensor = torchani.utils.ChemicalSymbolsToInts(['H', 'C', 'N', 'O'])
+        self.species = species_to_tensor(benzene.get_chemical_symbols()).unsqueeze(0)
+        self.coordinates = torch.tensor(benzene.get_positions()).unsqueeze(0).float()
+        _, self.aev = self.aev_computer((self.species, self.coordinates, self.cell, self.pbc))
+
+    def testRepeat(self):
+        natoms = self.aev.shape[1]
+        c1, c2, c3 = self.cell
+        species2 = self.species.repeat(1, 4)
+        coordinates2 = torch.cat([
+            self.coordinates,
+            self.coordinates + c1,
+            self.coordinates + 2 * c1,
+            self.coordinates + 3 * c1,
+        ], dim=1)
+        cell2 = torch.stack([4 * c1, c2, c3])
+        _, aev2 = self.aev_computer((species2, coordinates2, cell2, self.pbc))
+        aev2 = aev2[:, natoms: 2 * natoms, :]
+        self.assertTrue(torch.allclose(self.aev, aev2))
 
 
 if __name__ == '__main__':
