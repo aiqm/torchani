@@ -2,4 +2,7 @@
 tests/test_data/ANI1_subset/* filter=lfs diff=lfs merge=lfs -text
 tests/test_data/NIST/* filter=lfs diff=lfs merge=lfs -text
 tests/test_data/NeuroChemOptimized/* filter=lfs diff=lfs merge=lfs -text
+tests/test_data/benzene-md/* filter=lfs diff=lfs merge=lfs -text
+tests/test_data/tripeptide-md/* filter=lfs diff=lfs merge=lfs -text
 tools/generate-unit-test-expect/nist-dataset/result.json filter=lfs diff=lfs merge=lfs -text
+
