@@ -255,7 +255,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
             for new_i, new_j in [[0.1, 9.9], [9.9, 0.1], [9.9, 9.9]]:
                 xyz2 = xyz1.clone()
                 xyz2[i] = new_i
-                xyz2[j] = new_i
+                xyz2[j] = new_j
 
             coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
             atom_index1, atom_index2, _ = torchani.aev.neighbor_pairs(species == -1, coordinates, cell, allshifts, 1)
@@ -336,9 +336,10 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
         self.species = species_to_tensor(benzene.get_chemical_symbols()).unsqueeze(0)
         self.coordinates = torch.tensor(benzene.get_positions()).unsqueeze(0).float()
         _, self.aev = self.aev_computer((self.species, self.coordinates, self.cell, self.pbc))
+        self.natoms = self.aev.shape[1]
 
     def testRepeat(self):
-        natoms = self.aev.shape[1]
+        tolerance = 5e-6
         c1, c2, c3 = self.cell
         species2 = self.species.repeat(1, 4)
         coordinates2 = torch.cat([
@@ -349,7 +350,19 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
         ], dim=1)
         cell2 = torch.stack([4 * c1, c2, c3])
         _, aev2 = self.aev_computer((species2, coordinates2, cell2, self.pbc))
-        aev2 = aev2[:, natoms: 2 * natoms, :]
+        for i in range(3):
+            aev3 = aev2[:, i * self.natoms: (i + 1) * self.natoms, :]
+            self.assertTrue(torch.allclose(self.aev, aev3, atol=tolerance))
+
+    def testManualMirror(self):
+        c1, c2, c3 = self.cell
+        species2 = self.species.repeat(1, 3 ** 3)
+        coordinates2 = torch.cat([
+            self.coordinates + i * c1 + j * c2 + k * c3
+            for i, j, k in itertools.product([0, -1, 1], repeat=3)
+        ], dim=1)
+        _, aev2 = self.aev_computer((species2, coordinates2))
+        aev2 = aev2[:, :self.natoms, :]
         self.assertTrue(torch.allclose(self.aev, aev2))
 
 
