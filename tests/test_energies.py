@@ -4,7 +4,6 @@ import unittest
 import os
 import pickle
 import math
-import random
 
 
 path = os.path.dirname(os.path.realpath(__file__))

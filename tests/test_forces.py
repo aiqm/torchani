@@ -3,7 +3,6 @@ import torchani
 import unittest
 import os
 import pickle
-import random
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
