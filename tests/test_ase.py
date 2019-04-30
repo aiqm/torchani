@@ -27,7 +27,7 @@ class TestASE(unittest.TestCase):
     def testWithNumericalForceWithPBCEnabled(self):
         atoms = Diamond(symbol="C", pbc=True)
         builtin = torchani.neurochem.Builtins()
-        calculator = torchani.models.ANI1x()
+        calculator = torchani.models.ANI1x().ase()
         atoms.set_calculator(calculator)
         dyn = Langevin(atoms, 5 * units.fs, 30000000 * units.kB, 0.002)
         dyn.run(100)
@@ -40,8 +40,8 @@ class TestASE(unittest.TestCase):
 
     def testWithNumericalStressWithPBCEnabled(self):
         filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.cif')
-        benzene = ase.io.read(filename)
-        calculator = torchani.models.ANI1x()
+        benzene = read(filename)
+        calculator = torchani.models.ANI1x().ase()
         benzene.set_calculator(calculator)
         dyn = NPTBerendsen(benzene, timestep=0.1 * units.fs,
                            temperature=300 * units.kB,
