@@ -1,6 +1,6 @@
 from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
-from ase.md.npt import NPTBerendsen
+from ase.md.nptberendsen import NPTBerendsen
 from ase import units
 from ase.io import read
 from ase.calculators.test import numeric_force
