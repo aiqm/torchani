@@ -32,7 +32,7 @@ class Calculator(ase.calculators.calculator.Calculator):
             object with the wrapped positions.
     """
 
-    implemented_properties = ['energy', 'forces', 'stress']
+    implemented_properties = ['energy', 'forces', 'stress', 'free_energy']
 
     def __init__(self, species, aev_computer, model, energy_shifter, dtype=torch.float64, overwrite=False):
         super(Calculator, self).__init__()
@@ -78,9 +78,12 @@ class Calculator(ase.calculators.calculator.Calculator):
         coordinates = coordinates.unsqueeze(0).to(self.device).to(self.dtype) \
                                  .requires_grad_('forces' in properties)
         if 'stress' in properties:
-            displacement_x = torch.zeros(3, requires_grad=True)
-            displacement_y = torch.zeros(3, requires_grad=True)
-            displacement_z = torch.zeros(3, requires_grad=True)
+            displacement_x = torch.zeros(3, requires_grad=True,
+                                         dtype=self.dtype, device=self.device)
+            displacement_y = torch.zeros(3, requires_grad=True,
+                                         dtype=self.dtype, device=self.device)
+            displacement_z = torch.zeros(3, requires_grad=True,
+                                         dtype=self.dtype, device=self.device)
             strain_x = self.strain(coordinates, displacement_x, 0)
             strain_y = self.strain(coordinates, displacement_y, 1)
             strain_z = self.strain(coordinates, displacement_z, 2)
@@ -100,6 +103,7 @@ class Calculator(ase.calculators.calculator.Calculator):
             _, energy = self.whole((species, coordinates))
         energy *= ase.units.Hartree
         self.results['energy'] = energy.item()
+        self.results['free_energy'] = energy.item()
 
         if 'forces' in properties:
             forces = -torch.autograd.grad(energy.squeeze(), coordinates)[0]
@@ -108,8 +112,8 @@ class Calculator(ase.calculators.calculator.Calculator):
         if 'stress' in properties:
             volume = self.atoms.get_volume()
             stress = torch.stack([
-                torch.autograd.grad(energy.squeeze(), displacement_x)[0] / volume,
-                torch.autograd.grad(energy.squeeze(), displacement_y)[0] / volume,
-                torch.autograd.grad(energy.squeeze(), displacement_z)[0] / volume
-            ])
+                torch.autograd.grad(energy.squeeze(), displacement_x, retain_graph=True)[0],
+                torch.autograd.grad(energy.squeeze(), displacement_y, retain_graph=True)[0],
+                torch.autograd.grad(energy.squeeze(), displacement_z)[0],
+            ]) / volume
             self.results['stress'] = stress.cpu().numpy()

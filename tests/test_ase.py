@@ -26,7 +26,6 @@ class TestASE(unittest.TestCase):
 
     def testWithNumericalForceWithPBCEnabled(self):
         atoms = Diamond(symbol="C", pbc=True)
-        builtin = torchani.neurochem.Builtins()
         calculator = torchani.models.ANI1x().ase()
         atoms.set_calculator(calculator)
         dyn = Langevin(atoms, 5 * units.fs, 30000000 * units.kB, 0.002)
@@ -47,13 +46,14 @@ class TestASE(unittest.TestCase):
                            temperature=300 * units.kB,
                            taut=0.1 * 1000 * units.fs, pressure=1.01325,
                            taup=1.0 * 1000 * units.fs, compressibility=4.57e-5)
+
         def test_stress():
             stress = benzene.get_stress()
-            numerical_stress = calculator.calculate_numerical_stress()
+            numerical_stress = calculator.calculate_numerical_stress(benzene)
             diff = torch.from_numpy(stress - numerical_stress).abs().max().item()
             self.assertLess(diff, tol)
-        dyn.attach(test_stress)
-        dyn.run(1000)
+        dyn.attach(test_stress, interval=30)
+        dyn.run(120)
 
 
 if __name__ == '__main__':
