@@ -32,7 +32,7 @@ class Calculator(ase.calculators.calculator.Calculator):
             object with the wrapped positions.
     """
 
-    implemented_properties = ['energy', 'forces']
+    implemented_properties = ['energy', 'forces', 'stress']
 
     def __init__(self, species, aev_computer, model, energy_shifter, dtype=torch.float64, overwrite=False):
         super(Calculator, self).__init__()
@@ -57,8 +57,8 @@ class Calculator(ase.calculators.calculator.Calculator):
                   system_changes=ase.calculators.calculator.all_changes):
         super(Calculator, self).calculate(atoms, properties, system_changes)
         cell = torch.tensor(self.atoms.get_cell(complete=True),
-                            requires_grad=True, dtype=self.dtype,
-                            device=self.device)
+                            requires_grad=('stress' in properties),
+                            dtype=self.dtype, device=self.device)
         pbc = torch.tensor(self.atoms.get_pbc().astype(numpy.uint8), dtype=torch.uint8,
                            device=self.device)
         pbc_enabled = bool(pbc.any().item())
@@ -79,3 +79,14 @@ class Calculator(ase.calculators.calculator.Calculator):
         if 'forces' in properties:
             forces = -torch.autograd.grad(energy.squeeze(), coordinates)[0]
             self.results['forces'] = forces.squeeze().to('cpu').numpy()
+        if 'stress' in properties:
+            stress = cell.new_zeros(3, 3).requires_grad_(False)
+            range3 = torch.arange(3, device=cell.device)
+            volume = self.atoms.get_volume()
+            dE_dcell_V = torch.autograd.grad(energy.squeeze(), cell)[0] / volume
+            diagonal = (dE_dcell_V * cell).sum(dim=0)
+            stress[range3, range3] = diagonal
+            stress[[0, 1], [1, 0]] = 0.5 * (dE_dcell_V * cell[:, [1, 0, 2]]).sum()
+            stress[[0, 2], [2, 0]] = 0.5 * (dE_dcell_V * cell[:, [2, 1, 0]]).sum()
+            stress[[1, 2], [2, 1]] = 0.5 * (dE_dcell_V * cell[:, [0, 2, 1]]).sum()
+            self.results['stress'] = stress.cpu().numpy()
