@@ -1,6 +1,8 @@
 from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
+from ase.md.nptberendsen import NPTBerendsen
 from ase import units
+from ase.io import read
 from ase.calculators.test import numeric_force
 import torch
 import torchani
@@ -24,10 +26,7 @@ class TestASE(unittest.TestCase):
 
     def testWithNumericalForceWithPBCEnabled(self):
         atoms = Diamond(symbol="C", pbc=True)
-        builtin = torchani.neurochem.Builtins()
-        calculator = torchani.ase.Calculator(
-            builtin.species, builtin.aev_computer,
-            builtin.models, builtin.energy_shifter)
+        calculator = torchani.models.ANI1x().ase()
         atoms.set_calculator(calculator)
         dyn = Langevin(atoms, 5 * units.fs, 30000000 * units.kB, 0.002)
         dyn.run(100)
@@ -37,6 +36,24 @@ class TestASE(unittest.TestCase):
         avgf = f.abs().mean()
         if avgf > 0:
             self.assertLess(df / avgf, 0.1)
+
+    def testWithNumericalStressWithPBCEnabled(self):
+        filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.cif')
+        benzene = read(filename)
+        calculator = torchani.models.ANI1x().ase()
+        benzene.set_calculator(calculator)
+        dyn = NPTBerendsen(benzene, timestep=0.1 * units.fs,
+                           temperature=300 * units.kB,
+                           taut=0.1 * 1000 * units.fs, pressure=1.01325,
+                           taup=1.0 * 1000 * units.fs, compressibility=4.57e-5)
+
+        def test_stress():
+            stress = benzene.get_stress()
+            numerical_stress = calculator.calculate_numerical_stress(benzene)
+            diff = torch.from_numpy(stress - numerical_stress).abs().max().item()
+            self.assertLess(diff, tol)
+        dyn.attach(test_stress, interval=30)
+        dyn.run(120)
 
 
 if __name__ == '__main__':
