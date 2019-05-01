@@ -60,7 +60,6 @@ class TestAEV(unittest.TestCase):
                 _, aev = self.aev_computer((species, coordinates))
                 self.assertAEVEqual(expected_radial, expected_angular, aev)
 
-    @unittest.skipIf(True, "WIP")
     def testBenzeneMD(self):
         for i in range(100):
             datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
