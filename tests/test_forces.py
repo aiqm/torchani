@@ -67,7 +67,6 @@ class TestForce(unittest.TestCase):
             max_diff = (forces + derivative).abs().max().item()
             self.assertLess(max_diff, self.tolerance)
 
-    @unittest.skipIf(True, "WIP")
     def testBenzeneMD(self):
         tolerance = 1e-6
         for i in range(100):
