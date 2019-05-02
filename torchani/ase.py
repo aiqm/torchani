@@ -78,12 +78,9 @@ class Calculator(ase.calculators.calculator.Calculator):
         coordinates = coordinates.unsqueeze(0).to(self.device).to(self.dtype) \
                                  .requires_grad_('forces' in properties)
         if 'stress' in properties:
-            displacement_x = torch.zeros(3, requires_grad=True,
-                                         dtype=self.dtype, device=self.device)
-            displacement_y = torch.zeros(3, requires_grad=True,
-                                         dtype=self.dtype, device=self.device)
-            displacement_z = torch.zeros(3, requires_grad=True,
-                                         dtype=self.dtype, device=self.device)
+            displacements = torch.zeros(3, 3, requires_grad=True,
+                                        dtype=self.dtype, device=self.device)
+            displacement_x, displacement_y, displacement_z = displacements
             strain_x = self.strain(coordinates, displacement_x, 0)
             strain_y = self.strain(coordinates, displacement_y, 1)
             strain_z = self.strain(coordinates, displacement_z, 2)
@@ -111,9 +108,5 @@ class Calculator(ase.calculators.calculator.Calculator):
 
         if 'stress' in properties:
             volume = self.atoms.get_volume()
-            stress = torch.stack([
-                torch.autograd.grad(energy.squeeze(), displacement_x, retain_graph=True)[0],
-                torch.autograd.grad(energy.squeeze(), displacement_y, retain_graph=True)[0],
-                torch.autograd.grad(energy.squeeze(), displacement_z)[0],
-            ]) / volume
+            stress = torch.autograd.grad(energy.squeeze(), displacements)[0] / volume
             self.results['stress'] = stress.cpu().numpy()
