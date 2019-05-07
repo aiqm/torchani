@@ -80,6 +80,8 @@ class Calculator(ase.calculators.calculator.Calculator):
         
         if pbc_enabled:
             coordinates = utils.map2central(cell, coordinates, pbc)
+            if self.overwrite and atoms is not None:
+                atoms.set_positions(coordinates.detach().cpu().reshape(-1, 3).numpy())
 
         if 'stress' in properties:
             displacements = torch.zeros(3, 3, requires_grad=True,
@@ -91,8 +93,6 @@ class Calculator(ase.calculators.calculator.Calculator):
             coordinates = coordinates + strain_x + strain_y + strain_z
 
         if pbc_enabled:
-            if self.overwrite and atoms is not None:
-                atoms.set_positions(coordinates.detach().cpu().reshape(-1, 3).numpy())
             if 'stress' in properties:
                 strain_x = self.strain(cell, displacement_x, 0)
                 strain_y = self.strain(cell, displacement_y, 1)
