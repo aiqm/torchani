@@ -6,6 +6,7 @@ import torchani
 import ase
 import ase.optimize
 import ase.vibrations
+import numpy
 
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -29,15 +30,15 @@ class TestVibrational(unittest.TestCase):
         # compute vibrational frequencies by ASE
         vib = ase.vibrations.Vibrations(molecule)
         vib.run()
-        freq = vib.get_frequencies()
-        print(freq)
+        freq = torch.tensor([numpy.real(x) for x in vib.get_frequencies()[-3:]])
         # compute vibrational by torchani
         species = model.species_to_tensor(molecule.get_chemical_symbols()).unsqueeze(0)
         coordinates = torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_grad_(True)
         _, energies = model((species, coordinates))
         hessian = torchani.utils.hessian(coordinates, energies=energies)
-        freq2 = torchani.utils.vibrational_analysis(masses[species], hessian)
-        print(freq2)
+        freq2 = torchani.utils.vibrational_analysis(masses[species], hessian)[-3:].float()
+        ratio = freq2 / freq
+        self.assertLess((ratio - 1).abs().max(), 0.02)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 import torch
+import math
 
 
 def pad(species):
@@ -228,7 +229,6 @@ def hessian(coordinates, energies=None, forces=None):
     if forces is None:
         forces = -torch.autograd.grad(energies.sum(), coordinates, create_graph=True)[0]
     flattened_force = forces.flatten(start_dim=1)
-    print(flattened_force.shape)
     force_components = flattened_force.unbind(dim=1)
     return -torch.stack([
         torch.autograd.grad(f.sum(), coordinates, retain_graph=True)[0].flatten(start_dim=1)
@@ -249,14 +249,13 @@ def vibrational_analysis(masses, hessian, unit='cm^-1'):
     # Letting q' = T^(1/2) q, we then have
     # T^(-1/2) H T^(1/2) q' = w^2 * q'
     inv_sqrt_mass = (1 / masses.sqrt()).repeat_interleave(3, dim=1)  # shape (molecule, 3 * atoms)
-    print(inv_sqrt_mass.shape)
-    print(hessian.shape)
     mass_scaled_hessian = hessian * inv_sqrt_mass.unsqueeze(1) * inv_sqrt_mass.unsqueeze(2)
     if mass_scaled_hessian.shape[0] != 1:
         raise ValueError('The input should contain only one molecule')
     mass_scaled_hessian = mass_scaled_hessian.squeeze(0)
     eigenvalues = torch.symeig(mass_scaled_hessian).eigenvalues
-    frequencies = eigenvalues.sqrt()
+    angular_frequencies = eigenvalues.sqrt()
+    frequencies = angular_frequencies / (2 * math.pi)
     # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1
     wavenumbers = frequencies * 17092
     return wavenumbers
