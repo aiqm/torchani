@@ -228,9 +228,11 @@ def hessian(coordinates, energies=None, forces=None):
     if forces is None:
         forces = -torch.autograd.grad(energies.sum(), coordinates, create_graph=True)[0]
     flattened_force = forces.flatten(start_dim=1)
+    print(flattened_force.shape)
     force_components = flattened_force.unbind(dim=1)
     return -torch.stack([
-        torch.autograd.grad(f.sum(), coordinates)[0] for f in force_components
+        torch.autograd.grad(f.sum(), coordinates, retain_graph=True)[0].flatten(start_dim=1)
+        for f in force_components
     ], dim=1)
 
 
@@ -239,7 +241,6 @@ def vibrational_analysis(masses, hessian, unit='cm^-1'):
     if unit != 'cm^-1':
         raise ValueError('Only cm^-1 are supported right now')
     assert hessian.shape[0] == 1, 'Currently only supporting computing one molecule a time'
-    hessian = hessian.squeeze(0)
     # Solving the eigenvalue problem: Hq = w^2 * T q
     # where H is the Hessian matrix, q is the normal coordinates,
     # T = diag(m1, m1, m1, m2, m2, m2, ....) is the mass
@@ -247,19 +248,20 @@ def vibrational_analysis(masses, hessian, unit='cm^-1'):
     # Hq = w^2 * Tq ==> Hq = w^2 * T^(1/2) T^(1/2) q
     # Letting q' = T^(1/2) q, we then have
     # T^(-1/2) H T^(1/2) q' = w^2 * q'
-    inv_sqrt_mass = (1 / masses.sqrt()).repeat_interleave(3)  # shape (molecule, 3 * atoms)
+    inv_sqrt_mass = (1 / masses.sqrt()).repeat_interleave(3, dim=1)  # shape (molecule, 3 * atoms)
+    print(inv_sqrt_mass.shape)
+    print(hessian.shape)
     mass_scaled_hessian = hessian * inv_sqrt_mass.unsqueeze(1) * inv_sqrt_mass.unsqueeze(2)
+    if mass_scaled_hessian.shape[0] != 1:
+        raise ValueError('The input should contain only one molecule')
+    mass_scaled_hessian = mass_scaled_hessian.squeeze(0)
     eigenvalues = torch.symeig(mass_scaled_hessian).eigenvalues
-    complex_dtype = {
-        torch.float16: torch.complex32,
-        torch.float32: torch.complex64,
-        torch.float64: torch.complex128,
-    }
-    frequencies = eigenvalues.to(complex_dtype[hessian.dtype]).sqrt()
+    frequencies = eigenvalues.sqrt()
     # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1
     wavenumbers = frequencies * 17092
     return wavenumbers
 
 
 __all__ = ['pad', 'pad_coordinates', 'present_species', 'hessian',
-           'strip_redundant_padding', 'ChemicalSymbolsToInts']
+           'vibrational_analysis', 'strip_redundant_padding',
+           'ChemicalSymbolsToInts']
