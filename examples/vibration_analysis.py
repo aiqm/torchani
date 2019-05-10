@@ -43,11 +43,11 @@ coordinates = torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_g
 # TorchANI needs to know the mass of each atom in amu in order to do vibration
 # analysis:
 element_masses = torch.tensor([
-        1.008,  # H
-        12.011,  # C
-        14.007,  # N
-        15.999,  # O
-    ], dtype=torch.double)
+    1.008,  # H
+    12.011,  # C
+    14.007,  # N
+    15.999,  # O
+], dtype=torch.double)
 masses = element_masses[species]
 
 ###############################################################################
