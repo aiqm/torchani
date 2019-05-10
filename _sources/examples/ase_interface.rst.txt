@@ -118,7 +118,7 @@ Now let's minimize the structure:
 
     Begin minimizing...
           Step     Time          Energy         fmax
-    BFGS:    0 18:30:10    -8311.226179        0.0000
+    BFGS:    0 18:29:12    -8311.226179        0.0000
 
 
 Now create a callback function that print interesting physical quantities:
@@ -176,22 +176,22 @@ Now run the dynamics:
 
     Beginning dynamics...
     Energy per atom: Epot = -1038.903eV  Ekin = 0.000eV (T=  0K)  Etot = -1038.903eV
-    Energy per atom: Epot = -1038.875eV  Ekin = 0.016eV (T=122K)  Etot = -1038.859eV
-    Energy per atom: Epot = -1038.881eV  Ekin = 0.034eV (T=260K)  Etot = -1038.847eV
-    Energy per atom: Epot = -1038.891eV  Ekin = 0.029eV (T=227K)  Etot = -1038.862eV
-    Energy per atom: Epot = -1038.882eV  Ekin = 0.028eV (T=216K)  Etot = -1038.854eV
-    Energy per atom: Epot = -1038.871eV  Ekin = 0.023eV (T=177K)  Etot = -1038.848eV
-    Energy per atom: Epot = -1038.875eV  Ekin = 0.047eV (T=364K)  Etot = -1038.828eV
-    Energy per atom: Epot = -1038.874eV  Ekin = 0.046eV (T=353K)  Etot = -1038.828eV
-    Energy per atom: Epot = -1038.866eV  Ekin = 0.030eV (T=229K)  Etot = -1038.836eV
-    Energy per atom: Epot = -1038.877eV  Ekin = 0.041eV (T=315K)  Etot = -1038.836eV
-    Energy per atom: Epot = -1038.855eV  Ekin = 0.038eV (T=291K)  Etot = -1038.817eV
+    Energy per atom: Epot = -1038.877eV  Ekin = 0.018eV (T=142K)  Etot = -1038.858eV
+    Energy per atom: Epot = -1038.867eV  Ekin = 0.025eV (T=194K)  Etot = -1038.842eV
+    Energy per atom: Epot = -1038.861eV  Ekin = 0.045eV (T=346K)  Etot = -1038.816eV
+    Energy per atom: Epot = -1038.860eV  Ekin = 0.044eV (T=341K)  Etot = -1038.816eV
+    Energy per atom: Epot = -1038.860eV  Ekin = 0.039eV (T=304K)  Etot = -1038.821eV
+    Energy per atom: Epot = -1038.859eV  Ekin = 0.023eV (T=175K)  Etot = -1038.836eV
+    Energy per atom: Epot = -1038.882eV  Ekin = 0.019eV (T=145K)  Etot = -1038.863eV
+    Energy per atom: Epot = -1038.873eV  Ekin = 0.024eV (T=184K)  Etot = -1038.849eV
+    Energy per atom: Epot = -1038.862eV  Ekin = 0.039eV (T=301K)  Etot = -1038.823eV
+    Energy per atom: Epot = -1038.869eV  Ekin = 0.030eV (T=231K)  Etot = -1038.839eV
 
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 2 minutes  38.373 seconds)
+   **Total running time of the script:** ( 2 minutes  35.870 seconds)
 
 
 .. _sphx_glr_download_examples_ase_interface.py:

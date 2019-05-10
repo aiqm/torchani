@@ -32,6 +32,26 @@ Examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI is able to use ASE interface to do structure optimization and vibration analysis, but ...">
+
+.. only:: html
+
+    .. figure:: /examples/images/thumb/sphx_glr_vibration_analysis_thumb.png
+
+        :ref:`sphx_glr_examples_vibration_analysis.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/vibration_analysis
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example is modified from the official `home page` and `Constant temperature MD`_ to use th...">
 
 .. only:: html
