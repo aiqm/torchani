@@ -40,6 +40,8 @@ Utilities
 .. autofunction:: torchani.utils.map2central
 .. autoclass:: torchani.utils.ChemicalSymbolsToInts
     :members:
+.. autofunction:: torchani.utils.hessian
+.. autofunction:: torchani.utils.vibrational_analysis
 
 
 NeuroChem

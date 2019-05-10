@@ -24,3 +24,5 @@ benchmark_xyz
 *_cache
 datacache
 dist
+*.pckl
+
