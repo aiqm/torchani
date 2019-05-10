@@ -77,7 +77,7 @@ class Calculator(ase.calculators.calculator.Calculator):
         coordinates = torch.tensor(self.atoms.get_positions())
         coordinates = coordinates.unsqueeze(0).to(self.device).to(self.dtype) \
                                  .requires_grad_('forces' in properties)
-        
+
         if pbc_enabled:
             coordinates = utils.map2central(cell, coordinates, pbc)
             if self.overwrite and atoms is not None:
