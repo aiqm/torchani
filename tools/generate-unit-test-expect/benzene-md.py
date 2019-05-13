@@ -4,7 +4,7 @@ import ase.optimize
 import ase.md.velocitydistribution
 import ase.md.verlet
 import os
-from neurochem_calculator import NeuroChem, path
+from neurochem_calculator import NeuroChem, path, calc
 import torchani
 import pickle
 
@@ -23,7 +23,7 @@ ase.md.velocitydistribution.ZeroRotation(molecule)
 
 print("Initial temperature from velocities %.2f" % molecule.get_temperature())
 
-molecule.set_calculator(torchani.models.ANI1ccx().to('cuda').ase(overwrite=True))
+molecule.set_calculator(calc())
 
 dyn = ase.md.verlet.VelocityVerlet(
     molecule,
