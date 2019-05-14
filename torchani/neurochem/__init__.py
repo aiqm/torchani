@@ -592,7 +592,6 @@ if sys.version_info[0] > 2:
             input_size, network_setup = network_setup
             if input_size != self.aev_computer.aev_length:
                 raise ValueError('AEV size and input size does not match')
-            l2reg = []
             atomic_nets = {}
             for atom_type in network_setup:
                 layers = network_setup[atom_type]
