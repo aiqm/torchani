@@ -4,17 +4,16 @@ import ase.optimize
 import ase.md.velocitydistribution
 import ase.md.verlet
 import os
-from neurochem_calculator import NeuroChem, path
-import torchani
+from neurochem_calculator import NeuroChem, path, calc
 import pickle
 
 
 neurochem = NeuroChem()
 
-molecule = ase.io.read('others/Benzene.cif')
+molecule = ase.io.read('others/Benzene.pdb')
 
 temp = 300 * ase.units.kB
-stepsize = ase.units.fs
+stepsize = 0.25 * ase.units.fs
 steps = int(10000 * ase.units.fs / stepsize)
 
 ase.md.velocitydistribution.MaxwellBoltzmannDistribution(molecule, temp, force_temp=True)
@@ -23,7 +22,7 @@ ase.md.velocitydistribution.ZeroRotation(molecule)
 
 print("Initial temperature from velocities %.2f" % molecule.get_temperature())
 
-molecule.set_calculator(torchani.models.ANI1ccx().to('cuda').ase())
+molecule.set_calculator(calc())
 
 dyn = ase.md.verlet.VelocityVerlet(
     molecule,
@@ -44,5 +43,5 @@ def dump_neurochem_data(molecule=molecule):
     counter += 1
 
 
-dyn.attach(dump_neurochem_data, interval=100)
+dyn.attach(dump_neurochem_data, interval=4000)
 dyn.run(steps)

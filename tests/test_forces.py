@@ -67,10 +67,9 @@ class TestForce(unittest.TestCase):
             max_diff = (forces + derivative).abs().max().item()
             self.assertLess(max_diff, self.tolerance)
 
-    @unittest.skipIf(True, "WIP")
     def testBenzeneMD(self):
-        tolerance = 1e-6
-        for i in range(100):
+        tolerance = 1e-5
+        for i in range(10):
             datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces, cell, pbc \
