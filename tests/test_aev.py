@@ -79,7 +79,6 @@ class TestAEV(unittest.TestCase):
                 expected_angular = self.transform(expected_angular)
                 _, aev = self.aev_computer((species, coordinates, cell, pbc))
                 self.assertAEVEqual(expected_radial, expected_angular, aev)
-                print('success')
 
     def testTripeptideMD(self):
         tol = 5e-6
