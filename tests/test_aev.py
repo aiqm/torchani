@@ -60,9 +60,8 @@ class TestAEV(unittest.TestCase):
                 _, aev = self.aev_computer((species, coordinates))
                 self.assertAEVEqual(expected_radial, expected_angular, aev)
 
-    @unittest.skipIf(True, "WIP")
     def testBenzeneMD(self):
-        for i in range(100):
+        for i in range(10):
             datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, expected_radial, expected_angular, _, _, cell, pbc \
@@ -79,7 +78,7 @@ class TestAEV(unittest.TestCase):
                 expected_radial = self.transform(expected_radial)
                 expected_angular = self.transform(expected_angular)
                 _, aev = self.aev_computer((species, coordinates, cell, pbc))
-                self.assertAEVEqual(expected_radial, expected_angular, aev)
+                self.assertAEVEqual(expected_radial, expected_angular, aev, 5e-5)
 
     def testTripeptideMD(self):
         tol = 5e-6
