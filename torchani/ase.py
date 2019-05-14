@@ -32,7 +32,7 @@ class Calculator(ase.calculators.calculator.Calculator):
             object with the wrapped positions.
     """
 
-    implemented_properties = ['energy', 'forces']
+    implemented_properties = ['energy', 'forces', 'stress', 'free_energy']
 
     def __init__(self, species, aev_computer, model, energy_shifter, dtype=torch.float64, overwrite=False):
         super(Calculator, self).__init__()
@@ -53,12 +53,22 @@ class Calculator(ase.calculators.calculator.Calculator):
             self.energy_shifter
         ).to(dtype)
 
+    @staticmethod
+    def strain(tensor, displacement, surface_normal_axis):
+        rest_axes = {0, 1, 2} - set([surface_normal_axis])
+        displacement_normal = displacement[surface_normal_axis]
+        displacement_of_tensor = torch.zeros_like(tensor)
+        displacement_of_tensor[..., surface_normal_axis] = tensor[..., surface_normal_axis] * displacement_normal
+        for axis in rest_axes:
+            displacement_axis = displacement[axis]
+            displacement_of_tensor[..., axis] = tensor[..., surface_normal_axis] * displacement_axis
+        return displacement_of_tensor
+
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=ase.calculators.calculator.all_changes):
         super(Calculator, self).calculate(atoms, properties, system_changes)
         cell = torch.tensor(self.atoms.get_cell(complete=True),
-                            requires_grad=True, dtype=self.dtype,
-                            device=self.device)
+                            dtype=self.dtype, device=self.device)
         pbc = torch.tensor(self.atoms.get_pbc().astype(numpy.uint8), dtype=torch.uint8,
                            device=self.device)
         pbc_enabled = bool(pbc.any().item())
@@ -67,15 +77,39 @@ class Calculator(ase.calculators.calculator.Calculator):
         coordinates = torch.tensor(self.atoms.get_positions())
         coordinates = coordinates.unsqueeze(0).to(self.device).to(self.dtype) \
                                  .requires_grad_('forces' in properties)
+
         if pbc_enabled:
             coordinates = utils.map2central(cell, coordinates, pbc)
             if self.overwrite and atoms is not None:
                 atoms.set_positions(coordinates.detach().cpu().reshape(-1, 3).numpy())
+
+        if 'stress' in properties:
+            displacements = torch.zeros(3, 3, requires_grad=True,
+                                        dtype=self.dtype, device=self.device)
+            displacement_x, displacement_y, displacement_z = displacements
+            strain_x = self.strain(coordinates, displacement_x, 0)
+            strain_y = self.strain(coordinates, displacement_y, 1)
+            strain_z = self.strain(coordinates, displacement_z, 2)
+            coordinates = coordinates + strain_x + strain_y + strain_z
+
+        if pbc_enabled:
+            if 'stress' in properties:
+                strain_x = self.strain(cell, displacement_x, 0)
+                strain_y = self.strain(cell, displacement_y, 1)
+                strain_z = self.strain(cell, displacement_z, 2)
+                cell = cell + strain_x + strain_y + strain_z
             _, energy = self.whole((species, coordinates, cell, pbc))
         else:
             _, energy = self.whole((species, coordinates))
         energy *= ase.units.Hartree
         self.results['energy'] = energy.item()
+        self.results['free_energy'] = energy.item()
+
         if 'forces' in properties:
             forces = -torch.autograd.grad(energy.squeeze(), coordinates)[0]
             self.results['forces'] = forces.squeeze().to('cpu').numpy()
+
+        if 'stress' in properties:
+            volume = self.atoms.get_volume()
+            stress = torch.autograd.grad(energy.squeeze(), displacements)[0] / volume
+            self.results['stress'] = stress.cpu().numpy()
