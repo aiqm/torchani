@@ -69,7 +69,7 @@ class TestForce(unittest.TestCase):
 
     def testBenzeneMD(self):
         tolerance = 1e-6
-        for i in range(100):
+        for i in range(10):
             datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces, cell, pbc \
