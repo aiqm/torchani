@@ -611,13 +611,20 @@ if sys.version_info[0] > 2:
                     del layer['activation']
                     if 'l2norm' in layer:
                         if layer['l2norm'] == 1:
-                            l2valu = layer['l2valu']
                             self.parameters.append({
                                 'params': module.parameters(),
-                                'weight_decay': l2valu,
+                                'weight_decay': layer['l2valu'],
+                            })
+                        else:
+                            self.parameters.append({
+                                'params': module.parameters(),
                             })
                         del layer['l2norm']
                         del layer['l2valu']
+                    else:
+                        self.parameters.append({
+                            'params': module.parameters(),
+                        })
                     if layer:
                         raise ValueError(
                             'unrecognized parameter in layer setup')
@@ -768,10 +775,7 @@ if sys.version_info[0] > 2:
 
             # training using mse loss first until the validation MAE decrease
             # to < 1 Hartree
-            if len(self.parameters):
-                optimizer = torch.optim.Adam(self.parameters, lr=lr)
-            else:
-                optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
+            optimizer = torch.optim.Adam(self.parameters, lr=lr)
             trainer = ignite.engine.create_supervised_trainer(
                 self.container, optimizer, self.mse_loss)
             decorate(trainer)
