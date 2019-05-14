@@ -81,7 +81,6 @@ class TestAEV(unittest.TestCase):
                 self.assertAEVEqual(expected_radial, expected_angular, aev)
                 print('success')
 
-
     def testTripeptideMD(self):
         tol = 5e-6
         for i in range(100):

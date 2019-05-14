@@ -5,7 +5,6 @@ import ase.md.velocitydistribution
 import ase.md.verlet
 import os
 from neurochem_calculator import NeuroChem, path, calc
-import torchani
 import pickle
 
 
