@@ -404,6 +404,7 @@ if sys.version_info[0] > 2:
             self.device = device
             self.aev_caching = aev_caching
             self.checkpoint_name = checkpoint_name
+            self.parameters = []
             if tqdm:
                 import tqdm
                 self.tqdm = tqdm.tqdm
@@ -591,7 +592,6 @@ if sys.version_info[0] > 2:
             input_size, network_setup = network_setup
             if input_size != self.aev_computer.aev_length:
                 raise ValueError('AEV size and input size does not match')
-            l2reg = []
             atomic_nets = {}
             for atom_type in network_setup:
                 layers = network_setup[atom_type]
@@ -611,18 +611,20 @@ if sys.version_info[0] > 2:
                     del layer['activation']
                     if 'l2norm' in layer:
                         if layer['l2norm'] == 1:
-                            # NB: The "L2" implemented in NeuroChem is actually
-                            # not L2 but weight decay. The difference of these
-                            # two is:
-                            # https://arxiv.org/pdf/1711.05101.pdf
-                            # There is a pull request on github/pytorch
-                            # implementing AdamW, etc.:
-                            # https://github.com/pytorch/pytorch/pull/4429
-                            # There is no plan to support the "L2" settings in
-                            # input file before AdamW get merged into pytorch.
-                            raise NotImplementedError('L2 not supported yet')
+                            self.parameters.append({
+                                'params': module.parameters(),
+                                'weight_decay': layer['l2valu'],
+                            })
+                        else:
+                            self.parameters.append({
+                                'params': module.parameters(),
+                            })
                         del layer['l2norm']
                         del layer['l2valu']
+                    else:
+                        self.parameters.append({
+                            'params': module.parameters(),
+                        })
                     if layer:
                         raise ValueError(
                             'unrecognized parameter in layer setup')
@@ -637,13 +639,10 @@ if sys.version_info[0] > 2:
             self.container = Container({'energies': self.nnp}).to(self.device)
 
             # losses
-            def l2():
-                return sum([c * (m.weight ** 2).sum() for c, m in l2reg])
-            self.mse_loss = TransformedLoss(MSELoss('energies'),
-                                            lambda x: x + l2())
+            self.mse_loss = MSELoss('energies')
             self.exp_loss = TransformedLoss(
                 MSELoss('energies'),
-                lambda x: 0.5 * (torch.exp(2 * x) - 1) + l2())
+                lambda x: 0.5 * (torch.exp(2 * x) - 1))
 
             if params:
                 raise ValueError('unrecognized parameter')
@@ -776,7 +775,7 @@ if sys.version_info[0] > 2:
 
             # training using mse loss first until the validation MAE decrease
             # to < 1 Hartree
-            optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
+            optimizer = torch.optim.Adam(self.parameters, lr=lr)
             trainer = ignite.engine.create_supervised_trainer(
                 self.container, optimizer, self.mse_loss)
             decorate(trainer)
