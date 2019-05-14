@@ -58,7 +58,7 @@ class TestAEV(unittest.TestCase):
                 expected_radial = self.transform(expected_radial)
                 expected_angular = self.transform(expected_angular)
                 _, aev = self.aev_computer((species, coordinates))
-                self.assertAEVEqual(expected_radial, expected_angular, aev)
+                self.assertAEVEqual(expected_radial, expected_angular, aev, 5e-5)
 
     def testBenzeneMD(self):
         for i in range(10):
