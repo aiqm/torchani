@@ -61,7 +61,7 @@ class TestAEV(unittest.TestCase):
                 self.assertAEVEqual(expected_radial, expected_angular, aev)
 
     def testBenzeneMD(self):
-        for i in range(100):
+        for i in range(10):
             datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, expected_radial, expected_angular, _, _, cell, pbc \
