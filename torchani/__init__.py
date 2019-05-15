@@ -32,7 +32,6 @@ from . import neurochem
 from . import models
 from pkg_resources import get_distribution, DistributionNotFound
 import sys
-if sys.version_info[0] > 2:
 
 try:
     __version__ = get_distribution(__name__).version
