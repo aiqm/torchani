@@ -22,6 +22,7 @@ import torch
 import torchani
 import os
 import math
+import torch.utils.tensorboard
 
 # device to run the training
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -123,7 +124,7 @@ H_network = torch.nn.Sequential(
     torch.nn.CELU(0.1),
     torch.nn.Linear(128, 96),
     torch.nn.CELU(0.1),
-    torch.nn.Linear(64, 1)
+    torch.nn.Linear(96, 1)
 )
 
 C_network = torch.nn.Sequential(
@@ -133,7 +134,7 @@ C_network = torch.nn.Sequential(
     torch.nn.CELU(0.1),
     torch.nn.Linear(112, 96),
     torch.nn.CELU(0.1),
-    torch.nn.Linear(64, 1)
+    torch.nn.Linear(96, 1)
 )
 
 N_network = torch.nn.Sequential(
@@ -143,7 +144,7 @@ N_network = torch.nn.Sequential(
     torch.nn.CELU(0.1),
     torch.nn.Linear(112, 96),
     torch.nn.CELU(0.1),
-    torch.nn.Linear(64, 1)
+    torch.nn.Linear(96, 1)
 )
 
 O_network = torch.nn.Sequential(
@@ -153,7 +154,7 @@ O_network = torch.nn.Sequential(
     torch.nn.CELU(0.1),
     torch.nn.Linear(112, 96),
     torch.nn.CELU(0.1),
-    torch.nn.Linear(64, 1)
+    torch.nn.Linear(96, 1)
 )
 
 nn = torchani.ANIModel([H_network, C_network, N_network, O_network])
@@ -220,7 +221,7 @@ if not pretrained:
             true_energies = batch_y['energies']
             predicted_energies = []
             for chunk_species, chunk_coordinates in batch_x:
-                chunk_energies = model((chunk_species, chunk_coordinates))
+                _, chunk_energies = model((chunk_species, chunk_coordinates))
                 predicted_energies.append(chunk_energies)
             predicted_energies = torch.cat(predicted_energies)
             loss = mse(predicted_energies, true_energies)
@@ -233,7 +234,7 @@ if not pretrained:
 
 ###############################################################################
 # For phase 2, we need a learning rate scheduler to do learning rate decay
-scheduler = torch.optim.ReduceLROnPlateau(optimizer, factor=0.5, patience=100)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=100)
 
 ###############################################################################
 # We will also use TensorBoard to visualize our training process
@@ -260,17 +261,17 @@ def hartree2kcal(x):
 
 def validate():
     # run validation
-    mse_no_reduction = torch.nn.MSELoss(reduction='none')
+    mse_sum = torch.nn.MSELoss(reduction='sum')
     total_mse = 0.0
     count = 0
     for batch_x, batch_y in validation:
         true_energies = batch_y['energies']
         predicted_energies = []
         for chunk_species, chunk_coordinates in batch_x:
-            chunk_energies = model((chunk_species, chunk_coordinates))
+            _, chunk_energies = model((chunk_species, chunk_coordinates))
             predicted_energies.append(chunk_energies)
         predicted_energies = torch.cat(predicted_energies)
-        total_mse += mse_no_reduction(predicted_energies, true_energies)
+        total_mse += mse_sum(predicted_energies, true_energies)
         count += predicted_energies.shape[0]
     return hartree2kcal(math.sqrt(total_mse / count))
 
@@ -287,7 +288,7 @@ best_model_checkpoint = 'best.pt'
 for _ in range(scheduler.last_epoch + 1, max_epochs):
     rmse = validate()
     scheduler.step(rmse)
-    learning_rate = optimizer.param_groups[0].lr
+    learning_rate = optimizer.param_groups[0]['lr']
 
     tensorboard.add_scalar('validation_rmse', rmse, scheduler.last_epoch)
     tensorboard.add_scalar('best_validation_rmse', scheduler.best, scheduler.last_epoch)
@@ -301,7 +302,7 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
         true_energies = batch_y['energies']
         predicted_energies = []
         for chunk_species, chunk_coordinates in batch_x:
-            chunk_energies = model((chunk_species, chunk_coordinates))
+            _, chunk_energies = model((chunk_species, chunk_coordinates))
             predicted_energies.append(chunk_energies)
         predicted_energies = torch.cat(predicted_energies)
         loss = mse(predicted_energies, true_energies)
