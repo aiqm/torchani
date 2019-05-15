@@ -78,4 +78,4 @@ Ignite Helpers
 .. autofunction:: torchani.ignite.MSELoss
 .. autoclass:: torchani.ignite.DictMetric
 .. autofunction:: torchani.ignite.RMSEMetric
-.. autofunction:: torchani.ignite.MAEMetric
+.. autofunction:: torchani.ignite.MaxAEMetric
