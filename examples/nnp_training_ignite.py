@@ -19,9 +19,9 @@ import torch
 import ignite
 import torchani
 import timeit
-import tensorboardX
 import os
 import ignite.contrib.handlers
+import torch.utils.tensorboard
 
 
 ###############################################################################
@@ -52,7 +52,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # batch size
 batch_size = 1024
 
-# log directory for tensorboardX
+# log directory for tensorboard
 log = 'runs'
 
 
@@ -97,8 +97,8 @@ else:
 model = torch.nn.Sequential(aev_computer, nn).to(device)
 
 ###############################################################################
-# Now setup tensorboardX.
-writer = tensorboardX.SummaryWriter(log_dir=log)
+# Now setup tensorboard
+writer = torch.utils.tensorboard.SummaryWriter(log_dir=log)
 
 ###############################################################################
 # Now load training and validation datasets into memory.
