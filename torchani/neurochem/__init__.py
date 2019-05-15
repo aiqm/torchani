@@ -378,8 +378,6 @@ def hartree2kcal(x):
 
 
 if sys.version_info[0] > 2:
-    from ..data import BatchedANIDataset  # noqa: E402
-    from ..data import AEVCacheLoader  # noqa: E402
 
     class Trainer:
         """Train with NeuroChem training configurations.
@@ -401,6 +399,8 @@ if sys.version_info[0] > 2:
             try:
                 import ignite
                 from ..ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MaxAEMetric
+                from ..data import BatchedANIDataset  # noqa: E402
+                from ..data import AEVCacheLoader  # noqa: E402
             except ImportError:
                 raise RuntimeError(
                     'NeuroChem Trainer requires ignite,'
@@ -411,12 +411,14 @@ if sys.version_info[0] > 2:
             class dummy:
                 pass
 
-            self.ignite_tools = dummy()
-            self.ignite_tools.Container = Container
-            self.ignite_tools.MSELoss = MSELoss
-            self.ignite_tools.TransformedLoss = TransformedLoss
-            self.ignite_tools.RMSEMetric = RMSEMetric
-            self.ignite_tools.MaxAEMetric = MaxAEMetric
+            self.imports = dummy()
+            self.imports.Container = Container
+            self.imports.MSELoss = MSELoss
+            self.imports.TransformedLoss = TransformedLoss
+            self.imports.RMSEMetric = RMSEMetric
+            self.imports.MaxAEMetric = MaxAEMetric
+            self.imports.BatchedANIDataset = BatchedANIDataset
+            self.imports.AEVCacheLoader = AEVCacheLoader
 
             self.filename = filename
             self.device = device
@@ -654,12 +656,12 @@ if sys.version_info[0] > 2:
                 self.nnp = self.model
             else:
                 self.nnp = torch.nn.Sequential(self.aev_computer, self.model)
-            self.container = self.ignite_tools.Container({'energies': self.nnp}).to(self.device)
+            self.container = self.imports.Container({'energies': self.nnp}).to(self.device)
 
             # losses
-            self.mse_loss = self.ignite_tools.MSELoss('energies')
-            self.exp_loss = self.ignite_tools.TransformedLoss(
-                self.ignite_tools.MSELoss('energies'),
+            self.mse_loss = self.imports.MSELoss('energies')
+            self.exp_loss = self.imports.TransformedLoss(
+                self.imports.MSELoss('energies'),
                 lambda x: 0.5 * (torch.exp(2 * x) - 1))
 
             if params:
@@ -674,8 +676,8 @@ if sys.version_info[0] > 2:
             evaluator = self.ignite.engine.create_supervised_evaluator(
                 self.container,
                 metrics={
-                    'RMSE': self.ignite_tools.RMSEMetric('energies'),
-                    'MaxAE': self.ignite_tools.MaxAEMetric('energies'),
+                    'RMSE': self.imports.RMSEMetric('energies'),
+                    'MaxAE': self.imports.MaxAEMetric('energies'),
                 }
             )
             evaluator.run(dataset)
@@ -689,14 +691,14 @@ if sys.version_info[0] > 2:
             directory, otherwise it should be path to the dataset.
             """
             if self.aev_caching:
-                self.training_set = AEVCacheLoader(training_path)
-                self.validation_set = AEVCacheLoader(validation_path)
+                self.training_set = self.imports.AEVCacheLoader(training_path)
+                self.validation_set = self.imports.AEVCacheLoader(validation_path)
             else:
-                self.training_set = BatchedANIDataset(
+                self.training_set = self.imports.BatchedANIDataset(
                     training_path, self.consts.species_to_tensor,
                     self.training_batch_size, device=self.device,
                     transform=[self.shift_energy.subtract_from_dataset])
-                self.validation_set = BatchedANIDataset(
+                self.validation_set = self.imports.BatchedANIDataset(
                     validation_path, self.consts.species_to_tensor,
                     self.validation_batch_size, device=self.device,
                     transform=[self.shift_energy.subtract_from_dataset])
