@@ -215,10 +215,10 @@ pretrain_epoches = 10
 mse = torch.nn.MSELoss()
 
 if not pretrained:
+    print("pre-training...")
     epoch = 0
-    optimizer = optimizer
     for i in range(pretrain_epoches):
-        for batch_x, batch_y in training:
+        for batch_x, batch_y in tqdm.tqdm(training):
             true_energies = batch_y['energies']
             predicted_energies = []
             for chunk_species, chunk_coordinates in batch_x:
