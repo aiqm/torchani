@@ -33,7 +33,6 @@ from . import models
 from pkg_resources import get_distribution, DistributionNotFound
 import sys
 if sys.version_info[0] > 2:
-    from . import ignite
     from . import data
 
 try:
@@ -43,10 +42,18 @@ except DistributionNotFound:
     pass
 
 __all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble',
-           'ignite', 'utils', 'neurochem', 'data', 'models']
+           'utils', 'neurochem', 'data', 'models']
 
 try:
     from . import ase  # noqa: F401
     __all__.append('ase')
 except ImportError:
     pass
+
+
+if sys.version_info[0] > 2:
+    try:
+        from . import ignite  # noqa: F401
+        __all__.append('ignite')
+    except ImportError:
+        pass

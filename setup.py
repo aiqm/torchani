@@ -14,7 +14,6 @@ setup_attrs = {
     'setup_requires': ['setuptools_scm'],
     'install_requires': [
         'torch-nightly',
-        'pytorch-ignite-nightly',
         'lark-parser',
         'h5py',
     ],
@@ -25,6 +24,7 @@ setup_attrs = {
         'tqdm',
         'ase',
         'coverage',
+        'pytorch-ignite-nightly',
     ],
 }
 
