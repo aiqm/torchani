@@ -25,6 +25,7 @@ setup_attrs = {
         'coverage',
         'h5py',
         'pytorch-ignite-nightly',
+        'pillow',
     ],
 }
 
