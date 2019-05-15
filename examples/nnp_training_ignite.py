@@ -7,9 +7,10 @@ Train Your Own Neural Network Potential, Using PyTorch-Ignite
 
 We have seen how to train a neural network potential by manually writing
 training loop in :ref:`training-example`. TorchANI provide tools to work
-with PyTorch-Ignite to simplify the writing of training code. This example
-shows how to implement the same training procedure as :ref:`training-example`
-using these tools.
+with PyTorch-Ignite to simplify the writing of training code. This tutorial
+shows how to use these tools to train a demo model.
+
+This tutorial assumes readers have read :ref:`training-example`.
 """
 
 ###############################################################################
@@ -24,14 +25,7 @@ import ignite.contrib.handlers
 
 
 ###############################################################################
-# Now let's setup training hyperparameters. Note that here for our demo purpose
-# , we set both training set and validation set the ``ani_gdb_s01.h5`` in
-# TorchANI's repository. This allows this program to finish very quick, because
-# that dataset is very small. But this is wrong and should be avoided for any
-# serious training. These paths assumes the user run this script under the
-# ``examples`` directory of TorchANI's repository. If you download this script,
-# you should manually set the path of these files in your system before this
-# script can run successfully.
+# Now let's setup training hyperparameters and dataset.
 
 # training and validation set
 try:
@@ -107,12 +101,7 @@ model = torch.nn.Sequential(aev_computer, nn).to(device)
 writer = tensorboardX.SummaryWriter(log_dir=log)
 
 ###############################################################################
-# Now load training and validation datasets into memory. Note that we need to
-# subtracting energies by the self energies of all atoms for each molecule.
-# This makes the range of energies in a reasonable range. The second argument
-# defines how to convert species as a list of string to tensor, that is, for
-# all supported chemical symbols, which is correspond to ``0``, which
-# correspond to ``1``, etc.
+# Now load training and validation datasets into memory.
 training = torchani.data.BatchedANIDataset(
     training_path, consts.species_to_tensor, batch_size, device=device,
     transform=[energy_shifter.subtract_from_dataset])
@@ -122,32 +111,8 @@ validation = torchani.data.BatchedANIDataset(
     transform=[energy_shifter.subtract_from_dataset])
 
 ###############################################################################
-# When iterating the dataset, we will get pairs of input and output
-# ``(species_coordinates, properties)``, where ``species_coordinates`` is the
-# input and ``properties`` is the output.
-#
-# ``species_coordinates`` is a list of species-coordinate pairs, with shape
-# ``(N, Na)`` and ``(N, Na, 3)``. The reason for getting this type is, when
-# loading the dataset and generating minibatches, the whole dataset are
-# shuffled and each minibatch contains structures of molecules with a wide
-# range of number of atoms. Molecules of different number of atoms are batched
-# into single by padding. The way padding works is: adding ghost atoms, with
-# species 'X', and do computations as if they were normal atoms. But when
-# computing AEVs, atoms with species `X` would be ignored. To avoid computation
-# wasting on padding atoms, minibatches are further splitted into chunks. Each
-# chunk contains structures of molecules of similar size, which minimize the
-# total number of padding atoms required to add. The input list
-# ``species_coordinates`` contains chunks of that minibatch we are getting. The
-# batching and chunking happens automatically, so the user does not need to
-# worry how to construct chunks, but the user need to compute the energies for
-# each chunk and concat them into single tensor.
-#
-# The output, i.e. ``properties`` is a dictionary holding each property. This
-# allows us to extend TorchANI in the future to training forces and properties.
-#
-# We have tools to deal with these data types at :attr:`torchani.ignite` that
-# allow us to easily combine the dataset with pytorch ignite. These tools can
-# be used as follows:
+# We have tools to deal with the chunking (see :ref:`training-example`). These
+# tools can be used as follows:
 container = torchani.ignite.Container({'energies': model})
 optimizer = torch.optim.Adam(model.parameters())
 trainer = ignite.engine.create_supervised_trainer(
