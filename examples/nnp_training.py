@@ -217,7 +217,7 @@ mse = torch.nn.MSELoss()
 if not pretrained:
     print("pre-training...")
     epoch = 0
-    for i in range(pretrain_epoches):
+    for _ in range(pretrain_epoches):
         for batch_x, batch_y in tqdm.tqdm(training):
             true_energies = batch_y['energies']
             predicted_energies = []

@@ -407,8 +407,10 @@ if sys.version_info[0] > 2:
                     'please install pytorch-ignite-nightly from PYPI')
 
             self.ignite = ignite
+
             class dummy:
                 pass
+
             self.ignite_tools = dummy()
             self.ignite_tools.Container = Container
             self.ignite_tools.MSELoss = MSELoss
