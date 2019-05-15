@@ -16,9 +16,9 @@ import torch
 import ignite
 import torchani
 import timeit
-import tensorboardX
 import os
 import ignite.contrib.handlers
+import torch.utils.tensorboard
 
 
 # training and validation set
@@ -98,7 +98,7 @@ model = nn.to(device)
 
 ###############################################################################
 # This part is also a line by line copy
-writer = tensorboardX.SummaryWriter(log_dir=log)
+writer = torch.utils.tensorboard.SummaryWriter(log_dir=log)
 
 ###############################################################################
 # Here we don't need to construct :class:`torchani.data.BatchedANIDataset`

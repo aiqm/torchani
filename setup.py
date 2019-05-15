@@ -19,7 +19,7 @@ setup_attrs = {
     'test_suite': 'nose.collector',
     'tests_require': [
         'nose',
-        'tensorboardX',
+        'tb-nightly',
         'tqdm',
         'ase',
         'coverage',
