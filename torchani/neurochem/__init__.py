@@ -8,7 +8,6 @@ import bz2
 import lark
 import struct
 import itertools
-import ignite
 import math
 import timeit
 from . import _six  # noqa:F401
@@ -17,7 +16,6 @@ import sys
 from ..nn import ANIModel, Ensemble, Gaussian
 from ..utils import EnergyShifter, ChemicalSymbolsToInts
 from ..aev import AEVComputer
-from ..ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MAEMetric
 
 
 class Constants(collections.abc.Mapping):
@@ -400,6 +398,21 @@ if sys.version_info[0] > 2:
         def __init__(self, filename, device=torch.device('cuda'), tqdm=False,
                      tensorboard=None, aev_caching=False,
                      checkpoint_name='model.pt'):
+            try:
+                import ignite
+                from ..ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MAEMetric
+            except ImportError:
+                raise RuntimeError(
+                    'NeuroChem Trainer requires ignite,'
+                    'please install pytorch-ignite-nightly from PYPI')
+
+            self.ignite = ignite
+            self.ignite_tools.Container = Container
+            self.ignite_tools.MSELoss = MSELoss
+            self.ignite_tools.TransformedLoss = TransformedLoss
+            self.ignite_tools.RMSEMetric = RMSEMetric
+            self.ignite_tools.MAEMetric = MAEMetric
+
             self.filename = filename
             self.device = device
             self.aev_caching = aev_caching
@@ -636,12 +649,12 @@ if sys.version_info[0] > 2:
                 self.nnp = self.model
             else:
                 self.nnp = torch.nn.Sequential(self.aev_computer, self.model)
-            self.container = Container({'energies': self.nnp}).to(self.device)
+            self.container = self.ignite_tools.Container({'energies': self.nnp}).to(self.device)
 
             # losses
-            self.mse_loss = MSELoss('energies')
-            self.exp_loss = TransformedLoss(
-                MSELoss('energies'),
+            self.mse_loss = self.ignite_tools.MSELoss('energies')
+            self.exp_loss = self.ignite_tools.TransformedLoss(
+                self.ignite_tools.MSELoss('energies'),
                 lambda x: 0.5 * (torch.exp(2 * x) - 1))
 
             if params:
@@ -652,12 +665,12 @@ if sys.version_info[0] > 2:
             self.best_validation_rmse = math.inf
 
         def evaluate(self, dataset):
-            """Evaluate on given dataset to compute RMSE and MAE."""
-            evaluator = ignite.engine.create_supervised_evaluator(
+            """Evaluate on given dataset to compute RMSE and MaxAE."""
+            evaluator = self.ignite.engine.create_supervised_evaluator(
                 self.container,
                 metrics={
-                    'RMSE': RMSEMetric('energies'),
-                    'MAE': MAEMetric('energies'),
+                    'RMSE': self.ignite_tools.RMSEMetric('energies'),
+                    'MaxAE': self.ignite_tools.MaxAEMetric('energies'),
                 }
             )
             evaluator.run(dataset)
@@ -689,38 +702,38 @@ if sys.version_info[0] > 2:
 
             def decorate(trainer):
 
-                @trainer.on(ignite.engine.Events.STARTED)
+                @trainer.on(self.ignite.engine.Events.STARTED)
                 def initialize(trainer):
                     trainer.state.no_improve_count = 0
                     trainer.state.epoch += self.global_epoch
                     trainer.state.iteration += self.global_iteration
 
-                @trainer.on(ignite.engine.Events.COMPLETED)
+                @trainer.on(self.ignite.engine.Events.COMPLETED)
                 def finalize(trainer):
                     self.global_epoch = trainer.state.epoch
                     self.global_iteration = trainer.state.iteration
 
                 if self.nmax > 0:
-                    @trainer.on(ignite.engine.Events.EPOCH_COMPLETED)
+                    @trainer.on(self.ignite.engine.Events.EPOCH_COMPLETED)
                     def terminate_when_nmax_reaches(trainer):
                         if trainer.state.epoch >= self.nmax:
                             trainer.terminate()
 
                 if self.tqdm is not None:
-                    @trainer.on(ignite.engine.Events.EPOCH_STARTED)
+                    @trainer.on(self.ignite.engine.Events.EPOCH_STARTED)
                     def init_tqdm(trainer):
                         trainer.state.tqdm = self.tqdm(
                             total=len(self.training_set), desc='epoch')
 
-                    @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
+                    @trainer.on(self.ignite.engine.Events.ITERATION_COMPLETED)
                     def update_tqdm(trainer):
                         trainer.state.tqdm.update(1)
 
-                    @trainer.on(ignite.engine.Events.EPOCH_COMPLETED)
+                    @trainer.on(self.ignite.engine.Events.EPOCH_COMPLETED)
                     def finalize_tqdm(trainer):
                         trainer.state.tqdm.close()
 
-                @trainer.on(ignite.engine.Events.EPOCH_STARTED)
+                @trainer.on(self.ignite.engine.Events.EPOCH_STARTED)
                 def validation_and_checkpoint(trainer):
                     trainer.state.rmse, trainer.state.mae = \
                         self.evaluate(self.validation_set)
@@ -736,7 +749,7 @@ if sys.version_info[0] > 2:
                         trainer.terminate()
 
                 if self.tensorboard is not None:
-                    @trainer.on(ignite.engine.Events.EPOCH_STARTED)
+                    @trainer.on(self.ignite.engine.Events.EPOCH_STARTED)
                     def log_per_epoch(trainer):
                         elapsed = round(timeit.default_timer() - start, 2)
                         epoch = trainer.state.epoch
@@ -764,7 +777,7 @@ if sys.version_info[0] > 2:
                             self.tensorboard.add_scalar(
                                 'training_mae_vs_epoch', training_mae, epoch)
 
-                    @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
+                    @trainer.on(self.ignite.engine.Events.ITERATION_COMPLETED)
                     def log_loss(trainer):
                         iteration = trainer.state.iteration
                         loss = trainer.state.output
@@ -776,11 +789,11 @@ if sys.version_info[0] > 2:
             # training using mse loss first until the validation MAE decrease
             # to < 1 Hartree
             optimizer = torch.optim.Adam(self.parameters, lr=lr)
-            trainer = ignite.engine.create_supervised_trainer(
+            trainer = self.ignite.engine.create_supervised_trainer(
                 self.container, optimizer, self.mse_loss)
             decorate(trainer)
 
-            @trainer.on(ignite.engine.Events.EPOCH_STARTED)
+            @trainer.on(self.ignite.engine.Events.EPOCH_STARTED)
             def terminate_if_smaller_enough(trainer):
                 if trainer.state.mae < 1.0:
                     trainer.terminate()
@@ -789,7 +802,7 @@ if sys.version_info[0] > 2:
 
             while lr > self.min_lr:
                 optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
-                trainer = ignite.engine.create_supervised_trainer(
+                trainer = self.ignite.engine.create_supervised_trainer(
                     self.container, optimizer, self.exp_loss)
                 decorate(trainer)
                 trainer.run(self.training_set, max_epochs=math.inf)
