@@ -212,7 +212,7 @@ pretrained = os.path.isfile(latest_checkpoint)
 ###############################################################################
 # If the model is not pretrained yet, we need to run the pretrain.
 pretrain_epoches = 10
-mse = torch.nn.MSELoss()
+mse = torch.nn.MSELoss(reduction='none')
 
 if not pretrained:
     print("pre-training...")
@@ -221,11 +221,14 @@ if not pretrained:
         for batch_x, batch_y in tqdm.tqdm(training):
             true_energies = batch_y['energies']
             predicted_energies = []
+            num_atoms = []
             for chunk_species, chunk_coordinates in batch_x:
+                num_atoms.append((chunk_species >= 0).sum(dim=1))
                 _, chunk_energies = model((chunk_species, chunk_coordinates))
                 predicted_energies.append(chunk_energies)
+            num_atoms = torch.cat(num_atoms)
             predicted_energies = torch.cat(predicted_energies)
-            loss = mse(predicted_energies, true_energies)
+            loss = (mse(predicted_energies, true_energies) / num_atoms).mean()
             loss.backward()
             optimizer.step()
     torch.save({
@@ -307,11 +310,14 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
     for i, (batch_x, batch_y) in tqdm.tqdm(enumerate(training), total=len(training)):
         true_energies = batch_y['energies']
         predicted_energies = []
+        num_atoms = []
         for chunk_species, chunk_coordinates in batch_x:
+            num_atoms.append((chunk_species >= 0).sum(dim=1))
             _, chunk_energies = model((chunk_species, chunk_coordinates))
             predicted_energies.append(chunk_energies)
+        num_atoms = torch.cat(num_atoms)
         predicted_energies = torch.cat(predicted_energies)
-        loss = mse(predicted_energies, true_energies)
+        loss = (mse(predicted_energies, true_energies) / num_atoms).mean()
         loss = 0.5 * (torch.exp(2 * loss) - 1)
         nn.zero_grad()
         loss.backward()
