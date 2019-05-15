@@ -17,12 +17,13 @@ will use the same configuration as specified as in `inputtrain.ipt`_
 """
 
 ###############################################################################
-# To begin with, let's first import the modules we will use:
+# To begin with, let's first import the modules and setup devices we will use:
 import torch
 import torchani
 import os
 import math
 import torch.utils.tensorboard
+import tqdm
 
 # device to run the training
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -64,12 +65,11 @@ species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
 # you should manually set the path of these files in your system before this
 # script can run successfully.
 #
-# Now load training and validation datasets into memory. Note that we need to
-# subtracting energies by the self energies of all atoms for each molecule.
-# This makes the range of energies in a reasonable range. The second argument
-# defines how to convert species as a list of string to tensor, that is, for
-# all supported chemical symbols, which is correspond to ``0``, which
-# correspond to ``1``, etc.
+# Also note that we need to subtracting energies by the self energies of all
+# atoms for each molecule. This makes the range of energies in a reasonable
+# range. The second argument defines how to convert species as a list of string
+# to tensor, that is, for all supported chemical symbols, which is correspond to
+# ``0``, which correspond to ``1``, etc.
 
 try:
     path = os.path.dirname(os.path.realpath(__file__))
@@ -114,8 +114,7 @@ validation = torchani.data.BatchedANIDataset(
 
 
 ###############################################################################
-# Now let's define atomic neural networks. Here in this demo, we use the same
-# size of neural network for all atom types, but this is not necessary.
+# Now let's define atomic neural networks.
 
 H_network = torch.nn.Sequential(
     torch.nn.Linear(384, 160),
@@ -167,7 +166,9 @@ model = torch.nn.Sequential(aev_computer, nn).to(device)
 ###############################################################################
 # Now let's setup the optimizer. We need to specify different weight decay rate
 # for different parameters.
+#
 # .. note::
+#
 #   The weight decay in `inputtrain.ipt`_ is named "l2", but it is actually not
 #   L2 regularization. The confusion between L2 and weight decay is a common
 #   mistake in deep learning.  See: `Decoupled Weight Decay Regularization`_
@@ -195,11 +196,12 @@ optimizer = torch.optim.Adam([
 
 ###############################################################################
 # The way ANI trains a neural network potential looks like this:
+#
 # Phase 1: Pretrain the model by minimizing MSE loss
+#
 # Phase 2: Train the model by minimizing the exponential loss, until validation
-#   RMSE no longer improves for a certain steps, decay the learning rate and
-#   repeat the same process, stop until the learning rate is smaller than a
-#   certain number.
+# RMSE no longer improves for a certain steps, decay the learning rate and repeat
+# the same process, stop until the learning rate is smaller than a certain number.
 #
 # We first read the checkpoint files to find where we are. We use `latest.pt`
 # to store current training state. If `latest.pt` does not exist, this
@@ -208,8 +210,7 @@ latest_checkpoint = 'latest.pt'
 pretrained = os.path.isfile(latest_checkpoint)
 
 ###############################################################################
-# If the model is already pretrained, then we just load the lastest checkpoint
-# file and nothing else should be done. Otherwise we need to run the pretrain.
+# If the model is not pretrained yet, we need to run the pretrain.
 pretrain_epoches = 10
 mse = torch.nn.MSELoss()
 
@@ -241,13 +242,12 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, pa
 tensorboard = torch.utils.tensorboard.SummaryWriter()
 
 ###############################################################################
-# If pretrain phase has been done, then resume normal training
-if pretrained:
-    checkpoint = torch.load(latest_checkpoint)
-    nn.load_state_dict(checkpoint['nn'])
-    optimizer.load_state_dict(checkpoint['optimizer'])
-    if 'scheduler' in checkpoint:
-        scheduler.load_state_dict(checkpoint['scheduler'])
+# Resume training from previously saved checkpoints:
+checkpoint = torch.load(latest_checkpoint)
+nn.load_state_dict(checkpoint['nn'])
+optimizer.load_state_dict(checkpoint['optimizer'])
+if 'scheduler' in checkpoint:
+    scheduler.load_state_dict(checkpoint['scheduler'])
 
 ###############################################################################
 # During training, we need to validate on validation set and if validation error
@@ -277,18 +277,21 @@ def validate():
 
 
 ###############################################################################
-# Finally, we come to the training loop
+# Finally, we come to the training loop.
+#
 # In this tutorial, we are setting the maximum epoch to a very small number,
 # only to make this demo terminate fast. For serious training, this should be
-# set to a much larger value or even `math.inf`
-max_epochs = 20
+# set to a much larger value or even ``math.inf``
+max_epochs = 200
 early_stopping_learning_rate = 1.0E-5
 best_model_checkpoint = 'best.pt'
 
 for _ in range(scheduler.last_epoch + 1, max_epochs):
     rmse = validate()
-    scheduler.step(rmse)
     learning_rate = optimizer.param_groups[0]['lr']
+
+    if learning_rate < early_stopping_learning_rate:
+        break
 
     tensorboard.add_scalar('validation_rmse', rmse, scheduler.last_epoch)
     tensorboard.add_scalar('best_validation_rmse', scheduler.best, scheduler.last_epoch)
@@ -298,7 +301,9 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
     if scheduler.is_better(rmse, scheduler.best):
         torch.save(nn.state_dict(), best_model_checkpoint)
 
-    for i, (batch_x, batch_y) in enumerate(training):
+    scheduler.step(rmse)
+
+    for i, (batch_x, batch_y) in tqdm.tqdm(enumerate(training), total=len(training)):
         true_energies = batch_y['energies']
         predicted_energies = []
         for chunk_species, chunk_coordinates in batch_x:
@@ -307,6 +312,7 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
         predicted_energies = torch.cat(predicted_energies)
         loss = mse(predicted_energies, true_energies)
         loss = 0.5 * (torch.exp(2 * loss) - 1)
+        nn.zero_grad()
         loss.backward()
         optimizer.step()
 
