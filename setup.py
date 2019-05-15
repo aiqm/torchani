@@ -15,7 +15,6 @@ setup_attrs = {
     'install_requires': [
         'torch-nightly',
         'lark-parser',
-        'h5py',
     ],
     'test_suite': 'nose.collector',
     'tests_require': [
@@ -24,6 +23,7 @@ setup_attrs = {
         'tqdm',
         'ase',
         'coverage',
+        'h5py',
         'pytorch-ignite-nightly',
     ],
 }

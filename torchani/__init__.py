@@ -33,7 +33,6 @@ from . import models
 from pkg_resources import get_distribution, DistributionNotFound
 import sys
 if sys.version_info[0] > 2:
-    from . import data
 
 try:
     __version__ = get_distribution(__name__).version
@@ -42,7 +41,7 @@ except DistributionNotFound:
     pass
 
 __all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble',
-           'utils', 'neurochem', 'data', 'models']
+           'utils', 'neurochem', 'models']
 
 try:
     from . import ase  # noqa: F401
@@ -55,5 +54,7 @@ if sys.version_info[0] > 2:
     try:
         from . import ignite  # noqa: F401
         __all__.append('ignite')
+        from . import data  # noqa: F401
+        __all__.append('data')
     except ImportError:
         pass
