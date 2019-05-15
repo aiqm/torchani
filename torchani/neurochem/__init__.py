@@ -16,6 +16,7 @@ import sys
 from ..nn import ANIModel, Ensemble, Gaussian
 from ..utils import EnergyShifter, ChemicalSymbolsToInts
 from ..aev import AEVComputer
+from ..optim import AdamW
 
 
 class Constants(collections.abc.Mapping):
@@ -795,7 +796,7 @@ if sys.version_info[0] > 2:
 
             # training using mse loss first until the validation MAE decrease
             # to < 1 Hartree
-            optimizer = torch.optim.Adam(self.parameters, lr=lr)
+            optimizer = AdamW(self.parameters, lr=lr)
             trainer = self.ignite.engine.create_supervised_trainer(
                 self.container, optimizer, self.mse_loss)
             decorate(trainer)
@@ -808,7 +809,7 @@ if sys.version_info[0] > 2:
             trainer.run(self.training_set, max_epochs=math.inf)
 
             while lr > self.min_lr:
-                optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
+                optimizer = AdamW(self.model.parameters(), lr=lr)
                 trainer = self.ignite.engine.create_supervised_trainer(
                     self.container, optimizer, self.exp_loss)
                 decorate(trainer)
