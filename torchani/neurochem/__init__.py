@@ -387,7 +387,7 @@ if sys.version_info[0] > 2:
             device (:class:`torch.device`): device to train the model
             tqdm (bool): whether to enable tqdm
             tensorboard (str): Directory to store tensorboard log file, set to
-                ``None`` to disable tensorboardX.
+                ``None`` to disable tensorboard.
             aev_caching (bool): Whether to use AEV caching.
             checkpoint_name (str): Name of the checkpoint file, checkpoints
                 will be stored in the network directory with this file name.
@@ -431,8 +431,8 @@ if sys.version_info[0] > 2:
             else:
                 self.tqdm = None
             if tensorboard is not None:
-                import tensorboardX
-                self.tensorboard = tensorboardX.SummaryWriter(
+                import torch.utils.tensorboard
+                self.tensorboard = torch.utils.tensorboard.SummaryWriter(
                     log_dir=tensorboard)
                 self.training_eval_every = 20
             else:
