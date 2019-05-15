@@ -271,7 +271,7 @@ def validate():
             _, chunk_energies = model((chunk_species, chunk_coordinates))
             predicted_energies.append(chunk_energies)
         predicted_energies = torch.cat(predicted_energies)
-        total_mse += mse_sum(predicted_energies, true_energies)
+        total_mse += mse_sum(predicted_energies, true_energies).item()
         count += predicted_energies.shape[0]
     return hartree2kcal(math.sqrt(total_mse / count))
 
