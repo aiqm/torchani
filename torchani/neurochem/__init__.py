@@ -400,18 +400,21 @@ if sys.version_info[0] > 2:
                      checkpoint_name='model.pt'):
             try:
                 import ignite
-                from ..ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MAEMetric
+                from ..ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MaxAEMetric
             except ImportError:
                 raise RuntimeError(
                     'NeuroChem Trainer requires ignite,'
                     'please install pytorch-ignite-nightly from PYPI')
 
             self.ignite = ignite
+            class dummy:
+                pass
+            self.ignite_tools = dummy()
             self.ignite_tools.Container = Container
             self.ignite_tools.MSELoss = MSELoss
             self.ignite_tools.TransformedLoss = TransformedLoss
             self.ignite_tools.RMSEMetric = RMSEMetric
-            self.ignite_tools.MAEMetric = MAEMetric
+            self.ignite_tools.MaxAEMetric = MaxAEMetric
 
             self.filename = filename
             self.device = device
@@ -675,7 +678,7 @@ if sys.version_info[0] > 2:
             )
             evaluator.run(dataset)
             metrics = evaluator.state.metrics
-            return hartree2kcal(metrics['RMSE']), hartree2kcal(metrics['MAE'])
+            return hartree2kcal(metrics['RMSE']), hartree2kcal(metrics['MaxAE'])
 
         def load_data(self, training_path, validation_path):
             """Load training and validation dataset from file.
