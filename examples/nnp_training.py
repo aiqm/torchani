@@ -229,7 +229,7 @@ if not pretrained:
             num_atoms = torch.cat(num_atoms).to(true_energies.dtype)
             predicted_energies = torch.cat(predicted_energies)
             loss = (mse(predicted_energies, true_energies) / num_atoms).mean()
-            nn.zero_grad()
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
     torch.save({
@@ -320,7 +320,7 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
         predicted_energies = torch.cat(predicted_energies)
         loss = (mse(predicted_energies, true_energies) / num_atoms).mean()
         loss = 0.5 * (torch.exp(2 * loss) - 1)
-        nn.zero_grad()
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
