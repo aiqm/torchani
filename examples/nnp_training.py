@@ -282,6 +282,7 @@ def validate():
 # In this tutorial, we are setting the maximum epoch to a very small number,
 # only to make this demo terminate fast. For serious training, this should be
 # set to a much larger value or even ``math.inf``
+print("training...")
 max_epochs = 200
 early_stopping_learning_rate = 1.0E-5
 best_model_checkpoint = 'best.pt'
