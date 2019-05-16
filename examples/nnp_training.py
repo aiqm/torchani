@@ -172,25 +172,43 @@ model = torch.nn.Sequential(aev_computer, nn).to(device)
 #   The weight decay in `inputtrain.ipt`_ is named "l2", but it is actually not
 #   L2 regularization. The confusion between L2 and weight decay is a common
 #   mistake in deep learning.  See: `Decoupled Weight Decay Regularization`_
+#   Also note that the weight decay only applies to weight in the training
+#   of ANI models, not bias.
 #
 # .. _Decoupled Weight Decay Regularization:
 #   https://arxiv.org/abs/1711.05101
 optimizer = torchani.optim.AdamW([
-    {'params': H_network[0].parameters(), 'weight_decay': 0.0001},
-    {'params': H_network[2].parameters(), 'weight_decay': 0.00001},
-    {'params': H_network[4].parameters(), 'weight_decay': 0.000001},
+    # H networks
+    {'params': [H_network[0].weight], 'weight_decay': 0.0001},
+    {'params': [H_network[0].bias]},
+    {'params': [H_network[2].weight], 'weight_decay': 0.00001},
+    {'params': [H_network[2].bias]},
+    {'params': [H_network[4].weight], 'weight_decay': 0.000001},
+    {'params': [H_network[4].bias]},
     {'params': H_network[6].parameters()},
-    {'params': C_network[0].parameters(), 'weight_decay': 0.0001},
-    {'params': C_network[2].parameters(), 'weight_decay': 0.00001},
-    {'params': C_network[4].parameters(), 'weight_decay': 0.000001},
+    # C networks
+    {'params': [C_network[0].weight], 'weight_decay': 0.0001},
+    {'params': [C_network[0].bias]},
+    {'params': [C_network[2].weight], 'weight_decay': 0.00001},
+    {'params': [C_network[2].bias]},
+    {'params': [C_network[4].weight], 'weight_decay': 0.000001},
+    {'params': [C_network[4].bias]},
     {'params': C_network[6].parameters()},
-    {'params': N_network[0].parameters(), 'weight_decay': 0.0001},
-    {'params': N_network[2].parameters(), 'weight_decay': 0.00001},
-    {'params': N_network[4].parameters(), 'weight_decay': 0.000001},
+    # N networks
+    {'params': [N_network[0].weight], 'weight_decay': 0.0001},
+    {'params': [N_network[0].bias]},
+    {'params': [N_network[2].weight], 'weight_decay': 0.00001},
+    {'params': [N_network[2].bias]},
+    {'params': [N_network[4].weight], 'weight_decay': 0.000001},
+    {'params': [N_network[4].bias]},
     {'params': N_network[6].parameters()},
-    {'params': O_network[0].parameters(), 'weight_decay': 0.0001},
-    {'params': O_network[2].parameters(), 'weight_decay': 0.00001},
-    {'params': O_network[4].parameters(), 'weight_decay': 0.000001},
+    # O networks
+    {'params': [O_network[0].weight], 'weight_decay': 0.0001},
+    {'params': [O_network[0].bias]},
+    {'params': [O_network[2].weight], 'weight_decay': 0.00001},
+    {'params': [O_network[2].bias]},
+    {'params': [O_network[4].weight], 'weight_decay': 0.000001},
+    {'params': [O_network[4].bias]},
     {'params': O_network[6].parameters()},
 ])
 

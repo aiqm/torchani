@@ -633,8 +633,11 @@ if sys.version_info[0] > 2:
                     if 'l2norm' in layer:
                         if layer['l2norm'] == 1:
                             self.parameters.append({
-                                'params': module.parameters(),
+                                'params': [module.weight],
                                 'weight_decay': layer['l2valu'],
+                            })
+                            self.parameters.append({
+                                'params': [module.bias],
                             })
                         else:
                             self.parameters.append({
