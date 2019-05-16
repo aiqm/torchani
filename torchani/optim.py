@@ -6,9 +6,9 @@ from torch.optim.optimizer import Optimizer
 
 # Copied and modified from: https://github.com/pytorch/pytorch/pull/4429
 class AdamW(Optimizer):
-    r"""Implements Adam algorithm.
+    r"""Implements AdamW algorithm.
 
-    It has been proposed in `Adam\: A Method for Stochastic Optimization`_.
+    It has been proposed in `Decoupled Weight Decay Regularization`_.
 
     Arguments:
         params (iterable): iterable of parameters to optimize or dicts defining

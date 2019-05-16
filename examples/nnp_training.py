@@ -32,6 +32,12 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # Now let's setup constants and construct an AEV computer. These numbers could
 # be found in `rHCNO-5.2R_16-3.5A_a4-8.params`_ and `sae_linfit.dat`_
 #
+# .. note::
+#
+#   Besides defining these hyperparameters programmatically,
+#   :mod:`torchani.neurochem` provide tools to read them from file. See also
+#   :ref:`training-example-ignite` for an example of usage.
+#
 # .. _rHCNO-5.2R_16-3.5A_a4-8.params:
 #   https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params
 # .. _sae_linfit.dat:
@@ -165,7 +171,8 @@ model = torch.nn.Sequential(aev_computer, nn).to(device)
 
 ###############################################################################
 # Now let's setup the optimizer. We need to specify different weight decay rate
-# for different parameters.
+# for different parameters. Since PyTorch does not have correct implementation
+# of weight decay right now, we provide the correct implementation at TorchANI.
 #
 # .. note::
 #
