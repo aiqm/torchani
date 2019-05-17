@@ -66,6 +66,14 @@ ASE Interface
 .. automodule:: torchani.ase
 .. autoclass:: torchani.ase.Calculator
 
+
+TorchANI Optimizater
+====================
+
+.. automodule:: torchani.optim
+.. autoclass:: torchani.optim.AdamW
+
+
 Ignite Helpers
 ==============
 
@@ -78,4 +86,4 @@ Ignite Helpers
 .. autofunction:: torchani.ignite.MSELoss
 .. autoclass:: torchani.ignite.DictMetric
 .. autofunction:: torchani.ignite.RMSEMetric
-.. autofunction:: torchani.ignite.MAEMetric
+.. autofunction:: torchani.ignite.MaxAEMetric

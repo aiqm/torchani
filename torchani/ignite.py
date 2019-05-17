@@ -111,10 +111,10 @@ def RMSEMetric(key):
     return DictMetric(key, RootMeanSquaredError())
 
 
-def MAEMetric(key):
+def MaxAEMetric(key):
     """Create max absolute error metric on key."""
     return DictMetric(key, MaximumAbsoluteError())
 
 
 __all__ = ['Container', 'MSELoss', 'TransformedLoss', 'RMSEMetric',
-           'MAEMetric']
+           'MaxAEMetric']
