@@ -14,17 +14,18 @@ setup_attrs = {
     'setup_requires': ['setuptools_scm'],
     'install_requires': [
         'torch-nightly',
-        'pytorch-ignite-nightly',
         'lark-parser',
-        'h5py',
     ],
     'test_suite': 'nose.collector',
     'tests_require': [
         'nose',
-        'tensorboardX',
+        'tb-nightly',
         'tqdm',
         'ase',
         'coverage',
+        'h5py',
+        'pytorch-ignite-nightly',
+        'pillow',
     ],
 }
 

@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-Use Disk Cache of AEV to Boost Training
-=======================================
+.. _training-example-ignite:
 
-In the previous :ref:`training-example` example, AEVs are computed everytime
-when needed. This is not very efficient because the AEVs actually never change
-during training. If one has a good SSD, it would be beneficial to cache these
-AEVs.  This example shows how to use disk cache to boost training
+Train Your Own Neural Network Potential, Using PyTorch-Ignite
+=============================================================
+
+We have seen how to train a neural network potential by manually writing
+training loop in :ref:`training-example`. TorchANI provide tools to work
+with PyTorch-Ignite to simplify the writing of training code. This tutorial
+shows how to use these tools to train a demo model.
+
+This tutorial assumes readers have read :ref:`training-example`.
 """
 
 ###############################################################################
-# Most part of the codes in this example are line by line copy of
-# :ref:`training-example`.
+# To begin with, let's first import the modules we will use:
 import torch
 import ignite
 import torchani
@@ -20,6 +23,9 @@ import os
 import ignite.contrib.handlers
 import torch.utils.tensorboard
 
+
+###############################################################################
+# Now let's setup training hyperparameters and dataset.
 
 # training and validation set
 try:
@@ -46,29 +52,23 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # batch size
 batch_size = 1024
 
-# log directory for tensorboardX
+# log directory for tensorboard
 log = 'runs'
 
-###############################################################################
-# Here, there is no need to manually construct aev computer and energy shifter,
-# but we do need to generate a disk cache for datasets
-const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')
-sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')
-training_cache = './training_cache'
-validation_cache = './validation_cache'
 
-# If the cache dirs already exists, then we assume these data has already been
-# cached and skip the generation part.
-if not os.path.exists(training_cache):
-    torchani.data.cache_aev(training_cache, training_path, batch_size, device,
-                            const_file, True, sae_file)
-if not os.path.exists(validation_cache):
-    torchani.data.cache_aev(validation_cache, validation_path, batch_size,
-                            device, const_file, True, sae_file)
+###############################################################################
+# Instead of manually specifying hyperparameters as in :ref:`training-example`,
+# here we will load them from files.
+const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
+sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')  # noqa: E501
+consts = torchani.neurochem.Constants(const_file)
+aev_computer = torchani.AEVComputer(**consts)
+energy_shifter = torchani.neurochem.load_sae(sae_file)
 
 
 ###############################################################################
-# The codes that define the network are also the same
+# Now let's define atomic neural networks. Here in this demo, we use the same
+# size of neural network for all atom types, but this is not necessary.
 def atomic():
     model = torch.nn.Sequential(
         torch.nn.Linear(384, 128),
@@ -85,30 +85,34 @@ def atomic():
 nn = torchani.ANIModel([atomic() for _ in range(4)])
 print(nn)
 
+###############################################################################
+# If checkpoint from previous training exists, then load it.
 if os.path.isfile(model_checkpoint):
     nn.load_state_dict(torch.load(model_checkpoint))
 else:
     torch.save(nn.state_dict(), model_checkpoint)
 
+###############################################################################
+# Let's now create a pipeline of AEV Computer --> Neural Networks.
+model = torch.nn.Sequential(aev_computer, nn).to(device)
 
 ###############################################################################
-# Except that at here we do not include aev computer into our pipeline, because
-# the cache loader will load computed AEVs from disk.
-model = nn.to(device)
-
-###############################################################################
-# This part is also a line by line copy
+# Now setup tensorboard
 writer = torch.utils.tensorboard.SummaryWriter(log_dir=log)
 
 ###############################################################################
-# Here we don't need to construct :class:`torchani.data.BatchedANIDataset`
-# object, but instead an object of :class:`torchani.data.AEVCacheLoader`
-training = torchani.data.AEVCacheLoader(training_cache)
-validation = torchani.data.AEVCacheLoader(validation_cache)
+# Now load training and validation datasets into memory.
+training = torchani.data.BatchedANIDataset(
+    training_path, consts.species_to_tensor, batch_size, device=device,
+    transform=[energy_shifter.subtract_from_dataset])
+
+validation = torchani.data.BatchedANIDataset(
+    validation_path, consts.species_to_tensor, batch_size, device=device,
+    transform=[energy_shifter.subtract_from_dataset])
 
 ###############################################################################
-# The rest of the code are again the same
-training = torchani.data.AEVCacheLoader(training_cache)
+# We have tools to deal with the chunking (see :ref:`training-example`). These
+# tools can be used as follows:
 container = torchani.ignite.Container({'energies': model})
 optimizer = torch.optim.Adam(model.parameters())
 trainer = ignite.engine.create_supervised_trainer(
@@ -126,6 +130,8 @@ pbar = ignite.contrib.handlers.ProgressBar()
 pbar.attach(trainer)
 
 
+###############################################################################
+# And some event handlers to compute validation and training metrics:
 def hartree2kcal(x):
     return 627.509 * x
 
@@ -155,6 +161,8 @@ def validation_and_checkpoint(trainer):
     torch.save(nn.state_dict(), model_checkpoint)
 
 
+###############################################################################
+# Also some to log elapsed time:
 start = timeit.default_timer()
 
 
@@ -164,10 +172,14 @@ def log_time(trainer):
     writer.add_scalar('time_vs_epoch', elapsed, trainer.state.epoch)
 
 
+###############################################################################
+# Also log the loss per iteration:
 @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
 def log_loss(trainer):
     iteration = trainer.state.iteration
     writer.add_scalar('loss_vs_iteration', trainer.state.output, iteration)
 
 
+###############################################################################
+# And finally, we are ready to run:
 trainer.run(training, max_epochs)
