@@ -286,6 +286,7 @@ if not pretrained:
             loss.backward()
             optimizer.step()
         rmse = validate()
+        print('RMSE:', rmse, 'Target RMSE:', pretrain_criterion)
     torch.save({
         'nn': nn.state_dict(),
         'optimizer': optimizer.state_dict(),
