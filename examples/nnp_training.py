@@ -260,6 +260,7 @@ def validate():
         count += predicted_energies.shape[0]
     return hartree2kcal(math.sqrt(total_mse / count))
 
+
 ###############################################################################
 # If the model is not pretrained yet, we need to run the pretrain.
 pretrain_criterion = 10  # kcal/mol
