@@ -688,7 +688,7 @@ if sys.version_info[0] > 2:
             )
             evaluator.run(dataset)
             metrics = evaluator.state.metrics
-            return hartree2kcal(metrics['RMSE'], hartree2kcal(metrics['MAE'])), hartree2kcal(metrics['MaxAE'])
+            return hartree2kcal(metrics['RMSE']), hartree2kcal(metrics['MAE']), hartree2kcal(metrics['MaxAE'])
 
         def load_data(self, training_path, validation_path):
             """Load training and validation dataset from file.
