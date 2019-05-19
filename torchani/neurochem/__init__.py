@@ -813,7 +813,7 @@ if sys.version_info[0] > 2:
 
             @trainer.on(self.ignite.engine.Events.EPOCH_STARTED)
             def terminate_if_smaller_enough(trainer):
-                if trainer.state.mae < 1.0:
+                if trainer.state.rmse < 10.0:
                     trainer.terminate()
 
             trainer.run(self.training_set, max_epochs=math.inf)
