@@ -270,7 +270,7 @@ if not pretrained:
     print("pre-training...")
     epoch = 0
     rmse = math.inf
-    pretrain_optimizer = torch.optim.Adam(nn.params())
+    pretrain_optimizer = torch.optim.Adam(nn.parameters())
     while rmse > pretrain_criterion:
         for batch_x, batch_y in tqdm.tqdm(training):
             true_energies = batch_y['energies']
