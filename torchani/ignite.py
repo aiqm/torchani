@@ -4,7 +4,7 @@ from __future__ import absolute_import
 import torch
 from . import utils
 from torch.nn.modules.loss import _Loss
-from ignite.metrics import Metric, RootMeanSquaredError
+from ignite.metrics import Metric, RootMeanSquaredError, MeanAbsoluteError
 from ignite.contrib.metrics.regression import MaximumAbsoluteError
 
 
@@ -114,6 +114,11 @@ def RMSEMetric(key):
 def MaxAEMetric(key):
     """Create max absolute error metric on key."""
     return DictMetric(key, MaximumAbsoluteError())
+
+
+def MAEMetric(key):
+    """Create max absolute error metric on key."""
+    return DictMetric(key, MeanAbsoluteError())
 
 
 __all__ = ['Container', 'MSELoss', 'TransformedLoss', 'RMSEMetric',
