@@ -769,7 +769,7 @@ if sys.version_info[0] > 2:
                         self.tensorboard.add_scalar('time_vs_epoch', elapsed,
                                                     epoch)
                         self.tensorboard.add_scalar('learning_rate_vs_epoch',
-                                                    trainer.state.lr, epoch)
+                                                    lr, epoch)
                         self.tensorboard.add_scalar('validation_rmse_vs_epoch',
                                                     trainer.state.rmse, epoch)
                         self.tensorboard.add_scalar('validation_mae_vs_epoch',
@@ -808,7 +808,6 @@ if sys.version_info[0] > 2:
             optimizer = AdamW(self.parameters, lr=lr)
             trainer = self.ignite.engine.create_supervised_trainer(
                 self.container, optimizer, self.mse_loss)
-            trainer.state.lr = lr
             decorate(trainer)
 
             @trainer.on(self.ignite.engine.Events.EPOCH_STARTED)
@@ -822,7 +821,6 @@ if sys.version_info[0] > 2:
                 optimizer = AdamW(self.model.parameters(), lr=lr)
                 trainer = self.ignite.engine.create_supervised_trainer(
                     self.container, optimizer, self.exp_loss)
-                trainer.state.lr = lr
                 decorate(trainer)
                 trainer.run(self.training_set, max_epochs=math.inf)
                 lr *= self.lr_decay
