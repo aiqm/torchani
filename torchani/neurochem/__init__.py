@@ -818,7 +818,7 @@ if sys.version_info[0] > 2:
             trainer.run(self.training_set, max_epochs=math.inf)
 
             while lr > self.min_lr:
-                optimizer = AdamW(self.model.parameters(), lr=lr)
+                optimizer = AdamW(self.parameters, lr=lr)
                 trainer = self.ignite.engine.create_supervised_trainer(
                     self.container, optimizer, self.exp_loss)
                 decorate(trainer)
