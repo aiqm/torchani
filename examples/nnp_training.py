@@ -235,50 +235,6 @@ latest_checkpoint = 'latest.pt'
 pretrained = os.path.isfile(latest_checkpoint)
 
 ###############################################################################
-# If the model is not pretrained yet, we need to run the pretrain.
-pretrain_epoches = 10
-mse = torch.nn.MSELoss(reduction='none')
-
-if not pretrained:
-    print("pre-training...")
-    epoch = 0
-    for _ in range(pretrain_epoches):
-        for batch_x, batch_y in tqdm.tqdm(training):
-            true_energies = batch_y['energies']
-            predicted_energies = []
-            num_atoms = []
-            for chunk_species, chunk_coordinates in batch_x:
-                num_atoms.append((chunk_species >= 0).sum(dim=1))
-                _, chunk_energies = model((chunk_species, chunk_coordinates))
-                predicted_energies.append(chunk_energies)
-            num_atoms = torch.cat(num_atoms).to(true_energies.dtype)
-            predicted_energies = torch.cat(predicted_energies)
-            loss = (mse(predicted_energies, true_energies) / num_atoms).mean()
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-    torch.save({
-        'nn': nn.state_dict(),
-        'optimizer': optimizer.state_dict(),
-    }, latest_checkpoint)
-
-###############################################################################
-# For phase 2, we need a learning rate scheduler to do learning rate decay
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=100)
-
-###############################################################################
-# We will also use TensorBoard to visualize our training process
-tensorboard = torch.utils.tensorboard.SummaryWriter()
-
-###############################################################################
-# Resume training from previously saved checkpoints:
-checkpoint = torch.load(latest_checkpoint)
-nn.load_state_dict(checkpoint['nn'])
-optimizer.load_state_dict(checkpoint['optimizer'])
-if 'scheduler' in checkpoint:
-    scheduler.load_state_dict(checkpoint['scheduler'])
-
-###############################################################################
 # During training, we need to validate on validation set and if validation error
 # is better than the best, then save the new best model to a checkpoint
 
@@ -303,6 +259,55 @@ def validate():
         total_mse += mse_sum(predicted_energies, true_energies).item()
         count += predicted_energies.shape[0]
     return hartree2kcal(math.sqrt(total_mse / count))
+
+
+###############################################################################
+# If the model is not pretrained yet, we need to run the pretrain.
+pretrain_criterion = 10  # kcal/mol
+mse = torch.nn.MSELoss(reduction='none')
+
+if not pretrained:
+    print("pre-training...")
+    epoch = 0
+    rmse = math.inf
+    pretrain_optimizer = torch.optim.Adam(nn.parameters())
+    while rmse > pretrain_criterion:
+        for batch_x, batch_y in tqdm.tqdm(training):
+            true_energies = batch_y['energies']
+            predicted_energies = []
+            num_atoms = []
+            for chunk_species, chunk_coordinates in batch_x:
+                num_atoms.append((chunk_species >= 0).sum(dim=1))
+                _, chunk_energies = model((chunk_species, chunk_coordinates))
+                predicted_energies.append(chunk_energies)
+            num_atoms = torch.cat(num_atoms).to(true_energies.dtype)
+            predicted_energies = torch.cat(predicted_energies)
+            loss = (mse(predicted_energies, true_energies) / num_atoms).mean()
+            pretrain_optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        rmse = validate()
+        print('RMSE:', rmse, 'Target RMSE:', pretrain_criterion)
+    torch.save({
+        'nn': nn.state_dict(),
+        'optimizer': optimizer.state_dict(),
+    }, latest_checkpoint)
+
+###############################################################################
+# For phase 2, we need a learning rate scheduler to do learning rate decay
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=100)
+
+###############################################################################
+# We will also use TensorBoard to visualize our training process
+tensorboard = torch.utils.tensorboard.SummaryWriter()
+
+###############################################################################
+# Resume training from previously saved checkpoints:
+checkpoint = torch.load(latest_checkpoint)
+nn.load_state_dict(checkpoint['nn'])
+optimizer.load_state_dict(checkpoint['optimizer'])
+if 'scheduler' in checkpoint:
+    scheduler.load_state_dict(checkpoint['scheduler'])
 
 
 ###############################################################################
