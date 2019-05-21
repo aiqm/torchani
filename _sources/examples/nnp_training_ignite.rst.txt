@@ -1,21 +1,24 @@
 .. note::
     :class: sphx-glr-download-link-note
 
-    Click :ref:`here <sphx_glr_download_examples_cache_aev.py>` to download the full example code
+    Click :ref:`here <sphx_glr_download_examples_nnp_training_ignite.py>` to download the full example code
 .. rst-class:: sphx-glr-example-title
 
-.. _sphx_glr_examples_cache_aev.py:
+.. _sphx_glr_examples_nnp_training_ignite.py:
 
 
-Use Disk Cache of AEV to Boost Training
-=======================================
+.. _training-example-ignite:
 
-In the previous :ref:`training-example` example, AEVs are computed everytime
-when needed. This is not very efficient because the AEVs actually never change
-during training. If one has a good SSD, it would be beneficial to cache these
-AEVs.  This example shows how to use disk cache to boost training
-Most part of the codes in this example are line by line copy of
-:ref:`training-example`.
+Train Your Own Neural Network Potential, Using PyTorch-Ignite
+=============================================================
+
+We have seen how to train a neural network potential by manually writing
+training loop in :ref:`training-example`. TorchANI provide tools to work
+with PyTorch-Ignite to simplify the writing of training code. This tutorial
+shows how to use these tools to train a demo model.
+
+This tutorial assumes readers have read :ref:`training-example`.
+To begin with, let's first import the modules we will use:
 
 
 .. code-block:: default
@@ -27,6 +30,18 @@ Most part of the codes in this example are line by line copy of
     import os
     import ignite.contrib.handlers
     import torch.utils.tensorboard
+
+
+
+
+
+
+
+
+Now let's setup training hyperparameters and dataset.
+
+
+.. code-block:: default
 
 
     # training and validation set
@@ -54,7 +69,7 @@ Most part of the codes in this example are line by line copy of
     # batch size
     batch_size = 1024
 
-    # log directory for tensorboardX
+    # log directory for tensorboard
     log = 'runs'
 
 
@@ -63,25 +78,18 @@ Most part of the codes in this example are line by line copy of
 
 
 
-Here, there is no need to manually construct aev computer and energy shifter,
-but we do need to generate a disk cache for datasets
+
+Instead of manually specifying hyperparameters as in :ref:`training-example`,
+here we will load them from files.
 
 
 .. code-block:: default
 
-    const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')
-    sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')
-    training_cache = './training_cache'
-    validation_cache = './validation_cache'
-
-    # If the cache dirs already exists, then we assume these data has already been
-    # cached and skip the generation part.
-    if not os.path.exists(training_cache):
-        torchani.data.cache_aev(training_cache, training_path, batch_size, device,
-                                const_file, True, sae_file)
-    if not os.path.exists(validation_cache):
-        torchani.data.cache_aev(validation_cache, validation_path, batch_size,
-                                device, const_file, True, sae_file)
+    const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
+    sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')  # noqa: E501
+    consts = torchani.neurochem.Constants(const_file)
+    aev_computer = torchani.AEVComputer(**consts)
+    energy_shifter = torchani.neurochem.load_sae(sae_file)
 
 
 
@@ -90,7 +98,8 @@ but we do need to generate a disk cache for datasets
 
 
 
-The codes that define the network are also the same
+Now let's define atomic neural networks. Here in this demo, we use the same
+size of neural network for all atom types, but this is not necessary.
 
 
 .. code-block:: default
@@ -110,12 +119,6 @@ The codes that define the network are also the same
 
     nn = torchani.ANIModel([atomic() for _ in range(4)])
     print(nn)
-
-    if os.path.isfile(model_checkpoint):
-        nn.load_state_dict(torch.load(model_checkpoint))
-    else:
-        torch.save(nn.state_dict(), model_checkpoint)
-
 
 
 
@@ -167,13 +170,15 @@ The codes that define the network are also the same
     )
 
 
-Except that at here we do not include aev computer into our pipeline, because
-the cache loader will load computed AEVs from disk.
+If checkpoint from previous training exists, then load it.
 
 
 .. code-block:: default
 
-    model = nn.to(device)
+    if os.path.isfile(model_checkpoint):
+        nn.load_state_dict(torch.load(model_checkpoint))
+    else:
+        torch.save(nn.state_dict(), model_checkpoint)
 
 
 
@@ -181,7 +186,20 @@ the cache loader will load computed AEVs from disk.
 
 
 
-This part is also a line by line copy
+Let's now create a pipeline of AEV Computer --> Neural Networks.
+
+
+.. code-block:: default
+
+    model = torch.nn.Sequential(aev_computer, nn).to(device)
+
+
+
+
+
+
+
+Now setup tensorboard
 
 
 .. code-block:: default
@@ -194,14 +212,18 @@ This part is also a line by line copy
 
 
 
-Here we don't need to construct :class:`torchani.data.BatchedANIDataset`
-object, but instead an object of :class:`torchani.data.AEVCacheLoader`
+Now load training and validation datasets into memory.
 
 
 .. code-block:: default
 
-    training = torchani.data.AEVCacheLoader(training_cache)
-    validation = torchani.data.AEVCacheLoader(validation_cache)
+    training = torchani.data.BatchedANIDataset(
+        training_path, consts.species_to_tensor, batch_size, device=device,
+        transform=[energy_shifter.subtract_from_dataset])
+
+    validation = torchani.data.BatchedANIDataset(
+        validation_path, consts.species_to_tensor, batch_size, device=device,
+        transform=[energy_shifter.subtract_from_dataset])
 
 
 
@@ -209,12 +231,12 @@ object, but instead an object of :class:`torchani.data.AEVCacheLoader`
 
 
 
-The rest of the code are again the same
+We have tools to deal with the chunking (see :ref:`training-example`). These
+tools can be used as follows:
 
 
 .. code-block:: default
 
-    training = torchani.data.AEVCacheLoader(training_cache)
     container = torchani.ignite.Container({'energies': model})
     optimizer = torch.optim.Adam(model.parameters())
     trainer = ignite.engine.create_supervised_trainer(
@@ -240,6 +262,17 @@ Let's add a progress bar for the trainer
     pbar = ignite.contrib.handlers.ProgressBar()
     pbar.attach(trainer)
 
+
+
+
+
+
+
+
+And some event handlers to compute validation and training metrics:
+
+
+.. code-block:: default
 
     def hartree2kcal(x):
         return 627.509 * x
@@ -270,6 +303,17 @@ Let's add a progress bar for the trainer
         torch.save(nn.state_dict(), model_checkpoint)
 
 
+
+
+
+
+
+
+Also some to log elapsed time:
+
+
+.. code-block:: default
+
     start = timeit.default_timer()
 
 
@@ -279,11 +323,33 @@ Let's add a progress bar for the trainer
         writer.add_scalar('time_vs_epoch', elapsed, trainer.state.epoch)
 
 
+
+
+
+
+
+
+Also log the loss per iteration:
+
+
+.. code-block:: default
+
     @trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
     def log_loss(trainer):
         iteration = trainer.state.iteration
         writer.add_scalar('loss_vs_iteration', trainer.state.output, iteration)
 
+
+
+
+
+
+
+
+And finally, we are ready to run:
+
+
+.. code-block:: default
 
     trainer.run(training, max_epochs)
 
@@ -295,10 +361,10 @@ Let's add a progress bar for the trainer
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  42.116 seconds)
+   **Total running time of the script:** ( 1 minutes  18.943 seconds)
 
 
-.. _sphx_glr_download_examples_cache_aev.py:
+.. _sphx_glr_download_examples_nnp_training_ignite.py:
 
 
 .. only :: html
@@ -310,13 +376,13 @@ Let's add a progress bar for the trainer
 
   .. container:: sphx-glr-download
 
-     :download:`Download Python source code: cache_aev.py <cache_aev.py>`
+     :download:`Download Python source code: nnp_training_ignite.py <nnp_training_ignite.py>`
 
 
 
   .. container:: sphx-glr-download
 
-     :download:`Download Jupyter notebook: cache_aev.ipynb <cache_aev.ipynb>`
+     :download:`Download Jupyter notebook: nnp_training_ignite.ipynb <nnp_training_ignite.ipynb>`
 
 
 .. only:: html

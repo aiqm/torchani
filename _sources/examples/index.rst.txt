@@ -32,26 +32,6 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI is able to use ASE interface to do structure optimization and vibration analysis, but ...">
-
-.. only:: html
-
-    .. figure:: /examples/images/thumb/sphx_glr_vibration_analysis_thumb.png
-
-        :ref:`sphx_glr_examples_vibration_analysis.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/vibration_analysis
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="This example is modified from the official `home page` and `Constant temperature MD`_ to use th...">
 
 .. only:: html
@@ -69,6 +49,26 @@ Examples
    :hidden:
 
    /examples/ase_interface
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI is able to use ASE interface to do structure optimization and vibration analysis, but ...">
+
+.. only:: html
+
+    .. figure:: /examples/images/thumb/sphx_glr_vibration_analysis_thumb.png
+
+        :ref:`sphx_glr_examples_vibration_analysis.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/vibration_analysis
 
 .. raw:: html
 
@@ -112,13 +112,13 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI train your own neural network potential.">
+    <div class="sphx-glr-thumbcontainer" tooltip="We have seen how to train a neural network potential by manually writing training loop in :ref:...">
 
 .. only:: html
 
-    .. figure:: /examples/images/thumb/sphx_glr_nnp_training_thumb.png
+    .. figure:: /examples/images/thumb/sphx_glr_nnp_training_ignite_thumb.png
 
-        :ref:`sphx_glr_examples_nnp_training.py`
+        :ref:`sphx_glr_examples_nnp_training_ignite.py`
 
 .. raw:: html
 
@@ -128,7 +128,7 @@ Examples
 .. toctree::
    :hidden:
 
-   /examples/nnp_training
+   /examples/nnp_training_ignite
 
 .. raw:: html
 
@@ -149,6 +149,26 @@ Examples
    :hidden:
 
    /examples/cache_aev
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI to train a neural network potential. We will use the sam...">
+
+.. only:: html
+
+    .. figure:: /examples/images/thumb/sphx_glr_nnp_training_thumb.png
+
+        :ref:`sphx_glr_examples_nnp_training.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/nnp_training
 .. raw:: html
 
     <div style='clear:both'></div>

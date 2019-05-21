@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+.. _neurochem-training:
+
 Train Neural Network Potential From NeuroChem Input File
 ========================================================
 

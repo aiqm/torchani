@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Computing Vibrational Frequencies Using Analytical Hessian &mdash; TorchANI 0.6 documentation</title>
+  <title>Computing Vibrational Frequencies Using Analytical Hessian &mdash; TorchANI 0.7 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.6
+                0.7
               </div>
             
           
@@ -97,6 +97,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
 <li class="toctree-l1"><a class="reference internal" href="load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nnp_training_ignite.html">Train Your Own Neural Network Potential, Using PyTorch-Ignite</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
@@ -108,6 +109,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ase">ASE Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.optim">TorchANI Optimizater</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 
@@ -209,14 +211,14 @@ vibration analysis analytically, thanks to the super power of <cite>torch.autogr
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Step     Time          Energy         fmax
-BFGS:    0 18:29:10    -2078.633392        0.6576
-BFGS:    1 18:29:10    -2078.637244        0.1905
-BFGS:    2 18:29:10    -2078.637801        0.0292
-BFGS:    3 18:29:10    -2078.637827        0.0183
-BFGS:    4 18:29:10    -2078.637849        0.0014
-BFGS:    5 18:29:10    -2078.637849        0.0001
-BFGS:    6 18:29:10    -2078.637849        0.0000
-BFGS:    7 18:29:10    -2078.637849        0.0000
+BFGS:    0 19:13:00    -2078.633392        0.6576
+BFGS:    1 19:13:00    -2078.637244        0.1905
+BFGS:    2 19:13:00    -2078.637801        0.0292
+BFGS:    3 19:13:00    -2078.637827        0.0183
+BFGS:    4 19:13:00    -2078.637849        0.0014
+BFGS:    5 19:13:00    -2078.637849        0.0001
+BFGS:    6 19:13:00    -2078.637849        0.0000
+BFGS:    7 19:13:00    -2078.637849        0.0000
 </pre></div>
 </div>
 <p>Now let’s extract coordinates and species from ASE to use it directly with
@@ -258,15 +260,30 @@ one molecule to compute, 9 means <cite>3 atoms * 3D space = 9 degree of freedom<
 <p>We are now ready to compute vibrational frequencies. The output has unit
 cm^-1. Since there are in total 9 degree of freedom, there are in total 9
 frequencies. Only the frequencies of the 3 vibrational modes are interesting.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">freq</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">vibrational_analysis</span><span class="p">(</span><span class="n">masses</span><span class="p">,</span> <span class="n">hessian</span><span class="p">)[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">freq</span><span class="p">,</span> <span class="n">modes</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">vibrational_analysis</span><span class="p">(</span><span class="n">masses</span><span class="p">,</span> <span class="n">hessian</span><span class="p">)</span>
+<span class="n">freq</span> <span class="o">=</span> <span class="n">freq</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span>
+<span class="n">modes</span> <span class="o">=</span> <span class="n">modes</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Frequencies (cm^-1):&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Modes:&#39;</span><span class="p">,</span> <span class="n">modes</span><span class="p">)</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>tensor([1913.2332, 3882.4718, 3911.2534], dtype=torch.float64)
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Frequencies (cm^-1): tensor([1913.2332, 3882.4718, 3911.2534], dtype=torch.float64)
+Modes: tensor([[[ 1.4982e-02,  6.7708e-01, -6.5043e-17],
+         [ 6.5173e-01,  1.8415e-01,  7.4464e-17],
+         [-4.2006e-02, -5.4261e-02, -1.3243e-18]],
+
+        [[ 6.8921e-01, -5.3705e-02,  6.5088e-18],
+         [-2.2467e-01,  6.5377e-01,  1.7212e-17],
+         [-2.9268e-02, -3.7806e-02, -2.3479e-18]],
+
+        [[-6.7842e-01, -6.3755e-03, -2.7368e-17],
+         [-1.6381e-01,  6.5838e-01, -5.9713e-19],
+         [ 5.3064e-02, -4.1079e-02, -1.9849e-19]]], dtype=torch.float64)
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.951 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  2.131 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-vibration-analysis-py">
 <div class="sphx-glr-download docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/238d577aeb2d49bb8355a3f5caab0f54/vibration_analysis.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">vibration_analysis.py</span></code></a></p>
