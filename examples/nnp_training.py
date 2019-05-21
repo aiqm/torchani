@@ -182,6 +182,13 @@ model = torch.nn.Sequential(aev_computer, nn).to(device)
 #   Also note that the weight decay only applies to weight in the training
 #   of ANI models, not bias.
 #
+# .. warning::
+#
+#   Currently TorchANI training with weight decay can not reproduce the training
+#   result of NeuroChem with the same training setup. If you really want to use
+#   weight decay, consider smaller rates and and make sure you do enough validation
+#   to check if you get expected result.
+#
 # .. _Decoupled Weight Decay Regularization:
 #   https://arxiv.org/abs/1711.05101
 optimizer = torchani.optim.AdamW([
