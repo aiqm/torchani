@@ -248,18 +248,19 @@ def vibrational_analysis(masses, hessian, unit='cm^-1'):
     # We solve this eigenvalue problem through Lowdin diagnolization:
     # Hq = w^2 * Tq ==> Hq = w^2 * T^(1/2) T^(1/2) q
     # Letting q' = T^(1/2) q, we then have
-    # T^(-1/2) H T^(1/2) q' = w^2 * q'
+    # T^(-1/2) H T^(-1/2) q' = w^2 * q'
     inv_sqrt_mass = (1 / masses.sqrt()).repeat_interleave(3, dim=1)  # shape (molecule, 3 * atoms)
     mass_scaled_hessian = hessian * inv_sqrt_mass.unsqueeze(1) * inv_sqrt_mass.unsqueeze(2)
     if mass_scaled_hessian.shape[0] != 1:
         raise ValueError('The input should contain only one molecule')
     mass_scaled_hessian = mass_scaled_hessian.squeeze(0)
-    eigenvalues = torch.symeig(mass_scaled_hessian).eigenvalues
+    eigenvalues, eigenvectors = torch.symeig(mass_scaled_hessian, eigenvectors=True)
     angular_frequencies = eigenvalues.sqrt()
     frequencies = angular_frequencies / (2 * math.pi)
     # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1
     wavenumbers = frequencies * 17092
-    return wavenumbers
+    modes = (eigenvectors.t() * inv_sqrt_mass).reshape(frequencies.numel(), -1, 3)
+    return wavenumbers, modes
 
 
 __all__ = ['pad', 'pad_coordinates', 'present_species', 'hessian',
