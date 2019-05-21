@@ -30,15 +30,26 @@ class TestVibrational(unittest.TestCase):
         # compute vibrational frequencies by ASE
         vib = ase.vibrations.Vibrations(molecule)
         vib.run()
-        freq = torch.tensor([numpy.real(x) for x in vib.get_frequencies()[-3:]])
+        freq = torch.tensor([numpy.real(x) for x in vib.get_frequencies()[6:]])
+        modes = []
+        for j in range(6, 6 + len(freq)):
+            modes.append(vib.get_mode(j))
+        modes = torch.tensor(modes)
         # compute vibrational by torchani
         species = model.species_to_tensor(molecule.get_chemical_symbols()).unsqueeze(0)
         coordinates = torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_grad_(True)
         _, energies = model((species, coordinates))
         hessian = torchani.utils.hessian(coordinates, energies=energies)
-        freq2 = torchani.utils.vibrational_analysis(masses[species], hessian)[-3:].float()
+        freq2, modes2 = torchani.utils.vibrational_analysis(masses[species], hessian)
+        freq2 = freq2[6:].float()
+        modes2 = modes2[6:]
         ratio = freq2 / freq
         self.assertLess((ratio - 1).abs().max(), 0.02)
+
+        diff1 = (modes - modes2).abs().max(dim=-1).values.max(dim=-1).values
+        diff2 = (modes + modes2).abs().max(dim=-1).values.max(dim=-1).values
+        diff = torch.where(diff1 < diff2, diff1, diff2)
+        self.assertLess(diff.max(), 0.02)
 
 
 if __name__ == '__main__':

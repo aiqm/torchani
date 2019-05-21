@@ -69,5 +69,9 @@ print(hessian.shape)
 # We are now ready to compute vibrational frequencies. The output has unit
 # cm^-1. Since there are in total 9 degree of freedom, there are in total 9
 # frequencies. Only the frequencies of the 3 vibrational modes are interesting.
-freq = torchani.utils.vibrational_analysis(masses, hessian)[-3:]
-print(freq)
+freq, modes = torchani.utils.vibrational_analysis(masses, hessian)
+freq = freq[-3:]
+modes = modes[-3:]
+
+print('Frequencies (cm^-1):', freq)
+print('Modes:', modes)
