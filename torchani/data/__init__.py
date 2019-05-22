@@ -8,7 +8,7 @@ from ._pyanitools import anidataloader
 import torch
 from .. import utils, neurochem, aev
 import pickle
-import numpy as np 
+import numpy as np
 from scipy.sparse import bsr_matrix
 
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -288,7 +288,7 @@ class SparseAEVCacheLoader(Dataset):
                 species_np = np.array(species_.todense())
                 species = torch.from_numpy(species_np).to(self.device)
                 aevs_np = np.stack([np.array(i.todense()) for i in aev_], axis=0)
-                aevs = torch.from_numpy(aevs_np).to(self.device) 
+                aevs = torch.from_numpy(aevs_np).to(self.device)
                 batch_X.append((species, aevs))
         return batch_X, output
 
