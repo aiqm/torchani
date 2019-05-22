@@ -252,6 +252,48 @@ class AEVCacheLoader(Dataset):
         return len(self.dataset)
 
 
+class SparseAEVCacheLoader(Dataset):
+    """Build a factory for AEV.
+
+    The computation of AEV is the most time-consuming part of the training.
+    AEV never changes during training and contains a large number of zeros.
+    Therefore, we can store the computed AEVs as sparse representation and 
+    load it during the training rather than compute it from scratch. The 
+    storage requirement for ```'cache_sparse_aev'``` is considerably less 
+    than ```'cache_aev'```.
+
+    Arguments:
+        disk_cache (str): Directory storing disk caches.
+        device (:class:`torch.dtype`): device to put tensors when iterating.
+    """
+
+    def __init__(self, disk_cache=None, device=torch.device('cpu')):
+        super(SparseAEVCacheLoader, self).__init__()
+        self.disk_cache = disk_cache
+        self.device = device
+        # load dataset from disk cache
+        dataset_path = os.path.join(disk_cache, 'dataset')
+        with open(dataset_path, 'rb') as f:
+            self.dataset = pickle.load(f)
+
+    def __getitem__(self, index):
+        _, output = self.dataset.batches[index]
+        aev_path = os.path.join(self.disk_cache, str(index))
+        with open(aev_path, 'rb') as f:
+            species_aevs = pickle.load(f)
+            batch_X = []
+            for species_, aev_ in species_aevs:
+                species_np = np.array(species_.todense())
+                species = torch.from_numpy(species_np).to(self.device)
+                aevs_np = np.stack([np.array(i.todense()) for i in aev_], axis=0)
+                aevs = torch.from_numpy(aevs_np).to(self.device) 
+                batch_X.append((species, aevs))
+        return batch_X, output
+
+    def __len__(self):
+        return len(self.dataset)
+
+
 builtin = neurochem.Builtins()
 
 
@@ -295,4 +337,52 @@ def cache_aev(output, dataset_path, batchsize, device=default_device,
             pickle.dump(aevs, f)
 
 
-__all__ = ['BatchedANIDataset', 'AEVCacheLoader', 'cache_aev']
+import numpy as np 
+from scipy.sparse import bsr_matrix 
+
+def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
+              constfile=builtin.const_file, subtract_sae=False,
+              sae_file=builtin.sae_file, enable_tqdm=True, **kwargs):
+    # if output directory does not exist, then create it
+    if not os.path.exists(output):
+        os.makedirs(output)
+
+    device = torch.device(device)
+    consts = neurochem.Constants(constfile)
+    aev_computer = aev.AEVComputer(**consts).to(device)
+
+    if subtract_sae:
+        energy_shifter = neurochem.load_sae(sae_file)
+        transform = (energy_shifter.subtract_from_dataset,)
+    else:
+        transform = ()
+
+    dataset = BatchedANIDataset(
+        dataset_path, consts.species_to_tensor, batchsize,
+        device=device, transform=transform, **kwargs
+    )
+
+    # dump out the dataset
+    filename = os.path.join(output, 'dataset')
+    with open(filename, 'wb') as f:
+        pickle.dump(dataset, f)
+
+    if enable_tqdm:
+        import tqdm
+        indices = tqdm.trange(len(dataset))
+    else:
+        indices = range(len(dataset))
+    for i in indices:
+        input_, _ = dataset[i]
+        
+        aevs = []
+        for j in input_: 
+            species_, aev_ = aev_computer(j)
+            species_ = bsr_matrix(species_.cpu().numpy())
+            aev_ = [bsr_matrix(i.cpu().numpy()) for i in aev_]
+            aevs.append((species_, aev_))
+        filename = os.path.join(output, '{}'.format(i))
+        with open(filename, 'wb') as f:
+            pickle.dump(aevs, f)  
+
+__all__ = ['BatchedANIDataset', 'AEVCacheLoader', 'cache_aev', 'SparseAEVCacheLoader', 'cache_sparse_aev']
