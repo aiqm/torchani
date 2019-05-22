@@ -8,6 +8,8 @@ from ._pyanitools import anidataloader
 import torch
 from .. import utils, neurochem, aev
 import pickle
+import numpy as np 
+from scipy.sparse import bsr_matrix
 
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -257,9 +259,9 @@ class SparseAEVCacheLoader(Dataset):
 
     The computation of AEV is the most time-consuming part of the training.
     AEV never changes during training and contains a large number of zeros.
-    Therefore, we can store the computed AEVs as sparse representation and 
-    load it during the training rather than compute it from scratch. The 
-    storage requirement for ```'cache_sparse_aev'``` is considerably less 
+    Therefore, we can store the computed AEVs as sparse representation and
+    load it during the training rather than compute it from scratch. The
+    storage requirement for ```'cache_sparse_aev'``` is considerably less
     than ```'cache_aev'```.
 
     Arguments:
@@ -337,12 +339,9 @@ def cache_aev(output, dataset_path, batchsize, device=default_device,
             pickle.dump(aevs, f)
 
 
-import numpy as np 
-from scipy.sparse import bsr_matrix 
-
 def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
-              constfile=builtin.const_file, subtract_sae=False,
-              sae_file=builtin.sae_file, enable_tqdm=True, **kwargs):
+                     constfile=builtin.const_file, subtract_sae=False,
+                     sae_file=builtin.sae_file, enable_tqdm=True, **kwargs):
     # if output directory does not exist, then create it
     if not os.path.exists(output):
         os.makedirs(output)
@@ -374,15 +373,15 @@ def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
         indices = range(len(dataset))
     for i in indices:
         input_, _ = dataset[i]
-        
         aevs = []
-        for j in input_: 
+        for j in input_:
             species_, aev_ = aev_computer(j)
             species_ = bsr_matrix(species_.cpu().numpy())
             aev_ = [bsr_matrix(i.cpu().numpy()) for i in aev_]
             aevs.append((species_, aev_))
         filename = os.path.join(output, '{}'.format(i))
         with open(filename, 'wb') as f:
-            pickle.dump(aevs, f)  
+            pickle.dump(aevs, f)
 
-__all__ = ['BatchedANIDataset', 'AEVCacheLoader', 'cache_aev', 'SparseAEVCacheLoader', 'cache_sparse_aev']
+
+__all__ = ['BatchedANIDataset', 'AEVCacheLoader', 'SparseAEVCacheLoader', 'cache_aev', 'cache_sparse_aev']
