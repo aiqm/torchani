@@ -135,12 +135,16 @@ class TestStripRedundantPadding(unittest.TestCase):
         ])
         species123 = atomic_properties123['species']
         coordinates123 = atomic_properties123['coordinates']
-        species1_, coordinates1_ = torchani.utils.strip_redundant_padding(
-            species123[:5, ...], coordinates123[:5, ...])
+        species_coordinates1_ = torchani.utils.strip_redundant_padding(
+            {'species': species123[:5, ...], 'coordinates': coordinates123[:5, ...]})
+        species1_ = species_coordinates1_['species']
+        coordinates1_ = species_coordinates1_['coordinates']
         self._assertTensorEqual(species1_, species1)
         self._assertTensorEqual(coordinates1_, coordinates1)
-        species12_, coordinates12_ = torchani.utils.strip_redundant_padding(
-            species123[:7, ...], coordinates123[:7, ...])
+        species_coordinates12_ = torchani.utils.strip_redundant_padding(
+            {'species': species123[:7, ...], 'coordinates': coordinates123[:7, ...]})
+        species12_ = species_coordinates12_['species']
+        coordinates12_ = species_coordinates12_['coordinates']
         self._assertTensorEqual(species12_, species12)
         self._assertTensorEqual(coordinates12_, coordinates12)
 
