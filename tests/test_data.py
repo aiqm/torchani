@@ -30,13 +30,14 @@ class TestData(unittest.TestCase):
         coordinates2 = torch.randn(2, 8, 3)
         species3 = torch.randint(4, (10, 20), dtype=torch.long)
         coordinates3 = torch.randn(10, 20, 3)
-        species, coordinates = torchani.utils.pad_atomic_properties([
-            (species1, coordinates1),
-            (species2, coordinates2),
-            (species3, coordinates3),
+        species_coordinates = torchani.utils.pad_atomic_properties([
+            {'species': species1, 'coordinates': coordinates1},
+            {'species': species2, 'coordinates': coordinates2},
+            {'species': species3, 'coordinates': coordinates3},
         ])
         natoms = (species >= 0).to(torch.long).sum(1)
-        chunks = torchani.data.split_batch(natoms, species, coordinates)
+        chunks = torchani.data.split_batch(natoms, species_coordinates['species'],
+                                           species_coordinates['coordinates'])
         start = 0
         last = None
         for s, c in chunks:

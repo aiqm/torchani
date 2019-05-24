@@ -168,12 +168,12 @@ class BatchedANIDataset(Dataset):
             raise ValueError('Bad path')
 
         # load full dataset
-        atomic_properties = []
+        atomic_properties_ = []
         properties = {k: [] for k in self.properties}
         for f in files:
             for m in anidataloader(f):
-                atomic_properties.append(dict(
-                    species=species_tensor_converter(m['species']),
+                atomic_properties_.append(dict(
+                    species=species_tensor_converter(m['species']).unsqueeze(0),
                     **{
                         k: torch.from_numpy(m[k]).to(torch.double)
                         for k in ['coordinates'] + list(atomic_properties)
@@ -182,7 +182,7 @@ class BatchedANIDataset(Dataset):
                 for i in properties:
                     p = torch.from_numpy(m[i]).to(torch.double)
                     properties[i].append(p)
-        atomic_properties = utils.pad_atomic_properties(atomic_properties)
+        atomic_properties = utils.pad_atomic_properties(atomic_properties_)
         for i in properties:
             properties[i] = torch.cat(properties[i])
 
@@ -217,8 +217,8 @@ class BatchedANIDataset(Dataset):
         self.batches = []
         num_batches = (molecules + batch_size - 1) // batch_size
         for i in range(num_batches):
-            batch_properties = {k: v[i] for k, v in properties}
-            batch_atomic_properties = {k: v[i] for k, v in atomic_properties}
+            batch_properties = {k: v[i] for k, v in properties.items()}
+            batch_atomic_properties = {k: v[i] for k, v in atomic_properties.items()}
             species = batch_atomic_properties['species']
             natoms = (species >= 0).to(torch.long).sum(1)
 
