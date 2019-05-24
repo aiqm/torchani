@@ -67,6 +67,7 @@ class TestData(unittest.TestCase):
     def testTensorShape(self):
         for i in self.ds:
             input_, output = i
+            input_ = [{'species': x[0], 'coordinates': x[1]} for x in input_]
             species_coordinates = torchani.utils.pad_atomic_properties(input_)
             species = species_coordinates['species']
             coordinates = species_coordinates['coordinates']
