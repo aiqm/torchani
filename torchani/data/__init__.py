@@ -174,7 +174,7 @@ class BatchedANIDataset(Dataset):
                     species=species_tensor_converter(m['species']),
                     **{
                         k: torch.from_numpy(m[k]).to(torch.double)
-                        for k in ('coordinates',) + atomic_properties
+                        for k in ['coordinates'] + list(atomic_properties)
                     }
                 ))
                 for i in properties:
