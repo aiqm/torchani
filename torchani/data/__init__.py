@@ -19,21 +19,22 @@ def chunk_counts(counts, split):
     for i in split:
         count_chunks.append(counts[start:i])
         start = i
-    chunk_conformations = [sum([y[1] for y in x]) for x in count_chunks]
+    chunk_molecules = [sum([y[1] for y in x]) for x in count_chunks]
     chunk_maxatoms = [x[-1][0] for x in count_chunks]
-    return chunk_conformations, chunk_maxatoms
+    return chunk_molecules, chunk_maxatoms
 
 
 def split_cost(counts, split):
     split_min_cost = 40000
     cost = 0
-    chunk_conformations, chunk_maxatoms = chunk_counts(counts, split)
-    for conformations, maxatoms in zip(chunk_conformations, chunk_maxatoms):
-        cost += max(conformations * maxatoms ** 2, split_min_cost)
+    chunk_molecules, chunk_maxatoms = chunk_counts(counts, split)
+    for molecules, maxatoms in zip(chunk_molecules, chunk_maxatoms):
+        cost += max(molecules * maxatoms ** 2, split_min_cost)
     return cost
 
 
-def split_batch(natoms, species, coordinates):
+def split_batch(natoms, atomic_properties):
+
     # count number of conformation by natoms
     natoms = natoms.tolist()
     counts = []
@@ -45,6 +46,7 @@ def split_batch(natoms, species, coordinates):
             counts[-1][1] += 1
         else:
             counts.append([i, 1])
+
     # find best split using greedy strategy
     split = []
     cost = split_cost(counts, split)
@@ -64,19 +66,21 @@ def split_batch(natoms, species, coordinates):
         if improved:
             split = cycle_split
             cost = cycle_cost
+
     # do split
-    start = 0
-    species_coordinates = []
-    chunk_conformations, _ = chunk_counts(counts, split)
-    for i in chunk_conformations:
-        s = species
-        end = start + i
-        s = species[start:end, ...]
-        c = coordinates[start:end, ...]
-        s, c = utils.strip_redundant_padding(s, c)
-        species_coordinates.append((s, c))
-        start = end
-    return species_coordinates
+    chunk_molecules, _ = chunk_counts(counts, split)
+    num_chunks = None
+    for k in atomic_properties:
+        atomic_properties[k] = atomic_properties[k].split(chunk_molecules)
+        if num_chunks is None:
+            num_chunks = len(atomic_properties[k])
+        else:
+            assert num_chunks == len(atomic_properties[k])
+    chunks = []
+    for i in range(num_chunks):
+        chunk = {k: atomic_properties[k][i] for k in atomic_properties}
+        chunks.append(utils.strip_redundant_padding(chunk))
+    return chunks
 
 
 class BatchedANIDataset(Dataset):
@@ -116,9 +120,20 @@ class BatchedANIDataset(Dataset):
         batch_size (int): Number of different 3D structures in a single
             minibatch.
         shuffle (bool): Whether to shuffle the whole dataset.
-        properties (list): List of keys in the dataset to be loaded.
-            ``'species'`` and ``'coordinates'`` are always loaded and need not
-            to be specified here.
+        properties (list): List of keys of `molecular` properties in the
+            dataset to be loaded. Here `molecular` means, no matter the number
+            of atoms that property always have fixed size, i.e. the tensor
+            shape of molecular properties should be (molecule, ...). An example
+            of molecular property is the molecular energies. ``'species'`` and
+            ``'coordinates'`` are always loaded and need not to be specified
+            anywhere.
+        atomic_properties (list): List of keys of `atomic` properties in the
+            dataset to be loaded. Here `atomic` means, the size of property
+            is proportional to the number of atoms in the molecule, i.e. the
+            tensor shape of atomic properties should be (molecule, atoms, ...).
+            An example of atomic property is the forces. ``'species'`` and
+            ``'coordinates'`` are always loaded and need not to be specified
+            anywhere.
         transform (list): List of :class:`collections.abc.Callable` that
             transform the data. Callables must take species, coordinates,
             and properties of the whole dataset as arguments, and return
@@ -132,7 +147,7 @@ class BatchedANIDataset(Dataset):
     """
 
     def __init__(self, path, species_tensor_converter, batch_size,
-                 shuffle=True, properties=['energies'], transform=(),
+                 shuffle=True, properties=('energies'), atomic_properties=(), transform=(),
                  dtype=torch.get_default_dtype(), device=default_device):
         super(BatchedANIDataset, self).__init__()
         self.properties = properties
@@ -151,68 +166,80 @@ class BatchedANIDataset(Dataset):
             raise ValueError('Bad path')
 
         # load full dataset
-        species_coordinates = []
+        atomic_properties = []
         properties = {k: [] for k in self.properties}
         for f in files:
             for m in anidataloader(f):
-                s = species_tensor_converter(m['species'])
-                c = torch.from_numpy(m['coordinates']).to(torch.double)
-                species_coordinates.append((s, c))
+                atomic_properties.append(dict(
+                    species=species_tensor_converter(m['species']),
+                    **{
+                        k: torch.from_numpy(m[k]).to(torch.double)
+                        for k in ('coordinates',) + atomic_properties
+                    }
+                ))
                 for i in properties:
                     p = torch.from_numpy(m[i]).to(torch.double)
                     properties[i].append(p)
-        species, coordinates = utils.pad_coordinates(species_coordinates)
+        atomic_properties = utils.pad_atomic_properties(atomic_properties)
         for i in properties:
             properties[i] = torch.cat(properties[i])
 
         # shuffle if required
-        conformations = coordinates.shape[0]
+        molecules = atomic_properties['species'].shape[0]
         if shuffle:
-            indices = torch.randperm(conformations)
-            species = species.index_select(0, indices)
-            coordinates = coordinates.index_select(0, indices)
+            indices = torch.randperm(molecules)
             for i in properties:
                 properties[i] = properties[i].index_select(0, indices)
+            for i in atomic_properties:
+                atomic_properties[i] = atomic_properties[i].index_select(0, indices)
 
         # do transformations on data
         for t in transform:
-            species, coordinates, properties = t(species, coordinates,
-                                                 properties)
+            atomic_properties, properties = t(atomic_properties, properties)
 
         # convert to desired dtype
-        species = species
-        coordinates = coordinates.to(dtype)
         for k in properties:
             properties[k] = properties[k].to(dtype)
+        for k in atomic_properties:
+            if k == 'species':
+                continue
+            atomic_properties[k] = atomic_properties[k].to(dtype)
 
-        # split into minibatches, and strip redundant padding
-        natoms = (species >= 0).to(torch.long).sum(1)
-        batches = []
-        num_batches = (conformations + batch_size - 1) // batch_size
+        # split into minibatches
+        for k in properties:
+            properties[k] = properties[k].split(batch_size)
+        for k in atomic_properties:
+            atomic_properties[k] = atomic_properties[k].split(batch_size)
+
+        # further split batch into chunks and strip redundant padding
+        self.batches = []
+        num_batches = (molecules + batch_size - 1) // batch_size
         for i in range(num_batches):
-            start = i * batch_size
-            end = min((i + 1) * batch_size, conformations)
-            natoms_batch = natoms[start:end]
+            batch_properties = {k: v[i] for k, v in properties}
+            batch_atomic_properties = {k: v[i] for k, v in atomic_properties}
+            species = batch_atomic_properties['species']
+            natoms = (species >= 0).to(torch.long).sum(1)
+
             # sort batch by number of atoms to prepare for splitting
-            natoms_batch, indices = natoms_batch.sort()
-            species_batch = species[start:end, ...].index_select(0, indices)
-            coordinates_batch = coordinates[start:end, ...] \
-                .index_select(0, indices)
-            properties_batch = {
-                k: properties[k][start:end, ...].index_select(0, indices)
-                .to(self.device) for k in properties
-            }
-            # further split batch into chunks
-            species_coordinates = split_batch(natoms_batch, species_batch,
-                                              coordinates_batch)
-            batch = species_coordinates, properties_batch
-            batches.append(batch)
-        self.batches = batches
+            natoms, indices = natoms.sort()
+            for k in batch_properties:
+                batch_properties[k] = batch_properties[k].index_select(0, indices)
+            for k in batch_atomic_properties:
+                batch_atomic_properties[k] = batch_atomic_properties[k].index_select(0, indices)
+
+            batch_atomic_properties = split_batch(natoms, batch_atomic_properties)
+            self.batches.append((batch_atomic_properties, batch_properties))
 
     def __getitem__(self, idx):
-        species_coordinates, properties = self.batches[idx]
-        species_coordinates = [(s.to(self.device), c.to(self.device))
-                               for s, c in species_coordinates]
+        atomic_properties, properties = self.batches[idx]
+        species_coordinates = []
+        for chunk in atomic_properties:
+            for k in chunk:
+                chunk[k] = chunk[k].to(self.device)
+            species_coordinates.append((chunk['species'], chunk['coordinates']))
+        for k in properties:
+            properties[k] = properties[k].to(self.device)
+        properties['atomic'] = atomic_properties
         return species_coordinates, properties
 
     def __len__(self):

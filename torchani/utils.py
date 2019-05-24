@@ -1,6 +1,7 @@
 import torch
 import torch.utils.data
 import math
+from collections import defaultdict
 
 
 def pad(species):
@@ -30,41 +31,35 @@ def pad(species):
     return torch.cat(padded_species)
 
 
-def pad_coordinates(species_coordinates):
-    """Put different species and coordinates together into single tensor.
+def pad_atomic_properties(atomic_properties, padding_values=defaultdict(lambda: 0.0, species=-1)):
+    """Put a sequence of atomic properties together into single tensor.
 
-    If the species and coordinates are from molecules of different number of
-    total atoms, then ghost atoms with atom type -1 and coordinate (0, 0, 0)
-    will be added to make it fit into the same shape.
+    Inputs are `[{'species': ..., ...}, {'species': ..., ...}, ...]` and the outputs
+    are `{'species': padded_tensor, ...}`
 
     Arguments:
         species_coordinates (:class:`collections.abc.Sequence`): sequence of
-            pairs of species and coordinates. Species must be of shape
-            ``(N, A)`` and coordinates must be of shape ``(N, A, 3)``, where
-            ``N`` is the number of 3D structures, ``A`` is the number of atoms.
-
-    Returns:
-        (:class:`torch.Tensor`, :class:`torch.Tensor`): Species, and
-        coordinates batched together.
+             atomic properties.
+        padding_values (dict): the value to fill to pad tensors to same size
     """
-    max_atoms = max([c.shape[1] for _, c in species_coordinates])
-    species = []
-    coordinates = []
-    for s, c in species_coordinates:
-        natoms = c.shape[1]
-        if len(s.shape) == 1:
-            s = s.unsqueeze(0)
-        if natoms < max_atoms:
-            padding = torch.full((s.shape[0], max_atoms - natoms), -1,
-                                 dtype=torch.long, device=s.device)
-            s = torch.cat([s, padding], dim=1)
-            padding = torch.full((c.shape[0], max_atoms - natoms, 3), 0,
-                                 dtype=c.dtype, device=c.device)
-            c = torch.cat([c, padding], dim=1)
-        s = s.expand(c.shape[0], max_atoms)
-        species.append(s)
-        coordinates.append(c)
-    return torch.cat(species), torch.cat(coordinates)
+    keys = list(atomic_properties[0])
+    anykey = keys[0]
+    max_atoms = max(x[anykey].shape[1] for x in atomic_properties)
+    padded = {k: [] for k in keys}
+    for p in atomic_properties:
+        num_molecules = max(v.shape[0] for v in p.values())
+        for k, v in p.items():
+            shape = list(v.shape)
+            padatoms = max_atoms - shape[1]
+            shape[1] = padatoms
+            padding = v.new_full(shape, padding_values[k])
+            v = torch.cat([v, padding], dim=1)
+            if v.shape[0] < num_molecules:
+                shape = list(v.shape)
+                shape[0] = num_molecules
+                v = v.expand(*shape)
+            padded[k].append(v)
+    return {k: torch.cat(v) for k, v in padded.items()}
 
 
 # @torch.jit.script
@@ -84,23 +79,20 @@ def present_species(species):
     return present_species
 
 
-def strip_redundant_padding(species, coordinates):
+def strip_redundant_padding(atomic_properties):
     """Strip trailing padding atoms.
 
     Arguments:
-        species (:class:`torch.Tensor`): Long tensor of shape
-            ``(molecules, atoms)``.
-        coordinates (:class:`torch.Tensor`): Tensor of shape
-            ``(molecules, atoms, 3)``.
+        atomic_properties (dict): properties to strip
 
     Returns:
-        (:class:`torch.Tensor`, :class:`torch.Tensor`): species and coordinates
-        with redundant padding atoms stripped.
+        dict: same set of properties with redundant padding atoms stripped.
     """
+    species = atomic_properties['species']
     non_padding = (species >= 0).any(dim=0).nonzero().squeeze()
-    species = species.index_select(1, non_padding)
-    coordinates = coordinates.index_select(1, non_padding)
-    return species, coordinates
+    for k in atomic_properties:
+        atomic_properties[k] = atomic_properties[k].index_select(1, non_padding)
+    return atomic_properties
 
 
 def map2central(cell, coordinates, pbc):
@@ -263,6 +255,6 @@ def vibrational_analysis(masses, hessian, unit='cm^-1'):
     return wavenumbers, modes
 
 
-__all__ = ['pad', 'pad_coordinates', 'present_species', 'hessian',
+__all__ = ['pad', 'pad_atomic_properties', 'present_species', 'hessian',
            'vibrational_analysis', 'strip_redundant_padding',
            'ChemicalSymbolsToInts']

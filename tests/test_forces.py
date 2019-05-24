@@ -57,7 +57,7 @@ class TestForce(unittest.TestCase):
                 coordinates.requires_grad_(True)
                 species_coordinates.append((species, coordinates))
                 coordinates_forces.append((coordinates, forces))
-        species, coordinates = torchani.utils.pad_coordinates(
+        species, coordinates = torchani.utils.pad_atomic_properties(
             species_coordinates)
         _, energies = self.model((species, coordinates))
         energies = energies.sum()

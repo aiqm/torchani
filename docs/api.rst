@@ -34,7 +34,7 @@ Utilities
 
 .. automodule:: torchani.utils
 .. autofunction:: torchani.utils.pad
-.. autofunction:: torchani.utils.pad_coordinates
+.. autofunction:: torchani.utils.pad_atomic_properties
 .. autofunction:: torchani.utils.present_species
 .. autofunction:: torchani.utils.strip_redundant_padding
 .. autofunction:: torchani.utils.map2central

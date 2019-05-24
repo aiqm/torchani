@@ -91,7 +91,7 @@ class TestEnergies(unittest.TestCase):
                 e = self.transform(e)
                 species_coordinates.append((species, coordinates))
                 energies.append(e)
-        species, coordinates = torchani.utils.pad_coordinates(
+        species, coordinates = torchani.utils.pad_atomic_properties(
             species_coordinates)
         energies = torch.cat(energies)
         _, energies_ = self.model((species, coordinates))

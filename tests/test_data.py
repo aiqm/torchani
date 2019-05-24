@@ -30,7 +30,7 @@ class TestData(unittest.TestCase):
         coordinates2 = torch.randn(2, 8, 3)
         species3 = torch.randint(4, (10, 20), dtype=torch.long)
         coordinates3 = torch.randn(10, 20, 3)
-        species, coordinates = torchani.utils.pad_coordinates([
+        species, coordinates = torchani.utils.pad_atomic_properties([
             (species1, coordinates1),
             (species2, coordinates2),
             (species3, coordinates3),
@@ -52,14 +52,14 @@ class TestData(unittest.TestCase):
             self._assertTensorEqual(c, c_)
             start += conformations
 
-        s, c = torchani.utils.pad_coordinates(chunks)
+        s, c = torchani.utils.pad_atomic_properties(chunks)
         self._assertTensorEqual(s, species)
         self._assertTensorEqual(c, coordinates)
 
     def testTensorShape(self):
         for i in self.ds:
             input_, output = i
-            species, coordinates = torchani.utils.pad_coordinates(input_)
+            species, coordinates = torchani.utils.pad_atomic_properties(input_)
             energies = output['energies']
             self.assertEqual(len(species.shape), 2)
             self.assertLessEqual(species.shape[0], batch_size)
