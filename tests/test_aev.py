@@ -113,11 +113,11 @@ class TestAEV(unittest.TestCase):
                 species = self.transform(species)
                 radial = self.transform(radial)
                 angular = self.transform(angular)
-                species_coordinates.append((species, coordinates))
+                species_coordinates.append({'species': species, 'coordinates': coordinates})
                 radial_angular.append((radial, angular))
-        species, coordinates = torchani.utils.pad_atomic_properties(
+        species_coordinates = torchani.utils.pad_atomic_properties(
             species_coordinates)
-        _, aev = self.aev_computer((species, coordinates))
+        _, aev = self.aev_computer((species_coordinates['species'], species_coordinates['coordinates']))
         start = 0
         for expected_radial, expected_angular in radial_angular:
             conformations = expected_radial.shape[0]
