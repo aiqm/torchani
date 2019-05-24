@@ -35,12 +35,15 @@ class TestData(unittest.TestCase):
             {'species': species2, 'coordinates': coordinates2},
             {'species': species3, 'coordinates': coordinates3},
         ])
+        species = species_coordinates['species']
+        coordinates = species_coordinates['coordinates']
         natoms = (species >= 0).to(torch.long).sum(1)
-        chunks = torchani.data.split_batch(natoms, species_coordinates['species'],
-                                           species_coordinates['coordinates'])
+        chunks = torchani.data.split_batch(natoms, species_coordinates)
         start = 0
         last = None
-        for s, c in chunks:
+        for chunk in chunks:
+            s = chunk['species']
+            c = chunk['coordinates']
             n = (s >= 0).to(torch.long).sum(1)
             if last is not None:
                 self.assertNotEqual(last[-1], n[0])
@@ -53,14 +56,18 @@ class TestData(unittest.TestCase):
             self._assertTensorEqual(c, c_)
             start += conformations
 
-        s, c = torchani.utils.pad_atomic_properties(chunks)
+        sc = torchani.utils.pad_atomic_properties(chunks)
+        s = sc['species']
+        c = sc['coordinates']
         self._assertTensorEqual(s, species)
         self._assertTensorEqual(c, coordinates)
 
     def testTensorShape(self):
         for i in self.ds:
             input_, output = i
-            species, coordinates = torchani.utils.pad_atomic_properties(input_)
+            species_coordinates = torchani.utils.pad_atomic_properties(input_)
+            species = species_coordinates['species']
+            coordinates = species_coordinates['coordinates']
             energies = output['energies']
             self.assertEqual(len(species.shape), 2)
             self.assertLessEqual(species.shape[0], batch_size)
