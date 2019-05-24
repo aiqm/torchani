@@ -108,7 +108,6 @@ validation = torchani.data.AEVCacheLoader(validation_cache)
 
 ###############################################################################
 # The rest of the code are again the same
-training = torchani.data.AEVCacheLoader(training_cache)
 container = torchani.ignite.Container({'energies': model})
 optimizer = torch.optim.Adam(model.parameters())
 trainer = ignite.engine.create_supervised_trainer(
