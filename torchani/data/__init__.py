@@ -149,7 +149,7 @@ class BatchedANIDataset(Dataset):
     """
 
     def __init__(self, path, species_tensor_converter, batch_size,
-                 shuffle=True, properties=('energies'), atomic_properties=(), transform=(),
+                 shuffle=True, properties=('energies',), atomic_properties=(), transform=(),
                  dtype=torch.get_default_dtype(), device=default_device):
         super(BatchedANIDataset, self).__init__()
         self.properties = properties
