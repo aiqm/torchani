@@ -51,7 +51,9 @@ class TestData(unittest.TestCase):
             self.assertGreater(conformations, 0)
             s_ = species[start:(start + conformations), ...]
             c_ = coordinates[start:(start + conformations), ...]
-            s_, c_ = torchani.utils.strip_redundant_padding(s_, c_)
+            sc = torchani.utils.strip_redundant_padding({'species': s_, 'coordinates': c_})
+            s_ = sc['species']
+            c_ = sc['coordinates']
             self._assertTensorEqual(s, s_)
             self._assertTensorEqual(c, c_)
             start += conformations

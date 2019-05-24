@@ -234,16 +234,15 @@ class BatchedANIDataset(Dataset):
 
     def __getitem__(self, idx):
         atomic_properties, properties = self.batches[idx]
+        atomic_properties, properties = atomic_properties.copy(), properties.copy()
         species_coordinates = []
         for chunk in atomic_properties:
             for k in chunk:
                 chunk[k] = chunk[k].to(self.device)
             species_coordinates.append((chunk['species'], chunk['coordinates']))
         for k in properties:
-            if torch.is_tensor(properties[k]):
-                properties[k] = properties[k].to(self.device)
-        if 'atomic' not in properties:
-            properties['atomic'] = atomic_properties
+            properties[k] = properties[k].to(self.device)
+        properties['atomic'] = atomic_properties
         return species_coordinates, properties
 
     def __len__(self):
