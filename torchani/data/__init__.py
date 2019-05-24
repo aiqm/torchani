@@ -137,9 +137,9 @@ class BatchedANIDataset(Dataset):
             ``'coordinates'`` are always loaded and need not to be specified
             anywhere.
         transform (list): List of :class:`collections.abc.Callable` that
-            transform the data. Callables must take species, coordinates,
-            and properties of the whole dataset as arguments, and return
-            the transformed species, coordinates, and properties.
+            transform the data. Callables must take atomic properties,
+            properties as arguments, and return the transformed atomic
+            properties and properties.
         dtype (:class:`torch.dtype`): dtype of coordinates and properties to
             to convert the dataset to.
         device (:class:`torch.dtype`): device to put tensors when iterating.

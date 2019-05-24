@@ -162,15 +162,16 @@ class EnergyShifter(torch.nn.Module):
         self_energies[species == -1] = 0
         return self_energies.sum(dim=1)
 
-    def subtract_from_dataset(self, species, coordinates, properties):
+    def subtract_from_dataset(self, atomic_properties, properties):
         """Transformer for :class:`torchani.data.BatchedANIDataset` that
         subtract self energies.
         """
+        species = atomic_properties['species']
         energies = properties['energies']
         device = energies.device
         energies = energies.to(torch.double) - self.sae(species).to(device)
         properties['energies'] = energies
-        return species, coordinates, properties
+        return atomic_properties, properties
 
     def forward(self, species_energies):
         """(species, molecular energies)->(species, molecular energies + sae)
