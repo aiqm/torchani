@@ -271,18 +271,20 @@ class AEVCacheLoader(Dataset):
         with open(dataset_path, 'rb') as f:
             self.dataset = pickle.load(f)
 
+    def _load_aev(self, filename):
+        with open(filename, 'rb') as f:
+            return pickle.load(f)
+
     def __getitem__(self, index):
         _, output = self.dataset.batches[index]
-        aev_path = os.path.join(self.disk_cache, str(index))
-        with open(aev_path, 'rb') as f:
-            species_aevs = pickle.load(f)
-        return species_aevs, output
+        filename = os.path.join(self.disk_cache, str(index))
+        return self._load_aev(filename), output
 
     def __len__(self):
         return len(self.dataset)
 
 
-class SparseAEVCacheLoader(Dataset):
+class SparseAEVCacheLoader(AEVCacheLoader):
     """Build a factory for AEV.
 
     The computation of AEV is the most time-consuming part of the training.
@@ -294,34 +296,19 @@ class SparseAEVCacheLoader(Dataset):
 
     Arguments:
         disk_cache (str): Directory storing disk caches.
-        device (:class:`torch.dtype`): device to put tensors when iterating.
     """
 
-    def __init__(self, disk_cache=None, device=torch.device('cpu')):
-        super(SparseAEVCacheLoader, self).__init__()
-        self.disk_cache = disk_cache
-        self.device = device
-        # load dataset from disk cache
-        dataset_path = os.path.join(disk_cache, 'dataset')
-        with open(dataset_path, 'rb') as f:
-            self.dataset = pickle.load(f)
-
-    def __getitem__(self, index):
-        _, output = self.dataset.batches[index]
-        aev_path = os.path.join(self.disk_cache, str(index))
-        with open(aev_path, 'rb') as f:
+    def _load_aev(self, filename):
+        with open(filename, 'rb') as f:
             species_aevs = pickle.load(f)
             batch_X = []
             for species_, aev_ in species_aevs:
                 species_np = np.array(species_.todense())
-                species = torch.from_numpy(species_np).to(self.device)
+                species = torch.from_numpy(species_np).to(self.dataset.device)
                 aevs_np = np.stack([np.array(i.todense()) for i in aev_], axis=0)
-                aevs = torch.from_numpy(aevs_np).to(self.device)
+                aevs = torch.from_numpy(aevs_np).to(self.dataset.device)
                 batch_X.append((species, aevs))
-        return batch_X, output
-
-    def __len__(self):
-        return len(self.dataset)
+        return batch_X
 
 
 builtin = neurochem.Builtins()
