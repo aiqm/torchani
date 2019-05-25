@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tools for loading, shuffling, and batching ANI datasets"""
 
+import warnings
 from torch.utils.data import Dataset
 from os.path import join, isfile, isdir
 import os
@@ -364,6 +365,10 @@ def create_aev_cache(dataset, aev_computer, output, enable_tqdm=True, encoder=la
 
 def _cache_aev(output, dataset_path, batchsize, device, constfile,
                subtract_sae, sae_file, enable_tqdm, encoder, **kwargs):
+
+    warnings.warn("cache_aev() is deprecated; use cache_sparse_aev()",
+                  DeprecationWarning)
+
     # if output directory does not exist, then create it
     if not os.path.exists(output):
         os.makedirs(output)

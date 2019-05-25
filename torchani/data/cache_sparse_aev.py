@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """AEVs for a dataset can be precomputed by invoking
-``python -m torchani.data.cache_aev``, this would dump the dataset and
+``python -m torchani.data.cache_sparse_aev``, this would dump the dataset and
 computed aevs. Use the ``-h`` option for help.
 """
 
