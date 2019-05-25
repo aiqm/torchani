@@ -250,10 +250,12 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
 
             _, chunk_energies = model((chunk_species, chunk_coordinates))
 
-            # We can use torch.autograd.grad to compute force. Remember
-            # to retain graph so that we can backward through it a second
-            # time when computing gradient w.r.t. parameters.
-            chunk_forces = -torch.autograd.grad(chunk_energies.sum(), chunk_coordinates, retain_graph=True)[0]
+            # We can use torch.autograd.grad to compute force. Remember to
+            # create graph so that the loss of the force can contribute to
+            # the gradient of parameters, and also to retain graph so that
+            # we can backward through it a second time when computing gradient
+            # w.r.t. parameters.
+            chunk_forces = -torch.autograd.grad(chunk_energies.sum(), chunk_coordinates, create_graph=True, retain_graph=True)[0]
 
             # Now let's compute loss for force of this chunk
             chunk_force_loss = mse(chunk_true_forces, chunk_forces).sum(dim=(1, 2)) / chunk_num_atoms
