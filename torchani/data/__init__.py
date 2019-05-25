@@ -324,7 +324,7 @@ class SparseAEVCacheLoader(AEVCacheLoader):
 builtin = neurochem.Builtins()
 
 
-def create_aev_cache(dataset, aev_computer, output, process_aev=lambda x: x):
+def create_aev_cache(dataset, aev_computer, output, enable_tqdm=True, process_aev=lambda x: x):
     # dump out the dataset
     filename = os.path.join(output, 'dataset')
     with open(filename, 'wb') as f:
@@ -366,7 +366,7 @@ def cache_aev(output, dataset_path, batchsize, device=default_device,
         device=device, transform=transform, **kwargs
     )
 
-    create_aev_cache(dataset, aev_computer, process_aev)
+    create_aev_cache(dataset, aev_computer, enable_tqdm, process_aev)
 
 
 def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
