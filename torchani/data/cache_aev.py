@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-"""AEVs for a dataset can be precomputed by invoking
-``python -m torchani.data.cache_aev``, this would dump the dataset and
-computed aevs. Use the ``-h`` option for help.
+"""```'torchani.data.cache_aev'``` is deprecated, AEVs for a dataset
+can be precomputed by invoking ``python -m torchani.data.cache_sparse_aev``,
+this would dump the dataset and computed aevs. Use the ``-h`` option for help.
 """
 
+import warnings
 import torch
 from . import cache_aev, builtin, default_device
 
@@ -37,6 +38,9 @@ if __name__ == '__main__':
     parser.add_argument('--sae-file', help='Path to SAE file',
                         default=builtin.sae_file)
     parser = parser.parse_args()
+
+    warnings.warn("cache_aev() is deprecated; use cache_sparse_aev()",
+                  warnings.DeprecationWarning)
 
     cache_aev(parser.output, parser.dataset, parser.batchsize, parser.device,
               parser.constfile, parser.tqdm, shuffle=parser.shuffle,
