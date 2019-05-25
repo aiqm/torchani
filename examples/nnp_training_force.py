@@ -2,8 +2,8 @@
 """
 .. _force-training-example:
 
-Train Your Own Neural Network Potential
-=======================================
+Train To Force
+==============
 
 We have seen how to train a neural network potential by manually writing
 training loop in :ref:`training-example`. This tutorial shows how to modify
