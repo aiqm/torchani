@@ -46,7 +46,7 @@ try:
     path = os.path.dirname(os.path.realpath(__file__))
 except NameError:
     path = os.getcwd()
-path = os.path.join(path, '../dataset/ani-1x/sample.h5')
+dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
 
 batch_size = 2560
 
@@ -56,7 +56,7 @@ batch_size = 2560
 # from hdf5 files.
 
 training, validation = torchani.data.load_ani_dataset(
-    path, species_to_tensor, batch_size, device=device,
+    dspath, species_to_tensor, batch_size, device=device,
     atomic_properties=['forces'],
     transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
 

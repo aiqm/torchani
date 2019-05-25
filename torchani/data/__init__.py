@@ -417,13 +417,23 @@ class SparseAEVCacheLoader(AEVCacheLoader):
 builtin = neurochem.Builtins()
 
 
-def create_aev_cache(dataset, aev_computer, output, enable_tqdm=True, encoder=lambda x: x):
+def create_aev_cache(dataset, aev_computer, output, progress_bar=True, encoder=lambda *x: x):
+    """Cache AEV for the given dataset.
+
+    Arguments:
+        dataset (:class:`torchani.data.PaddedBatchChunkDataset`): the dataset to be cached
+        aev_computer (:class:`torchani.AEVComputer`): the AEV computer used to compute aev
+        output (str): path to the directory where cache will be stored
+        progress_bar (bool): whether to show progress bar
+        encoder (:class:`collections.abc.Callable`): The callable
+            (species, aev) -> (encoded_species, encoded_aev) that encode species and aev
+    """
     # dump out the dataset
     filename = os.path.join(output, 'dataset')
     with open(filename, 'wb') as f:
         pickle.dump(dataset, f)
 
-    if enable_tqdm:
+    if progress_bar:
         import tqdm
         indices = tqdm.trange(len(dataset))
     else:
