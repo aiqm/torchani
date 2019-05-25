@@ -138,6 +138,7 @@ optimizer = torch.optim.Adam(nn.parameters())
 latest_checkpoint = 'latest.pt'
 pretrained = os.path.isfile(latest_checkpoint)
 
+
 def hartree2kcal(x):
     return 627.509 * x
 
@@ -255,7 +256,7 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
             chunk_forces = -torch.autograd.grad(chunk_energies.sum(), chunk_coordinates, retain_graph=True)[0]
 
             # Now let's compute loss for force of this chunk
-            chunk_force_loss = mse(chunk_true_forces, chunk_forces).sum(dim=(1,2)) / chunk_num_atoms
+            chunk_force_loss = mse(chunk_true_forces, chunk_forces).sum(dim=(1, 2)) / chunk_num_atoms
 
             predicted_energies.append(chunk_energies)
             force_loss.append(chunk_force_loss)
