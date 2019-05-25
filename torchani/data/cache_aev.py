@@ -40,7 +40,7 @@ if __name__ == '__main__':
     parser = parser.parse_args()
 
     warnings.warn("cache_aev() is deprecated; use cache_sparse_aev()",
-                  warnings.DeprecationWarning)
+                  DeprecationWarning)
 
     cache_aev(parser.output, parser.dataset, parser.batchsize, parser.device,
               parser.constfile, parser.tqdm, shuffle=parser.shuffle,
