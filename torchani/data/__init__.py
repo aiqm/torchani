@@ -288,8 +288,8 @@ class AEVCacheLoader(Dataset):
         return len(self.dataset)
 
     @staticmethod
-    def decode_aev(species, aev):
-        return species, aev
+    def decode_aev(encoded_species, encoded_aev):
+        return encoded_species, encoded_aev
 
     @staticmethod
     def encode_aev(species, aev):
@@ -311,18 +311,18 @@ class SparseAEVCacheLoader(AEVCacheLoader):
     """
 
     @staticmethod
-    def decode_aev(species, aev):
-        species_np = np.array(species.todense())
+    def decode_aev(encoded_species, encoded_aev):
+        species_np = np.array(encoded_species.todense())
         species = torch.from_numpy(species_np)
-        aevs_np = np.stack([np.array(i.todense()) for i in aev], axis=0)
+        aevs_np = np.stack([np.array(i.todense()) for i in encoded_aev], axis=0)
         aevs = torch.from_numpy(aevs_np)
         return species, aevs
 
     @staticmethod
     def encode_aev(species, aev):
-        species = bsr_matrix(species.cpu().numpy())
-        aev = [bsr_matrix(i.cpu().numpy()) for i in aev]
-        return species, aev
+        encoded_species = bsr_matrix(species.cpu().numpy())
+        encoded_aev = [bsr_matrix(i.cpu().numpy()) for i in aev]
+        return encoded_species, encoded_aev
 
 
 builtin = neurochem.Builtins()
