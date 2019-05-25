@@ -313,7 +313,7 @@ class SparseAEVCacheLoader(AEVCacheLoader):
     @staticmethod
     def decode_aev(encoded_species, encoded_aev):
         species = torch.from_numpy(encoded_species.todense())
-        aevs_np = np.stack([i.todense() for i in encoded_aev], axis=0)
+        aevs_np = np.stack([np.array(i.todense()) for i in encoded_aev], axis=0)
         aevs = torch.from_numpy(aevs_np)
         return species, aevs
 
@@ -346,10 +346,8 @@ def create_aev_cache(dataset, aev_computer, output, enable_tqdm=True, encoder=la
             pickle.dump(aevs, f)
 
 
-def cache_aev(output, dataset_path, batchsize, device=default_device,
-              constfile=builtin.const_file, subtract_sae=False,
-              sae_file=builtin.sae_file, enable_tqdm=True,
-              process_aev=AEVCacheLoader.encode_aev, **kwargs):
+def _cache_aev(output, dataset_path, batchsize, device, constfile,
+               subtract_sae, sae_file, enable_tqdm, encoder, **kwargs):
     # if output directory does not exist, then create it
     if not os.path.exists(output):
         os.makedirs(output)
@@ -369,15 +367,23 @@ def cache_aev(output, dataset_path, batchsize, device=default_device,
         device=device, transform=transform, **kwargs
     )
 
-    create_aev_cache(dataset, aev_computer, output, enable_tqdm, process_aev)
+    create_aev_cache(dataset, aev_computer, output, enable_tqdm, encoder)
+
+
+def cache_aev(output, dataset_path, batchsize, device=default_device,
+              constfile=builtin.const_file, subtract_sae=False,
+              sae_file=builtin.sae_file, enable_tqdm=True, **kwargs):
+    _cache_aev(output, dataset_path, batchsize, device, constfile,
+               subtract_sae, sae_file, enable_tqdm, AEVCacheLoader.encode_aev,
+               **kwargs)
 
 
 def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
                      constfile=builtin.const_file, subtract_sae=False,
                      sae_file=builtin.sae_file, enable_tqdm=True, **kwargs):
-    cache_aev(output, dataset_path, batchsize, device, constfile, subtract_sae,
-              sae_file, enable_tqdm, SparseAEVCacheLoader.encode_aev,
-              **kwargs)
+    _cache_aev(output, dataset_path, batchsize, device, constfile,
+               subtract_sae, sae_file, enable_tqdm,
+               SparseAEVCacheLoader.encode_aev, **kwargs)
 
 
 __all__ = ['BatchedANIDataset', 'AEVCacheLoader', 'SparseAEVCacheLoader', 'cache_aev', 'cache_sparse_aev']
