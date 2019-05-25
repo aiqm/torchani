@@ -205,7 +205,7 @@ if 'scheduler' in checkpoint:
 ###############################################################################
 # In the training loop, we need to compute force, and loss for forces
 print("training starting from epoch", scheduler.last_epoch + 1)
-max_epochs = 200
+max_epochs = 20
 early_stopping_learning_rate = 1.0E-5
 force_coefficient = 1  # controls the importance of energy loss vs force loss
 best_model_checkpoint = 'force-training-best.pt'
