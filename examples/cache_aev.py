@@ -56,7 +56,7 @@ log = 'runs'
 # .. note::
 #
 #   The sparse representations of AEVs is stored via :mod:`
-#   torchani.data.cache_sparse_aev` and `torchani.data.cache_aev` 
+#   torchani.data.cache_sparse_aev` and `torchani.data.cache_aev`
 #   is deprecated.
 
 const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')
@@ -68,10 +68,10 @@ validation_cache = './validation_cache'
 # cached and skip the generation part.
 if not os.path.exists(training_cache):
     torchani.data.cache_sparse_aev(training_cache, training_path, batch_size, device,
-                            const_file, True, sae_file)
+                                   const_file, True, sae_file)
 if not os.path.exists(validation_cache):
     torchani.data.cache_sparse_aev(validation_cache, validation_path, batch_size,
-                            device, const_file, True, sae_file)
+                                   device, const_file, True, sae_file)
 
 
 ###############################################################################
