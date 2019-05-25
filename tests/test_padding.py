@@ -6,17 +6,17 @@ import torchani
 class TestPaddings(unittest.TestCase):
 
     def testVectorSpecies(self):
-        species1 = torch.LongTensor([0, 2, 3, 1])
+        species1 = torch.tensor([[0, 2, 3, 1]])
         coordinates1 = torch.zeros(5, 4, 3)
-        species2 = torch.LongTensor([3, 2, 0, 1, 0])
+        species2 = torch.tensor([[3, 2, 0, 1, 0]])
         coordinates2 = torch.zeros(2, 5, 3)
-        species, coordinates = torchani.utils.pad_coordinates([
-            (species1, coordinates1),
-            (species2, coordinates2),
+        atomic_properties = torchani.utils.pad_atomic_properties([
+            {'species': species1, 'coordinates': coordinates1},
+            {'species': species2, 'coordinates': coordinates2},
         ])
-        self.assertEqual(species.shape[0], 7)
-        self.assertEqual(species.shape[1], 5)
-        expected_species = torch.LongTensor([
+        self.assertEqual(atomic_properties['species'].shape[0], 7)
+        self.assertEqual(atomic_properties['species'].shape[1], 5)
+        expected_species = torch.tensor([
             [0, 2, 3, 1, -1],
             [0, 2, 3, 1, -1],
             [0, 2, 3, 1, -1],
@@ -25,21 +25,21 @@ class TestPaddings(unittest.TestCase):
             [3, 2, 0, 1, 0],
             [3, 2, 0, 1, 0],
         ])
-        self.assertEqual((species - expected_species).abs().max().item(), 0)
-        self.assertEqual(coordinates.abs().max().item(), 0)
+        self.assertEqual((atomic_properties['species'] - expected_species).abs().max().item(), 0)
+        self.assertEqual(atomic_properties['coordinates'].abs().max().item(), 0)
 
     def testTensorShape1NSpecies(self):
-        species1 = torch.LongTensor([[0, 2, 3, 1]])
+        species1 = torch.tensor([[0, 2, 3, 1]])
         coordinates1 = torch.zeros(5, 4, 3)
-        species2 = torch.LongTensor([3, 2, 0, 1, 0])
+        species2 = torch.tensor([[3, 2, 0, 1, 0]])
         coordinates2 = torch.zeros(2, 5, 3)
-        species, coordinates = torchani.utils.pad_coordinates([
-            (species1, coordinates1),
-            (species2, coordinates2),
+        atomic_properties = torchani.utils.pad_atomic_properties([
+            {'species': species1, 'coordinates': coordinates1},
+            {'species': species2, 'coordinates': coordinates2},
         ])
-        self.assertEqual(species.shape[0], 7)
-        self.assertEqual(species.shape[1], 5)
-        expected_species = torch.LongTensor([
+        self.assertEqual(atomic_properties['species'].shape[0], 7)
+        self.assertEqual(atomic_properties['species'].shape[1], 5)
+        expected_species = torch.tensor([
             [0, 2, 3, 1, -1],
             [0, 2, 3, 1, -1],
             [0, 2, 3, 1, -1],
@@ -48,11 +48,11 @@ class TestPaddings(unittest.TestCase):
             [3, 2, 0, 1, 0],
             [3, 2, 0, 1, 0],
         ])
-        self.assertEqual((species - expected_species).abs().max().item(), 0)
-        self.assertEqual(coordinates.abs().max().item(), 0)
+        self.assertEqual((atomic_properties['species'] - expected_species).abs().max().item(), 0)
+        self.assertEqual(atomic_properties['coordinates'].abs().max().item(), 0)
 
     def testTensorSpecies(self):
-        species1 = torch.LongTensor([
+        species1 = torch.tensor([
             [0, 2, 3, 1],
             [0, 2, 3, 1],
             [0, 2, 3, 1],
@@ -60,15 +60,15 @@ class TestPaddings(unittest.TestCase):
             [0, 2, 3, 1],
         ])
         coordinates1 = torch.zeros(5, 4, 3)
-        species2 = torch.LongTensor([3, 2, 0, 1, 0])
+        species2 = torch.tensor([[3, 2, 0, 1, 0]])
         coordinates2 = torch.zeros(2, 5, 3)
-        species, coordinates = torchani.utils.pad_coordinates([
-            (species1, coordinates1),
-            (species2, coordinates2),
+        atomic_properties = torchani.utils.pad_atomic_properties([
+            {'species': species1, 'coordinates': coordinates1},
+            {'species': species2, 'coordinates': coordinates2},
         ])
-        self.assertEqual(species.shape[0], 7)
-        self.assertEqual(species.shape[1], 5)
-        expected_species = torch.LongTensor([
+        self.assertEqual(atomic_properties['species'].shape[0], 7)
+        self.assertEqual(atomic_properties['species'].shape[1], 5)
+        expected_species = torch.tensor([
             [0, 2, 3, 1, -1],
             [0, 2, 3, 1, -1],
             [0, 2, 3, 1, -1],
@@ -77,22 +77,22 @@ class TestPaddings(unittest.TestCase):
             [3, 2, 0, 1, 0],
             [3, 2, 0, 1, 0],
         ])
-        self.assertEqual((species - expected_species).abs().max().item(), 0)
-        self.assertEqual(coordinates.abs().max().item(), 0)
+        self.assertEqual((atomic_properties['species'] - expected_species).abs().max().item(), 0)
+        self.assertEqual(atomic_properties['coordinates'].abs().max().item(), 0)
 
     def testPadSpecies(self):
-        species1 = torch.LongTensor([
+        species1 = torch.tensor([
             [0, 2, 3, 1],
             [0, 2, 3, 1],
             [0, 2, 3, 1],
             [0, 2, 3, 1],
             [0, 2, 3, 1],
         ])
-        species2 = torch.LongTensor([3, 2, 0, 1, 0]).expand(2, 5)
+        species2 = torch.tensor([[3, 2, 0, 1, 0]]).expand(2, 5)
         species = torchani.utils.pad([species1, species2])
         self.assertEqual(species.shape[0], 7)
         self.assertEqual(species.shape[1], 5)
-        expected_species = torch.LongTensor([
+        expected_species = torch.tensor([
             [0, 2, 3, 1, -1],
             [0, 2, 3, 1, -1],
             [0, 2, 3, 1, -1],
@@ -104,9 +104,9 @@ class TestPaddings(unittest.TestCase):
         self.assertEqual((species - expected_species).abs().max().item(), 0)
 
     def testPresentSpecies(self):
-        species = torch.LongTensor([0, 1, 1, 0, 3, 7, -1, -1])
+        species = torch.tensor([0, 1, 1, 0, 3, 7, -1, -1])
         present_species = torchani.utils.present_species(species)
-        expected = torch.LongTensor([0, 1, 3, 7])
+        expected = torch.tensor([0, 1, 3, 7])
         self.assertEqual((expected - present_species).abs().max().item(), 0)
 
 
@@ -120,23 +120,31 @@ class TestStripRedundantPadding(unittest.TestCase):
         coordinates1 = torch.randn(5, 4, 3)
         species2 = torch.randint(4, (2, 5), dtype=torch.long)
         coordinates2 = torch.randn(2, 5, 3)
-        species12, coordinates12 = torchani.utils.pad_coordinates([
-            (species1, coordinates1),
-            (species2, coordinates2),
+        atomic_properties12 = torchani.utils.pad_atomic_properties([
+            {'species': species1, 'coordinates': coordinates1},
+            {'species': species2, 'coordinates': coordinates2},
         ])
+        species12 = atomic_properties12['species']
+        coordinates12 = atomic_properties12['coordinates']
         species3 = torch.randint(4, (2, 10), dtype=torch.long)
         coordinates3 = torch.randn(2, 10, 3)
-        species123, coordinates123 = torchani.utils.pad_coordinates([
-            (species1, coordinates1),
-            (species2, coordinates2),
-            (species3, coordinates3),
+        atomic_properties123 = torchani.utils.pad_atomic_properties([
+            {'species': species1, 'coordinates': coordinates1},
+            {'species': species2, 'coordinates': coordinates2},
+            {'species': species3, 'coordinates': coordinates3},
         ])
-        species1_, coordinates1_ = torchani.utils.strip_redundant_padding(
-            species123[:5, ...], coordinates123[:5, ...])
+        species123 = atomic_properties123['species']
+        coordinates123 = atomic_properties123['coordinates']
+        species_coordinates1_ = torchani.utils.strip_redundant_padding(
+            {'species': species123[:5, ...], 'coordinates': coordinates123[:5, ...]})
+        species1_ = species_coordinates1_['species']
+        coordinates1_ = species_coordinates1_['coordinates']
         self._assertTensorEqual(species1_, species1)
         self._assertTensorEqual(coordinates1_, coordinates1)
-        species12_, coordinates12_ = torchani.utils.strip_redundant_padding(
-            species123[:7, ...], coordinates123[:7, ...])
+        species_coordinates12_ = torchani.utils.strip_redundant_padding(
+            {'species': species123[:7, ...], 'coordinates': coordinates123[:7, ...]})
+        species12_ = species_coordinates12_['species']
+        coordinates12_ = species_coordinates12_['coordinates']
         self._assertTensorEqual(species12_, species12)
         self._assertTensorEqual(coordinates12_, coordinates12)
 

@@ -330,6 +330,8 @@ best_model_checkpoint = 'best.pt'
 
 for _ in range(scheduler.last_epoch + 1, max_epochs):
     rmse = validate()
+    print('RMSE:', rmse, 'at epoch', scheduler.last_epoch)
+
     learning_rate = optimizer.param_groups[0]['lr']
 
     if learning_rate < early_stopping_learning_rate:

@@ -55,11 +55,10 @@ class TestForce(unittest.TestCase):
                 species = self.transform(species)
                 forces = self.transform(forces)
                 coordinates.requires_grad_(True)
-                species_coordinates.append((species, coordinates))
-                coordinates_forces.append((coordinates, forces))
-        species, coordinates = torchani.utils.pad_coordinates(
+                species_coordinates.append({'species': species, 'coordinates': coordinates})
+        species_coordinates = torchani.utils.pad_atomic_properties(
             species_coordinates)
-        _, energies = self.model((species, coordinates))
+        _, energies = self.model((species_coordinates['species'], species_coordinates['coordinates']))
         energies = energies.sum()
         for coordinates, forces in coordinates_forces:
             derivative = torch.autograd.grad(energies, coordinates,
