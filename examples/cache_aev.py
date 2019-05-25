@@ -67,7 +67,7 @@ validation_cache = './validation_cache'
 # If the cache dirs already exists, then we assume these data has already been
 # cached and skip the generation part.
 if not os.path.exists(training_cache):
-    torchani.data.cachei_sparse_aev(training_cache, training_path, batch_size, device,
+    torchani.data.cache_sparse_aev(training_cache, training_path, batch_size, device,
                             const_file, True, sae_file)
 if not os.path.exists(validation_cache):
     torchani.data.cache_sparse_aev(validation_cache, validation_path, batch_size,
