@@ -10,6 +10,7 @@ from .. import utils, neurochem, aev
 import pickle
 import numpy as np
 from scipy.sparse import bsr_matrix
+import warnings
 
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -161,15 +162,11 @@ def split_whole_into_batches_and_chunks(atomic_properties, properties, batch_siz
 
 class PaddedBatchChunkDataset(Dataset):
 
-    def __init__(self, atomic_properties, properties, batch_size, transform=(),
+    def __init__(self, atomic_properties, properties, batch_size,
                  dtype=torch.get_default_dtype(), device=default_device):
         super().__init__()
         self.device = device
         self.dtype = dtype
-
-        # do transformations on data
-        for t in transform:
-            atomic_properties, properties = t(atomic_properties, properties)
 
         # convert to desired dtype
         for k in properties:
@@ -199,10 +196,33 @@ class PaddedBatchChunkDataset(Dataset):
 
 
 class BatchedANIDataset(PaddedBatchChunkDataset):
-    """Load data from hdf5 files, create minibatches, and convert to tensors.
+    """Same as :func:`torchani.data.load_ani_dataset`. This API has been deprecated."""
 
-    This is already a dataset of batches, so when iterated, a batch rather
-    than a single data point will be yielded.
+    def __init__(self, path, species_tensor_converter, batch_size,
+                 shuffle=True, properties=('energies',), atomic_properties=(), transform=(),
+                 dtype=torch.get_default_dtype(), device=default_device):
+        self.properties = properties
+        self.atomic_properties = atomic_properties
+        warnings.warn("BatchedANIDataset is deprecated; use load_ani_dataset()", DeprecationWarning)
+
+        atomic_properties, properties = load_and_pad_whole_dataset(
+            path, species_tensor_converter, shuffle, properties, atomic_properties)
+
+        # do transformations on data
+        for t in transform:
+            atomic_properties, properties = t(atomic_properties, properties)
+
+        super().__init__(atomic_properties, properties, batch_size, transform, dtype, device)
+
+
+def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
+                     properties=('energies',), atomic_properties=(), transform=(),
+                     dtype=torch.get_default_dtype(), device=default_device,
+                     split=(None,)):
+    """Load ANI dataset from hdf5 files, and split into subsets.
+
+    The return datasets are already a dataset of batches, so when iterated, a
+    batch rather than a single data point will be yielded.
 
     Since each batch might contain molecules of very different sizes, putting
     the whole batch into a single tensor would require adding ghost atoms to
@@ -256,51 +276,31 @@ class BatchedANIDataset(PaddedBatchChunkDataset):
         dtype (:class:`torch.dtype`): dtype of coordinates and properties to
             to convert the dataset to.
         device (:class:`torch.dtype`): device to put tensors when iterating.
+        split (list): as sequence of integers or floats or ``None``. Integers
+            are interpreted as number of elements, floats are interpreted as
+            percentage, and ``None`` are interpreted as the rest of the dataset
+            and can only appear as the last element of :class:`split`. For
+            example, if the whole dataset has 10000 entry, and split is
+            ``(5000, 0.1, None)``, then this function will create 3 datasets,
+            where the first dataset contains 5000 elements, the second dataset
+            contains ``int(0.1 * 10000)``, which is 1000, and the third dataset
+            will contains ``10000 - 5000 - 1000`` elements. By default this
+            creates only a single dataset.
+
+    Returns:
+        An instance of :class:`torchani.data.PaddedBatchChunkDataset` if there is
+        only one element in :attr:`split`, otherwise returns a tuple of the same
+        classes according to :attr:`split`.
 
     .. _pyanitools.py:
         https://github.com/isayev/ASE_ANI/blob/master/lib/pyanitools.py
     """
-
-    def __init__(self, path, species_tensor_converter, batch_size,
-                 shuffle=True, properties=('energies',), atomic_properties=(), transform=(),
-                 dtype=torch.get_default_dtype(), device=default_device):
-        self.properties = properties
-        self.atomic_properties = atomic_properties
-
-        atomic_properties, properties = load_and_pad_whole_dataset(
-            path, species_tensor_converter, shuffle, properties, atomic_properties)
-
-        super().__init__(atomic_properties, properties, batch_size, transform, dtype, device)
-
-
-def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
-                     properties=('energies',), atomic_properties=(), transform=(),
-                     dtype=torch.get_default_dtype(), device=default_device,
-                     split=(None,)):
-    """Load ANI dataset from h5 files, split it, and create batched datasets.
-
-    This is Similar to directly use :class:`torchani.data.BatchedANIDataset`
-    except that instead of creating a single instance of BatchedANIDataset,
-    the whole dataset will be splitted as specified in :attr:`split`.
-
-    Most arguments has the same definition as in :class:`torchani.data.BatchedANIDataset`,
-    except for :attr:`split`, which specifies how to split the dataset.
-
-    :attr:`split` must be as sequence of integers or floats or ``None``.
-    Integers are interpreted as number of elements, floats are interpreted
-    as percentage, and ``None`` are interpreted as the rest of the dataset
-    and can only appear as the last element of :class:`split`.
-
-    For example, if the whole dataset has 10000 entry, and split is
-    ``(5000, 0.1, None)``, then this function will create 3 datasets, where
-    the first dataset contains 5000 elements, the second dataset contains
-    ``int(0.1 * 10000)``, which is 1000, and the third dataset will contains
-    ``10000 - 5000 - 1000`` elements.
-
-    Returns a tuple which has the same size as :attr:`split`
-    """
     atomic_properties_, properties_ = load_and_pad_whole_dataset(
         path, species_tensor_converter, shuffle, properties, atomic_properties)
+
+    # do transformations on data
+    for t in transform:
+        atomic_properties, properties = t(atomic_properties, properties)
 
     molecules = atomic_properties_['species'].shape[0]
     atomic_keys = ['species', 'coordinates', *atomic_properties]
@@ -334,6 +334,8 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
         ds.properties = properties
         ds.atomic_properties = atomic_properties
         ret.append(ds)
+    if len(ret) == 1:
+        return ret[0]
     return tuple(ret)
 
 

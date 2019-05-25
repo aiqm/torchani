@@ -24,8 +24,8 @@ Datasets
 ========
 
 .. automodule:: torchani.data
+.. autofunction:: torchani.data.load_ani_dataset
 .. autoclass:: torchani.data.BatchedANIDataset
-.. autofunction:: torchani.data.load_and_split
 .. autoclass:: torchani.data.AEVCacheLoader
 .. automodule:: torchani.data.cache_aev
 
