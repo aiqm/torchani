@@ -19,6 +19,7 @@ Welcome to TorchANI's documentation!
     examples/vibration_analysis
     examples/load_from_neurochem
     examples/nnp_training
+    examples/nnp_training_forces
     examples/nnp_training_ignite
     examples/cache_aev
     examples/neurochem_trainer
