@@ -271,20 +271,24 @@ class AEVCacheLoader(Dataset):
         with open(dataset_path, 'rb') as f:
             self.dataset = pickle.load(f)
 
-    def _load_aev(self, filename):
-        with open(filename, 'rb') as f:
-            return pickle.load(f)
-
     def __getitem__(self, index):
         _, output = self.dataset.batches[index]
-        filename = os.path.join(self.disk_cache, str(index))
-        return self._load_aev(filename), output
+        aev_path = os.path.join(self.disk_cache, str(index))
+        with open(aev_path, 'rb') as f:
+            species_aevs = pickle.load(f)
+            for i, sa in enumerate(species_aevs):
+                species_aevs[i] = self.decode_aev(*sa)
+        return species_aevs, output
 
     def __len__(self):
         return len(self.dataset)
 
     @staticmethod
-    def process_aev(species, aev):
+    def decode_aev(species, aev):
+        return species, aev
+
+    @staticmethod
+    def encode_aev(species, aev):
         return species, aev
 
 
@@ -302,20 +306,16 @@ class SparseAEVCacheLoader(AEVCacheLoader):
         disk_cache (str): Directory storing disk caches.
     """
 
-    def _load_aev(self, filename):
-        with open(filename, 'rb') as f:
-            species_aevs = pickle.load(f)
-            batch_X = []
-            for species_, aev_ in species_aevs:
-                species_np = np.array(species_.todense())
-                species = torch.from_numpy(species_np).to(self.dataset.device)
-                aevs_np = np.stack([np.array(i.todense()) for i in aev_], axis=0)
-                aevs = torch.from_numpy(aevs_np).to(self.dataset.device)
-                batch_X.append((species, aevs))
-        return batch_X
+    @staticmethod
+    def decode_aev(species, aev):
+        species_np = np.array(species_.todense())
+        species = torch.from_numpy(species_np).to(self.dataset.device)
+        aevs_np = np.stack([np.array(i.todense()) for i in aev_], axis=0)
+        aevs = torch.from_numpy(aevs_np).to(self.dataset.device)
+        return species, aevs
 
     @staticmethod
-    def process_aev(species, aev):
+    def encode_aev(species, aev):
         species = bsr_matrix(species.cpu().numpy())
         aev = [bsr_matrix(i.cpu().numpy()) for i in aev]
         return species, aev
@@ -346,7 +346,7 @@ def create_aev_cache(dataset, aev_computer, output, enable_tqdm=True, process_ae
 def cache_aev(output, dataset_path, batchsize, device=default_device,
               constfile=builtin.const_file, subtract_sae=False,
               sae_file=builtin.sae_file, enable_tqdm=True,
-              process_aev=AEVCacheLoader.process_aev, **kwargs):
+              process_aev=AEVCacheLoader.encode_aev, **kwargs):
     # if output directory does not exist, then create it
     if not os.path.exists(output):
         os.makedirs(output)
@@ -373,7 +373,7 @@ def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
                      constfile=builtin.const_file, subtract_sae=False,
                      sae_file=builtin.sae_file, enable_tqdm=True, **kwargs):
     cache_aev(output, dataset_path, batchsize, device, constfile, subtract_sae,
-              sae_file, enable_tqdm, SparseAEVCacheLoader.process_aev,
+              sae_file, enable_tqdm, SparseAEVCacheLoader.encode_aev,
               **kwargs)
 
 
