@@ -163,7 +163,7 @@ pretrain_criterion = 10  # kcal/mol
 mse = torch.nn.MSELoss(reduction='none')
 
 ###############################################################################
-# In the training loop, we need to define loss for forces
+# For simplicity, we don't train to force during pretraining
 if not pretrained:
     print("pre-training...")
     epoch = 0
@@ -191,16 +191,9 @@ if not pretrained:
         'optimizer': optimizer.state_dict(),
     }, latest_checkpoint)
 
-###############################################################################
-# For phase 2, we need a learning rate scheduler to do learning rate decay
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=100)
-
-###############################################################################
-# We will also use TensorBoard to visualize our training process
 tensorboard = torch.utils.tensorboard.SummaryWriter()
 
-###############################################################################
-# Resume training from previously saved checkpoints:
 checkpoint = torch.load(latest_checkpoint)
 nn.load_state_dict(checkpoint['nn'])
 optimizer.load_state_dict(checkpoint['optimizer'])
@@ -209,11 +202,7 @@ if 'scheduler' in checkpoint:
 
 
 ###############################################################################
-# Finally, we come to the training loop.
-#
-# In this tutorial, we are setting the maximum epoch to a very small number,
-# only to make this demo terminate fast. For serious training, this should be
-# set to a much larger value
+# In the training loop, we need to compute force, and loss for forces
 print("training starting from epoch", scheduler.last_epoch + 1)
 max_epochs = 200
 early_stopping_learning_rate = 1.0E-5
@@ -237,18 +226,47 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
 
     scheduler.step(rmse)
 
-    for i, (batch_x, batch_y) in tqdm.tqdm(enumerate(training), total=len(training)):
+    # Besides being stored in x, species and coordinates are also stored in y.
+    # So here, for simplicity, we just ignore the x and use y for everything.
+    for i, (_, batch_y) in tqdm.tqdm(enumerate(training), total=len(training)):
         true_energies = batch_y['energies']
         predicted_energies = []
         num_atoms = []
-        for chunk_species, chunk_coordinates in batch_x:
-            num_atoms.append((chunk_species >= 0).sum(dim=1))
+        force_loss = []
+
+        for chunk in batch_y['atomic']:
+            chunk_species = chunk['species']
+            chunk_coordinates = chunk['coordinates']
+            chunk_true_forces = chunk['forces']
+            chunk_num_atoms = (chunk_species >= 0).sum(dim=1)
+            num_atoms.append(chunk_num_atoms)
+
+            # We must set `chunk_coordinates` to make it requires grad, so
+            # that we could compute force from it
+            chunk_coordinates.requires_grad_(True)
+
             _, chunk_energies = model((chunk_species, chunk_coordinates))
+
+            # We can use torch.autograd.grad to compute force. Remember
+            # to retain graph so that we can backward through it a second
+            # time when computing gradient w.r.t. parameters.
+            chunk_forces = -torch.autograd.grad(chunk_energies.sum(), chunk_coordinates, retain_graph=True)[0]
+
+            # Now let's compute loss for force of this chunk
+            chunk_force_loss = mse(chunk_true_forces, chunk_forces).sum(dim=(1,2)) / chunk_num_atoms
+
             predicted_energies.append(chunk_energies)
+            force_loss.append(chunk_force_loss)
+
         num_atoms = torch.cat(num_atoms).to(true_energies.dtype)
         predicted_energies = torch.cat(predicted_energies)
-        loss = (mse(predicted_energies, true_energies) / num_atoms).mean()
-        loss = 0.5 * (torch.exp(2 * loss) - 1)
+
+        # Now the total loss has two parts, energy loss and force loss
+        energy_loss = (mse(predicted_energies, true_energies) / num_atoms).mean()
+        energy_loss = 0.5 * (torch.exp(2 * energy_loss) - 1)
+        force_loss = torch.cat(force_loss).mean()
+        loss = energy_loss + force_loss
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
