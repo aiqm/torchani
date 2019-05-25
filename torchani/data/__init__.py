@@ -300,7 +300,7 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
 
     # do transformations on data
     for t in transform:
-        atomic_properties, properties = t(atomic_properties, properties)
+        atomic_properties_, properties_ = t(atomic_properties_, properties_)
 
     molecules = atomic_properties_['species'].shape[0]
     atomic_keys = ['species', 'coordinates', *atomic_properties]
