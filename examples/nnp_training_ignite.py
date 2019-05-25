@@ -32,8 +32,7 @@ try:
     path = os.path.dirname(os.path.realpath(__file__))
 except NameError:
     path = os.getcwd()
-training_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
-validation_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')  # noqa: E501
+path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 
 # checkpoint file to save model when validation RMSE improves
 model_checkpoint = 'model.pt'
@@ -102,13 +101,9 @@ writer = torch.utils.tensorboard.SummaryWriter(log_dir=log)
 
 ###############################################################################
 # Now load training and validation datasets into memory.
-training = torchani.data.BatchedANIDataset(
-    training_path, consts.species_to_tensor, batch_size, device=device,
-    transform=[energy_shifter.subtract_from_dataset])
-
-validation = torchani.data.BatchedANIDataset(
+validation, training = torchani.data.load_and_split(
     validation_path, consts.species_to_tensor, batch_size, device=device,
-    transform=[energy_shifter.subtract_from_dataset])
+    transform=[energy_shifter.subtract_from_dataset], split=[0.2, None])
 
 ###############################################################################
 # We have tools to deal with the chunking (see :ref:`training-example`). These

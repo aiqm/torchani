@@ -301,8 +301,40 @@ def load_and_split(path, species_tensor_converter, batch_size, shuffle=True,
     """
     atomic_properties_, properties_ = load_and_pad_whole_dataset(
         path, species_tensor_converter, shuffle, properties, atomic_properties)
-    raise NotImplementedError('This is not done yet')
 
+    molecules = atomic_properties_['species'].shape[0]
+    atomic_keys = ['species', 'coordinates', *atomic_properties]
+    keys = properties
+
+    # compute size of each subset
+    split_ = []
+    total = 0
+    for index, size in enumerate(split):
+        if isinstance(size, float):
+            size = int(size * molecules)
+        if size is None:
+            assert index == len(split) - 1
+            size = molecules - total
+        split_.append(size)
+        total += size
+
+    # split
+    start = 0
+    splitted = []
+    for size in split_:
+        ap = {k: atomic_properties_[k][start:start + size] for k in keys}
+        p = {k: properties_[k][start:start + size] for k in keys}
+        start += size
+        splitted.append((ap, p))
+
+    # consturct batched dataset
+    ret = []
+    for ap, p in splitted:
+        ds = BatchedANIDatasetAbstract(ap, p, batch_size, transform, dtype, device)
+        ds.properties = properties
+        ds.atomic_properties = atomic_properties
+        ret.append(ds)
+    return *ds
 
 class AEVCacheLoader(Dataset):
     """Build a factory for AEV.

@@ -46,25 +46,19 @@ try:
     path = os.path.dirname(os.path.realpath(__file__))
 except NameError:
     path = os.getcwd()
-training_path = os.path.join(path, '../dataset/ani-1x/sample.h5')
-validation_path = os.path.join(path, '../dataset/ani-1x/sample.h5')
+path = os.path.join(path, '../dataset/ani-1x/sample.h5')
 
 batch_size = 2560
-
 
 ###############################################################################
 # The code to create the dataset is a bit different: we need to manually
 # specify that ``atomic_properties=['forces']`` so that forces will be read
 # from hdf5 files.
-training = torchani.data.BatchedANIDataset(
+
+training, validation = torchani.data.load_and_split(
     training_path, species_to_tensor, batch_size, device=device,
     atomic_properties=['forces'],
-    transform=[energy_shifter.subtract_from_dataset])
-
-validation = torchani.data.BatchedANIDataset(
-    validation_path, species_to_tensor, batch_size, device=device,
-    atomic_properties=['forces'],
-    transform=[energy_shifter.subtract_from_dataset])
+    transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
 
 ###############################################################################
 # When iterating the dataset, we will get pairs of input and output
