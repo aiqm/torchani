@@ -206,11 +206,13 @@ if 'scheduler' in checkpoint:
 print("training starting from epoch", scheduler.last_epoch + 1)
 max_epochs = 200
 early_stopping_learning_rate = 1.0E-5
+force_coefficient = 1  # controls the importance of energy loss vs force loss
 best_model_checkpoint = 'best.pt'
 
 for _ in range(scheduler.last_epoch + 1, max_epochs):
     rmse = validate()
     print('RMSE:', rmse, 'at epoch', scheduler.last_epoch)
+
     learning_rate = optimizer.param_groups[0]['lr']
 
     if learning_rate < early_stopping_learning_rate:
@@ -238,7 +240,7 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
             chunk_species = chunk['species']
             chunk_coordinates = chunk['coordinates']
             chunk_true_forces = chunk['forces']
-            chunk_num_atoms = (chunk_species >= 0).sum(dim=1)
+            chunk_num_atoms = (chunk_species >= 0).sum(dim=1).to(true_energies.dtype)
             num_atoms.append(chunk_num_atoms)
 
             # We must set `chunk_coordinates` to make it requires grad, so
@@ -258,14 +260,14 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
             predicted_energies.append(chunk_energies)
             force_loss.append(chunk_force_loss)
 
-        num_atoms = torch.cat(num_atoms).to(true_energies.dtype)
+        num_atoms = torch.cat(num_atoms)
         predicted_energies = torch.cat(predicted_energies)
 
         # Now the total loss has two parts, energy loss and force loss
         energy_loss = (mse(predicted_energies, true_energies) / num_atoms).mean()
         energy_loss = 0.5 * (torch.exp(2 * energy_loss) - 1)
         force_loss = torch.cat(force_loss).mean()
-        loss = energy_loss + force_loss
+        loss = energy_loss + force_coefficient * force_loss
 
         optimizer.zero_grad()
         loss.backward()
