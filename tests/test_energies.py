@@ -89,12 +89,12 @@ class TestEnergies(unittest.TestCase):
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 e = self.transform(e)
-                species_coordinates.append((species, coordinates))
+                species_coordinates.append({'species': species, 'coordinates': coordinates})
                 energies.append(e)
-        species, coordinates = torchani.utils.pad_coordinates(
+        species_coordinates = torchani.utils.pad_atomic_properties(
             species_coordinates)
         energies = torch.cat(energies)
-        _, energies_ = self.model((species, coordinates))
+        _, energies_ = self.model((species_coordinates['species'], species_coordinates['coordinates']))
         max_diff = (energies - energies_).abs().max().item()
         self.assertLess(max_diff, self.tolerance)
 

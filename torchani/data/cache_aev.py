@@ -6,7 +6,7 @@ this would dump the dataset and computed aevs. Use the ``-h`` option for help.
 
 import warnings
 import torch
-from . import cache_aev, builtin, default_device
+from . import cache_aev, cache_sparse_aev, builtin, default_device
 
 
 if __name__ == '__main__':
@@ -45,3 +45,7 @@ if __name__ == '__main__':
     cache_aev(parser.output, parser.dataset, parser.batchsize, parser.device,
               parser.constfile, parser.tqdm, shuffle=parser.shuffle,
               properties=parser.properties, dtype=getattr(torch, parser.dtype))
+
+    cache_sparse_aev(parser.output, parser.dataset, parser.batchsize, parser.device,
+                     parser.constfile, parser.tqdm, shuffle=parser.shuffle,
+                     properties=parser.properties, dtype=getattr(torch, parser.dtype))
