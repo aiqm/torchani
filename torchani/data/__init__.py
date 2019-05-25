@@ -277,7 +277,11 @@ class AEVCacheLoader(Dataset):
         with open(aev_path, 'rb') as f:
             species_aevs = pickle.load(f)
             for i, sa in enumerate(species_aevs):
-                species_aevs[i] = self.decode_aev(*sa)
+                species, aevs = self.decode_aev(*sa)
+                species_aevs[i] = (
+                    species.to(self.dataset.device),
+                    aevs.to(self.dataset.device)
+                )
         return species_aevs, output
 
     def __len__(self):
@@ -309,9 +313,9 @@ class SparseAEVCacheLoader(AEVCacheLoader):
     @staticmethod
     def decode_aev(species, aev):
         species_np = np.array(species.todense())
-        species = torch.from_numpy(species_np).to(self.dataset.device)
+        species = torch.from_numpy(species_np)
         aevs_np = np.stack([np.array(i.todense()) for i in aev], axis=0)
-        aevs = torch.from_numpy(aevs_np).to(self.dataset.device)
+        aevs = torch.from_numpy(aevs_np)
         return species, aevs
 
     @staticmethod
