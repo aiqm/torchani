@@ -69,14 +69,22 @@ validation = torchani.data.BatchedANIDataset(
 ###############################################################################
 # When iterating the dataset, we will get pairs of input and output
 # ``(species_coordinates, properties)``, in this case, ``properties`` would
-# contain a key ``'atomic'`` where ``properties['atomic']`` is also a dict
+# contain a key ``'atomic'`` where ``properties['atomic']`` is a list of dict
 # containing forces:
 
-print(training[0]['atomic'])
+data = training[0]
+properties = data[1]
+atomic_properties = properties['atomic']
+print(type(atomic_properties))
+print(list(atomic_properties[0].keys()))
+
+###############################################################################
+# Due to padding, part of the forces might be 0
+print(atomic_properties[0]['forces'][0])
 
 
 ###############################################################################
-# Now let's define atomic neural networks.
+# The code to define networks, optimizers, are mostly the same
 
 H_network = torch.nn.Sequential(
     torch.nn.Linear(384, 160),
@@ -119,90 +127,17 @@ O_network = torch.nn.Sequential(
 )
 
 nn = torchani.ANIModel([H_network, C_network, N_network, O_network])
-print(nn)
-
-###############################################################################
-# Let's now create a pipeline of AEV Computer --> Neural Networks.
 model = torch.nn.Sequential(aev_computer, nn).to(device)
 
 ###############################################################################
-# Now let's setup the optimizer. We need to specify different weight decay rate
-# for different parameters. Since PyTorch does not have correct implementation
-# of weight decay right now, we provide the correct implementation at TorchANI.
-#
-# .. note::
-#
-#   The weight decay in `inputtrain.ipt`_ is named "l2", but it is actually not
-#   L2 regularization. The confusion between L2 and weight decay is a common
-#   mistake in deep learning.  See: `Decoupled Weight Decay Regularization`_
-#   Also note that the weight decay only applies to weight in the training
-#   of ANI models, not bias.
-#
-# .. warning::
-#
-#   Currently TorchANI training with weight decay can not reproduce the training
-#   result of NeuroChem with the same training setup. If you really want to use
-#   weight decay, consider smaller rates and and make sure you do enough validation
-#   to check if you get expected result.
-#
-# .. _Decoupled Weight Decay Regularization:
-#   https://arxiv.org/abs/1711.05101
-optimizer = torchani.optim.AdamW([
-    # H networks
-    {'params': [H_network[0].weight], 'weight_decay': 0.0001},
-    {'params': [H_network[0].bias]},
-    {'params': [H_network[2].weight], 'weight_decay': 0.00001},
-    {'params': [H_network[2].bias]},
-    {'params': [H_network[4].weight], 'weight_decay': 0.000001},
-    {'params': [H_network[4].bias]},
-    {'params': H_network[6].parameters()},
-    # C networks
-    {'params': [C_network[0].weight], 'weight_decay': 0.0001},
-    {'params': [C_network[0].bias]},
-    {'params': [C_network[2].weight], 'weight_decay': 0.00001},
-    {'params': [C_network[2].bias]},
-    {'params': [C_network[4].weight], 'weight_decay': 0.000001},
-    {'params': [C_network[4].bias]},
-    {'params': C_network[6].parameters()},
-    # N networks
-    {'params': [N_network[0].weight], 'weight_decay': 0.0001},
-    {'params': [N_network[0].bias]},
-    {'params': [N_network[2].weight], 'weight_decay': 0.00001},
-    {'params': [N_network[2].bias]},
-    {'params': [N_network[4].weight], 'weight_decay': 0.000001},
-    {'params': [N_network[4].bias]},
-    {'params': N_network[6].parameters()},
-    # O networks
-    {'params': [O_network[0].weight], 'weight_decay': 0.0001},
-    {'params': [O_network[0].bias]},
-    {'params': [O_network[2].weight], 'weight_decay': 0.00001},
-    {'params': [O_network[2].bias]},
-    {'params': [O_network[4].weight], 'weight_decay': 0.000001},
-    {'params': [O_network[4].bias]},
-    {'params': O_network[6].parameters()},
-])
+# Here we will turn off weight decay
+optimizer = torch.optim.Adam(nn.parameters())
 
 ###############################################################################
-# The way ANI trains a neural network potential looks like this:
-#
-# Phase 1: Pretrain the model by minimizing MSE loss
-#
-# Phase 2: Train the model by minimizing the exponential loss, until validation
-# RMSE no longer improves for a certain steps, decay the learning rate and repeat
-# the same process, stop until the learning rate is smaller than a certain number.
-#
-# We first read the checkpoint files to find where we are. We use `latest.pt`
-# to store current training state. If `latest.pt` does not exist, this
-# this means the pretraining has not been finished yet.
+# This part of the code is also the same
 latest_checkpoint = 'latest.pt'
 pretrained = os.path.isfile(latest_checkpoint)
 
-###############################################################################
-# During training, we need to validate on validation set and if validation error
-# is better than the best, then save the new best model to a checkpoint
-
-
-# helper function to convert energy unit from Hartree to kcal/mol
 def hartree2kcal(x):
     return 627.509 * x
 
@@ -224,11 +159,11 @@ def validate():
     return hartree2kcal(math.sqrt(total_mse / count))
 
 
-###############################################################################
-# If the model is not pretrained yet, we need to run the pretrain.
 pretrain_criterion = 10  # kcal/mol
 mse = torch.nn.MSELoss(reduction='none')
 
+###############################################################################
+# In the training loop, we need to define loss for forces
 if not pretrained:
     print("pre-training...")
     epoch = 0
@@ -286,6 +221,7 @@ best_model_checkpoint = 'best.pt'
 
 for _ in range(scheduler.last_epoch + 1, max_epochs):
     rmse = validate()
+    print('RMSE:', rmse, 'at epoch', scheduler.last_epoch)
     learning_rate = optimizer.param_groups[0]['lr']
 
     if learning_rate < early_stopping_learning_rate:
