@@ -274,9 +274,9 @@ class BatchedANIDataset(PaddedBatchChunkDataset):
 
 
 def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
-                   properties=('energies',), atomic_properties=(), transform=(),
-                   dtype=torch.get_default_dtype(), device=default_device,
-                   split=(None,)):
+                     properties=('energies',), atomic_properties=(), transform=(),
+                     dtype=torch.get_default_dtype(), device=default_device,
+                     split=(None,)):
     """Load ANI dataset from h5 files, split it, and create batched datasets.
 
     This is Similar to directly use :class:`torchani.data.BatchedANIDataset`
@@ -322,7 +322,7 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
     start = 0
     splitted = []
     for size in split_:
-        ap = {k: atomic_properties_[k][start:start + size] for k in keys}
+        ap = {k: atomic_properties_[k][start:start + size] for k in atomic_keys}
         p = {k: properties_[k][start:start + size] for k in keys}
         start += size
         splitted.append((ap, p))
@@ -330,11 +330,12 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
     # consturct batched dataset
     ret = []
     for ap, p in splitted:
-        ds = BatchedANIDatasetAbstract(ap, p, batch_size, transform, dtype, device)
+        ds = PaddedBatchChunkDataset(ap, p, batch_size, transform, dtype, device)
         ds.properties = properties
         ds.atomic_properties = atomic_properties
         ret.append(ds)
-    return *ds
+    return tuple(ret)
+
 
 class AEVCacheLoader(Dataset):
     """Build a factory for AEV.
