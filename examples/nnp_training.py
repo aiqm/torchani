@@ -62,14 +62,10 @@ species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
 
 
 ###############################################################################
-# Now let's setup datasets. Note that here for our demo purpose, we set both
-# training set and validation set the ``ani_gdb_s01.h5`` in TorchANI's
-# repository. This allows this program to finish very quick, because that
-# dataset is very small. But this is wrong and should be avoided for any
-# serious training. These paths assumes the user run this script under the
-# ``examples`` directory of TorchANI's repository. If you download this script,
-# you should manually set the path of these files in your system before this
-# script can run successfully.
+# Now let's setup datasets. These paths assumes the user run this script under
+# the ``examples`` directory of TorchANI's repository. If you download this
+# script, you should manually set the path of these files in your system before
+# this script can run successfully.
 #
 # Also note that we need to subtracting energies by the self energies of all
 # atoms for each molecule. This makes the range of energies in a reasonable
