@@ -52,6 +52,13 @@ log = 'runs'
 ###############################################################################
 # Here, there is no need to manually construct aev computer and energy shifter,
 # but we do need to generate a disk cache for datasets
+
+# .. note::
+#
+#   The sparse representations of AEVs is stored via :mod:`
+#   torchani.data.cache_sparse_aev` and `torchani.data.cache_aev` 
+#   is deprecated.
+
 const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')
 sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')
 training_cache = './training_cache'
@@ -60,10 +67,10 @@ validation_cache = './validation_cache'
 # If the cache dirs already exists, then we assume these data has already been
 # cached and skip the generation part.
 if not os.path.exists(training_cache):
-    torchani.data.cache_aev(training_cache, training_path, batch_size, device,
+    torchani.data.cachei_sparse_aev(training_cache, training_path, batch_size, device,
                             const_file, True, sae_file)
 if not os.path.exists(validation_cache):
-    torchani.data.cache_aev(validation_cache, validation_path, batch_size,
+    torchani.data.cache_sparse_aev(validation_cache, validation_path, batch_size,
                             device, const_file, True, sae_file)
 
 
@@ -102,9 +109,9 @@ writer = torch.utils.tensorboard.SummaryWriter(log_dir=log)
 
 ###############################################################################
 # Here we don't need to construct :class:`torchani.data.BatchedANIDataset`
-# object, but instead an object of :class:`torchani.data.AEVCacheLoader`
-training = torchani.data.AEVCacheLoader(training_cache)
-validation = torchani.data.AEVCacheLoader(validation_cache)
+# object, but instead an object of :class:`torchani.data.SparseAEVCacheLoader`
+training = torchani.data.SparseAEVCacheLoader(training_cache)
+validation = torchani.data.SparseAEVCacheLoader(validation_cache)
 
 ###############################################################################
 # The rest of the code are again the same
