@@ -312,9 +312,8 @@ class SparseAEVCacheLoader(AEVCacheLoader):
 
     @staticmethod
     def decode_aev(encoded_species, encoded_aev):
-        species_np = np.array(encoded_species.todense())
-        species = torch.from_numpy(species_np)
-        aevs_np = np.stack([np.array(i.todense()) for i in encoded_aev], axis=0)
+        species = torch.from_numpy(encoded_species.todense())
+        aevs_np = np.stack([i.todense() for i in encoded_aev], axis=0)
         aevs = torch.from_numpy(aevs_np)
         return species, aevs
 
