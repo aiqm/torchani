@@ -159,7 +159,7 @@ def split_whole_into_batches_and_chunks(atomic_properties, properties, batch_siz
     return batches
 
 
-class BatchedANIDatasetAbstract(Dataset):
+class PaddedBatchChunkDataset(Dataset):
 
     def __init__(self, atomic_properties, properties, batch_size, transform=(),
                  dtype=torch.get_default_dtype(), device=default_device):
@@ -198,7 +198,7 @@ class BatchedANIDatasetAbstract(Dataset):
         return len(self.batches)
 
 
-class BatchedANIDataset(BatchedANIDatasetAbstract):
+class BatchedANIDataset(PaddedBatchChunkDataset):
     """Load data from hdf5 files, create minibatches, and convert to tensors.
 
     This is already a dataset of batches, so when iterated, a batch rather
@@ -273,11 +273,11 @@ class BatchedANIDataset(BatchedANIDatasetAbstract):
         super().__init__(atomic_properties, properties, batch_size, transform, dtype, device)
 
 
-def load_and_split(path, species_tensor_converter, batch_size, shuffle=True,
+def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
                    properties=('energies',), atomic_properties=(), transform=(),
                    dtype=torch.get_default_dtype(), device=default_device,
                    split=(None,)):
-    """Load data from files, split it, and create batched datasets.
+    """Load ANI dataset from h5 files, split it, and create batched datasets.
 
     This is Similar to directly use :class:`torchani.data.BatchedANIDataset`
     except that instead of creating a single instance of BatchedANIDataset,

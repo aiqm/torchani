@@ -101,7 +101,7 @@ writer = torch.utils.tensorboard.SummaryWriter(log_dir=log)
 
 ###############################################################################
 # Now load training and validation datasets into memory.
-validation, training = torchani.data.load_and_split(
+validation, training = torchani.data.load_ani_dataset(
     validation_path, consts.species_to_tensor, batch_size, device=device,
     transform=[energy_shifter.subtract_from_dataset], split=[0.2, None])
 
