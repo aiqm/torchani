@@ -212,7 +212,7 @@ class BatchedANIDataset(PaddedBatchChunkDataset):
         for t in transform:
             atomic_properties, properties = t(atomic_properties, properties)
 
-        super().__init__(atomic_properties, properties, batch_size, transform, dtype, device)
+        super().__init__(atomic_properties, properties, batch_size, dtype, device)
 
 
 def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
@@ -330,7 +330,7 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
     # consturct batched dataset
     ret = []
     for ap, p in splitted:
-        ds = PaddedBatchChunkDataset(ap, p, batch_size, transform, dtype, device)
+        ds = PaddedBatchChunkDataset(ap, p, batch_size, dtype, device)
         ds.properties = properties
         ds.atomic_properties = atomic_properties
         ret.append(ds)
