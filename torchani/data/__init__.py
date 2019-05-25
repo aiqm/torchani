@@ -324,7 +324,7 @@ class SparseAEVCacheLoader(AEVCacheLoader):
 builtin = neurochem.Builtins()
 
 
-def create_aev_cache(dataset, aev_computer, output, enable_tqdm=True, process_aev=lambda x: x):
+def create_aev_cache(dataset, aev_computer, output, enable_tqdm=True, encoder=lambda x: x):
     # dump out the dataset
     filename = os.path.join(output, 'dataset')
     with open(filename, 'wb') as f:
@@ -337,7 +337,7 @@ def create_aev_cache(dataset, aev_computer, output, enable_tqdm=True, process_ae
         indices = range(len(dataset))
     for i in indices:
         input_, _ = dataset[i]
-        aevs = [process_aev(*aev_computer(j)) for j in input_]
+        aevs = [encoder(*aev_computer(j)) for j in input_]
         filename = os.path.join(output, '{}'.format(i))
         with open(filename, 'wb') as f:
             pickle.dump(aevs, f)
