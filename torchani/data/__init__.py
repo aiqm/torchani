@@ -283,6 +283,10 @@ class AEVCacheLoader(Dataset):
     def __len__(self):
         return len(self.dataset)
 
+    @staticmethod
+    def process_aev(species, aev):
+        return species, aev
+
 
 class SparseAEVCacheLoader(AEVCacheLoader):
     """Build a factory for AEV.
@@ -310,13 +314,39 @@ class SparseAEVCacheLoader(AEVCacheLoader):
                 batch_X.append((species, aevs))
         return batch_X
 
+    @staticmethod
+    def process_aev(species, aev):
+        species = bsr_matrix(species.cpu().numpy())
+        aev = [bsr_matrix(i.cpu().numpy()) for i in aev]
+        return species, aev
+
 
 builtin = neurochem.Builtins()
 
 
+def create_aev_cache(dataset, aev_computer, output, process_aev=lambda x: x):
+    # dump out the dataset
+    filename = os.path.join(output, 'dataset')
+    with open(filename, 'wb') as f:
+        pickle.dump(dataset, f)
+
+    if enable_tqdm:
+        import tqdm
+        indices = tqdm.trange(len(dataset))
+    else:
+        indices = range(len(dataset))
+    for i in indices:
+        input_, _ = dataset[i]
+        aevs = [process_aev(*aev_computer(j)) for j in input_]
+        filename = os.path.join(output, '{}'.format(i))
+        with open(filename, 'wb') as f:
+            pickle.dump(aevs, f)
+
+
 def cache_aev(output, dataset_path, batchsize, device=default_device,
               constfile=builtin.const_file, subtract_sae=False,
-              sae_file=builtin.sae_file, enable_tqdm=True, **kwargs):
+              sae_file=builtin.sae_file, enable_tqdm=True,
+              process_aev=AEVCacheLoader.process_aev, **kwargs):
     # if output directory does not exist, then create it
     if not os.path.exists(output):
         os.makedirs(output)
@@ -336,67 +366,15 @@ def cache_aev(output, dataset_path, batchsize, device=default_device,
         device=device, transform=transform, **kwargs
     )
 
-    # dump out the dataset
-    filename = os.path.join(output, 'dataset')
-    with open(filename, 'wb') as f:
-        pickle.dump(dataset, f)
-
-    if enable_tqdm:
-        import tqdm
-        indices = tqdm.trange(len(dataset))
-    else:
-        indices = range(len(dataset))
-    for i in indices:
-        input_, _ = dataset[i]
-        aevs = [aev_computer(j) for j in input_]
-        filename = os.path.join(output, '{}'.format(i))
-        with open(filename, 'wb') as f:
-            pickle.dump(aevs, f)
+    create_aev_cache(dataset, aev_computer, process_aev)
 
 
 def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
                      constfile=builtin.const_file, subtract_sae=False,
                      sae_file=builtin.sae_file, enable_tqdm=True, **kwargs):
-    # if output directory does not exist, then create it
-    if not os.path.exists(output):
-        os.makedirs(output)
-
-    device = torch.device(device)
-    consts = neurochem.Constants(constfile)
-    aev_computer = aev.AEVComputer(**consts).to(device)
-
-    if subtract_sae:
-        energy_shifter = neurochem.load_sae(sae_file)
-        transform = (energy_shifter.subtract_from_dataset,)
-    else:
-        transform = ()
-
-    dataset = BatchedANIDataset(
-        dataset_path, consts.species_to_tensor, batchsize,
-        device=device, transform=transform, **kwargs
-    )
-
-    # dump out the dataset
-    filename = os.path.join(output, 'dataset')
-    with open(filename, 'wb') as f:
-        pickle.dump(dataset, f)
-
-    if enable_tqdm:
-        import tqdm
-        indices = tqdm.trange(len(dataset))
-    else:
-        indices = range(len(dataset))
-    for i in indices:
-        input_, _ = dataset[i]
-        aevs = []
-        for j in input_:
-            species_, aev_ = aev_computer(j)
-            species_ = bsr_matrix(species_.cpu().numpy())
-            aev_ = [bsr_matrix(i.cpu().numpy()) for i in aev_]
-            aevs.append((species_, aev_))
-        filename = os.path.join(output, '{}'.format(i))
-        with open(filename, 'wb') as f:
-            pickle.dump(aevs, f)
+    cache_aev(output, dataset_path, batchsize, device, constfile, subtract_sae,
+              sae_file, enable_tqdm, SparseAEVCacheLoader.process_aev,
+              **kwargs)
 
 
 __all__ = ['BatchedANIDataset', 'AEVCacheLoader', 'SparseAEVCacheLoader', 'cache_aev', 'cache_sparse_aev']
