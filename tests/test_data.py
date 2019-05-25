@@ -2,7 +2,7 @@ import os
 import torch
 import torchani
 import unittest
-from torchani.data.cache_aev import cache_aev, cache_sparse_aev
+from torchani.data import cache_aev, cache_sparse_aev
 
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, '../dataset/ani1-up_to_gdb4')
