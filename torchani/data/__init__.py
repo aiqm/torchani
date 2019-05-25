@@ -366,7 +366,7 @@ def cache_aev(output, dataset_path, batchsize, device=default_device,
         device=device, transform=transform, **kwargs
     )
 
-    create_aev_cache(dataset, aev_computer, enable_tqdm, process_aev)
+    create_aev_cache(dataset, aev_computer, output, enable_tqdm, process_aev)
 
 
 def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
