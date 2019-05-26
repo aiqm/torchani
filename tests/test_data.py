@@ -16,9 +16,9 @@ aev_computer = builtins.aev_computer
 class TestData(unittest.TestCase):
 
     def setUp(self):
-        self.ds = torchani.data.BatchedANIDataset(dataset_path,
-                                                  consts.species_to_tensor,
-                                                  batch_size)
+        self.ds = torchani.data.load_ani_dataset(dataset_path,
+                                                 consts.species_to_tensor,
+                                                 batch_size)
 
     def _assertTensorEqual(self, t1, t2):
         self.assertLess((t1 - t2).abs().max().item(), 1e-6)

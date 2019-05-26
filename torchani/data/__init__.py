@@ -11,6 +11,7 @@ from .. import utils, neurochem, aev
 import pickle
 import numpy as np
 from scipy.sparse import bsr_matrix
+import warnings
 
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -160,11 +161,69 @@ def split_whole_into_batches_and_chunks(atomic_properties, properties, batch_siz
     return batches
 
 
-class BatchedANIDataset(Dataset):
-    """Load data from hdf5 files, create minibatches, and convert to tensors.
+class PaddedBatchChunkDataset(Dataset):
 
-    This is already a dataset of batches, so when iterated, a batch rather
-    than a single data point will be yielded.
+    def __init__(self, atomic_properties, properties, batch_size,
+                 dtype=torch.get_default_dtype(), device=default_device):
+        super().__init__()
+        self.device = device
+        self.dtype = dtype
+
+        # convert to desired dtype
+        for k in properties:
+            properties[k] = properties[k].to(dtype)
+        for k in atomic_properties:
+            if k == 'species':
+                continue
+            atomic_properties[k] = atomic_properties[k].to(dtype)
+
+        self.batches = split_whole_into_batches_and_chunks(atomic_properties, properties, batch_size)
+
+    def __getitem__(self, idx):
+        atomic_properties, properties = self.batches[idx]
+        atomic_properties, properties = atomic_properties.copy(), properties.copy()
+        species_coordinates = []
+        for chunk in atomic_properties:
+            for k in chunk:
+                chunk[k] = chunk[k].to(self.device)
+            species_coordinates.append((chunk['species'], chunk['coordinates']))
+        for k in properties:
+            properties[k] = properties[k].to(self.device)
+        properties['atomic'] = atomic_properties
+        return species_coordinates, properties
+
+    def __len__(self):
+        return len(self.batches)
+
+
+class BatchedANIDataset(PaddedBatchChunkDataset):
+    """Same as :func:`torchani.data.load_ani_dataset`. This API has been deprecated."""
+
+    def __init__(self, path, species_tensor_converter, batch_size,
+                 shuffle=True, properties=('energies',), atomic_properties=(), transform=(),
+                 dtype=torch.get_default_dtype(), device=default_device):
+        self.properties = properties
+        self.atomic_properties = atomic_properties
+        warnings.warn("BatchedANIDataset is deprecated; use load_ani_dataset()", DeprecationWarning)
+
+        atomic_properties, properties = load_and_pad_whole_dataset(
+            path, species_tensor_converter, shuffle, properties, atomic_properties)
+
+        # do transformations on data
+        for t in transform:
+            atomic_properties, properties = t(atomic_properties, properties)
+
+        super().__init__(atomic_properties, properties, batch_size, dtype, device)
+
+
+def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
+                     properties=('energies',), atomic_properties=(), transform=(),
+                     dtype=torch.get_default_dtype(), device=default_device,
+                     split=(None,)):
+    """Load ANI dataset from hdf5 files, and split into subsets.
+
+    The return datasets are already a dataset of batches, so when iterated, a
+    batch rather than a single data point will be yielded.
 
     Since each batch might contain molecules of very different sizes, putting
     the whole batch into a single tensor would require adding ghost atoms to
@@ -218,52 +277,67 @@ class BatchedANIDataset(Dataset):
         dtype (:class:`torch.dtype`): dtype of coordinates and properties to
             to convert the dataset to.
         device (:class:`torch.dtype`): device to put tensors when iterating.
+        split (list): as sequence of integers or floats or ``None``. Integers
+            are interpreted as number of elements, floats are interpreted as
+            percentage, and ``None`` are interpreted as the rest of the dataset
+            and can only appear as the last element of :class:`split`. For
+            example, if the whole dataset has 10000 entry, and split is
+            ``(5000, 0.1, None)``, then this function will create 3 datasets,
+            where the first dataset contains 5000 elements, the second dataset
+            contains ``int(0.1 * 10000)``, which is 1000, and the third dataset
+            will contains ``10000 - 5000 - 1000`` elements. By default this
+            creates only a single dataset.
+
+    Returns:
+        An instance of :class:`torchani.data.PaddedBatchChunkDataset` if there is
+        only one element in :attr:`split`, otherwise returns a tuple of the same
+        classes according to :attr:`split`.
 
     .. _pyanitools.py:
         https://github.com/isayev/ASE_ANI/blob/master/lib/pyanitools.py
     """
+    atomic_properties_, properties_ = load_and_pad_whole_dataset(
+        path, species_tensor_converter, shuffle, properties, atomic_properties)
 
-    def __init__(self, path, species_tensor_converter, batch_size,
-                 shuffle=True, properties=('energies',), atomic_properties=(), transform=(),
-                 dtype=torch.get_default_dtype(), device=default_device):
-        super(BatchedANIDataset, self).__init__()
-        self.properties = properties
-        self.atomic_properties = atomic_properties
-        self.device = device
-        self.dtype = dtype
+    # do transformations on data
+    for t in transform:
+        atomic_properties_, properties_ = t(atomic_properties_, properties_)
 
-        atomic_properties, properties = load_and_pad_whole_dataset(
-            path, species_tensor_converter, shuffle, properties, atomic_properties)
+    molecules = atomic_properties_['species'].shape[0]
+    atomic_keys = ['species', 'coordinates', *atomic_properties]
+    keys = properties
 
-        # do transformations on data
-        for t in transform:
-            atomic_properties, properties = t(atomic_properties, properties)
+    # compute size of each subset
+    split_ = []
+    total = 0
+    for index, size in enumerate(split):
+        if isinstance(size, float):
+            size = int(size * molecules)
+        if size is None:
+            assert index == len(split) - 1
+            size = molecules - total
+        split_.append(size)
+        total += size
 
-        # convert to desired dtype
-        for k in properties:
-            properties[k] = properties[k].to(dtype)
-        for k in atomic_properties:
-            if k == 'species':
-                continue
-            atomic_properties[k] = atomic_properties[k].to(dtype)
+    # split
+    start = 0
+    splitted = []
+    for size in split_:
+        ap = {k: atomic_properties_[k][start:start + size] for k in atomic_keys}
+        p = {k: properties_[k][start:start + size] for k in keys}
+        start += size
+        splitted.append((ap, p))
 
-        self.batches = split_whole_into_batches_and_chunks(atomic_properties, properties, batch_size)
-
-    def __getitem__(self, idx):
-        atomic_properties, properties = self.batches[idx]
-        atomic_properties, properties = atomic_properties.copy(), properties.copy()
-        species_coordinates = []
-        for chunk in atomic_properties:
-            for k in chunk:
-                chunk[k] = chunk[k].to(self.device)
-            species_coordinates.append((chunk['species'], chunk['coordinates']))
-        for k in properties:
-            properties[k] = properties[k].to(self.device)
-        properties['atomic'] = atomic_properties
-        return species_coordinates, properties
-
-    def __len__(self):
-        return len(self.batches)
+    # consturct batched dataset
+    ret = []
+    for ap, p in splitted:
+        ds = PaddedBatchChunkDataset(ap, p, batch_size, dtype, device)
+        ds.properties = properties
+        ds.atomic_properties = atomic_properties
+        ret.append(ds)
+    if len(ret) == 1:
+        return ret[0]
+    return tuple(ret)
 
 
 class AEVCacheLoader(Dataset):
@@ -344,13 +418,23 @@ class SparseAEVCacheLoader(AEVCacheLoader):
 builtin = neurochem.Builtins()
 
 
-def create_aev_cache(dataset, aev_computer, output, enable_tqdm=True, encoder=lambda x: x):
+def create_aev_cache(dataset, aev_computer, output, progress_bar=True, encoder=lambda *x: x):
+    """Cache AEV for the given dataset.
+
+    Arguments:
+        dataset (:class:`torchani.data.PaddedBatchChunkDataset`): the dataset to be cached
+        aev_computer (:class:`torchani.AEVComputer`): the AEV computer used to compute aev
+        output (str): path to the directory where cache will be stored
+        progress_bar (bool): whether to show progress bar
+        encoder (:class:`collections.abc.Callable`): The callable
+            (species, aev) -> (encoded_species, encoded_aev) that encode species and aev
+    """
     # dump out the dataset
     filename = os.path.join(output, 'dataset')
     with open(filename, 'wb') as f:
         pickle.dump(dataset, f)
 
-    if enable_tqdm:
+    if progress_bar:
         import tqdm
         indices = tqdm.trange(len(dataset))
     else:
