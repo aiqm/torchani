@@ -62,14 +62,10 @@ species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
 
 
 ###############################################################################
-# Now let's setup datasets. Note that here for our demo purpose, we set both
-# training set and validation set the ``ani_gdb_s01.h5`` in TorchANI's
-# repository. This allows this program to finish very quick, because that
-# dataset is very small. But this is wrong and should be avoided for any
-# serious training. These paths assumes the user run this script under the
-# ``examples`` directory of TorchANI's repository. If you download this script,
-# you should manually set the path of these files in your system before this
-# script can run successfully.
+# Now let's setup datasets. These paths assumes the user run this script under
+# the ``examples`` directory of TorchANI's repository. If you download this
+# script, you should manually set the path of these files in your system before
+# this script can run successfully.
 #
 # Also note that we need to subtracting energies by the self energies of all
 # atoms for each molecule. This makes the range of energies in a reasonable
@@ -81,18 +77,13 @@ try:
     path = os.path.dirname(os.path.realpath(__file__))
 except NameError:
     path = os.getcwd()
-training_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
-validation_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
+dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 
 batch_size = 2560
 
-training = torchani.data.BatchedANIDataset(
-    training_path, species_to_tensor, batch_size, device=device,
-    transform=[energy_shifter.subtract_from_dataset])
-
-validation = torchani.data.BatchedANIDataset(
-    validation_path, species_to_tensor, batch_size, device=device,
-    transform=[energy_shifter.subtract_from_dataset])
+training, validation = torchani.data.load_ani_dataset(
+    dspath, species_to_tensor, batch_size, device=device,
+    transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
 
 ###############################################################################
 # When iterating the dataset, we will get pairs of input and output
