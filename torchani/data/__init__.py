@@ -11,7 +11,6 @@ from .. import utils, neurochem, aev
 import pickle
 import numpy as np
 from scipy.sparse import bsr_matrix
-import warnings
 
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
