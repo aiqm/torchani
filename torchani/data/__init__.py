@@ -162,20 +162,9 @@ def split_whole_into_batches_and_chunks(atomic_properties, properties, batch_siz
 
 class PaddedBatchChunkDataset(Dataset):
 
-    def __init__(self, atomic_properties, properties, batch_size,
-                 dtype=torch.get_default_dtype(), device=default_device):
+    def __init__(self, atomic_properties, properties, batch_size, device=default_device):
         super().__init__()
         self.device = device
-        self.dtype = dtype
-
-        # convert to desired dtype
-        for k in properties:
-            properties[k] = properties[k].to(dtype)
-        for k in atomic_properties:
-            if k == 'species':
-                continue
-            atomic_properties[k] = atomic_properties[k].to(dtype)
-
         self.batches = split_whole_into_batches_and_chunks(atomic_properties, properties, batch_size)
 
     def __getitem__(self, idx):
@@ -212,7 +201,15 @@ class BatchedANIDataset(PaddedBatchChunkDataset):
         for t in transform:
             atomic_properties, properties = t(atomic_properties, properties)
 
-        super().__init__(atomic_properties, properties, batch_size, dtype, device)
+        # convert to desired dtype
+        for k in properties:
+            properties[k] = properties[k].to(dtype)
+        for k in atomic_properties:
+            if k == 'species':
+                continue
+            atomic_properties[k] = atomic_properties[k].to(dtype)
+
+        super().__init__(atomic_properties, properties, batch_size, device)
 
 
 def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
@@ -302,6 +299,14 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
     for t in transform:
         atomic_properties_, properties_ = t(atomic_properties_, properties_)
 
+    # convert to desired dtype
+    for k in properties_:
+        properties_[k] = properties_[k].to(dtype)
+    for k in atomic_properties_:
+        if k == 'species':
+            continue
+        atomic_properties_[k] = atomic_properties_[k].to(dtype)
+
     molecules = atomic_properties_['species'].shape[0]
     atomic_keys = ['species', 'coordinates', *atomic_properties]
     keys = properties
@@ -330,7 +335,7 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
     # consturct batched dataset
     ret = []
     for ap, p in splitted:
-        ds = PaddedBatchChunkDataset(ap, p, batch_size, dtype, device)
+        ds = PaddedBatchChunkDataset(ap, p, batch_size, device)
         ds.properties = properties
         ds.atomic_properties = atomic_properties
         ret.append(ds)
