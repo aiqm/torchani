@@ -4,9 +4,11 @@ from . import _six  # noqa:F401
 import math
 from torch import Tensor
 from typing import Tuple
+import torchsnooper
 
 
 # @torch.jit.script
+#@torchsnooper.snoop()
 def cutoff_cosine(distances, cutoff):
     # type: (Tensor, float) -> Tensor
     return torch.where(
@@ -17,6 +19,7 @@ def cutoff_cosine(distances, cutoff):
 
 
 # @torch.jit.script
+#@torchsnooper.snoop()
 def radial_terms(Rcr, EtaR, ShfR, distances):
     # type: (float, Tensor, Tensor, Tensor) -> Tensor
     """Compute the radial subAEV terms of the center atom given neighbors
@@ -45,6 +48,7 @@ def radial_terms(Rcr, EtaR, ShfR, distances):
 
 
 # @torch.jit.script
+#@torchsnooper.snoop()
 def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
     # type: (float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
     """Compute the angular subAEV terms of the center atom given neighbor pairs.
@@ -82,6 +86,7 @@ def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
 
 
 # @torch.jit.script
+#@torchsnooper.snoop()
 def compute_shifts(cell, pbc, cutoff):
     """Compute the shifts of unit cell along the given cell vectors to make it
     large enough to contain all pairs of neighbor atoms with PBC under
@@ -126,6 +131,7 @@ def compute_shifts(cell, pbc, cutoff):
 
 
 # @torch.jit.script
+#@torchsnooper.snoop()
 def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
     """Compute pairs of atoms that are neighbors
 
@@ -177,6 +183,7 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
 
 
 # torch.jit.script
+#@torchsnooper.snoop()
 def triu_index(num_species):
     species = torch.arange(num_species)
     species1, species2 = torch.combinations(species, r=2, with_replacement=True).unbind(-1)
@@ -188,6 +195,7 @@ def triu_index(num_species):
 
 
 # torch.jit.script
+#@torchsnooper.snoop()
 def convert_pair_index(index):
     """Let's say we have a pair:
     index: 0 1 2 3 4 5 6 7 8 9 ...
@@ -213,6 +221,7 @@ def convert_pair_index(index):
 
 
 # torch.jit.script
+#@torchsnooper.snoop()
 def cumsum_from_zero(input_):
     cumsum = torch.cumsum(input_, dim=0)
     cumsum = torch.cat([input_.new_tensor([0]), cumsum[:-1]])
@@ -220,6 +229,7 @@ def cumsum_from_zero(input_):
 
 
 # torch.jit.script
+#@torchsnooper.snoop()
 def triple_by_molecule(atom_index1, atom_index2):
     """Input: indices for pairs of atoms that are close to each other.
     each pair only appear once, i.e. only one of the pairs (1, 2) and
@@ -264,6 +274,7 @@ def triple_by_molecule(atom_index1, atom_index2):
 
 
 # torch.jit.script
+#@torchsnooper.snoop()
 def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes):
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     num_species, radial_sublength, radial_length, angular_sublength, angular_length, aev_length = sizes
@@ -292,15 +303,22 @@ def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes
     radial_aev = radial_aev.reshape(num_molecules, num_atoms, radial_length)
 
     # compute angular aev
+    chunksize = 20480
+    angular_aev = radial_aev.new_zeros(num_molecules * num_atoms * num_species_pairs, angular_sublength)
     central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(atom_index1, atom_index2)
-    vec1 = vec.index_select(0, pair_index1) * sign1.unsqueeze(1).to(vec.dtype)
-    vec2 = vec.index_select(0, pair_index2) * sign2.unsqueeze(1).to(vec.dtype)
-    species1_ = torch.where(sign1 == 1, species2[pair_index1], species1[pair_index1])
-    species2_ = torch.where(sign2 == 1, species2[pair_index2], species1[pair_index2])
-    angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec1, vec2)
-    angular_aev = angular_terms_.new_zeros(num_molecules * num_atoms * num_species_pairs, angular_sublength)
-    index = central_atom_index * num_species_pairs + triu_index[species1_, species2_]
-    angular_aev.index_add_(0, index, angular_terms_)
+    central_atom_index_chunks = central_atom_index.split(chunksize)
+    pair_index1_chunks = pair_index1.split(chunksize)
+    pair_index2_chunks = pair_index2.split(chunksize)
+    sign1_chunks = sign1.split(chunksize)
+    sign2_chunks = sign2.split(chunksize)
+    for central_atom_index, pair_index1, pair_index2, sign1, sign2 in zip(central_atom_index_chunks, pair_index1_chunks, pair_index2_chunks, sign1_chunks, sign2_chunks):
+        vec1 = vec.index_select(0, pair_index1) * sign1.unsqueeze(1).to(vec.dtype)
+        vec2 = vec.index_select(0, pair_index2) * sign2.unsqueeze(1).to(vec.dtype)
+        species1_ = torch.where(sign1 == 1, species2[pair_index1], species1[pair_index1])
+        species2_ = torch.where(sign2 == 1, species2[pair_index2], species1[pair_index2])
+        angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec1, vec2)
+        index = central_atom_index * num_species_pairs + triu_index[species1_, species2_]
+        angular_aev.index_add_(0, index, angular_terms_)
     angular_aev = angular_aev.reshape(num_molecules, num_atoms, angular_length)
     return torch.cat([radial_aev, angular_aev], dim=-1)
 
