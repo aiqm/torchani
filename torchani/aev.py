@@ -4,7 +4,7 @@ from . import _six  # noqa:F401
 import math
 from torch import Tensor
 from typing import Tuple
-import torchsnooper
+# import torchsnooper
 
 
 # @torch.jit.script
