@@ -315,7 +315,7 @@ def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes
     radial_aev = radial_aev.reshape(num_molecules, num_atoms, radial_length)
 
     # compute angular aev
-    chunksize = 20480
+    chunksize = 2048
     angular_aev = radial_aev.new_zeros(num_molecules * num_atoms * num_species_pairs, angular_sublength)
     central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(atom_index1, atom_index2)
     central_atom_index_chunks = central_atom_index.split(chunksize)
