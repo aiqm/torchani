@@ -273,9 +273,21 @@ def triple_by_molecule(atom_index1, atom_index2):
     return central_atom_index, local_index1 % n, local_index2 % n, sign1, sign2
 
 
+def filter_required(required_mask, atom_index1, atom_index2, shifts):
+    if required_mask is not None:
+        atom_mask1 = required_mask.flatten()[atom_index1]
+        atom_mask2 = required_mask.flatten()[atom_index2]
+        atom_mask = atom_index1 | atom_index2
+        interested_indices = atom_mask.nonzero().squeeze()
+        atom_index1 = atom_index1.index_select(0, interested_indices)
+        atom_index2 = atom_index2.index_select(0, interested_indices)
+        shifts = shifts.index_select(0, interested_indices)
+    return atom_index1, atom_index2, shifts
+
+
 # torch.jit.script
 #@torchsnooper.snoop()
-def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes):
+def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes, required_mask=None):
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     num_species, radial_sublength, radial_length, angular_sublength, angular_length, aev_length = sizes
     num_molecules = species.shape[0]
@@ -284,6 +296,7 @@ def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes
     cutoff = max(Rcr, Rca)
 
     atom_index1, atom_index2, shifts = neighbor_pairs(species == -1, coordinates, cell, shifts, cutoff)
+    atom_index1, atom_index2, shifts = filter_required(required_mask, atom_index1, atom_index2, shifts)
     species = species.flatten()
     coordinates = coordinates.flatten(0, 1)
     species1 = species[atom_index1]
@@ -394,7 +407,7 @@ class AEVComputer(torch.nn.Module):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
     # @torch.jit.script_method
-    def forward(self, input):
+    def forward(self, input, required_mask=None):
         """Compute AEVs
 
         Arguments:
