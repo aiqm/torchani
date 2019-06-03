@@ -230,7 +230,7 @@ def cumsum_from_zero(input_):
 
 # torch.jit.script
 #@torchsnooper.snoop()
-def triple_by_molecule(atom_index1, atom_index2):
+def triple_by_molecule(atom_index1, atom_index2, required_mask):
     """Input: indices for pairs of atoms that are close to each other.
     each pair only appear once, i.e. only one of the pairs (1, 2) and
     (2, 1) exists.
@@ -270,7 +270,15 @@ def triple_by_molecule(atom_index1, atom_index2):
     # compute mapping between representation of central-other to pair
     sign1 = ((local_index1 < n) * 2).to(torch.long) - 1
     sign2 = ((local_index2 < n) * 2).to(torch.long) - 1
-    return central_atom_index, local_index1 % n, local_index2 % n, sign1, sign2
+
+    # filter required
+    required_indices = required_mask.flatten()[central_atom_index].nonzero().squeeze()
+    central_atom_index = central_atom_index.index_select(0, required_indices)
+    local_index1 = (local_index1 % n).index_select(0, required_indices)
+    local_index2 = (local_index2 % n).index_select(0, required_indices)
+    sign1 = sign1.index_select(0, required_indices)
+    sign2 = sign2.index_select(0, required_indices)
+    return central_atom_index, local_index1, local_index2, sign1, sign2
 
 
 def filter_required(required_mask, atom_index1, atom_index2, shifts):
@@ -317,7 +325,7 @@ def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes
     # compute angular aev
     chunksize = 2048
     angular_aev = radial_aev.new_zeros(num_molecules * num_atoms * num_species_pairs, angular_sublength)
-    central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(atom_index1, atom_index2)
+    central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(atom_index1, atom_index2, required_mask)
     central_atom_index_chunks = central_atom_index.split(chunksize)
     pair_index1_chunks = pair_index1.split(chunksize)
     pair_index2_chunks = pair_index2.split(chunksize)
