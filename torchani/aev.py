@@ -412,7 +412,7 @@ class AEVComputer(torch.nn.Module):
             cell = self.default_cell
             shifts = self.default_shifts
         else:
-            assert len(input) == 4
+            assert len(input_) == 4
             species, coordinates, cell, pbc = input_
             cutoff = max(self.Rcr, self.Rca)
             shifts = compute_shifts(cell, pbc, cutoff)
