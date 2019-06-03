@@ -274,20 +274,19 @@ def triple_by_molecule(atom_index1, atom_index2):
 
 
 def filter_required(required_mask, atom_index1, atom_index2, shifts):
-    if required_mask is not None:
-        atom_mask1 = required_mask.flatten()[atom_index1]
-        atom_mask2 = required_mask.flatten()[atom_index2]
-        atom_mask = atom_index1 | atom_index2
-        interested_indices = atom_mask.nonzero().squeeze()
-        atom_index1 = atom_index1.index_select(0, interested_indices)
-        atom_index2 = atom_index2.index_select(0, interested_indices)
-        shifts = shifts.index_select(0, interested_indices)
+    atom_mask1 = required_mask.flatten()[atom_index1]
+    atom_mask2 = required_mask.flatten()[atom_index2]
+    atom_mask = atom_index1 | atom_index2
+    interested_indices = atom_mask.nonzero().squeeze()
+    atom_index1 = atom_index1.index_select(0, interested_indices)
+    atom_index2 = atom_index2.index_select(0, interested_indices)
+    shifts = shifts.index_select(0, interested_indices)
     return atom_index1, atom_index2, shifts
 
 
 # torch.jit.script
 #@torchsnooper.snoop()
-def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes, required_mask=None):
+def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes, required_mask):
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     num_species, radial_sublength, radial_length, angular_sublength, angular_length, aev_length = sizes
     num_molecules = species.shape[0]
@@ -447,4 +446,6 @@ class AEVComputer(torch.nn.Module):
             species, coordinates, cell, pbc = input
             cutoff = max(self.Rcr, self.Rca)
             shifts = compute_shifts(cell, pbc, cutoff)
-        return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
+        if required_mask is None:
+            required_mask = torch.ones_like(species, dtype=torch.uint8)
+        return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes, required_mask)
