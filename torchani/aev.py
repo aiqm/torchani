@@ -376,11 +376,11 @@ class AEVComputer(torch.nn.Module):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
     # @torch.jit.script_method
-    def forward(self, input):
+    def forward(self, input_):
         """Compute AEVs
 
         Arguments:
-            input (tuple): Can be one of the following two cases:
+            input_ (tuple): Can be one of the following two cases:
 
                 If you don't care about periodic boundary conditions at all,
                 then input can be a tuple of two tensors: species and coordinates.
@@ -407,13 +407,13 @@ class AEVComputer(torch.nn.Module):
             unchanged, and AEVs is a tensor of shape
             ``(C, A, self.aev_length())``
         """
-        if len(input) == 2:
-            species, coordinates = input
+        if len(input_) == 2:
+            species, coordinates = input_
             cell = self.default_cell
             shifts = self.default_shifts
         else:
             assert len(input) == 4
-            species, coordinates, cell, pbc = input
+            species, coordinates, cell, pbc = input_
             cutoff = max(self.Rcr, self.Rca)
             shifts = compute_shifts(cell, pbc, cutoff)
         return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
