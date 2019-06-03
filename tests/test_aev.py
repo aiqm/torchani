@@ -140,6 +140,37 @@ class TestAEV(unittest.TestCase):
                 _, aev = self.aev_computer((species, coordinates))
                 self.assertAEVEqual(radial, angular, aev)
 
+    def testRequiredMask(self):
+        species_coordinates = []
+        radial_angular = []
+        for i in range(N):
+            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, radial, angular, _, _ = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates)
+                species = torch.from_numpy(species)
+                radial = torch.from_numpy(radial)
+                angular = torch.from_numpy(angular)
+                coordinates = self.transform(coordinates)
+                species = self.transform(species)
+                radial = self.transform(radial)
+                angular = self.transform(angular)
+                species_coordinates.append({'species': species, 'coordinates': coordinates})
+                radial_angular.append((radial, angular))
+        species_coordinates = torchani.utils.pad_atomic_properties(
+            species_coordinates)
+        species = species_coordinates['species']
+        coordinates = species_coordinates['coordinates']
+        requires_mask = torch.randint_like(species, 2)
+
+        _, aev = self.aev_computer((species, coordinates))
+        _, aev2 = self.aev_computer((species, coordinates), requires_mask=requires_mask)
+
+        aev = aev * requires_mask.unsqueeze(-1)
+        aev2 = aev2 * requires_mask.unsqueeze(-1)
+        self.assertTrue(torch.allclose(aev, aev2))
+
+
     @unittest.skipIf(not torch.cuda.is_available(), "Too slow on CPU")
     def testGradient(self):
         """Test validity of autodiff by comparing analytical and numerical
