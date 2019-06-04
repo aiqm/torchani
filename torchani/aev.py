@@ -233,7 +233,7 @@ def cumsum_from_zero(input_):
 
 # torch.jit.script
 #@torchsnooper.snoop()
-def triple_by_molecule(atom_index1, atom_index2, required_mask):
+def triple_by_molecule(atom_index1, atom_index2, required_mask, force_cpu=False):
     """Input: indices for pairs of atoms that are close to each other.
     each pair only appear once, i.e. only one of the pairs (1, 2) and
     (2, 1) exists.
@@ -244,6 +244,11 @@ def triple_by_molecule(atom_index1, atom_index2, required_mask):
     central atom 0, 1, 2, 3, 4 and for cental atom 0, its pairs of neighbors
     are (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
     """
+    device = atom_index1.device
+    if force_cpu:
+        atom_index1 = atom_index1.cpu()
+        atom_index2 = atom_index2.cpu()
+        required_mask = required_mask.cpu()
     # convert representation from pair to central-others
     n = atom_index1.shape[0]
     ai1 = torch.cat([atom_index1, atom_index2])
@@ -288,7 +293,7 @@ def triple_by_molecule(atom_index1, atom_index2, required_mask):
     # filter required
     local_index1 = local_index1 % n
     local_index2 = local_index2 % n
-    return central_atom_index, local_index1, local_index2, sign1, sign2
+    return central_atom_index.to(device), local_index1.to(device), local_index2.to(device), sign1.to(device), sign2.to(device)
 
 
 def filter_required(required_mask, atom_index1, atom_index2, shifts):
@@ -304,7 +309,7 @@ def filter_required(required_mask, atom_index1, atom_index2, shifts):
 
 # torch.jit.script
 #@torchsnooper.snoop()
-def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes, required_mask):
+def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes, required_mask, force_cpu=False):
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     num_species, radial_sublength, radial_length, angular_sublength, angular_length, aev_length = sizes
     num_molecules = species.shape[0]
@@ -335,7 +340,7 @@ def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes
     # compute angular aev
     chunksize = 2048
     angular_aev = radial_aev.new_zeros(num_molecules * num_atoms * num_species_pairs, angular_sublength)
-    central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(atom_index1, atom_index2, required_mask)
+    central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(atom_index1, atom_index2, required_mask, force_cpu)
     central_atom_index_chunks = central_atom_index.split(chunksize)
     del central_atom_index
     pair_index1_chunks = pair_index1.split(chunksize)
@@ -429,7 +434,7 @@ class AEVComputer(torch.nn.Module):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
     # @torch.jit.script_method
-    def forward(self, input_, required_mask=None):
+    def forward(self, input_, required_mask=None, force_cpu=False):
         """Compute AEVs
 
         Arguments:
@@ -471,4 +476,4 @@ class AEVComputer(torch.nn.Module):
             shifts = compute_shifts(cell, pbc, cutoff)
         if required_mask is None:
             required_mask = torch.ones_like(species, dtype=torch.uint8)
-        return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes, required_mask)
+        return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes, required_mask, force_cpu)
