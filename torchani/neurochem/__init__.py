@@ -88,7 +88,7 @@ def load_sae(filename):
 
 def _get_activation(activation_index):
     # Activation defined in:
-    # https://github.com/Jussmith01/NeuroChem/blob/master/src-atomicnnplib/cunetwork/cuannlayer_t.cu#L868
+    # https://github.com/Jussmith01/NeuroChem/blob/stable1/src-atomicnnplib/cunetwork/cuannlayer_t.cu#L920
     if activation_index == 6:
         return None
     elif activation_index == 5:  # Gaussian
