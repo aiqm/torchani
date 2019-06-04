@@ -4,7 +4,7 @@ from . import _six  # noqa:F401
 import math
 from torch import Tensor
 from typing import Tuple
-# import torchsnooper
+import torchsnooper
 
 
 # @torch.jit.script
@@ -216,8 +216,7 @@ def convert_pair_index(index):
     """
     n = (torch.sqrt(1.0 + 8.0 * index.to(torch.float)) - 1.0) / 2.0
     n = torch.floor(n).to(torch.long)
-    num_elems = n * (n + 1) / 2
-    return index - num_elems, n + 1
+    return index - n * (n + 1) / 2, n + 1
 
 
 # torch.jit.script
@@ -248,36 +247,43 @@ def triple_by_molecule(atom_index1, atom_index2, required_mask):
 
     # sort and compute unique key
     uniqued_central_atom_index, counts = torch.unique_consecutive(sorted_ai1, return_counts=True)
+    del sorted_ai1
 
     # do local combinations within unique key, assuming sorted
     pair_sizes = counts * (counts - 1) // 2
     total_size = pair_sizes.sum()
     pair_indices = torch.repeat_interleave(pair_sizes)
     central_atom_index = uniqued_central_atom_index.index_select(0, pair_indices)
+    required_indices = required_mask.flatten()[central_atom_index].nonzero().squeeze()
+    central_atom_index = central_atom_index.index_select(0, required_indices)
+    del uniqued_central_atom_index
     cumsum = cumsum_from_zero(pair_sizes)
     cumsum = cumsum.index_select(0, pair_indices)
     sorted_local_pair_index = torch.arange(total_size, device=cumsum.device) - cumsum
     sorted_local_index1, sorted_local_index2 = convert_pair_index(sorted_local_pair_index)
+    sorted_local_index1 = sorted_local_index1.index_select(0, required_indices)
+    sorted_local_index2 = sorted_local_index2.index_select(0, required_indices)
+    del sorted_local_pair_index
     cumsum = cumsum_from_zero(counts)
-    cumsum = cumsum.index_select(0, pair_indices)
+    del counts
+    cumsum = cumsum.index_select(0, pair_indices).index_select(0, required_indices)
     sorted_local_index1 += cumsum
     sorted_local_index2 += cumsum
+    del cumsum
 
     # unsort result from last part
     local_index1 = rev_indices[sorted_local_index1]
+    del sorted_local_index1
     local_index2 = rev_indices[sorted_local_index2]
+    del sorted_local_index2
 
     # compute mapping between representation of central-other to pair
     sign1 = ((local_index1 < n) * 2).to(torch.long) - 1
     sign2 = ((local_index2 < n) * 2).to(torch.long) - 1
 
     # filter required
-    required_indices = required_mask.flatten()[central_atom_index].nonzero().squeeze()
-    central_atom_index = central_atom_index.index_select(0, required_indices)
-    local_index1 = (local_index1 % n).index_select(0, required_indices)
-    local_index2 = (local_index2 % n).index_select(0, required_indices)
-    sign1 = sign1.index_select(0, required_indices)
-    sign2 = sign2.index_select(0, required_indices)
+    local_index1 = local_index1 % n
+    local_index2 = local_index2 % n
     return central_atom_index, local_index1, local_index2, sign1, sign2
 
 
@@ -327,10 +333,15 @@ def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes
     angular_aev = radial_aev.new_zeros(num_molecules * num_atoms * num_species_pairs, angular_sublength)
     central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(atom_index1, atom_index2, required_mask)
     central_atom_index_chunks = central_atom_index.split(chunksize)
+    del central_atom_index
     pair_index1_chunks = pair_index1.split(chunksize)
+    del pair_index1
     pair_index2_chunks = pair_index2.split(chunksize)
+    del pair_index2
     sign1_chunks = sign1.split(chunksize)
+    del sign1
     sign2_chunks = sign2.split(chunksize)
+    del sign2
     for central_atom_index, pair_index1, pair_index2, sign1, sign2 in zip(central_atom_index_chunks, pair_index1_chunks, pair_index2_chunks, sign1_chunks, sign2_chunks):
         vec1 = vec.index_select(0, pair_index1) * sign1.unsqueeze(1).to(vec.dtype)
         vec2 = vec.index_select(0, pair_index2) * sign2.unsqueeze(1).to(vec.dtype)
