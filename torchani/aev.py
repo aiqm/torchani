@@ -165,9 +165,13 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
 
     # Step 4: combine results for all cells
     shifts_all = torch.cat([shifts_center, shifts_outide])
-    p1_all = torch.cat([p1_center, p1])
-    p2_all = torch.cat([p2_center, p2])
+    del shifts_center, shifts_outide
     shift_values = torch.mm(shifts_all.to(cell.dtype), cell)
+
+    p1_all = torch.cat([p1_center, p1])
+    del p1_center, p1
+    p2_all = torch.cat([p2_center, p2])
+    del p2_center, p2
 
     # step 5, compute distances, and find all pairs within cutoff
     distances = (coordinates.index_select(1, p1_all) - coordinates.index_select(1, p2_all) + shift_values).norm(2, -1)
