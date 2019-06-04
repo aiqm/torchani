@@ -161,10 +161,10 @@ class TestAEV(unittest.TestCase):
             species_coordinates)
         species = species_coordinates['species']
         coordinates = species_coordinates['coordinates']
-        requires_mask = torch.randint_like(species, 2)
+        required_mask = torch.randint_like(species, 2)
 
         _, aev = self.aev_computer((species, coordinates))
-        _, aev2 = self.aev_computer((species, coordinates), requires_mask=requires_mask)
+        _, aev2 = self.aev_computer((species, coordinates), required_mask=required_mask)
 
         aev = aev * requires_mask.unsqueeze(-1)
         aev2 = aev2 * requires_mask.unsqueeze(-1)
