@@ -256,17 +256,17 @@ def triple_by_molecule(atom_index1, atom_index2, required_mask):
     central_atom_index = uniqued_central_atom_index.index_select(0, pair_indices)
     required_indices = required_mask.flatten()[central_atom_index].nonzero().squeeze()
     central_atom_index = central_atom_index.index_select(0, required_indices)
+    pair_indices = pair_indices.index_select(0, required_indices)
     del uniqued_central_atom_index
     cumsum = cumsum_from_zero(pair_sizes)
+    del pair_sizes
     cumsum = cumsum.index_select(0, pair_indices)
-    sorted_local_pair_index = torch.arange(total_size, device=cumsum.device) - cumsum
+    sorted_local_pair_index = torch.arange(total_size, device=cumsum.device).index_select(0, required_indices) - cumsum
     sorted_local_index1, sorted_local_index2 = convert_pair_index(sorted_local_pair_index)
-    sorted_local_index1 = sorted_local_index1.index_select(0, required_indices)
-    sorted_local_index2 = sorted_local_index2.index_select(0, required_indices)
     del sorted_local_pair_index
     cumsum = cumsum_from_zero(counts)
     del counts
-    cumsum = cumsum.index_select(0, pair_indices).index_select(0, required_indices)
+    cumsum = cumsum.index_select(0, pair_indices)
     sorted_local_index1 += cumsum
     sorted_local_index2 += cumsum
     del cumsum
