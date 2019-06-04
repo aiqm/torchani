@@ -166,8 +166,8 @@ class TestAEV(unittest.TestCase):
         _, aev = self.aev_computer((species, coordinates))
         _, aev2 = self.aev_computer((species, coordinates), required_mask=required_mask)
 
-        aev = aev * requires_mask.unsqueeze(-1)
-        aev2 = aev2 * requires_mask.unsqueeze(-1)
+        aev = aev * required_mask.unsqueeze(-1)
+        aev2 = aev2 * required_mask.unsqueeze(-1)
         self.assertTrue(torch.allclose(aev, aev2))
 
 
