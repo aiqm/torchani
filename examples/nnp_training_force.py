@@ -46,25 +46,19 @@ try:
     path = os.path.dirname(os.path.realpath(__file__))
 except NameError:
     path = os.getcwd()
-training_path = os.path.join(path, '../dataset/ani-1x/sample.h5')
-validation_path = os.path.join(path, '../dataset/ani-1x/sample.h5')
+dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
 
 batch_size = 2560
-
 
 ###############################################################################
 # The code to create the dataset is a bit different: we need to manually
 # specify that ``atomic_properties=['forces']`` so that forces will be read
 # from hdf5 files.
-training = torchani.data.BatchedANIDataset(
-    training_path, species_to_tensor, batch_size, device=device,
-    atomic_properties=['forces'],
-    transform=[energy_shifter.subtract_from_dataset])
 
-validation = torchani.data.BatchedANIDataset(
-    validation_path, species_to_tensor, batch_size, device=device,
+training, validation = torchani.data.load_ani_dataset(
+    dspath, species_to_tensor, batch_size, device=device,
     atomic_properties=['forces'],
-    transform=[energy_shifter.subtract_from_dataset])
+    transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
 
 ###############################################################################
 # When iterating the dataset, we will get pairs of input and output
@@ -205,7 +199,7 @@ if 'scheduler' in checkpoint:
 ###############################################################################
 # In the training loop, we need to compute force, and loss for forces
 print("training starting from epoch", scheduler.last_epoch + 1)
-max_epochs = 200
+max_epochs = 20
 early_stopping_learning_rate = 1.0E-5
 force_coefficient = 1  # controls the importance of energy loss vs force loss
 best_model_checkpoint = 'force-training-best.pt'
