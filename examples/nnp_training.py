@@ -161,8 +161,8 @@ print(nn)
 #
 # .. note::
 #   Pytorch default initialization for the weights and biases in linear layers
-#   is Kaiming uniform. See: `TORCH.NN.MODULES.LINEAR`_ 
-#   We initialize the weights similarly but from the normal distribution. 
+#   is Kaiming uniform. See: `TORCH.NN.MODULES.LINEAR`_
+#   We initialize the weights similarly but from the normal distribution.
 #   The biases were initialized to zero.
 #
 # .. _TORCH.NN.MODULES.LINEAR:
