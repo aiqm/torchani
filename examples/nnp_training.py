@@ -240,10 +240,10 @@ optimizer = torchani.optim.AdamW([
 
 ###############################################################################
 # Setting up a learning rate scheduler to do learning rate decay
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=100)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=100, threshold=0)
 
 ###############################################################################
-# Train the model by minimizing the mase loss, until validation RMSE no longer
+# Train the model by minimizing the MSE loss, until validation RMSE no longer
 # improves during a certain number of steps, decay the learning rate and repeat
 # the same process, stop until the learning rate is smaller than a threshold.
 #
@@ -257,9 +257,7 @@ if os.path.isfile(latest_checkpoint):
     checkpoint = torch.load(latest_checkpoint)
     model.load_state_dict(checkpoint['nn'])
     optimizer.load_state_dict(checkpoint['optimizer'])
-
-    if 'scheduler' in checkpoint:
-        scheduler.load_state_dict(checkpoint['scheduler'])
+    scheduler.load_state_dict(checkpoint['scheduler'])
 
 ###############################################################################
 # During training, we need to validate on validation set and if validation error
