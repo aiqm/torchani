@@ -171,7 +171,7 @@ print(nn)
 
 def init_params(m):
     if isinstance(m, torch.nn.Linear):
-        torch.nn.init.kaiming_normal_(m.weight, a=math.sqrt(5))
+        torch.nn.init.kaiming_normal_(m.weight, a=1.0)
         torch.nn.init.zeros_(m.bias)
 
 
