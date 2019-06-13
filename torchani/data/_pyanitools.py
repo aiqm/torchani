@@ -22,9 +22,9 @@ class datapacker:
             # print(type(v[0]))
 
             # print(k)
-            if type(v) == list:
+            if isinstance(v,list):
                 if len(v) != 0:
-                    if type(v[0]) is np.str_ or type(v[0]) is str:
+                    if isinstance(v[0],np.str_) or isinstance(v[0],str):
                         v = [a.encode('utf8') for a in v]
 
             g.create_dataset(k, data=v, compression=self.clib,
@@ -57,11 +57,11 @@ class anidataloader:
                 data = {'path': path}
                 for k in keys:
                     if not isinstance(item[k], h5py.Group):
-                        dataset = np.array(item[k].value)
+                        dataset = np.array(item[k][()])
 
-                        if type(dataset) is np.ndarray:
+                        if isinstance(dataset,np.ndarray):
                             if dataset.size != 0:
-                                if type(dataset[0]) is np.bytes_:
+                                if isinstance(dataset[0],np.bytes_):
                                     dataset = [a.decode('ascii')
                                                for a in dataset]
 
@@ -98,11 +98,11 @@ class anidataloader:
         # print(path)
         for k in keys:
             if not isinstance(item[k], h5py.Group):
-                dataset = np.array(item[k].value)
+                dataset = np.array(item[k][()])
 
-                if type(dataset) is np.ndarray:
+                if isinstance(dataset,np.ndarray):
                     if dataset.size != 0:
-                        if type(dataset[0]) is np.bytes_:
+                        if isinstance(dataset[0],np.bytes_):
                             dataset = [a.decode('ascii') for a in dataset]
 
                 data.update({k: dataset})
