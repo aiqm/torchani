@@ -61,7 +61,8 @@ class TestForce(unittest.TestCase):
         _, energies = self.model((species_coordinates['species'], species_coordinates['coordinates']))
         energies = energies.sum()
         for coordinates, forces in coordinates_forces:
-            derivative = torch.autograd.grad(energies, coordinates, retain_graph=True)[0]
+            derivative = torch.autograd.grad(energies, coordinates,
+                                             retain_graph=True)[0]
             max_diff = (forces + derivative).abs().max().item()
             self.assertLess(max_diff, self.tolerance)
 

@@ -299,8 +299,7 @@ class TestAEVOnBoundary(unittest.TestCase):
     def assertInCell(self, coordinates):
         coordinates_cell = coordinates @ self.inv_cell
         self.assertTrue(torch.allclose(coordinates, coordinates_cell @ self.cell))
-        in_cell = (coordinates_cell >= -self.eps) & (
-            coordinates_cell <= 1 + self.eps)
+        in_cell = (coordinates_cell >= -self.eps) & (coordinates_cell <= 1 + self.eps)
         self.assertTrue(in_cell.all())
 
     def assertNotInCell(self, coordinates):

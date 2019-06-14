@@ -46,8 +46,8 @@ class Constants(collections.abc.Mapping):
                             '[', '').replace(']', '').split(',')]
                         setattr(self, name, torch.tensor(value))
                     elif name == 'Atyp':
-                        value = [x.strip() for x in value.replace('[', '').replace(
-                            ']', '').split(',')]
+                        value = [x.strip() for x in value.replace(
+                            '[', '').replace(']', '').split(',')]
                         self.species = value
                 except Exception:
                     raise ValueError('unable to parse const file')
@@ -290,7 +290,6 @@ class BuiltinsAbstract(object):
         ensemble_prefix (:class:`str`): Prefix of directories of models.
         models (:class:`torchani.Ensemble`): Ensemble of models.
     """
-
     def __init__(
             self,
             parent_name,
