@@ -29,19 +29,14 @@ class TestAEV(unittest.TestCase):
     def transform(self, x):
         return x
 
-    def assertAEVEqual(self,
-                       expected_radial,
-                       expected_angular,
-                       aev,
-                       tolerance=tolerance):
+    def assertAEVEqual(
+            self, expected_radial, expected_angular, aev, tolerance=tolerance):
         radial = aev[..., :self.radial_length]
         angular = aev[..., self.radial_length:]
         radial_diff = expected_radial - radial
         if self.debug:
             aid = 1
-            print(torch.stack([
-                expected_radial[0, aid, :], radial[0, aid, :],
-                radial_diff.abs()[0, aid, :]], dim=1))
+            print(torch.stack([expected_radial[0, aid, :], radial[0, aid, :], radial_diff.abs()[0, aid, :]], dim=1))
         radial_max_error = torch.max(torch.abs(radial_diff)).item()
         angular_diff = expected_angular - angular
         angular_max_error = torch.max(torch.abs(angular_diff)).item()
@@ -72,8 +67,7 @@ class TestAEV(unittest.TestCase):
             with open(datafile, 'rb') as f:
                 coordinates, species, expected_radial, expected_angular, _, _, cell, pbc \
                     = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(
-                    0)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
                 species = torch.from_numpy(species).unsqueeze(0)
                 expected_radial = torch.from_numpy(
                     expected_radial).float().unsqueeze(0)
@@ -88,8 +82,8 @@ class TestAEV(unittest.TestCase):
                 expected_radial = self.transform(expected_radial)
                 expected_angular = self.transform(expected_angular)
                 _, aev = self.aev_computer((species, coordinates, cell, pbc))
-                self.assertAEVEqual(expected_radial, expected_angular, aev,
-                                    5e-5)
+                self.assertAEVEqual(
+                    expected_radial, expected_angular, aev, 5e-5)
 
     def testTripeptideMD(self):
         tol = 5e-6
@@ -99,8 +93,7 @@ class TestAEV(unittest.TestCase):
             with open(datafile, 'rb') as f:
                 coordinates, species, expected_radial, expected_angular, _, _, _, _ \
                     = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(
-                    0)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
                 species = torch.from_numpy(species).unsqueeze(0)
                 expected_radial = torch.from_numpy(
                     expected_radial).float().unsqueeze(0)
@@ -111,8 +104,7 @@ class TestAEV(unittest.TestCase):
                 expected_radial = self.transform(expected_radial)
                 expected_angular = self.transform(expected_angular)
                 _, aev = self.aev_computer((species, coordinates))
-                self.assertAEVEqual(expected_radial, expected_angular, aev,
-                                    tol)
+                self.assertAEVEqual(expected_radial, expected_angular, aev, tol)
 
     def testPadding(self):
         species_coordinates = []
@@ -129,10 +121,8 @@ class TestAEV(unittest.TestCase):
                 species = self.transform(species)
                 radial = self.transform(radial)
                 angular = self.transform(angular)
-                species_coordinates.append({
-                    'species': species,
-                    'coordinates': coordinates
-                })
+                species_coordinates.append(
+                    {'species': species, 'coordinates': coordinates})
                 radial_angular.append((radial, angular))
         species_coordinates = torchani.utils.pad_atomic_properties(
             species_coordinates)
@@ -202,10 +192,11 @@ class TestPBCSeeEachOther(unittest.TestCase):
         self.aev_computer = self.ani1x.aev_computer.to(torch.double)
 
     def testTranslationalInvariancePBC(self):
-        coordinates = torch.tensor(
-            [[[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]]],
-            dtype=torch.double,
-            requires_grad=True)
+        coordinates = torch.tensor([[[0, 0, 0],
+                                     [1, 0, 0],
+                                     [0, 1, 0],
+                                     [0, 0, 1],
+                                     [0, 1, 1]]], dtype=torch.double, requires_grad=True)
         cell = torch.eye(3, dtype=torch.double) * 2
         species = torch.tensor([[1, 0, 0, 0, 0]], dtype=torch.long)
         pbc = torch.ones(3, dtype=torch.uint8)
@@ -232,12 +223,11 @@ class TestPBCSeeEachOther(unittest.TestCase):
             torch.tensor([9.9, 9.9, 0.0]),
             torch.tensor([0.0, 9.9, 9.9]),
             torch.tensor([9.9, 0.0, 9.9]),
-            torch.tensor([9.9, 9.9, 9.9]),
-        ]
+            torch.tensor([9.9, 9.9, 9.9])]
 
         for xyz2 in xyz2s:
-            coordinates = torch.stack([xyz1,
-                                       xyz2]).to(torch.double).unsqueeze(0)
+            coordinates = torch.stack([xyz1, xyz2]).to(
+                torch.double).unsqueeze(0)
             atom_index1, atom_index2, _ = torchani.aev.neighbor_pairs(
                 species == -1, coordinates, cell, allshifts, 1)
             self.assertEqual(atom_index1.tolist(), [0])
@@ -309,10 +299,11 @@ class TestAEVOnBoundary(unittest.TestCase):
         self.cell = torch.tensor(ase.geometry.complete_cell(cell),
                                  dtype=torch.double)
         self.inv_cell = torch.inverse(self.cell)
-        self.coordinates = torch.tensor(
-            [[[0.0, 0.0, 0.0], [1.0, -0.1, -0.1], [-0.1, 1.0, -0.1],
-              [-0.1, -0.1, 1.0], [-1.0, -1.0, -1.0]]],
-            dtype=torch.double)
+        self.coordinates = torch.tensor([[[0.0, 0.0, 0.0],
+                                          [1.0, -0.1, -0.1],
+                                          [-0.1, 1.0, -0.1],
+                                          [-0.1, -0.1, 1.0],
+                                          [-1.0, -1.0, -1.0]]], dtype=torch.double)
         self.species = torch.tensor([[1, 0, 0, 0]])
         self.pbc = torch.ones(3, dtype=torch.uint8)
         self.v1, self.v2, self.v3 = self.cell
