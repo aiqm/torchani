@@ -20,7 +20,7 @@ parser = parser.parse_args()
 # set up benchmark
 device = torch.device(parser.device)
 ani1x = torchani.models.ANI1x()
-nnp = torch.nn.Sequential(ani1x.aev_computer, ani1x.models[0],
+nnp = torch.nn.Sequential(ani1x.aev_computer, ani1x.neural_networks[0],
                           ani1x.energy_shifter).to(device)
 
 
