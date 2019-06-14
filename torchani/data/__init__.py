@@ -6,7 +6,7 @@ from os.path import join, isfile, isdir
 import os
 from ._pyanitools import anidataloader
 import torch
-from .. import utils, neurochem, aev
+from .. import utils, neurochem, aev, models
 import pickle
 import numpy as np
 from scipy.sparse import bsr_matrix
@@ -414,7 +414,7 @@ class SparseAEVCacheLoader(AEVCacheLoader):
         return encoded_species, encoded_aev
 
 
-ani1x = neurochem.models.ANI1x()
+ani1x = models.ANI1x()
 
 
 def create_aev_cache(dataset, aev_computer, output, progress_bar=True, encoder=lambda *x: x):

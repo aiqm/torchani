@@ -186,14 +186,15 @@ class ANI1x(BuiltinNet):
             builtin constants
         neural_networks (:class:`torchani.Ensemble`): Ensemble of models
     """
-    def __init__(self,
-                 parent_name='.'.join(__name__.split('.')[:-1]),
-                 const_file_path='resources/ani-1x_8x'
-                 '/rHCNO-5.2R_16-3.5A_a4-8.params',
-                 sae_file_path='resources/ani-1x_8x/sae_linfit.dat',
-                 ensemble_size=8,
-                 ensemble_prefix_path='resources/ani-1x_8x/train'):
-        super(ANI1x, self).__init__()
+
+    def __init__(self):
+        super(ANI1x, self).__init__(
+            parent_name='.'.join(__name__.split('.')[:-1]),
+            const_file_path='resources/ani-1x_8x'
+            '/rHCNO-5.2R_16-3.5A_a4-8.params',
+            sae_file_path='resources/ani-1x_8x/sae_linfit.dat',
+            ensemble_size=8,
+            ensemble_prefix_path='resources/ani-1x_8x/train')
 
 
 class ANI1ccx(BuiltinNet):
@@ -223,11 +224,12 @@ class ANI1ccx(BuiltinNet):
             builtin constants
         neural_networks (:class:`torchani.Ensemble`): Ensemble of models
     """
-    def __init__(self,
-                 parent_name='.'.join(__name__.split('.')[:-1]),
-                 const_file_path='resources/ani-1ccx_8x'
-                 '/rHCNO-5.2R_16-3.5A_a4-8.params',
-                 sae_file_path='resources/ani-1ccx_8x/sae_linfit.dat',
-                 ensemble_size=8,
-                 ensemble_prefix_path='resources/ani-1ccx_8x/train'):
-        super(ANI1ccx, self).__init__()
+
+    def __init__(self):
+        super(ANI1ccx, self).__init__(
+            parent_name='.'.join(__name__.split('.')[:-1]),
+            const_file_path='resources/ani-1ccx_8x'
+            '/rHCNO-5.2R_16-3.5A_a4-8.params',
+            sae_file_path='resources/ani-1ccx_8x/sae_linfit.dat',
+            ensemble_size=8,
+            ensemble_prefix_path='resources/ani-1ccx_8x/train')

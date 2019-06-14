@@ -5,8 +5,9 @@ computed aevs. Use the ``-h`` option for help.
 """
 
 import torch
-from . import cache_aev, cache_sparse_aev, builtin, default_device
-
+from . import cache_aev, cache_sparse_aev, default_device
+from ..models import ANI1x
+ani1x = ANI1x()
 
 if __name__ == '__main__':
     import argparse
@@ -19,7 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('batchsize', help='batch size', type=int)
     parser.add_argument('--constfile',
                         help='Path of the constant file `.params`',
-                        default=builtin.const_file)
+                        default=ani1x.const_file)
     parser.add_argument('--properties', nargs='+',
                         help='Output properties to load.`',
                         default=['energies'])
@@ -35,7 +36,7 @@ if __name__ == '__main__':
                         help='Whether to subtrace self atomic energies',
                         default=None, action='store_true')
     parser.add_argument('--sae-file', help='Path to SAE file',
-                        default=builtin.sae_file)
+                        default=ani1x.sae_file)
     parser = parser.parse_args()
 
     cache_aev(parser.output, parser.dataset, parser.batchsize, parser.device,
