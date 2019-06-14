@@ -858,5 +858,5 @@ if sys.version_info[0] > 2:
                 lr *= self.lr_decay
 
 
-__all__ = ['Constants', 'load_sae', 'load_model', 'load_model_ensemble', 'Builtins',
-           'Trainer']
+__all__ = ['Constants', 'load_sae', 'load_model', 'load_model_ensemble',
+           'Builtins', 'Trainer']
