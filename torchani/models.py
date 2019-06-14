@@ -15,7 +15,7 @@ directly calculate energies or get an ASE calculator. For example:
     # convert atom species from string to long tensor
     ani1x.species_to_tensor('CHHHH')
 
-    model0 = ani1x.neural_networks[0]  # get the first model in the ensemble
+    model0 = ani1x[0]  # get the first model in the ensemble
     # compute energy using the first model in the ANI-1x model ensemble
     _, energies = model0((species, coordinates))
     model0.ase()  # get ASE Calculator using this model
