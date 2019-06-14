@@ -5,13 +5,11 @@ import os
 import pickle
 import math
 
-
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
 
 
 class TestEnergies(unittest.TestCase):
-
     def setUp(self):
         self.tolerance = 5e-5
         ani1x = torchani.models.ANI1x()
@@ -44,15 +42,18 @@ class TestEnergies(unittest.TestCase):
     def testBenzeneMD(self):
         tolerance = 1e-5
         for i in range(10):
-            datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
+            datafile = os.path.join(path,
+                                    'test_data/benzene-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, energies, _, cell, pbc \
                     = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(
+                    0)
                 species = torch.from_numpy(species).unsqueeze(0)
                 cell = torch.from_numpy(cell).float()
                 pbc = torch.from_numpy(pbc)
-                coordinates = torchani.utils.map2central(cell, coordinates, pbc)
+                coordinates = torchani.utils.map2central(
+                    cell, coordinates, pbc)
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 energies = self.transform(energies)
@@ -63,11 +64,13 @@ class TestEnergies(unittest.TestCase):
     def testTripeptideMD(self):
         tolerance = 2e-4
         for i in range(100):
-            datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
+            datafile = os.path.join(path,
+                                    'test_data/tripeptide-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, energies, _, _, _ \
                     = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(
+                    0)
                 species = torch.from_numpy(species).unsqueeze(0)
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
@@ -89,12 +92,16 @@ class TestEnergies(unittest.TestCase):
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 e = self.transform(e)
-                species_coordinates.append({'species': species, 'coordinates': coordinates})
+                species_coordinates.append({
+                    'species': species,
+                    'coordinates': coordinates
+                })
                 energies.append(e)
         species_coordinates = torchani.utils.pad_atomic_properties(
             species_coordinates)
         energies = torch.cat(energies)
-        _, energies_ = self.model((species_coordinates['species'], species_coordinates['coordinates']))
+        _, energies_ = self.model((species_coordinates['species'],
+                                   species_coordinates['coordinates']))
         max_diff = (energies - energies_).abs().max().item()
         self.assertLess(max_diff, self.tolerance)
 
