@@ -37,8 +37,9 @@ from .aev import AEVComputer
 class BuiltinModels(torch.nn.Module):
     """ BuiltinModels class.
 
-    This class is part of an old API. It is DEPRECATED and may be deleted in a
-    future version. It shouldn't be used.
+    .. warning::
+        This class is part of an old API. It is DEPRECATED and may be deleted in a
+        future version. It shouldn't be used.
     """
 
     def __init__(self, builtin_class):

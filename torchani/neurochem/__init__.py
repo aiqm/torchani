@@ -266,8 +266,9 @@ def load_model_ensemble(species, prefix, count):
 class BuiltinsAbstract(object):
     """Base class for loading ANI neural network from configuration files.
 
-    This class is part of an old API. It is DEPRECATED and may be deleted in a
-    future version. It shouldn't be used.
+    .. warning::
+        This class is part of an old API. It is DEPRECATED and may be deleted in a
+        future version. It shouldn't be used.
 
     Arguments:
         parent_name (:class:`str`): Base path that other paths are relative to.
@@ -323,8 +324,9 @@ class BuiltinsAbstract(object):
 class Builtins(BuiltinsAbstract):
     """Container for the builtin ANI-1x model.
 
-    This class is part of an old API. It is DEPRECATED and may be deleted in a
-    future version. It shouldn't be used.
+    .. warning::
+        This class is part of an old API. It is DEPRECATED and may be deleted in a
+        future version. It shouldn't be used.
 
     Attributes:
         const_file (:class:`str`): Path to the builtin constant file.
@@ -362,8 +364,9 @@ class Builtins(BuiltinsAbstract):
 class BuiltinsANI1CCX(BuiltinsAbstract):
     """Container for the builtin ANI-1ccx model.
 
-    This class is part of an old API. It is DEPRECATED and may be deleted in a
-    future version. It shouldn't be used.
+    .. warning::
+        This class is part of an old API. It is DEPRECATED and may be deleted in a
+        future version. It shouldn't be used.
 
     Attributes:
         const_file (:class:`str`): Path to the builtin constant file.
