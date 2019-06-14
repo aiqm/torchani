@@ -19,8 +19,8 @@ tolerance = 1e-5
 class TestAEV(unittest.TestCase):
 
     def setUp(self):
-        builtins = torchani.neurochem.Builtins()
-        self.aev_computer = builtins.aev_computer
+        ani1x = torchani.models.ANI1x()
+        self.aev_computer = ani1x.aev_computer
         self.radial_length = self.aev_computer.radial_length
         self.debug = False
 
@@ -179,8 +179,8 @@ class TestAEV(unittest.TestCase):
 class TestPBCSeeEachOther(unittest.TestCase):
 
     def setUp(self):
-        self.builtin = torchani.neurochem.Builtins()
-        self.aev_computer = self.builtin.aev_computer.to(torch.double)
+        self.ani1x = torchani.models.ANI1x()
+        self.aev_computer = self.ani1x.aev_computer.to(torch.double)
 
     def testTranslationalInvariancePBC(self):
         coordinates = torch.tensor(
@@ -293,8 +293,8 @@ class TestAEVOnBoundary(unittest.TestCase):
         self.pbc = torch.ones(3, dtype=torch.uint8)
         self.v1, self.v2, self.v3 = self.cell
         self.center_coordinates = self.coordinates + 0.5 * (self.v1 + self.v2 + self.v3)
-        builtin = torchani.neurochem.Builtins()
-        self.aev_computer = builtin.aev_computer.to(torch.double)
+        ani1x = torchani.models.ANI1x()
+        self.aev_computer = ani1x.aev_computer.to(torch.double)
         _, self.aev = self.aev_computer((self.species, self.center_coordinates, self.cell, self.pbc))
 
     def assertInCell(self, coordinates):
@@ -325,8 +325,8 @@ class TestAEVOnBoundary(unittest.TestCase):
 class TestAEVOnBenzenePBC(unittest.TestCase):
 
     def setUp(self):
-        builtins = torchani.neurochem.Builtins()
-        self.aev_computer = builtins.aev_computer
+        ani1x = torchani.models.ANI1x()
+        self.aev_computer = ani1x.aev_computer
         filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.cif')
         benzene = ase.io.read(filename)
         self.cell = torch.tensor(benzene.get_cell(complete=True)).float()

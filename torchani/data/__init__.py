@@ -414,7 +414,7 @@ class SparseAEVCacheLoader(AEVCacheLoader):
         return encoded_species, encoded_aev
 
 
-builtin = neurochem.Builtins()
+ani1x = neurochem.models.ANI1x()
 
 
 def create_aev_cache(dataset, aev_computer, output, progress_bar=True, encoder=lambda *x: x):
@@ -471,16 +471,16 @@ def _cache_aev(output, dataset_path, batchsize, device, constfile,
 
 
 def cache_aev(output, dataset_path, batchsize, device=default_device,
-              constfile=builtin.const_file, subtract_sae=False,
-              sae_file=builtin.sae_file, enable_tqdm=True, **kwargs):
+              constfile=ani1x.const_file, subtract_sae=False,
+              sae_file=ani1x.sae_file, enable_tqdm=True, **kwargs):
     _cache_aev(output, dataset_path, batchsize, device, constfile,
                subtract_sae, sae_file, enable_tqdm, AEVCacheLoader.encode_aev,
                **kwargs)
 
 
 def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
-                     constfile=builtin.const_file, subtract_sae=False,
-                     sae_file=builtin.sae_file, enable_tqdm=True, **kwargs):
+                     constfile=ani1x.const_file, subtract_sae=False,
+                     sae_file=ani1x.sae_file, enable_tqdm=True, **kwargs):
     _cache_aev(output, dataset_path, batchsize, device, constfile,
                subtract_sae, sae_file, enable_tqdm,
                SparseAEVCacheLoader.encode_aev, **kwargs)
