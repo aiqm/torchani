@@ -35,7 +35,7 @@ from .aev import AEVComputer
 
 # Future: Delete BuiltinModels in a future release, it is DEPRECATED
 class BuiltinModels(torch.nn.Module):
-    """ BuiltinModels class.
+    """BuiltinModels class.
 
     .. warning::
         This class is part of an old API. It is DEPRECATED and may be deleted in a
@@ -91,19 +91,30 @@ class BuiltinModels(torch.nn.Module):
 
 
 class BuiltinNet(torch.nn.Module):
-    """ Template for the builtin ANI models.
+    """Private template for the builtin ANI ensemble models.
+
+    All ANI ensemble models form the ANI models zoo should inherit from this class.
+    This class is a torch module that sequentially calculates
+    AEVs, then energies from a torchani.Ensemble and then uses EnergyShifter
+    to shift those energies. It is essentially a sequential
+    'AEVComputer -> Ensemble -> EnergyShifter'.
+
+    .. note::
+        This class is for internal use only, avoid using it, use ANI1x, ANI1ccx,
+        etc instead. Don't confuse this class with torchani.Ensemble, which
+        is only a container for many ANIModel instances and shouldn't be used
+        directly for calculations.
 
     Attributes:
         const_file (:class:`str`): Path to the file with the builtin constants.
         sae_file (:class:`str`): Path to the file with the Self Atomic Energies.
         ensemble_prefix (:class:`str`): Prefix of directories.
-
         ensemble_size (:class:`int`): Number of models in the ensemble.
         energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter with
             builtin Self Atomic Energies.
         aev_computer (:class:`torchani.AEVComputer`): AEV computer with
             builtin constants
-        neural_networks (:class:`torchani.Ensemble`): Ensemble of models
+        neural_networks (:class:`torchani.Ensemble`): Ensemble of ANIModel networks
     """
 
     def __init__(self, parent_name, const_file_path, sae_file_path,
@@ -124,11 +135,33 @@ class BuiltinNet(torch.nn.Module):
             self.species, self.ensemble_prefix, self.ensemble_size)
 
     def forward(self, species_coordinates):
+        """Calculates predicted properties for minibatch of configurations
+
+        Args:
+            species_coordinates: minibatch of configurations
+
+        Returns:
+            species_energies: energies for the given configurations
+        """
         species_aevs = self.aev_computer(species_coordinates)
         species_energies = self.neural_networks(species_aevs)
         return self.energy_shifter(species_energies)
 
     def __getitem__(self, index):
+        """Get a single 'AEVComputer -> ANIModel -> EnergyShifter' sequential model
+
+        Indexing allows access to a single model inside the ensemble
+        that can be used directly for calculations. The model consists
+        of a sequence AEVComputer -> ANIModel -> EnergyShifter
+        and can return an ase calculator and convert species to tensor.
+
+        Args:
+            index (:class:`int`): Index of the model
+
+        Returns:
+            ret: (:class:`torch.nn.Sequential`): Sequential model ready for
+                calculations
+        """
         ret = torch.nn.Sequential(
             self.aev_computer,
             self.neural_networks[index],
@@ -136,6 +169,7 @@ class BuiltinNet(torch.nn.Module):
         )
 
         def ase(**kwargs):
+            """Attach an ase calculator """
             from . import ase
             return ase.Calculator(self.species,
                                   self.aev_computer,
@@ -148,10 +182,22 @@ class BuiltinNet(torch.nn.Module):
         return ret
 
     def __len__(self):
+        """Get the number of networks in the ensemble
+
+        Returns:
+            length (:class:`int`): Number of networks in the ensemble
+        """
         return len(self.neural_networks)
 
     def ase(self, **kwargs):
-        """Get an ASE Calculator using this model"""
+        """Get an ASE Calculator using this ANI model ensemble
+
+        Arguments:
+            kwargs: ase.Calculator kwargs
+
+        Returns:
+            calculator (:class:`int`): A calculator to be used with ASE
+        """
         from . import ase
         return ase.Calculator(self.species, self.aev_computer,
                               self.neural_networks, self.energy_shifter,
@@ -160,7 +206,14 @@ class BuiltinNet(torch.nn.Module):
     def species_to_tensor(self, *args, **kwargs):
         """Convert species from strings to tensor.
 
-        See also :method:`torchani.neurochem.Constant.species_to_tensor`"""
+        See also :method:`torchani.neurochem.Constant.species_to_tensor`
+
+        Arguments:
+            species (:class:`str`): A string of chemical symbols
+
+        Returns:
+            tensor (:class:`torch.Tensor`): A 1D tensor of integers
+        """
         return self.consts.species_to_tensor(*args, **kwargs) \
             .to(self.aev_computer.ShfR.device)
 
@@ -178,17 +231,6 @@ class ANI1x(BuiltinNet):
 
     .. _Active Learning Paper:
         https://aip.scitation.org/doi/abs/10.1063/1.5023802
-    Attributes:
-        const_file (:class:`str`): Path to the file with the builtin constants.
-        sae_file (:class:`str`): Path to file with the Self Atomic Energies.
-        ensemble_prefix (:class:`str`): Prefix of directories.
-
-        ensemble_size (:class:`int`): Number of models in the ensemble.
-        energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter with
-            builtin Self Atomic Energies.
-        aev_computer (:class:`torchani.AEVComputer`): AEV computer with
-            builtin constants
-        neural_networks (:class:`torchani.Ensemble`): Ensemble of models
     """
 
     def __init__(self):
@@ -215,17 +257,6 @@ class ANI1ccx(BuiltinNet):
 
     .. _Transfer Learning Paper:
         https://doi.org/10.26434/chemrxiv.6744440.v1
-    Attributes:
-        const_file (:class:`str`): Path to the file with the builtin constants.
-        sae_file (:class:`str`): Path to file with the Self Atomic Energies.
-        ensemble_prefix (:class:`str`): Prefix of directories.
-
-        ensemble_size (:class:`int`): Number of models in the ensemble.
-        energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter with
-            builtin Self Atomic Energies.
-        aev_computer (:class:`torchani.AEVComputer`): AEV computer with
-            builtin constants
-        neural_networks (:class:`torchani.Ensemble`): Ensemble of models
     """
 
     def __init__(self):
