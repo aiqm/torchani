@@ -20,9 +20,7 @@ class TestIgnite(unittest.TestCase):
         nnp = copy.deepcopy(ani1x.neural_networks[0])
         shift_energy = ani1x.energy_shifter
         ds = torchani.data.BatchedANIDataset(
-            path,
-            ani1x.consts.species_to_tensor,
-            batchsize,
+            path, ani1x.consts.species_to_tensor, batchsize,
             transform=[shift_energy.subtract_from_dataset],
             device=aev_computer.EtaR.device)
         ds = torch.utils.data.Subset(ds, [0])
@@ -35,11 +33,13 @@ class TestIgnite(unittest.TestCase):
         container = torchani.ignite.Container({'energies': model})
         optimizer = torch.optim.Adam(container.parameters())
         loss = torchani.ignite.TransformedLoss(
-            torchani.ignite.MSELoss('energies'), lambda x: torch.exp(x) - 1)
-        trainer = create_supervised_trainer(container, optimizer, loss)
-        evaluator = create_supervised_evaluator(
-            container,
-            metrics={'RMSE': torchani.ignite.RMSEMetric('energies')})
+            torchani.ignite.MSELoss('energies'),
+            lambda x: torch.exp(x) - 1)
+        trainer = create_supervised_trainer(
+            container, optimizer, loss)
+        evaluator = create_supervised_evaluator(container, metrics={
+            'RMSE': torchani.ignite.RMSEMetric('energies')
+        })
 
         @trainer.on(Events.COMPLETED)
         def completes(trainer):

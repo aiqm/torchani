@@ -33,7 +33,7 @@ from . import neurochem
 from .aev import AEVComputer
 
 
-# TODO: Delete BuiltinModels in a future release, it is DEPRECATED
+# Future: Delete BuiltinModels in a future release, it is DEPRECATED
 class BuiltinModels(torch.nn.Module):
     """ BuiltinModels class.
 
@@ -128,15 +128,19 @@ class BuiltinNet(torch.nn.Module):
         return self.energy_shifter(species_energies)
 
     def __getitem__(self, index):
-        ret = torch.nn.Sequential(self.aev_computer,
-                                  self.neural_networks[index],
-                                  self.energy_shifter)
+        ret = torch.nn.Sequential(
+            self.aev_computer,
+            self.neural_networks[index],
+            self.energy_shifter
+        )
 
         def ase(**kwargs):
             from . import ase
-            return ase.Calculator(self.species, self.aev_computer,
+            return ase.Calculator(self.species,
+                                  self.aev_computer,
                                   self.neural_networks[index],
-                                  self.energy_shifter, **kwargs)
+                                  self.energy_shifter,
+                                  **kwargs)
 
         ret.ase = ase
         ret.species_to_tensor = self.consts.species_to_tensor
@@ -161,8 +165,7 @@ class BuiltinNet(torch.nn.Module):
 
 
 class ANI1x(BuiltinNet):
-    """The ANI-1x model as in `ani-1x_8x on
-    GitHub`_ and `Active Learning Paper`_.
+    """The ANI-1x model as in `ani-1x_8x on GitHub`_ and `Active Learning Paper`_.
 
     The ANI-1x model is an ensemble of 8 networks that was trained using
     active learning on the ANI-1x dataset, the target level of theory is
@@ -198,8 +201,7 @@ class ANI1x(BuiltinNet):
 
 
 class ANI1ccx(BuiltinNet):
-    """Factory method to instantiate the ANI-1x model as in `ani-1ccx_8x on
-    GitHub`_ and `Transfer Learning Paper`_.
+    """The ANI-1x model as in `ani-1ccx_8x on GitHub`_ and `Transfer Learning Paper`_.
 
     The ANI-1ccx model is an ensemble of 8 networks that was trained
     on the ANI-1ccx dataset, using transfer learning. The target accuracy

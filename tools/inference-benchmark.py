@@ -11,21 +11,23 @@ parser.add_argument('-d',
                     '--device',
                     help='Device of modules and tensors',
                     default=('cuda' if torch.cuda.is_available() else 'cpu'))
-parser.add_argument('--tqdm',
-                    dest='tqdm',
-                    action='store_true',
+parser.add_argument('--tqdm', dest='tqdm', action='store_true',
                     help='Whether to use tqdm to display progress')
 parser = parser.parse_args()
 
 # set up benchmark
 device = torch.device(parser.device)
 ani1x = torchani.models.ANI1x()
-nnp = torch.nn.Sequential(ani1x.aev_computer, ani1x.neural_networks[0],
-                          ani1x.energy_shifter).to(device)
+nnp = torch.nn.Sequential(
+    ani1x.aev_computer,
+    ani1x.neural_networks[0],
+    ani1x.energy_shifter
+).to(device)
 
 
 # load XYZ files
 class XYZ:
+
     def __init__(self, filename):
         with open(filename, 'r') as f:
             lines = f.readlines()

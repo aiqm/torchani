@@ -17,6 +17,7 @@ tolerance = 1e-5
 
 
 class TestAEV(unittest.TestCase):
+
     def setUp(self):
         ani1x = torchani.models.ANI1x()
         self.aev_computer = ani1x.aev_computer
@@ -29,8 +30,7 @@ class TestAEV(unittest.TestCase):
     def transform(self, x):
         return x
 
-    def assertAEVEqual(
-            self, expected_radial, expected_angular, aev, tolerance=tolerance):
+    def assertAEVEqual(self, expected_radial, expected_angular, aev, tolerance=tolerance):
         radial = aev[..., :self.radial_length]
         angular = aev[..., self.radial_length:]
         radial_diff = expected_radial - radial
@@ -62,17 +62,14 @@ class TestAEV(unittest.TestCase):
 
     def testBenzeneMD(self):
         for i in range(10):
-            datafile = os.path.join(path,
-                                    'test_data/benzene-md/{}.dat'.format(i))
+            datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, expected_radial, expected_angular, _, _, cell, pbc \
                     = pickle.load(f)
                 coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
                 species = torch.from_numpy(species).unsqueeze(0)
-                expected_radial = torch.from_numpy(
-                    expected_radial).float().unsqueeze(0)
-                expected_angular = torch.from_numpy(
-                    expected_angular).float().unsqueeze(0)
+                expected_radial = torch.from_numpy(expected_radial).float().unsqueeze(0)
+                expected_angular = torch.from_numpy(expected_angular).float().unsqueeze(0)
                 cell = torch.from_numpy(cell).float()
                 pbc = torch.from_numpy(pbc)
                 coordinates = torchani.utils.map2central(
@@ -82,14 +79,12 @@ class TestAEV(unittest.TestCase):
                 expected_radial = self.transform(expected_radial)
                 expected_angular = self.transform(expected_angular)
                 _, aev = self.aev_computer((species, coordinates, cell, pbc))
-                self.assertAEVEqual(
-                    expected_radial, expected_angular, aev, 5e-5)
+                self.assertAEVEqual(expected_radial, expected_angular, aev, 5e-5)
 
     def testTripeptideMD(self):
         tol = 5e-6
         for i in range(100):
-            datafile = os.path.join(path,
-                                    'test_data/tripeptide-md/{}.dat'.format(i))
+            datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, expected_radial, expected_angular, _, _, _, _ \
                     = pickle.load(f)
@@ -121,13 +116,11 @@ class TestAEV(unittest.TestCase):
                 species = self.transform(species)
                 radial = self.transform(radial)
                 angular = self.transform(angular)
-                species_coordinates.append(
-                    {'species': species, 'coordinates': coordinates})
+                species_coordinates.append({'species': species, 'coordinates': coordinates})
                 radial_angular.append((radial, angular))
         species_coordinates = torchani.utils.pad_atomic_properties(
             species_coordinates)
-        _, aev = self.aev_computer((species_coordinates['species'],
-                                    species_coordinates['coordinates']))
+        _, aev = self.aev_computer((species_coordinates['species'], species_coordinates['coordinates']))
         start = 0
         for expected_radial, expected_angular in radial_angular:
             conformations = expected_radial.shape[0]
@@ -159,8 +152,7 @@ class TestAEV(unittest.TestCase):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # Create local copy of aev_computer to avoid interference with other
         # tests.
-        aev_computer = copy.deepcopy(self.aev_computer).to(device).to(
-            torch.float64)
+        aev_computer = copy.deepcopy(self.aev_computer).to(device).to(torch.float64)
         with open(datafile, 'rb') as f:
             data = pickle.load(f)
             for coordinates, species, _, _, _, _ in data:
@@ -180,10 +172,12 @@ class TestAEV(unittest.TestCase):
                 def aev_forward_wrapper(coords):
                     # Return only the aev portion of the output.
                     return aev_computer((species, coords))[1]
-
                 # Sanity Check: Forward wrapper returns aev without error.
                 aev_forward_wrapper(coordinates)
-                torch.autograd.gradcheck(aev_forward_wrapper, coordinates)
+                torch.autograd.gradcheck(
+                    aev_forward_wrapper,
+                    coordinates
+                )
 
 
 class TestPBCSeeEachOther(unittest.TestCase):
@@ -205,8 +199,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
 
         for _ in range(100):
             translation = torch.randn(3, dtype=torch.double)
-            _, aev2 = self.aev_computer(
-                (species, coordinates + translation, cell, pbc))
+            _, aev2 = self.aev_computer((species, coordinates + translation, cell, pbc))
             self.assertTrue(torch.allclose(aev, aev2))
 
     def testPBCConnersSeeEachOther(self):
@@ -226,10 +219,8 @@ class TestPBCSeeEachOther(unittest.TestCase):
             torch.tensor([9.9, 9.9, 9.9])]
 
         for xyz2 in xyz2s:
-            coordinates = torch.stack([xyz1, xyz2]).to(
-                torch.double).unsqueeze(0)
-            atom_index1, atom_index2, _ = torchani.aev.neighbor_pairs(
-                species == -1, coordinates, cell, allshifts, 1)
+            coordinates = torch.stack([xyz1, xyz2]).to(torch.double).unsqueeze(0)
+            atom_index1, atom_index2, _ = torchani.aev.neighbor_pairs(species == -1, coordinates, cell, allshifts, 1)
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
 
@@ -246,8 +237,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
             xyz2[i] = 9.9
 
             coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
-            atom_index1, atom_index2, _ = torchani.aev.neighbor_pairs(
-                species == -1, coordinates, cell, allshifts, 1)
+            atom_index1, atom_index2, _ = torchani.aev.neighbor_pairs(species == -1, coordinates, cell, allshifts, 1)
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
 
@@ -274,10 +264,8 @@ class TestPBCSeeEachOther(unittest.TestCase):
 
     def testNonRectangularPBCConnersSeeEachOther(self):
         species = torch.tensor([[0, 0]])
-        cell = ase.geometry.cellpar_to_cell(
-            [10, 10, 10 * math.sqrt(2), 90, 45, 90])
-        cell = torch.tensor(ase.geometry.complete_cell(cell),
-                            dtype=torch.double)
+        cell = ase.geometry.cellpar_to_cell([10, 10, 10 * math.sqrt(2), 90, 45, 90])
+        cell = torch.tensor(ase.geometry.complete_cell(cell), dtype=torch.double)
         pbc = torch.ones(3, dtype=torch.uint8)
         allshifts = torchani.aev.compute_shifts(cell, pbc, 1)
 
@@ -285,19 +273,17 @@ class TestPBCSeeEachOther(unittest.TestCase):
         xyz2 = torch.tensor([10.0, 0.1, 0.1], dtype=torch.double)
 
         coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
-        atom_index1, atom_index2, _ = torchani.aev.neighbor_pairs(
-            species == -1, coordinates, cell, allshifts, 1)
+        atom_index1, atom_index2, _ = torchani.aev.neighbor_pairs(species == -1, coordinates, cell, allshifts, 1)
         self.assertEqual(atom_index1.tolist(), [0])
         self.assertEqual(atom_index2.tolist(), [1])
 
 
 class TestAEVOnBoundary(unittest.TestCase):
+
     def setUp(self):
         self.eps = 1e-9
-        cell = ase.geometry.cellpar_to_cell(
-            [100, 100, 100 * math.sqrt(2), 90, 45, 90])
-        self.cell = torch.tensor(ase.geometry.complete_cell(cell),
-                                 dtype=torch.double)
+        cell = ase.geometry.cellpar_to_cell([100, 100, 100 * math.sqrt(2), 90, 45, 90])
+        self.cell = torch.tensor(ase.geometry.complete_cell(cell), dtype=torch.double)
         self.inv_cell = torch.inverse(self.cell)
         self.coordinates = torch.tensor([[[0.0, 0.0, 0.0],
                                           [1.0, -0.1, -0.1],
@@ -307,12 +293,10 @@ class TestAEVOnBoundary(unittest.TestCase):
         self.species = torch.tensor([[1, 0, 0, 0]])
         self.pbc = torch.ones(3, dtype=torch.uint8)
         self.v1, self.v2, self.v3 = self.cell
-        self.center_coordinates = self.coordinates + 0.5 * (
-            self.v1 + self.v2 + self.v3)
+        self.center_coordinates = self.coordinates + 0.5 * (self.v1 + self.v2 + self.v3)
         ani1x = torchani.models.ANI1x()
         self.aev_computer = ani1x.aev_computer.to(torch.double)
-        _, self.aev = self.aev_computer(
-            (self.species, self.center_coordinates, self.cell, self.pbc))
+        _, self.aev = self.aev_computer((self.species, self.center_coordinates, self.cell, self.pbc))
 
     def assertInCell(self, coordinates):
         coordinates_cell = coordinates @ self.inv_cell
@@ -336,8 +320,7 @@ class TestAEVOnBoundary(unittest.TestCase):
                 continue
             coordinates = self.coordinates + i * self.v1 + j * self.v2 + k * self.v3
             self.assertNotInCell(coordinates)
-            coordinates = torchani.utils.map2central(self.cell, coordinates,
-                                                     self.pbc)
+            coordinates = torchani.utils.map2central(self.cell, coordinates, self.pbc)
             self.assertInCell(coordinates)
             _, aev = self.aev_computer(
                 (self.species, coordinates, self.cell, self.pbc))

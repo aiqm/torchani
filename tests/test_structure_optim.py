@@ -6,10 +6,12 @@ import copy
 import pickle
 from ase.optimize import BFGS
 
+
 path = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestStructureOptimization(unittest.TestCase):
+
     def setUp(self):
         self.tolerance = 1e-6
         self.ani1x = torchani.models.ANI1x()

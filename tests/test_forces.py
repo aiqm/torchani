@@ -9,6 +9,7 @@ N = 97
 
 
 class TestForce(unittest.TestCase):
+
     def setUp(self):
         self.tolerance = 1e-5
         ani1x = torchani.models.ANI1x()
@@ -98,13 +99,11 @@ class TestForce(unittest.TestCase):
     def testTripeptideMD(self):
         tolerance = 2e-6
         for i in range(100):
-            datafile = os.path.join(path,
-                                    'test_data/tripeptide-md/{}.dat'.format(i))
+            datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces, _, _ \
                     = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(
-                    0).requires_grad_(True)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0).requires_grad_(True)
                 species = torch.from_numpy(species).unsqueeze(0)
                 forces = torch.from_numpy(forces)
                 coordinates = self.transform(coordinates)
