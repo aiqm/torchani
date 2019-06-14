@@ -5,9 +5,8 @@ computed aevs. Use the ``-h`` option for help.
 """
 
 import torch
-from . import cache_aev, cache_sparse_aev, default_device
-from ..models import ANI1x
-ani1x = ANI1x()
+from . import cache_aev, cache_sparse_aev, ani1x, default_device
+
 
 if __name__ == '__main__':
     import argparse
