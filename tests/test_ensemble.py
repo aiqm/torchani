@@ -9,6 +9,7 @@ N = 10
 
 
 class TestEnsemble(unittest.TestCase):
+
     def setUp(self):
         self.tol = 1e-5
         self.conformations = 20

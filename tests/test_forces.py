@@ -9,6 +9,7 @@ N = 97
 
 
 class TestForce(unittest.TestCase):
+
     def setUp(self):
         self.tolerance = 1e-5
         ani1x = torchani.models.ANI1x()
@@ -54,38 +55,29 @@ class TestForce(unittest.TestCase):
                 species = self.transform(species)
                 forces = self.transform(forces)
                 coordinates.requires_grad_(True)
-                species_coordinates.append({
-                    'species': species,
-                    'coordinates': coordinates
-                })
+                species_coordinates.append({'species': species, 'coordinates': coordinates})
         species_coordinates = torchani.utils.pad_atomic_properties(
             species_coordinates)
-        _, energies = self.model((species_coordinates['species'],
-                                  species_coordinates['coordinates']))
+        _, energies = self.model((species_coordinates['species'], species_coordinates['coordinates']))
         energies = energies.sum()
         for coordinates, forces in coordinates_forces:
-            derivative = torch.autograd.grad(energies,
-                                             coordinates,
-                                             retain_graph=True)[0]
+            derivative = torch.autograd.grad(energies, coordinates, retain_graph=True)[0]
             max_diff = (forces + derivative).abs().max().item()
             self.assertLess(max_diff, self.tolerance)
 
     def testBenzeneMD(self):
         tolerance = 1e-5
         for i in range(10):
-            datafile = os.path.join(path,
-                                    'test_data/benzene-md/{}.dat'.format(i))
+            datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces, cell, pbc \
                     = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(
-                    0).requires_grad_(True)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0).requires_grad_(True)
                 species = torch.from_numpy(species).unsqueeze(0)
                 cell = torch.from_numpy(cell).float()
                 pbc = torch.from_numpy(pbc)
                 forces = torch.from_numpy(forces)
-                coordinates = torchani.utils.map2central(
-                    cell, coordinates, pbc)
+                coordinates = torchani.utils.map2central(cell, coordinates, pbc)
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 forces = self.transform(forces)
@@ -98,13 +90,11 @@ class TestForce(unittest.TestCase):
     def testTripeptideMD(self):
         tolerance = 2e-6
         for i in range(100):
-            datafile = os.path.join(path,
-                                    'test_data/tripeptide-md/{}.dat'.format(i))
+            datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, _, _, _, forces, _, _ \
                     = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(
-                    0).requires_grad_(True)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0).requires_grad_(True)
                 species = torch.from_numpy(species).unsqueeze(0)
                 forces = torch.from_numpy(forces)
                 coordinates = self.transform(coordinates)

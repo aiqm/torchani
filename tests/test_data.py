@@ -14,6 +14,7 @@ aev_computer = ani1x.aev_computer
 
 
 class TestData(unittest.TestCase):
+
     def setUp(self):
         self.ds = torchani.data.load_ani_dataset(dataset_path,
                                                  consts.species_to_tensor,
@@ -32,7 +33,8 @@ class TestData(unittest.TestCase):
         species_coordinates = torchani.utils.pad_atomic_properties([
             {'species': species1, 'coordinates': coordinates1},
             {'species': species2, 'coordinates': coordinates2},
-            {'species': species3, 'coordinates': coordinates3}])
+            {'species': species3, 'coordinates': coordinates3},
+        ])
         species = species_coordinates['species']
         coordinates = species_coordinates['coordinates']
         natoms = (species >= 0).to(torch.long).sum(1)
@@ -49,8 +51,7 @@ class TestData(unittest.TestCase):
             self.assertGreater(conformations, 0)
             s_ = species[start:(start + conformations), ...]
             c_ = coordinates[start:(start + conformations), ...]
-            sc = torchani.utils.strip_redundant_padding({
-                'species': s_, 'coordinates': c_})
+            sc = torchani.utils.strip_redundant_padding({'species': s_, 'coordinates': c_})
             s_ = sc['species']
             c_ = sc['coordinates']
             self._assertTensorEqual(s, s_)

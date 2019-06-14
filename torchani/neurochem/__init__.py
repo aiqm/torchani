@@ -40,19 +40,14 @@ class Constants(collections.abc.Mapping):
                     value = line[1]
                     if name == 'Rcr' or name == 'Rca':
                         setattr(self, name, float(value))
-                    elif name in [
-                            'EtaR', 'ShfR', 'Zeta', 'ShfZ', 'EtaA', 'ShfA'
-                    ]:
-                        value = [
-                            float(x.strip()) for x in value.replace(
-                                '[', '').replace(']', '').split(',')
-                        ]
+                    elif name in ['EtaR', 'ShfR', 'Zeta',
+                                  'ShfZ', 'EtaA', 'ShfA']:
+                        value = [float(x.strip()) for x in value.replace(
+                            '[', '').replace(']', '').split(',')]
                         setattr(self, name, torch.tensor(value))
                     elif name == 'Atyp':
-                        value = [
-                            x.strip() for x in value.replace('[', '').replace(
-                                ']', '').split(',')
-                        ]
+                        value = [x.strip() for x in value.replace('[', '').replace(
+                            ']', '').split(',')]
                         self.species = value
                 except Exception:
                     raise ValueError('unable to parse const file')
@@ -110,7 +105,7 @@ def load_atomic_network(filename):
     and parameters loaded NeuroChem's .nnf, .wparam and .bparam files."""
 
     def decompress_nnf(buffer_):
-        while buffer_[0] != b'=' [0]:
+        while buffer_[0] != b'='[0]:
             buffer_ = buffer_[1:]
         buffer_ = buffer_[2:]
         return bz2.decompress(buffer_)[:-1].decode('ascii').strip()
@@ -151,6 +146,7 @@ def load_atomic_network(filename):
 
         # execute parse tree
         class TreeExec(lark.Transformer):
+
             def identifier(self, v):
                 v = v[0].value
                 return v
@@ -266,7 +262,7 @@ def load_model_ensemble(species, prefix, count):
     return Ensemble(models)
 
 
-# TODO: Delete BuiltinsAbstract in a future release, it is DEPRECATED
+# Future: Delete BuiltinsAbstract in a future release, it is DEPRECATED
 class BuiltinsAbstract(object):
     """Base class for loading ANI neural network from configuration files.
 
@@ -295,10 +291,16 @@ class BuiltinsAbstract(object):
         models (:class:`torchani.Ensemble`): Ensemble of models.
     """
 
-    def __init__(self, parent_name, const_file_path, sae_file_path,
-                 ensemble_size, ensemble_prefix_path):
+    def __init__(
+            self,
+            parent_name,
+            const_file_path,
+            sae_file_path,
+            ensemble_size,
+            ensemble_prefix_path):
         self.const_file = pkg_resources.resource_filename(
-            parent_name, const_file_path)
+            parent_name,
+            const_file_path)
         warnings.warn(
             "BuiltinsAbstract is deprecated and will be deleted in"
             "the future; use torchani.models.BuiltinNet()", DeprecationWarning)
@@ -306,17 +308,19 @@ class BuiltinsAbstract(object):
         self.species = self.consts.species
         self.aev_computer = AEVComputer(**self.consts)
         self.sae_file = pkg_resources.resource_filename(
-            parent_name, sae_file_path)
+            parent_name,
+            sae_file_path)
         self.energy_shifter = load_sae(self.sae_file)
         self.ensemble_size = ensemble_size
         self.ensemble_prefix = pkg_resources.resource_filename(
-            parent_name, ensemble_prefix_path)
+            parent_name,
+            ensemble_prefix_path)
         self.models = load_model_ensemble(self.consts.species,
                                           self.ensemble_prefix,
                                           self.ensemble_size)
 
 
-# TODO: Delete Builtins in a future release, it is DEPRECATED
+# Future: Delete Builtins in a future release, it is DEPRECATED
 class Builtins(BuiltinsAbstract):
     """Container for the builtin ANI-1x model.
 
@@ -336,7 +340,6 @@ class Builtins(BuiltinsAbstract):
         ensemble_prefix (:class:`str`): Prefix of directories of models.
         models (:class:`torchani.Ensemble`): Ensemble of models.
     """
-
     def __init__(self):
         warnings.warn(
             "Builtins is deprecated and will be deleted in the"
@@ -347,12 +350,16 @@ class Builtins(BuiltinsAbstract):
         sae_file_path = 'resources/ani-1x_8x/sae_linfit.dat'
         ensemble_size = 8
         ensemble_prefix_path = 'resources/ani-1x_8x/train'
-        super(Builtins,
-              self).__init__(parent_name, const_file_path, sae_file_path,
-                             ensemble_size, ensemble_prefix_path)
+        super(Builtins, self).__init__(
+            parent_name,
+            const_file_path,
+            sae_file_path,
+            ensemble_size,
+            ensemble_prefix_path
+        )
 
 
-# TODO: Delete BuiltinsANI1CCX in a future release, it is DEPRECATED
+# Future: Delete BuiltinsANI1CCX in a future release, it is DEPRECATED
 class BuiltinsANI1CCX(BuiltinsAbstract):
     """Container for the builtin ANI-1ccx model.
 
@@ -372,7 +379,6 @@ class BuiltinsANI1CCX(BuiltinsAbstract):
         ensemble_prefix (:class:`str`): Prefix of directories of models.
         models (:class:`torchani.Ensemble`): Ensemble of models.
     """
-
     def __init__(self):
         warnings.warn(
             "BuiltinsANICCX is deprecated and will be deleted in the"
@@ -383,9 +389,13 @@ class BuiltinsANI1CCX(BuiltinsAbstract):
         sae_file_path = 'resources/ani-1ccx_8x/sae_linfit.dat'
         ensemble_size = 8
         ensemble_prefix_path = 'resources/ani-1ccx_8x/train'
-        super(BuiltinsANI1CCX,
-              self).__init__(parent_name, const_file_path, sae_file_path,
-                             ensemble_size, ensemble_prefix_path)
+        super(BuiltinsANI1CCX, self).__init__(
+            parent_name,
+            const_file_path,
+            sae_file_path,
+            ensemble_size,
+            ensemble_prefix_path
+        )
 
 
 def hartree2kcal(x):
@@ -408,12 +418,8 @@ if sys.version_info[0] > 2:
                 will be stored in the network directory with this file name.
         """
 
-        def __init__(self,
-                     filename,
-                     device=torch.device('cuda'),
-                     tqdm=False,
-                     tensorboard=None,
-                     aev_caching=False,
+        def __init__(self, filename, device=torch.device('cuda'), tqdm=False,
+                     tensorboard=None, aev_caching=False,
                      checkpoint_name='model.pt'):
             try:
                 import ignite
@@ -508,6 +514,7 @@ if sys.version_info[0] > 2:
             tree = parser.parse(txt)
 
             class TreeExec(lark.Transformer):
+
                 def identifier(self, v):
                     v = v[0].value
                     return v
@@ -652,8 +659,7 @@ if sys.version_info[0] > 2:
                     del layer['activation']
                     if 'l2norm' in layer:
                         if not self.warned:
-                            warnings.warn(
-                                textwrap.dedent("""
+                            warnings.warn(textwrap.dedent("""
                                 Currently TorchANI training with weight decay can not reproduce the training
                                 result of NeuroChem with the same training setup. If you really want to use
                                 weight decay, consider smaller rates and and make sure you do enough validation
@@ -662,16 +668,14 @@ if sys.version_info[0] > 2:
                         if layer['l2norm'] == 1:
                             self.parameters.append({
                                 'params': [module.weight],
-                                'weight_decay':
-                                layer['l2valu'],
+                                'weight_decay': layer['l2valu'],
                             })
                             self.parameters.append({
                                 'params': [module.bias],
                             })
                         else:
                             self.parameters.append({
-                                'params':
-                                module.parameters(),
+                                'params': module.parameters(),
                             })
                         del layer['l2norm']
                         del layer['l2valu']
@@ -684,21 +688,19 @@ if sys.version_info[0] > 2:
                             'unrecognized parameter in layer setup')
                     i = o
                 atomic_nets[atom_type] = torch.nn.Sequential(*modules)
-            self.model = ANIModel(
-                [atomic_nets[s] for s in self.consts.species])
+            self.model = ANIModel([atomic_nets[s]
+                                   for s in self.consts.species])
             if self.aev_caching:
                 self.nnp = self.model
             else:
                 self.nnp = torch.nn.Sequential(self.aev_computer, self.model)
-            self.container = self.imports.Container({
-                'energies': self.nnp
-            }).to(self.device)
+            self.container = self.imports.Container({'energies': self.nnp}).to(self.device)
 
             # losses
             self.mse_loss = self.imports.MSELoss('energies')
             self.exp_loss = self.imports.TransformedLoss(
-                self.imports.MSELoss(
-                    'energies'), lambda x: 0.5 * (torch.exp(2 * x) - 1))
+                self.imports.MSELoss('energies'),
+                lambda x: 0.5 * (torch.exp(2 * x) - 1))
 
             if params:
                 raise ValueError('unrecognized parameter')
@@ -715,11 +717,11 @@ if sys.version_info[0] > 2:
                     'RMSE': self.imports.RMSEMetric('energies'),
                     'MAE': self.imports.MAEMetric('energies'),
                     'MaxAE': self.imports.MaxAEMetric('energies'),
-                })
+                }
+            )
             evaluator.run(dataset)
             metrics = evaluator.state.metrics
-            return hartree2kcal(metrics['RMSE']), hartree2kcal(
-                metrics['MAE']), hartree2kcal(metrics['MaxAE'])
+            return hartree2kcal(metrics['RMSE']), hartree2kcal(metrics['MAE']), hartree2kcal(metrics['MaxAE'])
 
         def load_data(self, training_path, validation_path):
             """Load training and validation dataset from file.
@@ -729,20 +731,15 @@ if sys.version_info[0] > 2:
             """
             if self.aev_caching:
                 self.training_set = self.imports.AEVCacheLoader(training_path)
-                self.validation_set = self.imports.AEVCacheLoader(
-                    validation_path)
+                self.validation_set = self.imports.AEVCacheLoader(validation_path)
             else:
                 self.training_set = self.imports.BatchedANIDataset(
-                    training_path,
-                    self.consts.species_to_tensor,
-                    self.training_batch_size,
-                    device=self.device,
+                    training_path, self.consts.species_to_tensor,
+                    self.training_batch_size, device=self.device,
                     transform=[self.shift_energy.subtract_from_dataset])
                 self.validation_set = self.imports.BatchedANIDataset(
-                    validation_path,
-                    self.consts.species_to_tensor,
-                    self.validation_batch_size,
-                    device=self.device,
+                    validation_path, self.consts.species_to_tensor,
+                    self.validation_batch_size, device=self.device,
                     transform=[self.shift_energy.subtract_from_dataset])
 
         def run(self):
@@ -750,6 +747,7 @@ if sys.version_info[0] > 2:
             start = timeit.default_timer()
 
             def decorate(trainer):
+
                 @trainer.on(self.ignite.engine.Events.STARTED)
                 def initialize(trainer):
                     trainer.state.no_improve_count = 0
@@ -762,14 +760,12 @@ if sys.version_info[0] > 2:
                     self.global_iteration = trainer.state.iteration
 
                 if self.nmax > 0:
-
                     @trainer.on(self.ignite.engine.Events.EPOCH_COMPLETED)
                     def terminate_when_nmax_reaches(trainer):
                         if trainer.state.epoch >= self.nmax:
                             trainer.terminate()
 
                 if self.tqdm is not None:
-
                     @trainer.on(self.ignite.engine.Events.EPOCH_STARTED)
                     def init_tqdm(trainer):
                         trainer.state.tqdm = self.tqdm(
@@ -799,7 +795,6 @@ if sys.version_info[0] > 2:
                         trainer.terminate()
 
                 if self.tensorboard is not None:
-
                     @trainer.on(self.ignite.engine.Events.EPOCH_STARTED)
                     def log_per_epoch(trainer):
                         elapsed = round(timeit.default_timer() - start, 2)
@@ -812,9 +807,8 @@ if sys.version_info[0] > 2:
                                                     trainer.state.rmse, epoch)
                         self.tensorboard.add_scalar('validation_mae_vs_epoch',
                                                     trainer.state.mae, epoch)
-                        self.tensorboard.add_scalar(
-                            'validation_maxae_vs_epoch', trainer.state.maxae,
-                            epoch)
+                        self.tensorboard.add_scalar('validation_maxae_vs_epoch',
+                                                    trainer.state.maxae, epoch)
                         self.tensorboard.add_scalar(
                             'best_validation_rmse_vs_epoch',
                             self.best_validation_rmse, epoch)
@@ -837,8 +831,8 @@ if sys.version_info[0] > 2:
                     def log_loss(trainer):
                         iteration = trainer.state.iteration
                         loss = trainer.state.output
-                        self.tensorboard.add_scalar('loss_vs_iteration', loss,
-                                                    iteration)
+                        self.tensorboard.add_scalar('loss_vs_iteration',
+                                                    loss, iteration)
 
             lr = self.init_lr
 
@@ -865,7 +859,5 @@ if sys.version_info[0] > 2:
                 lr *= self.lr_decay
 
 
-__all__ = [
-    'Constants', 'load_sae', 'load_model', 'load_model_ensemble', 'Builtins',
-    'Trainer'
-]
+__all__ = ['Constants', 'load_sae', 'load_model', 'load_model_ensemble', 'Builtins',
+           'Trainer']
