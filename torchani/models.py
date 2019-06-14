@@ -201,7 +201,7 @@ class ANI1x(BuiltinNet):
 
 
 class ANI1ccx(BuiltinNet):
-    """The ANI-1x model as in `ani-1ccx_8x on GitHub`_ and `Transfer Learning Paper`_.
+    """The ANI-1ccx model as in `ani-1ccx_8x on GitHub`_ and `Transfer Learning Paper`_.
 
     The ANI-1ccx model is an ensemble of 8 networks that was trained
     on the ANI-1ccx dataset, using transfer learning. The target accuracy
