@@ -262,8 +262,13 @@ def load_model_ensemble(species, prefix, count):
     return Ensemble(models)
 
 
+# Future: Delete BuiltinsAbstract in a future release, it is DEPRECATED
 class BuiltinsAbstract(object):
     """Base class for loading ANI neural network from configuration files.
+
+    .. warning::
+        This class is part of an old API. It is DEPRECATED and may be deleted in a
+        future version. It shouldn't be used.
 
     Arguments:
         parent_name (:class:`str`): Base path that other paths are relative to.
@@ -296,6 +301,9 @@ class BuiltinsAbstract(object):
         self.const_file = pkg_resources.resource_filename(
             parent_name,
             const_file_path)
+        warnings.warn(
+            "BuiltinsAbstract is deprecated and will be deleted in"
+            "the future; use torchani.models.BuiltinNet()", DeprecationWarning)
         self.consts = Constants(self.const_file)
         self.species = self.consts.species
         self.aev_computer = AEVComputer(**self.consts)
@@ -312,8 +320,13 @@ class BuiltinsAbstract(object):
                                           self.ensemble_size)
 
 
+# Future: Delete Builtins in a future release, it is DEPRECATED
 class Builtins(BuiltinsAbstract):
     """Container for the builtin ANI-1x model.
+
+    .. warning::
+        This class is part of an old API. It is DEPRECATED and may be deleted in a
+        future version. It shouldn't be used.
 
     Attributes:
         const_file (:class:`str`): Path to the builtin constant file.
@@ -329,6 +342,9 @@ class Builtins(BuiltinsAbstract):
         models (:class:`torchani.Ensemble`): Ensemble of models.
     """
     def __init__(self):
+        warnings.warn(
+            "Builtins is deprecated and will be deleted in the"
+            "future; use torchani.models.ANI1x()", DeprecationWarning)
         parent_name = '.'.join(__name__.split('.')[:-1])
         const_file_path = 'resources/ani-1x_8x'\
             '/rHCNO-5.2R_16-3.5A_a4-8.params'
@@ -344,8 +360,13 @@ class Builtins(BuiltinsAbstract):
         )
 
 
+# Future: Delete BuiltinsANI1CCX in a future release, it is DEPRECATED
 class BuiltinsANI1CCX(BuiltinsAbstract):
     """Container for the builtin ANI-1ccx model.
+
+    .. warning::
+        This class is part of an old API. It is DEPRECATED and may be deleted in a
+        future version. It shouldn't be used.
 
     Attributes:
         const_file (:class:`str`): Path to the builtin constant file.
@@ -361,6 +382,9 @@ class BuiltinsANI1CCX(BuiltinsAbstract):
         models (:class:`torchani.Ensemble`): Ensemble of models.
     """
     def __init__(self):
+        warnings.warn(
+            "BuiltinsANICCX is deprecated and will be deleted in the"
+            "future; use torchani.models.ANI1ccx()", DeprecationWarning)
         parent_name = '.'.join(__name__.split('.')[:-1])
         const_file_path = 'resources/ani-1ccx_8x'\
             '/rHCNO-5.2R_16-3.5A_a4-8.params'
