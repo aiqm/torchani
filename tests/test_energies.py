@@ -14,11 +14,11 @@ class TestEnergies(unittest.TestCase):
 
     def setUp(self):
         self.tolerance = 5e-5
-        builtins = torchani.neurochem.Builtins()
-        self.aev_computer = builtins.aev_computer
-        nnp = builtins.models[0]
-        shift_energy = builtins.energy_shifter
-        self.model = torch.nn.Sequential(self.aev_computer, nnp, shift_energy)
+        ani1x = torchani.models.ANI1x()
+        aev_computer = ani1x.aev_computer
+        nnp = ani1x.neural_networks[0]
+        shift_energy = ani1x.energy_shifter
+        self.model = torch.nn.Sequential(aev_computer, nnp, shift_energy)
 
     def random_skip(self):
         return False

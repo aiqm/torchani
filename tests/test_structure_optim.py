@@ -14,10 +14,10 @@ class TestStructureOptimization(unittest.TestCase):
 
     def setUp(self):
         self.tolerance = 1e-6
-        self.builtin = torchani.neurochem.Builtins()
+        self.ani1x = torchani.models.ANI1x()
         self.calculator = torchani.ase.Calculator(
-            self.builtin.species, self.builtin.aev_computer,
-            self.builtin.models[0], self.builtin.energy_shifter)
+            self.ani1x.species, self.ani1x.aev_computer,
+            self.ani1x.neural_networks[0], self.ani1x.energy_shifter)
 
     def testRMSE(self):
         datafile = os.path.join(path, 'test_data/NeuroChemOptimized/all')
