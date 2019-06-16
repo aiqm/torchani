@@ -30,7 +30,10 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 ###############################################################################
 # Now let's setup constants and construct an AEV computer. These numbers could
-# be found in `rHCNO-5.2R_16-3.5A_a4-8.params`_ and `sae_linfit.dat`_
+# be found in `rHCNO-5.2R_16-3.5A_a4-8.params`
+# The atomic self energies given in `sae_linfit.dat`_ are computed from ANI-1x
+# dataset. These constants can be calculated for any given dataset if ``None``
+# is provided as an argument to the object of :class:`EnergyShifter` class.
 #
 # .. note::
 #
@@ -52,12 +55,7 @@ EtaA = torch.tensor([8.0000000e+00], device=device)
 ShfA = torch.tensor([9.0000000e-01, 1.5500000e+00, 2.2000000e+00, 2.8500000e+00], device=device)
 num_species = 4
 aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
-energy_shifter = torchani.utils.EnergyShifter([
-    -0.600952980000,  # H
-    -38.08316124000,  # C
-    -54.70775770000,  # N
-    -75.19446356000,  # O
-])
+energy_shifter = torchani.utils.EnergyShifter(None)
 species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
 
 
@@ -85,6 +83,7 @@ training, validation = torchani.data.load_ani_dataset(
     dspath, species_to_tensor, batch_size, device=device,
     transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
 
+print('H,C,N,O self energies: ' , energy_shifter.self_energies)
 ###############################################################################
 # When iterating the dataset, we will get pairs of input and output
 # ``(species_coordinates, properties)``, where ``species_coordinates`` is the
