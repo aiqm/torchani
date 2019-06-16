@@ -83,7 +83,7 @@ training, validation = torchani.data.load_ani_dataset(
     dspath, species_to_tensor, batch_size, device=device,
     transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
 
-print('H,C,N,O self energies: ' , energy_shifter.self_energies)
+print('H,C,N,O self energies: ', energy_shifter.self_energies)
 ###############################################################################
 # When iterating the dataset, we will get pairs of input and output
 # ``(species_coordinates, properties)``, where ``species_coordinates`` is the
