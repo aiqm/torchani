@@ -1,6 +1,7 @@
 import torch
 import torch.utils.data
 import math
+import numpy as np
 from collections import defaultdict
 
 
@@ -142,8 +143,27 @@ class EnergyShifter(torch.nn.Module):
 
     def __init__(self, self_energies):
         super(EnergyShifter, self).__init__()
-        self_energies = torch.tensor(self_energies, dtype=torch.double)
+
+        if self_energies is not None:
+            self_energies = torch.tensor(self_energies, dtype=torch.double)
+
         self.register_buffer('self_energies', self_energies)
+
+    @staticmethod
+    def sae_from_dataset(atomic_properties, properties):
+        """Compute atomic self energies from dataset.
+
+        Least-squares solution to a linear equation is calculated to output
+        ``self_energies`` when ``self_energies = None`` is passed to
+        :class:`torchani.EnergyShifter`
+        """
+        species = atomic_properties['species']
+        energies = properties['energies']
+        present_species_ = present_species(species)
+        X = (species.unsqueeze(-1) == present_species_).sum(dim=1).to(torch.double)
+        y = energies.unsqueeze(dim=-1)
+        coeff_, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
+        return coeff_.squeeze()
 
     def sae(self, species):
         """Compute self energies for molecules.
@@ -166,6 +186,10 @@ class EnergyShifter(torch.nn.Module):
         """Transformer for :class:`torchani.data.BatchedANIDataset` that
         subtract self energies.
         """
+        if self.self_energies is None:
+            self_energies = self.sae_from_dataset(atomic_properties, properties)
+            self.self_energies = torch.tensor(self_energies, dtype=torch.double)
+
         species = atomic_properties['species']
         energies = properties['energies']
         device = energies.device
