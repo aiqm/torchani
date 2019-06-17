@@ -148,9 +148,9 @@ class EnergyShifter(torch.nn.Module):
             self_energies = torch.tensor(self_energies, dtype=torch.double)
 
         self.register_buffer('self_energies', self_energies)
-        self.present_species = present_species
 
-    def sae_from_dataset(self, atomic_properties, properties):
+    @staticmethod
+    def sae_from_dataset(atomic_properties, properties):
         """Compute atomic self energies from dataset.
 
         Least-squares solution to a linear equation is calculated to output
@@ -159,14 +159,10 @@ class EnergyShifter(torch.nn.Module):
         """
         species = atomic_properties['species']
         energies = properties['energies']
-        present_species = self.present_species(species)
-        mask = []
-        for i in present_species:
-            species_count = (species == i).sum(dim=-1)
-            mask.append(species_count.unsqueeze(dim=-1))
-        X = torch.cat(mask, dim=-1).to(torch.double)
+        present_species_ = present_species(species)
+        X = (species.unsqueeze(-1) == present_species_).sum(dim=1).to(torch.double)
         y = energies.unsqueeze(dim=-1)
-        coeff_, _, _, _ = np.linalg.lstsq(X, y, rcond=-1)
+        coeff_, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
         return coeff_.squeeze()
 
     def sae(self, species):
