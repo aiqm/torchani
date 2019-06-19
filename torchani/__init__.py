@@ -54,6 +54,10 @@ if sys.version_info[0] > 2:
     try:
         from . import ignite  # noqa: F401
         __all__.append('ignite')
+    except ImportError:
+        pass
+    
+    try:
         from . import data  # noqa: F401
         __all__.append('data')
     except ImportError:
