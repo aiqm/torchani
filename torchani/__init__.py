@@ -56,7 +56,7 @@ if sys.version_info[0] > 2:
         __all__.append('ignite')
     except ImportError:
         pass
-    
+
     try:
         from . import data  # noqa: F401
         __all__.append('data')
