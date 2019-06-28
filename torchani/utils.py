@@ -52,6 +52,7 @@ def pad_atomic_properties(atomic_properties, padding_values=defaultdict(lambda: 
         for v in p.values():
             if v.shape[0] != 1:
                 assert num_molecules in {1, v.shape[0]}, 'Number of molecules in different atomic properties mismatch'
+                num_molecules = v.shape[0]
         for k, v in p.items():
             shape = list(v.shape)
             padatoms = max_atoms - shape[1]
