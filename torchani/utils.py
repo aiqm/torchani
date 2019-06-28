@@ -50,8 +50,8 @@ def pad_atomic_properties(atomic_properties, padding_values=defaultdict(lambda: 
     for p in atomic_properties:
         num_molecules = 1
         for v in p.values():
+            assert num_molecules in {1, v.shape[0]}, 'Number of molecules in different atomic properties mismatch'
             if v.shape[0] != 1:
-                assert num_molecules in {1, v.shape[0]}, 'Number of molecules in different atomic properties mismatch'
                 num_molecules = v.shape[0]
         for k, v in p.items():
             shape = list(v.shape)
@@ -59,10 +59,9 @@ def pad_atomic_properties(atomic_properties, padding_values=defaultdict(lambda: 
             shape[1] = padatoms
             padding = v.new_full(shape, padding_values[k])
             v = torch.cat([v, padding], dim=1)
-            if v.shape[0] < num_molecules and v.shape[0] == 1:
-                shape = list(v.shape)
-                shape[0] = num_molecules
-                v = v.expand(*shape)
+            shape = list(v.shape)
+            shape[0] = num_molecules
+            v = v.expand(*shape)
             padded[k].append(v)
     return {k: torch.cat(v) for k, v in padded.items()}
 
