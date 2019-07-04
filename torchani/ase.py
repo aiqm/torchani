@@ -55,11 +55,8 @@ class Calculator(ase.calculators.calculator.Calculator):
 
     @staticmethod
     def strain(tensor, displacement, surface_normal_axis):
-        rest_axes = {0, 1, 2} - set([surface_normal_axis])
-        displacement_normal = displacement[surface_normal_axis]
         displacement_of_tensor = torch.zeros_like(tensor)
-        displacement_of_tensor[..., surface_normal_axis] = tensor[..., surface_normal_axis] * displacement_normal
-        for axis in rest_axes:
+        for axis in range(3):
             displacement_axis = displacement[axis]
             displacement_of_tensor[..., axis] = tensor[..., surface_normal_axis] * displacement_axis
         return displacement_of_tensor
