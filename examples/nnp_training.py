@@ -331,7 +331,7 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
             predicted_energies.append(chunk_energies)
         num_atoms = torch.cat(num_atoms).to(true_energies.dtype)
         predicted_energies = torch.cat(predicted_energies)
-        loss = (mse(predicted_energies, true_energies) / num_atoms).mean()
+        loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
