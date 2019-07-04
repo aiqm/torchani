@@ -57,8 +57,7 @@ class Calculator(ase.calculators.calculator.Calculator):
     def strain(tensor, displacement, surface_normal_axis):
         displacement_of_tensor = torch.zeros_like(tensor)
         for axis in range(3):
-            displacement_axis = displacement[axis]
-            displacement_of_tensor[..., axis] = tensor[..., surface_normal_axis] * displacement_axis
+            displacement_of_tensor[..., axis] = tensor[..., surface_normal_axis] * displacement[axis]
         return displacement_of_tensor
 
     def calculate(self, atoms=None, properties=['energy'],
