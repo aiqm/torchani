@@ -43,8 +43,8 @@ class ANIModel(torch.nn.ModuleList):
                                  dtype=aev.dtype)
         for i in present_species:
             mask = (species_ == i)
-            input = aev.index_select(0, mask.nonzero().squeeze())
-            output.masked_scatter_(mask, self[i](input).squeeze())
+            input_ = aev.index_select(0, mask.nonzero().squeeze())
+            output.masked_scatter_(mask, self[i](input_).squeeze())
         output = output.view_as(species)
         return species, self.reducer(output, dim=1)
 
@@ -61,4 +61,4 @@ class Ensemble(torch.nn.ModuleList):
 class Gaussian(torch.nn.Module):
     """Gaussian activation"""
     def forward(self, x):
-        return torch.exp(-x*x)
+        return torch.exp(- x * x)

@@ -1,6 +1,21 @@
 # <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo1.png width=180/>  Accurate Neural Network Potential on PyTorch
 
-[![Codefresh build status]( https://g.codefresh.io/api/badges/pipeline/zasdfgbnm/aiqm%2Ftorchani%2Ftorchani?branch=master&type=cf-1)]( https://g.codefresh.io/repositories/aiqm/torchani/builds?filter=trigger:build;branch:master;service:5babc52a8a90dc40a407b05f~torchani)
+Build:
+
+[![flake8](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/flake8)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=3)
+[![docs](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/docs)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=4)
+[![runnable submodules](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/runnable-submodules)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=5)
+[![unit tests](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/unit-tests)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=6)
+[![tools](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/tools)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=7)
+[![Python2 Inference](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/python2?branchName=master)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=11&branchName=master)
+[![CodeFactor](https://www.codefactor.io/repository/github/aiqm/torchani/badge/master)](https://www.codefactor.io/repository/github/aiqm/torchani/overview/master)
+[![codecov](https://codecov.io/gh/aiqm/torchani/branch/master/graph/badge.svg)](https://codecov.io/gh/aiqm/torchani)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/aiqm/torchani.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/aiqm/torchani/alerts/)
+
+Deploy (these builds only succeed on tagged commits):
+
+[![Build Status](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/Deploy%20docs?branchName=master)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=9?branchName=master)
+[![Build Status](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/Deploy%20PYPI?branchName=master)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=10?branchName=master)
 
 TorchANI is a pytorch implementation of ANI. It is currently under alpha release, which means, the API is not stable yet. If you find a bug of TorchANI, or have some feature request, feel free to open an issue on GitHub, or send us a pull request.
 
@@ -8,15 +23,17 @@ TorchANI is a pytorch implementation of ANI. It is currently under alpha release
 
 # Install
 
-TorchANI requires the latest preview version of PyTorch. You can install PyTorch by
+TorchANI requires the latest preview version of PyTorch. You can install PyTorch by the following commands (assuming cuda10):
 
 ```bash
-conda install pytorch-nightly -c pytorch
+pip install numpy torchvision_nightly
+pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
 ```
+
 If you updated TorchANI, you may also need to update PyTorch:
 
 ```bash
-conda update pytorch-nightly -c pytorch
+pip install --upgrade torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
 ```
 
 After installing the correct PyTorch, you can install TorchANI by:
@@ -26,6 +43,8 @@ pip install torchani
 ```
 
 See also [PyTorch's official site](https://pytorch.org/get-started/locally/) for instructions of installing latest preview version of PyTorch.
+
+Please install nightly PyTorch through `pip install` instead of `conda install`. If your PyTorch is installed through `conda install`, then `pip` would mistakenly recognize the package name as `torch` instead of `torch-nightly`, which would cause dependency issue when installing TorchANI.
 
 # Paper
 

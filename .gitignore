@@ -24,3 +24,7 @@ benchmark_xyz
 *_cache
 datacache
 dist
+*.pckl
+# No vim swap files
+*.swp
+*.swo

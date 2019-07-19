@@ -10,10 +10,22 @@ TorchANI
 .. autoclass:: torchani.nn.Gaussian
 
 
+Model Zoo
+=========
+
+.. automodule:: torchani.models
+.. autoclass:: torchani.models.ANI1x
+    :members:
+.. autoclass:: torchani.models.ANI1ccx
+    :members:
+
+
 Datasets
 ========
 
 .. automodule:: torchani.data
+.. autofunction:: torchani.data.load_ani_dataset
+.. autofunction:: torchani.data.create_aev_cache
 .. autoclass:: torchani.data.BatchedANIDataset
 .. autoclass:: torchani.data.AEVCacheLoader
 .. automodule:: torchani.data.cache_aev
@@ -24,9 +36,14 @@ Utilities
 
 .. automodule:: torchani.utils
 .. autofunction:: torchani.utils.pad
-.. autofunction:: torchani.utils.pad_coordinates
+.. autofunction:: torchani.utils.pad_atomic_properties
 .. autofunction:: torchani.utils.present_species
 .. autofunction:: torchani.utils.strip_redundant_padding
+.. autofunction:: torchani.utils.map2central
+.. autoclass:: torchani.utils.ChemicalSymbolsToInts
+    :members:
+.. autofunction:: torchani.utils.hessian
+.. autofunction:: torchani.utils.vibrational_analysis
 
 
 NeuroChem
@@ -45,6 +62,20 @@ NeuroChem
 .. automodule:: torchani.neurochem.trainer
 
 
+ASE Interface
+=============
+
+.. automodule:: torchani.ase
+.. autoclass:: torchani.ase.Calculator
+
+
+TorchANI Optimizater
+====================
+
+.. automodule:: torchani.optim
+.. autoclass:: torchani.optim.AdamW
+
+
 Ignite Helpers
 ==============
 
@@ -57,5 +88,4 @@ Ignite Helpers
 .. autofunction:: torchani.ignite.MSELoss
 .. autoclass:: torchani.ignite.DictMetric
 .. autofunction:: torchani.ignite.RMSEMetric
-.. autoclass:: torchani.ignite.MaxAbsoluteError
-.. autofunction:: torchani.ignite.MAEMetric
+.. autofunction:: torchani.ignite.MaxAEMetric

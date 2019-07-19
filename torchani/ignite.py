@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Helpers for working with ignite."""
-
+from __future__ import absolute_import
 import torch
 from . import utils
 from torch.nn.modules.loss import _Loss
-from ignite.metrics.metric import Metric
-from ignite.metrics import RootMeanSquaredError
+from ignite.metrics import Metric, RootMeanSquaredError, MeanAbsoluteError
+from ignite.contrib.metrics.regression import MaximumAbsoluteError
 
 
 class Container(torch.nn.ModuleDict):
@@ -30,7 +30,7 @@ class Container(torch.nn.ModuleDict):
         results = {k: [] for k in self}
         for sx in species_x:
             for k in self:
-                _, result = self[k](sx)
+                _, result = self[k](tuple(sx))
                 results[k].append(result)
         for k in self:
             results[k] = torch.cat(results[k])
@@ -50,8 +50,8 @@ class DictLoss(_Loss):
         self.key = key
         self.loss = loss
 
-    def forward(self, input, other):
-        return self.loss(input[self.key], other[self.key])
+    def forward(self, input_, other):
+        return self.loss(input_[self.key], other[self.key])
 
 
 class PerAtomDictLoss(DictLoss):
@@ -60,9 +60,9 @@ class PerAtomDictLoss(DictLoss):
     by the caller. Currently the only reduce operation supported is averaging.
     """
 
-    def forward(self, input, other):
-        loss = self.loss(input[self.key], other[self.key])
-        num_atoms = (input['species'] >= 0).sum(dim=1)
+    def forward(self, input_, other):
+        loss = self.loss(input_[self.key], other[self.key])
+        num_atoms = (input_['species'] >= 0).sum(dim=1)
         loss /= num_atoms.to(loss.dtype).to(loss.device)
         n = loss.numel()
         return loss.sum() / n
@@ -91,8 +91,7 @@ def MSELoss(key, per_atom=True):
     """Create MSE loss on the specified key."""
     if per_atom:
         return PerAtomDictLoss(key, torch.nn.MSELoss(reduction='none'))
-    else:
-        return DictLoss(key, torch.nn.MSELoss())
+    return DictLoss(key, torch.nn.MSELoss())
 
 
 class TransformedLoss(_Loss):
@@ -103,8 +102,8 @@ class TransformedLoss(_Loss):
         self.origin = origin
         self.transform = transform
 
-    def forward(self, input, other):
-        return self.transform(self.origin(input, other))
+    def forward(self, input_, other):
+        return self.transform(self.origin(input_, other))
 
 
 def RMSEMetric(key):
@@ -112,30 +111,15 @@ def RMSEMetric(key):
     return DictMetric(key, RootMeanSquaredError())
 
 
-class MaxAbsoluteError(Metric):
-    """
-    Calculates the max absolute error.
-
-    - `update` must receive output of the form `(y_pred, y)`.
-    """
-    def reset(self):
-        self._max_of_absolute_errors = 0.0
-
-    def update(self, output):
-        y_pred, y = output
-        absolute_errors = torch.abs(y_pred - y.view_as(y_pred))
-        batch_max = absolute_errors.max().item()
-        if batch_max > self._max_of_absolute_errors:
-            self._max_of_absolute_errors = batch_max
-
-    def compute(self):
-        return self._max_of_absolute_errors
+def MaxAEMetric(key):
+    """Create max absolute error metric on key."""
+    return DictMetric(key, MaximumAbsoluteError())
 
 
 def MAEMetric(key):
     """Create max absolute error metric on key."""
-    return DictMetric(key, MaxAbsoluteError())
+    return DictMetric(key, MeanAbsoluteError())
 
 
 __all__ = ['Container', 'MSELoss', 'TransformedLoss', 'RMSEMetric',
-           'MAEMetric']
+           'MaxAEMetric']

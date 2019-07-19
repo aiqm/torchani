@@ -15,11 +15,10 @@ AEVs.  This example shows how to use disk cache to boost training
 import torch
 import ignite
 import torchani
-import tqdm
 import timeit
-import tensorboardX
 import os
-import sys
+import ignite.contrib.handlers
+import torch.utils.tensorboard
 
 
 # training and validation set
@@ -27,8 +26,8 @@ try:
     path = os.path.dirname(os.path.realpath(__file__))
 except NameError:
     path = os.getcwd()
-training_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
-validation_path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+training_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
+validation_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')  # noqa: E501
 
 # checkpoint file to save model when validation RMSE improves
 model_checkpoint = 'model.pt'
@@ -53,8 +52,8 @@ log = 'runs'
 ###############################################################################
 # Here, there is no need to manually construct aev computer and energy shifter,
 # but we do need to generate a disk cache for datasets
-const_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
-sae_file = os.path.join(path, '../torchani/resources/ani-1x_dft_x8ens/sae_linfit.dat')  # noqa: E501
+const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')
+sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')
 training_cache = './training_cache'
 validation_cache = './validation_cache'
 
@@ -99,7 +98,7 @@ model = nn.to(device)
 
 ###############################################################################
 # This part is also a line by line copy
-writer = tensorboardX.SummaryWriter(log_dir=log)
+writer = torch.utils.tensorboard.SummaryWriter(log_dir=log)
 
 ###############################################################################
 # Here we don't need to construct :class:`torchani.data.BatchedANIDataset`
@@ -109,30 +108,21 @@ validation = torchani.data.AEVCacheLoader(validation_cache)
 
 ###############################################################################
 # The rest of the code are again the same
-training = torchani.data.AEVCacheLoader(training_cache)
 container = torchani.ignite.Container({'energies': model})
 optimizer = torch.optim.Adam(model.parameters())
 trainer = ignite.engine.create_supervised_trainer(
     container, optimizer, torchani.ignite.MSELoss('energies'))
-evaluator = ignite.engine.create_supervised_evaluator(container, metrics={
+evaluator = ignite.engine.create_supervised_evaluator(
+    container,
+    metrics={
         'RMSE': torchani.ignite.RMSEMetric('energies')
     })
 
 
-@trainer.on(ignite.engine.Events.EPOCH_STARTED)
-def init_tqdm(trainer):
-    trainer.state.tqdm = tqdm.tqdm(total=len(training),
-                                   file=sys.stdout, desc='epoch')
-
-
-@trainer.on(ignite.engine.Events.ITERATION_COMPLETED)
-def update_tqdm(trainer):
-    trainer.state.tqdm.update(1)
-
-
-@trainer.on(ignite.engine.Events.EPOCH_COMPLETED)
-def finalize_tqdm(trainer):
-    trainer.state.tqdm.close()
+###############################################################################
+# Let's add a progress bar for the trainer
+pbar = ignite.contrib.handlers.ProgressBar()
+pbar.attach(trainer)
 
 
 def hartree2kcal(x):

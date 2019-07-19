@@ -8,7 +8,7 @@ import torchani
 import torchani.ignite
 
 path = os.path.dirname(os.path.realpath(__file__))
-path = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 batchsize = 4
 threshold = 1e-5
 
@@ -16,13 +16,14 @@ threshold = 1e-5
 class TestIgnite(unittest.TestCase):
 
     def testIgnite(self):
-        builtins = torchani.neurochem.Builtins()
-        aev_computer = builtins.aev_computer
-        nnp = copy.deepcopy(builtins.models[0])
-        shift_energy = builtins.energy_shifter
+        ani1x = torchani.models.ANI1x()
+        aev_computer = ani1x.aev_computer
+        nnp = copy.deepcopy(ani1x.neural_networks[0])
+        shift_energy = ani1x.energy_shifter
         ds = torchani.data.BatchedANIDataset(
-            path, builtins.consts.species_to_tensor, batchsize,
-            transform=[shift_energy.subtract_from_dataset])
+            path, ani1x.consts.species_to_tensor, batchsize,
+            transform=[shift_energy.subtract_from_dataset],
+            device=aev_computer.EtaR.device)
         ds = torch.utils.data.Subset(ds, [0])
 
         class Flatten(torch.nn.Module):

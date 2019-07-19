@@ -6,7 +6,7 @@ import unittest
 
 path = os.path.dirname(os.path.realpath(__file__))
 iptpath = os.path.join(path, 'test_data/inputtrain.ipt')
-dspath = os.path.join(path, '../dataset/ani_gdb_s01.h5')
+dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 
 
 class TestNeuroChem(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestNeuroChem(unittest.TestCase):
         trainer = torchani.neurochem.Trainer(iptpath, d, True, 'runs')
 
         # test if loader construct correct model
-        self.assertEqual(trainer.aev_computer.aev_length(), 384)
+        self.assertEqual(trainer.aev_computer.aev_length, 384)
         m = trainer.model
         H, C, N, O = m  # noqa: E741
         self.assertIsInstance(H[0], torch.nn.Linear)

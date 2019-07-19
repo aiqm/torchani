@@ -1,14 +1,10 @@
 # Written by Roman Zubatyuk and Justin S. Smith
 import h5py
 import numpy as np
-import platform
 import os
 
 
-PY_VERSION = int(platform.python_version().split('.')[0]) > 3
-
-
-class datapacker(object):
+class datapacker:
     def __init__(self, store_file, mode='w-', complib='gzip', complevel=6):
         """Wrapper to store arrays within HFD5 file
         """
@@ -26,9 +22,9 @@ class datapacker(object):
             # print(type(v[0]))
 
             # print(k)
-            if type(v) == list:
+            if isinstance(v, list):
                 if len(v) != 0:
-                    if type(v[0]) is np.str_ or type(v[0]) is str:
+                    if isinstance(v[0], np.str_) or isinstance(v[0], str):
                         v = [a.encode('utf8') for a in v]
 
             g.create_dataset(k, data=v, compression=self.clib,
@@ -40,13 +36,13 @@ class datapacker(object):
         self.store.close()
 
 
-class anidataloader(object):
+class anidataloader:
 
     ''' Contructor '''
 
     def __init__(self, store_file):
         if not os.path.exists(store_file):
-            exit('Error: file not found - '+store_file)
+            exit('Error: file not found - ' + store_file)
         self.store = h5py.File(store_file, 'r')
 
     ''' Group recursive iterator (iterate through all groups
@@ -61,11 +57,11 @@ class anidataloader(object):
                 data = {'path': path}
                 for k in keys:
                     if not isinstance(item[k], h5py.Group):
-                        dataset = np.array(item[k].value)
+                        dataset = np.array(item[k][()])
 
-                        if type(dataset) is np.ndarray:
+                        if isinstance(dataset, np.ndarray):
                             if dataset.size != 0:
-                                if type(dataset[0]) is np.bytes_:
+                                if isinstance(dataset[0], np.bytes_):
                                     dataset = [a.decode('ascii')
                                                for a in dataset]
 
@@ -102,11 +98,11 @@ class anidataloader(object):
         # print(path)
         for k in keys:
             if not isinstance(item[k], h5py.Group):
-                dataset = np.array(item[k].value)
+                dataset = np.array(item[k][()])
 
-                if type(dataset) is np.ndarray:
+                if isinstance(dataset, np.ndarray):
                     if dataset.size != 0:
-                        if type(dataset[0]) is np.bytes_:
+                        if isinstance(dataset[0], np.bytes_):
                             dataset = [a.decode('ascii') for a in dataset]
 
                 data.update({k: dataset})

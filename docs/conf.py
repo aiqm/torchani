@@ -5,8 +5,8 @@ project = 'TorchANI'
 copyright = '2018, Roitberg Group'
 author = 'Xiang Gao'
 
-version = '0.1'
-release = '0.1alpha'
+version = torchani.__version__
+release = torchani.__version__
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -28,9 +28,9 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 htmlhelp_basename = 'TorchANIdoc'
 
 sphinx_gallery_conf = {
-     'examples_dirs': '../examples',
-     'gallery_dirs': 'examples',
-     'filename_pattern': r'.*\.py'
+    'examples_dirs': '../examples',
+    'gallery_dirs': 'examples',
+    'filename_pattern': r'.*\.py'
 }
 
 intersphinx_mapping = {
@@ -38,6 +38,7 @@ intersphinx_mapping = {
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
     'torch': ('https://pytorch.org/docs/master/', None),
     'ignite': ('https://pytorch.org/ignite/', None),
+    'ase': ('https://wiki.fysik.dtu.dk/ase/', None),
 }
 
 latex_documents = [

@@ -1,0 +1,25 @@
+queue:
+  name: Hosted Ubuntu 1604
+  timeoutInMinutes: 10
+
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+
+variables:
+  python.version: '3.7'
+
+steps:
+
+- task: UsePythonVersion@0
+  displayName: 'Use Python $(python.version)'
+  inputs:
+    versionSpec: '$(python.version)'
+
+- script: 'azure/install_dependencies.sh'
+  displayName: 'Install dependencies'
+
+- script: 'pip install flake8 && flake8 .'
+  displayName: Flake8

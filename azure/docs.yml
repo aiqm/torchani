@@ -1,0 +1,25 @@
+queue:
+  name: Hosted Ubuntu 1604
+  timeoutInMinutes: 300
+
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+
+variables:
+  python.version: '3.7'
+
+steps:
+
+- task: UsePythonVersion@0
+  displayName: 'Use Python $(python.version)'
+  inputs:
+    versionSpec: '$(python.version)'
+
+- script: 'azure/install_dependencies.sh && pip install h5py pytorch-ignite-nightly tb-nightly sphinx sphinx_rtd_theme matplotlib pillow sphinx-gallery && pip install .'
+  displayName: 'Install dependencies'
+
+- script: 'sphinx-build docs build'
+  displayName: Documents

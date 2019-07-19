@@ -20,10 +20,10 @@ parser = parser.parse_args()
 
 # set up benchmark
 device = torch.device(parser.device)
-builtins = torchani.neurochem.Builtins()
-consts = builtins.consts
-aev_computer = builtins.aev_computer
-shift_energy = builtins.energy_shifter
+ani1x = torchani.models.ANI1x()
+consts = ani1x.consts
+aev_computer = ani1x.aev_computer
+shift_energy = ani1x.energy_shifter
 
 
 def atomic():
@@ -92,16 +92,16 @@ def time_func(key, func):
 
 
 # enable timers
-nnp[0]._radial_subaev_terms = time_func('radial terms',
-                                        nnp[0]._radial_subaev_terms)
-nnp[0]._angular_subaev_terms = time_func('angular terms',
-                                         nnp[0]._angular_subaev_terms)
-nnp[0]._terms_and_indices = time_func('terms and indices',
-                                      nnp[0]._terms_and_indices)
-nnp[0]._combinations = time_func('combinations', nnp[0]._combinations)
-nnp[0]._compute_mask_r = time_func('mask_r', nnp[0]._compute_mask_r)
-nnp[0]._compute_mask_a = time_func('mask_a', nnp[0]._compute_mask_a)
-nnp[0]._assemble = time_func('assemble', nnp[0]._assemble)
+torchani.aev.cutoff_cosine = time_func('torchani.aev.cutoff_cosine', torchani.aev.cutoff_cosine)
+torchani.aev.radial_terms = time_func('torchani.aev.radial_terms', torchani.aev.radial_terms)
+torchani.aev.angular_terms = time_func('torchani.aev.angular_terms', torchani.aev.angular_terms)
+torchani.aev.compute_shifts = time_func('torchani.aev.compute_shifts', torchani.aev.compute_shifts)
+torchani.aev.neighbor_pairs = time_func('torchani.aev.neighbor_pairs', torchani.aev.neighbor_pairs)
+torchani.aev.triu_index = time_func('torchani.aev.triu_index', torchani.aev.triu_index)
+torchani.aev.convert_pair_index = time_func('torchani.aev.convert_pair_index', torchani.aev.convert_pair_index)
+torchani.aev.cumsum_from_zero = time_func('torchani.aev.cumsum_from_zero', torchani.aev.cumsum_from_zero)
+torchani.aev.triple_by_molecule = time_func('torchani.aev.triple_by_molecule', torchani.aev.triple_by_molecule)
+torchani.aev.compute_aev = time_func('torchani.aev.compute_aev', torchani.aev.compute_aev)
 nnp[0].forward = time_func('total', nnp[0].forward)
 nnp[1].forward = time_func('forward', nnp[1].forward)
 
@@ -109,13 +109,9 @@ nnp[1].forward = time_func('forward', nnp[1].forward)
 start = timeit.default_timer()
 trainer.run(dataset, max_epochs=1)
 elapsed = round(timeit.default_timer() - start, 2)
-print('Radial terms:', timers['radial terms'])
-print('Angular terms:', timers['angular terms'])
-print('Terms and indices:', timers['terms and indices'])
-print('Combinations:', timers['combinations'])
-print('Mask R:', timers['mask_r'])
-print('Mask A:', timers['mask_a'])
-print('Assemble:', timers['assemble'])
+for k in timers:
+    if k.startswith('torchani.'):
+        print(k, timers[k])
 print('Total AEV:', timers['total'])
 print('NN:', timers['forward'])
 print('Epoch time:', elapsed)

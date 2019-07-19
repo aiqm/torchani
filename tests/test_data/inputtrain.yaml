@@ -1,0 +1,106 @@
+# InputFile for Force Prediction Network
+sflparamsfile: 'rHCNO-5.2R_16-3.5A_a4-8.params'
+ntwkStoreDir: 'networks/'
+atomEnergyFile: 'sae_linfit.dat'
+nmax: 10 # Maximum number of iterations (0 = inf)
+tolr: 1 # Tolerance - early stopping
+emult: 0.1 # Multiplier by eta after tol switch
+eta: 0.001 # Eta -- Learning rate
+tcrit: 1.0E-5 # Eta termination criterion
+tmax: 0 # Maximum time (0 = inf)
+tbtchsz: 2560
+vbtchsz: 2560
+gpuid: 0
+ntwshr: 0
+nkde: 2
+energy: 1
+force: 0
+fmult: 0.0
+pbc: 0
+cmult: 0.001
+runtype: 'ANNP_CREATE_HDNN_AND_TRAIN' # Create and train a HDN network
+
+network_setup:
+  inputsize: 384
+  atom_net:
+    H:
+      - nodes: 160
+        activation: 9
+        type: 0
+        # l2norm: 1
+        # l2valu: 0.0001
+      - nodes: 128
+        activation: 9
+        type: 0
+        # l2norm: 1
+        # l2valu: 0.00001
+      - nodes: 96
+        activation: 9
+        type: 0
+        # l2norm: 1
+        # l2valu: 0.000001
+      - nodes: 1
+        activation: 6
+        type: 0
+    C:
+      - nodes: 144
+        activation: 9
+        type: 0
+        # l2norm: 1
+        # l2valu: 0.0001
+      - nodes: 112
+        activation: 9
+        type: 0
+        # l2norm: 1
+        # l2valu: 0.00001
+      - nodes: 96
+        activation: 9
+        type: 0
+        # l2norm: 1
+        # l2valu: 0.000001
+      - nodes: 1
+        activation: 6
+        type: 0
+    N:
+      - nodes: 128
+        activation: 9
+        type: 0
+        # l2norm: 1
+        # l2valu: 0.0001
+      - nodes: 112
+        activation: 9
+        type: 0
+        # l2norm: 1
+        # l2valu: 0.00001
+      - nodes: 96
+        activation: 9
+        type: 0
+        # l2norm: 1
+        # l2valu: 0.000001
+      - nodes: 1
+        activation: 6
+        type: 0
+    O:
+      - nodes: 128
+        activation: 9
+        type: 0
+        # l2norm: 1
+        # l2valu: 0.0001
+      - nodes: 112
+        activation: 9
+        type: 0
+        # l2norm: 1
+        # l2valu: 0.00001
+      - nodes: 96
+        activation: 9
+        type: 0
+        # l2norm: 1
+        # l2valu: 0.000001
+      - nodes: 1
+        activation: 6
+        type: 0
+
+adptlrn: 'OFF' # Adaptive learning (OFF,RMSPROP)
+decrate: 0.9 # Decay rate of RMSPROP
+moment: 'ADAM' #  Turn on momentum or nesterov momentum (OFF,CNSTTEMP,TMANNEAL,REGULAR,NESTEROV)
+mu: 0.99 # Mu factor for momentum

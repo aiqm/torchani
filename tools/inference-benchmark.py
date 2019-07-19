@@ -18,11 +18,11 @@ parser = parser.parse_args()
 
 # set up benchmark
 device = torch.device(parser.device)
-builtins = torchani.neurochem.Builtins()
+ani1x = torchani.models.ANI1x()
 nnp = torch.nn.Sequential(
-    builtins.aev_computer,
-    builtins.models[0],
-    builtins.energy_shifter
+    ani1x.aev_computer,
+    ani1x.neural_networks[0],
+    ani1x.energy_shifter
 ).to(device)
 
 
@@ -54,8 +54,8 @@ class XYZ:
                 atom_count -= 1
                 if atom_count == 0:
                     state = 'ready'
-                    species = builtins.consts.species_to_tensor(species) \
-                                      .to(device)
+                    species = ani1x.consts.species_to_tensor(species) \
+                        .to(device)
                     coordinates = torch.tensor(coordinates, device=device)
                     self.mols.append((species, coordinates))
                     coordinates = []
@@ -76,7 +76,7 @@ print()
 # test batch mode
 print('[Batch mode]')
 species, coordinates = torch.utils.data.dataloader.default_collate(list(xyz))
-coordinates = torch.tensor(coordinates, requires_grad=True)
+coordinates.requires_grad_(True)
 start = timeit.default_timer()
 energies = nnp((species, coordinates))[1]
 mid = timeit.default_timer()
@@ -92,7 +92,7 @@ if parser.tqdm:
     xyz = tqdm.tqdm(xyz)
 for species, coordinates in xyz:
     species = species.unsqueeze(0)
-    coordinates = torch.tensor(coordinates.unsqueeze(0), requires_grad=True)
+    coordinates = coordinates.unsqueeze(0).detach().requires_grad_(True)
     energies = nnp((species, coordinates))[1]
     force = -torch.autograd.grad(energies.sum(), coordinates)[0]
 print('Time:', timeit.default_timer() - start)
