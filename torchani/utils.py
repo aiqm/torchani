@@ -183,11 +183,10 @@ class EnergyShifter(torch.nn.Module):
             :class:`torch.Tensor`: 1D vector in shape ``(conformations,)``
             for molecular self energies.
         """
+        intercept = 0.0
         present_species_ = present_species(species)
         if self.self_energies.numel() == present_species_.numel() + 1:
             intercept = self.self_energies[-1]
-        elif self.self_energies.numel() == present_species_.numel():
-            intercept = 0.0
 
         self_energies = self.self_energies[species]
         self_energies[species == -1] = 0
