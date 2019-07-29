@@ -255,7 +255,7 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
         batch_size (int): Number of different 3D structures in a single
             minibatch.
         shuffle (bool): Whether to shuffle the whole dataset.
-        rm_outlier (bool): Whether to discard the outlier energy conformers 
+        rm_outlier (bool): Whether to discard the outlier energy conformers
             from a given dataset.
         properties (list): List of keys of `molecular` properties in the
             dataset to be loaded. Here `molecular` means, no matter the number
