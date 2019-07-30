@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tools for loading/running NeuroChem input files."""
 
-import pkg_resources
 import torch
 import os
 import bz2

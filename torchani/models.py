@@ -27,7 +27,6 @@ shouldn't be used anymore.
 """
 
 import torch
-import warnings
 from pkg_resources import resource_filename
 from . import neurochem
 from .aev import AEVComputer
