@@ -153,7 +153,7 @@ class EnergyShifter(torch.nn.Module):
         self.register_buffer('self_energies', self_energies)
 
     @staticmethod
-    def sae_from_dataset(atomic_properties, properties):
+    def sae_from_dataset(atomic_properties, properties, fit_intercept=False):
         """Compute atomic self energies from dataset.
 
         Least-squares solution to a linear equation is calculated to output
@@ -165,7 +165,8 @@ class EnergyShifter(torch.nn.Module):
         present_species_ = present_species(species)
         X = (species.unsqueeze(-1) == present_species_).sum(dim=1).to(torch.double)
         # Concatenate a vector of ones to find fit intercept
-        X = torch.cat((X, torch.ones(X.shape[0], 1).to(torch.double)), dim=-1)
+        if fit_intercept:
+            X = torch.cat((X, torch.ones(X.shape[0], 1).to(torch.double)), dim=-1)
         y = energies.unsqueeze(dim=-1)
         coeff_, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
         return coeff_.squeeze()
