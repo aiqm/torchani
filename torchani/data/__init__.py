@@ -216,7 +216,7 @@ class BatchedANIDataset(PaddedBatchChunkDataset):
 
 
 def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
-                     rm_outlier=True, properties=('energies',), atomic_properties=(),
+                     rm_outlier=False, properties=('energies',), atomic_properties=(),
                      transform=(), dtype=torch.get_default_dtype(), device=default_device,
                      split=(None,)):
     """Load ANI dataset from hdf5 files, and split into subsets.
