@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tools for loading/running NeuroChem input files."""
 
-import pkg_resources
 import torch
 import os
 import bz2
@@ -260,144 +259,6 @@ def load_model_ensemble(species, prefix, count):
         network_dir = os.path.join('{}{}'.format(prefix, i), 'networks')
         models.append(load_model(species, network_dir))
     return Ensemble(models)
-
-
-# Future: Delete BuiltinsAbstract in a future release, it is DEPRECATED
-class BuiltinsAbstract(object):
-    """Base class for loading ANI neural network from configuration files.
-
-    .. warning::
-        This class is part of an old API. It is DEPRECATED and may be deleted in a
-        future version. It shouldn't be used.
-
-    Arguments:
-        parent_name (:class:`str`): Base path that other paths are relative to.
-        const_file_path (:class:`str`): Path to constant file for ANI model(s).
-        sae_file_path (:class:`str`): Path to sae file for ANI model(s).
-        ensemble_size (:class:`int`): Number of models in model ensemble.
-        ensemble_prefix_path (:class:`str`): Path to prefix of directories of
-            models.
-
-    Attributes:
-        const_file (:class:`str`): Path to the builtin constant file.
-        consts (:class:`Constants`): Constants loaded from builtin constant
-            file.
-        aev_computer (:class:`torchani.AEVComputer`): AEV computer with builtin
-            constants.
-        sae_file (:class:`str`): Path to the builtin self atomic energy file.
-        energy_shifter (:class:`torchani.EnergyShifter`): AEV computer with
-            builtin constants.
-        ensemble_size (:class:`int`): Number of models in model ensemble.
-        ensemble_prefix (:class:`str`): Prefix of directories of models.
-        models (:class:`torchani.Ensemble`): Ensemble of models.
-    """
-    def __init__(
-            self,
-            parent_name,
-            const_file_path,
-            sae_file_path,
-            ensemble_size,
-            ensemble_prefix_path):
-        self.const_file = pkg_resources.resource_filename(
-            parent_name,
-            const_file_path)
-        warnings.warn(
-            "BuiltinsAbstract is deprecated and will be deleted in"
-            "the future; use torchani.models.BuiltinNet()", DeprecationWarning)
-        self.consts = Constants(self.const_file)
-        self.species = self.consts.species
-        self.aev_computer = AEVComputer(**self.consts)
-        self.sae_file = pkg_resources.resource_filename(
-            parent_name,
-            sae_file_path)
-        self.energy_shifter = load_sae(self.sae_file)
-        self.ensemble_size = ensemble_size
-        self.ensemble_prefix = pkg_resources.resource_filename(
-            parent_name,
-            ensemble_prefix_path)
-        self.models = load_model_ensemble(self.consts.species,
-                                          self.ensemble_prefix,
-                                          self.ensemble_size)
-
-
-# Future: Delete Builtins in a future release, it is DEPRECATED
-class Builtins(BuiltinsAbstract):
-    """Container for the builtin ANI-1x model.
-
-    .. warning::
-        This class is part of an old API. It is DEPRECATED and may be deleted in a
-        future version. It shouldn't be used.
-
-    Attributes:
-        const_file (:class:`str`): Path to the builtin constant file.
-        consts (:class:`Constants`): Constants loaded from builtin constant
-            file.
-        aev_computer (:class:`torchani.AEVComputer`): AEV computer with builtin
-            constants.
-        sae_file (:class:`str`): Path to the builtin self atomic energy file.
-        energy_shifter (:class:`torchani.EnergyShifter`): AEV computer with
-            builtin constants.
-        ensemble_size (:class:`int`): Number of models in model ensemble.
-        ensemble_prefix (:class:`str`): Prefix of directories of models.
-        models (:class:`torchani.Ensemble`): Ensemble of models.
-    """
-    def __init__(self):
-        warnings.warn(
-            "Builtins is deprecated and will be deleted in the"
-            "future; use torchani.models.ANI1x()", DeprecationWarning)
-        parent_name = '.'.join(__name__.split('.')[:-1])
-        const_file_path = 'resources/ani-1x_8x'\
-            '/rHCNO-5.2R_16-3.5A_a4-8.params'
-        sae_file_path = 'resources/ani-1x_8x/sae_linfit.dat'
-        ensemble_size = 8
-        ensemble_prefix_path = 'resources/ani-1x_8x/train'
-        super(Builtins, self).__init__(
-            parent_name,
-            const_file_path,
-            sae_file_path,
-            ensemble_size,
-            ensemble_prefix_path
-        )
-
-
-# Future: Delete BuiltinsANI1CCX in a future release, it is DEPRECATED
-class BuiltinsANI1CCX(BuiltinsAbstract):
-    """Container for the builtin ANI-1ccx model.
-
-    .. warning::
-        This class is part of an old API. It is DEPRECATED and may be deleted in a
-        future version. It shouldn't be used.
-
-    Attributes:
-        const_file (:class:`str`): Path to the builtin constant file.
-        consts (:class:`Constants`): Constants loaded from builtin constant
-            file.
-        aev_computer (:class:`torchani.AEVComputer`): AEV computer with builtin
-            constants.
-        sae_file (:class:`str`): Path to the builtin self atomic energy file.
-        energy_shifter (:class:`torchani.EnergyShifter`): AEV computer with
-            builtin constants.
-        ensemble_size (:class:`int`): Number of models in model ensemble.
-        ensemble_prefix (:class:`str`): Prefix of directories of models.
-        models (:class:`torchani.Ensemble`): Ensemble of models.
-    """
-    def __init__(self):
-        warnings.warn(
-            "BuiltinsANICCX is deprecated and will be deleted in the"
-            "future; use torchani.models.ANI1ccx()", DeprecationWarning)
-        parent_name = '.'.join(__name__.split('.')[:-1])
-        const_file_path = 'resources/ani-1ccx_8x'\
-            '/rHCNO-5.2R_16-3.5A_a4-8.params'
-        sae_file_path = 'resources/ani-1ccx_8x/sae_linfit.dat'
-        ensemble_size = 8
-        ensemble_prefix_path = 'resources/ani-1ccx_8x/train'
-        super(BuiltinsANI1CCX, self).__init__(
-            parent_name,
-            const_file_path,
-            sae_file_path,
-            ensemble_size,
-            ensemble_prefix_path
-        )
 
 
 def hartree2kcal(x):
@@ -861,5 +722,4 @@ if sys.version_info[0] > 2:
                 lr *= self.lr_decay
 
 
-__all__ = ['Constants', 'load_sae', 'load_model', 'load_model_ensemble',
-           'Builtins', 'Trainer']
+__all__ = ['Constants', 'load_sae', 'load_model', 'load_model_ensemble', 'Trainer']
