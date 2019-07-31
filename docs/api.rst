@@ -56,7 +56,6 @@ NeuroChem
 .. autofunction:: torchani.neurochem.load_atomic_network
 .. autofunction:: torchani.neurochem.load_model
 .. autofunction:: torchani.neurochem.load_model_ensemble
-.. autoclass:: torchani.neurochem.Builtins
 .. autoclass:: torchani.neurochem.Trainer
     :members:
 .. automodule:: torchani.neurochem.trainer
