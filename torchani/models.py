@@ -7,7 +7,8 @@ these are subclasses of :class:`torch.nn.Module`.
 To use the models just instantiate them and either
 directly calculate energies or get an ASE calculator. For example:
 
-.. code:: python
+.. code-block:: python
+
     ani1x = torchani.models.ANI1x()
     # compute energy using ANI-1x model ensemble
     _, energies = ani1x((species, coordinates))
