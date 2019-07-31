@@ -144,16 +144,16 @@ class EnergyShifter(torch.nn.Module):
             be in order, i.e. ``self_energies[i]`` should be atom type ``i``.
     """
 
-    def __init__(self, self_energies):
+    def __init__(self, self_energies, fit_intercept=False):
         super(EnergyShifter, self).__init__()
 
+        self.fit_intercept = fit_intercept
         if self_energies is not None:
             self_energies = torch.tensor(self_energies, dtype=torch.double)
 
         self.register_buffer('self_energies', self_energies)
 
-    @staticmethod
-    def sae_from_dataset(atomic_properties, properties, fit_intercept=False):
+    def sae_from_dataset(atomic_properties, properties):
         """Compute atomic self energies from dataset.
 
         Least-squares solution to a linear equation is calculated to output
@@ -165,7 +165,7 @@ class EnergyShifter(torch.nn.Module):
         present_species_ = present_species(species)
         X = (species.unsqueeze(-1) == present_species_).sum(dim=1).to(torch.double)
         # Concatenate a vector of ones to find fit intercept
-        if fit_intercept:
+        if self.fit_intercept:
             X = torch.cat((X, torch.ones(X.shape[0], 1).to(torch.double)), dim=-1)
         y = energies.unsqueeze(dim=-1)
         coeff_, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
@@ -186,7 +186,7 @@ class EnergyShifter(torch.nn.Module):
         """
         intercept = 0.0
         present_species_ = present_species(species)
-        if self.self_energies.numel() == present_species_.numel() + 1:
+        if self.fit_intercept:
             intercept = self.self_energies[-1]
 
         self_energies = self.self_energies[species]
