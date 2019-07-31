@@ -153,7 +153,7 @@ class EnergyShifter(torch.nn.Module):
 
         self.register_buffer('self_energies', self_energies)
 
-    def sae_from_dataset(atomic_properties, properties):
+    def sae_from_dataset(self, atomic_properties, properties):
         """Compute atomic self energies from dataset.
 
         Least-squares solution to a linear equation is calculated to output
@@ -185,7 +185,6 @@ class EnergyShifter(torch.nn.Module):
             for molecular self energies.
         """
         intercept = 0.0
-        present_species_ = present_species(species)
         if self.fit_intercept:
             intercept = self.self_energies[-1]
 
