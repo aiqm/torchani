@@ -507,4 +507,4 @@ def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
                SparseAEVCacheLoader.encode_aev, **kwargs)
 
 
-__all__ = ['BatchedANIDataset', 'AEVCacheLoader', 'SparseAEVCacheLoader', 'cache_aev', 'cache_sparse_aev']
+__all__ = ['load_ani_dataset', 'BatchedANIDataset', 'AEVCacheLoader', 'SparseAEVCacheLoader', 'cache_aev', 'cache_sparse_aev']
