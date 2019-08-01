@@ -142,18 +142,20 @@ class EnergyShifter(torch.nn.Module):
         self_energies (:class:`collections.abc.Sequence`): Sequence of floating
             numbers for the self energy of each atom type. The numbers should
             be in order, i.e. ``self_energies[i]`` should be atom type ``i``.
+        fit_intercept (bool): Whether to calculate the intercept during the LSTSQ
+            fit. The intercept will also be taken into account to shift energies.
     """
 
-    def __init__(self, self_energies):
+    def __init__(self, self_energies, fit_intercept=False):
         super(EnergyShifter, self).__init__()
 
+        self.fit_intercept = fit_intercept
         if self_energies is not None:
             self_energies = torch.tensor(self_energies, dtype=torch.double)
 
         self.register_buffer('self_energies', self_energies)
 
-    @staticmethod
-    def sae_from_dataset(atomic_properties, properties):
+    def sae_from_dataset(self, atomic_properties, properties):
         """Compute atomic self energies from dataset.
 
         Least-squares solution to a linear equation is calculated to output
@@ -164,6 +166,9 @@ class EnergyShifter(torch.nn.Module):
         energies = properties['energies']
         present_species_ = present_species(species)
         X = (species.unsqueeze(-1) == present_species_).sum(dim=1).to(torch.double)
+        # Concatenate a vector of ones to find fit intercept
+        if self.fit_intercept:
+            X = torch.cat((X, torch.ones(X.shape[0], 1).to(torch.double)), dim=-1)
         y = energies.unsqueeze(dim=-1)
         coeff_, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
         return coeff_.squeeze()
@@ -181,9 +186,13 @@ class EnergyShifter(torch.nn.Module):
             :class:`torch.Tensor`: 1D vector in shape ``(conformations,)``
             for molecular self energies.
         """
+        intercept = 0.0
+        if self.fit_intercept:
+            intercept = self.self_energies[-1]
+
         self_energies = self.self_energies[species]
         self_energies[species == -1] = 0
-        return self_energies.sum(dim=1)
+        return self_energies.sum(dim=1) + intercept
 
     def subtract_from_dataset(self, atomic_properties, properties):
         """Transformer for :class:`torchani.data.BatchedANIDataset` that
