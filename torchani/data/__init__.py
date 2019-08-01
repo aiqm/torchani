@@ -483,7 +483,7 @@ def _cache_aev(output, dataset_path, batchsize, device, constfile,
     else:
         transform = ()
 
-    dataset = BatchedANIDataset(
+    dataset = load_ani_dataset(
         dataset_path, consts.species_to_tensor, batchsize,
         device=device, transform=transform, **kwargs
     )
