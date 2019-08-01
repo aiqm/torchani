@@ -483,7 +483,7 @@ def _cache_aev(output, dataset_path, batchsize, device, constfile,
     else:
         transform = ()
 
-    dataset = BatchedANIDataset(
+    dataset = load_ani_dataset(
         dataset_path, consts.species_to_tensor, batchsize,
         device=device, transform=transform, **kwargs
     )
@@ -507,4 +507,4 @@ def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
                SparseAEVCacheLoader.encode_aev, **kwargs)
 
 
-__all__ = ['BatchedANIDataset', 'AEVCacheLoader', 'SparseAEVCacheLoader', 'cache_aev', 'cache_sparse_aev']
+__all__ = ['load_ani_dataset', 'BatchedANIDataset', 'AEVCacheLoader', 'SparseAEVCacheLoader', 'cache_aev', 'cache_sparse_aev']
