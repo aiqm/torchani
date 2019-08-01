@@ -9,7 +9,7 @@ from ignite.contrib.metrics.regression import MaximumAbsoluteError
 
 
 class Container(torch.nn.ModuleDict):
-    """Each minibatch is splitted into chunks, as explained in the docstring of
+    r"""Each minibatch is splitted into chunks, as explained in the docstring of
     :method:`torchani.data.load_ani_dataset`, as a result, it is impossible to
     use :class:`torchani.AEVComputer`, :class:`torchani.ANIModel` directly with
     ignite. This class is designed to solve this issue.
