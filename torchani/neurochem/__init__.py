@@ -287,7 +287,7 @@ if sys.version_info[0] > 2:
             try:
                 import ignite
                 from ..ignite import Container, MSELoss, TransformedLoss, RMSEMetric, MAEMetric, MaxAEMetric
-                from ..data import BatchedANIDataset  # noqa: E402
+                from ..data import load_ani_dataset  # noqa: E402
                 from ..data import AEVCacheLoader  # noqa: E402
             except ImportError:
                 raise RuntimeError(
@@ -306,7 +306,7 @@ if sys.version_info[0] > 2:
             self.imports.RMSEMetric = RMSEMetric
             self.imports.MaxAEMetric = MaxAEMetric
             self.imports.MAEMetric = MAEMetric
-            self.imports.BatchedANIDataset = BatchedANIDataset
+            self.imports.load_ani_dataset = load_ani_dataset
             self.imports.AEVCacheLoader = AEVCacheLoader
 
             self.warned = False
@@ -596,11 +596,11 @@ if sys.version_info[0] > 2:
                 self.training_set = self.imports.AEVCacheLoader(training_path)
                 self.validation_set = self.imports.AEVCacheLoader(validation_path)
             else:
-                self.training_set = self.imports.BatchedANIDataset(
+                self.training_set = self.imports.load_ani_dataset(
                     training_path, self.consts.species_to_tensor,
                     self.training_batch_size, device=self.device,
                     transform=[self.shift_energy.subtract_from_dataset])
-                self.validation_set = self.imports.BatchedANIDataset(
+                self.validation_set = self.imports.load_ani_dataset(
                     validation_path, self.consts.species_to_tensor,
                     self.validation_batch_size, device=self.device,
                     transform=[self.shift_energy.subtract_from_dataset])
