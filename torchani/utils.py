@@ -142,6 +142,8 @@ class EnergyShifter(torch.nn.Module):
         self_energies (:class:`collections.abc.Sequence`): Sequence of floating
             numbers for the self energy of each atom type. The numbers should
             be in order, i.e. ``self_energies[i]`` should be atom type ``i``.
+        fit_intercept (bool): Whether to calculate the intercept during the LSTSQ
+            fit. The intercept will also be taken into account to shift energies.
     """
 
     def __init__(self, self_energies, fit_intercept=False):
