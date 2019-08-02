@@ -47,7 +47,7 @@ container = container.to(device)
 if parser.dataset_path.endswith('.h5') or \
    parser.dataset_path.endswith('.hdf5') or \
    os.path.isdir(parser.dataset_path):
-    dataset = torchani.data.BatchedANIDataset(
+    dataset = torchani.data.load_ani_dataset(
         parser.dataset_path, consts.species_to_tensor, parser.batch_size,
         device=device, transform=[shift_energy.subtract_from_dataset])
     datasets = [dataset]
