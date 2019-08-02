@@ -20,7 +20,7 @@ class TestIgnite(unittest.TestCase):
         aev_computer = ani1x.aev_computer
         nnp = copy.deepcopy(ani1x.neural_networks[0])
         shift_energy = ani1x.energy_shifter
-        ds = torchani.data.BatchedANIDataset(
+        ds = torchani.data.load_ani_dataset(
             path, ani1x.consts.species_to_tensor, batchsize,
             transform=[shift_energy.subtract_from_dataset],
             device=aev_computer.EtaR.device)

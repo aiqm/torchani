@@ -49,7 +49,7 @@ class Flatten(torch.nn.Module):
 
 nnp = torch.nn.Sequential(aev_computer, model, Flatten()).to(device)
 
-dataset = torchani.data.BatchedANIDataset(
+dataset = torchani.data.load_ani_dataset(
     parser.dataset_path, consts.species_to_tensor,
     parser.batch_size, device=device,
     transform=[shift_energy.subtract_from_dataset])

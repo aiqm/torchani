@@ -7,7 +7,8 @@ these are subclasses of :class:`torch.nn.Module`.
 To use the models just instantiate them and either
 directly calculate energies or get an ASE calculator. For example:
 
-.. code:: python
+.. code-block:: python
+
     ani1x = torchani.models.ANI1x()
     # compute energy using ANI-1x model ensemble
     _, energies = ani1x((species, coordinates))
@@ -27,67 +28,9 @@ shouldn't be used anymore.
 """
 
 import torch
-import warnings
 from pkg_resources import resource_filename
 from . import neurochem
 from .aev import AEVComputer
-
-
-# Future: Delete BuiltinModels in a future release, it is DEPRECATED
-class BuiltinModels(torch.nn.Module):
-    """BuiltinModels class.
-
-    .. warning::
-        This class is part of an old API. It is DEPRECATED and may be deleted in a
-        future version. It shouldn't be used.
-    """
-
-    def __init__(self, builtin_class):
-        warnings.warn(
-            "BuiltinsModels is deprecated and will be deleted in"
-            "the future; use torchani.models.BuiltinNet()", DeprecationWarning)
-        super(BuiltinModels, self).__init__()
-        self.builtins = builtin_class()
-        self.aev_computer = self.builtins.aev_computer
-        self.neural_networks = self.builtins.models
-        self.energy_shifter = self.builtins.energy_shifter
-
-    def forward(self, species_coordinates):
-        species_aevs = self.aev_computer(species_coordinates)
-        species_energies = self.neural_networks(species_aevs)
-        return self.energy_shifter(species_energies)
-
-    def __getitem__(self, index):
-        ret = torch.nn.Sequential(self.aev_computer,
-                                  self.neural_networks[index],
-                                  self.energy_shifter)
-
-        def ase(**kwargs):
-            from . import ase
-            return ase.Calculator(self.builtins.species, self.aev_computer,
-                                  self.neural_networks[index],
-                                  self.energy_shifter, **kwargs)
-
-        ret.ase = ase
-        ret.species_to_tensor = self.builtins.consts.species_to_tensor
-        return ret
-
-    def __len__(self):
-        return len(self.neural_networks)
-
-    def ase(self, **kwargs):
-        """Get an ASE Calculator using this model"""
-        from . import ase
-        return ase.Calculator(self.builtins.species, self.aev_computer,
-                              self.neural_networks, self.energy_shifter,
-                              **kwargs)
-
-    def species_to_tensor(self, *args, **kwargs):
-        """Convert species from strings to tensor.
-
-        See also :method:`torchani.neurochem.Constant.species_to_tensor`"""
-        return self.builtins.consts.species_to_tensor(*args, **kwargs) \
-            .to(self.aev_computer.ShfR.device)
 
 
 class BuiltinNet(torch.nn.Module):
@@ -117,16 +60,25 @@ class BuiltinNet(torch.nn.Module):
         neural_networks (:class:`torchani.Ensemble`): Ensemble of ANIModel networks
     """
 
-    def __init__(self, parent_name, const_file_path, sae_file_path,
-                 ensemble_size, ensemble_prefix_path):
+    def __init__(self, info_file):
         super(BuiltinNet, self).__init__()
+        package_name = '.'.join(__name__.split('.')[:-1])
+        info_file = 'resources/' + info_file
+        self.info_file = resource_filename(package_name, info_file)
 
-        self.const_file = resource_filename(parent_name, const_file_path)
-        self.sae_file = resource_filename(parent_name, sae_file_path)
-        self.ensemble_prefix = resource_filename(parent_name,
-                                                 ensemble_prefix_path)
+        with open(self.info_file) as f:
+            lines = [x.strip() for x in f.readlines()][:4]
+            const_file_path, sae_file_path, ensemble_prefix_path, ensemble_size = lines
+            const_file_path = 'resources/' + const_file_path
+            sae_file_path = 'resources/' + sae_file_path
+            ensemble_prefix_path = 'resources/' + ensemble_prefix_path
+            ensemble_size = int(ensemble_size)
 
+        self.const_file = resource_filename(package_name, const_file_path)
+        self.sae_file = resource_filename(package_name, sae_file_path)
+        self.ensemble_prefix = resource_filename(package_name, ensemble_prefix_path)
         self.ensemble_size = ensemble_size
+
         self.consts = neurochem.Constants(self.const_file)
         self.species = self.consts.species
         self.aev_computer = AEVComputer(**self.consts)
@@ -234,13 +186,7 @@ class ANI1x(BuiltinNet):
     """
 
     def __init__(self):
-        super(ANI1x, self).__init__(
-            parent_name='.'.join(__name__.split('.')[:-1]),
-            const_file_path='resources/ani-1x_8x'
-            '/rHCNO-5.2R_16-3.5A_a4-8.params',
-            sae_file_path='resources/ani-1x_8x/sae_linfit.dat',
-            ensemble_size=8,
-            ensemble_prefix_path='resources/ani-1x_8x/train')
+        super(ANI1x, self).__init__('ani-1x_8x.info')
 
 
 class ANI1ccx(BuiltinNet):
@@ -260,10 +206,4 @@ class ANI1ccx(BuiltinNet):
     """
 
     def __init__(self):
-        super(ANI1ccx, self).__init__(
-            parent_name='.'.join(__name__.split('.')[:-1]),
-            const_file_path='resources/ani-1ccx_8x'
-            '/rHCNO-5.2R_16-3.5A_a4-8.params',
-            sae_file_path='resources/ani-1ccx_8x/sae_linfit.dat',
-            ensemble_size=8,
-            ensemble_prefix_path='resources/ani-1ccx_8x/train')
+        super(ANI1ccx, self).__init__('ani-1ccx_8x.info')
