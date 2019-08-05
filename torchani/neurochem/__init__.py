@@ -620,11 +620,11 @@ if sys.version_info[0] > 2:
                     break
 
                 scheduler.step(rmse)
-
-                self.tensorboard.add_scalar('validation_rmse', rmse, scheduler.last_epoch)
-                self.tensorboard.add_scalar('best_validation_rmse', scheduler.best, scheduler.last_epoch)
-                self.tensorboard.add_scalar('learning_rate', learning_rate, scheduler.last_epoch)
-                self.tensorboard.add_scalar('no_improve_count_vs_epoch', no_improve_count, scheduler.last_epoch)
+                if self.tensorboard is not None:
+                    self.tensorboard.add_scalar('validation_rmse', rmse, scheduler.last_epoch)
+                    self.tensorboard.add_scalar('best_validation_rmse', scheduler.best, scheduler.last_epoch)
+                    self.tensorboard.add_scalar('learning_rate', learning_rate, scheduler.last_epoch)
+                    self.tensorboard.add_scalar('no_improve_count_vs_epoch', no_improve_count, scheduler.last_epoch)
 
                 for i, (batch_x, batch_y) in self.tqdm(
                     enumerate(self.training_set),
@@ -649,11 +649,13 @@ if sys.version_info[0] > 2:
                     SGD_optim.step()
 
                     # write current batch loss to TensorBoard
-                    self.tensorboard.add_scalar('batch_loss', loss, scheduler.last_epoch * len(self.training_set) + i)
+                    if self.tensorboard is not None:
+                        self.tensorboard.add_scalar('batch_loss', loss, scheduler.last_epoch * len(self.training_set) + i)
 
                 # log elapsed time
                 elapsed = round(timeit.default_timer() - start, 2)
-                self.tensorboard.add_scalar('time_vs_epoch', elapsed, scheduler.last_epoch)
+                if self.tensorboard is not None:
+                    self.tensorboard.add_scalar('time_vs_epoch', elapsed, scheduler.last_epoch)
 
 
 __all__ = ['Constants', 'load_sae', 'load_model', 'load_model_ensemble', 'Trainer']
