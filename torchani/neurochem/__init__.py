@@ -629,7 +629,7 @@ if sys.version_info[0] > 2:
                 for i, (batch_x, batch_y) in self.tqdm(
                     enumerate(self.training_set),
                     total=len(self.training_set),
-                    desc=f'epoch {scheduler.last_epoch}'
+                    desc='epoch {}'.format(scheduler.last_epoch)
                 ):
 
                     true_energies = batch_y['energies']
