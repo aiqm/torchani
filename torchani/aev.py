@@ -6,7 +6,16 @@ from torch import Tensor
 from typing import Tuple
 import snoop
 import torchsnooper
-torchsnooper.register_snoop()
+
+
+tf = torchsnooper.TensorFormat(properties=('shape', 'dtype', 'device'))
+torchsnooper.register_snoop(tensor_format=tf)
+
+
+if True:
+    # hack to quickly enable and disable snoop
+    def snoop(x):
+        return x
 
 
 # @torch.jit.script
