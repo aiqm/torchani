@@ -4,9 +4,13 @@ from . import _six  # noqa:F401
 import math
 from torch import Tensor
 from typing import Tuple
+import snoop
+import torchsnooper
+torchsnooper.register_snoop()
 
 
 # @torch.jit.script
+@snoop
 def cutoff_cosine(distances, cutoff):
     # type: (Tensor, float) -> Tensor
     return torch.where(
@@ -17,6 +21,7 @@ def cutoff_cosine(distances, cutoff):
 
 
 # @torch.jit.script
+@snoop
 def radial_terms(Rcr, EtaR, ShfR, distances):
     # type: (float, Tensor, Tensor, Tensor) -> Tensor
     """Compute the radial subAEV terms of the center atom given neighbors
@@ -45,6 +50,7 @@ def radial_terms(Rcr, EtaR, ShfR, distances):
 
 
 # @torch.jit.script
+@snoop
 def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
     # type: (float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
     """Compute the angular subAEV terms of the center atom given neighbor pairs.
@@ -82,6 +88,7 @@ def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
 
 
 # @torch.jit.script
+@snoop
 def compute_shifts(cell, pbc, cutoff):
     """Compute the shifts of unit cell along the given cell vectors to make it
     large enough to contain all pairs of neighbor atoms with PBC under
@@ -126,6 +133,7 @@ def compute_shifts(cell, pbc, cutoff):
 
 
 # @torch.jit.script
+@snoop
 def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
     """Compute pairs of atoms that are neighbors
 
@@ -177,6 +185,7 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
 
 
 # torch.jit.script
+@snoop
 def triu_index(num_species):
     species = torch.arange(num_species)
     species1, species2 = torch.combinations(species, r=2, with_replacement=True).unbind(-1)
@@ -188,6 +197,7 @@ def triu_index(num_species):
 
 
 # torch.jit.script
+@snoop
 def convert_pair_index(index):
     """Let's say we have a pair:
     index: 0 1 2 3 4 5 6 7 8 9 ...
@@ -213,6 +223,7 @@ def convert_pair_index(index):
 
 
 # torch.jit.script
+@snoop
 def cumsum_from_zero(input_):
     cumsum = torch.cumsum(input_, dim=0)
     cumsum = torch.cat([input_.new_tensor([0]), cumsum[:-1]])
@@ -220,6 +231,7 @@ def cumsum_from_zero(input_):
 
 
 # torch.jit.script
+@snoop
 def triple_by_molecule(atom_index1, atom_index2):
     """Input: indices for pairs of atoms that are close to each other.
     each pair only appear once, i.e. only one of the pairs (1, 2) and
@@ -264,6 +276,7 @@ def triple_by_molecule(atom_index1, atom_index2):
 
 
 # torch.jit.script
+@snoop
 def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes):
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     num_species, radial_sublength, radial_length, angular_sublength, angular_length, aev_length = sizes
@@ -367,7 +380,7 @@ class AEVComputer(torch.nn.Module):
         # These values are used when cell and pbc switch are not given.
         cutoff = max(self.Rcr, self.Rca)
         default_cell = torch.eye(3, dtype=self.EtaR.dtype, device=self.EtaR.device)
-        default_pbc = torch.zeros(3, dtype=torch.uint8, device=self.EtaR.device)
+        default_pbc = torch.zeros(3, dtype=torch.bool, device=self.EtaR.device)
         default_shifts = compute_shifts(default_cell, default_pbc, cutoff)
         self.register_buffer('default_cell', default_cell)
         self.register_buffer('default_shifts', default_shifts)
@@ -376,6 +389,7 @@ class AEVComputer(torch.nn.Module):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
     # @torch.jit.script_method
+    @snoop
     def forward(self, input_):
         """Compute AEVs
 
