@@ -9,7 +9,6 @@ import itertools
 import ase
 import ase.io
 import math
-import numpy
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
@@ -191,7 +190,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
             dtype=torch.double, requires_grad=True)
         cell = torch.eye(3, dtype=torch.double) * 2
         species = torch.tensor([[1, 0, 0, 0, 0]], dtype=torch.long)
-        pbc = torch.ones(3, dtype=torch.uint8)
+        pbc = torch.ones(3, dtype=torch.bool)
 
         _, aev = self.aev_computer((species, coordinates, cell, pbc))
 
@@ -203,7 +202,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
     def testPBCConnersSeeEachOther(self):
         species = torch.tensor([[0, 0]])
         cell = torch.eye(3, dtype=torch.double) * 10
-        pbc = torch.ones(3, dtype=torch.uint8)
+        pbc = torch.ones(3, dtype=torch.bool)
         allshifts = torchani.aev.compute_shifts(cell, pbc, 1)
 
         xyz1 = torch.tensor([0.1, 0.1, 0.1])
@@ -225,7 +224,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
 
     def testPBCSurfaceSeeEachOther(self):
         cell = torch.eye(3, dtype=torch.double) * 10
-        pbc = torch.ones(3, dtype=torch.uint8)
+        pbc = torch.ones(3, dtype=torch.bool)
         allshifts = torchani.aev.compute_shifts(cell, pbc, 1)
         species = torch.tensor([[0, 0]])
 
@@ -242,7 +241,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
 
     def testPBCEdgesSeeEachOther(self):
         cell = torch.eye(3, dtype=torch.double) * 10
-        pbc = torch.ones(3, dtype=torch.uint8)
+        pbc = torch.ones(3, dtype=torch.bool)
         allshifts = torchani.aev.compute_shifts(cell, pbc, 1)
         species = torch.tensor([[0, 0]])
 
@@ -264,7 +263,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
         species = torch.tensor([[0, 0]])
         cell = ase.geometry.cellpar_to_cell([10, 10, 10 * math.sqrt(2), 90, 45, 90])
         cell = torch.tensor(ase.geometry.complete_cell(cell), dtype=torch.double)
-        pbc = torch.ones(3, dtype=torch.uint8)
+        pbc = torch.ones(3, dtype=torch.bool)
         allshifts = torchani.aev.compute_shifts(cell, pbc, 1)
 
         xyz1 = torch.tensor([0.1, 0.1, 0.05], dtype=torch.double)
@@ -289,7 +288,7 @@ class TestAEVOnBoundary(unittest.TestCase):
                                           [-0.1, -0.1, 1.0],
                                           [-1.0, -1.0, -1.0]]], dtype=torch.double)
         self.species = torch.tensor([[1, 0, 0, 0]])
-        self.pbc = torch.ones(3, dtype=torch.uint8)
+        self.pbc = torch.ones(3, dtype=torch.bool)
         self.v1, self.v2, self.v3 = self.cell
         self.center_coordinates = self.coordinates + 0.5 * (self.v1 + self.v2 + self.v3)
         ani1x = torchani.models.ANI1x()
@@ -329,7 +328,7 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
         filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.cif')
         benzene = ase.io.read(filename)
         self.cell = torch.tensor(benzene.get_cell(complete=True)).float()
-        self.pbc = torch.tensor(benzene.get_pbc().astype(numpy.uint8), dtype=torch.uint8)
+        self.pbc = torch.tensor(benzene.get_pbc(), dtype=torch.bool)
         species_to_tensor = torchani.utils.ChemicalSymbolsToInts(['H', 'C', 'N', 'O'])
         self.species = species_to_tensor(benzene.get_chemical_symbols()).unsqueeze(0)
         self.coordinates = torch.tensor(benzene.get_positions()).unsqueeze(0).float()
