@@ -4,8 +4,6 @@ from . import _six  # noqa:F401
 import math
 from torch import Tensor
 from typing import Tuple
-import snoop
-import torchsnooper
 
 
 # @torch.jit.script
