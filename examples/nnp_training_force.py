@@ -235,7 +235,7 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
             chunk_species = chunk['species']
             chunk_coordinates = chunk['coordinates']
             chunk_true_forces = chunk['forces']
-            chunk_num_atoms = (chunk_species >= 0).sum(dim=1).to(true_energies.dtype)
+            chunk_num_atoms = (chunk_species >= 0).to(true_energies.dtype).sum(dim=1)
             num_atoms.append(chunk_num_atoms)
 
             # We must set `chunk_coordinates` to make it requires grad, so
