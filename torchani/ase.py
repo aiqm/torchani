@@ -12,7 +12,6 @@ from . import utils
 import ase.calculators.calculator
 import ase.units
 import copy
-import numpy
 
 
 class Calculator(ase.calculators.calculator.Calculator):

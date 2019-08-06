@@ -9,7 +9,6 @@ import itertools
 import ase
 import ase.io
 import math
-import numpy
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
