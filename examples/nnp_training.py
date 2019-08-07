@@ -347,7 +347,7 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
             _, chunk_energies = model((chunk_species, chunk_coordinates))
             predicted_energies.append(chunk_energies)
 
-        num_atoms = torch.cat(num_atoms).to(true_energies.dtype)
+        num_atoms = torch.cat(num_atoms)
         predicted_energies = torch.cat(predicted_energies)
         loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
 
