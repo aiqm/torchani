@@ -339,7 +339,7 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
         num_atoms = []
 
         for chunk_species, chunk_coordinates in batch_x:
-            num_atoms.append((chunk_species >= 0).sum(dim=1))
+            num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
             _, chunk_energies = model((chunk_species, chunk_coordinates))
             predicted_energies.append(chunk_energies)
 
