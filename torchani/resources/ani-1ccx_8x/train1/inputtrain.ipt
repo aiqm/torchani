@@ -27,8 +27,6 @@ network_setup {
           nodes=160;
           activation=9;
           type=0;
-          l2norm=1;
-          l2valu=0.0001;
     ]
     layer [
           nodes=128;
@@ -55,8 +53,6 @@ network_setup {
           nodes=144;
           activation=9;
           type=0;
-          l2norm=1;
-          l2valu=0.0001;
     ]
     layer [
           nodes=112;
@@ -83,8 +79,6 @@ network_setup {
           nodes=128;
           activation=9;
           type=0;
-          l2norm=1;
-          l2valu=0.0001;
     ]
     layer [
           nodes=112;
@@ -111,8 +105,6 @@ network_setup {
           nodes=128;
           activation=9;
           type=0;
-          l2norm=1;
-          l2valu=0.0001;
     ]
     layer [
           nodes=112;
