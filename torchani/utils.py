@@ -1,6 +1,7 @@
 import torch
 import torch.utils.data
 import math
+import numpy as np
 from collections import defaultdict
 
 
@@ -47,17 +48,20 @@ def pad_atomic_properties(atomic_properties, padding_values=defaultdict(lambda: 
     max_atoms = max(x[anykey].shape[1] for x in atomic_properties)
     padded = {k: [] for k in keys}
     for p in atomic_properties:
-        num_molecules = max(v.shape[0] for v in p.values())
+        num_molecules = 1
+        for v in p.values():
+            assert num_molecules in {1, v.shape[0]}, 'Number of molecules in different atomic properties mismatch'
+            if v.shape[0] != 1:
+                num_molecules = v.shape[0]
         for k, v in p.items():
             shape = list(v.shape)
             padatoms = max_atoms - shape[1]
             shape[1] = padatoms
             padding = v.new_full(shape, padding_values[k])
             v = torch.cat([v, padding], dim=1)
-            if v.shape[0] < num_molecules:
-                shape = list(v.shape)
-                shape[0] = num_molecules
-                v = v.expand(*shape)
+            shape = list(v.shape)
+            shape[0] = num_molecules
+            v = v.expand(*shape)
             padded[k].append(v)
     return {k: torch.cat(v) for k, v in padded.items()}
 
@@ -138,12 +142,36 @@ class EnergyShifter(torch.nn.Module):
         self_energies (:class:`collections.abc.Sequence`): Sequence of floating
             numbers for the self energy of each atom type. The numbers should
             be in order, i.e. ``self_energies[i]`` should be atom type ``i``.
+        fit_intercept (bool): Whether to calculate the intercept during the LSTSQ
+            fit. The intercept will also be taken into account to shift energies.
     """
 
-    def __init__(self, self_energies):
+    def __init__(self, self_energies, fit_intercept=False):
         super(EnergyShifter, self).__init__()
-        self_energies = torch.tensor(self_energies, dtype=torch.double)
+
+        self.fit_intercept = fit_intercept
+        if self_energies is not None:
+            self_energies = torch.tensor(self_energies, dtype=torch.double)
+
         self.register_buffer('self_energies', self_energies)
+
+    def sae_from_dataset(self, atomic_properties, properties):
+        """Compute atomic self energies from dataset.
+
+        Least-squares solution to a linear equation is calculated to output
+        ``self_energies`` when ``self_energies = None`` is passed to
+        :class:`torchani.EnergyShifter`
+        """
+        species = atomic_properties['species']
+        energies = properties['energies']
+        present_species_ = present_species(species)
+        X = (species.unsqueeze(-1) == present_species_).sum(dim=1).to(torch.double)
+        # Concatenate a vector of ones to find fit intercept
+        if self.fit_intercept:
+            X = torch.cat((X, torch.ones(X.shape[0], 1).to(torch.double)), dim=-1)
+        y = energies.unsqueeze(dim=-1)
+        coeff_, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
+        return coeff_.squeeze()
 
     def sae(self, species):
         """Compute self energies for molecules.
@@ -158,14 +186,22 @@ class EnergyShifter(torch.nn.Module):
             :class:`torch.Tensor`: 1D vector in shape ``(conformations,)``
             for molecular self energies.
         """
+        intercept = 0.0
+        if self.fit_intercept:
+            intercept = self.self_energies[-1]
+
         self_energies = self.self_energies[species]
         self_energies[species == -1] = 0
-        return self_energies.sum(dim=1)
+        return self_energies.sum(dim=1) + intercept
 
     def subtract_from_dataset(self, atomic_properties, properties):
         """Transformer for :class:`torchani.data.BatchedANIDataset` that
         subtract self energies.
         """
+        if self.self_energies is None:
+            self_energies = self.sae_from_dataset(atomic_properties, properties)
+            self.self_energies = torch.tensor(self_energies, dtype=torch.double)
+
         species = atomic_properties['species']
         energies = properties['energies']
         device = energies.device

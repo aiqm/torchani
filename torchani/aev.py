@@ -287,13 +287,9 @@ def triple_by_molecule(atom_index1, atom_index2, required_mask, force_cpu=False)
     del sorted_local_index2
 
     # compute mapping between representation of central-other to pair
-    sign1 = ((local_index1 < n) * 2).to(torch.long) - 1
-    sign2 = ((local_index2 < n) * 2).to(torch.long) - 1
-
-    # filter required
-    local_index1 = local_index1 % n
-    local_index2 = local_index2 % n
-    return central_atom_index.to(device), local_index1.to(device), local_index2.to(device), sign1.to(device), sign2.to(device)
+    sign1 = ((local_index1 < n).to(torch.long) * 2) - 1
+    sign2 = ((local_index2 < n).to(torch.long) * 2) - 1
+    return central_atom_index, local_index1 % n, local_index2 % n, sign1, sign2
 
 
 def filter_required(required_mask, atom_index1, atom_index2, shifts):
@@ -425,7 +421,7 @@ class AEVComputer(torch.nn.Module):
         # These values are used when cell and pbc switch are not given.
         cutoff = max(self.Rcr, self.Rca)
         default_cell = torch.eye(3, dtype=self.EtaR.dtype, device=self.EtaR.device)
-        default_pbc = torch.zeros(3, dtype=torch.uint8, device=self.EtaR.device)
+        default_pbc = torch.zeros(3, dtype=torch.bool, device=self.EtaR.device)
         default_shifts = compute_shifts(default_cell, default_pbc, cutoff)
         self.register_buffer('default_cell', default_cell)
         self.register_buffer('default_shifts', default_shifts)

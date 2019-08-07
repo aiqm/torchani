@@ -20,10 +20,10 @@ parser = parser.parse_args()
 
 # set up benchmark
 device = torch.device(parser.device)
-builtins = torchani.neurochem.Builtins()
-consts = builtins.consts
-aev_computer = builtins.aev_computer
-shift_energy = builtins.energy_shifter
+ani1x = torchani.models.ANI1x()
+consts = ani1x.consts
+aev_computer = ani1x.aev_computer
+shift_energy = ani1x.energy_shifter
 
 
 def atomic():
@@ -49,7 +49,7 @@ class Flatten(torch.nn.Module):
 
 nnp = torch.nn.Sequential(aev_computer, model, Flatten()).to(device)
 
-dataset = torchani.data.BatchedANIDataset(
+dataset = torchani.data.load_ani_dataset(
     parser.dataset_path, consts.species_to_tensor,
     parser.batch_size, device=device,
     transform=[shift_energy.subtract_from_dataset])

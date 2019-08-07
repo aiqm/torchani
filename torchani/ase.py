@@ -12,7 +12,6 @@ from . import utils
 import ase.calculators.calculator
 import ase.units
 import copy
-import numpy
 
 
 class Calculator(ase.calculators.calculator.Calculator):
@@ -55,13 +54,9 @@ class Calculator(ase.calculators.calculator.Calculator):
 
     @staticmethod
     def strain(tensor, displacement, surface_normal_axis):
-        rest_axes = {0, 1, 2} - set([surface_normal_axis])
-        displacement_normal = displacement[surface_normal_axis]
         displacement_of_tensor = torch.zeros_like(tensor)
-        displacement_of_tensor[..., surface_normal_axis] = tensor[..., surface_normal_axis] * displacement_normal
-        for axis in rest_axes:
-            displacement_axis = displacement[axis]
-            displacement_of_tensor[..., axis] = tensor[..., surface_normal_axis] * displacement_axis
+        for axis in range(3):
+            displacement_of_tensor[..., axis] = tensor[..., surface_normal_axis] * displacement[axis]
         return displacement_of_tensor
 
     def calculate(self, atoms=None, properties=['energy'],
@@ -69,9 +64,9 @@ class Calculator(ase.calculators.calculator.Calculator):
         super(Calculator, self).calculate(atoms, properties, system_changes)
         cell = torch.tensor(self.atoms.get_cell(complete=True),
                             dtype=self.dtype, device=self.device)
-        pbc = torch.tensor(self.atoms.get_pbc().astype(numpy.uint8), dtype=torch.uint8,
+        pbc = torch.tensor(self.atoms.get_pbc(), dtype=torch.bool,
                            device=self.device)
-        pbc_enabled = bool(pbc.any().item())
+        pbc_enabled = pbc.any().item()
         species = self.species_to_tensor(self.atoms.get_chemical_symbols()).to(self.device)
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions())
