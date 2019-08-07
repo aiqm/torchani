@@ -246,7 +246,8 @@ SGD = torch.optim.SGD([
 
 ###############################################################################
 # Setting up a learning rate scheduler to do learning rate decay
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(AdamW, factor=0.5, patience=100, threshold=0)
+AdamW_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(AdamW, factor=0.5, patience=100, threshold=0)
+SGD_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(SGD, factor=0.5, patience=100, threshold=0)
 
 ###############################################################################
 # Train the model by minimizing the MSE loss, until validation RMSE no longer
@@ -262,8 +263,10 @@ latest_checkpoint = 'latest.pt'
 if os.path.isfile(latest_checkpoint):
     checkpoint = torch.load(latest_checkpoint)
     nn.load_state_dict(checkpoint['nn'])
-    AdamW.load_state_dict(checkpoint['optimizer'])
-    scheduler.load_state_dict(checkpoint['scheduler'])
+    AdamW.load_state_dict(checkpoint['AdamW'])
+    SGD.load_state_dict(checkpoint['SGD'])
+    AdamW_scheduler.load_state_dict(checkpoint['AdamW_scheduler'])
+    SGD_scheduler.load_state_dict(checkpoint['SGD_scheduler'])
 
 ###############################################################################
 # During training, we need to validate on validation set and if validation error
@@ -304,14 +307,14 @@ tensorboard = torch.utils.tensorboard.SummaryWriter()
 # set to a much larger value
 mse = torch.nn.MSELoss(reduction='none')
 
-print("training starting from epoch", scheduler.last_epoch + 1)
+print("training starting from epoch", AdamW_scheduler.last_epoch + 1)
 max_epochs = 200
 early_stopping_learning_rate = 1.0E-5
 best_model_checkpoint = 'best.pt'
 
-for _ in range(scheduler.last_epoch + 1, max_epochs):
+for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
     rmse = validate()
-    print('RMSE:', rmse, 'at epoch', scheduler.last_epoch + 1)
+    print('RMSE:', rmse, 'at epoch', AdamW_scheduler.last_epoch + 1)
 
     learning_rate = AdamW.param_groups[0]['lr']
 
@@ -319,19 +322,20 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
         break
 
     # checkpoint
-    if scheduler.is_better(rmse, scheduler.best):
+    if AdamW_scheduler.is_better(rmse, AdamW_scheduler.best):
         torch.save(nn.state_dict(), best_model_checkpoint)
 
-    scheduler.step(rmse)
+    AdamW_scheduler.step(rmse)
+    SGD_scheduler.step(rmse)
 
-    tensorboard.add_scalar('validation_rmse', rmse, scheduler.last_epoch)
-    tensorboard.add_scalar('best_validation_rmse', scheduler.best, scheduler.last_epoch)
-    tensorboard.add_scalar('learning_rate', learning_rate, scheduler.last_epoch)
+    tensorboard.add_scalar('validation_rmse', rmse, AdamW_scheduler.last_epoch)
+    tensorboard.add_scalar('best_validation_rmse', AdamW_scheduler.best, AdamW_scheduler.last_epoch)
+    tensorboard.add_scalar('learning_rate', learning_rate, AdamW_scheduler.last_epoch)
 
     for i, (batch_x, batch_y) in tqdm.tqdm(
         enumerate(training),
         total=len(training),
-        desc="epoch {}".format(scheduler.last_epoch)
+        desc="epoch {}".format(AdamW_scheduler.last_epoch)
     ):
 
         true_energies = batch_y['energies']
@@ -343,7 +347,7 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
             _, chunk_energies = model((chunk_species, chunk_coordinates))
             predicted_energies.append(chunk_energies)
 
-        num_atoms = torch.cat(num_atoms).to(true_energies.dtype)
+        num_atoms = torch.cat(num_atoms)
         predicted_energies = torch.cat(predicted_energies)
         loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
 
@@ -354,10 +358,12 @@ for _ in range(scheduler.last_epoch + 1, max_epochs):
         SGD.step()
 
         # write current batch loss to TensorBoard
-        tensorboard.add_scalar('batch_loss', loss, scheduler.last_epoch * len(training) + i)
+        tensorboard.add_scalar('batch_loss', loss, AdamW_scheduler.last_epoch * len(training) + i)
 
     torch.save({
         'nn': nn.state_dict(),
-        'optimizer': AdamW.state_dict(),
-        'scheduler': scheduler.state_dict(),
+        'AdamW': AdamW.state_dict(),
+        'SGD': SGD.state_dict(),
+        'AdamW_scheduler': AdamW_scheduler.state_dict(),
+        'SGD_scheduler': SGD_scheduler.state_dict(),
     }, latest_checkpoint)
