@@ -9,10 +9,80 @@ import itertools
 import ase
 import ase.io
 import math
+import traceback
+
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
 tolerance = 1e-5
+
+
+class TestIsolated(unittest.TestCase):
+    # Tests that there is no error when atoms are separated
+    # a distance greater than the cutoff radius from all other atoms
+    # this can throw an IndexError for large distances or lone atoms
+    def setUp(self):
+        if torch.cuda.is_available():
+            self.device = 'cuda'
+        else:
+            self.device = 'cpu'
+        ani1x = torchani.models.ANI1x().to(self.device)
+        self.aev_computer = ani1x.aev_computer
+        self.species_to_tensor = ani1x.species_to_tensor
+        self.rcr = ani1x.aev_computer.Rcr
+        self.rca = self.aev_computer.Rca
+
+    def testCO2(self):
+        species = self.species_to_tensor(['O', 'C', 'O']).to(self.device).unsqueeze(0)
+        distances = [1.0, self.rca,
+                     self.rca + 1e-4, self.rcr,
+                     self.rcr + 1e-4, 2 * self.rcr]
+        error = ()
+        for dist in distances:
+            coordinates = torch.tensor(
+                [[[-dist, 0., 0.], [0., 0., 0.], [0., 0., dist]]],
+                requires_grad=True, device=self.device)
+            try:
+                _, _ = self.aev_computer((species, coordinates))
+            except IndexError:
+                error = (traceback.format_exc(), dist)
+            if error:
+                self.fail(f'\n\n{error[0]}\nFailure at distance: {error[1]}\n'
+                          f'Radial r_cut of aev_computer: {self.rcr}\n'
+                          f'Angular r_cut of aev_computer: {self.rca}')
+
+    def testH2(self):
+        species = self.species_to_tensor(['H', 'H']).to(self.device).unsqueeze(0)
+        distances = [1.0, self.rca,
+                     self.rca + 1e-4, self.rcr,
+                     self.rcr + 1e-4, 2 * self.rcr]
+        error = ()
+        for dist in distances:
+            coordinates = torch.tensor(
+                [[[0., 0., 0.], [0., 0., dist]]],
+                requires_grad=True, device=self.device)
+            try:
+                _, _ = self.aev_computer((species, coordinates))
+            except IndexError:
+                error = (traceback.format_exc(), dist)
+            if error:
+                self.fail(f'\n\n{error[0]}\nFailure at distance: {error[1]}\n'
+                          f'Radial r_cut of aev_computer: {self.rcr}\n'
+                          f'Angular r_cut of aev_computer: {self.rca}')
+
+    def testH(self):
+        # Tests for failure on a single atom
+        species = self.species_to_tensor(['H']).to(self.device).unsqueeze(0)
+        error = ()
+        coordinates = torch.tensor(
+            [[[0., 0., 0.]]],
+            requires_grad=True, device=self.device)
+        try:
+            _, _ = self.aev_computer((species, coordinates))
+        except IndexError:
+            error = (traceback.format_exc())
+        if error:
+            self.fail(f'\n\n{error}\nFailure on lone atom\n')
 
 
 class TestAEV(unittest.TestCase):
