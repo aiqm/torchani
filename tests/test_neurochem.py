@@ -17,7 +17,7 @@ class TestNeuroChem(unittest.TestCase):
 
         # test if loader construct correct model
         self.assertEqual(trainer.aev_computer.aev_length, 384)
-        m = trainer.model
+        m = trainer.nn
         H, C, N, O = m  # noqa: E741
         self.assertIsInstance(H[0], torch.nn.Linear)
         self.assertListEqual(list(H[0].weight.shape), [160, 384])
