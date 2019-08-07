@@ -12,7 +12,6 @@ from . import utils
 import ase.calculators.calculator
 import ase.units
 import copy
-import numpy
 
 
 class Calculator(ase.calculators.calculator.Calculator):
@@ -65,9 +64,9 @@ class Calculator(ase.calculators.calculator.Calculator):
         super(Calculator, self).calculate(atoms, properties, system_changes)
         cell = torch.tensor(self.atoms.get_cell(complete=True),
                             dtype=self.dtype, device=self.device)
-        pbc = torch.tensor(self.atoms.get_pbc().astype(numpy.uint8), dtype=torch.uint8,
+        pbc = torch.tensor(self.atoms.get_pbc(), dtype=torch.bool,
                            device=self.device)
-        pbc_enabled = bool(pbc.any().item())
+        pbc_enabled = pbc.any().item()
         species = self.species_to_tensor(self.atoms.get_chemical_symbols()).to(self.device)
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions())

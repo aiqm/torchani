@@ -310,7 +310,7 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
 
     if rm_outlier:
         transformed_energies = properties_['energies']
-        num_atoms = (atomic_properties_['species'] >= 0).sum(dim=1).to(transformed_energies.dtype)
+        num_atoms = (atomic_properties_['species'] >= 0).to(transformed_energies.dtype).sum(dim=1)
         scaled_diff = transformed_energies / num_atoms.sqrt()
 
         mean = transformed_energies.mean()
