@@ -145,7 +145,7 @@ class CacheDataset(torch.utils.data.Dataset):
         chunks = list(zip(*datas))
 
         for i in range(len(chunks)):
-            chunks[i] = {'coordinates': chunks[i][0], 'species': chunks[i][1], 'energies': chunks[i][2]}
+            chunks[i] = {'species': chunks[i][0], 'coordinates': chunks[i][1], 'energies': chunks[i][2]}
 
         return chunks
 
