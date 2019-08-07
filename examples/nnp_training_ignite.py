@@ -62,7 +62,7 @@ log = 'runs'
 const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
 consts = torchani.neurochem.Constants(const_file)
 aev_computer = torchani.AEVComputer(**consts)
-energy_shifter = torchani.neurochem.load_sae(None)
+energy_shifter = torchani.utils.EnergyShifter(None)
 
 
 ###############################################################################
