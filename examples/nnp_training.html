@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Train Your Own Neural Network Potential &mdash; TorchANI 0.7 documentation</title>
+  <title>Train Your Own Neural Network Potential &mdash; TorchANI 0.8 documentation</title>
   
 
   
@@ -37,7 +37,7 @@
   <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Train Your Own Neural Network Potential, Using PyTorch-Ignite" href="nnp_training_ignite.html" />
+    <link rel="next" title="Train Neural Network Potential To Both Energies and Forces" href="nnp_training_force.html" />
     <link rel="prev" title="Construct Model From NeuroChem Files" href="load_from_neurochem.html" /> 
 </head>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7
+                0.8
               </div>
             
           
@@ -97,6 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
 <li class="toctree-l1"><a class="reference internal" href="load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training_ignite.html">Train Your Own Neural Network Potential, Using PyTorch-Ignite</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
@@ -176,16 +177,17 @@
            <div itemprop="articleBody">
             
   <div class="sphx-glr-download-link-note admonition note">
-<p class="admonition-title">Note</p>
-<p>Click <a class="reference internal" href="#sphx-glr-download-examples-nnp-training-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+<p class="first admonition-title">Note</p>
+<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-nnp-training-py"><span class="std std-ref">here</span></a> to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="train-your-own-neural-network-potential">
 <span id="training-example"></span><span id="sphx-glr-examples-nnp-training-py"></span><h1>Train Your Own Neural Network Potential<a class="headerlink" href="#train-your-own-neural-network-potential" title="Permalink to this headline">¶</a></h1>
-<p>This example shows how to use TorchANI to train a neural network potential. We
-will use the same configuration as specified as in <a class="reference external" href="https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/inputtrain.ipt">inputtrain.ipt</a></p>
+<p>This example shows how to use TorchANI to train a neural network potential
+with the setup identical to NeuroChem. We will use the same configuration as
+specified in <a class="reference external" href="https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/inputtrain.ipt">inputtrain.ipt</a></p>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>TorchANI provide tools to run NeuroChem training config file <cite>inputtrain.ipt</cite>.
+<p class="first admonition-title">Note</p>
+<p class="last">TorchANI provide tools to run NeuroChem training config file <cite>inputtrain.ipt</cite>.
 See: <a class="reference internal" href="neurochem_trainer.html#neurochem-training"><span class="std std-ref">Train Neural Network Potential From NeuroChem Input File</span></a>.</p>
 </div>
 <p>To begin with, let’s first import the modules and setup devices we will use:</p>
@@ -201,10 +203,13 @@ See: <a class="reference internal" href="neurochem_trainer.html#neurochem-traini
 </pre></div>
 </div>
 <p>Now let’s setup constants and construct an AEV computer. These numbers could
-be found in <a class="reference external" href="https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params">rHCNO-5.2R_16-3.5A_a4-8.params</a> and <a class="reference external" href="https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/sae_linfit.dat">sae_linfit.dat</a></p>
+be found in <cite>rHCNO-5.2R_16-3.5A_a4-8.params</cite>
+The atomic self energies given in <a class="reference external" href="https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/sae_linfit.dat">sae_linfit.dat</a> are computed from ANI-1x
+dataset. These constants can be calculated for any given dataset if <code class="docutils literal notranslate"><span class="pre">None</span></code>
+is provided as an argument to the object of <code class="xref py py-class docutils literal notranslate"><span class="pre">EnergyShifter</span></code> class.</p>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Besides defining these hyperparameters programmatically,
+<p class="first admonition-title">Note</p>
+<p class="last">Besides defining these hyperparameters programmatically,
 <a class="reference internal" href="../api.html#module-torchani.neurochem" title="torchani.neurochem"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchani.neurochem</span></code></a> provide tools to read them from file. See also
 <a class="reference internal" href="nnp_training_ignite.html#training-example-ignite"><span class="std std-ref">Train Your Own Neural Network Potential, Using PyTorch-Ignite</span></a> for an example of usage.</p>
 </div>
@@ -218,23 +223,14 @@ be found in <a class="reference external" href="https://github.com/aiqm/torchani
 <span class="n">ShfA</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">9.0000000e-01</span><span class="p">,</span> <span class="mf">1.5500000e+00</span><span class="p">,</span> <span class="mf">2.2000000e+00</span><span class="p">,</span> <span class="mf">2.8500000e+00</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
 <span class="n">num_species</span> <span class="o">=</span> <span class="mi">4</span>
 <span class="n">aev_computer</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">AEVComputer</span><span class="p">(</span><span class="n">Rcr</span><span class="p">,</span> <span class="n">Rca</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span> <span class="n">num_species</span><span class="p">)</span>
-<span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">EnergyShifter</span><span class="p">([</span>
-    <span class="o">-</span><span class="mf">0.600952980000</span><span class="p">,</span>  <span class="c1"># H</span>
-    <span class="o">-</span><span class="mf">38.08316124000</span><span class="p">,</span>  <span class="c1"># C</span>
-    <span class="o">-</span><span class="mf">54.70775770000</span><span class="p">,</span>  <span class="c1"># N</span>
-    <span class="o">-</span><span class="mf">75.19446356000</span><span class="p">,</span>  <span class="c1"># O</span>
-<span class="p">])</span>
+<span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">EnergyShifter</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 <span class="n">species_to_tensor</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">ChemicalSymbolsToInts</span><span class="p">(</span><span class="s1">&#39;HCNO&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Now let’s setup datasets. Note that here for our demo purpose, we set both
-training set and validation set the <code class="docutils literal notranslate"><span class="pre">ani_gdb_s01.h5</span></code> in TorchANI’s
-repository. This allows this program to finish very quick, because that
-dataset is very small. But this is wrong and should be avoided for any
-serious training. These paths assumes the user run this script under the
-<code class="docutils literal notranslate"><span class="pre">examples</span></code> directory of TorchANI’s repository. If you download this script,
-you should manually set the path of these files in your system before this
-script can run successfully.</p>
+<p>Now let’s setup datasets. These paths assumes the user run this script under
+the <code class="docutils literal notranslate"><span class="pre">examples</span></code> directory of TorchANI’s repository. If you download this
+script, you should manually set the path of these files in your system before
+this script can run successfully.</p>
 <p>Also note that we need to subtracting energies by the self energies of all
 atoms for each molecule. This makes the range of energies in a reasonable
 range. The second argument defines how to convert species as a list of string
@@ -244,22 +240,23 @@ to tensor, that is, for all supported chemical symbols, which is correspond to
     <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
 <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
-<span class="n">training_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
-<span class="n">validation_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
+<span class="n">dspath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
 
 <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">2560</span>
 
-<span class="n">training</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">BatchedANIDataset</span><span class="p">(</span>
-    <span class="n">training_path</span><span class="p">,</span> <span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
-    <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="n">energy_shifter</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">])</span>
+<span class="n">training</span><span class="p">,</span> <span class="n">validation</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">load_ani_dataset</span><span class="p">(</span>
+    <span class="n">dspath</span><span class="p">,</span> <span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="n">energy_shifter</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">],</span> <span class="n">split</span><span class="o">=</span><span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
 
-<span class="n">validation</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">BatchedANIDataset</span><span class="p">(</span>
-    <span class="n">validation_path</span><span class="p">,</span> <span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
-    <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="n">energy_shifter</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Self atomic energies: &#39;</span><span class="p">,</span> <span class="n">energy_shifter</span><span class="o">.</span><span class="n">self_energies</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>When iterating the dataset, we will get pairs of input and output
-<code class="docutils literal notranslate"><span class="pre">(species_coordinates,</span> <span class="pre">properties)</span></code>, where <code class="docutils literal notranslate"><span class="pre">species_coordinates</span></code> is the
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Self atomic energies:  tensor([-16.1395,  24.0818,  -8.0923, -44.0951], dtype=torch.float64)
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>When iterating the dataset, we will get pairs of input and output</dt><dd><p><code class="docutils literal notranslate"><span class="pre">(species_coordinates,</span> <span class="pre">properties)</span></code>, where <code class="docutils literal notranslate"><span class="pre">species_coordinates</span></code> is the
 input and <code class="docutils literal notranslate"><span class="pre">properties</span></code> is the output.</p>
 <p><code class="docutils literal notranslate"><span class="pre">species_coordinates</span></code> is a list of species-coordinate pairs, with shape
 <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">Na)</span></code> and <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">Na,</span> <span class="pre">3)</span></code>. The reason for getting this type is, when
@@ -278,7 +275,8 @@ worry how to construct chunks, but the user need to compute the energies for
 each chunk and concat them into single tensor.</p>
 <p>The output, i.e. <code class="docutils literal notranslate"><span class="pre">properties</span></code> is a dictionary holding each property. This
 allows us to extend TorchANI in the future to training forces and properties.</p>
-<p>Now let’s define atomic neural networks.</p>
+</dd>
+</dl>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">H_network</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">384</span><span class="p">,</span> <span class="mi">160</span><span class="p">),</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">CELU</span><span class="p">(</span><span class="mf">0.1</span><span class="p">),</span>
@@ -364,74 +362,106 @@ allows us to extend TorchANI in the future to training forces and properties.</p
 )
 </pre></div>
 </div>
+<p>Initialize the weights and biases.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Pytorch default initialization for the weights and biases in linear layers
+is Kaiming uniform. See: <a class="reference external" href="https://pytorch.org/docs/stable/_modules/torch/nn/modules/linear.html#Linear">TORCH.NN.MODULES.LINEAR</a>
+We initialize the weights similarly but from the normal distribution.
+The biases were initialized to zero.</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">init_params</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">):</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
+
+
+<span class="n">nn</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">init_params</span><span class="p">)</span>
+</pre></div>
+</div>
 <p>Let’s now create a pipeline of AEV Computer –&gt; Neural Networks.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">nn</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Now let’s setup the optimizer. We need to specify different weight decay rate
-for different parameters. Since PyTorch does not have correct implementation
-of weight decay right now, we provide the correct implementation at TorchANI.</p>
+<p>Now let’s setup the optimizers. NeuroChem uses Adam with decoupled weight decay
+to updates the weights and Stochastic Gradient Descent (SGD) to update the biases.
+Moreover, we need to specify different weight decay rate for different layes.</p>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The weight decay in <a class="reference external" href="https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/inputtrain.ipt">inputtrain.ipt</a> is named “l2”, but it is actually not
+<p class="first admonition-title">Note</p>
+<p class="last">The weight decay in <a class="reference external" href="https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/inputtrain.ipt">inputtrain.ipt</a> is named “l2”, but it is actually not
 L2 regularization. The confusion between L2 and weight decay is a common
 mistake in deep learning.  See: <a class="reference external" href="https://arxiv.org/abs/1711.05101">Decoupled Weight Decay Regularization</a>
 Also note that the weight decay only applies to weight in the training
 of ANI models, not bias.</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Currently TorchANI training with weight decay can not reproduce the training
-result of NeuroChem with the same training setup. If you really want to use
-weight decay, consider smaller rates and and make sure you do enough validation
-to check if you get expected result.</p>
-</div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">AdamW</span><span class="p">([</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">AdamW</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">AdamW</span><span class="p">([</span>
     <span class="c1"># H networks</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">H_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.0001</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">H_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">H_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">]},</span>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">H_network</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.00001</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">H_network</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">H_network</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.000001</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">H_network</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="n">H_network</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">()},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">H_network</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">]},</span>
     <span class="c1"># C networks</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">C_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.0001</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">C_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">C_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">]},</span>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">C_network</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.00001</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">C_network</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">C_network</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.000001</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">C_network</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="n">C_network</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">()},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">C_network</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">]},</span>
     <span class="c1"># N networks</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">N_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.0001</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">N_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">N_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">]},</span>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">N_network</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.00001</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">N_network</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">N_network</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.000001</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">N_network</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="n">N_network</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">()},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">N_network</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">]},</span>
     <span class="c1"># O networks</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">O_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.0001</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">O_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">O_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">]},</span>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">O_network</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.00001</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">O_network</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">O_network</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.000001</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">O_network</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
-    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="n">O_network</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">()},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">O_network</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">]},</span>
 <span class="p">])</span>
+
+<span class="n">SGD</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">([</span>
+    <span class="c1"># H networks</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">H_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">H_network</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">H_network</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">H_network</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="c1"># C networks</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">C_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">C_network</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">C_network</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">C_network</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="c1"># N networks</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">N_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">N_network</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">N_network</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">N_network</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="c1"># O networks</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">O_network</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">O_network</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">O_network</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+    <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">O_network</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
+<span class="p">],</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The way ANI trains a neural network potential looks like this:</p>
-<p>Phase 1: Pretrain the model by minimizing MSE loss</p>
-<p>Phase 2: Train the model by minimizing the exponential loss, until validation
-RMSE no longer improves for a certain steps, decay the learning rate and repeat
-the same process, stop until the learning rate is smaller than a certain number.</p>
-<p>We first read the checkpoint files to find where we are. We use <cite>latest.pt</cite>
-to store current training state. If <cite>latest.pt</cite> does not exist, this
-this means the pretraining has not been finished yet.</p>
+<p>Setting up a learning rate scheduler to do learning rate decay</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">AdamW_scheduler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">ReduceLROnPlateau</span><span class="p">(</span><span class="n">AdamW</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">patience</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">SGD_scheduler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">ReduceLROnPlateau</span><span class="p">(</span><span class="n">SGD</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">patience</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Train the model by minimizing the MSE loss, until validation RMSE no longer
+improves during a certain number of steps, decay the learning rate and repeat
+the same process, stop until the learning rate is smaller than a threshold.</p>
+<p>We first read the checkpoint files to restart training. We use <cite>latest.pt</cite>
+to store current training state.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">latest_checkpoint</span> <span class="o">=</span> <span class="s1">&#39;latest.pt&#39;</span>
-<span class="n">pretrained</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">latest_checkpoint</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Resume training from previously saved checkpoints:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">latest_checkpoint</span><span class="p">):</span>
+    <span class="n">checkpoint</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">latest_checkpoint</span><span class="p">)</span>
+    <span class="n">nn</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;nn&#39;</span><span class="p">])</span>
+    <span class="n">AdamW</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;AdamW&#39;</span><span class="p">])</span>
+    <span class="n">SGD</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;SGD&#39;</span><span class="p">])</span>
+    <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;AdamW_scheduler&#39;</span><span class="p">])</span>
+    <span class="n">SGD_scheduler</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;SGD_scheduler&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>During training, we need to validate on validation set and if validation error
@@ -458,131 +488,1490 @@ is better than the best, then save the new best model to a checkpoint</p>
     <span class="k">return</span> <span class="n">hartree2kcal</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">total_mse</span> <span class="o">/</span> <span class="n">count</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>If the model is not pretrained yet, we need to run the pretrain.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pretrain_criterion</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c1"># kcal/mol</span>
-<span class="n">mse</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
-
-<span class="k">if</span> <span class="ow">not</span> <span class="n">pretrained</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;pre-training...&quot;</span><span class="p">)</span>
-    <span class="n">epoch</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">rmse</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span>
-    <span class="n">pretrain_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
-    <span class="k">while</span> <span class="n">rmse</span> <span class="o">&gt;</span> <span class="n">pretrain_criterion</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">batch_x</span><span class="p">,</span> <span class="n">batch_y</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">training</span><span class="p">):</span>
-            <span class="n">true_energies</span> <span class="o">=</span> <span class="n">batch_y</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span>
-            <span class="n">predicted_energies</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">num_atoms</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span> <span class="ow">in</span> <span class="n">batch_x</span><span class="p">:</span>
-                <span class="n">num_atoms</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk_species</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-                <span class="n">_</span><span class="p">,</span> <span class="n">chunk_energies</span> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span><span class="p">))</span>
-                <span class="n">predicted_energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk_energies</span><span class="p">)</span>
-            <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">true_energies</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-            <span class="n">predicted_energies</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">predicted_energies</span><span class="p">)</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">mse</span><span class="p">(</span><span class="n">predicted_energies</span><span class="p">,</span> <span class="n">true_energies</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_atoms</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-            <span class="n">pretrain_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
-            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
-            <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-        <span class="n">rmse</span> <span class="o">=</span> <span class="n">validate</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;RMSE:&#39;</span><span class="p">,</span> <span class="n">rmse</span><span class="p">,</span> <span class="s1">&#39;Target RMSE:&#39;</span><span class="p">,</span> <span class="n">pretrain_criterion</span><span class="p">)</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">({</span>
-        <span class="s1">&#39;nn&#39;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
-        <span class="s1">&#39;optimizer&#39;</span><span class="p">:</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
-    <span class="p">},</span> <span class="n">latest_checkpoint</span><span class="p">)</span>
-</pre></div>
-</div>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>pre-training...
-RMSE: 48.451335096686456 Target RMSE: 10
-RMSE: 20.429923707516604 Target RMSE: 10
-RMSE: 18.333714569001128 Target RMSE: 10
-RMSE: 18.927467003889944 Target RMSE: 10
-RMSE: 16.613716608053572 Target RMSE: 10
-RMSE: 14.737770540508576 Target RMSE: 10
-RMSE: 9.093133208475704 Target RMSE: 10
-</pre></div>
-</div>
-<p>For phase 2, we need a learning rate scheduler to do learning rate decay</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">scheduler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">ReduceLROnPlateau</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">patience</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</pre></div>
-</div>
 <p>We will also use TensorBoard to visualize our training process</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tensorboard</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">SummaryWriter</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>Resume training from previously saved checkpoints:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">checkpoint</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">latest_checkpoint</span><span class="p">)</span>
-<span class="n">nn</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;nn&#39;</span><span class="p">])</span>
-<span class="n">optimizer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;optimizer&#39;</span><span class="p">])</span>
-<span class="k">if</span> <span class="s1">&#39;scheduler&#39;</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">:</span>
-    <span class="n">scheduler</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;scheduler&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>Finally, we come to the training loop.</p>
 <p>In this tutorial, we are setting the maximum epoch to a very small number,
 only to make this demo terminate fast. For serious training, this should be
 set to a much larger value</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;training starting from epoch&quot;</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">last_epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mse</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;training starting from epoch&quot;</span><span class="p">,</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">max_epochs</span> <span class="o">=</span> <span class="mi">200</span>
 <span class="n">early_stopping_learning_rate</span> <span class="o">=</span> <span class="mf">1.0E-5</span>
 <span class="n">best_model_checkpoint</span> <span class="o">=</span> <span class="s1">&#39;best.pt&#39;</span>
 
-<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">scheduler</span><span class="o">.</span><span class="n">last_epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">):</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">):</span>
     <span class="n">rmse</span> <span class="o">=</span> <span class="n">validate</span><span class="p">()</span>
-    <span class="n">learning_rate</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">param_groups</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;lr&#39;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;RMSE:&#39;</span><span class="p">,</span> <span class="n">rmse</span><span class="p">,</span> <span class="s1">&#39;at epoch&#39;</span><span class="p">,</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">learning_rate</span> <span class="o">=</span> <span class="n">AdamW</span><span class="o">.</span><span class="n">param_groups</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;lr&#39;</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">learning_rate</span> <span class="o">&lt;</span> <span class="n">early_stopping_learning_rate</span><span class="p">:</span>
         <span class="k">break</span>
 
-    <span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;validation_rmse&#39;</span><span class="p">,</span> <span class="n">rmse</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">last_epoch</span><span class="p">)</span>
-    <span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;best_validation_rmse&#39;</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">best</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">last_epoch</span><span class="p">)</span>
-    <span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">last_epoch</span><span class="p">)</span>
-
     <span class="c1"># checkpoint</span>
-    <span class="k">if</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">is_better</span><span class="p">(</span><span class="n">rmse</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">best</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">is_better</span><span class="p">(</span><span class="n">rmse</span><span class="p">,</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">best</span><span class="p">):</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">best_model_checkpoint</span><span class="p">)</span>
 
-    <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">rmse</span><span class="p">)</span>
+    <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">rmse</span><span class="p">)</span>
+    <span class="n">SGD_scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">rmse</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">batch_x</span><span class="p">,</span> <span class="n">batch_y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">training</span><span class="p">),</span> <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">training</span><span class="p">)):</span>
+    <span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;validation_rmse&#39;</span><span class="p">,</span> <span class="n">rmse</span><span class="p">,</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span><span class="p">)</span>
+    <span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;best_validation_rmse&#39;</span><span class="p">,</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">best</span><span class="p">,</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span><span class="p">)</span>
+    <span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">batch_x</span><span class="p">,</span> <span class="n">batch_y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span>
+        <span class="nb">enumerate</span><span class="p">(</span><span class="n">training</span><span class="p">),</span>
+        <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">training</span><span class="p">),</span>
+        <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;epoch </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span><span class="p">)</span>
+    <span class="p">):</span>
+
         <span class="n">true_energies</span> <span class="o">=</span> <span class="n">batch_y</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span>
         <span class="n">predicted_energies</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">num_atoms</span> <span class="o">=</span> <span class="p">[]</span>
+
         <span class="k">for</span> <span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span> <span class="ow">in</span> <span class="n">batch_x</span><span class="p">:</span>
-            <span class="n">num_atoms</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk_species</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">num_atoms</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk_species</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">true_energies</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
             <span class="n">_</span><span class="p">,</span> <span class="n">chunk_energies</span> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span><span class="p">))</span>
             <span class="n">predicted_energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk_energies</span><span class="p">)</span>
-        <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">true_energies</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">)</span>
         <span class="n">predicted_energies</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">predicted_energies</span><span class="p">)</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">mse</span><span class="p">(</span><span class="n">predicted_energies</span><span class="p">,</span> <span class="n">true_energies</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_atoms</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">loss</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">mse</span><span class="p">(</span><span class="n">predicted_energies</span><span class="p">,</span> <span class="n">true_energies</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_atoms</span><span class="o">.</span><span class="n">sqrt</span><span class="p">())</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+        <span class="n">AdamW</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="n">SGD</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
         <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
-        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="n">AdamW</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="n">SGD</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 
         <span class="c1"># write current batch loss to TensorBoard</span>
-        <span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;batch_loss&#39;</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">last_epoch</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">training</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;batch_loss&#39;</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">training</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
 
     <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">({</span>
         <span class="s1">&#39;nn&#39;</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
-        <span class="s1">&#39;optimizer&#39;</span><span class="p">:</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
-        <span class="s1">&#39;scheduler&#39;</span><span class="p">:</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+        <span class="s1">&#39;AdamW&#39;</span><span class="p">:</span> <span class="n">AdamW</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+        <span class="s1">&#39;SGD&#39;</span><span class="p">:</span> <span class="n">SGD</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+        <span class="s1">&#39;AdamW_scheduler&#39;</span><span class="p">:</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+        <span class="s1">&#39;SGD_scheduler&#39;</span><span class="p">:</span> <span class="n">SGD_scheduler</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
     <span class="p">},</span> <span class="n">latest_checkpoint</span><span class="p">)</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>training starting from epoch 0
+RMSE: 178.81754098922335 at epoch 0
+
+epoch 0:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 0:  25%|##5       | 1/4 [00:00&lt;00:01,  2.07it/s]
+epoch 0:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 0:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.03it/s]
+epoch 0: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 91.04299379132767 at epoch 1
+
+epoch 1:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 1:  25%|##5       | 1/4 [00:00&lt;00:01,  2.04it/s]
+epoch 1:  50%|#####     | 2/4 [00:00&lt;00:00,  2.05it/s]
+epoch 1:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 1: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 56.296724339917866 at epoch 2
+
+epoch 2:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 2:  25%|##5       | 1/4 [00:00&lt;00:01,  2.08it/s]
+epoch 2:  50%|#####     | 2/4 [00:00&lt;00:00,  2.07it/s]
+epoch 2:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.07it/s]
+epoch 2: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 31.665282757546223 at epoch 3
+
+epoch 3:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 3:  25%|##5       | 1/4 [00:00&lt;00:01,  2.05it/s]
+epoch 3:  50%|#####     | 2/4 [00:00&lt;00:00,  2.04it/s]
+epoch 3:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.03it/s]
+epoch 3: 100%|##########| 4/4 [00:01&lt;00:00,  2.47it/s]
+RMSE: 45.16138500704265 at epoch 4
+
+epoch 4:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 4:  25%|##5       | 1/4 [00:00&lt;00:01,  2.08it/s]
+epoch 4:  50%|#####     | 2/4 [00:00&lt;00:00,  2.09it/s]
+epoch 4:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 4: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 41.494999889262026 at epoch 5
+
+epoch 5:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 5:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 5:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 5:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 5: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 11.183332340295438 at epoch 6
+
+epoch 6:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 6:  25%|##5       | 1/4 [00:00&lt;00:01,  2.08it/s]
+epoch 6:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 6:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 6: 100%|##########| 4/4 [00:01&lt;00:00,  2.56it/s]
+RMSE: 22.134512384619157 at epoch 7
+
+epoch 7:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 7:  25%|##5       | 1/4 [00:00&lt;00:01,  2.15it/s]
+epoch 7:  50%|#####     | 2/4 [00:00&lt;00:00,  2.15it/s]
+epoch 7:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.13it/s]
+epoch 7: 100%|##########| 4/4 [00:01&lt;00:00,  2.60it/s]
+RMSE: 22.002673410541618 at epoch 8
+
+epoch 8:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 8:  25%|##5       | 1/4 [00:00&lt;00:01,  2.09it/s]
+epoch 8:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 8:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 8: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
+RMSE: 8.796034666435677 at epoch 9
+
+epoch 9:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 9:  25%|##5       | 1/4 [00:00&lt;00:01,  2.23it/s]
+epoch 9:  50%|#####     | 2/4 [00:00&lt;00:00,  2.17it/s]
+epoch 9:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.17it/s]
+epoch 9: 100%|##########| 4/4 [00:01&lt;00:00,  2.63it/s]
+RMSE: 11.56107987971455 at epoch 10
+
+epoch 10:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 10:  25%|##5       | 1/4 [00:00&lt;00:01,  2.01it/s]
+epoch 10:  50%|#####     | 2/4 [00:01&lt;00:01,  2.00it/s]
+epoch 10:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.02it/s]
+epoch 10: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 10.928229407991768 at epoch 11
+
+epoch 11:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 11:  25%|##5       | 1/4 [00:00&lt;00:01,  2.12it/s]
+epoch 11:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 11:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 11: 100%|##########| 4/4 [00:01&lt;00:00,  2.56it/s]
+RMSE: 7.534462954052051 at epoch 12
+
+epoch 12:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 12:  25%|##5       | 1/4 [00:00&lt;00:01,  2.13it/s]
+epoch 12:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 12:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 12: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
+RMSE: 7.448843141462196 at epoch 13
+
+epoch 13:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 13:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 13:  50%|#####     | 2/4 [00:00&lt;00:00,  2.07it/s]
+epoch 13:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.06it/s]
+epoch 13: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 5.89947825594898 at epoch 14
+
+epoch 14:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 14:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 14:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 14:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 14: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 4.782640613625842 at epoch 15
+
+epoch 15:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 15:  25%|##5       | 1/4 [00:00&lt;00:01,  2.07it/s]
+epoch 15:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 15:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.07it/s]
+epoch 15: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 5.3837898198428755 at epoch 16
+
+epoch 16:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 16:  25%|##5       | 1/4 [00:00&lt;00:01,  1.98it/s]
+epoch 16:  50%|#####     | 2/4 [00:01&lt;00:01,  1.98it/s]
+epoch 16:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.98it/s]
+epoch 16: 100%|##########| 4/4 [00:01&lt;00:00,  2.41it/s]
+RMSE: 5.06669986990663 at epoch 17
+
+epoch 17:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 17:  25%|##5       | 1/4 [00:00&lt;00:01,  2.05it/s]
+epoch 17:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 17:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.02it/s]
+epoch 17: 100%|##########| 4/4 [00:01&lt;00:00,  2.47it/s]
+RMSE: 4.3148131535266305 at epoch 18
+
+epoch 18:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 18:  25%|##5       | 1/4 [00:00&lt;00:01,  2.09it/s]
+epoch 18:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 18:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 18: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
+RMSE: 4.122231063087252 at epoch 19
+
+epoch 19:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 19:  25%|##5       | 1/4 [00:00&lt;00:01,  2.03it/s]
+epoch 19:  50%|#####     | 2/4 [00:00&lt;00:00,  2.06it/s]
+epoch 19:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.07it/s]
+epoch 19: 100%|##########| 4/4 [00:01&lt;00:00,  2.54it/s]
+RMSE: 4.194053914825217 at epoch 20
+
+epoch 20:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 20:  25%|##5       | 1/4 [00:00&lt;00:01,  1.99it/s]
+epoch 20:  50%|#####     | 2/4 [00:00&lt;00:01,  2.00it/s]
+epoch 20:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.00it/s]
+epoch 20: 100%|##########| 4/4 [00:01&lt;00:00,  2.46it/s]
+RMSE: 4.11438532825012 at epoch 21
+
+epoch 21:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 21:  25%|##5       | 1/4 [00:00&lt;00:01,  2.12it/s]
+epoch 21:  50%|#####     | 2/4 [00:00&lt;00:00,  2.12it/s]
+epoch 21:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 21: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
+RMSE: 3.957271145421598 at epoch 22
+
+epoch 22:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 22:  25%|##5       | 1/4 [00:00&lt;00:01,  2.13it/s]
+epoch 22:  50%|#####     | 2/4 [00:00&lt;00:00,  2.14it/s]
+epoch 22:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.15it/s]
+epoch 22: 100%|##########| 4/4 [00:01&lt;00:00,  2.59it/s]
+RMSE: 3.8964065929846785 at epoch 23
+
+epoch 23:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 23:  25%|##5       | 1/4 [00:00&lt;00:01,  2.10it/s]
+epoch 23:  50%|#####     | 2/4 [00:00&lt;00:00,  2.10it/s]
+epoch 23:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.14it/s]
+epoch 23: 100%|##########| 4/4 [00:01&lt;00:00,  2.60it/s]
+RMSE: 3.8758999460833636 at epoch 24
+
+epoch 24:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 24:  25%|##5       | 1/4 [00:00&lt;00:01,  2.05it/s]
+epoch 24:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 24:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.04it/s]
+epoch 24: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 3.826057473847054 at epoch 25
+
+epoch 25:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 25:  25%|##5       | 1/4 [00:00&lt;00:01,  2.01it/s]
+epoch 25:  50%|#####     | 2/4 [00:00&lt;00:00,  2.02it/s]
+epoch 25:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.04it/s]
+epoch 25: 100%|##########| 4/4 [00:01&lt;00:00,  2.48it/s]
+RMSE: 3.7656698329973946 at epoch 26
+
+epoch 26:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 26:  25%|##5       | 1/4 [00:00&lt;00:01,  2.20it/s]
+epoch 26:  50%|#####     | 2/4 [00:00&lt;00:00,  2.18it/s]
+epoch 26:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.19it/s]
+epoch 26: 100%|##########| 4/4 [00:01&lt;00:00,  2.65it/s]
+RMSE: 3.708022798887172 at epoch 27
+
+epoch 27:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 27:  25%|##5       | 1/4 [00:00&lt;00:01,  2.19it/s]
+epoch 27:  50%|#####     | 2/4 [00:00&lt;00:00,  2.18it/s]
+epoch 27:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.14it/s]
+epoch 27: 100%|##########| 4/4 [00:01&lt;00:00,  2.58it/s]
+RMSE: 3.6658605354770923 at epoch 28
+
+epoch 28:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 28:  25%|##5       | 1/4 [00:00&lt;00:01,  2.08it/s]
+epoch 28:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 28:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 28: 100%|##########| 4/4 [00:01&lt;00:00,  2.56it/s]
+RMSE: 3.629592305704072 at epoch 29
+
+epoch 29:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 29:  25%|##5       | 1/4 [00:00&lt;00:01,  2.09it/s]
+epoch 29:  50%|#####     | 2/4 [00:00&lt;00:00,  2.12it/s]
+epoch 29:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 29: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 3.590133769637672 at epoch 30
+
+epoch 30:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 30:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 30:  50%|#####     | 2/4 [00:00&lt;00:00,  2.05it/s]
+epoch 30:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.02it/s]
+epoch 30: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 3.5516221290359296 at epoch 31
+
+epoch 31:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 31:  25%|##5       | 1/4 [00:00&lt;00:01,  2.19it/s]
+epoch 31:  50%|#####     | 2/4 [00:00&lt;00:00,  2.17it/s]
+epoch 31:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 31: 100%|##########| 4/4 [00:01&lt;00:00,  2.56it/s]
+RMSE: 3.5126171409605567 at epoch 32
+
+epoch 32:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 32:  25%|##5       | 1/4 [00:00&lt;00:01,  2.04it/s]
+epoch 32:  50%|#####     | 2/4 [00:00&lt;00:00,  2.05it/s]
+epoch 32:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.03it/s]
+epoch 32: 100%|##########| 4/4 [00:01&lt;00:00,  2.48it/s]
+RMSE: 3.4752975647722244 at epoch 33
+
+epoch 33:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 33:  25%|##5       | 1/4 [00:00&lt;00:01,  2.10it/s]
+epoch 33:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 33:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 33: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 3.4387248217758724 at epoch 34
+
+epoch 34:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 34:  25%|##5       | 1/4 [00:00&lt;00:01,  2.11it/s]
+epoch 34:  50%|#####     | 2/4 [00:00&lt;00:00,  2.07it/s]
+epoch 34:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.06it/s]
+epoch 34: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 3.402946540832145 at epoch 35
+
+epoch 35:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 35:  25%|##5       | 1/4 [00:00&lt;00:01,  2.04it/s]
+epoch 35:  50%|#####     | 2/4 [00:00&lt;00:00,  2.04it/s]
+epoch 35:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.04it/s]
+epoch 35: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 3.3685546003683196 at epoch 36
+
+epoch 36:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 36:  25%|##5       | 1/4 [00:00&lt;00:01,  2.19it/s]
+epoch 36:  50%|#####     | 2/4 [00:00&lt;00:00,  2.16it/s]
+epoch 36:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.14it/s]
+epoch 36: 100%|##########| 4/4 [00:01&lt;00:00,  2.58it/s]
+RMSE: 3.3341791227586888 at epoch 37
+
+epoch 37:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 37:  25%|##5       | 1/4 [00:00&lt;00:01,  2.03it/s]
+epoch 37:  50%|#####     | 2/4 [00:00&lt;00:00,  2.05it/s]
+epoch 37:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 37: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 3.300145778408253 at epoch 38
+
+epoch 38:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 38:  25%|##5       | 1/4 [00:00&lt;00:01,  1.96it/s]
+epoch 38:  50%|#####     | 2/4 [00:00&lt;00:01,  2.00it/s]
+epoch 38:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.04it/s]
+epoch 38: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 3.2664317882755887 at epoch 39
+
+epoch 39:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 39:  25%|##5       | 1/4 [00:00&lt;00:01,  2.08it/s]
+epoch 39:  50%|#####     | 2/4 [00:00&lt;00:00,  2.10it/s]
+epoch 39:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.06it/s]
+epoch 39: 100%|##########| 4/4 [00:01&lt;00:00,  2.48it/s]
+RMSE: 3.2335475617104663 at epoch 40
+
+epoch 40:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 40:  25%|##5       | 1/4 [00:00&lt;00:01,  2.10it/s]
+epoch 40:  50%|#####     | 2/4 [00:00&lt;00:00,  2.09it/s]
+epoch 40:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 40: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
+RMSE: 3.201206617501219 at epoch 41
+
+epoch 41:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 41:  25%|##5       | 1/4 [00:00&lt;00:01,  2.12it/s]
+epoch 41:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 41:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 41: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
+RMSE: 3.1693840176456787 at epoch 42
+
+epoch 42:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 42:  25%|##5       | 1/4 [00:00&lt;00:01,  2.10it/s]
+epoch 42:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 42:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 42: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
+RMSE: 3.1381403282033378 at epoch 43
+
+epoch 43:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 43:  25%|##5       | 1/4 [00:00&lt;00:01,  2.07it/s]
+epoch 43:  50%|#####     | 2/4 [00:00&lt;00:00,  2.09it/s]
+epoch 43:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 43: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
+RMSE: 3.107414880887025 at epoch 44
+
+epoch 44:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 44:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 44:  50%|#####     | 2/4 [00:00&lt;00:00,  2.05it/s]
+epoch 44:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.04it/s]
+epoch 44: 100%|##########| 4/4 [00:01&lt;00:00,  2.48it/s]
+RMSE: 3.0771427559472335 at epoch 45
+
+epoch 45:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 45:  25%|##5       | 1/4 [00:00&lt;00:01,  2.15it/s]
+epoch 45:  50%|#####     | 2/4 [00:00&lt;00:00,  2.16it/s]
+epoch 45:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.13it/s]
+epoch 45: 100%|##########| 4/4 [00:01&lt;00:00,  2.59it/s]
+RMSE: 3.0474081080333066 at epoch 46
+
+epoch 46:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 46:  25%|##5       | 1/4 [00:00&lt;00:01,  2.12it/s]
+epoch 46:  50%|#####     | 2/4 [00:00&lt;00:00,  2.13it/s]
+epoch 46:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 46: 100%|##########| 4/4 [00:01&lt;00:00,  2.54it/s]
+RMSE: 3.0182611356099 at epoch 47
+
+epoch 47:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 47:  25%|##5       | 1/4 [00:00&lt;00:01,  2.04it/s]
+epoch 47:  50%|#####     | 2/4 [00:00&lt;00:00,  2.04it/s]
+epoch 47:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.01it/s]
+epoch 47: 100%|##########| 4/4 [00:01&lt;00:00,  2.44it/s]
+RMSE: 2.9896269151737216 at epoch 48
+
+epoch 48:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 48:  25%|##5       | 1/4 [00:00&lt;00:01,  2.09it/s]
+epoch 48:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 48:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 48: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
+RMSE: 2.9614692968630774 at epoch 49
+
+epoch 49:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 49:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
+epoch 49:  50%|#####     | 2/4 [00:00&lt;00:00,  2.17it/s]
+epoch 49:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.16it/s]
+epoch 49: 100%|##########| 4/4 [00:01&lt;00:00,  2.62it/s]
+RMSE: 2.9338165867691943 at epoch 50
+
+epoch 50:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 50:  25%|##5       | 1/4 [00:00&lt;00:01,  2.19it/s]
+epoch 50:  50%|#####     | 2/4 [00:00&lt;00:00,  2.19it/s]
+epoch 50:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.14it/s]
+epoch 50: 100%|##########| 4/4 [00:01&lt;00:00,  2.58it/s]
+RMSE: 2.906683545711181 at epoch 51
+
+epoch 51:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 51:  25%|##5       | 1/4 [00:00&lt;00:01,  2.08it/s]
+epoch 51:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 51:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 51: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
+RMSE: 2.88002473176293 at epoch 52
+
+epoch 52:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 52:  25%|##5       | 1/4 [00:00&lt;00:01,  2.15it/s]
+epoch 52:  50%|#####     | 2/4 [00:00&lt;00:00,  2.13it/s]
+epoch 52:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.14it/s]
+epoch 52: 100%|##########| 4/4 [00:01&lt;00:00,  2.61it/s]
+RMSE: 2.853860930618942 at epoch 53
+
+epoch 53:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 53:  25%|##5       | 1/4 [00:00&lt;00:01,  2.13it/s]
+epoch 53:  50%|#####     | 2/4 [00:00&lt;00:00,  2.12it/s]
+epoch 53:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 53: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 2.8281731033457786 at epoch 54
+
+epoch 54:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 54:  25%|##5       | 1/4 [00:00&lt;00:01,  1.98it/s]
+epoch 54:  50%|#####     | 2/4 [00:01&lt;00:01,  1.99it/s]
+epoch 54:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.99it/s]
+epoch 54: 100%|##########| 4/4 [00:01&lt;00:00,  2.40it/s]
+RMSE: 2.802946109759622 at epoch 55
+
+epoch 55:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 55:  25%|##5       | 1/4 [00:00&lt;00:01,  1.98it/s]
+epoch 55:  50%|#####     | 2/4 [00:01&lt;00:01,  1.98it/s]
+epoch 55:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.96it/s]
+epoch 55: 100%|##########| 4/4 [00:01&lt;00:00,  2.39it/s]
+RMSE: 2.778179425576468 at epoch 56
+
+epoch 56:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 56:  25%|##5       | 1/4 [00:00&lt;00:01,  2.02it/s]
+epoch 56:  50%|#####     | 2/4 [00:01&lt;00:00,  2.00it/s]
+epoch 56:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 56: 100%|##########| 4/4 [00:01&lt;00:00,  2.48it/s]
+RMSE: 2.75387227665459 at epoch 57
+
+epoch 57:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 57:  25%|##5       | 1/4 [00:00&lt;00:01,  2.01it/s]
+epoch 57:  50%|#####     | 2/4 [00:00&lt;00:00,  2.02it/s]
+epoch 57:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.02it/s]
+epoch 57: 100%|##########| 4/4 [00:01&lt;00:00,  2.48it/s]
+RMSE: 2.73001579302563 at epoch 58
+
+epoch 58:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 58:  25%|##5       | 1/4 [00:00&lt;00:01,  2.04it/s]
+epoch 58:  50%|#####     | 2/4 [00:00&lt;00:00,  2.06it/s]
+epoch 58:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 58: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
+RMSE: 2.7065875164205906 at epoch 59
+
+epoch 59:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 59:  25%|##5       | 1/4 [00:00&lt;00:01,  2.12it/s]
+epoch 59:  50%|#####     | 2/4 [00:00&lt;00:00,  2.10it/s]
+epoch 59:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 59: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
+RMSE: 2.683589425008325 at epoch 60
+
+epoch 60:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 60:  25%|##5       | 1/4 [00:00&lt;00:01,  2.01it/s]
+epoch 60:  50%|#####     | 2/4 [00:00&lt;00:00,  2.06it/s]
+epoch 60:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.06it/s]
+epoch 60: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 2.6610105968203843 at epoch 61
+
+epoch 61:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 61:  25%|##5       | 1/4 [00:00&lt;00:01,  1.96it/s]
+epoch 61:  50%|#####     | 2/4 [00:01&lt;00:01,  1.97it/s]
+epoch 61:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.97it/s]
+epoch 61: 100%|##########| 4/4 [00:01&lt;00:00,  2.39it/s]
+RMSE: 2.6388403047903513 at epoch 62
+
+epoch 62:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 62:  25%|##5       | 1/4 [00:00&lt;00:01,  1.99it/s]
+epoch 62:  50%|#####     | 2/4 [00:00&lt;00:00,  2.05it/s]
+epoch 62:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 62: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 2.6170745295317426 at epoch 63
+
+epoch 63:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 63:  25%|##5       | 1/4 [00:00&lt;00:01,  2.11it/s]
+epoch 63:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 63:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 63: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 2.595699507706952 at epoch 64
+
+epoch 64:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 64:  25%|##5       | 1/4 [00:00&lt;00:01,  1.88it/s]
+epoch 64:  50%|#####     | 2/4 [00:01&lt;00:01,  1.92it/s]
+epoch 64:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.98it/s]
+epoch 64: 100%|##########| 4/4 [00:01&lt;00:00,  2.44it/s]
+RMSE: 2.5747088816309502 at epoch 65
+
+epoch 65:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 65:  25%|##5       | 1/4 [00:00&lt;00:01,  2.19it/s]
+epoch 65:  50%|#####     | 2/4 [00:00&lt;00:00,  2.10it/s]
+epoch 65:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 65: 100%|##########| 4/4 [00:01&lt;00:00,  2.59it/s]
+RMSE: 2.5540925854507983 at epoch 66
+
+epoch 66:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 66:  25%|##5       | 1/4 [00:00&lt;00:01,  2.13it/s]
+epoch 66:  50%|#####     | 2/4 [00:00&lt;00:00,  2.13it/s]
+epoch 66:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 66: 100%|##########| 4/4 [00:01&lt;00:00,  2.56it/s]
+RMSE: 2.533841932937954 at epoch 67
+
+epoch 67:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 67:  25%|##5       | 1/4 [00:00&lt;00:01,  2.11it/s]
+epoch 67:  50%|#####     | 2/4 [00:00&lt;00:00,  2.13it/s]
+epoch 67:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 67: 100%|##########| 4/4 [00:01&lt;00:00,  2.58it/s]
+RMSE: 2.5139502271467262 at epoch 68
+
+epoch 68:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 68:  25%|##5       | 1/4 [00:00&lt;00:01,  2.15it/s]
+epoch 68:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 68:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 68: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
+RMSE: 2.4944054999856307 at epoch 69
+
+epoch 69:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 69:  25%|##5       | 1/4 [00:00&lt;00:01,  2.05it/s]
+epoch 69:  50%|#####     | 2/4 [00:00&lt;00:00,  2.07it/s]
+epoch 69:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.07it/s]
+epoch 69: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 2.4752023896306286 at epoch 70
+
+epoch 70:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 70:  25%|##5       | 1/4 [00:00&lt;00:01,  1.98it/s]
+epoch 70:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 70:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.06it/s]
+epoch 70: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 2.456331904828737 at epoch 71
+
+epoch 71:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 71:  25%|##5       | 1/4 [00:00&lt;00:01,  2.02it/s]
+epoch 71:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 71:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.02it/s]
+epoch 71: 100%|##########| 4/4 [00:01&lt;00:00,  2.46it/s]
+RMSE: 2.4377842194139165 at epoch 72
+
+epoch 72:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 72:  25%|##5       | 1/4 [00:00&lt;00:01,  2.15it/s]
+epoch 72:  50%|#####     | 2/4 [00:00&lt;00:00,  2.15it/s]
+epoch 72:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.16it/s]
+epoch 72: 100%|##########| 4/4 [00:01&lt;00:00,  2.62it/s]
+RMSE: 2.419555670038138 at epoch 73
+
+epoch 73:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 73:  25%|##5       | 1/4 [00:00&lt;00:01,  2.10it/s]
+epoch 73:  50%|#####     | 2/4 [00:00&lt;00:00,  2.10it/s]
+epoch 73:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 73: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 2.401635284596098 at epoch 74
+
+epoch 74:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 74:  25%|##5       | 1/4 [00:00&lt;00:01,  2.10it/s]
+epoch 74:  50%|#####     | 2/4 [00:00&lt;00:00,  2.09it/s]
+epoch 74:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 74: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 2.3840157692158126 at epoch 75
+
+epoch 75:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 75:  25%|##5       | 1/4 [00:00&lt;00:01,  2.11it/s]
+epoch 75:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 75:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.06it/s]
+epoch 75: 100%|##########| 4/4 [00:01&lt;00:00,  2.48it/s]
+RMSE: 2.366691576577481 at epoch 76
+
+epoch 76:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 76:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 76:  50%|#####     | 2/4 [00:00&lt;00:00,  2.04it/s]
+epoch 76:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.01it/s]
+epoch 76: 100%|##########| 4/4 [00:01&lt;00:00,  2.43it/s]
+RMSE: 2.3496545707599803 at epoch 77
+
+epoch 77:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 77:  25%|##5       | 1/4 [00:00&lt;00:01,  1.98it/s]
+epoch 77:  50%|#####     | 2/4 [00:01&lt;00:01,  1.97it/s]
+epoch 77:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.98it/s]
+epoch 77: 100%|##########| 4/4 [00:01&lt;00:00,  2.42it/s]
+RMSE: 2.3328985989305457 at epoch 78
+
+epoch 78:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 78:  25%|##5       | 1/4 [00:00&lt;00:01,  2.11it/s]
+epoch 78:  50%|#####     | 2/4 [00:00&lt;00:00,  2.09it/s]
+epoch 78:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.07it/s]
+epoch 78: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
+RMSE: 2.3164156872535155 at epoch 79
+
+epoch 79:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 79:  25%|##5       | 1/4 [00:00&lt;00:01,  2.21it/s]
+epoch 79:  50%|#####     | 2/4 [00:00&lt;00:00,  2.15it/s]
+epoch 79:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 79: 100%|##########| 4/4 [00:01&lt;00:00,  2.56it/s]
+RMSE: 2.300199748497705 at epoch 80
+
+epoch 80:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 80:  25%|##5       | 1/4 [00:00&lt;00:01,  2.03it/s]
+epoch 80:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 80:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.99it/s]
+epoch 80: 100%|##########| 4/4 [00:01&lt;00:00,  2.44it/s]
+RMSE: 2.284242049081383 at epoch 81
+
+epoch 81:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 81:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
+epoch 81:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 81:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 81: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
+RMSE: 2.2685401054910312 at epoch 82
+
+epoch 82:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 82:  25%|##5       | 1/4 [00:00&lt;00:01,  2.01it/s]
+epoch 82:  50%|#####     | 2/4 [00:00&lt;00:00,  2.01it/s]
+epoch 82:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.01it/s]
+epoch 82: 100%|##########| 4/4 [00:01&lt;00:00,  2.46it/s]
+RMSE: 2.253085248975703 at epoch 83
+
+epoch 83:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 83:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 83:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 83:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.99it/s]
+epoch 83: 100%|##########| 4/4 [00:01&lt;00:00,  2.44it/s]
+RMSE: 2.2378711428611977 at epoch 84
+
+epoch 84:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 84:  25%|##5       | 1/4 [00:00&lt;00:01,  2.13it/s]
+epoch 84:  50%|#####     | 2/4 [00:00&lt;00:00,  2.13it/s]
+epoch 84:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.13it/s]
+epoch 84: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
+RMSE: 2.222892495804176 at epoch 85
+
+epoch 85:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 85:  25%|##5       | 1/4 [00:00&lt;00:01,  2.17it/s]
+epoch 85:  50%|#####     | 2/4 [00:00&lt;00:00,  2.17it/s]
+epoch 85:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.17it/s]
+epoch 85: 100%|##########| 4/4 [00:01&lt;00:00,  2.62it/s]
+RMSE: 2.2081418742226875 at epoch 86
+
+epoch 86:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 86:  25%|##5       | 1/4 [00:00&lt;00:01,  2.02it/s]
+epoch 86:  50%|#####     | 2/4 [00:01&lt;00:00,  2.00it/s]
+epoch 86:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.02it/s]
+epoch 86: 100%|##########| 4/4 [00:01&lt;00:00,  2.46it/s]
+RMSE: 2.1936147452029515 at epoch 87
+
+epoch 87:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 87:  25%|##5       | 1/4 [00:00&lt;00:01,  2.12it/s]
+epoch 87:  50%|#####     | 2/4 [00:00&lt;00:00,  2.06it/s]
+epoch 87:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 87: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 2.179304126008481 at epoch 88
+
+epoch 88:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 88:  25%|##5       | 1/4 [00:00&lt;00:01,  2.14it/s]
+epoch 88:  50%|#####     | 2/4 [00:00&lt;00:00,  2.14it/s]
+epoch 88:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 88: 100%|##########| 4/4 [00:01&lt;00:00,  2.54it/s]
+RMSE: 2.1652068603970087 at epoch 89
+
+epoch 89:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 89:  25%|##5       | 1/4 [00:00&lt;00:01,  2.05it/s]
+epoch 89:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 89:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.03it/s]
+epoch 89: 100%|##########| 4/4 [00:01&lt;00:00,  2.45it/s]
+RMSE: 2.1513144366314965 at epoch 90
+
+epoch 90:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 90:  25%|##5       | 1/4 [00:00&lt;00:01,  2.04it/s]
+epoch 90:  50%|#####     | 2/4 [00:00&lt;00:00,  2.06it/s]
+epoch 90:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.07it/s]
+epoch 90: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 2.137625924191441 at epoch 91
+
+epoch 91:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 91:  25%|##5       | 1/4 [00:00&lt;00:01,  2.08it/s]
+epoch 91:  50%|#####     | 2/4 [00:00&lt;00:00,  2.07it/s]
+epoch 91:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 91: 100%|##########| 4/4 [00:01&lt;00:00,  2.46it/s]
+RMSE: 2.1241314375552056 at epoch 92
+
+epoch 92:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 92:  25%|##5       | 1/4 [00:00&lt;00:01,  2.05it/s]
+epoch 92:  50%|#####     | 2/4 [00:00&lt;00:00,  2.05it/s]
+epoch 92:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.04it/s]
+epoch 92: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 2.110829148068767 at epoch 93
+
+epoch 93:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 93:  25%|##5       | 1/4 [00:00&lt;00:01,  1.99it/s]
+epoch 93:  50%|#####     | 2/4 [00:01&lt;00:01,  1.98it/s]
+epoch 93:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.03it/s]
+epoch 93: 100%|##########| 4/4 [00:01&lt;00:00,  2.48it/s]
+RMSE: 2.0977138091680683 at epoch 94
+
+epoch 94:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 94:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 94:  50%|#####     | 2/4 [00:01&lt;00:00,  2.01it/s]
+epoch 94:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.99it/s]
+epoch 94: 100%|##########| 4/4 [00:01&lt;00:00,  2.43it/s]
+RMSE: 2.084778362259888 at epoch 95
+
+epoch 95:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 95:  25%|##5       | 1/4 [00:00&lt;00:01,  2.11it/s]
+epoch 95:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 95:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 95: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 2.0720233905583045 at epoch 96
+
+epoch 96:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 96:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 96:  50%|#####     | 2/4 [00:00&lt;00:00,  2.04it/s]
+epoch 96:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.06it/s]
+epoch 96: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 2.0594407057793536 at epoch 97
+
+epoch 97:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 97:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
+epoch 97:  50%|#####     | 2/4 [00:00&lt;00:00,  2.16it/s]
+epoch 97:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.15it/s]
+epoch 97: 100%|##########| 4/4 [00:01&lt;00:00,  2.62it/s]
+RMSE: 2.0470293379814537 at epoch 98
+
+epoch 98:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 98:  25%|##5       | 1/4 [00:00&lt;00:01,  2.03it/s]
+epoch 98:  50%|#####     | 2/4 [00:01&lt;00:01,  1.98it/s]
+epoch 98:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.96it/s]
+epoch 98: 100%|##########| 4/4 [00:01&lt;00:00,  2.39it/s]
+RMSE: 2.0347824928502374 at epoch 99
+
+epoch 99:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 99:  25%|##5       | 1/4 [00:00&lt;00:01,  1.97it/s]
+epoch 99:  50%|#####     | 2/4 [00:00&lt;00:01,  1.99it/s]
+epoch 99:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.04it/s]
+epoch 99: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 2.0226981225558514 at epoch 100
+
+epoch 100:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 100:  25%|##5       | 1/4 [00:00&lt;00:01,  2.20it/s]
+epoch 100:  50%|#####     | 2/4 [00:00&lt;00:00,  2.15it/s]
+epoch 100:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.13it/s]
+epoch 100: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
+RMSE: 2.010771895008438 at epoch 101
+
+epoch 101:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 101:  25%|##5       | 1/4 [00:00&lt;00:01,  2.04it/s]
+epoch 101:  50%|#####     | 2/4 [00:00&lt;00:00,  2.06it/s]
+epoch 101:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 101: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 1.9990003556972775 at epoch 102
+
+epoch 102:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 102:  25%|##5       | 1/4 [00:00&lt;00:01,  2.04it/s]
+epoch 102:  50%|#####     | 2/4 [00:00&lt;00:00,  2.02it/s]
+epoch 102:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.01it/s]
+epoch 102: 100%|##########| 4/4 [00:01&lt;00:00,  2.45it/s]
+RMSE: 1.9873812130358206 at epoch 103
+
+epoch 103:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 103:  25%|##5       | 1/4 [00:00&lt;00:01,  1.98it/s]
+epoch 103:  50%|#####     | 2/4 [00:01&lt;00:01,  1.96it/s]
+epoch 103:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.96it/s]
+epoch 103: 100%|##########| 4/4 [00:01&lt;00:00,  2.38it/s]
+RMSE: 1.9759092503964333 at epoch 104
+
+epoch 104:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 104:  25%|##5       | 1/4 [00:00&lt;00:01,  1.96it/s]
+epoch 104:  50%|#####     | 2/4 [00:00&lt;00:01,  2.00it/s]
+epoch 104:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.04it/s]
+epoch 104: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 1.964582897927688 at epoch 105
+
+epoch 105:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 105:  25%|##5       | 1/4 [00:00&lt;00:01,  2.20it/s]
+epoch 105:  50%|#####     | 2/4 [00:00&lt;00:00,  2.18it/s]
+epoch 105:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 105: 100%|##########| 4/4 [00:01&lt;00:00,  2.59it/s]
+RMSE: 1.9533990390145093 at epoch 106
+
+epoch 106:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 106:  25%|##5       | 1/4 [00:00&lt;00:01,  2.12it/s]
+epoch 106:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 106:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 106: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
+RMSE: 1.9423555023502734 at epoch 107
+
+epoch 107:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 107:  25%|##5       | 1/4 [00:00&lt;00:01,  2.08it/s]
+epoch 107:  50%|#####     | 2/4 [00:00&lt;00:00,  2.07it/s]
+epoch 107:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.06it/s]
+epoch 107: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
+RMSE: 1.9314472231744035 at epoch 108
+
+epoch 108:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 108:  25%|##5       | 1/4 [00:00&lt;00:01,  2.14it/s]
+epoch 108:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 108:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 108: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
+RMSE: 1.920673323775425 at epoch 109
+
+epoch 109:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 109:  25%|##5       | 1/4 [00:00&lt;00:01,  2.14it/s]
+epoch 109:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 109:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.07it/s]
+epoch 109: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 1.9100312781584128 at epoch 110
+
+epoch 110:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 110:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
+epoch 110:  50%|#####     | 2/4 [00:00&lt;00:00,  2.10it/s]
+epoch 110:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 110: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 1.8995191909531302 at epoch 111
+
+epoch 111:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 111:  25%|##5       | 1/4 [00:00&lt;00:01,  2.10it/s]
+epoch 111:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 111:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 111: 100%|##########| 4/4 [00:01&lt;00:00,  2.60it/s]
+RMSE: 1.8891355468778055 at epoch 112
+
+epoch 112:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 112:  25%|##5       | 1/4 [00:00&lt;00:01,  1.98it/s]
+epoch 112:  50%|#####     | 2/4 [00:01&lt;00:01,  1.98it/s]
+epoch 112:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.03it/s]
+epoch 112: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 1.8788773248054336 at epoch 113
+
+epoch 113:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 113:  25%|##5       | 1/4 [00:00&lt;00:01,  2.23it/s]
+epoch 113:  50%|#####     | 2/4 [00:00&lt;00:00,  2.15it/s]
+epoch 113:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 113: 100%|##########| 4/4 [00:01&lt;00:00,  2.54it/s]
+RMSE: 1.8687421384290253 at epoch 114
+
+epoch 114:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 114:  25%|##5       | 1/4 [00:00&lt;00:01,  2.07it/s]
+epoch 114:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 114:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.07it/s]
+epoch 114: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 1.8587298081911887 at epoch 115
+
+epoch 115:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 115:  25%|##5       | 1/4 [00:00&lt;00:01,  1.99it/s]
+epoch 115:  50%|#####     | 2/4 [00:00&lt;00:00,  2.02it/s]
+epoch 115:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.03it/s]
+epoch 115: 100%|##########| 4/4 [00:01&lt;00:00,  2.48it/s]
+RMSE: 1.8488376467044865 at epoch 116
+
+epoch 116:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 116:  25%|##5       | 1/4 [00:00&lt;00:01,  1.96it/s]
+epoch 116:  50%|#####     | 2/4 [00:00&lt;00:01,  1.99it/s]
+epoch 116:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.03it/s]
+epoch 116: 100%|##########| 4/4 [00:01&lt;00:00,  2.48it/s]
+RMSE: 1.8390645465851028 at epoch 117
+
+epoch 117:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 117:  25%|##5       | 1/4 [00:00&lt;00:01,  2.13it/s]
+epoch 117:  50%|#####     | 2/4 [00:00&lt;00:00,  2.14it/s]
+epoch 117:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 117: 100%|##########| 4/4 [00:01&lt;00:00,  2.58it/s]
+RMSE: 1.8294088893653093 at epoch 118
+
+epoch 118:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 118:  25%|##5       | 1/4 [00:00&lt;00:01,  2.12it/s]
+epoch 118:  50%|#####     | 2/4 [00:00&lt;00:00,  2.13it/s]
+epoch 118:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 118: 100%|##########| 4/4 [00:01&lt;00:00,  2.56it/s]
+RMSE: 1.8198686261120727 at epoch 119
+
+epoch 119:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 119:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 119:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 119:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 119: 100%|##########| 4/4 [00:01&lt;00:00,  2.56it/s]
+RMSE: 1.8104457686107558 at epoch 120
+
+epoch 120:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 120:  25%|##5       | 1/4 [00:00&lt;00:01,  2.19it/s]
+epoch 120:  50%|#####     | 2/4 [00:00&lt;00:00,  2.13it/s]
+epoch 120:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.14it/s]
+epoch 120: 100%|##########| 4/4 [00:01&lt;00:00,  2.58it/s]
+RMSE: 1.8011359381960717 at epoch 121
+
+epoch 121:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 121:  25%|##5       | 1/4 [00:00&lt;00:01,  2.21it/s]
+epoch 121:  50%|#####     | 2/4 [00:00&lt;00:00,  2.15it/s]
+epoch 121:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.15it/s]
+epoch 121: 100%|##########| 4/4 [00:01&lt;00:00,  2.61it/s]
+RMSE: 1.7919408965280086 at epoch 122
+
+epoch 122:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 122:  25%|##5       | 1/4 [00:00&lt;00:01,  2.21it/s]
+epoch 122:  50%|#####     | 2/4 [00:00&lt;00:00,  2.16it/s]
+epoch 122:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 122: 100%|##########| 4/4 [00:01&lt;00:00,  2.54it/s]
+RMSE: 1.782857182069011 at epoch 123
+
+epoch 123:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 123:  25%|##5       | 1/4 [00:00&lt;00:01,  2.03it/s]
+epoch 123:  50%|#####     | 2/4 [00:00&lt;00:00,  2.04it/s]
+epoch 123:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.02it/s]
+epoch 123: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 1.7738874621790364 at epoch 124
+
+epoch 124:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 124:  25%|##5       | 1/4 [00:00&lt;00:01,  2.13it/s]
+epoch 124:  50%|#####     | 2/4 [00:00&lt;00:00,  2.14it/s]
+epoch 124:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 124: 100%|##########| 4/4 [00:01&lt;00:00,  2.54it/s]
+RMSE: 1.7650280880945084 at epoch 125
+
+epoch 125:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 125:  25%|##5       | 1/4 [00:00&lt;00:01,  2.08it/s]
+epoch 125:  50%|#####     | 2/4 [00:00&lt;00:00,  2.04it/s]
+epoch 125:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.01it/s]
+epoch 125: 100%|##########| 4/4 [00:01&lt;00:00,  2.44it/s]
+RMSE: 1.7562804396893228 at epoch 126
+
+epoch 126:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 126:  25%|##5       | 1/4 [00:00&lt;00:01,  2.07it/s]
+epoch 126:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 126:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 126: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 1.7476437659599897 at epoch 127
+
+epoch 127:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 127:  25%|##5       | 1/4 [00:00&lt;00:01,  2.14it/s]
+epoch 127:  50%|#####     | 2/4 [00:00&lt;00:00,  2.13it/s]
+epoch 127:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 127: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
+RMSE: 1.7391180606376688 at epoch 128
+
+epoch 128:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 128:  25%|##5       | 1/4 [00:00&lt;00:01,  2.17it/s]
+epoch 128:  50%|#####     | 2/4 [00:00&lt;00:00,  2.14it/s]
+epoch 128:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.13it/s]
+epoch 128: 100%|##########| 4/4 [00:01&lt;00:00,  2.60it/s]
+RMSE: 1.7307016283038015 at epoch 129
+
+epoch 129:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 129:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
+epoch 129:  50%|#####     | 2/4 [00:00&lt;00:00,  2.16it/s]
+epoch 129:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.16it/s]
+epoch 129: 100%|##########| 4/4 [00:01&lt;00:00,  2.64it/s]
+RMSE: 1.7223952822601951 at epoch 130
+
+epoch 130:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 130:  25%|##5       | 1/4 [00:00&lt;00:01,  2.04it/s]
+epoch 130:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 130:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 130: 100%|##########| 4/4 [00:01&lt;00:00,  2.54it/s]
+RMSE: 1.714195571602502 at epoch 131
+
+epoch 131:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 131:  25%|##5       | 1/4 [00:00&lt;00:01,  2.22it/s]
+epoch 131:  50%|#####     | 2/4 [00:00&lt;00:00,  2.18it/s]
+epoch 131:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 131: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
+RMSE: 1.7061051284782502 at epoch 132
+
+epoch 132:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 132:  25%|##5       | 1/4 [00:00&lt;00:01,  2.07it/s]
+epoch 132:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 132:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 132: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 1.6981201156798238 at epoch 133
+
+epoch 133:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 133:  25%|##5       | 1/4 [00:00&lt;00:01,  1.99it/s]
+epoch 133:  50%|#####     | 2/4 [00:00&lt;00:00,  2.01it/s]
+epoch 133:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.03it/s]
+epoch 133: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 1.6902375072988458 at epoch 134
+
+epoch 134:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 134:  25%|##5       | 1/4 [00:00&lt;00:01,  2.10it/s]
+epoch 134:  50%|#####     | 2/4 [00:00&lt;00:00,  2.07it/s]
+epoch 134:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 134: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 1.682453949366366 at epoch 135
+
+epoch 135:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 135:  25%|##5       | 1/4 [00:00&lt;00:01,  2.03it/s]
+epoch 135:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 135:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.06it/s]
+epoch 135: 100%|##########| 4/4 [00:01&lt;00:00,  2.54it/s]
+RMSE: 1.6747633211370185 at epoch 136
+
+epoch 136:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 136:  25%|##5       | 1/4 [00:00&lt;00:01,  2.04it/s]
+epoch 136:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 136:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.06it/s]
+epoch 136: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 1.6671594235991365 at epoch 137
+
+epoch 137:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 137:  25%|##5       | 1/4 [00:00&lt;00:01,  2.15it/s]
+epoch 137:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 137:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 137: 100%|##########| 4/4 [00:01&lt;00:00,  2.56it/s]
+RMSE: 1.6596351114693277 at epoch 138
+
+epoch 138:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 138:  25%|##5       | 1/4 [00:00&lt;00:01,  2.17it/s]
+epoch 138:  50%|#####     | 2/4 [00:00&lt;00:00,  2.12it/s]
+epoch 138:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 138: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
+RMSE: 1.6521762634634292 at epoch 139
+
+epoch 139:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 139:  25%|##5       | 1/4 [00:00&lt;00:01,  2.07it/s]
+epoch 139:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 139:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 139: 100%|##########| 4/4 [00:01&lt;00:00,  2.56it/s]
+RMSE: 1.6447709188481312 at epoch 140
+
+epoch 140:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 140:  25%|##5       | 1/4 [00:00&lt;00:01,  2.19it/s]
+epoch 140:  50%|#####     | 2/4 [00:00&lt;00:00,  2.19it/s]
+epoch 140:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.18it/s]
+epoch 140: 100%|##########| 4/4 [00:01&lt;00:00,  2.65it/s]
+RMSE: 1.6374087089455946 at epoch 141
+
+epoch 141:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 141:  25%|##5       | 1/4 [00:00&lt;00:01,  2.07it/s]
+epoch 141:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 141:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.02it/s]
+epoch 141: 100%|##########| 4/4 [00:01&lt;00:00,  2.46it/s]
+RMSE: 1.63006735630737 at epoch 142
+
+epoch 142:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 142:  25%|##5       | 1/4 [00:00&lt;00:01,  2.04it/s]
+epoch 142:  50%|#####     | 2/4 [00:00&lt;00:00,  2.05it/s]
+epoch 142:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 142: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 1.6227308224289418 at epoch 143
+
+epoch 143:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 143:  25%|##5       | 1/4 [00:00&lt;00:01,  2.00it/s]
+epoch 143:  50%|#####     | 2/4 [00:01&lt;00:01,  1.98it/s]
+epoch 143:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.99it/s]
+epoch 143: 100%|##########| 4/4 [00:01&lt;00:00,  2.45it/s]
+RMSE: 1.615381200611164 at epoch 144
+
+epoch 144:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 144:  25%|##5       | 1/4 [00:00&lt;00:01,  2.20it/s]
+epoch 144:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 144:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.06it/s]
+epoch 144: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 1.6080027377796502 at epoch 145
+
+epoch 145:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 145:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 145:  50%|#####     | 2/4 [00:00&lt;00:00,  2.04it/s]
+epoch 145:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.01it/s]
+epoch 145: 100%|##########| 4/4 [00:01&lt;00:00,  2.44it/s]
+RMSE: 1.6005785406426642 at epoch 146
+
+epoch 146:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 146:  25%|##5       | 1/4 [00:00&lt;00:01,  1.97it/s]
+epoch 146:  50%|#####     | 2/4 [00:01&lt;00:01,  1.97it/s]
+epoch 146:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.97it/s]
+epoch 146: 100%|##########| 4/4 [00:01&lt;00:00,  2.41it/s]
+RMSE: 1.593098111913266 at epoch 147
+
+epoch 147:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 147:  25%|##5       | 1/4 [00:00&lt;00:01,  2.03it/s]
+epoch 147:  50%|#####     | 2/4 [00:00&lt;00:00,  2.04it/s]
+epoch 147:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 147: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 1.5855589424544243 at epoch 148
+
+epoch 148:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 148:  25%|##5       | 1/4 [00:00&lt;00:01,  2.20it/s]
+epoch 148:  50%|#####     | 2/4 [00:00&lt;00:00,  2.18it/s]
+epoch 148:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.14it/s]
+epoch 148: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
+RMSE: 1.5779606206910914 at epoch 149
+
+epoch 149:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 149:  25%|##5       | 1/4 [00:00&lt;00:01,  2.03it/s]
+epoch 149:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 149:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.04it/s]
+epoch 149: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 1.5703122348911285 at epoch 150
+
+epoch 150:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 150:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 150:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 150:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 150: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 1.562633041630264 at epoch 151
+
+epoch 151:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 151:  25%|##5       | 1/4 [00:00&lt;00:01,  2.20it/s]
+epoch 151:  50%|#####     | 2/4 [00:00&lt;00:00,  2.17it/s]
+epoch 151:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.18it/s]
+epoch 151: 100%|##########| 4/4 [00:01&lt;00:00,  2.63it/s]
+RMSE: 1.5549493900525746 at epoch 152
+
+epoch 152:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 152:  25%|##5       | 1/4 [00:00&lt;00:01,  2.13it/s]
+epoch 152:  50%|#####     | 2/4 [00:00&lt;00:00,  2.10it/s]
+epoch 152:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.02it/s]
+epoch 152: 100%|##########| 4/4 [00:01&lt;00:00,  2.45it/s]
+RMSE: 1.54729468081683 at epoch 153
+
+epoch 153:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 153:  25%|##5       | 1/4 [00:00&lt;00:01,  2.13it/s]
+epoch 153:  50%|#####     | 2/4 [00:00&lt;00:00,  2.10it/s]
+epoch 153:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 153: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 1.5397071678698881 at epoch 154
+
+epoch 154:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 154:  25%|##5       | 1/4 [00:00&lt;00:01,  2.17it/s]
+epoch 154:  50%|#####     | 2/4 [00:00&lt;00:00,  2.16it/s]
+epoch 154:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.17it/s]
+epoch 154: 100%|##########| 4/4 [00:01&lt;00:00,  2.64it/s]
+RMSE: 1.5322338898637484 at epoch 155
+
+epoch 155:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 155:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
+epoch 155:  50%|#####     | 2/4 [00:00&lt;00:00,  2.14it/s]
+epoch 155:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.13it/s]
+epoch 155: 100%|##########| 4/4 [00:01&lt;00:00,  2.60it/s]
+RMSE: 1.5249217854439232 at epoch 156
+
+epoch 156:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 156:  25%|##5       | 1/4 [00:00&lt;00:01,  1.75it/s]
+epoch 156:  50%|#####     | 2/4 [00:01&lt;00:01,  1.72it/s]
+epoch 156:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.81it/s]
+epoch 156: 100%|##########| 4/4 [00:01&lt;00:00,  2.25it/s]
+RMSE: 1.5178198294453984 at epoch 157
+
+epoch 157:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 157:  25%|##5       | 1/4 [00:00&lt;00:01,  2.20it/s]
+epoch 157:  50%|#####     | 2/4 [00:00&lt;00:00,  2.15it/s]
+epoch 157:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 157: 100%|##########| 4/4 [00:01&lt;00:00,  2.59it/s]
+RMSE: 1.5109811565715972 at epoch 158
+
+epoch 158:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 158:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
+epoch 158:  50%|#####     | 2/4 [00:00&lt;00:00,  2.12it/s]
+epoch 158:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 158: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 1.504453821444941 at epoch 159
+
+epoch 159:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 159:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 159:  50%|#####     | 2/4 [00:00&lt;00:00,  2.06it/s]
+epoch 159:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.09it/s]
+epoch 159: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 1.4982858605435534 at epoch 160
+
+epoch 160:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 160:  25%|##5       | 1/4 [00:00&lt;00:01,  2.20it/s]
+epoch 160:  50%|#####     | 2/4 [00:00&lt;00:00,  2.18it/s]
+epoch 160:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.14it/s]
+epoch 160: 100%|##########| 4/4 [00:01&lt;00:00,  2.60it/s]
+RMSE: 1.4925243875996455 at epoch 161
+
+epoch 161:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 161:  25%|##5       | 1/4 [00:00&lt;00:01,  2.17it/s]
+epoch 161:  50%|#####     | 2/4 [00:00&lt;00:00,  2.17it/s]
+epoch 161:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 161: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
+RMSE: 1.487202324890704 at epoch 162
+
+epoch 162:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 162:  25%|##5       | 1/4 [00:00&lt;00:01,  2.18it/s]
+epoch 162:  50%|#####     | 2/4 [00:00&lt;00:00,  2.14it/s]
+epoch 162:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.14it/s]
+epoch 162: 100%|##########| 4/4 [00:01&lt;00:00,  2.62it/s]
+RMSE: 1.4823476560138409 at epoch 163
+
+epoch 163:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 163:  25%|##5       | 1/4 [00:00&lt;00:01,  2.18it/s]
+epoch 163:  50%|#####     | 2/4 [00:00&lt;00:00,  2.15it/s]
+epoch 163:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.16it/s]
+epoch 163: 100%|##########| 4/4 [00:01&lt;00:00,  2.64it/s]
+RMSE: 1.4779678011321793 at epoch 164
+
+epoch 164:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 164:  25%|##5       | 1/4 [00:00&lt;00:01,  2.06it/s]
+epoch 164:  50%|#####     | 2/4 [00:00&lt;00:00,  2.06it/s]
+epoch 164:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 164: 100%|##########| 4/4 [00:01&lt;00:00,  2.56it/s]
+RMSE: 1.4740494855157327 at epoch 165
+
+epoch 165:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 165:  25%|##5       | 1/4 [00:00&lt;00:01,  1.95it/s]
+epoch 165:  50%|#####     | 2/4 [00:01&lt;00:01,  1.96it/s]
+epoch 165:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.98it/s]
+epoch 165: 100%|##########| 4/4 [00:01&lt;00:00,  2.42it/s]
+RMSE: 1.4705505064291513 at epoch 166
+
+epoch 166:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 166:  25%|##5       | 1/4 [00:00&lt;00:01,  2.17it/s]
+epoch 166:  50%|#####     | 2/4 [00:00&lt;00:00,  2.14it/s]
+epoch 166:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.13it/s]
+epoch 166: 100%|##########| 4/4 [00:01&lt;00:00,  2.58it/s]
+RMSE: 1.4673892298248037 at epoch 167
+
+epoch 167:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 167:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
+epoch 167:  50%|#####     | 2/4 [00:00&lt;00:00,  2.10it/s]
+epoch 167:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 167: 100%|##########| 4/4 [00:01&lt;00:00,  2.59it/s]
+RMSE: 1.464447681393161 at epoch 168
+
+epoch 168:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 168:  25%|##5       | 1/4 [00:00&lt;00:01,  2.18it/s]
+epoch 168:  50%|#####     | 2/4 [00:00&lt;00:00,  2.16it/s]
+epoch 168:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.03it/s]
+epoch 168: 100%|##########| 4/4 [00:01&lt;00:00,  2.47it/s]
+RMSE: 1.46155881824789 at epoch 169
+
+epoch 169:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 169:  25%|##5       | 1/4 [00:00&lt;00:01,  2.12it/s]
+epoch 169:  50%|#####     | 2/4 [00:00&lt;00:00,  2.12it/s]
+epoch 169:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.13it/s]
+epoch 169: 100%|##########| 4/4 [00:01&lt;00:00,  2.59it/s]
+RMSE: 1.4585277552969105 at epoch 170
+
+epoch 170:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 170:  25%|##5       | 1/4 [00:00&lt;00:01,  2.15it/s]
+epoch 170:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 170:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 170: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
+RMSE: 1.4551383525261994 at epoch 171
+
+epoch 171:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 171:  25%|##5       | 1/4 [00:00&lt;00:01,  2.22it/s]
+epoch 171:  50%|#####     | 2/4 [00:00&lt;00:00,  2.22it/s]
+epoch 171:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.13it/s]
+epoch 171: 100%|##########| 4/4 [00:01&lt;00:00,  2.60it/s]
+RMSE: 1.451184310161238 at epoch 172
+
+epoch 172:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 172:  25%|##5       | 1/4 [00:00&lt;00:01,  1.94it/s]
+epoch 172:  50%|#####     | 2/4 [00:01&lt;00:01,  1.95it/s]
+epoch 172:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.95it/s]
+epoch 172: 100%|##########| 4/4 [00:01&lt;00:00,  2.39it/s]
+RMSE: 1.4464929879843338 at epoch 173
+
+epoch 173:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 173:  25%|##5       | 1/4 [00:00&lt;00:01,  2.09it/s]
+epoch 173:  50%|#####     | 2/4 [00:00&lt;00:00,  2.06it/s]
+epoch 173:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.02it/s]
+epoch 173: 100%|##########| 4/4 [00:01&lt;00:00,  2.47it/s]
+RMSE: 1.4409661106154175 at epoch 174
+
+epoch 174:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 174:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
+epoch 174:  50%|#####     | 2/4 [00:00&lt;00:00,  2.17it/s]
+epoch 174:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.17it/s]
+epoch 174: 100%|##########| 4/4 [00:01&lt;00:00,  2.65it/s]
+RMSE: 1.4346034295325465 at epoch 175
+
+epoch 175:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 175:  25%|##5       | 1/4 [00:00&lt;00:01,  2.08it/s]
+epoch 175:  50%|#####     | 2/4 [00:00&lt;00:00,  2.03it/s]
+epoch 175:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 175: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 1.42751342050379 at epoch 176
+
+epoch 176:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 176:  25%|##5       | 1/4 [00:00&lt;00:01,  2.09it/s]
+epoch 176:  50%|#####     | 2/4 [00:00&lt;00:00,  2.09it/s]
+epoch 176:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 176: 100%|##########| 4/4 [00:01&lt;00:00,  2.54it/s]
+RMSE: 1.4198908661955154 at epoch 177
+
+epoch 177:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 177:  25%|##5       | 1/4 [00:00&lt;00:01,  2.05it/s]
+epoch 177:  50%|#####     | 2/4 [00:00&lt;00:00,  2.09it/s]
+epoch 177:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 177: 100%|##########| 4/4 [00:01&lt;00:00,  2.48it/s]
+RMSE: 1.4120005940560627 at epoch 178
+
+epoch 178:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 178:  25%|##5       | 1/4 [00:00&lt;00:01,  1.86it/s]
+epoch 178:  50%|#####     | 2/4 [00:01&lt;00:01,  1.91it/s]
+epoch 178:  75%|#######5  | 3/4 [00:01&lt;00:00,  1.96it/s]
+epoch 178: 100%|##########| 4/4 [00:01&lt;00:00,  2.40it/s]
+RMSE: 1.404108848088183 at epoch 179
+
+epoch 179:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 179:  25%|##5       | 1/4 [00:00&lt;00:01,  2.07it/s]
+epoch 179:  50%|#####     | 2/4 [00:00&lt;00:00,  2.09it/s]
+epoch 179:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 179: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 1.3964473537924353 at epoch 180
+
+epoch 180:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 180:  25%|##5       | 1/4 [00:00&lt;00:01,  2.17it/s]
+epoch 180:  50%|#####     | 2/4 [00:00&lt;00:00,  2.16it/s]
+epoch 180:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 180: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
+RMSE: 1.3891736169354205 at epoch 181
+
+epoch 181:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 181:  25%|##5       | 1/4 [00:00&lt;00:01,  2.11it/s]
+epoch 181:  50%|#####     | 2/4 [00:00&lt;00:00,  2.09it/s]
+epoch 181:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 181: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 1.3823633986485588 at epoch 182
+
+epoch 182:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 182:  25%|##5       | 1/4 [00:00&lt;00:01,  2.00it/s]
+epoch 182:  50%|#####     | 2/4 [00:00&lt;00:00,  2.01it/s]
+epoch 182:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 182: 100%|##########| 4/4 [00:01&lt;00:00,  2.53it/s]
+RMSE: 1.3760136486059216 at epoch 183
+
+epoch 183:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 183:  25%|##5       | 1/4 [00:00&lt;00:01,  2.19it/s]
+epoch 183:  50%|#####     | 2/4 [00:00&lt;00:00,  2.15it/s]
+epoch 183:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 183: 100%|##########| 4/4 [00:01&lt;00:00,  2.54it/s]
+RMSE: 1.370066269486157 at epoch 184
+
+epoch 184:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 184:  25%|##5       | 1/4 [00:00&lt;00:01,  2.18it/s]
+epoch 184:  50%|#####     | 2/4 [00:00&lt;00:00,  2.17it/s]
+epoch 184:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.18it/s]
+epoch 184: 100%|##########| 4/4 [00:01&lt;00:00,  2.66it/s]
+RMSE: 1.3644259842482178 at epoch 185
+
+epoch 185:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 185:  25%|##5       | 1/4 [00:00&lt;00:01,  2.11it/s]
+epoch 185:  50%|#####     | 2/4 [00:00&lt;00:00,  2.13it/s]
+epoch 185:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 185: 100%|##########| 4/4 [00:01&lt;00:00,  2.60it/s]
+RMSE: 1.358981933787381 at epoch 186
+
+epoch 186:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 186:  25%|##5       | 1/4 [00:00&lt;00:01,  2.19it/s]
+epoch 186:  50%|#####     | 2/4 [00:00&lt;00:00,  2.20it/s]
+epoch 186:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.16it/s]
+epoch 186: 100%|##########| 4/4 [00:01&lt;00:00,  2.62it/s]
+RMSE: 1.3536251745040757 at epoch 187
+
+epoch 187:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 187:  25%|##5       | 1/4 [00:00&lt;00:01,  2.08it/s]
+epoch 187:  50%|#####     | 2/4 [00:00&lt;00:00,  2.08it/s]
+epoch 187:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 187: 100%|##########| 4/4 [00:01&lt;00:00,  2.58it/s]
+RMSE: 1.3482857911459802 at epoch 188
+
+epoch 188:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 188:  25%|##5       | 1/4 [00:00&lt;00:01,  2.03it/s]
+epoch 188:  50%|#####     | 2/4 [00:00&lt;00:00,  2.04it/s]
+epoch 188:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 188: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
+RMSE: 1.342938074247123 at epoch 189
+
+epoch 189:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 189:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
+epoch 189:  50%|#####     | 2/4 [00:00&lt;00:00,  2.16it/s]
+epoch 189:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.16it/s]
+epoch 189: 100%|##########| 4/4 [00:01&lt;00:00,  2.59it/s]
+RMSE: 1.3375977266046288 at epoch 190
+
+epoch 190:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 190:  25%|##5       | 1/4 [00:00&lt;00:01,  2.10it/s]
+epoch 190:  50%|#####     | 2/4 [00:00&lt;00:00,  2.12it/s]
+epoch 190:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 190: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
+RMSE: 1.3323095027764367 at epoch 191
+
+epoch 191:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 191:  25%|##5       | 1/4 [00:00&lt;00:01,  2.17it/s]
+epoch 191:  50%|#####     | 2/4 [00:00&lt;00:00,  2.12it/s]
+epoch 191:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 191: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
+RMSE: 1.3271171394541434 at epoch 192
+
+epoch 192:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 192:  25%|##5       | 1/4 [00:00&lt;00:01,  2.05it/s]
+epoch 192:  50%|#####     | 2/4 [00:00&lt;00:00,  2.07it/s]
+epoch 192:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.07it/s]
+epoch 192: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
+RMSE: 1.3220440475944906 at epoch 193
+
+epoch 193:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 193:  25%|##5       | 1/4 [00:00&lt;00:01,  2.13it/s]
+epoch 193:  50%|#####     | 2/4 [00:00&lt;00:00,  2.12it/s]
+epoch 193:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.10it/s]
+epoch 193: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
+RMSE: 1.3170856113017353 at epoch 194
+
+epoch 194:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 194:  25%|##5       | 1/4 [00:00&lt;00:01,  2.19it/s]
+epoch 194:  50%|#####     | 2/4 [00:00&lt;00:00,  2.13it/s]
+epoch 194:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.08it/s]
+epoch 194: 100%|##########| 4/4 [00:01&lt;00:00,  2.49it/s]
+RMSE: 1.3122210705662503 at epoch 195
+
+epoch 195:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 195:  25%|##5       | 1/4 [00:00&lt;00:01,  2.13it/s]
+epoch 195:  50%|#####     | 2/4 [00:00&lt;00:00,  2.11it/s]
+epoch 195:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.13it/s]
+epoch 195: 100%|##########| 4/4 [00:01&lt;00:00,  2.59it/s]
+RMSE: 1.3074282940078763 at epoch 196
+
+epoch 196:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 196:  25%|##5       | 1/4 [00:00&lt;00:01,  2.07it/s]
+epoch 196:  50%|#####     | 2/4 [00:00&lt;00:00,  2.05it/s]
+epoch 196:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.04it/s]
+epoch 196: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 1.3026953666221057 at epoch 197
+
+epoch 197:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 197:  25%|##5       | 1/4 [00:00&lt;00:01,  2.07it/s]
+epoch 197:  50%|#####     | 2/4 [00:00&lt;00:00,  2.10it/s]
+epoch 197:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.05it/s]
+epoch 197: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
+RMSE: 1.298025297462972 at epoch 198
+
+epoch 198:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 198:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
+epoch 198:  50%|#####     | 2/4 [00:00&lt;00:00,  2.13it/s]
+epoch 198:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.12it/s]
+epoch 198: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
+RMSE: 1.2934381943992812 at epoch 199
+
+epoch 199:   0%|          | 0/4 [00:00&lt;?, ?it/s]
+epoch 199:  25%|##5       | 1/4 [00:00&lt;00:01,  2.07it/s]
+epoch 199:  50%|#####     | 2/4 [00:00&lt;00:00,  2.07it/s]
+epoch 199:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.11it/s]
+epoch 199: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 12 minutes  41.738 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 6 minutes  17.444 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-nnp-training-py">
 <div class="sphx-glr-download docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/87ff16f37ec64c81cfa1b8f99b19226d/nnp_training.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">nnp_training.py</span></code></a></p>
-</div>
+<a class="reference download internal" download="" href="../_downloads/87ff16f37ec64c81cfa1b8f99b19226d/nnp_training.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">nnp_training.py</span></code></a></div>
 <div class="sphx-glr-download docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/5a10214b508bfc57bc90396cb7b92e90/nnp_training.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">nnp_training.ipynb</span></code></a></p>
+<a class="reference download internal" download="" href="../_downloads/5a10214b508bfc57bc90396cb7b92e90/nnp_training.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">nnp_training.ipynb</span></code></a></div>
 </div>
-</div>
-<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
 
 
@@ -593,7 +1982,7 @@ set to a much larger value</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="nnp_training_ignite.html" class="btn btn-neutral float-right" title="Train Your Own Neural Network Potential, Using PyTorch-Ignite" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="nnp_training_force.html" class="btn btn-neutral float-right" title="Train Neural Network Potential To Both Energies and Forces" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="load_from_neurochem.html" class="btn btn-neutral float-left" title="Construct Model From NeuroChem Files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

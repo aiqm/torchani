@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Train Neural Network Potential From NeuroChem Input File &mdash; TorchANI 0.7 documentation</title>
+  <title>Train Neural Network Potential From NeuroChem Input File &mdash; TorchANI 0.8 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7
+                0.8
               </div>
             
           
@@ -97,6 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
 <li class="toctree-l1"><a class="reference internal" href="load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training_ignite.html">Train Your Own Neural Network Potential, Using PyTorch-Ignite</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Train Neural Network Potential From NeuroChem Input File</a></li>
@@ -176,14 +177,14 @@
            <div itemprop="articleBody">
             
   <div class="sphx-glr-download-link-note admonition note">
-<p class="admonition-title">Note</p>
-<p>Click <a class="reference internal" href="#sphx-glr-download-examples-neurochem-trainer-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+<p class="first admonition-title">Note</p>
+<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-neurochem-trainer-py"><span class="std std-ref">here</span></a> to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="train-neural-network-potential-from-neurochem-input-file">
 <span id="neurochem-training"></span><span id="sphx-glr-examples-neurochem-trainer-py"></span><h1>Train Neural Network Potential From NeuroChem Input File<a class="headerlink" href="#train-neural-network-potential-from-neurochem-input-file" title="Permalink to this headline">¶</a></h1>
 <p>This example shows how to use TorchANI’s NeuroChem trainer to read and run
-NeuroChem’s training config file to train a neural network potential.
-To begin with, let’s first import the modules we will use:</p>
+NeuroChem’s training config file to train a neural network potential.</p>
+<p>To begin with, let’s first import the modules we will use:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchani</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">os</span>
@@ -217,6 +218,10 @@ But this is wrong and should be avoided for any serious training.</p>
 <span class="n">trainer</span><span class="o">.</span><span class="n">load_data</span><span class="p">(</span><span class="n">training_path</span><span class="p">,</span> <span class="n">validation_path</span><span class="p">)</span>
 </pre></div>
 </div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>WARNING:root:This caffe2 python run does not have GPU support. Will run in CPU only mode.
+</pre></div>
+</div>
 <p>Once everything is set up, running NeuroChem is very easy. We simplify need a
 <code class="docutils literal notranslate"><span class="pre">trainer.run()</span></code>. But here, in order for sphinx-gallery to be able to
 capture the output of tqdm, let’s do some hacking first to make tqdm to print
@@ -233,56 +238,19 @@ its progressbar to stdout.</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|##        | 1/5 [00:03&lt;00:12,  3.20s/it]
-epoch:  40%|####      | 2/5 [00:03&lt;00:07,  2.40s/it]
-epoch:  60%|######    | 3/5 [00:04&lt;00:03,  1.85s/it]
-epoch:  80%|########  | 4/5 [00:04&lt;00:01,  1.46s/it]
-epoch: 100%|##########| 5/5 [00:05&lt;00:00,  1.07s/it]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>epoch 0:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch 0:  20%|##        | 1/5 [00:00&lt;00:01,  2.09it/s]
+epoch 0:  40%|####      | 2/5 [00:00&lt;00:01,  2.14it/s]
+epoch 0:  60%|######    | 3/5 [00:01&lt;00:00,  2.17it/s]
+epoch 0:  80%|########  | 4/5 [00:01&lt;00:00,  2.18it/s]
+epoch 0: 100%|##########| 5/5 [00:01&lt;00:00,  2.83it/s]
 
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|##        | 1/5 [00:01&lt;00:07,  1.86s/it]
-epoch:  40%|####      | 2/5 [00:02&lt;00:04,  1.47s/it]
-epoch:  60%|######    | 3/5 [00:02&lt;00:02,  1.19s/it]
-epoch:  80%|########  | 4/5 [00:03&lt;00:01,  1.00s/it]
-epoch: 100%|##########| 5/5 [00:03&lt;00:00,  1.34it/s]
-
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|##        | 1/5 [00:01&lt;00:07,  1.83s/it]
-epoch:  40%|####      | 2/5 [00:02&lt;00:04,  1.45s/it]
-epoch:  60%|######    | 3/5 [00:02&lt;00:02,  1.18s/it]
-epoch:  80%|########  | 4/5 [00:03&lt;00:00,  1.00it/s]
-epoch: 100%|##########| 5/5 [00:03&lt;00:00,  1.35it/s]
-
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|##        | 1/5 [00:01&lt;00:07,  1.86s/it]
-epoch:  40%|####      | 2/5 [00:02&lt;00:04,  1.47s/it]
-epoch:  60%|######    | 3/5 [00:02&lt;00:02,  1.20s/it]
-epoch:  80%|########  | 4/5 [00:03&lt;00:01,  1.00s/it]
-epoch: 100%|##########| 5/5 [00:03&lt;00:00,  1.34it/s]
-
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|##        | 1/5 [00:01&lt;00:07,  1.86s/it]
-
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|##        | 1/5 [00:01&lt;00:07,  1.86s/it]
-epoch:  40%|####      | 2/5 [00:02&lt;00:04,  1.47s/it]
-epoch:  60%|######    | 3/5 [00:03&lt;00:02,  1.20s/it]
-epoch:  80%|########  | 4/5 [00:03&lt;00:01,  1.01s/it]
-epoch: 100%|##########| 5/5 [00:03&lt;00:00,  1.33it/s]
-
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|##        | 1/5 [00:01&lt;00:07,  1.87s/it]
-
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|##        | 1/5 [00:01&lt;00:07,  1.91s/it]
-epoch:  40%|####      | 2/5 [00:02&lt;00:04,  1.50s/it]
-epoch:  60%|######    | 3/5 [00:03&lt;00:02,  1.22s/it]
-epoch:  80%|########  | 4/5 [00:03&lt;00:01,  1.02s/it]
-epoch: 100%|##########| 5/5 [00:03&lt;00:00,  1.32it/s]
-
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|##        | 1/5 [00:01&lt;00:07,  1.83s/it]
+epoch 1:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch 1:  20%|##        | 1/5 [00:00&lt;00:01,  2.07it/s]
+epoch 1:  40%|####      | 2/5 [00:00&lt;00:01,  2.07it/s]
+epoch 1:  60%|######    | 3/5 [00:01&lt;00:00,  2.10it/s]
+epoch 1:  80%|########  | 4/5 [00:01&lt;00:00,  2.11it/s]
+epoch 1: 100%|##########| 5/5 [00:02&lt;00:00,  2.72it/s]
 </pre></div>
 </div>
 <p>Alternatively, you can run NeuroChem trainer directly using command line.
@@ -308,99 +276,65 @@ generating this document:</p>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>WARNING:root:This caffe2 python run does not have GPU support. Will run in CPU only mode.
-/opt/hostedtoolcache/Python/3.7.2/x64/lib/python3.7/site-packages/torchani/neurochem/__init__.py:644: UserWarning:
-Currently TorchANI training with weight decay can not reproduce the training
-result of NeuroChem with the same training setup. If you really want to use
-weight decay, consider smaller rates and and make sure you do enough validation
-to check if you get expected result.
-  to check if you get expected result.&quot;&quot;&quot;))
-/opt/hostedtoolcache/Python/3.7.2/x64/lib/python3.7/site-packages/h5py/_hl/dataset.py:313: H5pyDeprecationWarning: dataset.value has been deprecated. Use dataset[()] instead.
-  &quot;Use dataset[()] instead.&quot;, H5pyDeprecationWarning)
 
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|██        | 1/5 [00:03&lt;00:12,  3.16s/it]
-epoch:  40%|████      | 2/5 [00:03&lt;00:07,  2.38s/it]
-epoch:  60%|██████    | 3/5 [00:04&lt;00:03,  1.83s/it]
-epoch:  80%|████████  | 4/5 [00:04&lt;00:01,  1.45s/it]
-epoch: 100%|██████████| 5/5 [00:04&lt;00:00,  1.06s/it]
+epoch 0:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch 0:  20%|██        | 1/5 [00:00&lt;00:01,  2.02it/s]
+epoch 0:  40%|████      | 2/5 [00:00&lt;00:01,  2.05it/s]
+epoch 0:  60%|██████    | 3/5 [00:01&lt;00:00,  2.09it/s]
+epoch 0:  80%|████████  | 4/5 [00:01&lt;00:00,  2.13it/s]
+epoch 0: 100%|██████████| 5/5 [00:01&lt;00:00,  2.77it/s]
 
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|██        | 1/5 [00:01&lt;00:07,  1.87s/it]
-epoch:  40%|████      | 2/5 [00:02&lt;00:04,  1.47s/it]
-epoch:  60%|██████    | 3/5 [00:02&lt;00:02,  1.20s/it]
-epoch:  80%|████████  | 4/5 [00:03&lt;00:01,  1.00s/it]
-epoch: 100%|██████████| 5/5 [00:03&lt;00:00,  1.35it/s]
+epoch 1:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch 1:  20%|██        | 1/5 [00:00&lt;00:01,  2.20it/s]
+epoch 1:  40%|████      | 2/5 [00:00&lt;00:01,  2.20it/s]
+epoch 1:  60%|██████    | 3/5 [00:01&lt;00:00,  2.16it/s]
+epoch 1:  80%|████████  | 4/5 [00:01&lt;00:00,  2.17it/s]
+epoch 1: 100%|██████████| 5/5 [00:01&lt;00:00,  2.77it/s]
 
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|██        | 1/5 [00:01&lt;00:07,  1.90s/it]
-epoch:  40%|████      | 2/5 [00:02&lt;00:04,  1.50s/it]
-epoch:  60%|██████    | 3/5 [00:02&lt;00:02,  1.21s/it]
-epoch:  80%|████████  | 4/5 [00:03&lt;00:01,  1.01s/it]
-epoch: 100%|██████████| 5/5 [00:03&lt;00:00,  1.33it/s]
+epoch 2:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch 2:  20%|██        | 1/5 [00:00&lt;00:01,  2.16it/s]
+epoch 2:  40%|████      | 2/5 [00:00&lt;00:01,  2.12it/s]
+epoch 2:  60%|██████    | 3/5 [00:01&lt;00:00,  2.08it/s]
+epoch 2:  80%|████████  | 4/5 [00:01&lt;00:00,  2.05it/s]
+epoch 2: 100%|██████████| 5/5 [00:02&lt;00:00,  2.65it/s]
 
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|██        | 1/5 [00:01&lt;00:07,  1.93s/it]
-epoch:  40%|████      | 2/5 [00:02&lt;00:04,  1.51s/it]
-epoch:  60%|██████    | 3/5 [00:03&lt;00:02,  1.23s/it]
-epoch:  80%|████████  | 4/5 [00:03&lt;00:01,  1.03s/it]
-epoch: 100%|██████████| 5/5 [00:03&lt;00:00,  1.31it/s]
+epoch 3:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch 3:  20%|██        | 1/5 [00:00&lt;00:01,  2.17it/s]
+epoch 3:  40%|████      | 2/5 [00:00&lt;00:01,  2.16it/s]
+epoch 3:  60%|██████    | 3/5 [00:01&lt;00:00,  2.14it/s]
+epoch 3:  80%|████████  | 4/5 [00:01&lt;00:00,  2.17it/s]
+epoch 3: 100%|██████████| 5/5 [00:01&lt;00:00,  2.79it/s]
 
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|██        | 1/5 [00:01&lt;00:07,  1.87s/it]
-epoch:  40%|████      | 2/5 [00:02&lt;00:04,  1.48s/it]
-epoch:  60%|██████    | 3/5 [00:02&lt;00:02,  1.20s/it]
-epoch:  80%|████████  | 4/5 [00:03&lt;00:01,  1.01s/it]
-epoch: 100%|██████████| 5/5 [00:03&lt;00:00,  1.33it/s]
+epoch 4:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch 4:  20%|██        | 1/5 [00:00&lt;00:01,  2.08it/s]
+epoch 4:  40%|████      | 2/5 [00:00&lt;00:01,  2.09it/s]
+epoch 4:  60%|██████    | 3/5 [00:01&lt;00:00,  2.10it/s]
+epoch 4:  80%|████████  | 4/5 [00:01&lt;00:00,  2.10it/s]
+epoch 4: 100%|██████████| 5/5 [00:02&lt;00:00,  2.72it/s]
 
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|██        | 1/5 [00:01&lt;00:07,  1.90s/it]
-epoch:  40%|████      | 2/5 [00:02&lt;00:04,  1.50s/it]
-epoch:  60%|██████    | 3/5 [00:03&lt;00:02,  1.22s/it]
-epoch:  80%|████████  | 4/5 [00:03&lt;00:01,  1.03s/it]
-epoch: 100%|██████████| 5/5 [00:03&lt;00:00,  1.31it/s]
+epoch 5:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch 5:  20%|██        | 1/5 [00:00&lt;00:01,  2.22it/s]
+epoch 5:  40%|████      | 2/5 [00:00&lt;00:01,  2.14it/s]
+epoch 5:  60%|██████    | 3/5 [00:01&lt;00:00,  2.11it/s]
+epoch 5:  80%|████████  | 4/5 [00:01&lt;00:00,  2.08it/s]
+epoch 5: 100%|██████████| 5/5 [00:02&lt;00:00,  2.69it/s]
 
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|██        | 1/5 [00:01&lt;00:07,  1.88s/it]
-
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|██        | 1/5 [00:01&lt;00:07,  1.91s/it]
-epoch:  40%|████      | 2/5 [00:02&lt;00:04,  1.50s/it]
-epoch:  60%|██████    | 3/5 [00:03&lt;00:02,  1.22s/it]
-epoch:  80%|████████  | 4/5 [00:03&lt;00:01,  1.02s/it]
-epoch: 100%|██████████| 5/5 [00:03&lt;00:00,  1.32it/s]
-
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|██        | 1/5 [00:01&lt;00:07,  1.90s/it]
-epoch:  40%|████      | 2/5 [00:02&lt;00:04,  1.51s/it]
-epoch:  60%|██████    | 3/5 [00:03&lt;00:02,  1.23s/it]
-epoch:  80%|████████  | 4/5 [00:03&lt;00:01,  1.03s/it]
-epoch: 100%|██████████| 5/5 [00:03&lt;00:00,  1.31it/s]
-
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|██        | 1/5 [00:01&lt;00:07,  1.90s/it]
-epoch:  40%|████      | 2/5 [00:02&lt;00:04,  1.50s/it]
-epoch:  60%|██████    | 3/5 [00:03&lt;00:02,  1.22s/it]
-epoch:  80%|████████  | 4/5 [00:03&lt;00:01,  1.02s/it]
-epoch: 100%|██████████| 5/5 [00:03&lt;00:00,  1.32it/s]
-
-epoch:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch:  20%|██        | 1/5 [00:01&lt;00:07,  1.91s/it]
-epoch:  40%|████      | 2/5 [00:02&lt;00:04,  1.51s/it]
-epoch:  60%|██████    | 3/5 [00:03&lt;00:02,  1.23s/it]
-epoch:  80%|████████  | 4/5 [00:03&lt;00:01,  1.03s/it]
-epoch: 100%|██████████| 5/5 [00:03&lt;00:00,  1.31it/s]
+epoch 6:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch 6:  20%|██        | 1/5 [00:00&lt;00:01,  2.09it/s]
+epoch 6:  40%|████      | 2/5 [00:00&lt;00:01,  2.10it/s]
+epoch 6:  60%|██████    | 3/5 [00:01&lt;00:00,  2.08it/s]
+epoch 6:  80%|████████  | 4/5 [00:01&lt;00:00,  2.12it/s]
+epoch 6: 100%|██████████| 5/5 [00:02&lt;00:00,  2.73it/s]
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 1 minutes  12.228 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  33.460 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-neurochem-trainer-py">
 <div class="sphx-glr-download docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/9e8cebff36da2d6eb5a69d4d649315ea/neurochem_trainer.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">neurochem_trainer.py</span></code></a></p>
-</div>
+<a class="reference download internal" download="" href="../_downloads/9e8cebff36da2d6eb5a69d4d649315ea/neurochem_trainer.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">neurochem_trainer.py</span></code></a></div>
 <div class="sphx-glr-download docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/6afb5e9c1c8ea9d5c5ac689af8c57c0e/neurochem_trainer.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">neurochem_trainer.ipynb</span></code></a></p>
+<a class="reference download internal" download="" href="../_downloads/6afb5e9c1c8ea9d5c5ac689af8c57c0e/neurochem_trainer.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">neurochem_trainer.ipynb</span></code></a></div>
 </div>
-</div>
-<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
 
 

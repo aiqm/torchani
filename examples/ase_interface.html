@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 0.7 documentation</title>
+  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 0.8 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7
+                0.8
               </div>
             
           
@@ -97,6 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
 <li class="toctree-l1"><a class="reference internal" href="load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training_ignite.html">Train Your Own Neural Network Potential, Using PyTorch-Ignite</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
@@ -176,8 +177,8 @@
            <div itemprop="articleBody">
             
   <div class="sphx-glr-download-link-note admonition note">
-<p class="admonition-title">Note</p>
-<p>Click <a class="reference internal" href="#sphx-glr-download-examples-ase-interface-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+<p class="first admonition-title">Note</p>
+<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-ase-interface-py"><span class="std std-ref">here</span></a> to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="structure-minimization-and-constant-temperature-md-using-ase-interface">
 <span id="sphx-glr-examples-ase-interface-py"></span><h1>Structure minimization and constant temperature MD using ASE interface<a class="headerlink" href="#structure-minimization-and-constant-temperature-md-using-ase-interface" title="Permalink to this headline">¶</a></h1>
@@ -207,13 +208,13 @@ calculator.</p>
 </pre></div>
 </div>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
+<p class="first admonition-title">Note</p>
 <p>Regardless of the dtype you use in your model, when converting it to ASE
 calculator, it always automatically the dtype to <code class="docutils literal notranslate"><span class="pre">torch.float64</span></code>. The
 reason for this behavior is, at many cases, the rounding error is too
 large for structure minimization. If you insist on using
 <code class="docutils literal notranslate"><span class="pre">torch.float32</span></code>, do the following instead:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">calculator</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1ccx</span><span class="p">()</span><span class="o">.</span><span class="n">ase</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<div class="last highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">calculator</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1ccx</span><span class="p">()</span><span class="o">.</span><span class="n">ase</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -231,7 +232,7 @@ large for structure minimization. If you insist on using
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Begin minimizing...
       Step     Time          Energy         fmax
-BFGS:    0 19:10:16    -8311.226179        0.0000
+BFGS:    0 00:29:55    -8311.226179        0.0000
 </pre></div>
 </div>
 <p>Now create a callback function that print interesting physical quantities:</p>
@@ -259,28 +260,26 @@ coefficient to 0.02 atomic units.</p>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Beginning dynamics...
 Energy per atom: Epot = -1038.903eV  Ekin = 0.000eV (T=  0K)  Etot = -1038.903eV
-Energy per atom: Epot = -1038.886eV  Ekin = 0.011eV (T= 85K)  Etot = -1038.875eV
-Energy per atom: Epot = -1038.861eV  Ekin = 0.023eV (T=182K)  Etot = -1038.838eV
-Energy per atom: Epot = -1038.864eV  Ekin = 0.029eV (T=223K)  Etot = -1038.835eV
-Energy per atom: Epot = -1038.877eV  Ekin = 0.029eV (T=227K)  Etot = -1038.848eV
-Energy per atom: Epot = -1038.876eV  Ekin = 0.031eV (T=236K)  Etot = -1038.845eV
-Energy per atom: Epot = -1038.863eV  Ekin = 0.053eV (T=410K)  Etot = -1038.810eV
-Energy per atom: Epot = -1038.866eV  Ekin = 0.026eV (T=198K)  Etot = -1038.840eV
-Energy per atom: Epot = -1038.872eV  Ekin = 0.047eV (T=362K)  Etot = -1038.826eV
-Energy per atom: Epot = -1038.860eV  Ekin = 0.025eV (T=194K)  Etot = -1038.835eV
-Energy per atom: Epot = -1038.860eV  Ekin = 0.020eV (T=153K)  Etot = -1038.840eV
+Energy per atom: Epot = -1038.885eV  Ekin = 0.020eV (T=157K)  Etot = -1038.864eV
+Energy per atom: Epot = -1038.875eV  Ekin = 0.029eV (T=223K)  Etot = -1038.846eV
+Energy per atom: Epot = -1038.871eV  Ekin = 0.016eV (T=126K)  Etot = -1038.854eV
+Energy per atom: Epot = -1038.879eV  Ekin = 0.030eV (T=236K)  Etot = -1038.848eV
+Energy per atom: Epot = -1038.882eV  Ekin = 0.044eV (T=344K)  Etot = -1038.838eV
+Energy per atom: Epot = -1038.877eV  Ekin = 0.043eV (T=333K)  Etot = -1038.834eV
+Energy per atom: Epot = -1038.868eV  Ekin = 0.044eV (T=343K)  Etot = -1038.823eV
+Energy per atom: Epot = -1038.867eV  Ekin = 0.041eV (T=320K)  Etot = -1038.826eV
+Energy per atom: Epot = -1038.868eV  Ekin = 0.052eV (T=402K)  Etot = -1038.816eV
+Energy per atom: Epot = -1038.872eV  Ekin = 0.043eV (T=331K)  Etot = -1038.829eV
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 2 minutes  44.789 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 2 minutes  29.153 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-ase-interface-py">
 <div class="sphx-glr-download docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/93c3677ffa6b2842ce34153b0479a93a/ase_interface.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">ase_interface.py</span></code></a></p>
-</div>
+<a class="reference download internal" download="" href="../_downloads/93c3677ffa6b2842ce34153b0479a93a/ase_interface.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">ase_interface.py</span></code></a></div>
 <div class="sphx-glr-download docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/dde6824e0e523baeced914a8cca5387b/ase_interface.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">ase_interface.ipynb</span></code></a></p>
+<a class="reference download internal" download="" href="../_downloads/dde6824e0e523baeced914a8cca5387b/ase_interface.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">ase_interface.ipynb</span></code></a></div>
 </div>
-</div>
-<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
 
 

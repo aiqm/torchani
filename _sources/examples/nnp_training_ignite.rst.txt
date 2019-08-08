@@ -15,10 +15,12 @@ Train Your Own Neural Network Potential, Using PyTorch-Ignite
 We have seen how to train a neural network potential by manually writing
 training loop in :ref:`training-example`. TorchANI provide tools to work
 with PyTorch-Ignite to simplify the writing of training code. This tutorial
-shows how to use these tools to train a demo model.
+shows how to use these tools to train a demo model. The setup in this demo is
+not necessarily identical to NeuroChem.
 
 This tutorial assumes readers have read :ref:`training-example`.
-To begin with, let's first import the modules we will use:
+
+To begin with, let's first import the modules and setup devices we will use:
 
 
 .. code-block:: default
@@ -30,6 +32,9 @@ To begin with, let's first import the modules we will use:
     import os
     import ignite.contrib.handlers
     import torch.utils.tensorboard
+
+    # device to run the training
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 
@@ -49,8 +54,7 @@ Now let's setup training hyperparameters and dataset.
         path = os.path.dirname(os.path.realpath(__file__))
     except NameError:
         path = os.getcwd()
-    training_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
-    validation_path = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')  # noqa: E501
+    dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 
     # checkpoint file to save model when validation RMSE improves
     model_checkpoint = 'model.pt'
@@ -63,11 +67,8 @@ Now let's setup training hyperparameters and dataset.
     # check the training RMSE to see overfitting.
     training_rmse_every = 5
 
-    # device to run the training
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
     # batch size
-    batch_size = 1024
+    batch_size = 2560
 
     # log directory for tensorboard
     log = 'runs'
@@ -86,10 +87,9 @@ here we will load them from files.
 .. code-block:: default
 
     const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
-    sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')  # noqa: E501
     consts = torchani.neurochem.Constants(const_file)
     aev_computer = torchani.AEVComputer(**consts)
-    energy_shifter = torchani.neurochem.load_sae(sae_file)
+    energy_shifter = torchani.utils.EnergyShifter(None)
 
 
 
@@ -170,6 +170,7 @@ size of neural network for all atom types, but this is not necessary.
     )
 
 
+
 If checkpoint from previous training exists, then load it.
 
 
@@ -217,13 +218,9 @@ Now load training and validation datasets into memory.
 
 .. code-block:: default
 
-    training = torchani.data.BatchedANIDataset(
-        training_path, consts.species_to_tensor, batch_size, device=device,
-        transform=[energy_shifter.subtract_from_dataset])
-
-    validation = torchani.data.BatchedANIDataset(
-        validation_path, consts.species_to_tensor, batch_size, device=device,
-        transform=[energy_shifter.subtract_from_dataset])
+    training, validation = torchani.data.load_ani_dataset(
+        dspath, consts.species_to_tensor, batch_size, device=device,
+        transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
 
 
 
@@ -356,12 +353,19 @@ And finally, we are ready to run:
 
 
 
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    [0/4]   0%|           [00:00<?]    Epoch [1/20]: [0/4]   0%|           [00:00<?]    Epoch [1/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [1/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [1/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [1/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [1/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [1/20]: [4/4] 100%|########## [00:01<00:00]                                                     [0/4]   0%|           [00:00<?]    Epoch [2/20]: [0/4]   0%|           [00:00<?]    Epoch [2/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [2/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [2/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [2/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [2/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [2/20]: [4/4] 100%|########## [00:01<00:00]                                                     [0/4]   0%|           [00:00<?]    Epoch [3/20]: [0/4]   0%|           [00:00<?]    Epoch [3/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [3/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [3/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [3/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [3/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [3/20]: [4/4] 100%|########## [00:01<00:00]                                                     [0/4]   0%|           [00:00<?]    Epoch [4/20]: [0/4]   0%|           [00:00<?]    Epoch [4/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [4/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [4/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [4/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [4/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [4/20]: [4/4] 100%|########## [00:01<00:00]                                                     [0/4]   0%|           [00:00<?]    Epoch [5/20]: [0/4]   0%|           [00:00<?]    Epoch [5/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [5/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [5/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [5/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [5/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [5/20]: [4/4] 100%|########## [00:01<00:00]                                                     [0/4]   0%|           [00:00<?]    Epoch [6/20]: [0/4]   0%|           [00:00<?]    Epoch [6/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [6/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [6/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [6/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [6/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [6/20]: [4/4] 100%|########## [00:01<00:00]                                                     [0/4]   0%|           [00:00<?]    Epoch [7/20]: [0/4]   0%|           [00:00<?]    Epoch [7/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [7/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [7/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [7/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [7/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [7/20]: [4/4] 100%|########## [00:01<00:00]                                                     [0/4]   0%|           [00:00<?]    Epoch [8/20]: [0/4]   0%|           [00:00<?]    Epoch [8/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [8/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [8/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [8/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [8/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [8/20]: [4/4] 100%|########## [00:01<00:00]                                                     [0/4]   0%|           [00:00<?]    Epoch [9/20]: [0/4]   0%|           [00:00<?]    Epoch [9/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [9/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [9/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [9/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [9/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [9/20]: [4/4] 100%|########## [00:01<00:00]                                                     [0/4]   0%|           [00:00<?]    Epoch [10/20]: [0/4]   0%|           [00:00<?]    Epoch [10/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [10/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [10/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [10/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [10/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [10/20]: [4/4] 100%|########## [00:01<00:00]                                                      [0/4]   0%|           [00:00<?]    Epoch [11/20]: [0/4]   0%|           [00:00<?]    Epoch [11/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [11/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [11/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [11/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [11/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [11/20]: [4/4] 100%|########## [00:01<00:00]                                                      [0/4]   0%|           [00:00<?]    Epoch [12/20]: [0/4]   0%|           [00:00<?]    Epoch [12/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [12/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [12/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [12/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [12/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [12/20]: [4/4] 100%|########## [00:01<00:00]                                                      [0/4]   0%|           [00:00<?]    Epoch [13/20]: [0/4]   0%|           [00:00<?]    Epoch [13/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [13/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [13/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [13/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [13/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [13/20]: [4/4] 100%|########## [00:01<00:00]                                                      [0/4]   0%|           [00:00<?]    Epoch [14/20]: [0/4]   0%|           [00:00<?]    Epoch [14/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [14/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [14/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [14/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [14/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [14/20]: [4/4] 100%|########## [00:01<00:00]                                                      [0/4]   0%|           [00:00<?]    Epoch [15/20]: [0/4]   0%|           [00:00<?]    Epoch [15/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [15/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [15/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [15/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [15/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [15/20]: [4/4] 100%|########## [00:01<00:00]                                                      [0/4]   0%|           [00:00<?]    Epoch [16/20]: [0/4]   0%|           [00:00<?]    Epoch [16/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [16/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [16/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [16/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [16/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [16/20]: [4/4] 100%|########## [00:01<00:00]                                                      [0/4]   0%|           [00:00<?]    Epoch [17/20]: [0/4]   0%|           [00:00<?]    Epoch [17/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [17/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [17/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [17/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [17/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [17/20]: [4/4] 100%|########## [00:01<00:00]                                                      [0/4]   0%|           [00:00<?]    Epoch [18/20]: [0/4]   0%|           [00:00<?]    Epoch [18/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [18/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [18/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [18/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [18/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [18/20]: [4/4] 100%|########## [00:01<00:00]                                                      [0/4]   0%|           [00:00<?]    Epoch [19/20]: [0/4]   0%|           [00:00<?]    Epoch [19/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [19/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [19/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [19/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [19/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [19/20]: [4/4] 100%|########## [00:01<00:00]                                                      [0/4]   0%|           [00:00<?]    Epoch [20/20]: [0/4]   0%|           [00:00<?]    Epoch [20/20]: [1/4]  25%|##5        [00:00<00:01]    Epoch [20/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [20/20]: [2/4]  50%|#####      [00:00<00:00]    Epoch [20/20]: [3/4]  75%|#######5   [00:00<00:00]    Epoch [20/20]: [3/4]  75%|#######5   [00:01<00:00]    Epoch [20/20]: [4/4] 100%|########## [00:01<00:00]                                                  
 
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 1 minutes  18.943 seconds)
+   **Total running time of the script:** ( 0 minutes  37.703 seconds)
 
 
 .. _sphx_glr_download_examples_nnp_training_ignite.py:
@@ -389,4 +393,4 @@ And finally, we are ready to run:
 
  .. rst-class:: sphx-glr-signature
 
-    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.readthedocs.io>`_
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.github.io>`_

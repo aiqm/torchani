@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Train Your Own Neural Network Potential, Using PyTorch-Ignite &mdash; TorchANI 0.7 documentation</title>
+  <title>Train Your Own Neural Network Potential, Using PyTorch-Ignite &mdash; TorchANI 0.8 documentation</title>
   
 
   
@@ -38,7 +38,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Use Disk Cache of AEV to Boost Training" href="cache_aev.html" />
-    <link rel="prev" title="Train Your Own Neural Network Potential" href="nnp_training.html" /> 
+    <link rel="prev" title="Train Neural Network Potential To Both Energies and Forces" href="nnp_training_force.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.7
+                0.8
               </div>
             
           
@@ -97,6 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
 <li class="toctree-l1"><a class="reference internal" href="load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Train Your Own Neural Network Potential, Using PyTorch-Ignite</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
@@ -176,17 +177,18 @@
            <div itemprop="articleBody">
             
   <div class="sphx-glr-download-link-note admonition note">
-<p class="admonition-title">Note</p>
-<p>Click <a class="reference internal" href="#sphx-glr-download-examples-nnp-training-ignite-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+<p class="first admonition-title">Note</p>
+<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-nnp-training-ignite-py"><span class="std std-ref">here</span></a> to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="train-your-own-neural-network-potential-using-pytorch-ignite">
 <span id="training-example-ignite"></span><span id="sphx-glr-examples-nnp-training-ignite-py"></span><h1>Train Your Own Neural Network Potential, Using PyTorch-Ignite<a class="headerlink" href="#train-your-own-neural-network-potential-using-pytorch-ignite" title="Permalink to this headline">¶</a></h1>
 <p>We have seen how to train a neural network potential by manually writing
 training loop in <a class="reference internal" href="nnp_training.html#training-example"><span class="std std-ref">Train Your Own Neural Network Potential</span></a>. TorchANI provide tools to work
 with PyTorch-Ignite to simplify the writing of training code. This tutorial
-shows how to use these tools to train a demo model.</p>
-<p>This tutorial assumes readers have read <a class="reference internal" href="nnp_training.html#training-example"><span class="std std-ref">Train Your Own Neural Network Potential</span></a>.
-To begin with, let’s first import the modules we will use:</p>
+shows how to use these tools to train a demo model. The setup in this demo is
+not necessarily identical to NeuroChem.</p>
+<p>This tutorial assumes readers have read <a class="reference internal" href="nnp_training.html#training-example"><span class="std std-ref">Train Your Own Neural Network Potential</span></a>.</p>
+<p>To begin with, let’s first import the modules and setup devices we will use:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">ignite</span>
 <span class="kn">import</span> <span class="nn">torchani</span>
@@ -194,6 +196,9 @@ To begin with, let’s first import the modules we will use:</p>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">ignite.contrib.handlers</span>
 <span class="kn">import</span> <span class="nn">torch.utils.tensorboard</span>
+
+<span class="c1"># device to run the training</span>
+<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now let’s setup training hyperparameters and dataset.</p>
@@ -202,8 +207,7 @@ To begin with, let’s first import the modules we will use:</p>
     <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
 <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
-<span class="n">training_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
-<span class="n">validation_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+<span class="n">dspath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
 
 <span class="c1"># checkpoint file to save model when validation RMSE improves</span>
 <span class="n">model_checkpoint</span> <span class="o">=</span> <span class="s1">&#39;model.pt&#39;</span>
@@ -216,11 +220,8 @@ To begin with, let’s first import the modules we will use:</p>
 <span class="c1"># check the training RMSE to see overfitting.</span>
 <span class="n">training_rmse_every</span> <span class="o">=</span> <span class="mi">5</span>
 
-<span class="c1"># device to run the training</span>
-<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
-
 <span class="c1"># batch size</span>
-<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">2560</span>
 
 <span class="c1"># log directory for tensorboard</span>
 <span class="n">log</span> <span class="o">=</span> <span class="s1">&#39;runs&#39;</span>
@@ -229,10 +230,9 @@ To begin with, let’s first import the modules we will use:</p>
 <p>Instead of manually specifying hyperparameters as in <a class="reference internal" href="nnp_training.html#training-example"><span class="std std-ref">Train Your Own Neural Network Potential</span></a>,
 here we will load them from files.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">const_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
-<span class="n">sae_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/sae_linfit.dat&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
 <span class="n">consts</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">Constants</span><span class="p">(</span><span class="n">const_file</span><span class="p">)</span>
 <span class="n">aev_computer</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">AEVComputer</span><span class="p">(</span><span class="o">**</span><span class="n">consts</span><span class="p">)</span>
-<span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">load_sae</span><span class="p">(</span><span class="n">sae_file</span><span class="p">)</span>
+<span class="n">energy_shifter</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">EnergyShifter</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now let’s define atomic neural networks. Here in this demo, we use the same
@@ -311,13 +311,9 @@ size of neural network for all atom types, but this is not necessary.</p>
 </pre></div>
 </div>
 <p>Now load training and validation datasets into memory.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">training</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">BatchedANIDataset</span><span class="p">(</span>
-    <span class="n">training_path</span><span class="p">,</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
-    <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="n">energy_shifter</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">])</span>
-
-<span class="n">validation</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">BatchedANIDataset</span><span class="p">(</span>
-    <span class="n">validation_path</span><span class="p">,</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
-    <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="n">energy_shifter</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">])</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">training</span><span class="p">,</span> <span class="n">validation</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">load_ani_dataset</span><span class="p">(</span>
+    <span class="n">dspath</span><span class="p">,</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="n">energy_shifter</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">],</span> <span class="n">split</span><span class="o">=</span><span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>We have tools to deal with the chunking (see <a class="reference internal" href="nnp_training.html#training-example"><span class="std std-ref">Train Your Own Neural Network Potential</span></a>). These
@@ -389,16 +385,215 @@ tools can be used as follows:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">trainer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">training</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 1 minutes  18.943 seconds)</p>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[0/4]   0%|           [00:00&lt;?]
+Epoch [1/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [1/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [1/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [1/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [1/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [1/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [1/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [2/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [2/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [2/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [2/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [2/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [2/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [2/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [3/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [3/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [3/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [3/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [3/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [3/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [3/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [4/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [4/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [4/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [4/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [4/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [4/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [4/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [5/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [5/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [5/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [5/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [5/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [5/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [5/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [6/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [6/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [6/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [6/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [6/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [6/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [6/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [7/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [7/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [7/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [7/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [7/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [7/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [7/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [8/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [8/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [8/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [8/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [8/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [8/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [8/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [9/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [9/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [9/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [9/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [9/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [9/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [9/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [10/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [10/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [10/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [10/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [10/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [10/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [10/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [11/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [11/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [11/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [11/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [11/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [11/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [11/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [12/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [12/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [12/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [12/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [12/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [12/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [12/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [13/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [13/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [13/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [13/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [13/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [13/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [13/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [14/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [14/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [14/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [14/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [14/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [14/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [14/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [15/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [15/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [15/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [15/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [15/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [15/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [15/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [16/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [16/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [16/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [16/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [16/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [16/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [16/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [17/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [17/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [17/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [17/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [17/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [17/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [17/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [18/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [18/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [18/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [18/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [18/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [18/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [18/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [19/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [19/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [19/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [19/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [19/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [19/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [19/20]: [4/4] 100%|########## [00:01&lt;00:00]
+
+
+[0/4]   0%|           [00:00&lt;?]
+Epoch [20/20]: [0/4]   0%|           [00:00&lt;?]
+Epoch [20/20]: [1/4]  25%|##5        [00:00&lt;00:01]
+Epoch [20/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [20/20]: [2/4]  50%|#####      [00:00&lt;00:00]
+Epoch [20/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [20/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
+Epoch [20/20]: [4/4] 100%|########## [00:01&lt;00:00]
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  37.703 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-nnp-training-ignite-py">
 <div class="sphx-glr-download docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/ce4197e2126708abd8a04382ffe7d3f2/nnp_training_ignite.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">nnp_training_ignite.py</span></code></a></p>
-</div>
+<a class="reference download internal" download="" href="../_downloads/ce4197e2126708abd8a04382ffe7d3f2/nnp_training_ignite.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">nnp_training_ignite.py</span></code></a></div>
 <div class="sphx-glr-download docutils container">
-<p><a class="reference download internal" download="" href="../_downloads/12fa464dd5bf1be214f2f1b616f822ab/nnp_training_ignite.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">nnp_training_ignite.ipynb</span></code></a></p>
+<a class="reference download internal" download="" href="../_downloads/12fa464dd5bf1be214f2f1b616f822ab/nnp_training_ignite.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">nnp_training_ignite.ipynb</span></code></a></div>
 </div>
-</div>
-<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.readthedocs.io">Gallery generated by Sphinx-Gallery</a></p>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>
 
 
@@ -412,7 +607,7 @@ tools can be used as follows:</p>
         <a href="cache_aev.html" class="btn btn-neutral float-right" title="Use Disk Cache of AEV to Boost Training" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="nnp_training.html" class="btn btn-neutral float-left" title="Train Your Own Neural Network Potential" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="nnp_training_force.html" class="btn btn-neutral float-left" title="Train Neural Network Potential To Both Energies and Forces" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

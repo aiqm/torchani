@@ -14,6 +14,7 @@ Train Neural Network Potential From NeuroChem Input File
 
 This example shows how to use TorchANI's NeuroChem trainer to read and run
 NeuroChem's training config file to train a neural network potential.
+
 To begin with, let's first import the modules we will use:
 
 
@@ -75,6 +76,14 @@ We also need to set the device to run the training:
 
 
 
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    WARNING:root:This caffe2 python run does not have GPU support. Will run in CPU only mode.
+
 
 
 Once everything is set up, running NeuroChem is very easy. We simplify need a
@@ -115,15 +124,9 @@ Now, let's go!
 
  .. code-block:: none
 
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|##        | 1/5 [00:03<00:12,  3.20s/it]    epoch:  40%|####      | 2/5 [00:03<00:07,  2.40s/it]    epoch:  60%|######    | 3/5 [00:04<00:03,  1.85s/it]    epoch:  80%|########  | 4/5 [00:04<00:01,  1.46s/it]    epoch: 100%|##########| 5/5 [00:05<00:00,  1.07s/it]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|##        | 1/5 [00:01<00:07,  1.86s/it]    epoch:  40%|####      | 2/5 [00:02<00:04,  1.47s/it]    epoch:  60%|######    | 3/5 [00:02<00:02,  1.19s/it]    epoch:  80%|########  | 4/5 [00:03<00:01,  1.00s/it]    epoch: 100%|##########| 5/5 [00:03<00:00,  1.34it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|##        | 1/5 [00:01<00:07,  1.83s/it]    epoch:  40%|####      | 2/5 [00:02<00:04,  1.45s/it]    epoch:  60%|######    | 3/5 [00:02<00:02,  1.18s/it]    epoch:  80%|########  | 4/5 [00:03<00:00,  1.00it/s]    epoch: 100%|##########| 5/5 [00:03<00:00,  1.35it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|##        | 1/5 [00:01<00:07,  1.86s/it]    epoch:  40%|####      | 2/5 [00:02<00:04,  1.47s/it]    epoch:  60%|######    | 3/5 [00:02<00:02,  1.20s/it]    epoch:  80%|########  | 4/5 [00:03<00:01,  1.00s/it]    epoch: 100%|##########| 5/5 [00:03<00:00,  1.34it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|##        | 1/5 [00:01<00:07,  1.86s/it]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|##        | 1/5 [00:01<00:07,  1.86s/it]    epoch:  40%|####      | 2/5 [00:02<00:04,  1.47s/it]    epoch:  60%|######    | 3/5 [00:03<00:02,  1.20s/it]    epoch:  80%|########  | 4/5 [00:03<00:01,  1.01s/it]    epoch: 100%|##########| 5/5 [00:03<00:00,  1.33it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|##        | 1/5 [00:01<00:07,  1.87s/it]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|##        | 1/5 [00:01<00:07,  1.91s/it]    epoch:  40%|####      | 2/5 [00:02<00:04,  1.50s/it]    epoch:  60%|######    | 3/5 [00:03<00:02,  1.22s/it]    epoch:  80%|########  | 4/5 [00:03<00:01,  1.02s/it]    epoch: 100%|##########| 5/5 [00:03<00:00,  1.32it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|##        | 1/5 [00:01<00:07,  1.83s/it]
+    epoch 0:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 0:  20%|##        | 1/5 [00:00<00:01,  2.09it/s]    epoch 0:  40%|####      | 2/5 [00:00<00:01,  2.14it/s]    epoch 0:  60%|######    | 3/5 [00:01<00:00,  2.17it/s]    epoch 0:  80%|########  | 4/5 [00:01<00:00,  2.18it/s]    epoch 0: 100%|##########| 5/5 [00:01<00:00,  2.83it/s]
+    epoch 1:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 1:  20%|##        | 1/5 [00:00<00:01,  2.07it/s]    epoch 1:  40%|####      | 2/5 [00:00<00:01,  2.07it/s]    epoch 1:  60%|######    | 3/5 [00:01<00:00,  2.10it/s]    epoch 1:  80%|########  | 4/5 [00:01<00:00,  2.11it/s]    epoch 1: 100%|##########| 5/5 [00:02<00:00,  2.72it/s]
+
 
 
 Alternatively, you can run NeuroChem trainer directly using command line.
@@ -152,6 +155,7 @@ equivalent command is:
     python -m torchani.neurochem.trainer -d cpu --tqdm --tensorboard runs /home/vsts/work/1/s/examples/../tests/test_data/inputtrain.ipt /home/vsts/work/1/s/examples/../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5 /home/vsts/work/1/s/examples/../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5
 
 
+
 Now let's invoke this command to see what we get. Again, we redirect stderr
 to stdout simplify for sphinx-gallery to be able to capture it when
 generating this document:
@@ -172,31 +176,21 @@ generating this document:
  .. code-block:: none
 
     WARNING:root:This caffe2 python run does not have GPU support. Will run in CPU only mode.
-    /opt/hostedtoolcache/Python/3.7.2/x64/lib/python3.7/site-packages/torchani/neurochem/__init__.py:644: UserWarning: 
-    Currently TorchANI training with weight decay can not reproduce the training
-    result of NeuroChem with the same training setup. If you really want to use
-    weight decay, consider smaller rates and and make sure you do enough validation
-    to check if you get expected result.
-      to check if you get expected result."""))
-    /opt/hostedtoolcache/Python/3.7.2/x64/lib/python3.7/site-packages/h5py/_hl/dataset.py:313: H5pyDeprecationWarning: dataset.value has been deprecated. Use dataset[()] instead.
-      "Use dataset[()] instead.", H5pyDeprecationWarning)
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|██        | 1/5 [00:03<00:12,  3.16s/it]    epoch:  40%|████      | 2/5 [00:03<00:07,  2.38s/it]    epoch:  60%|██████    | 3/5 [00:04<00:03,  1.83s/it]    epoch:  80%|████████  | 4/5 [00:04<00:01,  1.45s/it]    epoch: 100%|██████████| 5/5 [00:04<00:00,  1.06s/it]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|██        | 1/5 [00:01<00:07,  1.87s/it]    epoch:  40%|████      | 2/5 [00:02<00:04,  1.47s/it]    epoch:  60%|██████    | 3/5 [00:02<00:02,  1.20s/it]    epoch:  80%|████████  | 4/5 [00:03<00:01,  1.00s/it]    epoch: 100%|██████████| 5/5 [00:03<00:00,  1.35it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|██        | 1/5 [00:01<00:07,  1.90s/it]    epoch:  40%|████      | 2/5 [00:02<00:04,  1.50s/it]    epoch:  60%|██████    | 3/5 [00:02<00:02,  1.21s/it]    epoch:  80%|████████  | 4/5 [00:03<00:01,  1.01s/it]    epoch: 100%|██████████| 5/5 [00:03<00:00,  1.33it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|██        | 1/5 [00:01<00:07,  1.93s/it]    epoch:  40%|████      | 2/5 [00:02<00:04,  1.51s/it]    epoch:  60%|██████    | 3/5 [00:03<00:02,  1.23s/it]    epoch:  80%|████████  | 4/5 [00:03<00:01,  1.03s/it]    epoch: 100%|██████████| 5/5 [00:03<00:00,  1.31it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|██        | 1/5 [00:01<00:07,  1.87s/it]    epoch:  40%|████      | 2/5 [00:02<00:04,  1.48s/it]    epoch:  60%|██████    | 3/5 [00:02<00:02,  1.20s/it]    epoch:  80%|████████  | 4/5 [00:03<00:01,  1.01s/it]    epoch: 100%|██████████| 5/5 [00:03<00:00,  1.33it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|██        | 1/5 [00:01<00:07,  1.90s/it]    epoch:  40%|████      | 2/5 [00:02<00:04,  1.50s/it]    epoch:  60%|██████    | 3/5 [00:03<00:02,  1.22s/it]    epoch:  80%|████████  | 4/5 [00:03<00:01,  1.03s/it]    epoch: 100%|██████████| 5/5 [00:03<00:00,  1.31it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|██        | 1/5 [00:01<00:07,  1.88s/it]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|██        | 1/5 [00:01<00:07,  1.91s/it]    epoch:  40%|████      | 2/5 [00:02<00:04,  1.50s/it]    epoch:  60%|██████    | 3/5 [00:03<00:02,  1.22s/it]    epoch:  80%|████████  | 4/5 [00:03<00:01,  1.02s/it]    epoch: 100%|██████████| 5/5 [00:03<00:00,  1.32it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|██        | 1/5 [00:01<00:07,  1.90s/it]    epoch:  40%|████      | 2/5 [00:02<00:04,  1.51s/it]    epoch:  60%|██████    | 3/5 [00:03<00:02,  1.23s/it]    epoch:  80%|████████  | 4/5 [00:03<00:01,  1.03s/it]    epoch: 100%|██████████| 5/5 [00:03<00:00,  1.31it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|██        | 1/5 [00:01<00:07,  1.90s/it]    epoch:  40%|████      | 2/5 [00:02<00:04,  1.50s/it]    epoch:  60%|██████    | 3/5 [00:03<00:02,  1.22s/it]    epoch:  80%|████████  | 4/5 [00:03<00:01,  1.02s/it]    epoch: 100%|██████████| 5/5 [00:03<00:00,  1.32it/s]
-    epoch:   0%|          | 0/5 [00:00<?, ?it/s]    epoch:  20%|██        | 1/5 [00:01<00:07,  1.91s/it]    epoch:  40%|████      | 2/5 [00:02<00:04,  1.51s/it]    epoch:  60%|██████    | 3/5 [00:03<00:02,  1.23s/it]    epoch:  80%|████████  | 4/5 [00:03<00:01,  1.03s/it]    epoch: 100%|██████████| 5/5 [00:03<00:00,  1.31it/s]
+    epoch 0:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 0:  20%|██        | 1/5 [00:00<00:01,  2.02it/s]    epoch 0:  40%|████      | 2/5 [00:00<00:01,  2.05it/s]    epoch 0:  60%|██████    | 3/5 [00:01<00:00,  2.09it/s]    epoch 0:  80%|████████  | 4/5 [00:01<00:00,  2.13it/s]    epoch 0: 100%|██████████| 5/5 [00:01<00:00,  2.77it/s]
+    epoch 1:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 1:  20%|██        | 1/5 [00:00<00:01,  2.20it/s]    epoch 1:  40%|████      | 2/5 [00:00<00:01,  2.20it/s]    epoch 1:  60%|██████    | 3/5 [00:01<00:00,  2.16it/s]    epoch 1:  80%|████████  | 4/5 [00:01<00:00,  2.17it/s]    epoch 1: 100%|██████████| 5/5 [00:01<00:00,  2.77it/s]
+    epoch 2:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 2:  20%|██        | 1/5 [00:00<00:01,  2.16it/s]    epoch 2:  40%|████      | 2/5 [00:00<00:01,  2.12it/s]    epoch 2:  60%|██████    | 3/5 [00:01<00:00,  2.08it/s]    epoch 2:  80%|████████  | 4/5 [00:01<00:00,  2.05it/s]    epoch 2: 100%|██████████| 5/5 [00:02<00:00,  2.65it/s]
+    epoch 3:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 3:  20%|██        | 1/5 [00:00<00:01,  2.17it/s]    epoch 3:  40%|████      | 2/5 [00:00<00:01,  2.16it/s]    epoch 3:  60%|██████    | 3/5 [00:01<00:00,  2.14it/s]    epoch 3:  80%|████████  | 4/5 [00:01<00:00,  2.17it/s]    epoch 3: 100%|██████████| 5/5 [00:01<00:00,  2.79it/s]
+    epoch 4:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 4:  20%|██        | 1/5 [00:00<00:01,  2.08it/s]    epoch 4:  40%|████      | 2/5 [00:00<00:01,  2.09it/s]    epoch 4:  60%|██████    | 3/5 [00:01<00:00,  2.10it/s]    epoch 4:  80%|████████  | 4/5 [00:01<00:00,  2.10it/s]    epoch 4: 100%|██████████| 5/5 [00:02<00:00,  2.72it/s]
+    epoch 5:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 5:  20%|██        | 1/5 [00:00<00:01,  2.22it/s]    epoch 5:  40%|████      | 2/5 [00:00<00:01,  2.14it/s]    epoch 5:  60%|██████    | 3/5 [00:01<00:00,  2.11it/s]    epoch 5:  80%|████████  | 4/5 [00:01<00:00,  2.08it/s]    epoch 5: 100%|██████████| 5/5 [00:02<00:00,  2.69it/s]
+    epoch 6:   0%|          | 0/5 [00:00<?, ?it/s]    epoch 6:  20%|██        | 1/5 [00:00<00:01,  2.09it/s]    epoch 6:  40%|████      | 2/5 [00:00<00:01,  2.10it/s]    epoch 6:  60%|██████    | 3/5 [00:01<00:00,  2.08it/s]    epoch 6:  80%|████████  | 4/5 [00:01<00:00,  2.12it/s]    epoch 6: 100%|██████████| 5/5 [00:02<00:00,  2.73it/s]
+
+
 
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 1 minutes  12.228 seconds)
+   **Total running time of the script:** ( 0 minutes  33.460 seconds)
 
 
 .. _sphx_glr_download_examples_neurochem_trainer.py:
@@ -224,4 +218,4 @@ generating this document:
 
  .. rst-class:: sphx-glr-signature
 
-    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.readthedocs.io>`_
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.github.io>`_

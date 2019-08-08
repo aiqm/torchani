@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; TorchANI 0.7 documentation</title>
+  <title>Index &mdash; TorchANI 0.8 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.7
+                0.8
               </div>
             
           
@@ -96,6 +96,7 @@
 <li class="toctree-l1"><a class="reference internal" href="examples/vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/nnp_training_ignite.html">Train Your Own Neural Network Potential, Using PyTorch-Ignite</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
@@ -198,14 +199,12 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#torchani.optim.AdamW">AdamW (class in torchani.optim)</a>
 </li>
-      <li><a href="api.html#torchani.neurochem.Builtins.aev_computer">aev_computer (torchani.neurochem.Builtins attribute)</a>
-</li>
       <li><a href="api.html#torchani.data.AEVCacheLoader">AEVCacheLoader (class in torchani.data)</a>
+</li>
+      <li><a href="api.html#torchani.AEVComputer">AEVComputer (class in torchani)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.AEVComputer">AEVComputer (class in torchani)</a>
-</li>
       <li><a href="api.html#torchani.models.ANI1ccx">ANI1ccx (class in torchani.models)</a>
 </li>
       <li><a href="api.html#torchani.models.ANI1x">ANI1x (class in torchani.models)</a>
@@ -221,10 +220,6 @@
       <li><a href="api.html#torchani.data.BatchedANIDataset">BatchedANIDataset (class in torchani.data)</a>
 </li>
   </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.neurochem.Builtins">Builtins (class in torchani.neurochem)</a>
-</li>
-  </ul></td>
 </tr></table>
 
 <h2 id="C">C</h2>
@@ -234,15 +229,13 @@
 </li>
       <li><a href="api.html#torchani.utils.ChemicalSymbolsToInts">ChemicalSymbolsToInts (class in torchani.utils)</a>
 </li>
-      <li><a href="api.html#torchani.neurochem.Builtins.const_file">const_file (torchani.neurochem.Builtins attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#torchani.neurochem.Constants">Constants (class in torchani.neurochem)</a>
 </li>
-      <li><a href="api.html#torchani.neurochem.Builtins.consts">consts (torchani.neurochem.Builtins attribute)</a>
-</li>
       <li><a href="api.html#torchani.ignite.Container">Container (class in torchani.ignite)</a>
+</li>
+      <li><a href="api.html#torchani.data.create_aev_cache">create_aev_cache() (in module torchani.data)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -262,17 +255,11 @@
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.neurochem.Builtins.energy_shifter">energy_shifter (torchani.neurochem.Builtins attribute)</a>
-</li>
       <li><a href="api.html#torchani.EnergyShifter">EnergyShifter (class in torchani)</a>
-</li>
-      <li><a href="api.html#torchani.Ensemble">Ensemble (class in torchani)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.neurochem.Builtins.ensemble_prefix">ensemble_prefix (torchani.neurochem.Builtins attribute)</a>
-</li>
-      <li><a href="api.html#torchani.neurochem.Builtins.ensemble_size">ensemble_size (torchani.neurochem.Builtins attribute)</a>
+      <li><a href="api.html#torchani.Ensemble">Ensemble (class in torchani)</a>
 </li>
       <li><a href="api.html#torchani.neurochem.Trainer.evaluate">evaluate() (torchani.neurochem.Trainer method)</a>
 </li>
@@ -312,6 +299,8 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#torchani.data.load_ani_dataset">load_ani_dataset() (in module torchani.data)</a>
+</li>
       <li><a href="api.html#torchani.neurochem.load_atomic_network">load_atomic_network() (in module torchani.neurochem)</a>
 </li>
       <li><a href="api.html#torchani.neurochem.Trainer.load_data">load_data() (torchani.neurochem.Trainer method)</a>
@@ -332,11 +321,9 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#torchani.utils.map2central">map2central() (in module torchani.utils)</a>
 </li>
-      <li><a href="api.html#torchani.ignite.MaxAEMetric">MaxAEMetric() (in module torchani.ignite)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.neurochem.Builtins.models">models (torchani.neurochem.Builtins attribute)</a>
+      <li><a href="api.html#torchani.ignite.MaxAEMetric">MaxAEMetric() (in module torchani.ignite)</a>
 </li>
       <li><a href="api.html#torchani.ignite.MSELoss">MSELoss() (in module torchani.ignite)</a>
 </li>
@@ -348,7 +335,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#torchani.utils.pad">pad() (in module torchani.utils)</a>
 </li>
-      <li><a href="api.html#torchani.utils.pad_coordinates">pad_coordinates() (in module torchani.utils)</a>
+      <li><a href="api.html#torchani.utils.pad_atomic_properties">pad_atomic_properties() (in module torchani.utils)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -376,7 +363,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#torchani.EnergyShifter.sae">sae() (torchani.EnergyShifter method)</a>
 </li>
-      <li><a href="api.html#torchani.neurochem.Builtins.sae_file">sae_file (torchani.neurochem.Builtins attribute)</a>
+      <li><a href="api.html#torchani.EnergyShifter.sae_from_dataset">sae_from_dataset() (torchani.EnergyShifter method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
