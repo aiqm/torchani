@@ -1,3 +1,4 @@
+import torchani
 from torchani.data import new_data
 
 if __name__ == "__main__":
@@ -9,21 +10,21 @@ if __name__ == "__main__":
 
     if test1:
         print('1. test of shuffled dataset')
-        batch_size = 2000
-        shuffledataset = new_data.ShuffleDataset(dspath, batch_size=batch_size, num_workers=2)
+        batch_size = 2560
+        shuffledataset = new_data.ShuffleDataset(dspath, batch_size=batch_size, num_workers=2, test_bar_max=None)
 
         print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
 
         chunks, properties = iter(shuffledataset).next()
         for i, chunk in enumerate(chunks):
-            print('chunk{}'.format(i + 1), list(chunk[0].size()), list(chunk[1].size()), chunk[1].dtype)
+            print('chunk{}'.format(i + 1), list(chunk[0].size()), chunk[0].dtype, list(chunk[1].size()), chunk[1].dtype)
 
         for key, value in properties.items():
             print(key, list(value.size()))
 
-        pbar = new_data.Progressbar('=> loading and processing dataset into cpu memory, total '
-                                    + 'batches: {}, batch_size: {}'.format(len(shuffledataset), batch_size),
-                                    len(shuffledataset))
+        pbar = torchani.utils.Progressbar('=> loading and processing dataset into cpu memory, total '
+                                          + 'batches: {}, batch_size: {}'.format(len(shuffledataset), batch_size),
+                                          len(shuffledataset))
         for i, t in enumerate(shuffledataset):
             pbar.update(i)
         print()
@@ -32,9 +33,9 @@ if __name__ == "__main__":
         print('2. test of cached dataset\n')
         dataset = new_data.CacheDataset(dspath, batch_size=2000, device='cpu', bar=20, test_bar_max=None)
 
-        pbar = new_data.Progressbar('=> processing and caching dataset into cpu memory, total batches:'
-                                    + ' {}, batch_size: {}'.format(len(dataset), dataset.batch_size),
-                                    len(dataset))
+        pbar = torchani.utils.Progressbar('=> processing and caching dataset into cpu memory, total batches:'
+                                          + ' {}, batch_size: {}'.format(len(dataset), dataset.batch_size),
+                                          len(dataset))
         for i, d in enumerate(dataset):
             pbar.update(i)
         total_chunks = sum([len(d) for d in dataset])
@@ -45,6 +46,6 @@ if __name__ == "__main__":
         print('=> releasing h5 file memory, dataset is still cached')
         dataset.release_h5()
 
-        pbar = new_data.Progressbar('=> test of loading all cached dataset', len(dataset))
+        pbar = torchani.utils.Progressbar('=> test of loading all cached dataset', len(dataset))
         for i, d in enumerate(dataset):
             pbar.update(i)

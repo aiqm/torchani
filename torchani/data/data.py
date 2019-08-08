@@ -1,232 +1,8 @@
 import numpy as np
 import torch
 import functools
-import time
-import sys
 from ._pyanitools import anidataloader
-
-
-class Progbar(object):
-    """Displays a keras progress bar.
-    Arguments:
-            target: Total number of steps expected, None if unknown.
-            width: Progress bar width on screen.
-            verbose: Verbosity mode, 0 (silent), 1 (verbose), 2 (semi-verbose)
-            stateful_metrics: Iterable of string names of metrics that
-                    should *not* be averaged over time. Metrics in this list
-                    will be displayed as-is. All others will be averaged
-                    by the progbar before display.
-            interval: Minimum visual progress update interval (in seconds).
-            unit_name: Display name for step counts (usually "step" or "sample").
-    """
-
-    def __init__(self, target, width=30, verbose=1, interval=0.05,
-                 stateful_metrics=None, unit_name='step'):
-        self.target = target
-        self.width = width
-        self.verbose = verbose
-        self.interval = interval
-        self.unit_name = unit_name
-        if stateful_metrics:
-            self.stateful_metrics = set(stateful_metrics)
-        else:
-            self.stateful_metrics = set()
-
-        self._dynamic_display = ((hasattr(sys.stdout, 'isatty')
-                                  and sys.stdout.isatty())
-                                 or 'ipykernel' in sys.modules
-                                 or 'posix' in sys.modules)
-        self._total_width = 0
-        self._seen_so_far = 0
-        # We use a dict + list to avoid garbage collection
-        # issues found in OrderedDict
-        self._values = {}
-        self._values_order = []
-        self._start = time.time()
-        self._last_update = 0
-
-    def update(self, current, values=None):
-        """Updates the progress bar.
-        Arguments:
-                current: Index of current step.
-                values: List of tuples:
-                        `(name, value_for_last_step)`.
-                        If `name` is in `stateful_metrics`,
-                        `value_for_last_step` will be displayed as-is.
-                        Else, an average of the metric over time will be displayed.
-        """
-        values = values or []
-        for k, v in values:
-            if k not in self._values_order:
-                self._values_order.append(k)
-            if k not in self.stateful_metrics:
-                if k not in self._values:
-                    self._values[k] = [v * (current - self._seen_so_far),
-                                       current - self._seen_so_far]
-                else:
-                    self._values[k][0] += v * (current - self._seen_so_far)
-                    self._values[k][1] += (current - self._seen_so_far)
-            else:
-                # Stateful metrics output a numeric value. This representation
-                # means "take an average from a single value" but keeps the
-                # numeric formatting.
-                self._values[k] = [v, 1]
-        self._seen_so_far = current
-
-        now = time.time()
-        info = ' - %.0fs' % (now - self._start)
-        if self.verbose == 1:
-            if (now - self._last_update < self.interval
-                    and self.target is not None and current < self.target):
-                return
-
-            prev_total_width = self._total_width
-            if self._dynamic_display:
-                sys.stdout.write('\b' * prev_total_width)
-                sys.stdout.write('\r')
-            else:
-                sys.stdout.write('\n')
-
-            if self.target is not None:
-                numdigits = int(np.log10(self.target)) + 1
-                bar = ('%' + str(numdigits) + 'd/%d [') % (current, self.target)
-                prog = float(current) / self.target
-                prog_width = int(self.width * prog)
-                if prog_width > 0:
-                    bar += ('=' * (prog_width - 1))
-                    if current < self.target:
-                        bar += '>'
-                    else:
-                        bar += '='
-                bar += ('.' * (self.width - prog_width))
-                bar += ']'
-            else:
-                bar = '%7d/Unknown' % current
-
-            self._total_width = len(bar)
-            sys.stdout.write(bar)
-
-            if current:
-                time_per_unit = (now - self._start) / current
-            else:
-                time_per_unit = 0
-            if self.target is not None and current < self.target:
-                eta = time_per_unit * (self.target - current)
-                if eta > 3600:
-                    eta_format = '%d:%02d:%02d' % (eta // 3600,
-                                                   (eta % 3600) // 60,
-                                                   eta % 60)
-                elif eta > 60:
-                    eta_format = '%d:%02d' % (eta // 60, eta % 60)
-                else:
-                    eta_format = '%ds' % eta
-
-                info = ' - ETA: %s' % eta_format
-            else:
-                if time_per_unit >= 1 or time_per_unit == 0:
-                    info += ' %.0fs/%s' % (time_per_unit, self.unit_name)
-                elif time_per_unit >= 1e-3:
-                    info += ' %.0fms/%s' % (time_per_unit * 1e3, self.unit_name)
-                else:
-                    info += ' %.0fus/%s' % (time_per_unit * 1e6, self.unit_name)
-
-            for k in self._values_order:
-                info += ' - %s:' % k
-                if isinstance(self._values[k], list):
-                    avg = np.mean(self._values[k][0] / max(1, self._values[k][1]))
-                    if abs(avg) > 1e-3:
-                        info += ' %.4f' % avg
-                    else:
-                        info += ' %.4e' % avg
-                else:
-                    info += ' %s' % self._values[k]
-
-            self._total_width += len(info)
-            if prev_total_width > self._total_width:
-                info += (' ' * (prev_total_width - self._total_width))
-
-            if self.target is not None and current >= self.target:
-                info += '\n'
-
-            sys.stdout.write(info)
-            sys.stdout.flush()
-
-        elif self.verbose == 2:
-            if self.target is not None and current >= self.target:
-                numdigits = int(np.log10(self.target)) + 1
-                count = ('%' + str(numdigits) + 'd/%d') % (current, self.target)
-                info = count + info
-                for k in self._values_order:
-                    info += ' - %s:' % k
-                    avg = np.mean(self._values[k][0] / max(1, self._values[k][1]))
-                    if avg > 1e-3:
-                        info += ' %.4f' % avg
-                    else:
-                        info += ' %.4e' % avg
-                info += '\n'
-
-                sys.stdout.write(info)
-                sys.stdout.flush()
-
-        self._last_update = now
-
-    def add(self, n, values=None):
-        self.update(self._seen_so_far + n, values)
-
-
-class Progressbar(object):
-    """ Personal progress bar
-    Usage example
-    ```
-    pbar = ANI_D.utils.Progressbar('loading and processing dataset', 10)
-    import time
-    for i in range(10):
-        time.sleep(0.1)
-        pbar.update(i)
-    ```
-    """
-    def __init__(self, name, target):
-        self.name = name
-        self.target = target
-        self.start = time.time()
-        self.numdigits = int(np.log10(self.target)) + 1
-        self.width = 30
-        print(self.name)
-
-    def update(self, step):
-
-        bar = ('%' + str(self.numdigits) + 'd/%d ') % (step + 1, self.target)
-
-        status = ""
-
-        if step < 0:
-            step = 0
-            status = "negtive?...\r\n"
-
-        stop = time.time()
-
-        status = '- {:.1f}s'.format((stop - self.start))
-
-        progress = float(step + 1) / self.target
-
-        # prog
-        prog_width = int(self.width * progress)
-        prog = ''
-        if prog_width > 0:
-            prog += ('=' * (prog_width - 1))
-            if step + 1 < self.target:
-                prog += '>'
-            else:
-                prog += '='
-        prog += ('.' * (self.width - prog_width))
-
-        # text = "\r{0} {1} [{2}] {3:.0f}% {4}".format(self.name, bar, prog, pregress, status)
-
-        text = "\r{0} [{1}] {2}".format(bar, prog, status)
-        sys.stdout.write(text)
-        if step + 1 == self.target:
-            sys.stdout.write('\n')
-        sys.stdout.flush()
+from ..utils import Progressbar
 
 
 class CacheDataset(torch.utils.data.Dataset):
@@ -357,10 +133,28 @@ class CacheDataset(torch.utils.data.Dataset):
         gc.collect()
 
 
-def ShuffleDataset(file_path, batch_size=1000, bar=20, test_bar_max=None, num_workers=0, shuffle=True):
-    dataset = TorchData(file_path)
+def ShuffleDataset(file_path,
+                   species_order='HCNO',
+                   transform=True,
+                   self_energies=[-0.600953, -38.08316, -54.707756, -75.194466],
+                   batch_size=1000, num_workers=0, shuffle=True,
+                   bar=20, test_bar_max=None):
 
-    def my_collate_fn(data, bar=bar, test_bar_max=test_bar_max):
+    dataset = TorchData(file_path, species_order, transform, self_energies)
+
+    if test_bar_max:
+        def my_collate_fn(data, bar=bar, test_bar_max=test_bar_max):
+            return collate_fn(data, bar, test_bar_max)
+        data_loader = torch.utils.data.DataLoader(dataset=dataset,
+                                                  batch_size=batch_size,
+                                                  shuffle=shuffle,
+                                                  num_workers=0,
+                                                  pin_memory=False,
+                                                  collate_fn=my_collate_fn)
+        print('=> checking which bar should use (bar control how chunks will be splitted)')
+        chunks, properties = iter(data_loader).next()
+
+    def my_collate_fn(data, bar=bar, test_bar_max=None):
         return collate_fn(data, bar, test_bar_max)
 
     data_loader = torch.utils.data.DataLoader(dataset=dataset,
@@ -375,17 +169,22 @@ def ShuffleDataset(file_path, batch_size=1000, bar=20, test_bar_max=None, num_wo
 
 class TorchData(torch.utils.data.Dataset):
 
-    def __init__(self, file_path):
+    def __init__(self, file_path, species_order, transform, self_energies):
 
         super(TorchData, self).__init__()
 
-        species_dict = {'H': 0, 'C': 1, 'N': 2, 'O': 3}
-        self_energies_dict = {'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}
+        # species_dict = {'H': 0, 'C': 1, 'N': 2, 'O': 3}
+        # self_energies_dict = {'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}
+        species_dict = {}
+        self_energies_dict = {}
+        for i, s in enumerate(species_order):
+            species_dict[s] = i
+            self_energies_dict[s] = self_energies[i]
 
         self.data_species = []
         self.data_coordinates = []
         self.data_energies = []
-        self.self_energies = []
+        self.data_self_energies = []
 
         anidata = anidataloader(file_path)
         pbar = Progressbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata.group_size()), anidata.group_size())
@@ -396,13 +195,27 @@ class TorchData(torch.utils.data.Dataset):
             self.data_energies += list(molecule['energies'].reshape((-1, 1)))
             species = np.array([species_dict[x] for x in molecule['species']])
             self.data_species += list(np.tile(species, (num_conformations, 1)))
-            self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
-            self.self_energies += list(np.tile(self_energies, (num_conformations, 1)))
+            if transform:
+                self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
+                self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)))
             pbar.update(i)
 
-        self.data_energies = np.array(self.data_energies) - np.array(self.self_energies)
+        if transform:
+            self.data_energies = np.array(self.data_energies) - np.array(self.data_self_energies)
+            import gc
+            del self.data_self_energies
+            del self_energies
+            gc.collect()
+
         self.length = len(self.data_species)
         anidata.cleanup()
+
+        import gc
+        del num_conformations
+        del species
+        del anidata
+        del molecule
+        gc.collect()
 
     def __getitem__(self, index):
 
@@ -462,7 +275,7 @@ def collate_fn(data, bar, test_bar_max):
 
     # optimize bar, if test_bar_max is not None
     if test_bar_max:
-        print('format is [chunk_size, chunk_max]\n')
+        print('format is [chunk_size, chunk_max]')
         print('current bar = {}'.format(bar))
         size_max = []
         for i in range(len(chunk_size_list)):
@@ -476,7 +289,6 @@ def collate_fn(data, bar, test_bar_max):
             for i in range(len(test_chunk_size_list)):
                 size_max.append([list(test_chunk_size_list[i].numpy())[0],
                                  list(test_chunk_max_list[i].numpy())[0]])
-            print()
             print('bar = {}'.format(b))
             print(size_max)
 

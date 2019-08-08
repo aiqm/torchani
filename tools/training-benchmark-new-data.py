@@ -76,7 +76,7 @@ def hartree2kcal(x):
 mse = torch.nn.MSELoss(reduction='none')
 
 max_epochs = 2
-test1 = True
+test1 = False
 test2 = True
 
 if test1:
@@ -102,7 +102,7 @@ if test1:
     for epoch in range(0, max_epochs):
 
         print('Epoch: %d/%d' % (epoch, max_epochs))
-        progbar = new_data.Progbar(target=len(training) - 1, width=8)
+        progbar = torchani.utils.Progbar(target=len(training) - 1, width=8)
 
         for i, (batch_x, batch_y) in enumerate(training):
 
@@ -128,7 +128,7 @@ if test1:
 
 if test2:
     print('2. using shuffled dataset')
-    shuffledataset = new_data.ShuffleDataset(dspath, batch_size=batch_size, num_workers=2, bar=2)
+    shuffledataset = new_data.ShuffleDataset(dspath, batch_size=batch_size, num_workers=2, bar=20)
 
     print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
 
@@ -144,7 +144,7 @@ if test2:
         # rmse = validate()
 
         print('Epoch: %d/%d' % (epoch, max_epochs))
-        progbar = new_data.Progbar(target=len(shuffledataset) - 1, width=8)
+        progbar = torchani.utils.Progbar(target=len(shuffledataset) - 1, width=8)
 
         for i, (batch_x, batch_y) in enumerate(shuffledataset):
 
