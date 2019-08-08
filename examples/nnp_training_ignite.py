@@ -8,13 +8,14 @@ Train Your Own Neural Network Potential, Using PyTorch-Ignite
 We have seen how to train a neural network potential by manually writing
 training loop in :ref:`training-example`. TorchANI provide tools to work
 with PyTorch-Ignite to simplify the writing of training code. This tutorial
-shows how to use these tools to train a demo model.
+shows how to use these tools to train a demo model. The setup in this demo is
+not necessarily identical to NeuroChem.
 
 This tutorial assumes readers have read :ref:`training-example`.
 """
 
 ###############################################################################
-# To begin with, let's first import the modules we will use:
+# To begin with, let's first import the modules and setup devices we will use:
 import torch
 import ignite
 import torchani
@@ -22,6 +23,9 @@ import timeit
 import os
 import ignite.contrib.handlers
 import torch.utils.tensorboard
+
+# device to run the training
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 ###############################################################################
@@ -45,11 +49,8 @@ max_epochs = 20
 # check the training RMSE to see overfitting.
 training_rmse_every = 5
 
-# device to run the training
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 # batch size
-batch_size = 1024
+batch_size = 2560
 
 # log directory for tensorboard
 log = 'runs'
@@ -59,10 +60,9 @@ log = 'runs'
 # Instead of manually specifying hyperparameters as in :ref:`training-example`,
 # here we will load them from files.
 const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
-sae_file = os.path.join(path, '../torchani/resources/ani-1x_8x/sae_linfit.dat')  # noqa: E501
 consts = torchani.neurochem.Constants(const_file)
 aev_computer = torchani.AEVComputer(**consts)
-energy_shifter = torchani.neurochem.load_sae(sae_file)
+energy_shifter = torchani.utils.EnergyShifter(None)
 
 
 ###############################################################################
