@@ -3,7 +3,175 @@ import torch
 import functools
 import time
 import sys
-from _pyanitools import anidataloader
+from ._pyanitools import anidataloader
+
+
+class Progbar(object):
+    """Displays a keras progress bar.
+    Arguments:
+            target: Total number of steps expected, None if unknown.
+            width: Progress bar width on screen.
+            verbose: Verbosity mode, 0 (silent), 1 (verbose), 2 (semi-verbose)
+            stateful_metrics: Iterable of string names of metrics that
+                    should *not* be averaged over time. Metrics in this list
+                    will be displayed as-is. All others will be averaged
+                    by the progbar before display.
+            interval: Minimum visual progress update interval (in seconds).
+            unit_name: Display name for step counts (usually "step" or "sample").
+    """
+
+    def __init__(self, target, width=30, verbose=1, interval=0.05,
+                 stateful_metrics=None, unit_name='step'):
+        self.target = target
+        self.width = width
+        self.verbose = verbose
+        self.interval = interval
+        self.unit_name = unit_name
+        if stateful_metrics:
+            self.stateful_metrics = set(stateful_metrics)
+        else:
+            self.stateful_metrics = set()
+
+        self._dynamic_display = ((hasattr(sys.stdout, 'isatty')
+                                  and sys.stdout.isatty())
+                                 or 'ipykernel' in sys.modules
+                                 or 'posix' in sys.modules)
+        self._total_width = 0
+        self._seen_so_far = 0
+        # We use a dict + list to avoid garbage collection
+        # issues found in OrderedDict
+        self._values = {}
+        self._values_order = []
+        self._start = time.time()
+        self._last_update = 0
+
+    def update(self, current, values=None):
+        """Updates the progress bar.
+        Arguments:
+                current: Index of current step.
+                values: List of tuples:
+                        `(name, value_for_last_step)`.
+                        If `name` is in `stateful_metrics`,
+                        `value_for_last_step` will be displayed as-is.
+                        Else, an average of the metric over time will be displayed.
+        """
+        values = values or []
+        for k, v in values:
+            if k not in self._values_order:
+                self._values_order.append(k)
+            if k not in self.stateful_metrics:
+                if k not in self._values:
+                    self._values[k] = [v * (current - self._seen_so_far),
+                                       current - self._seen_so_far]
+                else:
+                    self._values[k][0] += v * (current - self._seen_so_far)
+                    self._values[k][1] += (current - self._seen_so_far)
+            else:
+                # Stateful metrics output a numeric value. This representation
+                # means "take an average from a single value" but keeps the
+                # numeric formatting.
+                self._values[k] = [v, 1]
+        self._seen_so_far = current
+
+        now = time.time()
+        info = ' - %.0fs' % (now - self._start)
+        if self.verbose == 1:
+            if (now - self._last_update < self.interval
+                    and self.target is not None and current < self.target):
+                return
+
+            prev_total_width = self._total_width
+            if self._dynamic_display:
+                sys.stdout.write('\b' * prev_total_width)
+                sys.stdout.write('\r')
+            else:
+                sys.stdout.write('\n')
+
+            if self.target is not None:
+                numdigits = int(np.log10(self.target)) + 1
+                bar = ('%' + str(numdigits) + 'd/%d [') % (current, self.target)
+                prog = float(current) / self.target
+                prog_width = int(self.width * prog)
+                if prog_width > 0:
+                    bar += ('=' * (prog_width - 1))
+                    if current < self.target:
+                        bar += '>'
+                    else:
+                        bar += '='
+                bar += ('.' * (self.width - prog_width))
+                bar += ']'
+            else:
+                bar = '%7d/Unknown' % current
+
+            self._total_width = len(bar)
+            sys.stdout.write(bar)
+
+            if current:
+                time_per_unit = (now - self._start) / current
+            else:
+                time_per_unit = 0
+            if self.target is not None and current < self.target:
+                eta = time_per_unit * (self.target - current)
+                if eta > 3600:
+                    eta_format = '%d:%02d:%02d' % (eta // 3600,
+                                                   (eta % 3600) // 60,
+                                                   eta % 60)
+                elif eta > 60:
+                    eta_format = '%d:%02d' % (eta // 60, eta % 60)
+                else:
+                    eta_format = '%ds' % eta
+
+                info = ' - ETA: %s' % eta_format
+            else:
+                if time_per_unit >= 1 or time_per_unit == 0:
+                    info += ' %.0fs/%s' % (time_per_unit, self.unit_name)
+                elif time_per_unit >= 1e-3:
+                    info += ' %.0fms/%s' % (time_per_unit * 1e3, self.unit_name)
+                else:
+                    info += ' %.0fus/%s' % (time_per_unit * 1e6, self.unit_name)
+
+            for k in self._values_order:
+                info += ' - %s:' % k
+                if isinstance(self._values[k], list):
+                    avg = np.mean(self._values[k][0] / max(1, self._values[k][1]))
+                    if abs(avg) > 1e-3:
+                        info += ' %.4f' % avg
+                    else:
+                        info += ' %.4e' % avg
+                else:
+                    info += ' %s' % self._values[k]
+
+            self._total_width += len(info)
+            if prev_total_width > self._total_width:
+                info += (' ' * (prev_total_width - self._total_width))
+
+            if self.target is not None and current >= self.target:
+                info += '\n'
+
+            sys.stdout.write(info)
+            sys.stdout.flush()
+
+        elif self.verbose == 2:
+            if self.target is not None and current >= self.target:
+                numdigits = int(np.log10(self.target)) + 1
+                count = ('%' + str(numdigits) + 'd/%d') % (current, self.target)
+                info = count + info
+                for k in self._values_order:
+                    info += ' - %s:' % k
+                    avg = np.mean(self._values[k][0] / max(1, self._values[k][1]))
+                    if avg > 1e-3:
+                        info += ' %.4f' % avg
+                    else:
+                        info += ' %.4e' % avg
+                info += '\n'
+
+                sys.stdout.write(info)
+                sys.stdout.flush()
+
+        self._last_update = now
+
+    def add(self, n, values=None):
+        self.update(self._seen_so_far + n, values)
 
 
 class Progressbar(object):
@@ -189,6 +357,155 @@ class CacheDataset(torch.utils.data.Dataset):
         gc.collect()
 
 
+def ShuffleDataset(file_path, batch_size=1000, bar=20, test_bar_max=None, num_workers=0, shuffle=True):
+    dataset = TorchData(file_path)
+
+    def my_collate_fn(data, bar=bar, test_bar_max=test_bar_max):
+        return collate_fn(data, bar, test_bar_max)
+
+    data_loader = torch.utils.data.DataLoader(dataset=dataset,
+                                              batch_size=batch_size,
+                                              shuffle=shuffle,
+                                              num_workers=num_workers,
+                                              pin_memory=False,
+                                              collate_fn=my_collate_fn)
+
+    return data_loader
+
+
+class TorchData(torch.utils.data.Dataset):
+
+    def __init__(self, file_path):
+
+        super(TorchData, self).__init__()
+
+        species_dict = {'H': 0, 'C': 1, 'N': 2, 'O': 3}
+        self_energies_dict = {'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}
+
+        self.data_species = []
+        self.data_coordinates = []
+        self.data_energies = []
+        self.self_energies = []
+
+        anidata = anidataloader(file_path)
+        pbar = Progressbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata.group_size()), anidata.group_size())
+
+        for i, molecule in enumerate(anidata):
+            num_conformations = len(molecule['coordinates'])
+            self.data_coordinates += list(molecule['coordinates'].reshape(num_conformations, -1))
+            self.data_energies += list(molecule['energies'].reshape((-1, 1)))
+            species = np.array([species_dict[x] for x in molecule['species']])
+            self.data_species += list(np.tile(species, (num_conformations, 1)))
+            self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
+            self.self_energies += list(np.tile(self_energies, (num_conformations, 1)))
+            pbar.update(i)
+
+        self.data_energies = np.array(self.data_energies) - np.array(self.self_energies)
+        self.length = len(self.data_species)
+        anidata.cleanup()
+
+    def __getitem__(self, index):
+
+        if index >= self.length:
+            raise IndexError()
+
+        species = torch.from_numpy(self.data_species[index])
+        coordinates = torch.from_numpy(self.data_coordinates[index]).float()
+        energies = torch.from_numpy(self.data_energies[index]).float()
+
+        return [species, coordinates, energies]
+
+    def __len__(self):
+        return self.length
+
+
+def collate_fn(data, bar, test_bar_max):
+    """Creates a batch of chunked data.
+    Args:
+        data: list of molecules, each molecule is a list.
+              which contain [species, coordinates, energies, MO_energies]
+            - species: numpy array, shape (?); variable length.
+            - coordinates: numpy array, shape (?); variable length. (flattened)
+            - energies: numpy array, shape (1); variable length.
+            - MO_energies: numpy array, shape (?); variable length.
+    Returns:
+            - [chunk1, chunk2, ...] in which chunk1=(coordinates, species, energies)
+    """
+
+    # unzip a batch of molecules (each molecule is a list)
+    batch_species, batch_coordinates, batch_energies = zip(*data)
+    batch_size = len(batch_species)
+
+    # padding - time: 13.2s
+    batch_species = torch.nn.utils.rnn.pad_sequence(batch_species,
+                                                    batch_first=True,
+                                                    padding_value=-1)
+    batch_coordinates = torch.nn.utils.rnn.pad_sequence(batch_coordinates,
+                                                        batch_first=True,
+                                                        padding_value=0)
+    batch_energies = torch.stack(batch_energies)
+
+    # sort - time: 0.7s
+    atoms = torch.sum(~(batch_species == -1), dim=-1, dtype=torch.int32)
+    sorted_atoms, sorted_atoms_idx = torch.sort(atoms, descending=False)
+
+    batch_species = torch.index_select(batch_species, dim=0, index=sorted_atoms_idx)
+    batch_coordinates = torch.index_select(batch_coordinates, dim=0, index=sorted_atoms_idx)
+    batch_energies = torch.index_select(batch_energies, dim=0, index=sorted_atoms_idx)
+
+    # get chunk size - time: 2.1s
+    if not bar:
+        bar = 1000
+    output, count = torch.unique(atoms, sorted=True, return_counts=True)
+    counts = torch.cat((output.unsqueeze(-1).int(), count.unsqueeze(-1).int()), dim=-1)
+    chunk_size_list, chunk_max_list = split_to_chunks(counts, bar=bar * batch_size * 20)
+
+    # optimize bar, if test_bar_max is not None
+    if test_bar_max:
+        print('format is [chunk_size, chunk_max]\n')
+        print('current bar = {}'.format(bar))
+        size_max = []
+        for i in range(len(chunk_size_list)):
+            size_max.append([list(chunk_size_list[i].numpy())[0],
+                             list(chunk_max_list[i].numpy())[0]])
+        print(size_max)
+
+        for b in range(0, test_bar_max + 1, 1):
+            test_chunk_size_list, test_chunk_max_list = split_to_chunks(counts, bar=b * batch_size * 20)
+            size_max = []
+            for i in range(len(test_chunk_size_list)):
+                size_max.append([list(test_chunk_size_list[i].numpy())[0],
+                                 list(test_chunk_max_list[i].numpy())[0]])
+            print()
+            print('bar = {}'.format(b))
+            print(size_max)
+
+    # split into chunks - time: 0.3s
+    chunks_batch_species = torch.split(batch_species, chunk_size_list, dim=0)
+    chunks_batch_coordinates = torch.split(batch_coordinates, chunk_size_list, dim=0)
+
+    # truncate redundant padding - time: 1.3s
+    chunks_batch_species = trunc_pad(list(chunks_batch_species), padding_value=-1)
+    chunks_batch_coordinates = trunc_pad(list(chunks_batch_coordinates))
+
+    for i, c in enumerate(chunks_batch_coordinates):
+        chunks_batch_coordinates[i] = c.reshape(c.shape[0], -1, 3)
+
+    datas = [chunks_batch_species, chunks_batch_coordinates]
+
+    chunks = list(zip(*datas))
+
+    for i in range(len(chunks)):
+        chunks[i] = (chunks[i][0], chunks[i][1])
+
+    properties = {'energies': batch_energies.flatten()}
+
+    # return: [chunk1, chunk2, ...], {"energies", "force", ...} in which chunk1=(species, coordinates)
+    # e.g. chunk1 = [[1807, 21], [1807, 21, 3]], chunk2 = [[193, 50], [193, 50, 3]]
+    # 'energies' = [2000, 1]
+    return chunks, properties
+
+
 def split_to_two_chunks(counts, bar):
 
     left_mask = torch.triu(torch.ones([counts.shape[0], counts.shape[0]], dtype=torch.uint8))
@@ -247,24 +564,8 @@ def split_to_chunks(counts, bar=50000):
         return chunk_size, chunk_max
 
 
-if __name__ == "__main__":
-
-    dspath = '/home/richard/dev/torchani/dataset/ani-1x/ANI-1x_complete.h5'
-    dataset = CacheDataset(dspath, batch_size=2000, device='cpu', bar=20, test_bar_max=None)
-
-    pbar = Progressbar('=> processing and caching dataset into cpu memory, total batches:'
-                       + ' {}, batch_size: {}'.format(len(dataset), dataset.batch_size),
-                       len(dataset))
-    for i, d in enumerate(dataset):
-        pbar.update(i)
-    total_chunks = sum([len(d) for d in dataset])
-    chunks_size = str([list(c['species'].size()) for c in dataset[0]])
-
-    print('=> dataset cached, total chunks: '
-          + '{}, first batch is splited to {}'.format(total_chunks, chunks_size))
-    print('=> releasing h5 file memory, dataset is still cached')
-    dataset.release_h5()
-
-    pbar = Progressbar('=> test of loading all cached dataset', len(dataset))
-    for i, d in enumerate(dataset):
-        pbar.update(i)
+def trunc_pad(chunks, padding_value=0):
+    for i in range(len(chunks)):
+        lengths = torch.sum(~(chunks[i] == padding_value), dim=-1, dtype=torch.int32)
+        chunks[i] = chunks[i][..., :lengths.max()]
+    return chunks
