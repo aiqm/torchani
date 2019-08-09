@@ -97,10 +97,10 @@ if __name__ == "__main__":
         print('using shuffled dataset')
         print('=> loading dataset...')
         dataset = torchani.data.ShuffleDataset(file_path=parser.dataset_path,
-                                            species_order='HCNO',
-                                            transform=True,
-                                            batch_size=parser.batch_size,
-                                            num_workers=2)
+                                               species_order='HCNO',
+                                               transform=True,
+                                               batch_size=parser.batch_size,
+                                               num_workers=2)
         print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
         chunks, properties = iter(dataset).next()
     else:
@@ -109,10 +109,9 @@ if __name__ == "__main__":
         print('=> loading dataset...')
         energy_shifter = torchani.utils.EnergyShifter(None)
         species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
-        dataset = torchani.data.load_ani_dataset(
-            parser.dataset_path, species_to_tensor,
-            parser.batch_size, device=parser.device,
-            transform=[energy_shifter.subtract_from_dataset])
+        dataset = torchani.data.load_ani_dataset(parser.dataset_path, species_to_tensor,
+                                                 parser.batch_size, device=parser.device,
+                                                 transform=[energy_shifter.subtract_from_dataset])
         print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
         chunks, properties = dataset[0]
 
