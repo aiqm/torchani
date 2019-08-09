@@ -1,5 +1,4 @@
 import torchani
-from torchani.data import new_data
 
 if __name__ == "__main__":
 
@@ -11,7 +10,7 @@ if __name__ == "__main__":
     if test1:
         print('1. test of shuffled dataset')
         batch_size = 2560
-        shuffledataset = new_data.ShuffleDataset(dspath, batch_size=batch_size, num_workers=2, test_bar_max=None)
+        shuffledataset = torchani.data.ShuffleDataset(dspath, batch_size=batch_size, num_workers=2, test_bar_max=None)
 
         print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
 
@@ -31,7 +30,7 @@ if __name__ == "__main__":
 
     if test2:
         print('2. test of cached dataset\n')
-        dataset = new_data.CacheDataset(dspath, batch_size=2000, device='cpu', bar=20, test_bar_max=None)
+        dataset = torchani.data.CacheDataset(dspath, batch_size=2000, device='cpu', bar=20, test_bar_max=None)
 
         pbar = torchani.utils.Progressbar('=> processing and caching dataset into cpu memory, total batches:'
                                           + ' {}, batch_size: {}'.format(len(dataset), dataset.batch_size),

@@ -51,9 +51,6 @@ class CacheDataset(torch.utils.data.Dataset):
         batch_species = [self.data_species[i] for i in batch_indices_shuffled]
         batch_coordinates = [self.data_coordinates[i] for i in batch_indices_shuffled]
         batch_energies = [self.data_energies[i] for i in batch_indices_shuffled]
-        # batch_species = self.data_species[batch_indices]
-        # batch_coordinates = self.data_coordinates[batch_indices]
-        # batch_energies = self.data_energies[batch_indices]
 
         datas = [batch_species, batch_coordinates, batch_energies]
 
@@ -187,7 +184,9 @@ class TorchData(torch.utils.data.Dataset):
         self.data_self_energies = []
 
         anidata = anidataloader(file_path)
-        pbar = Progressbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata.group_size()), anidata.group_size())
+        anidata_size = anidata.group_size()
+        if anidata_size > 5:
+            pbar = Progressbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata_size), anidata_size)
 
         for i, molecule in enumerate(anidata):
             num_conformations = len(molecule['coordinates'])
@@ -198,7 +197,8 @@ class TorchData(torch.utils.data.Dataset):
             if transform:
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
                 self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)))
-            pbar.update(i)
+            if anidata_size > 5:
+                pbar.update(i)
 
         if transform:
             self.data_energies = np.array(self.data_energies) - np.array(self.data_self_energies)
