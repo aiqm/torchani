@@ -226,7 +226,7 @@ class ChemicalSymbolsToInts:
     """
 
     def __init__(self, all_species):
-        self.rev_species = {s:i in enumerate(all_species)}
+        self.rev_species = {s:i for i, s in enumerate(all_species)}
 
     def __call__(self, species):
         """Convert species from squence of strings to 1D tensor"""
