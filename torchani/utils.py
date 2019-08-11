@@ -226,14 +226,15 @@ class ChemicalSymbolsToInts:
     """
 
     def __init__(self, all_species):
-        self.rev_species = {}
-        for i, s in enumerate(all_species):
-            self.rev_species[s] = i
+        self.rev_species = {s:i in enumerate(all_species)}
 
     def __call__(self, species):
         """Convert species from squence of strings to 1D tensor"""
         rev = [self.rev_species[s] for s in species]
         return torch.tensor(rev, dtype=torch.long)
+
+    def __len__(self):
+        return len(self.rev_species)
 
 
 def hessian(coordinates, energies=None, forces=None):
