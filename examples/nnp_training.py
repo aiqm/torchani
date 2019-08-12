@@ -77,7 +77,7 @@ try:
     path = os.path.dirname(os.path.realpath(__file__))
 except NameError:
     path = os.getcwd()
-dspath = os.path.join(path, '../download/dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
+dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 
 batch_size = 2560
 
