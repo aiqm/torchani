@@ -46,6 +46,12 @@ See also [PyTorch's official site](https://pytorch.org/get-started/locally/) for
 
 Please install nightly PyTorch through `pip install` instead of `conda install`. If your PyTorch is installed through `conda install`, then `pip` would mistakenly recognize the package name as `torch` instead of `torch-nightly`, which would cause dependency issue when installing TorchANI.
 
+To run the tests and examples, you must manually download a data package
+
+```bash
+./download.sh
+```
+
 # Paper
 
 The original ANI-1 paper is:
@@ -72,6 +78,8 @@ install dependencies:
 pip install sphinx sphinx-gallery pillow matplotlib sphinx_rtd_theme
 ```
 
+To manually run unit tests, do `python setup.py test`
+
 # Note to TorchANI developers
 
 Never commit to the master branch directly. If you need to change something, create a new branch, submit a PR on GitHub.
@@ -79,5 +87,3 @@ Never commit to the master branch directly. If you need to change something, cre
 You must pass all the tests on GitHub before your PR can be merged.
 
 Code review is required before merging pull request.
-
-To manually run unit tests, do `python setup.py test`
