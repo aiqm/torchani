@@ -29,3 +29,4 @@ dist
 *.swp
 *.swo
 /download
+/download.tar.xz
