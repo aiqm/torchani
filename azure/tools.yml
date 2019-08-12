@@ -25,6 +25,9 @@ steps:
 - script: 'azure/install_dependencies.sh && pip install .'
   displayName: 'Install dependencies'
 
+- script: './download.sh'
+  displayName: 'Download data files'
+
 - script: 'python tools/inference-benchmark.py --tqdm ./dataset/xyz_files/CH4-5.xyz'
   displayName: Inference Benchmark
 

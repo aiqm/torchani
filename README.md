@@ -78,7 +78,7 @@ install dependencies:
 pip install sphinx sphinx-gallery pillow matplotlib sphinx_rtd_theme
 ```
 
-To manually run unit tests, do `python setup.py test`
+To manually run unit tests, do `python setup.py nosetests`
 
 # Note to TorchANI developers
 

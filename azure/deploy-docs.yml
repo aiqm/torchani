@@ -26,6 +26,9 @@ steps:
 - script: 'azure/install_dependencies.sh && pip install h5py pytorch-ignite-nightly tb-nightly sphinx sphinx_rtd_theme matplotlib pillow sphinx-gallery && pip install .'
   displayName: 'Install dependencies'
 
+- script: './download.sh'
+  displayName: 'Download data files'
+
 - script: 'sphinx-build docs build'
   displayName: Build documents
 
