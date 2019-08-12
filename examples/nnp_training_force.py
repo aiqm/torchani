@@ -52,8 +52,8 @@ batch_size = 2560
 # from hdf5 files.
 
 training, validation = torchani.data.load_ani_dataset(
-    dspath, species_to_tensor, batch_size, device=device,
-    atomic_properties=['forces'],
+    dspath, species_to_tensor, batch_size, rm_outlier=True,
+    device=device, atomic_properties=['forces'],
     transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
 
 print('Self atomic energies: ', energy_shifter.self_energies)

@@ -567,11 +567,11 @@ if sys.version_info[0] > 2:
             else:
                 self.training_set = self.imports.load_ani_dataset(
                     training_path, self.consts.species_to_tensor,
-                    self.training_batch_size, device=self.device,
+                    self.training_batch_size, rm_outlier=True, device=self.device,
                     transform=[self.shift_energy.subtract_from_dataset])
                 self.validation_set = self.imports.load_ani_dataset(
                     validation_path, self.consts.species_to_tensor,
-                    self.validation_batch_size, device=self.device,
+                    self.validation_batch_size, rm_outlier=True, device=self.device,
                     transform=[self.shift_energy.subtract_from_dataset])
 
         def evaluate(self, dataset):
