@@ -28,20 +28,20 @@ steps:
 - script: './download.sh'
   displayName: 'Download data files'
 
-- script: 'python tools/inference-benchmark.py --tqdm ./dataset/xyz_files/CH4-5.xyz'
+- script: 'python tools/inference-benchmark.py --tqdm dataset/xyz_files/CH4-5.xyz'
   displayName: Inference Benchmark
 
 - script: 'pip install h5py'
   displayName: 'Install more dependencies'
 
-- script: 'python tools/comp6.py ./dataset/COMP6/COMP6v1/s66x8'
+- script: 'python tools/comp6.py dataset/COMP6/COMP6v1/s66x8'
   displayName: COMP6 Benchmark
 
 - script: 'pip install pytorch-ignite-nightly'
   displayName: 'Install more dependencies'
 
-- script: 'python tools/training-benchmark.py ./dataset/ani1-up_to_gdb4/ani_gdb_s01.h5'
+- script: 'python tools/training-benchmark.py download/dataset/ani1-up_to_gdb4/ani_gdb_s01.h5'
   displayName: Training Benchmark
 
-- script: 'python tools/neurochem-test.py ./dataset/ani1-up_to_gdb4/ani_gdb_s01.h5'
+- script: 'python tools/neurochem-test.py download/dataset/ani1-up_to_gdb4/ani_gdb_s01.h5'
   displayName: NeuroChem Test
