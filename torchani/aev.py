@@ -10,7 +10,7 @@ from typing import Tuple
 def cutoff_cosine(distances, cutoff):
     # type: (Tensor, float) -> Tensor
     # assuming all elements in distances are smaller than cutoff
-    return 0.5 * torch.cos(math.pi * distances / cutoff) + 0.5
+    return 0.5 * torch.cos(distances * (math.pi / cutoff)) + 0.5
 
 
 # @torch.jit.script
