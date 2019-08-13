@@ -1,4 +1,4 @@
 #!/bin/sh
 
-wget http://atl.ipv6.ai/download.tar.xz
+wget https://www.dropbox.com/sh/2c8zdqc1hrqsgwy/AAD6l24ngoiFa6DRapF6HPk5a/ -O download.tar.xz
 tar xvf download.tar.xz
