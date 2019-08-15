@@ -3,7 +3,7 @@ import torchani
 import time
 import timeit
 import argparse
-
+import pkbar
 
 def atomic():
     model = torch.nn.Sequential(
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     for epoch in range(0, parser.num_epochs):
 
         print('Epoch: %d/%d' % (epoch + 1, parser.num_epochs))
-        progbar = torchani.utils.Progbar(target=len(dataset) - 1, width=8)
+        progbar = pkbar.Kbar(target=len(dataset) - 1, width=8)
 
         for i, (batch_x, batch_y) in enumerate(dataset):
 
