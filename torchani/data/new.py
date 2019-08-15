@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import functools
 from ._pyanitools import anidataloader
-from ..utils import Progressbar
+import pkbar
 
 
 class CacheDataset(torch.utils.data.Dataset):
@@ -18,7 +18,7 @@ class CacheDataset(torch.utils.data.Dataset):
         self.data_energies = []
 
         anidata = anidataloader(file_path)
-        pbar = Progressbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata.group_size()), anidata.group_size())
+        pbar = pkbar.Pbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata.group_size()), anidata.group_size())
 
         for i, molecule in enumerate(anidata):
             num_conformations = len(molecule['coordinates'])
@@ -186,7 +186,7 @@ class TorchData(torch.utils.data.Dataset):
         anidata = anidataloader(file_path)
         anidata_size = anidata.group_size()
         if anidata_size > 5:
-            pbar = Progressbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata_size), anidata_size)
+            pbar = pkbar.Pbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata_size), anidata_size)
 
         for i, molecule in enumerate(anidata):
             num_conformations = len(molecule['coordinates'])
