@@ -357,7 +357,7 @@ class TestAEVOnBoundary(unittest.TestCase):
                                           [-0.1, 1.0, -0.1],
                                           [-0.1, -0.1, 1.0],
                                           [-1.0, -1.0, -1.0]]], dtype=torch.double)
-        self.species = torch.tensor([[1, 0, 0, 0]])
+        self.species = torch.tensor([[1, 0, 0, 0, 0]])
         self.pbc = torch.ones(3, dtype=torch.bool)
         self.v1, self.v2, self.v3 = self.cell
         self.center_coordinates = self.coordinates + 0.5 * (self.v1 + self.v2 + self.v3)
