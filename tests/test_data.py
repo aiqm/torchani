@@ -76,8 +76,7 @@ class TestData(unittest.TestCase):
             self.assertLessEqual(species.shape[0], batch_size)
             self.assertEqual(len(coordinates.shape), 3)
             self.assertEqual(coordinates.shape[2], 3)
-            self.assertEqual(coordinates.shape[1], coordinates.shape[1])
-            self.assertEqual(coordinates.shape[0], coordinates.shape[0])
+            self.assertEqual(coordinates.shape[:2], species.shape[:2])
             self.assertEqual(len(energies.shape), 1)
             self.assertEqual(coordinates.shape[0], energies.shape[0])
 
