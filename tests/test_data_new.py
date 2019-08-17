@@ -5,8 +5,8 @@ import torch
 
 # TODO no calculation is need for split chunks, use probability to split
 
-dspath = '/home/richard/dev/torchani/dataset/ani-1x/ANI-1x_complete.h5'
-dspath = '/home/richard/dev/torchani/download/dataset/ani1-up_to_gdb4/ani_gdb_s03.h5'
+dspath = '/home/richard/dev/torchani/download/dataset/ani-1x/ANI-1x_complete.h5'
+# dspath = '/home/richard/dev/torchani/download/dataset/ani1-up_to_gdb4/ani_gdb_s03.h5'
 batch_size = 2560
 
 
@@ -51,28 +51,34 @@ class TestData(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # unittest.main()
 
     test1 = True
-    test2 = False
+    test2 = True
 
     if test2:
         print('2. test of cached dataset\n')
-        dataset = torchani.data.CacheDataset(dspath, batch_size=2000, device='cpu', bar=20, test_bar_max=None)
+        dataset = torchani.data.CacheDataset(dspath, batch_size=batch_size, device='cpu', bar=20, test_bar_max=None)
 
         pbar = pkbar.Pbar('=> processing and caching dataset into cpu memory, total batches:'
                           + ' {}, batch_size: {}'.format(len(dataset), dataset.batch_size),
                           len(dataset))
         for i, d in enumerate(dataset):
             pbar.update(i)
-        total_chunks = sum([len(d) for d in dataset])
-        chunks_size = str([list(c['species'].size()) for c in dataset[0]])
 
-        print('=> dataset cached, total chunks: '
-              + '{}, first batch is splited to {}'.format(total_chunks, chunks_size))
+        chunks, properties = dataset[0]
+        print('\n=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
+        batch_len = 0
+        for i, chunk in enumerate(chunks):
+            print('chunk{}'.format(i + 1), list(chunk[0].size()), chunk[0].dtype, list(chunk[1].size()), chunk[1].dtype)
+            batch_len += chunk[0].shape[0]
+
+        for key, value in properties.items():
+            print(key, list(value.size()), value.dtype)
+
         print('=> releasing h5 file memory, dataset is still cached')
         dataset.release_h5()
 
-        pbar = torchani.utils.Progressbar('=> test of loading all cached dataset', len(dataset))
+        pbar = pkbar.Pbar('=> test of loading all cached dataset', len(dataset))
         for i, d in enumerate(dataset):
             pbar.update(i)

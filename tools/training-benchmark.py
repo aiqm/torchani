@@ -5,6 +5,7 @@ import timeit
 import argparse
 import pkbar
 
+
 def atomic():
     model = torch.nn.Sequential(
         torch.nn.Linear(384, 128),
