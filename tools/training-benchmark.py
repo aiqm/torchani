@@ -127,9 +127,9 @@ if __name__ == "__main__":
         print('using cache dataset API')
         print('=> loading dataset...')
         dataset = torchani.data.CacheDataset(file_path=parser.dataset_path,
-                                               species_order='HCNO',
-                                               transform=True,
-                                               batch_size=parser.batch_size)
+                                             species_order='HCNO',
+                                             transform=True,
+                                             batch_size=parser.batch_size)
         print('=> caching all dataset into cpu')
         pbar = pkbar.Pbar('loading and processing dataset into cpu memory, total '
                           + 'batches: {}, batch_size: {}'.format(len(dataset), parser.batch_size),
