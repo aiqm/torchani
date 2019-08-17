@@ -47,17 +47,24 @@ if __name__ == "__main__":
                         default=('cuda' if torch.cuda.is_available() else 'cpu'))
     parser.add_argument('-b', '--batch_size',
                         help='Number of conformations of each batch',
-                        default=2056, type=int)
-    parser.add_argument('-n', '--new_dataset_api',
-                        help='use new dataset api',
-                        dest='new_dataset_api',
-                        action='store_true')
+                        default=2560, type=int)
     parser.add_argument('-o', '--original_dataset_api',
                         help='use original dataset api',
-                        dest='new_dataset_api',
-                        action='store_false')
-    parser.set_defaults(new_dataset_api=True)
-    parser.add_argument('-e', '--num_epochs',
+                        dest='dataset',
+                        action='store_const',
+                        const='original')
+    parser.add_argument('-s', '--shuffle_dataset_api',
+                        help='use shuffle dataset api',
+                        dest='dataset',
+                        action='store_const',
+                        const='shuffle')
+    parser.add_argument('-c', '--cache_dataset_api',
+                        help='use cache dataset api',
+                        dest='dataset',
+                        action='store_const',
+                        const='cache')
+    parser.set_defaults(dataset='shuffle')
+    parser.add_argument('-n', '--num_epochs',
                         help='epochs',
                         default=1, type=int)
     parser = parser.parse_args()
@@ -93,9 +100,9 @@ if __name__ == "__main__":
     model[0].forward = time_func('total', model[0].forward)
     model[1].forward = time_func('forward', model[1].forward)
 
-    if parser.new_dataset_api:
+    if parser.dataset == 'shuffle':
         torchani.data.ShuffleDataset = time_func('data_loading', torchani.data.ShuffleDataset)
-        print('using shuffled dataset')
+        print('using shuffle dataset API')
         print('=> loading dataset...')
         dataset = torchani.data.ShuffleDataset(file_path=parser.dataset_path,
                                                species_order='HCNO',
@@ -104,7 +111,7 @@ if __name__ == "__main__":
                                                num_workers=2)
         print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
         chunks, properties = iter(dataset).next()
-    else:
+    elif parser.dataset == 'original':
         torchani.data.load_ani_dataset = time_func('data_loading', torchani.data.load_ani_dataset)
         print('using original dataset API')
         print('=> loading dataset...')
@@ -113,6 +120,22 @@ if __name__ == "__main__":
         dataset = torchani.data.load_ani_dataset(parser.dataset_path, species_to_tensor,
                                                  parser.batch_size, device=parser.device,
                                                  transform=[energy_shifter.subtract_from_dataset])
+        print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
+        chunks, properties = dataset[0]
+    elif parser.dataset == 'cache':
+        torchani.data.CacheDataset = time_func('data_loading', torchani.data.CacheDataset)
+        print('using cache dataset API')
+        print('=> loading dataset...')
+        dataset = torchani.data.CacheDataset(file_path=parser.dataset_path,
+                                               species_order='HCNO',
+                                               transform=True,
+                                               batch_size=parser.batch_size)
+        print('=> caching all dataset into cpu')
+        pbar = pkbar.Pbar('loading and processing dataset into cpu memory, total '
+                          + 'batches: {}, batch_size: {}'.format(len(dataset), parser.batch_size),
+                          len(dataset))
+        for i, t in enumerate(dataset):
+            pbar.update(i)
         print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
         chunks, properties = dataset[0]
 
