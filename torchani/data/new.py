@@ -38,13 +38,13 @@ class CacheDataset(torch.utils.data.Dataset):
 
         for i, molecule in enumerate(anidata):
             num_conformations = len(molecule['coordinates'])
-            self.data_coordinates += list(molecule['coordinates'].reshape(num_conformations, -1))
-            self.data_energies += list(molecule['energies'].reshape((-1, 1)))
+            self.data_coordinates += list(molecule['coordinates'].reshape(num_conformations, -1).astype(np.float32))
+            self.data_energies += list(molecule['energies'].reshape((-1, 1)).astype(np.float32))
             species = np.array([species_dict[x] for x in molecule['species']])
             self.data_species += list(np.tile(species, (num_conformations, 1)))
             if transform:
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
-                self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)))
+                self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)).astype(np.float32))
             if anidata_size > 5:
                 pbar.update(i)
 
@@ -58,13 +58,16 @@ class CacheDataset(torch.utils.data.Dataset):
         self.batch_size = batch_size
         self.length = (len(self.data_species) + self.batch_size - 1) // self.batch_size
         self.device = device
-        self.test_bar_max = test_bar_max
-        self.bar = bar
-        if not self.bar:
-            self.bar = 1000
 
         self.shuffled_index = np.arange(len(self.data_species))
         np.random.shuffle(self.shuffled_index)
+
+        self.bar = bar
+        self.test_bar_max = test_bar_max
+        if not self.bar:
+            self.bar = 1000
+        if self.test_bar_max:
+            self.__getitem__(0, test_bar_max=self.test_bar_max)
 
         anidata.cleanup()
         import gc
@@ -75,7 +78,7 @@ class CacheDataset(torch.utils.data.Dataset):
         gc.collect()
 
     @functools.lru_cache(maxsize=None)
-    def __getitem__(self, index):
+    def __getitem__(self, index, test_bar_max=None):
 
         if index >= self.length:
             raise IndexError()
@@ -83,70 +86,68 @@ class CacheDataset(torch.utils.data.Dataset):
         batch_indices = slice(index * self.batch_size, (index + 1) * self.batch_size)
         batch_indices_shuffled = self.shuffled_index[batch_indices]
 
-        batch_species = [torch.from_numpy(self.data_species[i]) for i in batch_indices_shuffled]
-        batch_coordinates = [torch.from_numpy(self.data_coordinates[i]) for i in batch_indices_shuffled]
-        batch_energies = [torch.from_numpy(self.data_energies[i]) for i in batch_indices_shuffled]
+        batch_species = [self.data_species[i] for i in batch_indices_shuffled]
+        batch_coordinates = [self.data_coordinates[i] for i in batch_indices_shuffled]
+        batch_energies = [self.data_energies[i] for i in batch_indices_shuffled]
 
-        # padding - time: 13.2s
-        batch_species = torch.nn.utils.rnn.pad_sequence(batch_species,
-                                                        batch_first=True,
-                                                        padding_value=-1).to(self.device)
-        batch_coordinates = torch.nn.utils.rnn.pad_sequence(batch_coordinates,
-                                                            batch_first=True,
-                                                            padding_value=0).to(self.device)
-        batch_energies = torch.stack(batch_energies).to(self.device)
+        datas = [batch_species, batch_coordinates, batch_energies]
 
-        # sort - time: 0.7s
-        atoms = torch.sum(~(batch_species == -1), dim=-1, dtype=torch.int32)
+        # get sort index
+        num_atoms_each_mole = [b.shape[0] for b in batch_species]
+        atoms = torch.tensor(num_atoms_each_mole, dtype=torch.int32)
         sorted_atoms, sorted_atoms_idx = torch.sort(atoms, descending=False)
 
-        batch_species = torch.index_select(batch_species, dim=0, index=sorted_atoms_idx)
-        batch_coordinates = torch.index_select(batch_coordinates, dim=0, index=sorted_atoms_idx)
-        batch_energies = torch.index_select(batch_energies, dim=0, index=sorted_atoms_idx)
+        # sort each batch of data
+        for i, d in enumerate(datas):
+            datas[i] = self.sort_list_with_index(d, sorted_atoms_idx.numpy())
 
-        # get chunk size - time: 2.1s
+        # get chunk size
         output, count = torch.unique(atoms, sorted=True, return_counts=True)
         counts = torch.cat((output.unsqueeze(-1).int(), count.unsqueeze(-1).int()), dim=-1)
         chunk_size_list, chunk_max_list = split_to_chunks(counts, bar=self.bar * self.batch_size * 20)
 
         # optimize bar, if test_bar_max is not None
-        if self.test_bar_max:
+        if test_bar_max:
+            print('=> choose a reasonable bar to split chunks')
             print('format is [chunk_size, chunk_max]')
             print('current bar = {}'.format(self.bar))
             size_max = []
             for i in range(len(chunk_size_list)):
-                size_max.append([list(chunk_size_list[i])[0],
-                                list(chunk_max_list[i])[0]])
+                size_max.append([list(chunk_size_list[i].numpy())[0],
+                                list(chunk_max_list[i].numpy())[0]])
             print(size_max)
 
             for b in range(0, self.test_bar_max + 1, 1):
                 test_chunk_size_list, test_chunk_max_list = split_to_chunks(counts, bar=b * self.batch_size * 20)
                 size_max = []
                 for i in range(len(test_chunk_size_list)):
-                    size_max.append([list(test_chunk_size_list[i])[0],
-                                    list(test_chunk_max_list[i])[0]])
+                    size_max.append([list(test_chunk_size_list[i].numpy())[0],
+                                    list(test_chunk_max_list[i].numpy())[0]])
                 print('bar = {}'.format(b))
                 print(size_max)
 
-        # split into chunks - time: 0.3s
-        chunks_batch_species = torch.split(batch_species, chunk_size_list, dim=0)
-        chunks_batch_coordinates = torch.split(batch_coordinates, chunk_size_list, dim=0)
+        chunk_size_list = torch.stack(chunk_size_list).flatten()
+        chunk_max_list = torch.stack(chunk_max_list).flatten()
+        # split into chunks
+        datas[0] = self.split_list_with_size(datas[0], chunk_size_list.numpy())
+        datas[1] = self.split_list_with_size(datas[1], chunk_size_list.numpy())
+        datas[2] = self.split_list_with_size(datas[2], np.array([self.batch_size]))
 
-        # truncate redundant padding - time: 1.3s
-        chunks_batch_species = trunc_pad(list(chunks_batch_species), padding_value=-1)
-        chunks_batch_coordinates = trunc_pad(list(chunks_batch_coordinates))
+        # padding each data
+        # batch_species
+        datas[0] = self.pad_and_convert_to_tensor(datas[0], padding_value=-1)
+        # batch_coordinates
+        datas[1] = self.pad_and_convert_to_tensor(datas[1])
+        # batch_energies
+        datas[2] = self.pad_and_convert_to_tensor(datas[2], no_padding=True)
 
-        for i, c in enumerate(chunks_batch_coordinates):
-            chunks_batch_coordinates[i] = c.reshape(c.shape[0], -1, 3)
-
-        datas = [chunks_batch_species, chunks_batch_coordinates]
-
-        chunks = list(zip(*datas))
+        # return: [chunk1, chunk2, ...] in which chunk1=(coordinates, species, energies)
+        chunks = list(zip(*datas[:2]))
 
         for i in range(len(chunks)):
-            chunks[i] = (chunks[i][0], chunks[i][1])
+            chunks[i] = (chunks[i][0], chunks[i][1].reshape(chunks[i][1].shape[0], -1, 3))
 
-        properties = {'energies': batch_energies.flatten()}
+        properties = {'energies': datas[2][0].flatten()}
 
         # return: [chunk1, chunk2, ...], {"energies", "force", ...} in which chunk1=(species, coordinates)
         # e.g. chunk1 = [[1807, 21], [1807, 21, 3]], chunk2 = [[193, 50], [193, 50, 3]]
@@ -155,6 +156,35 @@ class CacheDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return self.length
+
+    @staticmethod
+    def sort_list_with_index(input, index):
+
+        return [input[i] for i in index]
+
+    @staticmethod
+    def split_list_with_size(input, split_size):
+
+        output = []
+        # split_size = np.array(split_size)
+        for i, value in enumerate(split_size):
+            start_index = np.sum(split_size[:i])
+            stop_index = np.sum(split_size[:i + 1])
+            output.append(input[start_index:stop_index])
+        return output
+
+    def pad_and_convert_to_tensor(self, inputs, padding_value=0, no_padding=False):
+
+        if no_padding:
+            for i, input_tmp in enumerate(inputs):
+                inputs[i] = torch.from_numpy(np.stack(input_tmp)).to(self.device)
+            return inputs
+        else:
+            for i, input_tmp in enumerate(inputs):
+                inputs[i] = torch.nn.utils.rnn.pad_sequence([torch.from_numpy(b) for b in inputs[i]],
+                                                            batch_first=True,
+                                                            padding_value=padding_value).to(self.device)
+            return inputs
 
     def release_h5(self):
         import gc
@@ -224,13 +254,13 @@ class TorchData(torch.utils.data.Dataset):
 
         for i, molecule in enumerate(anidata):
             num_conformations = len(molecule['coordinates'])
-            self.data_coordinates += list(molecule['coordinates'].reshape(num_conformations, -1))
-            self.data_energies += list(molecule['energies'].reshape((-1, 1)))
+            self.data_coordinates += list(molecule['coordinates'].reshape(num_conformations, -1).astype(np.float32))
+            self.data_energies += list(molecule['energies'].reshape((-1, 1)).astype(np.float32))
             species = np.array([species_dict[x] for x in molecule['species']])
             self.data_species += list(np.tile(species, (num_conformations, 1)))
             if transform:
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
-                self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)))
+                self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)).astype(np.float32))
             if anidata_size > 5:
                 pbar.update(i)
 
