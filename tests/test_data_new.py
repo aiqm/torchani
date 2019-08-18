@@ -4,8 +4,6 @@ import pkbar
 import torch
 import os
 
-# TODO no calculation is need for split chunks, use probability to split
-
 # dspath = '/home/richard/dev/torchani/download/dataset/ani-1x/ANI-1x_complete.h5'
 path = os.path.dirname(os.path.realpath(__file__))
 dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s03.h5')

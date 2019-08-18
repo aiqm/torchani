@@ -417,9 +417,8 @@ def split_to_two_chunks(counts, bar):
     if cost_min_index == (counts.shape[0] - 1):
         return False, counts, [final_chunk_size[0]], [final_chunk_max[0]], cost_min
     # if splitted
-    else:
-        return True, [counts[:cost_min_index + 1], counts[(cost_min_index + 1):]], \
-            final_chunk_size, final_chunk_max, cost_min
+    return True, [counts[:cost_min_index + 1], counts[(cost_min_index + 1):]], \
+        final_chunk_size, final_chunk_max, cost_min
 
 
 def split_to_chunks(counts, bar=50000):
@@ -434,8 +433,8 @@ def split_to_chunks(counts, bar=50000):
             final_chunk_size.extend(tmp_chunk_size)
             final_chunk_max.extend(tmp_chunk_max)
         return final_chunk_size, final_chunk_max
-    else:
-        return chunk_size, chunk_max
+    # if not splitted
+    return chunk_size, chunk_max
 
 
 def trunc_pad(chunks, padding_value=0):
