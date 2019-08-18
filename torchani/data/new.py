@@ -213,7 +213,6 @@ def ShuffleDataset(file_path,
                                                   pin_memory=False,
                                                   collate_fn=my_collate_fn)
         print('=> checking which bar should use (bar control how chunks will be splitted)')
-        chunks, properties = iter(data_loader).next()
 
     def my_collate_fn(data, bar=bar, test_bar_max=None):
         return collate_fn(data, bar, test_bar_max)
