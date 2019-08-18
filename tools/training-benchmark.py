@@ -44,7 +44,7 @@ if __name__ == "__main__":
                             or a directory containing hdf5 files')
     parser.add_argument('-d', '--device',
                         help='Device of modules and tensors',
-                        default=('cuda' if torch.cuda.is_available() else 'cpu'))
+                        default=('cpu' if torch.cuda.is_available() else 'cpu'))
     parser.add_argument('-b', '--batch_size',
                         help='Number of conformations of each batch',
                         default=2560, type=int)
@@ -153,13 +153,13 @@ if __name__ == "__main__":
 
         for i, (batch_x, batch_y) in enumerate(dataset):
 
-            true_energies = batch_y['energies'].to('cuda')
+            true_energies = batch_y['energies'].to(parser.device)
             predicted_energies = []
             num_atoms = []
 
             for chunk_species, chunk_coordinates in batch_x:
-                chunk_species = chunk_species.to('cuda')
-                chunk_coordinates = chunk_coordinates.to('cuda')
+                chunk_species = chunk_species.to(parser.device)
+                chunk_coordinates = chunk_coordinates.to(parser.device)
                 num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
                 _, chunk_energies = model((chunk_species, chunk_coordinates))
                 predicted_energies.append(chunk_energies)
