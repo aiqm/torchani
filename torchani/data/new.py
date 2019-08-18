@@ -74,7 +74,6 @@ class CacheDataset(torch.utils.data.Dataset):
         del num_conformations
         del species
         del anidata
-        del molecule
         gc.collect()
 
     @functools.lru_cache(maxsize=None)
@@ -112,7 +111,7 @@ class CacheDataset(torch.utils.data.Dataset):
             print('format is [chunk_size, chunk_max]')
             print('current bar = {}'.format(self.bar))
             size_max = []
-            for i in range(len(chunk_size_list)):
+            for i, _ in enumerate(chunk_size_list):
                 size_max.append([list(chunk_size_list[i].numpy())[0],
                                 list(chunk_max_list[i].numpy())[0]])
             print(size_max)
@@ -120,7 +119,7 @@ class CacheDataset(torch.utils.data.Dataset):
             for b in range(0, self.test_bar_max + 1, 1):
                 test_chunk_size_list, test_chunk_max_list = split_to_chunks(counts, bar=b * self.batch_size * 20)
                 size_max = []
-                for i in range(len(test_chunk_size_list)):
+                for i, _ in enumerate(test_chunk_size_list):
                     size_max.append([list(test_chunk_size_list[i].numpy())[0],
                                     list(test_chunk_max_list[i].numpy())[0]])
                 print('bar = {}'.format(b))
@@ -145,7 +144,7 @@ class CacheDataset(torch.utils.data.Dataset):
         # return: [chunk1, chunk2, ...] in which chunk1=(coordinates, species, energies)
         chunks = list(zip(*datas[:2]))
 
-        for i in range(len(chunks)):
+        for i, _ in enumerate(chunks):
             chunks[i] = (chunks[i][0], chunks[i][1].reshape(chunks[i][1].shape[0], -1, 3))
 
         properties = {'energies': datas[2][0].flatten()}
@@ -159,19 +158,19 @@ class CacheDataset(torch.utils.data.Dataset):
         return self.length
 
     @staticmethod
-    def sort_list_with_index(input, index):
+    def sort_list_with_index(inputs, index):
 
-        return [input[i] for i in index]
+        return [inputs[i] for i in index]
 
     @staticmethod
-    def split_list_with_size(input, split_size):
+    def split_list_with_size(inputs, split_size):
 
         output = []
         # split_size = np.array(split_size)
         for i, value in enumerate(split_size):
             start_index = np.sum(split_size[:i])
             stop_index = np.sum(split_size[:i + 1])
-            output.append(input[start_index:stop_index])
+            output.append(inputs[start_index:stop_index])
         return output
 
     def pad_and_convert_to_tensor(self, inputs, padding_value=0, no_padding=False):
@@ -179,13 +178,12 @@ class CacheDataset(torch.utils.data.Dataset):
         if no_padding:
             for i, input_tmp in enumerate(inputs):
                 inputs[i] = torch.from_numpy(np.stack(input_tmp)).to(self.device)
-            return inputs
         else:
             for i, input_tmp in enumerate(inputs):
                 inputs[i] = torch.nn.utils.rnn.pad_sequence([torch.from_numpy(b) for b in inputs[i]],
                                                             batch_first=True,
                                                             padding_value=padding_value).to(self.device)
-            return inputs
+        return inputs
 
     def release_h5(self):
         import gc
@@ -278,7 +276,6 @@ class TorchData(torch.utils.data.Dataset):
         del num_conformations
         del species
         del anidata
-        del molecule
         gc.collect()
 
     def __getitem__(self, index):
@@ -342,7 +339,7 @@ def collate_fn(data, bar, test_bar_max):
         print('format is [chunk_size, chunk_max]')
         print('current bar = {}'.format(bar))
         size_max = []
-        for i in range(len(chunk_size_list)):
+        for i, _ in enumerate(chunk_size_list):
             size_max.append([list(chunk_size_list[i].numpy())[0],
                              list(chunk_max_list[i].numpy())[0]])
         print(size_max)
@@ -350,7 +347,7 @@ def collate_fn(data, bar, test_bar_max):
         for b in range(0, test_bar_max + 1, 1):
             test_chunk_size_list, test_chunk_max_list = split_to_chunks(counts, bar=b * batch_size * 20)
             size_max = []
-            for i in range(len(test_chunk_size_list)):
+            for i, _ in enumerate(test_chunk_size_list):
                 size_max.append([list(test_chunk_size_list[i].numpy())[0],
                                  list(test_chunk_max_list[i].numpy())[0]])
             print('bar = {}'.format(b))
@@ -371,7 +368,7 @@ def collate_fn(data, bar, test_bar_max):
 
     chunks = list(zip(*datas))
 
-    for i in range(len(chunks)):
+    for i, _ in enumerate(chunks):
         chunks[i] = (chunks[i][0], chunks[i][1])
 
     properties = {'energies': batch_energies.flatten()}
@@ -432,7 +429,7 @@ def split_to_chunks(counts, bar=50000):
     final_chunk_max = []
 
     if (splitted):
-        for i in range(len(counts_list)):
+        for i, _ in enumerate(counts_list):
             tmp_chunk_size, tmp_chunk_max = split_to_chunks(counts_list[i], bar)
             final_chunk_size.extend(tmp_chunk_size)
             final_chunk_max.extend(tmp_chunk_max)
@@ -442,7 +439,7 @@ def split_to_chunks(counts, bar=50000):
 
 
 def trunc_pad(chunks, padding_value=0):
-    for i in range(len(chunks)):
+    for i, _ in enumerate(chunks):
         lengths = torch.sum(~(chunks[i] == padding_value), dim=-1, dtype=torch.int32)
         chunks[i] = chunks[i][..., :lengths.max()]
     return chunks
