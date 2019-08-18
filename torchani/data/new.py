@@ -127,7 +127,8 @@ class CacheDataset(torch.utils.data.Dataset):
                 print(size_max)
 
         chunk_size_list = torch.stack(chunk_size_list).flatten()
-        chunk_max_list = torch.stack(chunk_max_list).flatten()
+        # chunk_max_list = torch.stack(chunk_max_list).flatten()
+
         # split into chunks
         datas[0] = self.split_list_with_size(datas[0], chunk_size_list.numpy())
         datas[1] = self.split_list_with_size(datas[1], chunk_size_list.numpy())
@@ -206,12 +207,12 @@ def ShuffleDataset(file_path,
     if test_bar_max:
         def my_collate_fn(data, bar=bar, test_bar_max=test_bar_max):
             return collate_fn(data, bar, test_bar_max)
-        data_loader = torch.utils.data.DataLoader(dataset=dataset,
-                                                  batch_size=batch_size,
-                                                  shuffle=shuffle,
-                                                  num_workers=0,
-                                                  pin_memory=False,
-                                                  collate_fn=my_collate_fn)
+        _ = torch.utils.data.DataLoader(dataset=dataset,
+                                        batch_size=batch_size,
+                                        shuffle=shuffle,
+                                        num_workers=0,
+                                        pin_memory=False,
+                                        collate_fn=my_collate_fn)
         print('=> checking which bar should use (bar control how chunks will be splitted)')
 
     def my_collate_fn(data, bar=bar, test_bar_max=None):
