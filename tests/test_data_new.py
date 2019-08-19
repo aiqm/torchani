@@ -8,7 +8,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s03.h5')
 
 batch_size = 2560
-bar = 5
+chunk_threshold = 5
 
 
 class TestFindThreshold(unittest.TestCase):
@@ -23,7 +23,7 @@ class TestShuffleData(unittest.TestCase):
 
     def setUp(self):
         print('.. setup shuffle dataset')
-        self.ds = torchani.data.ShuffleDataset(dspath, batch_size=batch_size, bar=bar, num_workers=2)
+        self.ds = torchani.data.ShuffleDataset(dspath, batch_size=batch_size, chunk_threshold=chunk_threshold, num_workers=2)
         self.chunks, self.properties = iter(self.ds).next()
 
     def testTensorShape(self):
@@ -66,7 +66,7 @@ class TestCacheData(unittest.TestCase):
 
     def setUp(self):
         print('.. setup cached dataset')
-        self.ds = torchani.data.CacheDataset(dspath, batch_size=batch_size, device='cpu', bar=bar)
+        self.ds = torchani.data.CacheDataset(dspath, batch_size=batch_size, device='cpu', chunk_threshold=chunk_threshold)
         self.chunks, self.properties = self.ds[0]
 
     def testTensorShape(self):

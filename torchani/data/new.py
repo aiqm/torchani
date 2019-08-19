@@ -22,7 +22,7 @@ class CacheDataset(torch.utils.data.Dataset):
                  self_energies=[-0.600953, -38.08316, -54.707756, -75.194466],
                  batch_size=1000,
                  device='cpu',
-                 bar=20):
+                 chunk_threshold=20):
 
         super(CacheDataset, self).__init__()
 
@@ -75,9 +75,9 @@ class CacheDataset(torch.utils.data.Dataset):
         self.shuffled_index = np.arange(len(self.data_species))
         np.random.shuffle(self.shuffled_index)
 
-        self.bar = bar
-        if not self.bar:
-            self.bar = np.inf
+        self.chunk_threshold = chunk_threshold
+        if not self.chunk_threshold:
+            self.chunk_threshold = np.inf
 
         anidata.cleanup()
         import gc
@@ -113,7 +113,7 @@ class CacheDataset(torch.utils.data.Dataset):
         # get chunk size
         output, count = torch.unique(atoms, sorted=True, return_counts=True)
         counts = torch.cat((output.unsqueeze(-1).int(), count.unsqueeze(-1).int()), dim=-1)
-        chunk_size_list, chunk_max_list = split_to_chunks(counts, bar=self.bar * self.batch_size * 20)
+        chunk_size_list, chunk_max_list = split_to_chunks(counts, chunk_threshold=self.chunk_threshold * self.batch_size * 20)
         chunk_size_list = torch.stack(chunk_size_list).flatten()
 
         # split into chunks
@@ -184,16 +184,16 @@ class CacheDataset(torch.utils.data.Dataset):
         output, count = torch.unique(atoms, sorted=True, return_counts=True)
         counts = torch.cat((output.unsqueeze(-1).int(), count.unsqueeze(-1).int()), dim=-1)
 
-        print('=> choose a reasonable bar to split chunks')
+        print('=> choose a reasonable threshold to split chunks')
         print('format is [chunk_size, chunk_max]')
 
         for b in range(0, threshold_max, 1):
-            test_chunk_size_list, test_chunk_max_list = split_to_chunks(counts, bar=b * self.batch_size * 20)
+            test_chunk_size_list, test_chunk_max_list = split_to_chunks(counts, chunk_threshold=b * self.batch_size * 20)
             size_max = []
             for i, _ in enumerate(test_chunk_size_list):
                 size_max.append([list(test_chunk_size_list[i].numpy())[0],
                                 list(test_chunk_max_list[i].numpy())[0]])
-            print('bar = {}'.format(b))
+            print('chunk_threshold = {}'.format(b))
             print(size_max)
 
     def release_h5(self):
@@ -208,15 +208,15 @@ def ShuffleDataset(file_path,
                    species_order='HCNO',
                    subtract_self_energies=False,
                    self_energies=[-0.600953, -38.08316, -54.707756, -75.194466],
-                   batch_size=1000, num_workers=0, shuffle=True, bar=20):
+                   batch_size=1000, num_workers=0, shuffle=True, chunk_threshold=20):
 
     dataset = TorchData(file_path, species_order, subtract_self_energies, self_energies)
 
-    if not bar:
-        bar = np.inf
+    if not chunk_threshold:
+        chunk_threshold = np.inf
 
-    def my_collate_fn(data, bar=bar):
-        return collate_fn(data, bar)
+    def my_collate_fn(data, chunk_threshold=chunk_threshold):
+        return collate_fn(data, chunk_threshold)
 
     data_loader = torch.utils.data.DataLoader(dataset=dataset,
                                               batch_size=batch_size,
@@ -294,7 +294,7 @@ class TorchData(torch.utils.data.Dataset):
         return self.length
 
 
-def collate_fn(data, bar):
+def collate_fn(data, chunk_threshold):
     """Creates a batch of chunked data.
     Args:
         data: list of molecules, each molecule is a list.
@@ -329,11 +329,9 @@ def collate_fn(data, bar):
     batch_energies = torch.index_select(batch_energies, dim=0, index=sorted_atoms_idx)
 
     # get chunk size - time: 2.1s
-    if not bar:
-        bar = 1000
     output, count = torch.unique(atoms, sorted=True, return_counts=True)
     counts = torch.cat((output.unsqueeze(-1).int(), count.unsqueeze(-1).int()), dim=-1)
-    chunk_size_list, chunk_max_list = split_to_chunks(counts, bar=bar * batch_size * 20)
+    chunk_size_list, chunk_max_list = split_to_chunks(counts, chunk_threshold=chunk_threshold * batch_size * 20)
 
     # split into chunks - time: 0.3s
     chunks_batch_species = torch.split(batch_species, chunk_size_list, dim=0)
@@ -361,7 +359,7 @@ def collate_fn(data, bar):
     return chunks, properties
 
 
-def split_to_two_chunks(counts, bar):
+def split_to_two_chunks(counts, chunk_threshold):
 
     counts = counts.cpu()
     left_mask = torch.triu(torch.ones([counts.shape[0], counts.shape[0]], dtype=torch.uint8))
@@ -384,9 +382,9 @@ def split_to_two_chunks(counts, bar):
     chunk_size_right = torch.sum(counts_counts_right, dim=-1, keepdim=True, dtype=torch.int32)
 
     # calculate cost
-    min_cost_bar = torch.tensor([bar], dtype=torch.int32)
-    cost = (torch.max(chunk_size_left * chunk_max_left * chunk_max_left, min_cost_bar)
-            + torch.max(chunk_size_right * chunk_max_right * chunk_max_right, min_cost_bar))
+    min_cost_threshold = torch.tensor([chunk_threshold], dtype=torch.int32)
+    cost = (torch.max(chunk_size_left * chunk_max_left * chunk_max_left, min_cost_threshold)
+            + torch.max(chunk_size_right * chunk_max_right * chunk_max_right, min_cost_threshold))
 
     # find smallest cost
     cost_min, cost_min_index = torch.min(cost.squeeze(), dim=-1)
@@ -403,15 +401,15 @@ def split_to_two_chunks(counts, bar):
         final_chunk_size, final_chunk_max, cost_min
 
 
-def split_to_chunks(counts, bar=50000):
+def split_to_chunks(counts, chunk_threshold=50000):
 
-    splitted, counts_list, chunk_size, chunk_max, cost = split_to_two_chunks(counts, bar)
+    splitted, counts_list, chunk_size, chunk_max, cost = split_to_two_chunks(counts, chunk_threshold)
     final_chunk_size = []
     final_chunk_max = []
 
     if (splitted):
         for i, _ in enumerate(counts_list):
-            tmp_chunk_size, tmp_chunk_max = split_to_chunks(counts_list[i], bar)
+            tmp_chunk_size, tmp_chunk_max = split_to_chunks(counts_list[i], chunk_threshold)
             final_chunk_size.extend(tmp_chunk_size)
             final_chunk_max.extend(tmp_chunk_max)
         return final_chunk_size, final_chunk_max
