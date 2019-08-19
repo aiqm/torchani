@@ -21,6 +21,9 @@ steps:
 - script: 'azure/install_dependencies.sh && pip install h5py .'
   displayName: 'Install dependencies'
 
+- script: './download.sh'
+  displayName: 'Download data files'
+
 - script: 'python -m torchani.data.cache_aev tmp dataset/ani1-up_to_gdb4/ani_gdb_s01.h5 256'
   displayName: Cache AEV
 
