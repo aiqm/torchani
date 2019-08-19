@@ -148,7 +148,7 @@ class CachedDataset(torch.utils.data.Dataset):
         chunks_batch_coordinates = self.pad_and_convert_to_tensor(chunks_batch_coordinates)
         batch_energies = self.pad_and_convert_to_tensor(batch_energies, no_padding=True)
 
-        chunks = list(zip(*[chunks_batch_species, chunks_batch_coordinates]))
+        chunks = list(zip(chunks_batch_species, chunks_batch_coordinates))
 
         for i, _ in enumerate(chunks):
             chunks[i] = (chunks[i][0], chunks[i][1].reshape(chunks[i][1].shape[0], -1, 3))
@@ -368,7 +368,7 @@ def collate_fn(data, chunk_threshold):
     for i, c in enumerate(chunks_batch_coordinates):
         chunks_batch_coordinates[i] = c.reshape(c.shape[0], -1, 3)
 
-    chunks = list(zip(*[chunks_batch_species, chunks_batch_coordinates]))
+    chunks = list(zip(chunks_batch_species, chunks_batch_coordinates))
 
     for i, _ in enumerate(chunks):
         chunks[i] = (chunks[i][0], chunks[i][1])
