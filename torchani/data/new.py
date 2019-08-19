@@ -3,8 +3,9 @@ import torch
 import functools
 from ._pyanitools import anidataloader
 import importlib
+
 PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None
-if PKBAR_INSTALLED is not None:
+if PKBAR_INSTALLED:
     import pkbar
 
 
@@ -37,7 +38,8 @@ class CacheDataset(torch.utils.data.Dataset):
 
         anidata = anidataloader(file_path)
         anidata_size = anidata.group_size()
-        if anidata_size > 5 and PKBAR_INSTALLED:
+        enable_pkbar = anidata_size > 5 and PKBAR_INSTALLED
+        if enable_pkbar:
             pbar = pkbar.Pbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata_size), anidata_size)
 
         for i, molecule in enumerate(anidata):
@@ -52,7 +54,7 @@ class CacheDataset(torch.utils.data.Dataset):
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
                 self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)).astype(np.float32))
             # other properties
-            if anidata_size > 5 and PKBAR_INSTALLED:
+            if enable_pkbar:
                 pbar.update(i)
 
         if subtract_self_energies:
@@ -251,7 +253,8 @@ class TorchData(torch.utils.data.Dataset):
 
         anidata = anidataloader(file_path)
         anidata_size = anidata.group_size()
-        if anidata_size > 5 and PKBAR_INSTALLED:
+        enable_pkbar = anidata_size > 5 and PKBAR_INSTALLED
+        if enable_pkbar:
             pbar = pkbar.Pbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata_size), anidata_size)
 
         for i, molecule in enumerate(anidata):
@@ -263,7 +266,7 @@ class TorchData(torch.utils.data.Dataset):
             if subtract_self_energies:
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
                 self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)).astype(np.float32))
-            if anidata_size > 5 and PKBAR_INSTALLED:
+            if enable_pkbar:
                 pbar.update(i)
 
         if subtract_self_energies:
