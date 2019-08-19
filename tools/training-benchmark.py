@@ -105,7 +105,7 @@ if __name__ == "__main__":
         print('using shuffle dataset API')
         print('=> loading dataset...')
         dataset = torchani.data.ShuffledDataset(file_path=parser.dataset_path,
-                                                species_order='HCNO',
+                                                species_order=['H', 'C', 'N', 'O'],
                                                 subtract_self_energies=True,
                                                 batch_size=parser.batch_size,
                                                 num_workers=2)
@@ -127,7 +127,7 @@ if __name__ == "__main__":
         print('using cache dataset API')
         print('=> loading dataset...')
         dataset = torchani.data.CachedDataset(file_path=parser.dataset_path,
-                                              species_order='HCNO',
+                                              species_order=['H', 'C', 'N', 'O'],
                                               subtract_self_energies=True,
                                               batch_size=parser.batch_size)
         print('=> caching all dataset into cpu')

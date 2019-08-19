@@ -27,8 +27,8 @@ class CachedDataset(torch.utils.data.Dataset):
         file_path (str): Path to one hdf5 files.
         batch_size (int): batch size.
         chunk_threshold (int): threshould to split batch into chunks.
-        species_order (str): a string which specify how species are transfomed to int.
-            for example: 'HCNO' means {'H': 0, 'C': 1, 'N': 2, 'O': 3}
+        species_order (list): a list which specify how species are transfomed to int.
+            for example: ['H', 'C', 'N', 'O'] means {'H': 0, 'C': 1, 'N': 2, 'O': 3}
         subtract_self_energies (bool): whether subtract self energies from energies
         self_energies (list): if `subtract_self_energies` is True, the order should keep
             the same as `species_order`.
@@ -44,7 +44,7 @@ class CachedDataset(torch.utils.data.Dataset):
                  batch_size=1000,
                  device='cpu',
                  chunk_threshold=20,
-                 species_order='HCNO',
+                 species_order=['H', 'C', 'N', 'O'],
                  subtract_self_energies=False,
                  self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]):
 
@@ -220,7 +220,7 @@ class CachedDataset(torch.utils.data.Dataset):
 
 def ShuffledDataset(file_path,
                     batch_size=1000, num_workers=0, shuffle=True, chunk_threshold=20,
-                    species_order='HCNO',
+                    species_order=['H', 'C', 'N', 'O'],
                     subtract_self_energies=False,
                     self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]):
     """ Shuffled Dataset which using `torch.utils.data.DataLoader`, it will shuffle at every epoch.
@@ -230,8 +230,8 @@ def ShuffledDataset(file_path,
         num_workers (int): multiple process to prepare data background when training is going.
         shuffle (bool): whether to shuffle.
         chunk_threshold (int): threshould to split batch into chunks.
-        species_order (str): a string which specify how species are transfomed to int.
-            for example: 'HCNO' means {'H': 0, 'C': 1, 'N': 2, 'O': 3}
+        species_order (list): a list which specify how species are transfomed to int.
+            for example: ['H', 'C', 'N', 'O'] means {'H': 0, 'C': 1, 'N': 2, 'O': 3}
         subtract_self_energies (bool): whether subtract self energies from energies
         self_energies (list): if `subtract_self_energies` is True, the order should keep
             the same as `species_order`.
@@ -425,7 +425,7 @@ def split_to_two_chunks(counts, chunk_threshold):
         final_chunk_size, final_chunk_max, cost_min
 
 
-def split_to_chunks(counts, chunk_threshold=50000):
+def split_to_chunks(counts, chunk_threshold=np.inf):
     splitted, counts_list, chunk_size, chunk_max, cost = split_to_two_chunks(counts, chunk_threshold)
     final_chunk_size = []
     final_chunk_max = []
