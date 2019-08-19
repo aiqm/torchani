@@ -10,19 +10,42 @@ if PKBAR_INSTALLED:
 
 
 def find_threshold(file_path, batch_size, threshold_max=100):
+    """Find resonable threshold to split chunks
+    Arguments:
+        file_path (str): Path to one hdf5 files.
+        batch_size (int): batch size.
+        threshold_max (int): max threshould to test.
+    """
     ds = CacheDataset(file_path=file_path, batch_size=batch_size)
     ds.find_threshold(threshold_max + 1)
 
 
 class CacheDataset(torch.utils.data.Dataset):
+    """ Cached Dataset which is shuffled once, but the dataset keeps the same at every epoch
+    Arguments:
+        file_path (str): Path to one hdf5 files.
+        batch_size (int): batch size.
+        chunk_threshold (int): threshould to split batch into chunks.
+        species_order (str): a string which specify how species are transfomed to int.
+            for example: 'HCNO' means {'H': 0, 'C': 1, 'N': 2, 'O': 3}
+        subtract_self_energies (bool): whether subtract self energies from energies
+        self_energies (list): if `subtract_self_energies` is True, the order should keep
+            the same as `species_order`.
+            for example :[-0.600953, -38.08316, -54.707756, -75.194466] will be converted
+            to {'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}
 
+    Returns:
+        ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)
+        e.g. chunk1 = [[1807, 21], [1807, 21, 3]], chunk2 = [[193, 50], [193, 50, 3]]
+        'energies' = [2000, 1]
+    """
     def __init__(self, file_path,
-                 species_order='HCNO',
-                 subtract_self_energies=False,
-                 self_energies=[-0.600953, -38.08316, -54.707756, -75.194466],
                  batch_size=1000,
                  device='cpu',
-                 chunk_threshold=20):
+                 chunk_threshold=20,
+                 species_order='HCNO',
+                 subtract_self_energies=False,
+                 self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]):
 
         super(CacheDataset, self).__init__()
 
@@ -205,10 +228,30 @@ class CacheDataset(torch.utils.data.Dataset):
 
 
 def ShuffleDataset(file_path,
+                   batch_size=1000, num_workers=0, shuffle=True, chunk_threshold=20,
                    species_order='HCNO',
                    subtract_self_energies=False,
-                   self_energies=[-0.600953, -38.08316, -54.707756, -75.194466],
-                   batch_size=1000, num_workers=0, shuffle=True, chunk_threshold=20):
+                   self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]):
+    """ Shuffled Dataset which using `torch.utils.data.DataLoader`, it will shuffle at every epoch.
+    Arguments:
+        file_path (str): Path to one hdf5 files.
+        batch_size (int): batch size.
+        num_workers (int): multiple process to prepare data background when training is going.
+        shuffle (bool): whether to shuffle.
+        chunk_threshold (int): threshould to split batch into chunks.
+        species_order (str): a string which specify how species are transfomed to int.
+            for example: 'HCNO' means {'H': 0, 'C': 1, 'N': 2, 'O': 3}
+        subtract_self_energies (bool): whether subtract self energies from energies
+        self_energies (list): if `subtract_self_energies` is True, the order should keep
+            the same as `species_order`.
+            for example :[-0.600953, -38.08316, -54.707756, -75.194466] will be converted
+            to {'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}
+
+    Returns:
+        ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)
+        e.g. chunk1 = [[1807, 21], [1807, 21, 3]], chunk2 = [[193, 50], [193, 50, 3]]
+        'energies' = [2000, 1]
+    """
 
     dataset = TorchData(file_path, species_order, subtract_self_energies, self_energies)
 
@@ -296,15 +339,6 @@ class TorchData(torch.utils.data.Dataset):
 
 def collate_fn(data, chunk_threshold):
     """Creates a batch of chunked data.
-    Args:
-        data: list of molecules, each molecule is a list.
-              which contain [species, coordinates, energies, MO_energies]
-            - species: numpy array, shape (?); variable length.
-            - coordinates: numpy array, shape (?); variable length. (flattened)
-            - energies: numpy array, shape (1); variable length.
-            - MO_energies: numpy array, shape (?); variable length.
-    Returns:
-            - [chunk1, chunk2, ...] in which chunk1=(coordinates, species, energies)
     """
 
     # unzip a batch of molecules (each molecule is a list)
