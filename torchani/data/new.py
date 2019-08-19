@@ -9,6 +9,11 @@ if PKBAR_INSTALLED:
     import pkbar
 
 
+def find_threshold(file_path, batch_size, threshold_max=100):
+    ds = CacheDataset(file_path=file_path, batch_size=batch_size)
+    ds.find_threshold(threshold_max + 1)
+
+
 class CacheDataset(torch.utils.data.Dataset):
 
     def __init__(self, file_path,
@@ -17,8 +22,7 @@ class CacheDataset(torch.utils.data.Dataset):
                  self_energies=[-0.600953, -38.08316, -54.707756, -75.194466],
                  batch_size=1000,
                  device='cpu',
-                 bar=20,
-                 test_bar_max=None):
+                 bar=20):
 
         super(CacheDataset, self).__init__()
 
@@ -72,11 +76,8 @@ class CacheDataset(torch.utils.data.Dataset):
         np.random.shuffle(self.shuffled_index)
 
         self.bar = bar
-        self.test_bar_max = test_bar_max
         if not self.bar:
-            self.bar = 1000
-        if self.test_bar_max:
-            self.__getitem__(0, test_bar_max=self.test_bar_max)
+            self.bar = np.inf
 
         anidata.cleanup()
         import gc
@@ -86,7 +87,7 @@ class CacheDataset(torch.utils.data.Dataset):
         gc.collect()
 
     @functools.lru_cache(maxsize=None)
-    def __getitem__(self, index, test_bar_max=None):
+    def __getitem__(self, index):
 
         if index >= self.length:
             raise IndexError()
@@ -113,29 +114,7 @@ class CacheDataset(torch.utils.data.Dataset):
         output, count = torch.unique(atoms, sorted=True, return_counts=True)
         counts = torch.cat((output.unsqueeze(-1).int(), count.unsqueeze(-1).int()), dim=-1)
         chunk_size_list, chunk_max_list = split_to_chunks(counts, bar=self.bar * self.batch_size * 20)
-
-        # optimize bar, if test_bar_max is not None
-        if test_bar_max:
-            print('=> choose a reasonable bar to split chunks')
-            print('format is [chunk_size, chunk_max]')
-            print('current bar = {}'.format(self.bar))
-            size_max = []
-            for i, _ in enumerate(chunk_size_list):
-                size_max.append([list(chunk_size_list[i].numpy())[0],
-                                list(chunk_max_list[i].numpy())[0]])
-            print(size_max)
-
-            for b in range(0, self.test_bar_max + 1, 1):
-                test_chunk_size_list, test_chunk_max_list = split_to_chunks(counts, bar=b * self.batch_size * 20)
-                size_max = []
-                for i, _ in enumerate(test_chunk_size_list):
-                    size_max.append([list(test_chunk_size_list[i].numpy())[0],
-                                    list(test_chunk_max_list[i].numpy())[0]])
-                print('bar = {}'.format(b))
-                print(size_max)
-
         chunk_size_list = torch.stack(chunk_size_list).flatten()
-        # chunk_max_list = torch.stack(chunk_max_list).flatten()
 
         # split into chunks
         datas[0] = self.split_list_with_size(datas[0], chunk_size_list.numpy())
@@ -193,6 +172,30 @@ class CacheDataset(torch.utils.data.Dataset):
                                                             padding_value=padding_value).to(self.device)
         return inputs
 
+    def find_threshold(self, threshold_max=100):
+        batch_indices = slice(0, self.batch_size)
+        batch_indices_shuffled = self.shuffled_index[batch_indices]
+
+        batch_species = [self.data_species[i] for i in batch_indices_shuffled]
+
+        num_atoms_each_mole = [b.shape[0] for b in batch_species]
+        atoms = torch.tensor(num_atoms_each_mole, dtype=torch.int32)
+
+        output, count = torch.unique(atoms, sorted=True, return_counts=True)
+        counts = torch.cat((output.unsqueeze(-1).int(), count.unsqueeze(-1).int()), dim=-1)
+
+        print('=> choose a reasonable bar to split chunks')
+        print('format is [chunk_size, chunk_max]')
+
+        for b in range(0, threshold_max, 1):
+            test_chunk_size_list, test_chunk_max_list = split_to_chunks(counts, bar=b * self.batch_size * 20)
+            size_max = []
+            for i, _ in enumerate(test_chunk_size_list):
+                size_max.append([list(test_chunk_size_list[i].numpy())[0],
+                                list(test_chunk_max_list[i].numpy())[0]])
+            print('bar = {}'.format(b))
+            print(size_max)
+
     def release_h5(self):
         import gc
         del self.data_species
@@ -205,24 +208,15 @@ def ShuffleDataset(file_path,
                    species_order='HCNO',
                    subtract_self_energies=False,
                    self_energies=[-0.600953, -38.08316, -54.707756, -75.194466],
-                   batch_size=1000, num_workers=0, shuffle=True,
-                   bar=20, test_bar_max=None):
+                   batch_size=1000, num_workers=0, shuffle=True, bar=20):
 
     dataset = TorchData(file_path, species_order, subtract_self_energies, self_energies)
 
-    if test_bar_max:
-        def my_collate_fn(data, bar=bar, test_bar_max=test_bar_max):
-            return collate_fn(data, bar, test_bar_max)
-        _ = torch.utils.data.DataLoader(dataset=dataset,
-                                        batch_size=batch_size,
-                                        shuffle=shuffle,
-                                        num_workers=0,
-                                        pin_memory=False,
-                                        collate_fn=my_collate_fn)
-        print('=> checking which bar should use (bar control how chunks will be splitted)')
+    if not bar:
+        bar = np.inf
 
-    def my_collate_fn(data, bar=bar, test_bar_max=None):
-        return collate_fn(data, bar, test_bar_max)
+    def my_collate_fn(data, bar=bar):
+        return collate_fn(data, bar)
 
     data_loader = torch.utils.data.DataLoader(dataset=dataset,
                                               batch_size=batch_size,
@@ -300,7 +294,7 @@ class TorchData(torch.utils.data.Dataset):
         return self.length
 
 
-def collate_fn(data, bar, test_bar_max):
+def collate_fn(data, bar):
     """Creates a batch of chunked data.
     Args:
         data: list of molecules, each molecule is a list.
@@ -340,25 +334,6 @@ def collate_fn(data, bar, test_bar_max):
     output, count = torch.unique(atoms, sorted=True, return_counts=True)
     counts = torch.cat((output.unsqueeze(-1).int(), count.unsqueeze(-1).int()), dim=-1)
     chunk_size_list, chunk_max_list = split_to_chunks(counts, bar=bar * batch_size * 20)
-
-    # optimize bar, if test_bar_max is not None
-    if test_bar_max:
-        print('format is [chunk_size, chunk_max]')
-        print('current bar = {}'.format(bar))
-        size_max = []
-        for i, _ in enumerate(chunk_size_list):
-            size_max.append([list(chunk_size_list[i].numpy())[0],
-                             list(chunk_max_list[i].numpy())[0]])
-        print(size_max)
-
-        for b in range(0, test_bar_max + 1, 1):
-            test_chunk_size_list, test_chunk_max_list = split_to_chunks(counts, bar=b * batch_size * 20)
-            size_max = []
-            for i, _ in enumerate(test_chunk_size_list):
-                size_max.append([list(test_chunk_size_list[i].numpy())[0],
-                                 list(test_chunk_max_list[i].numpy())[0]])
-            print('bar = {}'.format(b))
-            print(size_max)
 
     # split into chunks - time: 0.3s
     chunks_batch_species = torch.split(batch_species, chunk_size_list, dim=0)

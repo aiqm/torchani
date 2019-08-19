@@ -11,11 +11,19 @@ batch_size = 2560
 bar = 5
 
 
+class TestFindThreshold(unittest.TestCase):
+    def setUp(self):
+        print('.. check find threshold to split chunks')
+
+    def testFindThreshould(self):
+        torchani.data.find_threshold(dspath, batch_size=batch_size, threshold_max=10)
+
+
 class TestShuffleData(unittest.TestCase):
 
     def setUp(self):
         print('.. setup shuffle dataset')
-        self.ds = torchani.data.ShuffleDataset(dspath, batch_size=batch_size, bar=bar, num_workers=2, test_bar_max=None)
+        self.ds = torchani.data.ShuffleDataset(dspath, batch_size=batch_size, bar=bar, num_workers=2)
         self.chunks, self.properties = iter(self.ds).next()
 
     def testTensorShape(self):
@@ -58,7 +66,7 @@ class TestCacheData(unittest.TestCase):
 
     def setUp(self):
         print('.. setup cached dataset')
-        self.ds = torchani.data.CacheDataset(dspath, batch_size=batch_size, device='cpu', bar=bar, test_bar_max=None)
+        self.ds = torchani.data.CacheDataset(dspath, batch_size=batch_size, device='cpu', bar=bar)
         self.chunks, self.properties = self.ds[0]
 
     def testTensorShape(self):
