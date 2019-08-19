@@ -16,11 +16,11 @@ def find_threshold(file_path, batch_size, threshold_max=100):
         batch_size (int): batch size.
         threshold_max (int): max threshould to test.
     """
-    ds = CacheDataset(file_path=file_path, batch_size=batch_size)
+    ds = CachedDataset(file_path=file_path, batch_size=batch_size)
     ds.find_threshold(threshold_max + 1)
 
 
-class CacheDataset(torch.utils.data.Dataset):
+class CachedDataset(torch.utils.data.Dataset):
     """ Cached Dataset which is shuffled once, but the dataset keeps the same at every epoch
     Arguments:
         file_path (str): Path to one hdf5 files.
@@ -47,7 +47,7 @@ class CacheDataset(torch.utils.data.Dataset):
                  subtract_self_energies=False,
                  self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]):
 
-        super(CacheDataset, self).__init__()
+        super(CachedDataset, self).__init__()
 
         # example of species_dict will looks like
         # species_dict: {'H': 0, 'C': 1, 'N': 2, 'O': 3}
@@ -227,11 +227,11 @@ class CacheDataset(torch.utils.data.Dataset):
         gc.collect()
 
 
-def ShuffleDataset(file_path,
-                   batch_size=1000, num_workers=0, shuffle=True, chunk_threshold=20,
-                   species_order='HCNO',
-                   subtract_self_energies=False,
-                   self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]):
+def ShuffledDataset(file_path,
+                    batch_size=1000, num_workers=0, shuffle=True, chunk_threshold=20,
+                    species_order='HCNO',
+                    subtract_self_energies=False,
+                    self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]):
     """ Shuffled Dataset which using `torch.utils.data.DataLoader`, it will shuffle at every epoch.
     Arguments:
         file_path (str): Path to one hdf5 files.

@@ -101,10 +101,10 @@ if __name__ == "__main__":
     model[1].forward = time_func('forward', model[1].forward)
 
     if parser.dataset == 'shuffle':
-        torchani.data.ShuffleDataset = time_func('data_loading', torchani.data.ShuffleDataset)
+        torchani.data.ShuffledDataset = time_func('data_loading', torchani.data.ShuffledDataset)
         print('using shuffle dataset API')
         print('=> loading dataset...')
-        dataset = torchani.data.ShuffleDataset(file_path=parser.dataset_path,
+        dataset = torchani.data.ShuffledDataset(file_path=parser.dataset_path,
                                                species_order='HCNO',
                                                subtract_self_energies=True,
                                                batch_size=parser.batch_size,
@@ -123,10 +123,10 @@ if __name__ == "__main__":
         print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
         chunks, properties = dataset[0]
     elif parser.dataset == 'cache':
-        torchani.data.CacheDataset = time_func('data_loading', torchani.data.CacheDataset)
+        torchani.data.CachedDataset = time_func('data_loading', torchani.data.CachedDataset)
         print('using cache dataset API')
         print('=> loading dataset...')
-        dataset = torchani.data.CacheDataset(file_path=parser.dataset_path,
+        dataset = torchani.data.CachedDataset(file_path=parser.dataset_path,
                                              species_order='HCNO',
                                              subtract_self_energies=True,
                                              batch_size=parser.batch_size)

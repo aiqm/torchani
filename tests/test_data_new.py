@@ -19,11 +19,11 @@ class TestFindThreshold(unittest.TestCase):
         torchani.data.find_threshold(dspath, batch_size=batch_size, threshold_max=10)
 
 
-class TestShuffleData(unittest.TestCase):
+class TestShuffledData(unittest.TestCase):
 
     def setUp(self):
         print('.. setup shuffle dataset')
-        self.ds = torchani.data.ShuffleDataset(dspath, batch_size=batch_size, chunk_threshold=chunk_threshold, num_workers=2)
+        self.ds = torchani.data.ShuffledDataset(dspath, batch_size=batch_size, chunk_threshold=chunk_threshold, num_workers=2)
         self.chunks, self.properties = iter(self.ds).next()
 
     def testTensorShape(self):
@@ -62,11 +62,11 @@ class TestShuffleData(unittest.TestCase):
             self.assertGreater(non_padding.numel(), 0)
 
 
-class TestCacheData(unittest.TestCase):
+class TestCachedData(unittest.TestCase):
 
     def setUp(self):
         print('.. setup cached dataset')
-        self.ds = torchani.data.CacheDataset(dspath, batch_size=batch_size, device='cpu', chunk_threshold=chunk_threshold)
+        self.ds = torchani.data.CachedDataset(dspath, batch_size=batch_size, device='cpu', chunk_threshold=chunk_threshold)
         self.chunks, self.properties = self.ds[0]
 
     def testTensorShape(self):
