@@ -44,7 +44,7 @@ if __name__ == "__main__":
                             or a directory containing hdf5 files')
     parser.add_argument('-d', '--device',
                         help='Device of modules and tensors',
-                        default=('cpu' if torch.cuda.is_available() else 'cpu'))
+                        default=('cuda' if torch.cuda.is_available() else 'cpu'))
     parser.add_argument('-b', '--batch_size',
                         help='Number of conformations of each batch',
                         default=2560, type=int)
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         print('=> loading dataset...')
         dataset = torchani.data.ShuffleDataset(file_path=parser.dataset_path,
                                                species_order='HCNO',
-                                               transform=True,
+                                               subtract_self_energies=True,
                                                batch_size=parser.batch_size,
                                                num_workers=2)
         print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
@@ -128,7 +128,7 @@ if __name__ == "__main__":
         print('=> loading dataset...')
         dataset = torchani.data.CacheDataset(file_path=parser.dataset_path,
                                              species_order='HCNO',
-                                             transform=True,
+                                             subtract_self_energies=True,
                                              batch_size=parser.batch_size)
         print('=> caching all dataset into cpu')
         pbar = pkbar.Pbar('loading and processing dataset into cpu memory, total '

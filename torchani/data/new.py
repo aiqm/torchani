@@ -3,8 +3,8 @@ import torch
 import functools
 from ._pyanitools import anidataloader
 import importlib
-pkbar_installed = importlib.util.find_spec('pkbar')
-if pkbar_installed is not None:
+PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None
+if PKBAR_INSTALLED is not None:
     import pkbar
 
 
@@ -12,7 +12,7 @@ class CacheDataset(torch.utils.data.Dataset):
 
     def __init__(self, file_path,
                  species_order='HCNO',
-                 transform=True,
+                 subtract_self_energies=False,
                  self_energies=[-0.600953, -38.08316, -54.707756, -75.194466],
                  batch_size=1000,
                  device='cpu',
@@ -21,8 +21,9 @@ class CacheDataset(torch.utils.data.Dataset):
 
         super(CacheDataset, self).__init__()
 
-        # species_dict = {'H': 0, 'C': 1, 'N': 2, 'O': 3}
-        # self_energies_dict = {'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}
+        # example of species_dict will looks like
+        # species_dict: {'H': 0, 'C': 1, 'N': 2, 'O': 3}
+        # self_energies_dict: {'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}
         species_dict = {}
         self_energies_dict = {}
         for i, s in enumerate(species_order):
@@ -36,7 +37,7 @@ class CacheDataset(torch.utils.data.Dataset):
 
         anidata = anidataloader(file_path)
         anidata_size = anidata.group_size()
-        if anidata_size > 5 and pkbar_installed is not None:
+        if anidata_size > 5 and PKBAR_INSTALLED:
             pbar = pkbar.Pbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata_size), anidata_size)
 
         for i, molecule in enumerate(anidata):
@@ -47,14 +48,14 @@ class CacheDataset(torch.utils.data.Dataset):
             self.data_species += list(np.tile(species, (num_conformations, 1)))
             # energies
             self.data_energies += list(molecule['energies'].reshape((-1, 1)).astype(np.float32))
-            if transform:
+            if subtract_self_energies:
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
                 self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)).astype(np.float32))
             # other properties
-            if anidata_size > 5 and pkbar_installed is not None:
+            if anidata_size > 5 and PKBAR_INSTALLED:
                 pbar.update(i)
 
-        if transform:
+        if subtract_self_energies:
             self.data_energies = np.array(self.data_energies) - np.array(self.data_self_energies)
             import gc
             del self.data_self_energies
@@ -200,12 +201,12 @@ class CacheDataset(torch.utils.data.Dataset):
 
 def ShuffleDataset(file_path,
                    species_order='HCNO',
-                   transform=True,
+                   subtract_self_energies=False,
                    self_energies=[-0.600953, -38.08316, -54.707756, -75.194466],
                    batch_size=1000, num_workers=0, shuffle=True,
                    bar=20, test_bar_max=None):
 
-    dataset = TorchData(file_path, species_order, transform, self_energies)
+    dataset = TorchData(file_path, species_order, subtract_self_energies, self_energies)
 
     if test_bar_max:
         def my_collate_fn(data, bar=bar, test_bar_max=test_bar_max):
@@ -233,12 +234,10 @@ def ShuffleDataset(file_path,
 
 class TorchData(torch.utils.data.Dataset):
 
-    def __init__(self, file_path, species_order, transform, self_energies):
+    def __init__(self, file_path, species_order, subtract_self_energies, self_energies):
 
         super(TorchData, self).__init__()
 
-        # species_dict = {'H': 0, 'C': 1, 'N': 2, 'O': 3}
-        # self_energies_dict = {'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}
         species_dict = {}
         self_energies_dict = {}
         for i, s in enumerate(species_order):
@@ -252,7 +251,7 @@ class TorchData(torch.utils.data.Dataset):
 
         anidata = anidataloader(file_path)
         anidata_size = anidata.group_size()
-        if anidata_size > 5 and pkbar_installed is not None:
+        if anidata_size > 5 and PKBAR_INSTALLED:
             pbar = pkbar.Pbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata_size), anidata_size)
 
         for i, molecule in enumerate(anidata):
@@ -261,13 +260,13 @@ class TorchData(torch.utils.data.Dataset):
             self.data_energies += list(molecule['energies'].reshape((-1, 1)).astype(np.float32))
             species = np.array([species_dict[x] for x in molecule['species']])
             self.data_species += list(np.tile(species, (num_conformations, 1)))
-            if transform:
+            if subtract_self_energies:
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
                 self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)).astype(np.float32))
-            if anidata_size > 5 and pkbar_installed is not None:
+            if anidata_size > 5 and PKBAR_INSTALLED:
                 pbar.update(i)
 
-        if transform:
+        if subtract_self_energies:
             self.data_energies = np.array(self.data_energies) - np.array(self.data_self_energies)
             import gc
             del self.data_self_energies
