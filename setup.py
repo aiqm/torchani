@@ -20,7 +20,6 @@ setup_attrs = {
     'install_requires': [
         'torch-nightly',
         'lark-parser',
-        'pkbar',
     ],
     'test_suite': 'nose.collector',
     'tests_require': [

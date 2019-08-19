@@ -2,7 +2,10 @@ import numpy as np
 import torch
 import functools
 from ._pyanitools import anidataloader
-import pkbar
+import importlib
+pkbar_installed = importlib.util.find_spec('hello')
+if pkbar_installed is not None:
+    import pkbar
 
 
 class CacheDataset(torch.utils.data.Dataset):
@@ -33,7 +36,7 @@ class CacheDataset(torch.utils.data.Dataset):
 
         anidata = anidataloader(file_path)
         anidata_size = anidata.group_size()
-        if anidata_size > 5:
+        if anidata_size > 5 and pkbar_installed is not None:
             pbar = pkbar.Pbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata_size), anidata_size)
 
         for i, molecule in enumerate(anidata):
@@ -48,7 +51,7 @@ class CacheDataset(torch.utils.data.Dataset):
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
                 self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)).astype(np.float32))
             # other properties
-            if anidata_size > 5:
+            if anidata_size > 5 and pkbar_installed is not None:
                 pbar.update(i)
 
         if transform:
@@ -249,7 +252,7 @@ class TorchData(torch.utils.data.Dataset):
 
         anidata = anidataloader(file_path)
         anidata_size = anidata.group_size()
-        if anidata_size > 5:
+        if anidata_size > 5 and pkbar_installed is not None:
             pbar = pkbar.Pbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata_size), anidata_size)
 
         for i, molecule in enumerate(anidata):
@@ -261,7 +264,7 @@ class TorchData(torch.utils.data.Dataset):
             if transform:
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
                 self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)).astype(np.float32))
-            if anidata_size > 5:
+            if anidata_size > 5 and pkbar_installed is not None:
                 pbar.update(i)
 
         if transform:
