@@ -38,13 +38,16 @@ class CacheDataset(torch.utils.data.Dataset):
 
         for i, molecule in enumerate(anidata):
             num_conformations = len(molecule['coordinates'])
+            # species and coordinates
             self.data_coordinates += list(molecule['coordinates'].reshape(num_conformations, -1).astype(np.float32))
-            self.data_energies += list(molecule['energies'].reshape((-1, 1)).astype(np.float32))
             species = np.array([species_dict[x] for x in molecule['species']])
             self.data_species += list(np.tile(species, (num_conformations, 1)))
+            # energies
+            self.data_energies += list(molecule['energies'].reshape((-1, 1)).astype(np.float32))
             if transform:
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
                 self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)).astype(np.float32))
+            # other properties
             if anidata_size > 5:
                 pbar.update(i)
 
@@ -141,7 +144,6 @@ class CacheDataset(torch.utils.data.Dataset):
         # batch_energies
         datas[2] = self.pad_and_convert_to_tensor(datas[2], no_padding=True)
 
-        # return: [chunk1, chunk2, ...] in which chunk1=(coordinates, species, energies)
         chunks = list(zip(*datas[:2]))
 
         for i, _ in enumerate(chunks):
