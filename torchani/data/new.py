@@ -3,7 +3,7 @@ import torch
 import functools
 from ._pyanitools import anidataloader
 import importlib
-pkbar_installed = importlib.util.find_spec('hello')
+pkbar_installed = importlib.util.find_spec('pkbar')
 if pkbar_installed is not None:
     import pkbar
 
