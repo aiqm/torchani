@@ -26,14 +26,14 @@ TorchANI is a pytorch implementation of ANI. It is currently under alpha release
 TorchANI requires the latest preview version of PyTorch. You can install PyTorch by the following commands (assuming cuda10):
 
 ```bash
-pip install numpy torchvision_nightly
-pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
+pip install numpy
+pip install torch -f https://download.pytorch.org/whl/nightly/cu100/torch.html
 ```
 
 If you updated TorchANI, you may also need to update PyTorch:
 
 ```bash
-pip install --upgrade torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
+pip install --upgrade torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch.html
 ```
 
 After installing the correct PyTorch, you can install TorchANI by:
