@@ -11,6 +11,7 @@ import pickle
 import numpy as np
 from scipy.sparse import bsr_matrix
 import warnings
+from .new import CachedDataset, ShuffledDataset, find_threshold
 
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -216,8 +217,8 @@ class BatchedANIDataset(PaddedBatchChunkDataset):
 
 
 def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
-                     properties=('energies',), atomic_properties=(), transform=(),
-                     dtype=torch.get_default_dtype(), device=default_device,
+                     rm_outlier=False, properties=('energies',), atomic_properties=(),
+                     transform=(), dtype=torch.get_default_dtype(), device=default_device,
                      split=(None,)):
     """Load ANI dataset from hdf5 files, and split into subsets.
 
@@ -255,6 +256,8 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
         batch_size (int): Number of different 3D structures in a single
             minibatch.
         shuffle (bool): Whether to shuffle the whole dataset.
+        rm_outlier (bool): Whether to discard the outlier energy conformers
+            from a given dataset.
         properties (list): List of keys of `molecular` properties in the
             dataset to be loaded. Here `molecular` means, no matter the number
             of atoms that property always have fixed size, i.e. the tensor
@@ -298,13 +301,36 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
     atomic_properties_, properties_ = load_and_pad_whole_dataset(
         path, species_tensor_converter, shuffle, properties, atomic_properties)
 
+    molecules = atomic_properties_['species'].shape[0]
+    atomic_keys = ['species', 'coordinates', *atomic_properties]
+    keys = properties
+
     # do transformations on data
     for t in transform:
         atomic_properties_, properties_ = t(atomic_properties_, properties_)
 
-    molecules = atomic_properties_['species'].shape[0]
-    atomic_keys = ['species', 'coordinates', *atomic_properties]
-    keys = properties
+    if rm_outlier:
+        # This is how NeuroChem discard the outliers
+        transformed_energies = properties_['energies']
+        num_atoms = (atomic_properties_['species'] >= 0).to(transformed_energies.dtype).sum(dim=1)
+        scaled_diff = transformed_energies / num_atoms.sqrt()
+
+        mean = scaled_diff[torch.abs(scaled_diff) < 15.0].mean()
+        std = torch.abs(scaled_diff[torch.abs(scaled_diff) < 15.0]).std()
+
+        # -15 * std + mean < scaled_diff < +11 * std + mean
+        tol = 13.0 * std + mean
+        low_idx = (torch.abs(scaled_diff + 2.0 * std) < tol).nonzero().squeeze()
+        outlier_count = molecules - low_idx.numel()
+
+        # discard outlier energy conformers if exist
+        if outlier_count > 0:
+            print("Note: {} outlier energy conformers have been discarded from dataset".format(outlier_count))
+            for key, val in atomic_properties_.items():
+                atomic_properties_[key] = val[low_idx]
+            for key, val in properties_.items():
+                properties_[key] = val[low_idx]
+            molecules = low_idx.numel()
 
     # compute size of each subset
     split_ = []
@@ -462,7 +488,7 @@ def _cache_aev(output, dataset_path, batchsize, device, constfile,
     else:
         transform = ()
 
-    dataset = BatchedANIDataset(
+    dataset = load_ani_dataset(
         dataset_path, consts.species_to_tensor, batchsize,
         device=device, transform=transform, **kwargs
     )
@@ -486,4 +512,6 @@ def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
                SparseAEVCacheLoader.encode_aev, **kwargs)
 
 
-__all__ = ['BatchedANIDataset', 'AEVCacheLoader', 'SparseAEVCacheLoader', 'cache_aev', 'cache_sparse_aev']
+__all__ = ['load_ani_dataset', 'BatchedANIDataset', 'AEVCacheLoader',
+           'SparseAEVCacheLoader', 'cache_aev', 'cache_sparse_aev',
+           'CachedDataset', 'ShuffledDataset', 'find_threshold']

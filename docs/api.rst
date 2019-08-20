@@ -24,6 +24,9 @@ Datasets
 ========
 
 .. automodule:: torchani.data
+.. autofunction:: torchani.data.find_threshold
+.. autofunction:: torchani.data.ShuffledDataset
+.. autoclass:: torchani.data.CachedDataset
 .. autofunction:: torchani.data.load_ani_dataset
 .. autofunction:: torchani.data.create_aev_cache
 .. autoclass:: torchani.data.BatchedANIDataset
@@ -56,7 +59,6 @@ NeuroChem
 .. autofunction:: torchani.neurochem.load_atomic_network
 .. autofunction:: torchani.neurochem.load_model
 .. autofunction:: torchani.neurochem.load_model_ensemble
-.. autoclass:: torchani.neurochem.Builtins
 .. autoclass:: torchani.neurochem.Trainer
     :members:
 .. automodule:: torchani.neurochem.trainer

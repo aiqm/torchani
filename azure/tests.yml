@@ -24,6 +24,9 @@ steps:
 - script: 'azure/install_dependencies.sh && pip install nose coverage codecov'
   displayName: 'Install dependencies'
 
+- script: './download.sh'
+  displayName: 'Download data files'
+
 - script: 'python setup.py nosetests'
   displayName: Unit tests
 

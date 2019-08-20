@@ -1,9 +1,14 @@
 from setuptools import setup, find_packages
 import sys
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 setup_attrs = {
     'name': 'torchani',
     'description': 'PyTorch implementation of ANI',
+    'long_description': long_description,
+    'long_description_content_type': "text/markdown",
     'url': 'https://github.com/zasdfgbnm/torchani',
     'author': 'Xiang Gao',
     'author_email': 'qasdfgtyuiop@ufl.edu',
@@ -26,6 +31,7 @@ setup_attrs = {
         'h5py',
         'pytorch-ignite-nightly',
         'pillow',
+        'pkbar'
     ],
 }
 

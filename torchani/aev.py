@@ -2,23 +2,19 @@ from __future__ import division
 import torch
 from . import _six  # noqa:F401
 import math
-from torch import Tensor
 from typing import Tuple
 
 
 # @torch.jit.script
 def cutoff_cosine(distances, cutoff):
-    # type: (Tensor, float) -> Tensor
-    return torch.where(
-        distances <= cutoff,
-        0.5 * torch.cos(math.pi * distances / cutoff) + 0.5,
-        torch.zeros_like(distances)
-    )
+    # type: (torch.Tensor, float) -> torch.Tensor
+    # assuming all elements in distances are smaller than cutoff
+    return 0.5 * torch.cos(distances * (math.pi / cutoff)) + 0.5
 
 
 # @torch.jit.script
 def radial_terms(Rcr, EtaR, ShfR, distances):
-    # type: (float, Tensor, Tensor, Tensor) -> Tensor
+    # type: (float, torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
     """Compute the radial subAEV terms of the center atom given neighbors
 
     This correspond to equation (3) in the `ANI paper`_. This function just
@@ -46,7 +42,7 @@ def radial_terms(Rcr, EtaR, ShfR, distances):
 
 # @torch.jit.script
 def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
-    # type: (float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
+    # type: (float, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
     """Compute the angular subAEV terms of the center atom given neighbor pairs.
 
     This correspond to equation (4) in the `ANI paper`_. This function just
@@ -99,7 +95,7 @@ def compute_shifts(cell, pbc, cutoff):
         :class:`torch.Tensor`: long tensor of shifts. the center cell and
             symmetric cells are not included.
     """
-    # type: (Tensor, Tensor, float) -> Tensor
+    # type: (torch.Tensor, torch.Tensor, float) -> torch.Tensor
     reciprocal_cell = cell.inverse().t()
     inv_distances = reciprocal_cell.norm(2, -1)
     num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
@@ -139,7 +135,7 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
         cutoff (float): the cutoff inside which atoms are considered pairs
         shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts
     """
-    # type: (Tensor, Tensor, Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor, Tensor]
+    # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, float) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
 
     coordinates = coordinates.detach()
     cell = cell.detach()
@@ -258,8 +254,8 @@ def triple_by_molecule(atom_index1, atom_index2):
     local_index2 = rev_indices[sorted_local_index2]
 
     # compute mapping between representation of central-other to pair
-    sign1 = ((local_index1 < n) * 2).to(torch.long) - 1
-    sign2 = ((local_index2 < n) * 2).to(torch.long) - 1
+    sign1 = ((local_index1 < n).to(torch.long) * 2) - 1
+    sign2 = ((local_index2 < n).to(torch.long) * 2) - 1
     return central_atom_index, local_index1 % n, local_index2 % n, sign1, sign2
 
 
@@ -270,9 +266,8 @@ def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes
     num_molecules = species.shape[0]
     num_atoms = species.shape[1]
     num_species_pairs = angular_length // angular_sublength
-    cutoff = max(Rcr, Rca)
 
-    atom_index1, atom_index2, shifts = neighbor_pairs(species == -1, coordinates, cell, shifts, cutoff)
+    atom_index1, atom_index2, shifts = neighbor_pairs(species == -1, coordinates, cell, shifts, Rcr)
     species = species.flatten()
     coordinates = coordinates.flatten(0, 1)
     species1 = species[atom_index1]
@@ -290,6 +285,15 @@ def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes
     radial_aev.index_add_(0, index1, radial_terms_)
     radial_aev.index_add_(0, index2, radial_terms_)
     radial_aev = radial_aev.reshape(num_molecules, num_atoms, radial_length)
+
+    # Rca is usually much smaller than Rcr, using neighbor list with cutoff=Rcr is a waste of resources
+    # Now we will get a smaller neighbor list that only cares about atoms with distances <= Rca
+    even_closer_indices = (distances <= Rca).nonzero().flatten()
+    atom_index1 = atom_index1.index_select(0, even_closer_indices)
+    atom_index2 = atom_index2.index_select(0, even_closer_indices)
+    species1 = species1.index_select(0, even_closer_indices)
+    species2 = species2.index_select(0, even_closer_indices)
+    vec = vec.index_select(0, even_closer_indices)
 
     # compute angular aev
     central_atom_index, pair_index1, pair_index2, sign1, sign2 = triple_by_molecule(atom_index1, atom_index2)
@@ -338,6 +342,7 @@ class AEVComputer(torch.nn.Module):
         super(AEVComputer, self).__init__()
         self.Rcr = Rcr
         self.Rca = Rca
+        assert Rca <= Rcr, "Current implementation of AEVComputer assumes Rca <= Rcr"
         # convert constant tensors to a ready-to-broadcast shape
         # shape convension (..., EtaR, ShfR)
         self.register_buffer('EtaR', EtaR.view(-1, 1))
@@ -367,7 +372,7 @@ class AEVComputer(torch.nn.Module):
         # These values are used when cell and pbc switch are not given.
         cutoff = max(self.Rcr, self.Rca)
         default_cell = torch.eye(3, dtype=self.EtaR.dtype, device=self.EtaR.device)
-        default_pbc = torch.zeros(3, dtype=torch.uint8, device=self.EtaR.device)
+        default_pbc = torch.zeros(3, dtype=torch.bool, device=self.EtaR.device)
         default_shifts = compute_shifts(default_cell, default_pbc, cutoff)
         self.register_buffer('default_cell', default_cell)
         self.register_buffer('default_shifts', default_shifts)
