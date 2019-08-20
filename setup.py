@@ -31,6 +31,7 @@ setup_attrs = {
         'h5py',
         'pytorch-ignite',
         'pillow',
+        'pkbar'
     ],
 }
 
