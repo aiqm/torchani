@@ -29,7 +29,7 @@ setup_attrs = {
         'ase',
         'coverage',
         'h5py',
-        'pytorch-ignite-nightly',
+        'pytorch-ignite',
         'pillow',
     ],
 }
