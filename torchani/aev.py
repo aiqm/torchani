@@ -2,7 +2,6 @@ from __future__ import division
 import torch
 from . import _six  # noqa:F401
 import math
-from torch import Tensor
 from typing import Tuple
 
 
