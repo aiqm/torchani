@@ -11,7 +11,8 @@ if PKBAR_INSTALLED:
 
 
 def find_threshold(file_path, batch_size, threshold_max=100):
-    """Find resonable threshold to split chunks
+    """Find resonable threshold to split chunks before using ``torchani.data.CachedDataset`` or ``torchani.data.ShuffledDataset``.
+
     Arguments:
         file_path (str): Path to one hdf5 files.
         batch_size (int): batch size.
@@ -22,23 +23,24 @@ def find_threshold(file_path, batch_size, threshold_max=100):
 
 
 class CachedDataset(torch.utils.data.Dataset):
-    """ Cached Dataset which is shuffled once, but the dataset keeps the same at every epoch
+    """ Cached Dataset which is shuffled once, but the dataset keeps the same at every epoch.
+
     Arguments:
-        file_path (str): Path to one hdf5 files.
+        file_path (str): Path to one hdf5 file.
         batch_size (int): batch size.
-        chunk_threshold (int): threshould to split batch into chunks.
+        chunk_threshold (int): threshould to split batch into chunks. Set to ``None`` will not split chunks.
         species_order (list): a list which specify how species are transfomed to int.
-            for example: ['H', 'C', 'N', 'O'] means {'H': 0, 'C': 1, 'N': 2, 'O': 3}
-        subtract_self_energies (bool): whether subtract self energies from energies
+            for example: ``['H', 'C', 'N', 'O']`` means ``{'H': 0, 'C': 1, 'N': 2, 'O': 3}``.
+        subtract_self_energies (bool): whether subtract self energies from ``energies``.
         self_energies (list): if `subtract_self_energies` is True, the order should keep
-            the same as `species_order`.
-            for example :[-0.600953, -38.08316, -54.707756, -75.194466] will be converted
-            to {'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}
+            the same as ``species_order``.
+            for example :``[-0.600953, -38.08316, -54.707756, -75.194466]`` will be converted
+            to ``{'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}``.
 
     The resulting dataset will be:
-        ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)
-        e.g. chunk1 = [[1807, 21], [1807, 21, 3]], chunk2 = [[193, 50], [193, 50, 3]]
-        'energies' = [2000, 1]
+        ``([chunk1, chunk2, ...], {'energies', 'force', ...})`` in which chunk1 = (species, coordinates).\n
+        e.g. the shape of ``chunk1`` = [[1807, 21], [1807, 21, 3]], ``chunk2`` = [[193, 50], [193, 50, 3]],
+        ``'energies'`` = [2000, 1].
     """
     def __init__(self, file_path,
                  batch_size=1000,
@@ -223,24 +225,28 @@ def ShuffledDataset(file_path,
                     subtract_self_energies=False,
                     self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]):
     """ Shuffled Dataset which using `torch.utils.data.DataLoader`, it will shuffle at every epoch.
+
     Arguments:
-        file_path (str): Path to one hdf5 files.
+        file_path (str): Path to one hdf5 file.
         batch_size (int): batch size.
-        num_workers (int): multiple process to prepare data background when training is going.
+        num_workers (int): multiple process to prepare dataset at background when
+            training is going.
         shuffle (bool): whether to shuffle.
-        chunk_threshold (int): threshould to split batch into chunks.
+        chunk_threshold (int): threshould to split batch into chunks. Set to ``None``
+            will not split chunks.
         species_order (list): a list which specify how species are transfomed to int.
-            for example: ['H', 'C', 'N', 'O'] means {'H': 0, 'C': 1, 'N': 2, 'O': 3}
-        subtract_self_energies (bool): whether subtract self energies from energies
+            for example: ``['H', 'C', 'N', 'O']`` means ``{'H': 0, 'C': 1, 'N': 2, 'O': 3}``.
+        subtract_self_energies (bool): whether subtract self energies from ``energies``.
         self_energies (list): if `subtract_self_energies` is True, the order should keep
-            the same as `species_order`.
-            for example :[-0.600953, -38.08316, -54.707756, -75.194466] will be converted
-            to {'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}
+            the same as ``species_order``.
+            for example :``[-0.600953, -38.08316, -54.707756, -75.194466]`` will be
+            converted to ``{'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}``.
 
     Returns:A dataloader that, when iterating, you will get
-        ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)
-        e.g. chunk1 = [[1807, 21], [1807, 21, 3]], chunk2 = [[193, 50], [193, 50, 3]]
-        'energies' = [2000, 1]
+        ``([chunk1, chunk2, ...], {'energies', 'force', ...})`` in which
+        chunk1 = (species, coordinates).\n
+        e.g. the shape of ``chunk1`` = [[1807, 21], [1807, 21, 3]],
+        ``chunk2`` = [[193, 50], [193, 50, 3]], ``'energies'`` = [2000, 1].
     """
 
     dataset = TorchData(file_path, species_order, subtract_self_energies, self_energies)
