@@ -18,7 +18,7 @@ setup_attrs = {
     'use_scm_version': True,
     'setup_requires': ['setuptools_scm'],
     'install_requires': [
-        'torch-nightly',
+        'torch',
         'lark-parser',
     ],
     'test_suite': 'nose.collector',
