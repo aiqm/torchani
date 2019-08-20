@@ -87,12 +87,9 @@ class CachedDataset(torch.utils.data.Dataset):
 
         if subtract_self_energies:
             self.data_energies = np.array(self.data_energies) - np.array(self.data_self_energies)
-            self.data_energies = self.data_energies.astype(np.float32)
             del self.data_self_energies
             del self_energies
             gc.collect()
-        else:
-            self.data_energies = self.data_energies.astype(np.float32)
 
         self.batch_size = batch_size
         self.length = (len(self.data_species) + self.batch_size - 1) // self.batch_size
@@ -155,7 +152,7 @@ class CachedDataset(torch.utils.data.Dataset):
         for i, _ in enumerate(chunks):
             chunks[i] = (chunks[i][0], chunks[i][1].reshape(chunks[i][1].shape[0], -1, 3))
 
-        properties = {'energies': batch_energies[0].flatten()}
+        properties = {'energies': batch_energies[0].flatten().float()}
 
         # return: [chunk1, chunk2, ...], {"energies", "force", ...} in which chunk1=(species, coordinates)
         # e.g. chunk1 = [[1807, 21], [1807, 21, 3]], chunk2 = [[193, 50], [193, 50, 3]]
@@ -301,12 +298,9 @@ class TorchData(torch.utils.data.Dataset):
 
         if subtract_self_energies:
             self.data_energies = np.array(self.data_energies) - np.array(self.data_self_energies)
-            self.data_energies = self.data_energies.astype(np.float32)
             del self.data_self_energies
             del self_energies
             gc.collect()
-        else:
-            self.data_energies = self.data_energies.astype(np.float32)
 
         self.length = len(self.data_species)
         anidata.cleanup()
@@ -377,7 +371,7 @@ def collate_fn(data, chunk_threshold):
     for i, _ in enumerate(chunks):
         chunks[i] = (chunks[i][0], chunks[i][1])
 
-    properties = {'energies': batch_energies.flatten()}
+    properties = {'energies': batch_energies.flatten().float()}
 
     # return: [chunk1, chunk2, ...], {"energies", "force", ...} in which chunk1=(species, coordinates)
     # e.g. chunk1 = [[1807, 21], [1807, 21, 3]], chunk2 = [[193, 50], [193, 50, 3]]
