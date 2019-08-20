@@ -11,6 +11,7 @@ import pickle
 import numpy as np
 from scipy.sparse import bsr_matrix
 import warnings
+from .new import CachedDataset, ShuffledDataset, find_threshold
 
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -511,4 +512,6 @@ def cache_sparse_aev(output, dataset_path, batchsize, device=default_device,
                SparseAEVCacheLoader.encode_aev, **kwargs)
 
 
-__all__ = ['load_ani_dataset', 'BatchedANIDataset', 'AEVCacheLoader', 'SparseAEVCacheLoader', 'cache_aev', 'cache_sparse_aev']
+__all__ = ['load_ani_dataset', 'BatchedANIDataset', 'AEVCacheLoader',
+           'SparseAEVCacheLoader', 'cache_aev', 'cache_sparse_aev',
+           'CachedDataset', 'ShuffledDataset', 'find_threshold']
