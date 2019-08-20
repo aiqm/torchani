@@ -91,6 +91,8 @@ class CachedDataset(torch.utils.data.Dataset):
             del self.data_self_energies
             del self_energies
             gc.collect()
+        else:
+            self.data_energies = self.data_energies.astype(np.float32)
 
         self.batch_size = batch_size
         self.length = (len(self.data_species) + self.batch_size - 1) // self.batch_size
@@ -182,9 +184,9 @@ class CachedDataset(torch.utils.data.Dataset):
                 inputs[i] = torch.from_numpy(np.stack(input_tmp)).to(self.device)
         else:
             for i, input_tmp in enumerate(inputs):
-                inputs[i] = torch.nn.utils.rnn.pad_sequence([torch.from_numpy(b) for b in inputs[i]],
-                                                            batch_first=True,
-                                                            padding_value=padding_value).to(self.device)
+                inputs[i] = torch.nn.utils.rnn.pad_sequence(
+                    [torch.from_numpy(b) for b in inputs[i]],
+                    batch_first=True, padding_value=padding_value).to(self.device)
         return inputs
 
     def find_threshold(self, threshold_max=100):
@@ -303,6 +305,8 @@ class TorchData(torch.utils.data.Dataset):
             del self.data_self_energies
             del self_energies
             gc.collect()
+        else:
+            self.data_energies = self.data_energies.astype(np.float32)
 
         self.length = len(self.data_species)
         anidata.cleanup()

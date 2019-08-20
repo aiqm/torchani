@@ -51,7 +51,7 @@ class TestShuffledData(unittest.TestCase):
         pbar = pkbar.Pbar('loading and processing dataset into cpu memory, total '
                           + 'batches: {}, batch_size: {}'.format(len(self.ds), batch_size),
                           len(self.ds))
-        for i, t in enumerate(self.ds):
+        for i, _ in enumerate(self.ds):
             pbar.update(i)
 
     def testNoUnnecessaryPadding(self):
@@ -94,7 +94,7 @@ class TestCachedData(unittest.TestCase):
         pbar = pkbar.Pbar('loading and processing dataset into cpu memory, total '
                           + 'batches: {}, batch_size: {}'.format(len(self.ds), batch_size),
                           len(self.ds))
-        for i, t in enumerate(self.ds):
+        for i, _ in enumerate(self.ds):
             pbar.update(i)
 
     def testNoUnnecessaryPadding(self):
