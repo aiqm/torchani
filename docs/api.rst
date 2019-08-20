@@ -24,6 +24,9 @@ Datasets
 ========
 
 .. automodule:: torchani.data
+.. autofunction:: torchani.data.find_threshold
+.. autoclass:: torchani.data.CachedDataset
+.. autoclass:: torchani.data.ShuffledDataset
 .. autofunction:: torchani.data.load_ani_dataset
 .. autofunction:: torchani.data.create_aev_cache
 .. autoclass:: torchani.data.BatchedANIDataset
