@@ -328,7 +328,7 @@ def ShuffledDataset(file_path,
 
     val_data_loader = torch.utils.data.DataLoader(dataset=val_dataset,
                                                   batch_size=batch_size,
-                                                  shuffle=shuffle,
+                                                  shuffle=False,
                                                   num_workers=num_workers,
                                                   pin_memory=False,
                                                   collate_fn=my_collate_fn)
