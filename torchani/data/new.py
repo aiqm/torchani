@@ -199,6 +199,8 @@ class CachedDataset(torch.utils.data.Dataset):
         return train_dataset, val_dataset
 
     def load(self):
+        """Cache dataset into CPU memory. If not called, dataset will be cached during the first epoch.
+        """
         if self.enable_pkbar:
             pbar = pkbar.Pbar('=> processing and caching dataset into cpu memory: \ntotal '
                               + 'batches: {}, batch_size: {}'.format(len(self), self.batch_size),
