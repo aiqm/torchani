@@ -280,7 +280,7 @@ def ShuffledDataset(file_path,
         shuffle (bool): whether to shuffle.
         chunk_threshold (int): threshould to split batch into chunks. Set to ``None``
             will not split chunks.
-        validation_split: Float between 0 and 1. Fraction of the dataset to be used
+        validation_split (float): Float between 0 and 1. Fraction of the dataset to be used
             as validation data.
         species_order (list): a list which specify how species are transfomed to int.
             for example: ``['H', 'C', 'N', 'O']`` means ``{'H': 0, 'C': 1, 'N': 2, 'O': 3}``.
