@@ -96,8 +96,7 @@ class CachedDataset(torch.utils.data.Dataset):
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
                 data_self_energies += list(np.tile(self_energies, (num_conformations, 1)))
             # other properties
-            for key, value in self.data_properties.items():
-                # print(key, molecule[key].dtype, molecule[key].shape,)
+            for key in self.data_properties:
                 self.data_properties[key] += list(molecule[key].reshape(num_conformations, -1))
             # pkbar update
             if self.enable_pkbar:
