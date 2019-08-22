@@ -6,7 +6,6 @@ import os
 
 path = os.path.dirname(os.path.realpath(__file__))
 dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s03.h5')
-# dspath = '/home/richard/dev/torchani/download/dataset/ani-1x/ANI-1x_dipole.h5'
 
 batch_size = 2560
 chunk_threshold = 5
@@ -24,8 +23,7 @@ other_properties = {'properties': ['energies'],
                     }
 
 
-# class TestFindThreshold(unittest.TestCase):
-class TestFindThreshold():
+class TestFindThreshold(unittest.TestCase):
     def setUp(self):
         print('.. check find threshold to split chunks')
 
@@ -33,8 +31,7 @@ class TestFindThreshold():
         torchani.data.find_threshold(dspath, batch_size=batch_size, threshold_max=10)
 
 
-# class TestShuffledData(unittest.TestCase):
-class TestShuffledData():
+class TestShuffledData(unittest.TestCase):
     def setUp(self):
         print('.. setup shuffle dataset')
         self.ds = torchani.data.ShuffledDataset(dspath, batch_size=batch_size, chunk_threshold=chunk_threshold, num_workers=2)

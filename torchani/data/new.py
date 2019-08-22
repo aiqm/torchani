@@ -67,6 +67,7 @@ class CachedDataset(torch.utils.data.Dataset):
             species_dict[s] = i
             self_energies_dict[s] = self_energies[i]
 
+        self.batch_size = batch_size
         self.data_species = []
         self.data_coordinates = []
         data_self_energies = []
@@ -108,7 +109,6 @@ class CachedDataset(torch.utils.data.Dataset):
             del data_self_energies
             gc.collect()
 
-        self.batch_size = batch_size
         self.length = (len(self.data_species) + self.batch_size - 1) // self.batch_size
         self.device = device
         self.shuffled_index = np.arange(len(self.data_species))
@@ -233,14 +233,14 @@ class CachedDataset(torch.utils.data.Dataset):
             # setup energies info, so the user does not need to input energies
             self.properties_info['properties'].append('energies')
             self.properties_info['padding_values'].append(None)
-            self.properties_info['padded_shapes'].append((batch_size))
+            self.properties_info['padded_shapes'].append((self.batch_size))
             self.properties_info['dtypes'].append(torch.float64)
         # if no properties provided
         if 'properties' not in self.properties_info:
             self.properties_info = {'properties': ['energies'],
                                     'padding_values': [None],
-                                    'padded_shapes': [(batch_size, )],
-                                    'dtype': [torch.float64],
+                                    'padded_shapes': [(self.batch_size, )],
+                                    'dtypes': [torch.float64],
                                     }
         # print properties information
         print('... The following properties will be loaded:')
@@ -248,8 +248,8 @@ class CachedDataset(torch.utils.data.Dataset):
             self.data_properties[prop] = []
             message = '{}: (dtype: {}, padding_value: {}, padded_shape: {})'
             print(message.format(prop, self.properties_info['dtypes'][i],
-                                    self.properties_info['padding_values'][i],
-                                    self.properties_info['padded_shapes'][i]))
+                                 self.properties_info['padding_values'][i],
+                                 self.properties_info['padded_shapes'][i]))
 
     @staticmethod
     def sort_list_with_index(inputs, index):
