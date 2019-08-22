@@ -1,19 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-.. _force-training-example:
+.. _training-example:
 
-Train Neural Network Potential To Both Energies and Forces
-==========================================================
+Train Your Own Neural Network Potential
+=======================================
 
-We have seen how to train a neural network potential by manually writing
-training loop in :ref:`training-example`. This tutorial shows how to modify
-that script to train to force.
+This example shows how to use TorchANI to train a neural network potential
+with the setup identical to NeuroChem. We will use the same configuration as
+specified in `inputtrain.ipt`_
+
+.. _`inputtrain.ipt`:
+    https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/inputtrain.ipt
+
+.. note::
+    TorchANI provide tools to run NeuroChem training config file `inputtrain.ipt`.
+    See: :ref:`neurochem-training`.
 """
 
 ###############################################################################
-# Most part of the script are the same as :ref:`training-example`, we will omit
-# the comments for these parts. Please refer to :ref:`training-example` for more
-# information
+# To begin with, let's first import the modules and setup devices we will use:
 
 import torch
 import torchani
@@ -22,7 +27,26 @@ import math
 import torch.utils.tensorboard
 import tqdm
 
+# device to run the training
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+###############################################################################
+# Now let's setup constants and construct an AEV computer. These numbers could
+# be found in `rHCNO-5.2R_16-3.5A_a4-8.params`
+# The atomic self energies given in `sae_linfit.dat`_ are computed from ANI-1x
+# dataset. These constants can be calculated for any given dataset if ``None``
+# is provided as an argument to the object of :class:`EnergyShifter` class.
+#
+# .. note::
+#
+#   Besides defining these hyperparameters programmatically,
+#   :mod:`torchani.neurochem` provide tools to read them from file. See also
+#   :ref:`training-example-ignite` for an example of usage.
+#
+# .. _rHCNO-5.2R_16-3.5A_a4-8.params:
+#   https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params
+# .. _sae_linfit.dat:
+#   https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/sae_linfit.dat
 
 Rcr = 5.2000e+00
 Rca = 3.5000e+00
@@ -37,45 +61,58 @@ aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ
 energy_shifter = torchani.utils.EnergyShifter(None)
 species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
 
+###############################################################################
+# Now let's setup datasets. These paths assumes the user run this script under
+# the ``examples`` directory of TorchANI's repository. If you download this
+# script, you should manually set the path of these files in your system before
+# this script can run successfully.
+#
+# Also note that we need to subtracting energies by the self energies of all
+# atoms for each molecule. This makes the range of energies in a reasonable
+# range. The second argument defines how to convert species as a list of string
+# to tensor, that is, for all supported chemical symbols, which is correspond to
+# ``0``, which correspond to ``1``, etc.
 
 try:
     path = os.path.dirname(os.path.realpath(__file__))
 except NameError:
     path = os.getcwd()
-dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
+dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 
 batch_size = 2560
 
-###############################################################################
-# The code to create the dataset is a bit different: we need to manually
-# specify that ``atomic_properties=['forces']`` so that forces will be read
-# from hdf5 files.
-
 training, validation = torchani.data.load_ani_dataset(
-    dspath, species_to_tensor, batch_size, device=device,
-    atomic_properties=['forces'],
+    dspath, species_to_tensor, batch_size, rm_outlier=True, device=device,
     transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
 
 print('Self atomic energies: ', energy_shifter.self_energies)
 
 ###############################################################################
 # When iterating the dataset, we will get pairs of input and output
-# ``(species_coordinates, properties)``, in this case, ``properties`` would
-# contain a key ``'atomic'`` where ``properties['atomic']`` is a list of dict
-# containing forces:
-
-data = training[0]
-properties = data[1]
-atomic_properties = properties['atomic']
-print(type(atomic_properties))
-print(list(atomic_properties[0].keys()))
-
+# ``(species_coordinates, properties)``, where ``species_coordinates`` is the
+# input and ``properties`` is the output.
+#
+# ``species_coordinates`` is a list of species-coordinate pairs, with shape
+# ``(N, Na)`` and ``(N, Na, 3)``. The reason for getting this type is, when
+# loading the dataset and generating minibatches, the whole dataset are
+# shuffled and each minibatch contains structures of molecules with a wide
+# range of number of atoms. Molecules of different number of atoms are batched
+# into single by padding. The way padding works is: adding ghost atoms, with
+# species 'X', and do computations as if they were normal atoms. But when
+# computing AEVs, atoms with species `X` would be ignored. To avoid computation
+# wasting on padding atoms, minibatches are further splitted into chunks. Each
+# chunk contains structures of molecules of similar size, which minimize the
+# total number of padding atoms required to add. The input list
+# ``species_coordinates`` contains chunks of that minibatch we are getting. The
+# batching and chunking happens automatically, so the user does not need to
+# worry how to construct chunks, but the user need to compute the energies for
+# each chunk and concat them into single tensor.
+#
+# The output, i.e. ``properties`` is a dictionary holding each property. This
+# allows us to extend TorchANI in the future to training forces and properties.
+#
 ###############################################################################
-# Due to padding, part of the forces might be 0
-print(atomic_properties[0]['forces'][0])
-
-###############################################################################
-# The code to define networks, optimizers, are mostly the same
+# Now let's define atomic neural networks.
 
 H_network = torch.nn.Sequential(
     torch.nn.Linear(384, 160),
@@ -146,8 +183,20 @@ nn.apply(init_params)
 model = torch.nn.Sequential(aev_computer, nn).to(device)
 
 ###############################################################################
-# Here we will use Adam with weight decay for the weights and Stochastic Gradient
-# Descent for biases.
+# Now let's setup the optimizers. NeuroChem uses Adam with decoupled weight decay
+# to updates the weights and Stochastic Gradient Descent (SGD) to update the biases.
+# Moreover, we need to specify different weight decay rate for different layes.
+#
+# .. note::
+#
+#   The weight decay in `inputtrain.ipt`_ is named "l2", but it is actually not
+#   L2 regularization. The confusion between L2 and weight decay is a common
+#   mistake in deep learning.  See: `Decoupled Weight Decay Regularization`_
+#   Also note that the weight decay only applies to weight in the training
+#   of ANI models, not bias.
+#
+# .. _Decoupled Weight Decay Regularization:
+#   https://arxiv.org/abs/1711.05101
 
 AdamW = torchani.optim.AdamW([
     # H networks
@@ -195,12 +244,19 @@ SGD = torch.optim.SGD([
     {'params': [O_network[6].bias]},
 ], lr=1e-3)
 
+###############################################################################
+# Setting up a learning rate scheduler to do learning rate decay
 AdamW_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(AdamW, factor=0.5, patience=100, threshold=0)
 SGD_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(SGD, factor=0.5, patience=100, threshold=0)
 
 ###############################################################################
-# This part of the code is also the same
-latest_checkpoint = 'force-training-latest.pt'
+# Train the model by minimizing the MSE loss, until validation RMSE no longer
+# improves during a certain number of steps, decay the learning rate and repeat
+# the same process, stop until the learning rate is smaller than a threshold.
+#
+# We first read the checkpoint files to restart training. We use `latest.pt`
+# to store current training state.
+latest_checkpoint = 'latest.pt'
 
 ###############################################################################
 # Resume training from previously saved checkpoints:
@@ -244,14 +300,17 @@ def validate():
 tensorboard = torch.utils.tensorboard.SummaryWriter()
 
 ###############################################################################
-# In the training loop, we need to compute force, and loss for forces
+# Finally, we come to the training loop.
+#
+# In this tutorial, we are setting the maximum epoch to a very small number,
+# only to make this demo terminate fast. For serious training, this should be
+# set to a much larger value
 mse = torch.nn.MSELoss(reduction='none')
 
 print("training starting from epoch", AdamW_scheduler.last_epoch + 1)
-max_epochs = 20
+max_epochs = 200
 early_stopping_learning_rate = 1.0E-5
-force_coefficient = 0.1  # controls the importance of energy loss vs force loss
-best_model_checkpoint = 'force-training-best.pt'
+best_model_checkpoint = 'best.pt'
 
 for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
     rmse = validate()
@@ -273,9 +332,7 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
     tensorboard.add_scalar('best_validation_rmse', AdamW_scheduler.best, AdamW_scheduler.last_epoch)
     tensorboard.add_scalar('learning_rate', learning_rate, AdamW_scheduler.last_epoch)
 
-    # Besides being stored in x, species and coordinates are also stored in y.
-    # So here, for simplicity, we just ignore the x and use y for everything.
-    for i, (_, batch_y) in tqdm.tqdm(
+    for i, (batch_x, batch_y) in tqdm.tqdm(
         enumerate(training),
         total=len(training),
         desc="epoch {}".format(AdamW_scheduler.last_epoch)
@@ -284,41 +341,15 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         true_energies = batch_y['energies']
         predicted_energies = []
         num_atoms = []
-        force_loss = []
 
-        for chunk in batch_y['atomic']:
-            chunk_species = chunk['species']
-            chunk_coordinates = chunk['coordinates']
-            chunk_true_forces = chunk['forces']
-            chunk_num_atoms = (chunk_species >= 0).to(true_energies.dtype).sum(dim=1)
-            num_atoms.append(chunk_num_atoms)
-
-            # We must set `chunk_coordinates` to make it requires grad, so
-            # that we could compute force from it
-            chunk_coordinates.requires_grad_(True)
-
+        for chunk_species, chunk_coordinates in batch_x:
+            num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
             _, chunk_energies = model((chunk_species, chunk_coordinates))
-
-            # We can use torch.autograd.grad to compute force. Remember to
-            # create graph so that the loss of the force can contribute to
-            # the gradient of parameters, and also to retain graph so that
-            # we can backward through it a second time when computing gradient
-            # w.r.t. parameters.
-            chunk_forces = -torch.autograd.grad(chunk_energies.sum(), chunk_coordinates, create_graph=True, retain_graph=True)[0]
-
-            # Now let's compute loss for force of this chunk
-            chunk_force_loss = mse(chunk_true_forces, chunk_forces).sum(dim=(1, 2)) / chunk_num_atoms
-
             predicted_energies.append(chunk_energies)
-            force_loss.append(chunk_force_loss)
 
         num_atoms = torch.cat(num_atoms)
         predicted_energies = torch.cat(predicted_energies)
-
-        # Now the total loss has two parts, energy loss and force loss
-        energy_loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
-        force_loss = torch.cat(force_loss).mean()
-        loss = energy_loss + force_coefficient * force_loss
+        loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
 
         AdamW.zero_grad()
         SGD.zero_grad()

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.aev &mdash; TorchANI 0.8 documentation</title>
+  <title>torchani.aev &mdash; TorchANI 0.9 documentation</title>
   
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                0.8
+                0.9
               </div>
             
           
@@ -177,23 +177,19 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">_six</span>  <span class="c1"># noqa:F401</span>
 <span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="k">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Tuple</span>
 
 
 <span class="c1"># @torch.jit.script</span>
 <span class="k">def</span> <span class="nf">cutoff_cosine</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
-    <span class="c1"># type: (Tensor, float) -&gt; Tensor</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-        <span class="n">distances</span> <span class="o">&lt;=</span> <span class="n">cutoff</span><span class="p">,</span>
-        <span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">distances</span> <span class="o">/</span> <span class="n">cutoff</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="c1"># type: (torch.Tensor, float) -&gt; torch.Tensor</span>
+    <span class="c1"># assuming all elements in distances are smaller than cutoff</span>
+    <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">distances</span> <span class="o">*</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">cutoff</span><span class="p">))</span> <span class="o">+</span> <span class="mf">0.5</span>
 
 
 <span class="c1"># @torch.jit.script</span>
 <span class="k">def</span> <span class="nf">radial_terms</span><span class="p">(</span><span class="n">Rcr</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">distances</span><span class="p">):</span>
-    <span class="c1"># type: (float, Tensor, Tensor, Tensor) -&gt; Tensor</span>
+    <span class="c1"># type: (float, torch.Tensor, torch.Tensor, torch.Tensor) -&gt; torch.Tensor</span>
     <span class="sd">&quot;&quot;&quot;Compute the radial subAEV terms of the center atom given neighbors</span>
 
 <span class="sd">    This correspond to equation (3) in the `ANI paper`_. This function just</span>
@@ -221,7 +217,7 @@
 
 <span class="c1"># @torch.jit.script</span>
 <span class="k">def</span> <span class="nf">angular_terms</span><span class="p">(</span><span class="n">Rca</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span><span class="p">,</span> <span class="n">vectors1</span><span class="p">,</span> <span class="n">vectors2</span><span class="p">):</span>
-    <span class="c1"># type: (float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -&gt; Tensor</span>
+    <span class="c1"># type: (float, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor) -&gt; torch.Tensor</span>
     <span class="sd">&quot;&quot;&quot;Compute the angular subAEV terms of the center atom given neighbor pairs.</span>
 
 <span class="sd">    This correspond to equation (4) in the `ANI paper`_. This function just</span>
@@ -274,7 +270,7 @@
 <span class="sd">        :class:`torch.Tensor`: long tensor of shifts. the center cell and</span>
 <span class="sd">            symmetric cells are not included.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># type: (Tensor, Tensor, float) -&gt; Tensor</span>
+    <span class="c1"># type: (torch.Tensor, torch.Tensor, float) -&gt; torch.Tensor</span>
     <span class="n">reciprocal_cell</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
     <span class="n">inv_distances</span> <span class="o">=</span> <span class="n">reciprocal_cell</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">num_repeats</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">cutoff</span> <span class="o">*</span> <span class="n">inv_distances</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
@@ -314,7 +310,7 @@
 <span class="sd">        cutoff (float): the cutoff inside which atoms are considered pairs</span>
 <span class="sd">        shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># type: (Tensor, Tensor, Tensor, Tensor, float) -&gt; Tuple[Tensor, Tensor, Tensor, Tensor]</span>
+    <span class="c1"># type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, float) -&gt; Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]</span>
 
     <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
     <span class="n">cell</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
@@ -445,9 +441,8 @@
     <span class="n">num_molecules</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">num_species_pairs</span> <span class="o">=</span> <span class="n">angular_length</span> <span class="o">//</span> <span class="n">angular_sublength</span>
-    <span class="n">cutoff</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">Rcr</span><span class="p">,</span> <span class="n">Rca</span><span class="p">)</span>
 
-    <span class="n">atom_index1</span><span class="p">,</span> <span class="n">atom_index2</span><span class="p">,</span> <span class="n">shifts</span> <span class="o">=</span> <span class="n">neighbor_pairs</span><span class="p">(</span><span class="n">species</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">shifts</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">)</span>
+    <span class="n">atom_index1</span><span class="p">,</span> <span class="n">atom_index2</span><span class="p">,</span> <span class="n">shifts</span> <span class="o">=</span> <span class="n">neighbor_pairs</span><span class="p">(</span><span class="n">species</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">shifts</span><span class="p">,</span> <span class="n">Rcr</span><span class="p">)</span>
     <span class="n">species</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
     <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">species1</span> <span class="o">=</span> <span class="n">species</span><span class="p">[</span><span class="n">atom_index1</span><span class="p">]</span>
@@ -465,6 +460,15 @@
     <span class="n">radial_aev</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index1</span><span class="p">,</span> <span class="n">radial_terms_</span><span class="p">)</span>
     <span class="n">radial_aev</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index2</span><span class="p">,</span> <span class="n">radial_terms_</span><span class="p">)</span>
     <span class="n">radial_aev</span> <span class="o">=</span> <span class="n">radial_aev</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_molecules</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">radial_length</span><span class="p">)</span>
+
+    <span class="c1"># Rca is usually much smaller than Rcr, using neighbor list with cutoff=Rcr is a waste of resources</span>
+    <span class="c1"># Now we will get a smaller neighbor list that only cares about atoms with distances &lt;= Rca</span>
+    <span class="n">even_closer_indices</span> <span class="o">=</span> <span class="p">(</span><span class="n">distances</span> <span class="o">&lt;=</span> <span class="n">Rca</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">atom_index1</span> <span class="o">=</span> <span class="n">atom_index1</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">even_closer_indices</span><span class="p">)</span>
+    <span class="n">atom_index2</span> <span class="o">=</span> <span class="n">atom_index2</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">even_closer_indices</span><span class="p">)</span>
+    <span class="n">species1</span> <span class="o">=</span> <span class="n">species1</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">even_closer_indices</span><span class="p">)</span>
+    <span class="n">species2</span> <span class="o">=</span> <span class="n">species2</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">even_closer_indices</span><span class="p">)</span>
+    <span class="n">vec</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">even_closer_indices</span><span class="p">)</span>
 
     <span class="c1"># compute angular aev</span>
     <span class="n">central_atom_index</span><span class="p">,</span> <span class="n">pair_index1</span><span class="p">,</span> <span class="n">pair_index2</span><span class="p">,</span> <span class="n">sign1</span><span class="p">,</span> <span class="n">sign2</span> <span class="o">=</span> <span class="n">triple_by_molecule</span><span class="p">(</span><span class="n">atom_index1</span><span class="p">,</span> <span class="n">atom_index2</span><span class="p">)</span>
@@ -513,6 +517,7 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">AEVComputer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span> <span class="o">=</span> <span class="n">Rcr</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span> <span class="o">=</span> <span class="n">Rca</span>
+        <span class="k">assert</span> <span class="n">Rca</span> <span class="o">&lt;=</span> <span class="n">Rcr</span><span class="p">,</span> <span class="s2">&quot;Current implementation of AEVComputer assumes Rca &lt;= Rcr&quot;</span>
         <span class="c1"># convert constant tensors to a ready-to-broadcast shape</span>
         <span class="c1"># shape convension (..., EtaR, ShfR)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;EtaR&#39;</span><span class="p">,</span> <span class="n">EtaR</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>

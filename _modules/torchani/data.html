@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.data &mdash; TorchANI 0.8 documentation</title>
+  <title>torchani.data &mdash; TorchANI 0.9 documentation</title>
   
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                0.8
+                0.9
               </div>
             
           
@@ -186,6 +186,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="k">import</span> <span class="n">bsr_matrix</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">.new</span> <span class="k">import</span> <span class="n">CachedDataset</span><span class="p">,</span> <span class="n">ShuffledDataset</span><span class="p">,</span> <span class="n">find_threshold</span>
 
 <span class="n">default_device</span> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span>
 
@@ -484,23 +485,27 @@
         <span class="n">atomic_properties_</span><span class="p">,</span> <span class="n">properties_</span> <span class="o">=</span> <span class="n">t</span><span class="p">(</span><span class="n">atomic_properties_</span><span class="p">,</span> <span class="n">properties_</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">rm_outlier</span><span class="p">:</span>
+        <span class="c1"># This is how NeuroChem discard the outliers</span>
         <span class="n">transformed_energies</span> <span class="o">=</span> <span class="n">properties_</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span>
         <span class="n">num_atoms</span> <span class="o">=</span> <span class="p">(</span><span class="n">atomic_properties_</span><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">transformed_energies</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">scaled_diff</span> <span class="o">=</span> <span class="n">transformed_energies</span> <span class="o">/</span> <span class="n">num_atoms</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>
 
-        <span class="n">mean</span> <span class="o">=</span> <span class="n">transformed_energies</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-        <span class="n">std</span> <span class="o">=</span> <span class="n">transformed_energies</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
-        <span class="n">tol</span> <span class="o">=</span> <span class="mf">15.0</span> <span class="o">*</span> <span class="n">std</span> <span class="o">+</span> <span class="n">mean</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">scaled_diff</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">scaled_diff</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">15.0</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">scaled_diff</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">scaled_diff</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">15.0</span><span class="p">])</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
 
-        <span class="n">low_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">scaled_diff</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+        <span class="c1"># -15 * std + mean &lt; scaled_diff &lt; +11 * std + mean</span>
+        <span class="n">tol</span> <span class="o">=</span> <span class="mf">13.0</span> <span class="o">*</span> <span class="n">std</span> <span class="o">+</span> <span class="n">mean</span>
+        <span class="n">low_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">scaled_diff</span> <span class="o">+</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">std</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
         <span class="n">outlier_count</span> <span class="o">=</span> <span class="n">molecules</span> <span class="o">-</span> <span class="n">low_idx</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+
         <span class="c1"># discard outlier energy conformers if exist</span>
         <span class="k">if</span> <span class="n">outlier_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;Note: </span><span class="si">{outlier_count}</span><span class="s1"> outlier energy conformers have been discarded from dataset&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Note: </span><span class="si">{}</span><span class="s2"> outlier energy conformers have been discarded from dataset&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">outlier_count</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">atomic_properties_</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">atomic_properties_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="n">low_idx</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">properties_</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">properties_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="n">low_idx</span><span class="p">]</span>
+            <span class="n">molecules</span> <span class="o">=</span> <span class="n">low_idx</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
 
     <span class="c1"># compute size of each subset</span>
     <span class="n">split_</span> <span class="o">=</span> <span class="p">[]</span>
@@ -682,7 +687,9 @@
                <span class="n">SparseAEVCacheLoader</span><span class="o">.</span><span class="n">encode_aev</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;load_ani_dataset&#39;</span><span class="p">,</span> <span class="s1">&#39;BatchedANIDataset&#39;</span><span class="p">,</span> <span class="s1">&#39;AEVCacheLoader&#39;</span><span class="p">,</span> <span class="s1">&#39;SparseAEVCacheLoader&#39;</span><span class="p">,</span> <span class="s1">&#39;cache_aev&#39;</span><span class="p">,</span> <span class="s1">&#39;cache_sparse_aev&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;load_ani_dataset&#39;</span><span class="p">,</span> <span class="s1">&#39;BatchedANIDataset&#39;</span><span class="p">,</span> <span class="s1">&#39;AEVCacheLoader&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;SparseAEVCacheLoader&#39;</span><span class="p">,</span> <span class="s1">&#39;cache_aev&#39;</span><span class="p">,</span> <span class="s1">&#39;cache_sparse_aev&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;CachedDataset&#39;</span><span class="p">,</span> <span class="s1">&#39;ShuffledDataset&#39;</span><span class="p">,</span> <span class="s1">&#39;find_threshold&#39;</span><span class="p">]</span>
 </pre></div>
 
            </div>

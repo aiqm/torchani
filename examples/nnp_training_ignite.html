@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Train Your Own Neural Network Potential, Using PyTorch-Ignite &mdash; TorchANI 0.8 documentation</title>
+  <title>Train Your Own Neural Network Potential, Using PyTorch-Ignite &mdash; TorchANI 0.9 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.8
+                0.9
               </div>
             
           
@@ -312,7 +312,7 @@ size of neural network for all atom types, but this is not necessary.</p>
 </div>
 <p>Now load training and validation datasets into memory.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">training</span><span class="p">,</span> <span class="n">validation</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">load_ani_dataset</span><span class="p">(</span>
-    <span class="n">dspath</span><span class="p">,</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">dspath</span><span class="p">,</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">rm_outlier</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
     <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="n">energy_shifter</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">],</span> <span class="n">split</span><span class="o">=</span><span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span>
 </pre></div>
 </div>
@@ -390,8 +390,8 @@ tools can be used as follows:</p>
 Epoch [1/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [1/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [1/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [1/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [1/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [1/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [1/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [1/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [1/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -400,8 +400,8 @@ Epoch [1/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [2/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [2/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [2/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [2/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [2/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [2/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [2/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [2/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [2/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -410,8 +410,8 @@ Epoch [2/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [3/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [3/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [3/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [3/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [3/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [3/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [3/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [3/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [3/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -420,8 +420,8 @@ Epoch [3/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [4/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [4/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [4/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [4/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [4/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [4/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [4/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [4/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [4/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -430,8 +430,8 @@ Epoch [4/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [5/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [5/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [5/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [5/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [5/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [5/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [5/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [5/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [5/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -440,8 +440,8 @@ Epoch [5/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [6/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [6/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [6/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [6/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [6/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [6/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [6/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [6/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [6/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -460,8 +460,8 @@ Epoch [7/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [8/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [8/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [8/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [8/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [8/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [8/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [8/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [8/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [8/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -470,8 +470,8 @@ Epoch [8/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [9/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [9/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [9/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [9/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [9/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [9/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [9/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [9/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [9/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -480,8 +480,8 @@ Epoch [9/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [10/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [10/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [10/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [10/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [10/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [10/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [10/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [10/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [10/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -490,8 +490,8 @@ Epoch [10/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [11/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [11/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [11/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [11/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [11/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [11/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [11/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [11/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [11/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -500,8 +500,8 @@ Epoch [11/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [12/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [12/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [12/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [12/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [12/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [12/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [12/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [12/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [12/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -510,8 +510,8 @@ Epoch [12/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [13/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [13/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [13/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [13/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [13/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [13/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [13/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [13/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [13/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -520,8 +520,8 @@ Epoch [13/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [14/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [14/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [14/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [14/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [14/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [14/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [14/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [14/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [14/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -530,8 +530,8 @@ Epoch [14/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [15/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [15/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [15/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [15/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [15/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [15/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [15/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [15/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [15/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -560,8 +560,8 @@ Epoch [17/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [18/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [18/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [18/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [18/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [18/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [18/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [18/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [18/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [18/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -570,8 +570,8 @@ Epoch [18/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [19/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [19/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [19/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [19/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [19/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [19/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [19/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [19/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [19/20]: [4/4] 100%|########## [00:01&lt;00:00]
 
@@ -580,18 +580,18 @@ Epoch [19/20]: [4/4] 100%|########## [00:01&lt;00:00]
 Epoch [20/20]: [0/4]   0%|           [00:00&lt;?]
 Epoch [20/20]: [1/4]  25%|##5        [00:00&lt;00:01]
 Epoch [20/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [20/20]: [2/4]  50%|#####      [00:00&lt;00:00]
-Epoch [20/20]: [3/4]  75%|#######5   [00:00&lt;00:00]
+Epoch [20/20]: [2/4]  50%|#####      [00:01&lt;00:00]
+Epoch [20/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [20/20]: [3/4]  75%|#######5   [00:01&lt;00:00]
 Epoch [20/20]: [4/4] 100%|########## [00:01&lt;00:00]
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  37.703 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  44.395 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-nnp-training-ignite-py">
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/ce4197e2126708abd8a04382ffe7d3f2/nnp_training_ignite.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">nnp_training_ignite.py</span></code></a></div>
+<a class="reference download internal" download="" href="../_downloads/3a9df1868e6c8a659aa1599a39bef616/nnp_training_ignite.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">nnp_training_ignite.py</span></code></a></div>
 <div class="sphx-glr-download docutils container">
-<a class="reference download internal" download="" href="../_downloads/12fa464dd5bf1be214f2f1b616f822ab/nnp_training_ignite.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">nnp_training_ignite.ipynb</span></code></a></div>
+<a class="reference download internal" download="" href="../_downloads/730f266a5729cdd9e3efd8f9194606ea/nnp_training_ignite.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">nnp_training_ignite.ipynb</span></code></a></div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
 </div>

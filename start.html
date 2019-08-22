@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation &mdash; TorchANI 0.8 documentation</title>
+  <title>Installation &mdash; TorchANI 0.9 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.8
+                0.9
               </div>
             
           
@@ -179,12 +179,12 @@
   <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
 <p>TorchANI requires the latest preview version of PyTorch. You can install PyTorch by the following commands (assuming cuda10):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install numpy torchvision_nightly
-pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install numpy
+pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
 </pre></div>
 </div>
 <p>If you updated TorchANI, you may also need to update PyTorch:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install --upgrade torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
 </pre></div>
 </div>
 <p>After installing the correct PyTorch, you can install TorchANI by:</p>

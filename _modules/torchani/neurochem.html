@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.neurochem &mdash; TorchANI 0.8 documentation</title>
+  <title>torchani.neurochem &mdash; TorchANI 0.9 documentation</title>
   
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                0.8
+                0.9
               </div>
             
           
@@ -742,11 +742,11 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">training_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="o">.</span><span class="n">load_ani_dataset</span><span class="p">(</span>
                     <span class="n">training_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">training_batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">training_batch_size</span><span class="p">,</span> <span class="n">rm_outlier</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
                     <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_energy</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">])</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">validation_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="o">.</span><span class="n">load_ani_dataset</span><span class="p">(</span>
                     <span class="n">validation_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">validation_batch_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">validation_batch_size</span><span class="p">,</span> <span class="n">rm_outlier</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
                     <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_energy</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="Trainer.evaluate"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer.evaluate">[docs]</a>        <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
