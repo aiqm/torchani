@@ -73,28 +73,7 @@ class CachedDataset(torch.utils.data.Dataset):
         self.properties = {}
         self.properties_info = properties_except_energy
 
-        # if user does not provide energies info
-        if 'properties' in self.properties_info and 'energies' not in self.properties_info['properties']:
-            # setup energies info, so the user does not need to input energies
-            self.properties_info['properties'].append('energies')
-            self.properties_info['padding_values'].append(False)
-            self.properties_info['padded_shapes'].append((batch_size))
-            self.properties_info['dtype'].append(torch.float64)
-        # if no properties provided
-        if 'properties' not in self.properties_info:
-            self.properties_info = {'properties': ['energies'],
-                                    'padding_values': [False],
-                                    'padded_shapes': [(batch_size, )],
-                                    'dtype': [torch.float64],
-                                    }
-        # print properties information
-        print('... The following properties will be loaded:')
-        for i, prop in enumerate(self.properties_info['properties']):
-            self.properties[prop] = []
-            message = '{}: (dtype: {}, padding_value: {}, padded_shape: {})'
-            print(message.format(prop, self.properties_info['dtype'][i],
-                                    self.properties_info['padding_values'][i],
-                                    self.properties_info['padded_shapes'][i]))
+        self.add_energies_to_properties_and_check()
 
         # anidataloader
         anidata = anidataloader(file_path)
@@ -247,6 +226,30 @@ class CachedDataset(torch.utils.data.Dataset):
         for i, _ in enumerate(self):
             if self.enable_pkbar:
                 pbar.update(i)
+
+    def add_energies_to_properties_and_check(self):
+        # if user does not provide energies info
+        if 'properties' in self.properties_info and 'energies' not in self.properties_info['properties']:
+            # setup energies info, so the user does not need to input energies
+            self.properties_info['properties'].append('energies')
+            self.properties_info['padding_values'].append(False)
+            self.properties_info['padded_shapes'].append((batch_size))
+            self.properties_info['dtype'].append(torch.float64)
+        # if no properties provided
+        if 'properties' not in self.properties_info:
+            self.properties_info = {'properties': ['energies'],
+                                    'padding_values': [False],
+                                    'padded_shapes': [(batch_size, )],
+                                    'dtype': [torch.float64],
+                                    }
+        # print properties information
+        print('... The following properties will be loaded:')
+        for i, prop in enumerate(self.properties_info['properties']):
+            self.properties[prop] = []
+            message = '{}: (dtype: {}, padding_value: {}, padded_shape: {})'
+            print(message.format(prop, self.properties_info['dtype'][i],
+                                    self.properties_info['padding_values'][i],
+                                    self.properties_info['padded_shapes'][i]))
 
     @staticmethod
     def sort_list_with_index(inputs, index):
