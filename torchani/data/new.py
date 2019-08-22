@@ -189,15 +189,18 @@ class CachedDataset(torch.utils.data.Dataset):
         # properties
         properties = {}
         for i, key in enumerate(self.properties_info['properties']):
+            # get a batch of property
             prop = [self.properties[key][i] for i in batch_indices_shuffled]
+            # sort with number of atoms
             prop = self.sort_list_with_index(prop, sorted_atoms_idx.numpy())
+            # padding and convert to tensor
             if self.properties_info['padding_values'][i] is False:
                 prop = self.pad_and_convert_to_tensor([prop], no_padding=True)[0]
             else:
                 prop = self.pad_and_convert_to_tensor([prop], padding_value=self.properties_info['padding_values'][i])[0]
+            # set property shape and dtype
             padded_shape = list(self.properties_info['padded_shapes'][i])
-            # the last batch may does not have one batch data
-            padded_shape[0] = prop.shape[0]
+            padded_shape[0] = prop.shape[0]  # the last batch may does not have one batch data
             properties[key] = prop.reshape(padded_shape).to(self.properties_info['dtype'][i])
 
         # return: [chunk1, chunk2, ...], {"energies", "force", ...} in which chunk1=(species, coordinates)
@@ -364,7 +367,7 @@ def ShuffledDataset(file_path,
 
     val_data_loader = torch.utils.data.DataLoader(dataset=val_dataset,
                                                   batch_size=batch_size,
-                                                  shuffle=shuffle,
+                                                  shuffle=False,
                                                   num_workers=num_workers,
                                                   pin_memory=False,
                                                   collate_fn=my_collate_fn)
