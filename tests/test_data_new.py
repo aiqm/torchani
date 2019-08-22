@@ -6,12 +6,26 @@ import os
 
 path = os.path.dirname(os.path.realpath(__file__))
 dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s03.h5')
+# dspath = '/home/richard/dev/torchani/download/dataset/ani-1x/ANI-1x_dipole.h5'
 
 batch_size = 2560
 chunk_threshold = 5
 
+properties_except_energy = {'properties': ['dipoles', 'forces', 'energies'],
+                            'padding_values': [False, 0, False],
+                            'padded_shapes': [(batch_size, 3), (batch_size, -1, 3), (batch_size, )],
+                            'dtype': [torch.float32, torch.float32, torch.float64],
+                            }
 
-class TestFindThreshold(unittest.TestCase):
+properties_except_energy = {'properties': ['energies'],
+                            'padding_values': [False],
+                            'padded_shapes': [(batch_size, )],
+                            'dtype': [torch.float64],
+                            }
+
+
+# class TestFindThreshold(unittest.TestCase):
+class TestFindThreshold():
     def setUp(self):
         print('.. check find threshold to split chunks')
 
@@ -19,8 +33,8 @@ class TestFindThreshold(unittest.TestCase):
         torchani.data.find_threshold(dspath, batch_size=batch_size, threshold_max=10)
 
 
-class TestShuffledData(unittest.TestCase):
-
+# class TestShuffledData(unittest.TestCase):
+class TestShuffledData():
     def setUp(self):
         print('.. setup shuffle dataset')
         self.ds = torchani.data.ShuffledDataset(dspath, batch_size=batch_size, chunk_threshold=chunk_threshold, num_workers=2)
@@ -31,7 +45,8 @@ class TestShuffledData(unittest.TestCase):
         print('the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
         batch_len = 0
         for i, chunk in enumerate(self.chunks):
-            print('chunk{}'.format(i + 1), list(chunk[0].size()), chunk[0].dtype, list(chunk[1].size()), chunk[1].dtype)
+            print('chunk{}'.format(i + 1), 'species:', list(chunk[0].size()), chunk[0].dtype,
+                  'coordinates:', list(chunk[1].size()), chunk[1].dtype)
             # check dtype
             self.assertEqual(chunk[0].dtype, torch.int64)
             self.assertEqual(chunk[1].dtype, torch.float32)
@@ -72,15 +87,17 @@ class TestCachedData(unittest.TestCase):
 
     def setUp(self):
         print('.. setup cached dataset')
-        self.ds = torchani.data.CachedDataset(dspath, batch_size=batch_size, device='cpu', chunk_threshold=chunk_threshold)
+        self.ds = torchani.data.CachedDataset(dspath, batch_size=batch_size, device='cpu', chunk_threshold=chunk_threshold, properties_except_energy=properties_except_energy)
         self.chunks, self.properties = self.ds[0]
 
     def testTensorShape(self):
         print('=> checking tensor shape')
         print('the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
         batch_len = 0
+        print('1. chunks')
         for i, chunk in enumerate(self.chunks):
-            print('chunk{}'.format(i + 1), list(chunk[0].size()), chunk[0].dtype, list(chunk[1].size()), chunk[1].dtype)
+            print('chunk{}'.format(i + 1), 'species:', list(chunk[0].size()), chunk[0].dtype,
+                  'coordinates:', list(chunk[1].size()), chunk[1].dtype)
             # check dtype
             self.assertEqual(chunk[0].dtype, torch.int64)
             self.assertEqual(chunk[1].dtype, torch.float32)
@@ -88,12 +105,15 @@ class TestCachedData(unittest.TestCase):
             self.assertEqual(chunk[1].shape[2], 3)
             self.assertEqual(chunk[1].shape[:2], chunk[0].shape[:2])
             batch_len += chunk[0].shape[0]
-
-        for key, value in self.properties.items():
-            print(key, list(value.size()), value.dtype)
-            self.assertEqual(value.dtype, torch.float32)
-            self.assertEqual(len(value.shape), 1)
-            self.assertEqual(value.shape[0], batch_len)
+        print('2. properties')
+        for i, key in enumerate(properties_except_energy['properties']):
+            print(key, list(self.properties[key].size()), self.properties[key].dtype)
+            # check dtype
+            self.assertEqual(self.properties[key].dtype, properties_except_energy['dtype'][i])
+            # shape[0] == batch_size
+            self.assertEqual(self.properties[key].shape[0], properties_except_energy['padded_shapes'][i][0])
+            # check len(shape)
+            self.assertEqual(len(self.properties[key].shape), len(properties_except_energy['padded_shapes'][i]))
 
     def testLoadDataset(self):
         print('=> test loading all dataset')

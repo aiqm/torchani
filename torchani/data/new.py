@@ -42,18 +42,16 @@ class CachedDataset(torch.utils.data.Dataset):
         ``([chunk1, chunk2, ...], {'energies', 'force', ...})`` in which chunk1 is a
         tuple of ``(species, coordinates)``.
 
-        e.g. the shape of
-
-        chunk1: ``[[1807, 21], [1807, 21, 3]]``
-
-        chunk2: ``[[193, 50], [193, 50, 3]]``
-
+        e.g. the shape of\n
+        chunk1: ``[[1807, 21], [1807, 21, 3]]``\n
+        chunk2: ``[[193, 50], [193, 50, 3]]``\n
         'energies': ``[2000, 1]``
     """
     def __init__(self, file_path,
                  batch_size=1000,
                  device='cpu',
                  chunk_threshold=20,
+                 properties_except_energy={},
                  species_order=['H', 'C', 'N', 'O'],
                  subtract_self_energies=False,
                  self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]):
@@ -71,40 +69,69 @@ class CachedDataset(torch.utils.data.Dataset):
 
         self.data_species = []
         self.data_coordinates = []
-        self.data_energies = []
-        self.data_self_energies = []
+        data_self_energies = []
+        self.properties = {}
+        self.properties_info = properties_except_energy
 
+        # if user does not provide energies info
+        if 'properties' in self.properties_info and 'energies' not in self.properties_info['properties']:
+            # setup energies info, so the user does not need to input energies
+            self.properties_info['properties'].append('energies')
+            self.properties_info['padding_values'].append(False)
+            self.properties_info['padded_shapes'].append((batch_size))
+            self.properties_info['dtype'].append(torch.float64)
+        # if no properties provided
+        if 'properties' not in self.properties_info:
+            self.properties_info = {'properties': ['energies'],
+                                    'padding_values': [False],
+                                    'padded_shapes': [(batch_size, )],
+                                    'dtype': [torch.float64],
+                                    }
+        # print properties information
+        print('... The following properties will be loaded:')
+        for i, prop in enumerate(self.properties_info['properties']):
+            self.properties[prop] = []
+            message = '{}: (dtype: {}, padding_value: {}, padded_shape: {})'
+            print(message.format(prop, self.properties_info['dtype'][i],
+                                    self.properties_info['padding_values'][i],
+                                    self.properties_info['padded_shapes'][i]))
+
+        # anidataloader
         anidata = anidataloader(file_path)
         anidata_size = anidata.group_size()
         self.enable_pkbar = anidata_size > 5 and PKBAR_INSTALLED
         if self.enable_pkbar:
             pbar = pkbar.Pbar('=> loading h5 dataset into cpu memory, total molecules: {}'.format(anidata_size), anidata_size)
 
+        # load h5 data into cpu memory as lists
         for i, molecule in enumerate(anidata):
+            # conformations
             num_conformations = len(molecule['coordinates'])
             # species and coordinates
             self.data_coordinates += list(molecule['coordinates'].reshape(num_conformations, -1).astype(np.float32))
             species = np.array([species_dict[x] for x in molecule['species']])
             self.data_species += list(np.tile(species, (num_conformations, 1)))
-            # energies
-            self.data_energies += list(molecule['energies'].reshape((-1, 1)))
+            # if subtract_self_energies
             if subtract_self_energies:
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
-                self.data_self_energies += list(np.tile(self_energies, (num_conformations, 1)))
-
+                data_self_energies += list(np.tile(self_energies, (num_conformations, 1)))
+            # other properties
+            for key, value in self.properties.items():
+                # print(key, molecule[key].dtype, molecule[key].shape,)
+                self.properties[key] += list(molecule[key].reshape(num_conformations, -1))
+            # pkbar update
             if self.enable_pkbar:
                 pbar.update(i)
 
-        if subtract_self_energies:
-            self.data_energies = np.array(self.data_energies) - np.array(self.data_self_energies)
-            del self.data_self_energies
-            del self_energies
+        # if subtract self energies
+        if subtract_self_energies and 'energies' in self.properties_info['properties']:
+            self.properties['energies'] = np.array(self.properties['energies']) - np.array(data_self_energies)
+            del data_self_energies
             gc.collect()
 
         self.batch_size = batch_size
         self.length = (len(self.data_species) + self.batch_size - 1) // self.batch_size
         self.device = device
-
         self.shuffled_index = np.arange(len(self.data_species))
         np.random.shuffle(self.shuffled_index)
 
@@ -112,6 +139,7 @@ class CachedDataset(torch.utils.data.Dataset):
         if not self.chunk_threshold:
             self.chunk_threshold = np.inf
 
+        # clean trash
         anidata.cleanup()
         del num_conformations
         del species
@@ -129,7 +157,6 @@ class CachedDataset(torch.utils.data.Dataset):
 
         batch_species = [self.data_species[i] for i in batch_indices_shuffled]
         batch_coordinates = [self.data_coordinates[i] for i in batch_indices_shuffled]
-        batch_energies = [self.data_energies[i] for i in batch_indices_shuffled]
 
         # get sort index
         num_atoms_each_mole = [b.shape[0] for b in batch_species]
@@ -139,7 +166,6 @@ class CachedDataset(torch.utils.data.Dataset):
         # sort each batch of data
         batch_species = self.sort_list_with_index(batch_species, sorted_atoms_idx.numpy())
         batch_coordinates = self.sort_list_with_index(batch_coordinates, sorted_atoms_idx.numpy())
-        batch_energies = self.sort_list_with_index(batch_energies, sorted_atoms_idx.numpy())
 
         # get chunk size
         output, count = torch.unique(atoms, sorted=True, return_counts=True)
@@ -150,19 +176,29 @@ class CachedDataset(torch.utils.data.Dataset):
         # split into chunks
         chunks_batch_species = self.split_list_with_size(batch_species, chunk_size_list.numpy())
         chunks_batch_coordinates = self.split_list_with_size(batch_coordinates, chunk_size_list.numpy())
-        batch_energies = self.split_list_with_size(batch_energies, np.array([self.batch_size]))
 
         # padding each data
         chunks_batch_species = self.pad_and_convert_to_tensor(chunks_batch_species, padding_value=-1)
         chunks_batch_coordinates = self.pad_and_convert_to_tensor(chunks_batch_coordinates)
-        batch_energies = self.pad_and_convert_to_tensor(batch_energies, no_padding=True)
 
+        # chunks
         chunks = list(zip(chunks_batch_species, chunks_batch_coordinates))
-
         for i, _ in enumerate(chunks):
             chunks[i] = (chunks[i][0], chunks[i][1].reshape(chunks[i][1].shape[0], -1, 3))
 
-        properties = {'energies': batch_energies[0].flatten().float()}
+        # properties
+        properties = {}
+        for i, key in enumerate(self.properties_info['properties']):
+            prop = [self.properties[key][i] for i in batch_indices_shuffled]
+            prop = self.sort_list_with_index(prop, sorted_atoms_idx.numpy())
+            if self.properties_info['padding_values'][i] is False:
+                prop = self.pad_and_convert_to_tensor([prop], no_padding=True)[0]
+            else:
+                prop = self.pad_and_convert_to_tensor([prop], padding_value=self.properties_info['padding_values'][i])[0]
+            padded_shape = list(self.properties_info['padded_shapes'][i])
+            # the last batch may does not have one batch data
+            padded_shape[0] = prop.shape[0]
+            properties[key] = prop.reshape(padded_shape).to(self.properties_info['dtype'][i])
 
         # return: [chunk1, chunk2, ...], {"energies", "force", ...} in which chunk1=(species, coordinates)
         # e.g. chunk1 = [[1807, 21], [1807, 21, 3]], chunk2 = [[193, 50], [193, 50, 3]]
@@ -328,7 +364,7 @@ def ShuffledDataset(file_path,
 
     val_data_loader = torch.utils.data.DataLoader(dataset=val_dataset,
                                                   batch_size=batch_size,
-                                                  shuffle=False,
+                                                  shuffle=shuffle,
                                                   num_workers=num_workers,
                                                   pin_memory=False,
                                                   collate_fn=my_collate_fn)
