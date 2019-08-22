@@ -33,7 +33,8 @@ pip install torch -f https://download.pytorch.org/whl/nightly/cu100/torch.html
 If you updated TorchANI, you may also need to update PyTorch:
 
 ```bash
-pip install --upgrade torch -f https://download.pytorch.org/whl/nightly/cu100/torch.html
+pip install numpy
+pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
 ```
 
 After installing the correct PyTorch, you can install TorchANI by:
