@@ -54,6 +54,12 @@ class TestShuffledData(unittest.TestCase):
         for i, _ in enumerate(self.ds):
             pbar.update(i)
 
+    def testSplitDataset(self):
+        print('=> test splitting dataset')
+        train_ds, val_ds = torchani.data.ShuffledDataset(dspath, batch_size=batch_size, chunk_threshold=chunk_threshold, num_workers=2, validation_split=0.1)
+        frac = len(val_ds) / (len(val_ds) + len(train_ds))
+        self.assertLess(abs(frac - 0.1), 0.05)
+
     def testNoUnnecessaryPadding(self):
         print('=> checking No Unnecessary Padding')
         for i, chunk in enumerate(self.chunks):
@@ -91,11 +97,13 @@ class TestCachedData(unittest.TestCase):
 
     def testLoadDataset(self):
         print('=> test loading all dataset')
-        pbar = pkbar.Pbar('loading and processing dataset into cpu memory, total '
-                          + 'batches: {}, batch_size: {}'.format(len(self.ds), batch_size),
-                          len(self.ds))
-        for i, _ in enumerate(self.ds):
-            pbar.update(i)
+        self.ds.load()
+
+    def testSplitDataset(self):
+        print('=> test splitting dataset')
+        train_dataset, val_dataset = self.ds.split(0.1)
+        frac = len(val_dataset) / len(self.ds)
+        self.assertLess(abs(frac - 0.1), 0.05)
 
     def testNoUnnecessaryPadding(self):
         print('=> checking No Unnecessary Padding')
