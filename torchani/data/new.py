@@ -232,7 +232,7 @@ class CachedDataset(torch.utils.data.Dataset):
             # setup energies info, so the user does not need to input energies
             self.properties_info['properties'].append('energies')
             self.properties_info['padding_values'].append(None)
-            self.properties_info['padded_shapes'].append((self.batch_size))
+            self.properties_info['padded_shapes'].append((self.batch_size, ))
             self.properties_info['dtypes'].append(torch.float64)
         # if no properties provided
         if 'properties' not in self.properties_info:
