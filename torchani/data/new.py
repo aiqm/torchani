@@ -51,7 +51,7 @@ class CachedDataset(torch.utils.data.Dataset):
                  batch_size=1000,
                  device='cpu',
                  chunk_threshold=20,
-                 properties_except_energy={},
+                 other_properties={},
                  species_order=['H', 'C', 'N', 'O'],
                  subtract_self_energies=False,
                  self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]):
@@ -70,8 +70,8 @@ class CachedDataset(torch.utils.data.Dataset):
         self.data_species = []
         self.data_coordinates = []
         data_self_energies = []
-        self.properties = {}
-        self.properties_info = properties_except_energy
+        self.data_properties = {}
+        self.properties_info = other_properties
 
         self.add_energies_to_properties_and_check()
 
@@ -95,16 +95,16 @@ class CachedDataset(torch.utils.data.Dataset):
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
                 data_self_energies += list(np.tile(self_energies, (num_conformations, 1)))
             # other properties
-            for key, value in self.properties.items():
+            for key, value in self.data_properties.items():
                 # print(key, molecule[key].dtype, molecule[key].shape,)
-                self.properties[key] += list(molecule[key].reshape(num_conformations, -1))
+                self.data_properties[key] += list(molecule[key].reshape(num_conformations, -1))
             # pkbar update
             if self.enable_pkbar:
                 pbar.update(i)
 
         # if subtract self energies
         if subtract_self_energies and 'energies' in self.properties_info['properties']:
-            self.properties['energies'] = np.array(self.properties['energies']) - np.array(data_self_energies)
+            self.data_properties['energies'] = np.array(self.data_properties['energies']) - np.array(data_self_energies)
             del data_self_energies
             gc.collect()
 
@@ -169,18 +169,18 @@ class CachedDataset(torch.utils.data.Dataset):
         properties = {}
         for i, key in enumerate(self.properties_info['properties']):
             # get a batch of property
-            prop = [self.properties[key][i] for i in batch_indices_shuffled]
+            prop = [self.data_properties[key][i] for i in batch_indices_shuffled]
             # sort with number of atoms
             prop = self.sort_list_with_index(prop, sorted_atoms_idx.numpy())
             # padding and convert to tensor
-            if self.properties_info['padding_values'][i] is False:
+            if self.properties_info['padding_values'][i] is None:
                 prop = self.pad_and_convert_to_tensor([prop], no_padding=True)[0]
             else:
                 prop = self.pad_and_convert_to_tensor([prop], padding_value=self.properties_info['padding_values'][i])[0]
             # set property shape and dtype
             padded_shape = list(self.properties_info['padded_shapes'][i])
             padded_shape[0] = prop.shape[0]  # the last batch may does not have one batch data
-            properties[key] = prop.reshape(padded_shape).to(self.properties_info['dtype'][i])
+            properties[key] = prop.reshape(padded_shape).to(self.properties_info['dtypes'][i])
 
         # return: [chunk1, chunk2, ...], {"energies", "force", ...} in which chunk1=(species, coordinates)
         # e.g. chunk1 = [[1807, 21], [1807, 21, 3]], chunk2 = [[193, 50], [193, 50, 3]]
@@ -232,22 +232,22 @@ class CachedDataset(torch.utils.data.Dataset):
         if 'properties' in self.properties_info and 'energies' not in self.properties_info['properties']:
             # setup energies info, so the user does not need to input energies
             self.properties_info['properties'].append('energies')
-            self.properties_info['padding_values'].append(False)
+            self.properties_info['padding_values'].append(None)
             self.properties_info['padded_shapes'].append((batch_size))
-            self.properties_info['dtype'].append(torch.float64)
+            self.properties_info['dtypes'].append(torch.float64)
         # if no properties provided
         if 'properties' not in self.properties_info:
             self.properties_info = {'properties': ['energies'],
-                                    'padding_values': [False],
+                                    'padding_values': [None],
                                     'padded_shapes': [(batch_size, )],
                                     'dtype': [torch.float64],
                                     }
         # print properties information
         print('... The following properties will be loaded:')
         for i, prop in enumerate(self.properties_info['properties']):
-            self.properties[prop] = []
+            self.data_properties[prop] = []
             message = '{}: (dtype: {}, padding_value: {}, padded_shape: {})'
-            print(message.format(prop, self.properties_info['dtype'][i],
+            print(message.format(prop, self.properties_info['dtypes'][i],
                                     self.properties_info['padding_values'][i],
                                     self.properties_info['padded_shapes'][i]))
 

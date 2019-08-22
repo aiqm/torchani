@@ -11,17 +11,17 @@ dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s03.h5')
 batch_size = 2560
 chunk_threshold = 5
 
-properties_except_energy = {'properties': ['dipoles', 'forces', 'energies'],
-                            'padding_values': [False, 0, False],
-                            'padded_shapes': [(batch_size, 3), (batch_size, -1, 3), (batch_size, )],
-                            'dtype': [torch.float32, torch.float32, torch.float64],
-                            }
+other_properties = {'properties': ['dipoles', 'forces', 'energies'],
+                    'padding_values': [None, 0, None],
+                    'padded_shapes': [(batch_size, 3), (batch_size, -1, 3), (batch_size, )],
+                    'dtypes': [torch.float32, torch.float32, torch.float64],
+                    }
 
-properties_except_energy = {'properties': ['energies'],
-                            'padding_values': [False],
-                            'padded_shapes': [(batch_size, )],
-                            'dtype': [torch.float64],
-                            }
+other_properties = {'properties': ['energies'],
+                    'padding_values': [None],
+                    'padded_shapes': [(batch_size, )],
+                    'dtypes': [torch.float64],
+                    }
 
 
 # class TestFindThreshold(unittest.TestCase):
@@ -87,7 +87,10 @@ class TestCachedData(unittest.TestCase):
 
     def setUp(self):
         print('.. setup cached dataset')
-        self.ds = torchani.data.CachedDataset(dspath, batch_size=batch_size, device='cpu', chunk_threshold=chunk_threshold, properties_except_energy=properties_except_energy)
+        self.ds = torchani.data.CachedDataset(dspath, batch_size=batch_size, device='cpu',
+                                              chunk_threshold=chunk_threshold,
+                                              other_properties=other_properties,
+                                              subtract_self_energies=True)
         self.chunks, self.properties = self.ds[0]
 
     def testTensorShape(self):
@@ -106,14 +109,14 @@ class TestCachedData(unittest.TestCase):
             self.assertEqual(chunk[1].shape[:2], chunk[0].shape[:2])
             batch_len += chunk[0].shape[0]
         print('2. properties')
-        for i, key in enumerate(properties_except_energy['properties']):
+        for i, key in enumerate(other_properties['properties']):
             print(key, list(self.properties[key].size()), self.properties[key].dtype)
             # check dtype
-            self.assertEqual(self.properties[key].dtype, properties_except_energy['dtype'][i])
+            self.assertEqual(self.properties[key].dtype, other_properties['dtypes'][i])
             # shape[0] == batch_size
-            self.assertEqual(self.properties[key].shape[0], properties_except_energy['padded_shapes'][i][0])
+            self.assertEqual(self.properties[key].shape[0], other_properties['padded_shapes'][i][0])
             # check len(shape)
-            self.assertEqual(len(self.properties[key].shape), len(properties_except_energy['padded_shapes'][i]))
+            self.assertEqual(len(self.properties[key].shape), len(other_properties['padded_shapes'][i]))
 
     def testLoadDataset(self):
         print('=> test loading all dataset')
