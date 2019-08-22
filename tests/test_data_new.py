@@ -32,6 +32,7 @@ class TestFindThreshold(unittest.TestCase):
 
 
 class TestShuffledData(unittest.TestCase):
+
     def setUp(self):
         print('.. setup shuffle dataset')
         self.ds = torchani.data.ShuffledDataset(dspath, batch_size=batch_size, chunk_threshold=chunk_threshold, num_workers=2)
