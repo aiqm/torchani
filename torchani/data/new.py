@@ -29,13 +29,27 @@ class CachedDataset(torch.utils.data.Dataset):
         file_path (str): Path to one hdf5 file.
         batch_size (int): batch size.
         chunk_threshold (int): threshould to split batch into chunks. Set to ``None`` will not split chunks.
+        other_properties (dict): A diction which is used to extract properties other than
+            ``energies`` from dataset with correct padding, shape and dtype.\n
+            The example below will extract ``dipoles`` and ``forces`` into ``properties``.\n
+            ``padding_values``: set to ``None`` means there is no need to padding for this property.
+
+            .. code-block:: python
+
+                other_properties = {'properties': ['dipoles', 'forces'],
+                                    'padding_values': [None, 0],
+                                    'padded_shapes': [(batch_size, 3), (batch_size, -1, 3)],
+                                    'dtypes': [torch.float32, torch.float32]
+                                    }
+
+        include_energies (bool): Whether include energies into properties. Default is ``True``.
         species_order (list): a list which specify how species are transfomed to int.
             for example: ``['H', 'C', 'N', 'O']`` means ``{'H': 0, 'C': 1, 'N': 2, 'O': 3}``.
         subtract_self_energies (bool): whether subtract self energies from ``energies``.
         self_energies (list): if `subtract_self_energies` is True, the order should keep
             the same as ``species_order``.
             for example :``[-0.600953, -38.08316, -54.707756, -75.194466]`` will be converted
-            to ``{'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}``..
+            to ``{'H': -0.600953, 'C': -38.08316, 'N': -54.707756, 'O': -75.194466}``.
 
     .. note::
         The resulting dataset will be:
@@ -52,6 +66,7 @@ class CachedDataset(torch.utils.data.Dataset):
                  device='cpu',
                  chunk_threshold=20,
                  other_properties={},
+                 include_energies=True,
                  species_order=['H', 'C', 'N', 'O'],
                  subtract_self_energies=False,
                  self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]):
@@ -74,7 +89,11 @@ class CachedDataset(torch.utils.data.Dataset):
         self.data_properties = {}
         self.properties_info = other_properties
 
-        self.add_energies_to_properties_and_check()
+        # whether include energies to properties
+        if include_energies:
+            self.add_energies_to_properties()
+        # let user check the properties will be loaded
+        self.check_properties()
 
         # anidataloader
         anidata = anidataloader(file_path)
@@ -95,7 +114,7 @@ class CachedDataset(torch.utils.data.Dataset):
             if subtract_self_energies:
                 self_energies = np.array(sum([self_energies_dict[x] for x in molecule['species']]))
                 data_self_energies += list(np.tile(self_energies, (num_conformations, 1)))
-            # other properties
+            # properties
             for key in self.data_properties:
                 self.data_properties[key] += list(molecule[key].reshape(num_conformations, -1))
             # pkbar update
@@ -226,7 +245,7 @@ class CachedDataset(torch.utils.data.Dataset):
             if self.enable_pkbar:
                 pbar.update(i)
 
-    def add_energies_to_properties_and_check(self):
+    def add_energies_to_properties(self):
         # if user does not provide energies info
         if 'properties' in self.properties_info and 'energies' not in self.properties_info['properties']:
             # setup energies info, so the user does not need to input energies
@@ -241,6 +260,8 @@ class CachedDataset(torch.utils.data.Dataset):
                                     'padded_shapes': [(self.batch_size, )],
                                     'dtypes': [torch.float64],
                                     }
+
+    def check_properties(self):
         # print properties information
         print('... The following properties will be loaded:')
         for i, prop in enumerate(self.properties_info['properties']):
@@ -335,14 +356,10 @@ def ShuffledDataset(file_path,
         Return a dataloader that, when iterating, you will get
 
         ``([chunk1, chunk2, ...], {'energies', 'force', ...})`` in which chunk1 is a
-        tuple of ``(species, coordinates)``.
-
-        e.g. the shape of
-
-        chunk1: ``[[1807, 21], [1807, 21, 3]]``
-
-        chunk2: ``[[193, 50], [193, 50, 3]]``
-
+        tuple of ``(species, coordinates)``.\n
+        e.g. the shape of\n
+        chunk1: ``[[1807, 21], [1807, 21, 3]]``\n
+        chunk2: ``[[193, 50], [193, 50, 3]]``\n
         'energies': ``[2000, 1]``
     """
 
