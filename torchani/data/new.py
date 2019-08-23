@@ -28,11 +28,14 @@ class CachedDataset(torch.utils.data.Dataset):
     Arguments:
         file_path (str): Path to one hdf5 file.
         batch_size (int): batch size.
+        device (str): ``'cuda'`` or ``'cpu'``, cache to CPU or GPU. Commonly, 'cpu' is already fast enough.
+            Default is ``'cpu'``.
         chunk_threshold (int): threshould to split batch into chunks. Set to ``None`` will not split chunks.
-        other_properties (dict): A diction which is used to extract properties other than
+            Use ``torchani.data.find_threshold`` to find resonable ``chunk_threshold``.
+        other_properties (dict): A dict which is used to extract properties other than
             ``energies`` from dataset with correct padding, shape and dtype.\n
-            The example below will extract ``dipoles`` and ``forces`` into ``properties``.\n
-            ``padding_values``: set to ``None`` means there is no need to padding for this property.
+            The example below will extract ``dipoles`` and ``forces``.\n
+            ``padding_values``: set to ``None`` means there is no need to pad for this property.
 
             .. code-block:: python
 
@@ -327,7 +330,10 @@ class CachedDataset(torch.utils.data.Dataset):
 
 
 def ShuffledDataset(file_path,
-                    batch_size=1000, num_workers=0, shuffle=True, chunk_threshold=20,
+                    batch_size=1000, num_workers=0, shuffle=True,
+                    chunk_threshold=20,
+                    other_properties={},
+                    include_energies=True,
                     validation_split=0.0,
                     species_order=['H', 'C', 'N', 'O'],
                     subtract_self_energies=False,
@@ -340,8 +346,8 @@ def ShuffledDataset(file_path,
         num_workers (int): multiple process to prepare dataset at background when
             training is going.
         shuffle (bool): whether to shuffle.
-        chunk_threshold (int): threshould to split batch into chunks. Set to ``None``
-            will not split chunks.
+        chunk_threshold (int): threshould to split batch into chunks. Set to ``None`` will not split chunks.
+            Use ``torchani.data.find_threshold`` to find resonable ``chunk_threshold``.
         validation_split (float): Float between 0 and 1. Fraction of the dataset to be used
             as validation data.
         species_order (list): a list which specify how species are transfomed to int.
@@ -363,7 +369,13 @@ def ShuffledDataset(file_path,
         'energies': ``[2000, 1]``
     """
 
-    dataset = TorchData(file_path, species_order, subtract_self_energies, self_energies)
+    dataset = TorchData(file_path,
+                        batch_size,
+                        other_properties,
+                        include_energies,
+                        species_order,
+                        subtract_self_energies,
+                        self_energies)
 
     if not chunk_threshold:
         chunk_threshold = np.inf
@@ -396,7 +408,13 @@ def ShuffledDataset(file_path,
 
 class TorchData(torch.utils.data.Dataset):
 
-    def __init__(self, file_path, species_order, subtract_self_energies, self_energies):
+    def __init__(self, file_path,
+                 batch_size,
+                 other_properties,
+                 include_energies,
+                 species_order,
+                 subtract_self_energies,
+                 self_energies):
 
         super(TorchData, self).__init__()
 
@@ -406,10 +424,12 @@ class TorchData(torch.utils.data.Dataset):
             species_dict[s] = i
             self_energies_dict[s] = self_energies[i]
 
+        self.batch_size = batch_size
         self.data_species = []
         self.data_coordinates = []
-        self.data_energies = []
-        self.data_self_energies = []
+        data_self_energies = []
+        self.data_properties = {}
+        self.properties_info = other_properties
 
         anidata = anidataloader(file_path)
         anidata_size = anidata.group_size()
