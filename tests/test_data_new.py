@@ -42,6 +42,7 @@ class TestShuffledData(unittest.TestCase):
         print('=> checking tensor shape')
         print('the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
         batch_len = 0
+        print('1. chunks')
         for i, chunk in enumerate(self.chunks):
             print('chunk{}'.format(i + 1), 'species:', list(chunk[0].size()), chunk[0].dtype,
                   'coordinates:', list(chunk[1].size()), chunk[1].dtype)
@@ -52,12 +53,15 @@ class TestShuffledData(unittest.TestCase):
             self.assertEqual(chunk[1].shape[2], 3)
             self.assertEqual(chunk[1].shape[:2], chunk[0].shape[:2])
             batch_len += chunk[0].shape[0]
-
-        for key, value in self.properties.items():
-            print(key, list(value.size()), value.dtype)
-            self.assertEqual(value.dtype, torch.float32)
-            self.assertEqual(len(value.shape), 1)
-            self.assertEqual(value.shape[0], batch_len)
+        print('2. properties')
+        for i, key in enumerate(other_properties['properties']):
+            print(key, list(self.properties[key].size()), self.properties[key].dtype)
+            # check dtype
+            self.assertEqual(self.properties[key].dtype, other_properties['dtypes'][i])
+            # shape[0] == batch_size
+            self.assertEqual(self.properties[key].shape[0], other_properties['padded_shapes'][i][0])
+            # check len(shape)
+            self.assertEqual(len(self.properties[key].shape), len(other_properties['padded_shapes'][i]))
 
     def testLoadDataset(self):
         print('=> test loading all dataset')
