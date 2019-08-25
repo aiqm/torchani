@@ -165,7 +165,7 @@ if __name__ == "__main__":
                 predicted_energies.append(chunk_energies)
 
             num_atoms = torch.cat(num_atoms)
-            predicted_energies = torch.cat(predicted_energies)
+            predicted_energies = torch.cat(predicted_energies).to(true_energies.dtype)
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
             rmse = hartree2kcal((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
             loss.backward()
