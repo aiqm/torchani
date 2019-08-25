@@ -35,7 +35,9 @@ class TestShuffledData(unittest.TestCase):
 
     def setUp(self):
         print('.. setup shuffle dataset')
-        self.ds = torchani.data.ShuffledDataset(dspath, batch_size=batch_size, chunk_threshold=chunk_threshold, num_workers=2,
+        self.ds = torchani.data.ShuffledDataset(dspath, batch_size=batch_size,
+                                                chunk_threshold=chunk_threshold,
+                                                num_workers=2,
                                                 other_properties=other_properties,
                                                 subtract_self_energies=True)
         self.chunks, self.properties = iter(self.ds).next()
