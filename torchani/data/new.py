@@ -348,6 +348,20 @@ def ShuffledDataset(file_path,
         shuffle (bool): whether to shuffle.
         chunk_threshold (int): threshould to split batch into chunks. Set to ``None`` will not split chunks.
             Use ``torchani.data.find_threshold`` to find resonable ``chunk_threshold``.
+        other_properties (dict): A dict which is used to extract properties other than
+            ``energies`` from dataset with correct padding, shape and dtype.\n
+            The example below will extract ``dipoles`` and ``forces``.\n
+            ``padding_values``: set to ``None`` means there is no need to pad for this property.
+
+            .. code-block:: python
+
+                other_properties = {'properties': ['dipoles', 'forces'],
+                                    'padding_values': [None, 0],
+                                    'padded_shapes': [(batch_size, 3), (batch_size, -1, 3)],
+                                    'dtypes': [torch.float32, torch.float32]
+                                    }
+
+        include_energies (bool): Whether include energies into properties. Default is ``True``.
         validation_split (float): Float between 0 and 1. Fraction of the dataset to be used
             as validation data.
         species_order (list): a list which specify how species are transfomed to int.
