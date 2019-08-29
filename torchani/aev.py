@@ -2,19 +2,18 @@ from __future__ import division
 import torch
 from . import _six  # noqa:F401
 import math
+from torch import Tensor
 from typing import Tuple
 
 
-# @torch.jit.script
 def cutoff_cosine(distances, cutoff):
-    # type: (torch.Tensor, float) -> torch.Tensor
+    # type: (Tensor, float) -> Tensor
     # assuming all elements in distances are smaller than cutoff
     return 0.5 * torch.cos(distances * (math.pi / cutoff)) + 0.5
 
 
-# @torch.jit.script
 def radial_terms(Rcr, EtaR, ShfR, distances):
-    # type: (float, torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
+    # type: (float, float, float, Tensor) -> Tensor
     """Compute the radial subAEV terms of the center atom given neighbors
 
     This correspond to equation (3) in the `ANI paper`_. This function just
@@ -40,9 +39,8 @@ def radial_terms(Rcr, EtaR, ShfR, distances):
     return ret.flatten(start_dim=-2)
 
 
-# @torch.jit.script
 def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
-    # type: (float, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
+    # type: (float, float, float, float, float, Tensor, Tensor) -> Tensor
     """Compute the angular subAEV terms of the center atom given neighbor pairs.
 
     This correspond to equation (4) in the `ANI paper`_. This function just
@@ -77,25 +75,24 @@ def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
     return ret.flatten(start_dim=-4)
 
 
-# @torch.jit.script
 def compute_shifts(cell, pbc, cutoff):
+    # type: (Tensor, Tensor, float) -> Tensor
     """Compute the shifts of unit cell along the given cell vectors to make it
     large enough to contain all pairs of neighbor atoms with PBC under
     consideration
 
     Arguments:
-        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three
+        cell (:class:`Tensor`): tensor of shape (3, 3) of the three
         vectors defining unit cell:
             tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])
         cutoff (float): the cutoff inside which atoms are considered pairs
-        pbc (:class:`torch.Tensor`): boolean vector of size 3 storing
+        pbc (:class:`Tensor`): boolean vector of size 3 storing
             if pbc is enabled for that direction.
 
     Returns:
-        :class:`torch.Tensor`: long tensor of shifts. the center cell and
+        :class:`Tensor`: long tensor of shifts. the center cell and
             symmetric cells are not included.
     """
-    # type: (torch.Tensor, torch.Tensor, float) -> torch.Tensor
     reciprocal_cell = cell.inverse().t()
     inv_distances = reciprocal_cell.norm(2, -1)
     num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
@@ -121,22 +118,20 @@ def compute_shifts(cell, pbc, cutoff):
     ])
 
 
-# @torch.jit.script
 def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
+    # type: (Tensor, Tensor, Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor]
     """Compute pairs of atoms that are neighbors
 
     Arguments:
-        padding_mask (:class:`torch.Tensor`): boolean tensor of shape
+        padding_mask (:class:`Tensor`): boolean tensor of shape
             (molecules, atoms) for padding mask. 1 == is padding.
-        coordinates (:class:`torch.Tensor`): tensor of shape
+        coordinates (:class:`Tensor`): tensor of shape
             (molecules, atoms, 3) for atom coordinates.
-        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three vectors
+        cell (:class:`Tensor`): tensor of shape (3, 3) of the three vectors
             defining unit cell: tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])
         cutoff (float): the cutoff inside which atoms are considered pairs
-        shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts
+        shifts (:class:`Tensor`): tensor of shape (?, 3) storing shifts
     """
-    # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, float) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
-
     coordinates = coordinates.detach()
     cell = cell.detach()
     num_atoms = padding_mask.shape[1]
@@ -144,7 +139,7 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
 
     # Step 2: center cell
     p1_center, p2_center = torch.combinations(all_atoms).unbind(-1)
-    shifts_center = shifts.new_zeros(p1_center.shape[0], 3)
+    shifts_center = torch.zeros((p1_center.shape[0], 3), dtype=shifts.dtype, device=shifts.device)
 
     # Step 3: cells with shifts
     # shape convention (shift index, molecule index, atom index, 3)
@@ -172,8 +167,8 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
     return molecule_index + atom_index1, molecule_index + atom_index2, shifts
 
 
-# torch.jit.script
 def triu_index(num_species):
+    # type: (int) -> Tensor
     species = torch.arange(num_species)
     species1, species2 = torch.combinations(species, r=2, with_replacement=True).unbind(-1)
     pair_index = torch.arange(species1.shape[0])
@@ -183,8 +178,8 @@ def triu_index(num_species):
     return ret
 
 
-# torch.jit.script
 def convert_pair_index(index):
+    # type: (Tensor) -> Tuple[Tensor, Tensor]
     """Let's say we have a pair:
     index: 0 1 2 3 4 5 6 7 8 9 ...
     elem1: 0 0 1 0 1 2 0 1 2 3 ...
@@ -208,15 +203,15 @@ def convert_pair_index(index):
     return index - num_elems, n + 1
 
 
-# torch.jit.script
 def cumsum_from_zero(input_):
+    # type: (Tensor) -> Tensor
     cumsum = torch.cumsum(input_, dim=0)
-    cumsum = torch.cat([input_.new_tensor([0]), cumsum[:-1]])
+    cumsum = torch.cat([torch.tensor([0], dtype=input_.dtype, device=input_.device), cumsum[:-1]])
     return cumsum
 
 
-# torch.jit.script
 def triple_by_molecule(atom_index1, atom_index2):
+    # type: (Tensor, Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]
     """Input: indices for pairs of atoms that are close to each other.
     each pair only appear once, i.e. only one of the pairs (1, 2) and
     (2, 1) exists.
@@ -233,10 +228,12 @@ def triple_by_molecule(atom_index1, atom_index2):
     sorted_ai1, rev_indices = ai1.sort()
 
     # sort and compute unique key
-    uniqued_central_atom_index, counts = torch.unique_consecutive(sorted_ai1, return_counts=True)
+    unique_results = torch.unique_consecutive(sorted_ai1, return_inverse=True, return_counts=True)
+    uniqued_central_atom_index = unique_results[0]
+    counts = unique_results[-1]
 
     # do local combinations within unique key, assuming sorted
-    pair_sizes = counts * (counts - 1) // 2
+    pair_sizes = (counts * (counts - 1) / 2).long()
     total_size = pair_sizes.sum()
     pair_indices = torch.repeat_interleave(pair_sizes)
     central_atom_index = uniqued_central_atom_index.index_select(0, pair_indices)
@@ -259,8 +256,8 @@ def triple_by_molecule(atom_index1, atom_index2):
     return central_atom_index, local_index1 % n, local_index2 % n, sign1, sign2
 
 
-# torch.jit.script
 def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes):
+    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tuple[float, float, float, float, float, float, float, float], Tuple[int, int, int, int, int, int]) > Tensor
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     num_species, radial_sublength, radial_length, angular_sublength, angular_length, aev_length = sizes
     num_molecules = species.shape[0]
@@ -279,7 +276,7 @@ def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes
 
     # compute radial aev
     radial_terms_ = radial_terms(Rcr, EtaR, ShfR, distances)
-    radial_aev = radial_terms_.new_zeros(num_molecules * num_atoms * num_species, radial_sublength)
+    radial_aev = torch.zeros((num_molecules * num_atoms * num_species, radial_sublength), dtype=radial_terms_.dtype)
     index1 = atom_index1 * num_species + species2
     index2 = atom_index2 * num_species + species1
     radial_aev.index_add_(0, index1, radial_terms_)
@@ -302,7 +299,7 @@ def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes
     species1_ = torch.where(sign1 == 1, species2[pair_index1], species1[pair_index1])
     species2_ = torch.where(sign2 == 1, species2[pair_index2], species1[pair_index2])
     angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec1, vec2)
-    angular_aev = angular_terms_.new_zeros(num_molecules * num_atoms * num_species_pairs, angular_sublength)
+    angular_aev = torch.zeros((num_molecules * num_atoms * num_species_pairs, angular_sublength), dtype=angular_terms_.dtype, device=angular_terms_.device)
     index = central_atom_index * num_species_pairs + triu_index[species1_, species2_]
     angular_aev.index_add_(0, index, angular_terms_)
     angular_aev = angular_aev.reshape(num_molecules, num_atoms, angular_length)
@@ -317,17 +314,17 @@ class AEVComputer(torch.nn.Module):
             in the `ANI paper`_.
         Rca (float): :math:`R_C` in equation (2) when used at equation (4)
             in the `ANI paper`_.
-        EtaR (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
+        EtaR (:class:`Tensor`): The 1D tensor of :math:`\eta` in
             equation (3) in the `ANI paper`_.
-        ShfR (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
+        ShfR (:class:`Tensor`): The 1D tensor of :math:`R_s` in
             equation (3) in the `ANI paper`_.
-        EtaA (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
+        EtaA (:class:`Tensor`): The 1D tensor of :math:`\eta` in
             equation (4) in the `ANI paper`_.
-        Zeta (:class:`torch.Tensor`): The 1D tensor of :math:`\zeta` in
+        Zeta (:class:`Tensor`): The 1D tensor of :math:`\zeta` in
             equation (4) in the `ANI paper`_.
-        ShfA (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
+        ShfA (:class:`Tensor`): The 1D tensor of :math:`R_s` in
             equation (4) in the `ANI paper`_.
-        ShfZ (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
+        ShfZ (:class:`Tensor`): The 1D tensor of :math:`\theta_s` in
             equation (4) in the `ANI paper`_.
         num_species (int): Number of supported atom types.
 
@@ -380,8 +377,8 @@ class AEVComputer(torch.nn.Module):
     def constants(self):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
-    # @torch.jit.script_method
     def forward(self, input_):
+        # type: (Tuple[Tensor, Tensor]) > Tuple[Tensor, Tensor]
         """Compute AEVs
 
         Arguments:
@@ -412,13 +409,14 @@ class AEVComputer(torch.nn.Module):
             unchanged, and AEVs is a tensor of shape
             ``(C, A, self.aev_length())``
         """
-        if len(input_) == 2:
-            species, coordinates = input_
-            cell = self.default_cell
-            shifts = self.default_shifts
-        else:
-            assert len(input_) == 4
-            species, coordinates, cell, pbc = input_
-            cutoff = max(self.Rcr, self.Rca)
-            shifts = compute_shifts(cell, pbc, cutoff)
+
+        # if len(input_) == 2:
+        species, coordinates = input_
+        cell = self.default_cell
+        shifts = self.default_shifts
+        # else:
+        #     assert len(input_) == 4
+        #     species, coordinates, cell, pbc = input_
+        #     cutoff = max(self.Rcr, self.Rca)
+        #     shifts = compute_shifts(cell, pbc, cutoff)
         return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
