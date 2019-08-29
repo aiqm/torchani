@@ -189,7 +189,9 @@ class EnergyShifter(torch.nn.Module):
         intercept = 0.0
         if self.fit_intercept:
             intercept = self.self_energies[-1]
-
+        species=species-species.min()
+        if self.self_energies.dim()==0:
+            self.self_energies=self.self_energies.unsqueeze(0)  
         self_energies = self.self_energies[species]
         self_energies[species == -1] = 0
         return self_energies.sum(dim=1) + intercept
