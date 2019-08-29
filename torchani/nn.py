@@ -1,6 +1,7 @@
 import torch
 from . import utils
-
+from torch import Tensor
+from typing import Tuple
 
 class ANIModel(torch.nn.ModuleList):
     """ANI model that compute properties from species and AEVs.
@@ -34,6 +35,7 @@ class ANIModel(torch.nn.ModuleList):
         self.padding_fill = padding_fill
 
     def forward(self, species_aev):
+        # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
         species, aev = species_aev
         species_ = species.flatten()
         present_species = utils.present_species(species)
@@ -53,6 +55,7 @@ class Ensemble(torch.nn.ModuleList):
     """Compute the average output of an ensemble of modules."""
 
     def forward(self, species_input):
+        # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
         outputs = [x(species_input)[1] for x in self]
         species, _ = species_input
         return species, sum(outputs) / len(outputs)
