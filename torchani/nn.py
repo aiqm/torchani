@@ -3,6 +3,7 @@ from . import utils
 from torch import Tensor
 from typing import Tuple
 
+
 class ANIModel(torch.nn.ModuleList):
     """ANI model that compute properties from species and AEVs.
 
