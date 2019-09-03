@@ -385,9 +385,10 @@ class AEVComputer(torch.nn.Module):
             input_ (tuple): Can be one of the following two cases:
 
                 If you don't care about periodic boundary conditions at all,
-                then input can be a tuple of two tensors: species and coordinates.
-                species must have shape ``(C, A)`` and coordinates must have
-                shape ``(C, A, 3)``, where ``C`` is the number of molecules
+                then input can be a tuple of four tensors: species, coordinates and
+                two padding tensors. species must have shape ``(C, A)``, coordinates
+                must have shape ``(C, A, 3)``, and padding tensors must be
+                `torch.zeros(size(0,0))` where ``C`` is the number of molecules
                 in a chunk, and ``A`` is the number of atoms.
 
                 If you want to apply periodic boundary conditions, then the input
