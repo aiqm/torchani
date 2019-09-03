@@ -378,7 +378,7 @@ class AEVComputer(torch.nn.Module):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
     def forward(self, input_):
-        # type: (Tuple[Tensor, Tensor]) > Tuple[Tensor, Tensor]
+        # type: (Tuple[Tensor, Tensor, Tensor, Tensor]) > Tuple[Tensor, Tensor]
         """Compute AEVs
 
         Arguments:
@@ -409,14 +409,13 @@ class AEVComputer(torch.nn.Module):
             unchanged, and AEVs is a tensor of shape
             ``(C, A, self.aev_length())``
         """
+        species, coordinates, cell, pbc = input_
 
-        # if len(input_) == 2:
-        species, coordinates = input_
-        cell = self.default_cell
-        shifts = self.default_shifts
-        # else:
-        #     assert len(input_) == 4
-        #     species, coordinates, cell, pbc = input_
-        #     cutoff = max(self.Rcr, self.Rca)
-        #     shifts = compute_shifts(cell, pbc, cutoff)
+        if cell.numel():
+            cutoff = max(self.Rcr, self.Rca)
+            shifts = compute_shifts(cell, pbc, cutoff)
+        else:
+            cell = self.default_cell
+            shifts = self.default_shifts
+
         return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
