@@ -92,9 +92,9 @@ class Calculator(ase.calculators.calculator.Calculator):
                 strain_y = self.strain(cell, displacement_y, 1)
                 strain_z = self.strain(cell, displacement_z, 2)
                 cell = cell + strain_x + strain_y + strain_z
-            _, aevs = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
+            _, aevs = self.aev_computer((species, coordinates), cell=cell, pbc=pbc).to(self.dtype)
         else:
-            _, aevs = self.aev_computer((species, coordinates))
+            _, aevs = self.aev_computer((species, coordinates)).to(self.dtype)
 
         _, energy = self.nn((species, aevs))
         energy *= ase.units.Hartree
