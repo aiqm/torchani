@@ -46,8 +46,7 @@ class Calculator(ase.calculators.calculator.Calculator):
         self.device = self.aev_computer.EtaR.device
         self.dtype = dtype
 
-        self.whole = torch.nn.Sequential(
-            self.aev_computer,
+        self.nn = torch.nn.Sequential(
             self.model,
             self.energy_shifter
         ).to(dtype)
@@ -93,9 +92,11 @@ class Calculator(ase.calculators.calculator.Calculator):
                 strain_y = self.strain(cell, displacement_y, 1)
                 strain_z = self.strain(cell, displacement_z, 2)
                 cell = cell + strain_x + strain_y + strain_z
-            _, energy = self.whole((species, coordinates), cell=cell, pbc=pbc)
+            _, aevs = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
         else:
-            _, energy = self.whole((species, coordinates))
+            _, aevs = self.aev_computer((species, coordinates))
+
+        _, energy = self.nn((species, aevs))
         energy *= ase.units.Hartree
         self.results['energy'] = energy.item()
         self.results['free_energy'] = energy.item()
