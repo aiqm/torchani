@@ -377,7 +377,7 @@ class AEVComputer(torch.nn.Module):
     def constants(self):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
-    def forward(self, input_, *, cell=None, pbc=None):
+    def forward(self, input_, cell=None, pbc=None):
         # type: (Tuple[Tensor, Tensor], Optional[Tensor], Optional[Tensor]) > Tuple[Tensor, Tensor]
         """Compute AEVs
 
