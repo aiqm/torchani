@@ -93,7 +93,7 @@ class Calculator(ase.calculators.calculator.Calculator):
                 strain_y = self.strain(cell, displacement_y, 1)
                 strain_z = self.strain(cell, displacement_z, 2)
                 cell = cell + strain_x + strain_y + strain_z
-            _, energy = self.whole((species, coordinates, cell, pbc))
+            _, energy = self.whole((species, coordinates), cell=cell, pbc=pbc)
         else:
             _, energy = self.whole((species, coordinates))
         energy *= ase.units.Hartree
