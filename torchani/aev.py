@@ -412,12 +412,12 @@ class AEVComputer(torch.nn.Module):
         """
         species, coordinates = input_
 
-        if not cell and not pbc:
-            cell = self.default_cell
-            shifts = self.default_shifts
-        else:
-            assert (cell and pbc)
+        if isinstance(cell, Tensor) and isinstance(pbc, Tensor):
             cutoff = max(self.Rcr, self.Rca)
             shifts = compute_shifts(cell, pbc, cutoff)
+        else:
+            assert not (cell and pbc)
+            cell = self.default_cell
+            shifts = self.default_shifts
 
         return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
