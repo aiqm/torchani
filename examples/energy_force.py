@@ -43,9 +43,7 @@ species = model.species_to_tensor('CHHHH').to(device).unsqueeze(0)
 
 ###############################################################################
 # Now let's compute energy and force:
-padding = torch.zeros((0, 0))
-input_ = (species, coordinates, padding, padding)
-_, energy = model(input_)
+_, energy = model((species, coordinates))
 derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
 force = -derivative
 

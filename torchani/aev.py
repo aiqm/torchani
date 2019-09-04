@@ -276,7 +276,7 @@ def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes
 
     # compute radial aev
     radial_terms_ = radial_terms(Rcr, EtaR, ShfR, distances)
-    radial_aev = torch.zeros((num_molecules * num_atoms * num_species, radial_sublength), dtype=radial_terms_.dtype)
+    radial_aev = torch.zeros((num_molecules * num_atoms * num_species, radial_sublength), dtype=radial_terms_.dtype, device=radial_terms_.device)
     index1 = atom_index1 * num_species + species2
     index2 = atom_index2 * num_species + species1
     radial_aev.index_add_(0, index1, radial_terms_)
