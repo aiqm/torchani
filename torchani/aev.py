@@ -3,7 +3,7 @@ import torch
 from . import _six  # noqa:F401
 import math
 from torch import Tensor
-from typing import Tuple
+from typing import Tuple, Optional
 
 
 def cutoff_cosine(distances, cutoff):
@@ -377,24 +377,24 @@ class AEVComputer(torch.nn.Module):
     def constants(self):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
-    def forward(self, input_):
-        # type: (Tuple[Tensor, Tensor, Tensor, Tensor]) > Tuple[Tensor, Tensor]
+    def forward(self, input_, *, cell=None, pbc=None):
+        # type: (Tuple[Tensor, Tensor, Optional[Tensor], Optional[Tensor]]) > Tuple[Tensor, Tensor]
         """Compute AEVs
 
         Arguments:
             input_ (tuple): Can be one of the following two cases:
 
                 If you don't care about periodic boundary conditions at all,
-                then input can be a tuple of four tensors: species, coordinates and
-                two padding tensors. species must have shape ``(C, A)``, coordinates
-                must have shape ``(C, A, 3)``, and padding tensors must be
-                `torch.zeros(size(0,0))` where ``C`` is the number of molecules
-                in a chunk, and ``A`` is the number of atoms.
+                then input can be a tuple of two tensors: species, coordinates.
+                species must have shape ``(C, A)``, coordinates must have shape
+                ``(C, A, 3)`` where ``C`` is the number of molecules in a chunk,
+                and ``A`` is the number of atoms.
 
                 If you want to apply periodic boundary conditions, then the input
-                would be a tuple of four tensors: species, coordinates, cell, pbc
-                where species and coordinates are the same as described above, cell
-                is a tensor of shape (3, 3) of the three vectors defining unit cell:
+                would be a tuple of two tensors (species, coordinates) and two keyword
+                arguments `cell=...` , and `pbc=...` where species and coordinates are
+                the same as described above, cell is a tensor of shape (3, 3) of the
+                three vectors defining unit cell:
 
                 .. code-block:: python
 
@@ -410,13 +410,14 @@ class AEVComputer(torch.nn.Module):
             unchanged, and AEVs is a tensor of shape
             ``(C, A, self.aev_length())``
         """
-        species, coordinates, cell, pbc = input_
+        species, coordinates = input_
 
-        if cell.numel():
-            cutoff = max(self.Rcr, self.Rca)
-            shifts = compute_shifts(cell, pbc, cutoff)
-        else:
+        if not cell and not pbc:
             cell = self.default_cell
             shifts = self.default_shifts
+        else:
+            assert (cell and pbc)
+            cutoff = max(self.Rcr, self.Rca)
+            shifts = compute_shifts(cell, pbc, cutoff)
 
         return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
