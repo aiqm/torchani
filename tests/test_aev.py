@@ -245,6 +245,12 @@ class TestAEV(unittest.TestCase):
                 )
 
 
+class TestAEVJIT(TestAEV):
+    def __init__(self):
+        super(TestAEVJIT).__init__()
+        self.aev_computer = torch.jit.script(self.aev_computer)
+
+
 class TestPBCSeeEachOther(unittest.TestCase):
     def setUp(self):
         self.ani1x = torchani.models.ANI1x()
