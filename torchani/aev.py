@@ -2,18 +2,17 @@ from __future__ import division
 import torch
 from . import _six  # noqa:F401
 import math
-from torch import Tensor
 from typing import Tuple, Optional
 
 
 def cutoff_cosine(distances, cutoff):
-    # type: (Tensor, float) -> Tensor
+    # type: (torch.Tensor, float) -> torch.Tensor
     # assuming all elements in distances are smaller than cutoff
     return 0.5 * torch.cos(distances * (math.pi / cutoff)) + 0.5
 
 
 def radial_terms(Rcr, EtaR, ShfR, distances):
-    # type: (float, Tensor, Tensor, Tensor) -> Tensor
+    # type: (float, torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
     """Compute the radial subAEV terms of the center atom given neighbors
 
     This correspond to equation (3) in the `ANI paper`_. This function just
@@ -40,7 +39,7 @@ def radial_terms(Rcr, EtaR, ShfR, distances):
 
 
 def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
-    # type: (float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
+    # type: (float, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
     """Compute the angular subAEV terms of the center atom given neighbor pairs.
 
     This correspond to equation (4) in the `ANI paper`_. This function just
@@ -76,7 +75,7 @@ def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
 
 
 def compute_shifts(cell, pbc, cutoff):
-    # type: (Tensor, Tensor, float) -> Tensor
+    # type: (torch.Tensor, torch.Tensor, float) -> torch.Tensor
     """Compute the shifts of unit cell along the given cell vectors to make it
     large enough to contain all pairs of neighbor atoms with PBC under
     consideration
@@ -119,7 +118,7 @@ def compute_shifts(cell, pbc, cutoff):
 
 
 def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
-    # type: (Tensor, Tensor, Tensor, Tensor, float) -> Tuple[Tensor, Tensor, Tensor]
+    # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, float) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
     """Compute pairs of atoms that are neighbors
 
     Arguments:
@@ -168,7 +167,7 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
 
 
 def triu_index(num_species):
-    # type: (int) -> Tensor
+    # type: (int) -> torch.Tensor
     species = torch.arange(num_species)
     species1, species2 = torch.combinations(species, r=2, with_replacement=True).unbind(-1)
     pair_index = torch.arange(species1.shape[0])
@@ -179,7 +178,7 @@ def triu_index(num_species):
 
 
 def convert_pair_index(index):
-    # type: (Tensor) -> Tuple[Tensor, Tensor]
+    # type: (torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]
     """Let's say we have a pair:
     index: 0 1 2 3 4 5 6 7 8 9 ...
     elem1: 0 0 1 0 1 2 0 1 2 3 ...
@@ -204,14 +203,14 @@ def convert_pair_index(index):
 
 
 def cumsum_from_zero(input_):
-    # type: (Tensor) -> Tensor
+    # type: (torch.Tensor) -> torch.Tensor
     cumsum = torch.cumsum(input_, dim=0)
     cumsum = torch.cat([torch.tensor([0], dtype=input_.dtype, device=input_.device), cumsum[:-1]])
     return cumsum
 
 
 def triple_by_molecule(atom_index1, atom_index2):
-    # type: (Tensor, Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]
+    # type: (torch.Tensor, torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
     """Input: indices for pairs of atoms that are close to each other.
     each pair only appear once, i.e. only one of the pairs (1, 2) and
     (2, 1) exists.
@@ -257,7 +256,7 @@ def triple_by_molecule(atom_index1, atom_index2):
 
 
 def compute_aev(species, coordinates, cell, shifts, triu_index, constants, sizes):
-    # type: (Tensor, Tensor, Tensor, Tensor, Tensor, Tuple[float, float, float, float, float, float, float, float], Tuple[int, int, int, int, int, int]) > Tensor
+    # type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Tuple[float, torch.Tensor, torch.Tensor, float, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor], Tuple[int, int, int, int, int, int]) > torch.Tensor
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     num_species, radial_sublength, radial_length, angular_sublength, angular_length, aev_length = sizes
     num_molecules = species.shape[0]
@@ -378,7 +377,7 @@ class AEVComputer(torch.nn.Module):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
     def forward(self, input_, cell=None, pbc=None):
-        # type: (Tuple[Tensor, Tensor], Optional[Tensor], Optional[Tensor]) -> Tuple[Tensor, Tensor]
+        # type: (Tuple[torch.Tensor, torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
         """Compute AEVs
 
         Arguments:
@@ -412,12 +411,12 @@ class AEVComputer(torch.nn.Module):
         """
         species, coordinates = input_
 
-        if isinstance(cell, Tensor) and isinstance(pbc, Tensor):
-            cutoff = max(self.Rcr, self.Rca)
-            shifts = compute_shifts(cell, pbc, cutoff)
-        else:
-            assert not (cell and pbc)
+        if cell is None and pbc is None:
             cell = self.default_cell
             shifts = self.default_shifts
+        else:
+            assert (cell is not None and pbc is not None)
+            cutoff = max(self.Rcr, self.Rca)
+            shifts = compute_shifts(cell, pbc, cutoff)
 
         return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
