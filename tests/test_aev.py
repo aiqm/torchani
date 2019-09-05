@@ -246,8 +246,8 @@ class TestAEV(unittest.TestCase):
 
 
 class TestAEVJIT(TestAEV):
-    def __init__(self):
-        super(TestAEVJIT).__init__()
+    def setUp(self):
+        super().setUp()
         self.aev_computer = torch.jit.script(self.aev_computer)
 
 
