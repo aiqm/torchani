@@ -363,7 +363,7 @@ class TestAEVOnBoundary(unittest.TestCase):
         self.center_coordinates = self.coordinates + 0.5 * (self.v1 + self.v2 + self.v3)
         ani1x = torchani.models.ANI1x()
         self.aev_computer = ani1x.aev_computer.to(torch.double)
-        _, self.aev = self.aev_computer((self.species, self.center_coordinates, self.cell, self.pbc))
+        _, self.aev = self.aev_computer((self.species, self.center_coordinates), cell=self.cell, pbc=self.pbc)
 
     def assertInCell(self, coordinates):
         coordinates_cell = coordinates @ self.inv_cell

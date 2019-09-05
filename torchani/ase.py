@@ -38,7 +38,7 @@ class Calculator(ase.calculators.calculator.Calculator):
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
         # aev_computer.neighborlist will be changed later, so we need a copy to
         # make sure we do not change the original object
-        self.aev_computer = copy.deepcopy(aev_computer)
+        self.aev_computer = copy.deepcopy(aev_computer.to(dtype))
         self.model = copy.deepcopy(model)
         self.energy_shifter = copy.deepcopy(energy_shifter)
         self.overwrite = overwrite
@@ -92,9 +92,9 @@ class Calculator(ase.calculators.calculator.Calculator):
                 strain_y = self.strain(cell, displacement_y, 1)
                 strain_z = self.strain(cell, displacement_z, 2)
                 cell = cell + strain_x + strain_y + strain_z
-            _, aevs = self.aev_computer((species, coordinates), cell=cell, pbc=pbc).to(self.dtype)
+            _, aevs = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
         else:
-            _, aevs = self.aev_computer((species, coordinates)).to(self.dtype)
+            _, aevs = self.aev_computer((species, coordinates))
 
         _, energy = self.nn((species, aevs))
         energy *= ase.units.Hartree

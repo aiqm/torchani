@@ -13,7 +13,7 @@ def cutoff_cosine(distances, cutoff):
 
 
 def radial_terms(Rcr, EtaR, ShfR, distances):
-    # type: (float, float, float, Tensor) -> Tensor
+    # type: (float, Tensor, Tensor, Tensor) -> Tensor
     """Compute the radial subAEV terms of the center atom given neighbors
 
     This correspond to equation (3) in the `ANI paper`_. This function just
@@ -40,7 +40,7 @@ def radial_terms(Rcr, EtaR, ShfR, distances):
 
 
 def angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vectors1, vectors2):
-    # type: (float, float, float, float, float, Tensor, Tensor) -> Tensor
+    # type: (float, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor) -> Tensor
     """Compute the angular subAEV terms of the center atom given neighbor pairs.
 
     This correspond to equation (4) in the `ANI paper`_. This function just
@@ -82,15 +82,15 @@ def compute_shifts(cell, pbc, cutoff):
     consideration
 
     Arguments:
-        cell (:class:`Tensor`): tensor of shape (3, 3) of the three
+        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three
         vectors defining unit cell:
             tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])
         cutoff (float): the cutoff inside which atoms are considered pairs
-        pbc (:class:`Tensor`): boolean vector of size 3 storing
+        pbc (:class:`torch.Tensor`): boolean vector of size 3 storing
             if pbc is enabled for that direction.
 
     Returns:
-        :class:`Tensor`: long tensor of shifts. the center cell and
+        :class:`torch.Tensor`: long tensor of shifts. the center cell and
             symmetric cells are not included.
     """
     reciprocal_cell = cell.inverse().t()
@@ -123,14 +123,14 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
     """Compute pairs of atoms that are neighbors
 
     Arguments:
-        padding_mask (:class:`Tensor`): boolean tensor of shape
+        padding_mask (:class:`torch.Tensor`): boolean tensor of shape
             (molecules, atoms) for padding mask. 1 == is padding.
-        coordinates (:class:`Tensor`): tensor of shape
+        coordinates (:class:`torch.Tensor`): tensor of shape
             (molecules, atoms, 3) for atom coordinates.
-        cell (:class:`Tensor`): tensor of shape (3, 3) of the three vectors
+        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three vectors
             defining unit cell: tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])
         cutoff (float): the cutoff inside which atoms are considered pairs
-        shifts (:class:`Tensor`): tensor of shape (?, 3) storing shifts
+        shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts
     """
     coordinates = coordinates.detach()
     cell = cell.detach()
@@ -314,17 +314,17 @@ class AEVComputer(torch.nn.Module):
             in the `ANI paper`_.
         Rca (float): :math:`R_C` in equation (2) when used at equation (4)
             in the `ANI paper`_.
-        EtaR (:class:`Tensor`): The 1D tensor of :math:`\eta` in
+        EtaR (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
             equation (3) in the `ANI paper`_.
-        ShfR (:class:`Tensor`): The 1D tensor of :math:`R_s` in
+        ShfR (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
             equation (3) in the `ANI paper`_.
-        EtaA (:class:`Tensor`): The 1D tensor of :math:`\eta` in
+        EtaA (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
             equation (4) in the `ANI paper`_.
-        Zeta (:class:`Tensor`): The 1D tensor of :math:`\zeta` in
+        Zeta (:class:`torch.Tensor`): The 1D tensor of :math:`\zeta` in
             equation (4) in the `ANI paper`_.
-        ShfA (:class:`Tensor`): The 1D tensor of :math:`R_s` in
+        ShfA (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
             equation (4) in the `ANI paper`_.
-        ShfZ (:class:`Tensor`): The 1D tensor of :math:`\theta_s` in
+        ShfZ (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
             equation (4) in the `ANI paper`_.
         num_species (int): Number of supported atom types.
 
