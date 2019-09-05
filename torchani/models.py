@@ -28,7 +28,6 @@ shouldn't be used anymore.
 """
 
 import torch
-from torch import Tensor
 from typing import Tuple
 from pkg_resources import resource_filename
 from . import neurochem
@@ -89,7 +88,7 @@ class BuiltinNet(torch.nn.Module):
             self.species, self.ensemble_prefix, self.ensemble_size)
 
     def forward(self, species_coordinates):
-        # type: (Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]
+        # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
         """Calculates predicted properties for minibatch of configurations
 
         Args:
