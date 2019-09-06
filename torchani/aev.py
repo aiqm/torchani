@@ -96,9 +96,9 @@ def compute_shifts(cell, pbc, cutoff):
     inv_distances = reciprocal_cell.norm(2, -1)
     num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
     num_repeats = torch.where(pbc, num_repeats, torch.zeros_like(num_repeats))
-    r1 = torch.arange(1, num_repeats[0] + 1, device=cell.device)
-    r2 = torch.arange(1, num_repeats[1] + 1, device=cell.device)
-    r3 = torch.arange(1, num_repeats[2] + 1, device=cell.device)
+    r1 = torch.arange(1, num_repeats[0] + 1, device=cell.device, dtype=torch.long)
+    r2 = torch.arange(1, num_repeats[1] + 1, device=cell.device, dtype=torch.long)
+    r3 = torch.arange(1, num_repeats[2] + 1, device=cell.device, dtype=torch.long)
     o = torch.zeros(1, dtype=torch.long, device=cell.device)
     return torch.cat([
         torch.cartesian_prod(r1, r2, r3),
