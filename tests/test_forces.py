@@ -14,8 +14,8 @@ class TestForce(unittest.TestCase):
         self.tolerance = 1e-5
         ani1x = torchani.models.ANI1x()
         self.aev_computer = ani1x.aev_computer
-        nnp = ani1x.neural_networks[0]
-        self.model = torch.nn.Sequential(self.aev_computer, nnp)
+        self.nnp = ani1x.neural_networks[0]
+        self.model = torch.nn.Sequential(self.aev_computer, self.nnp)
 
     def random_skip(self):
         return False
@@ -82,7 +82,8 @@ class TestForce(unittest.TestCase):
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 forces = self.transform(forces)
-                _, energies_ = self.model((species, coordinates, cell, pbc))
+                _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
+                _, energies_ = self.nnp((species, aev))
                 derivative = torch.autograd.grad(energies_.sum(),
                                                  coordinates)[0]
                 max_diff = (forces + derivative).abs().max().item()
