@@ -143,7 +143,7 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
     # Step 3: cells with shifts
     # shape convention (shift index, molecule index, atom index, 3)
     num_shifts = shifts.shape[0]
-    all_shifts = torch.arange(num_shifts, device=cell.device)
+    all_shifts = torch.arange(num_shifts, device=cell.device, dtype=torch.long)
     shift_index, p1, p2 = torch.cartesian_prod(all_shifts, all_atoms, all_atoms).unbind(-1)
     shifts_outide = shifts.index_select(0, shift_index)
 
@@ -168,9 +168,9 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
 
 def triu_index(num_species):
     # type: (int) -> torch.Tensor
-    species = torch.arange(num_species)
+    species = torch.arange(num_species, dtype=torch.long)
     species1, species2 = torch.combinations(species, r=2, with_replacement=True).unbind(-1)
-    pair_index = torch.arange(species1.shape[0])
+    pair_index = torch.arange(species1.shape[0], dtype=torch.long)
     ret = torch.zeros(num_species, num_species, dtype=torch.long)
     ret[species1, species2] = pair_index
     ret[species2, species1] = pair_index
@@ -238,7 +238,7 @@ def triple_by_molecule(atom_index1, atom_index2):
     central_atom_index = uniqued_central_atom_index.index_select(0, pair_indices)
     cumsum = cumsum_from_zero(pair_sizes)
     cumsum = cumsum.index_select(0, pair_indices)
-    sorted_local_pair_index = torch.arange(total_size, device=cumsum.device) - cumsum
+    sorted_local_pair_index = torch.arange(total_size, device=cumsum.device, dtype=torch.long) - cumsum
     sorted_local_index1, sorted_local_index2 = convert_pair_index(sorted_local_pair_index)
     cumsum = cumsum_from_zero(counts)
     cumsum = cumsum.index_select(0, pair_indices)
