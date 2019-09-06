@@ -134,7 +134,7 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
     coordinates = coordinates.detach()
     cell = cell.detach()
     num_atoms = padding_mask.shape[1]
-    all_atoms = torch.arange(num_atoms, device=cell.device)
+    all_atoms = torch.arange(num_atoms, device=cell.device, dtype=torch.long)
 
     # Step 2: center cell
     p1_center, p2_center = torch.combinations(all_atoms).unbind(-1)
