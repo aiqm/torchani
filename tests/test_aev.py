@@ -146,7 +146,7 @@ class TestAEV(unittest.TestCase):
                 species = self.transform(species)
                 expected_radial = self.transform(expected_radial)
                 expected_angular = self.transform(expected_angular)
-                _, aev = self.aev_computer((species, coordinates, cell, pbc))
+                _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
                 self.assertAEVEqual(expected_radial, expected_angular, aev, 5e-5)
 
     def testTripeptideMD(self):
@@ -245,6 +245,12 @@ class TestAEV(unittest.TestCase):
                 )
 
 
+class TestAEVJIT(TestAEV):
+    def setUp(self):
+        super().setUp()
+        self.aev_computer = torch.jit.script(self.aev_computer)
+
+
 class TestPBCSeeEachOther(unittest.TestCase):
     def setUp(self):
         self.ani1x = torchani.models.ANI1x()
@@ -262,11 +268,11 @@ class TestPBCSeeEachOther(unittest.TestCase):
         species = torch.tensor([[1, 0, 0, 0, 0]], dtype=torch.long)
         pbc = torch.ones(3, dtype=torch.bool)
 
-        _, aev = self.aev_computer((species, coordinates, cell, pbc))
+        _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
 
         for _ in range(100):
             translation = torch.randn(3, dtype=torch.double)
-            _, aev2 = self.aev_computer((species, coordinates + translation, cell, pbc))
+            _, aev2 = self.aev_computer((species, coordinates + translation), cell=cell, pbc=pbc)
             self.assertTrue(torch.allclose(aev, aev2))
 
     def testPBCConnersSeeEachOther(self):
@@ -363,7 +369,7 @@ class TestAEVOnBoundary(unittest.TestCase):
         self.center_coordinates = self.coordinates + 0.5 * (self.v1 + self.v2 + self.v3)
         ani1x = torchani.models.ANI1x()
         self.aev_computer = ani1x.aev_computer.to(torch.double)
-        _, self.aev = self.aev_computer((self.species, self.center_coordinates, self.cell, self.pbc))
+        _, self.aev = self.aev_computer((self.species, self.center_coordinates), cell=self.cell, pbc=self.pbc)
 
     def assertInCell(self, coordinates):
         coordinates_cell = coordinates @ self.inv_cell
@@ -385,7 +391,7 @@ class TestAEVOnBoundary(unittest.TestCase):
             self.assertNotInCell(coordinates)
             coordinates = torchani.utils.map2central(self.cell, coordinates, self.pbc)
             self.assertInCell(coordinates)
-            _, aev = self.aev_computer((self.species, coordinates, self.cell, self.pbc))
+            _, aev = self.aev_computer((self.species, coordinates), cell=self.cell, pbc=self.pbc)
             self.assertGreater(aev.abs().max().item(), 0)
             self.assertTrue(torch.allclose(aev, self.aev))
 
@@ -402,7 +408,7 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
         species_to_tensor = torchani.utils.ChemicalSymbolsToInts(['H', 'C', 'N', 'O'])
         self.species = species_to_tensor(benzene.get_chemical_symbols()).unsqueeze(0)
         self.coordinates = torch.tensor(benzene.get_positions()).unsqueeze(0).float()
-        _, self.aev = self.aev_computer((self.species, self.coordinates, self.cell, self.pbc))
+        _, self.aev = self.aev_computer((self.species, self.coordinates), cell=self.cell, pbc=self.pbc)
         self.natoms = self.aev.shape[1]
 
     def testRepeat(self):
@@ -416,7 +422,7 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
             self.coordinates + 3 * c1,
         ], dim=1)
         cell2 = torch.stack([4 * c1, c2, c3])
-        _, aev2 = self.aev_computer((species2, coordinates2, cell2, self.pbc))
+        _, aev2 = self.aev_computer((species2, coordinates2), cell=cell2, pbc=self.pbc)
         for i in range(3):
             aev3 = aev2[:, i * self.natoms: (i + 1) * self.natoms, :]
             self.assertTrue(torch.allclose(self.aev, aev3, atol=tolerance))
