@@ -38,7 +38,8 @@ class Calculator(ase.calculators.calculator.Calculator):
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
         # aev_computer.neighborlist will be changed later, so we need a copy to
         # make sure we do not change the original object
-        self.aev_computer = copy.deepcopy(aev_computer)
+        aev_computer = copy.deepcopy(aev_computer)
+        self.aev_computer = aev_computer.to(dtype)
         self.model = copy.deepcopy(model)
         self.energy_shifter = copy.deepcopy(energy_shifter)
         self.overwrite = overwrite
@@ -46,8 +47,7 @@ class Calculator(ase.calculators.calculator.Calculator):
         self.device = self.aev_computer.EtaR.device
         self.dtype = dtype
 
-        self.whole = torch.nn.Sequential(
-            self.aev_computer,
+        self.nn = torch.nn.Sequential(
             self.model,
             self.energy_shifter
         ).to(dtype)
@@ -93,9 +93,11 @@ class Calculator(ase.calculators.calculator.Calculator):
                 strain_y = self.strain(cell, displacement_y, 1)
                 strain_z = self.strain(cell, displacement_z, 2)
                 cell = cell + strain_x + strain_y + strain_z
-            _, energy = self.whole((species, coordinates, cell, pbc))
+            _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
         else:
-            _, energy = self.whole((species, coordinates))
+            _, aev = self.aev_computer((species, coordinates))
+
+        _, energy = self.nn((species, aev))
         energy *= ase.units.Hartree
         self.results['energy'] = energy.item()
         self.results['free_energy'] = energy.item()
