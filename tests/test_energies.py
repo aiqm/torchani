@@ -17,9 +17,9 @@ class TestEnergies(unittest.TestCase):
         ani1x = torchani.models.ANI1x()
         self.aev_computer = ani1x.aev_computer
         nnp = ani1x.neural_networks[0]
-        shift_energy = ani1x.energy_shifter
-        self.nn = torch.nn.Sequential(nnp, shift_energy)
-        self.model = torch.nn.Sequential(self.aev_computer, nnp, shift_energy)
+        self.energy_shifter = ani1x.energy_shifter
+        self.nn = torch.nn.Sequential(nnp, self.energy_shifter)
+        self.model = torch.nn.Sequential(self.aev_computer, nnp, self.energy_shifter)
 
     def random_skip(self):
         return False
@@ -114,6 +114,12 @@ class TestEnergies(unittest.TestCase):
                 natoms = coordinates.shape[1]
                 max_diff = (energies - energies_).abs().max().item()
                 self.assertLess(max_diff / math.sqrt(natoms), self.tolerance)
+
+
+class TestEnergiesEnergyShifterJIT(TestEnergies):
+    def setUp(self):
+        super().setUp()
+        self.energy_shifter = torch.jit.script(self.energy_shifter)
 
 
 if __name__ == '__main__':
