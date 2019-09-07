@@ -3,6 +3,7 @@ import torch.utils.data
 import math
 import numpy as np
 from collections import defaultdict
+from typing import Tuple
 
 
 def pad(species):
@@ -191,7 +192,7 @@ class EnergyShifter(torch.nn.Module):
             intercept = self.self_energies[-1]
 
         self_energies = self.self_energies[species]
-        self_energies[species == -1] = 0
+        self_energies[species == torch.tensor(-1)] = torch.tensor(0)
         return self_energies.sum(dim=1) + intercept
 
     def subtract_from_dataset(self, atomic_properties, properties):
@@ -210,6 +211,7 @@ class EnergyShifter(torch.nn.Module):
         return atomic_properties, properties
 
     def forward(self, species_energies):
+        # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
         """(species, molecular energies)->(species, molecular energies + sae)
         """
         species, energies = species_energies
