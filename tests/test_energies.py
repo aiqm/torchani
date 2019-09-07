@@ -15,10 +15,11 @@ class TestEnergies(unittest.TestCase):
     def setUp(self):
         self.tolerance = 5e-5
         ani1x = torchani.models.ANI1x()
-        aev_computer = ani1x.aev_computer
+        self.aev_computer = ani1x.aev_computer
         nnp = ani1x.neural_networks[0]
         shift_energy = ani1x.energy_shifter
-        self.model = torch.nn.Sequential(aev_computer, nnp, shift_energy)
+        self.nn = torch.nn.Sequential(nnp, shift_energy)
+        self.model = torch.nn.Sequential(self.aev_computer, nnp, shift_energy)
 
     def random_skip(self):
         return False
@@ -56,7 +57,8 @@ class TestEnergies(unittest.TestCase):
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 energies = self.transform(energies)
-                _, energies_ = self.model((species, coordinates, cell, pbc))
+                _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
+                _, energies_ = self.nn((species, aev))
                 max_diff = (energies - energies_).abs().max().item()
                 self.assertLess(max_diff, tolerance)
 
