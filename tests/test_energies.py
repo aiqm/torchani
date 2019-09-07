@@ -120,6 +120,8 @@ class TestEnergiesEnergyShifterJIT(TestEnergies):
     def setUp(self):
         super().setUp()
         self.energy_shifter = torch.jit.script(self.energy_shifter)
+        self.nn = torch.nn.Sequential(nnp, self.energy_shifter)
+        self.model = torch.nn.Sequential(self.aev_computer, nnp, self.energy_shifter)
 
 
 if __name__ == '__main__':
