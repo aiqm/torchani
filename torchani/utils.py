@@ -172,7 +172,7 @@ class EnergyShifter(torch.nn.Module):
             X = torch.cat((X, torch.ones(X.shape[0], 1).to(torch.double)), dim=-1)
         y = energies.unsqueeze(dim=-1)
         coeff_, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
-        return coeff_.squeeze()
+        return coeff_.squeeze(-1)
 
     def sae(self, species):
         """Compute self energies for molecules.
