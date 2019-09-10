@@ -13,16 +13,15 @@ class TestEnsemble(unittest.TestCase):
     def setUp(self):
         self.tol = 1e-5
         self.conformations = 20
+        ani1x = torchani.models.ANI1x()
+        self.aev_computer = ani1x.aev_computer
+        self.model_iterator = ani1x.neural_networks
+        self.ensemble = torch.nn.Sequential(self.aev_computer, self.model_iterator)
 
     def _test_molecule(self, coordinates, species):
-        ani1x = torchani.models.ANI1x()
+        model_list = [torch.nn.Sequential(self.aev_computer, m) for m in self.model_iterator]
         coordinates.requires_grad_(True)
-        aev = ani1x.aev_computer
-        model_iterator = ani1x.neural_networks
-        model_list = [torch.nn.Sequential(aev, m) for m in model_iterator]
-        ensemble = torch.nn.Sequential(aev, model_iterator)
-
-        _, energy1 = ensemble((species, coordinates))
+        _, energy1 = self.ensemble((species, coordinates))
         force1 = torch.autograd.grad(energy1.sum(), coordinates)[0]
         energy2 = [m((species, coordinates))[1] for m in model_list]
         energy2 = sum(energy2) / len(model_list)
@@ -40,6 +39,14 @@ class TestEnsemble(unittest.TestCase):
                 coordinates = torch.from_numpy(coordinates)
                 species = torch.from_numpy(species)
                 self._test_molecule(coordinates, species)
+
+
+class TestEnsembleJIT(TestEnsemble):
+
+    def setUp(self):
+        super().setUp()
+        self.ensemble = torch.nn.Sequential(self.aev_computer, self.model_iterator)
+        self.ensemble = torch.jit.script(self.ensemble)
 
 
 if __name__ == '__main__':
