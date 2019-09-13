@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 import torch
+from .nn import Sequential
 import ase.neighborlist
 from . import utils
 import ase.calculators.calculator
@@ -47,7 +48,7 @@ class Calculator(ase.calculators.calculator.Calculator):
         self.device = self.aev_computer.EtaR.device
         self.dtype = dtype
 
-        self.nn = torch.nn.Sequential(
+        self.nn = Sequential(
             self.model,
             self.energy_shifter
         ).to(dtype)

@@ -31,6 +31,7 @@ import torch
 from typing import Tuple
 from pkg_resources import resource_filename
 from . import neurochem
+from .nn import Sequential
 from .aev import AEVComputer
 
 
@@ -113,10 +114,10 @@ class BuiltinNet(torch.nn.Module):
             index (:class:`int`): Index of the model
 
         Returns:
-            ret: (:class:`torch.nn.Sequential`): Sequential model ready for
+            ret: (:class:`Sequential`): Sequential model ready for
                 calculations
         """
-        ret = torch.nn.Sequential(
+        ret = Sequential(
             self.aev_computer,
             self.neural_networks[index],
             self.energy_shifter
