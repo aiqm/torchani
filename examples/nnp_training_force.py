@@ -143,7 +143,7 @@ nn.apply(init_params)
 
 ###############################################################################
 # Let's now create a pipeline of AEV Computer --> Neural Networks.
-model = torch.nn.Sequential(aev_computer, nn).to(device)
+model = torchani.nn.Sequential(aev_computer, nn).to(device)
 
 ###############################################################################
 # Here we will use Adam with weight decay for the weights and Stochastic Gradient
