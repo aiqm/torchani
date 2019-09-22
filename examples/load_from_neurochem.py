@@ -48,8 +48,8 @@ model = torchani.neurochem.load_model(consts.species, model_dir)
 # (Coordinates) -[AEVComputer]-> (AEV) -[Neural Network]->
 # (Raw energies) -[EnergyShifter]-> (Final energies)
 # From using either the ensemble or a single model:
-nnp1 = torch.nn.Sequential(aev_computer, ensemble, energy_shifter)
-nnp2 = torch.nn.Sequential(aev_computer, model, energy_shifter)
+nnp1 = torchani.nn.Sequential(aev_computer, ensemble, energy_shifter)
+nnp2 = torchani.nn.Sequential(aev_computer, model, energy_shifter)
 print(nnp1)
 print(nnp2)
 
