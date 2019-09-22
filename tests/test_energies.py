@@ -18,8 +18,8 @@ class TestEnergies(unittest.TestCase):
         self.aev_computer = ani1x.aev_computer
         self.nnp = ani1x.neural_networks[0]
         self.energy_shifter = ani1x.energy_shifter
-        self.nn = torch.nn.Sequential(self.nnp, self.energy_shifter)
-        self.model = torch.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
+        self.nn = torchani.nn.Sequential(self.nnp, self.energy_shifter)
+        self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
 
     def random_skip(self):
         return False
@@ -120,8 +120,8 @@ class TestEnergiesEnergyShifterJIT(TestEnergies):
     def setUp(self):
         super().setUp()
         self.energy_shifter = torch.jit.script(self.energy_shifter)
-        self.nn = torch.nn.Sequential(self.nnp, self.energy_shifter)
-        self.model = torch.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
+        self.nn = torchani.nn.Sequential(self.nnp, self.energy_shifter)
+        self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
 
 
 if __name__ == '__main__':

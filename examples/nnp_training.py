@@ -180,7 +180,7 @@ nn.apply(init_params)
 
 ###############################################################################
 # Let's now create a pipeline of AEV Computer --> Neural Networks.
-model = torch.nn.Sequential(aev_computer, nn).to(device)
+model = torchani.nn.Sequential(aev_computer, nn).to(device)
 
 ###############################################################################
 # Now let's setup the optimizers. NeuroChem uses Adam with decoupled weight decay

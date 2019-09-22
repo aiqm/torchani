@@ -30,7 +30,7 @@ class TestIgnite(unittest.TestCase):
             def forward(self, x):
                 return x[0], x[1].flatten()
 
-        model = torch.nn.Sequential(aev_computer, nnp, Flatten())
+        model = torchani.nn.Sequential(aev_computer, nnp, Flatten())
         container = torchani.ignite.Container({'energies': model})
         optimizer = torch.optim.Adam(container.parameters())
         loss = torchani.ignite.TransformedLoss(

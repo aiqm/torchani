@@ -12,7 +12,7 @@ import timeit
 from . import _six  # noqa:F401
 import collections
 import sys
-from ..nn import ANIModel, Ensemble, Gaussian
+from ..nn import ANIModel, Ensemble, Gaussian, Sequential
 from ..utils import EnergyShifter, ChemicalSymbolsToInts
 from ..aev import AEVComputer
 from ..optim import AdamW
@@ -544,7 +544,7 @@ if sys.version_info[0] > 2:
             if self.aev_caching:
                 self.model = self.nn.to(self.device)
             else:
-                self.model = torch.nn.Sequential(self.aev_computer, self.nn).to(self.device)
+                self.model = Sequential(self.aev_computer, self.nn).to(self.device)
 
             # loss functions
             self.mse_se = torch.nn.MSELoss(reduction='none')
