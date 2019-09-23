@@ -14,6 +14,9 @@ class _TestAEVBase(unittest.TestCase):
         self.radial_length = self.aev_computer.radial_length
         self.debug = False
 
+    def transform(self, x):
+        return x
+
     def random_skip(self, prob=0):
         return random.random() < prob
 

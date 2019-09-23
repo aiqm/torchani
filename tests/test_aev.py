@@ -86,9 +86,6 @@ class TestIsolated(unittest.TestCase):
 
 class TestAEV(_TestAEVBase):
 
-    def transform(self, x):
-        return x
-
     def testIsomers(self):
         for i in range(N):
             datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
