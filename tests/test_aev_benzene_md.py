@@ -5,8 +5,10 @@ import torchani
 import unittest
 from common_aev_test import _TestAEVBase
 
+path = os.path.dirname(os.path.realpath(__file__))
 
-class TestAEV2(_TestAEVBase):
+
+class TestAEVBenzeneMD(_TestAEVBase):
 
     def testBenzeneMD(self):
         for i in range(10):
@@ -27,12 +29,6 @@ class TestAEV2(_TestAEVBase):
                 expected_angular = self.transform(expected_angular)
                 _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
                 self.assertAEVEqual(expected_radial, expected_angular, aev, 5e-5)
-
-
-class TestAEVJIT(TestAEV2):
-    def setUp(self):
-        super().setUp()
-        self.aev_computer = torch.jit.script(self.aev_computer)
 
 
 if __name__ == '__main__':

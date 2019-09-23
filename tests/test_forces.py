@@ -66,29 +66,6 @@ class TestForce(unittest.TestCase):
             max_diff = (forces + derivative).abs().max().item()
             self.assertLess(max_diff, self.tolerance)
 
-    def testBenzeneMD(self):
-        tolerance = 1e-5
-        for i in range(10):
-            datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
-            with open(datafile, 'rb') as f:
-                coordinates, species, _, _, _, forces, cell, pbc \
-                    = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0).requires_grad_(True)
-                species = torch.from_numpy(species).unsqueeze(0)
-                cell = torch.from_numpy(cell).float()
-                pbc = torch.from_numpy(pbc)
-                forces = torch.from_numpy(forces)
-                coordinates = torchani.utils.map2central(cell, coordinates, pbc)
-                coordinates = self.transform(coordinates)
-                species = self.transform(species)
-                forces = self.transform(forces)
-                _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
-                _, energies_ = self.nnp((species, aev))
-                derivative = torch.autograd.grad(energies_.sum(),
-                                                 coordinates)[0]
-                max_diff = (forces + derivative).abs().max().item()
-                self.assertLess(max_diff, tolerance)
-
     def testTripeptideMD(self):
         tolerance = 2e-6
         for i in range(100):
@@ -107,23 +84,6 @@ class TestForce(unittest.TestCase):
                                                  coordinates)[0]
                 max_diff = (forces + derivative).abs().max().item()
                 self.assertLess(max_diff, tolerance)
-
-    def testNIST(self):
-        datafile = os.path.join(path, 'test_data/NIST/all')
-        with open(datafile, 'rb') as f:
-            data = pickle.load(f)
-            for coordinates, species, _, _, _, forces in data:
-                if self.random_skip():
-                    continue
-                coordinates = torch.from_numpy(coordinates).to(torch.float) \
-                                   .requires_grad_(True)
-                species = torch.from_numpy(species)
-                forces = torch.from_numpy(forces).to(torch.float)
-                _, energies = self.model((species, coordinates))
-                derivative = torch.autograd.grad(energies.sum(),
-                                                 coordinates)[0]
-                max_diff = (forces + derivative).abs().max().item()
-                self.assertLess(max_diff, self.tolerance)
 
 
 if __name__ == '__main__':

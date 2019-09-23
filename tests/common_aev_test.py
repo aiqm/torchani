@@ -1,8 +1,7 @@
 import random
 import unittest
-
-
-path = os.path.dirname(os.path.realpath(__file__))
+import torch
+import torchani
 
 
 class _TestAEVBase(unittest.TestCase):
