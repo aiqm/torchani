@@ -1,0 +1,39 @@
+name: tools
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.6, 3.7]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Fetch submodules
+      run: git submodule update --init
+    - name: Install dependencies
+      run: |
+        ci/install_dependencies.sh
+        pip install .
+    - name: Download data files
+      run: ./download.sh
+    - name: Inference benchmark
+      run: python tools/inference-benchmark.py --tqdm dataset/xyz_files/CH4-5.xyz
+    - name: Install more dependencies
+      run: pip install h5py
+    - name: COMP6 Benchmark
+      run: python tools/comp6.py dataset/COMP6/COMP6v1/s66x8
+    - name: Install more dependencies
+      run: pip install pytorch-ignite
+    - name: Training Benchmark
+      run: python tools/training-benchmark.py dataset/ani1-up_to_gdb4/ani_gdb_s01.h5
+    - name: NeuroChem Test
+      run: python tools/neurochem-test.py dataset/ani1-up_to_gdb4/ani_gdb_s01.h5
