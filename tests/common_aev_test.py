@@ -3,6 +3,8 @@ import unittest
 import torch
 import torchani
 
+tolerance = 1e-5
+
 
 class _TestAEVBase(unittest.TestCase):
 

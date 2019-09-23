@@ -14,7 +14,6 @@ from common_aev_test import _TestAEVBase
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
-tolerance = 1e-5
 
 
 class TestIsolated(unittest.TestCase):
