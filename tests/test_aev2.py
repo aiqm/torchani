@@ -3,7 +3,7 @@ import torch
 import pickle
 import torchani
 import unittest
-from tests.common_aev_test import _TestAEVBase
+from common_aev_test import _TestAEVBase
 
 class TestAEV2(_TestAEVBase):
 

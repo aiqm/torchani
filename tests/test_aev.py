@@ -10,7 +10,7 @@ import ase
 import ase.io
 import math
 import traceback
-from tests.common_aev_test import _TestAEVBase
+from common_aev_test import _TestAEVBase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
