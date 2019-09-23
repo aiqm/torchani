@@ -1,4 +1,4 @@
-name: Runnable submodules
+name: runnable submodules
 
 on: [push]
 
