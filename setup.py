@@ -21,18 +21,6 @@ setup_attrs = {
         'torch',
         'lark-parser',
     ],
-    'test_suite': 'nose.collector',
-    'tests_require': [
-        'nose',
-        'tb-nightly',
-        'tqdm',
-        'ase',
-        'coverage',
-        'h5py',
-        'pytorch-ignite',
-        'pillow',
-        'pkbar'
-    ],
 }
 
 if sys.version_info[0] < 3:
