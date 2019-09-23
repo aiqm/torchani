@@ -1,9 +1,20 @@
 # <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo1.png width=180/>  Accurate Neural Network Potential on PyTorch
 
+Build:
+
+[![Actions Status](https://github.com/aiqm/torchani/workflows/docs/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/flake8/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/python2/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/runnable%20submodules/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/tools/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/unit%20tests/badge.svg)](https://github.com/aiqm/torchani/actions)
+
+
 Checks:
 
 [![CodeFactor](https://www.codefactor.io/repository/github/aiqm/torchani/badge/master)](https://www.codefactor.io/repository/github/aiqm/torchani/overview/master)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/aiqm/torchani.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/aiqm/torchani/alerts/)
+
 
 Deploy (these builds only succeed on tagged commits):
 
