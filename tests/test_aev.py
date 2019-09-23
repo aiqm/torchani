@@ -3,18 +3,17 @@ import torchani
 import unittest
 import os
 import pickle
-import random
 import copy
 import itertools
 import ase
 import ase.io
 import math
 import traceback
+from common_aev_test import _TestAEVBase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
-tolerance = 1e-5
 
 
 class TestIsolated(unittest.TestCase):
@@ -85,32 +84,7 @@ class TestIsolated(unittest.TestCase):
             self.fail(f'\n\n{error}\nFailure on lone atom\n')
 
 
-class TestAEV(unittest.TestCase):
-
-    def setUp(self):
-        ani1x = torchani.models.ANI1x()
-        self.aev_computer = ani1x.aev_computer
-        self.radial_length = self.aev_computer.radial_length
-        self.debug = False
-
-    def random_skip(self, prob=0):
-        return random.random() < prob
-
-    def transform(self, x):
-        return x
-
-    def assertAEVEqual(self, expected_radial, expected_angular, aev, tolerance=tolerance):
-        radial = aev[..., :self.radial_length]
-        angular = aev[..., self.radial_length:]
-        radial_diff = expected_radial - radial
-        if self.debug:
-            aid = 1
-            print(torch.stack([expected_radial[0, aid, :], radial[0, aid, :], radial_diff.abs()[0, aid, :]], dim=1))
-        radial_max_error = torch.max(torch.abs(radial_diff)).item()
-        angular_diff = expected_angular - angular
-        angular_max_error = torch.max(torch.abs(angular_diff)).item()
-        self.assertLess(radial_max_error, tolerance)
-        self.assertLess(angular_max_error, tolerance)
+class TestAEV(_TestAEVBase):
 
     def testIsomers(self):
         for i in range(N):
@@ -128,44 +102,6 @@ class TestAEV(unittest.TestCase):
                 expected_angular = self.transform(expected_angular)
                 _, aev = self.aev_computer((species, coordinates))
                 self.assertAEVEqual(expected_radial, expected_angular, aev)
-
-    def testBenzeneMD(self):
-        for i in range(10):
-            datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
-            with open(datafile, 'rb') as f:
-                coordinates, species, expected_radial, expected_angular, _, _, cell, pbc \
-                    = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
-                species = torch.from_numpy(species).unsqueeze(0)
-                expected_radial = torch.from_numpy(expected_radial).float().unsqueeze(0)
-                expected_angular = torch.from_numpy(expected_angular).float().unsqueeze(0)
-                cell = torch.from_numpy(cell).float()
-                pbc = torch.from_numpy(pbc)
-                coordinates = torchani.utils.map2central(cell, coordinates, pbc)
-                coordinates = self.transform(coordinates)
-                species = self.transform(species)
-                expected_radial = self.transform(expected_radial)
-                expected_angular = self.transform(expected_angular)
-                _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
-                self.assertAEVEqual(expected_radial, expected_angular, aev, 5e-5)
-
-    def testTripeptideMD(self):
-        tol = 5e-6
-        for i in range(100):
-            datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
-            with open(datafile, 'rb') as f:
-                coordinates, species, expected_radial, expected_angular, _, _, _, _ \
-                    = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
-                species = torch.from_numpy(species).unsqueeze(0)
-                expected_radial = torch.from_numpy(expected_radial).float().unsqueeze(0)
-                expected_angular = torch.from_numpy(expected_angular).float().unsqueeze(0)
-                coordinates = self.transform(coordinates)
-                species = self.transform(species)
-                expected_radial = self.transform(expected_radial)
-                expected_angular = self.transform(expected_angular)
-                _, aev = self.aev_computer((species, coordinates))
-                self.assertAEVEqual(expected_radial, expected_angular, aev, tol)
 
     def testPadding(self):
         species_coordinates = []
@@ -194,20 +130,6 @@ class TestAEV(unittest.TestCase):
             aev_ = aev[start:(start + conformations), 0:atoms]
             start += conformations
             self.assertAEVEqual(expected_radial, expected_angular, aev_)
-
-    def testNIST(self):
-        datafile = os.path.join(path, 'test_data/NIST/all')
-        with open(datafile, 'rb') as f:
-            data = pickle.load(f)
-            for coordinates, species, radial, angular, _, _ in data:
-                if self.random_skip():
-                    continue
-                coordinates = torch.from_numpy(coordinates).to(torch.float)
-                species = torch.from_numpy(species)
-                radial = torch.from_numpy(radial).to(torch.float)
-                angular = torch.from_numpy(angular).to(torch.float)
-                _, aev = self.aev_computer((species, coordinates))
-                self.assertAEVEqual(radial, angular, aev)
 
     @unittest.skipIf(not torch.cuda.is_available(), "Too slow on CPU")
     def testGradient(self):
