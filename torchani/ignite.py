@@ -9,8 +9,8 @@ from ignite.contrib.metrics.regression import MaximumAbsoluteError
 
 
 class Container(torch.nn.ModuleDict):
-    """Each minibatch is splitted into chunks, as explained in the docstring of
-    :class:`torchani.data.BatchedANIDataset`, as a result, it is impossible to
+    r"""Each minibatch is splitted into chunks, as explained in the docstring of
+    :method:`torchani.data.load_ani_dataset`, as a result, it is impossible to
     use :class:`torchani.AEVComputer`, :class:`torchani.ANIModel` directly with
     ignite. This class is designed to solve this issue.
 
@@ -62,8 +62,8 @@ class PerAtomDictLoss(DictLoss):
 
     def forward(self, input_, other):
         loss = self.loss(input_[self.key], other[self.key])
-        num_atoms = (input_['species'] >= 0).sum(dim=1)
-        loss /= num_atoms.to(loss.dtype).to(loss.device)
+        num_atoms = (input_['species'] >= 0).to(loss.dtype).to(loss.device).sum(dim=1)
+        loss /= num_atoms
         n = loss.numel()
         return loss.sum() / n
 

@@ -7,12 +7,12 @@
 
 from __future__ import absolute_import
 import torch
+from .nn import Sequential
 import ase.neighborlist
 from . import utils
 import ase.calculators.calculator
 import ase.units
 import copy
-import numpy
 
 
 class Calculator(ase.calculators.calculator.Calculator):
@@ -39,7 +39,8 @@ class Calculator(ase.calculators.calculator.Calculator):
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
         # aev_computer.neighborlist will be changed later, so we need a copy to
         # make sure we do not change the original object
-        self.aev_computer = copy.deepcopy(aev_computer)
+        aev_computer = copy.deepcopy(aev_computer)
+        self.aev_computer = aev_computer.to(dtype)
         self.model = copy.deepcopy(model)
         self.energy_shifter = copy.deepcopy(energy_shifter)
         self.overwrite = overwrite
@@ -47,21 +48,16 @@ class Calculator(ase.calculators.calculator.Calculator):
         self.device = self.aev_computer.EtaR.device
         self.dtype = dtype
 
-        self.whole = torch.nn.Sequential(
-            self.aev_computer,
+        self.nn = Sequential(
             self.model,
             self.energy_shifter
         ).to(dtype)
 
     @staticmethod
     def strain(tensor, displacement, surface_normal_axis):
-        rest_axes = {0, 1, 2} - set([surface_normal_axis])
-        displacement_normal = displacement[surface_normal_axis]
         displacement_of_tensor = torch.zeros_like(tensor)
-        displacement_of_tensor[..., surface_normal_axis] = tensor[..., surface_normal_axis] * displacement_normal
-        for axis in rest_axes:
-            displacement_axis = displacement[axis]
-            displacement_of_tensor[..., axis] = tensor[..., surface_normal_axis] * displacement_axis
+        for axis in range(3):
+            displacement_of_tensor[..., axis] = tensor[..., surface_normal_axis] * displacement[axis]
         return displacement_of_tensor
 
     def calculate(self, atoms=None, properties=['energy'],
@@ -69,9 +65,9 @@ class Calculator(ase.calculators.calculator.Calculator):
         super(Calculator, self).calculate(atoms, properties, system_changes)
         cell = torch.tensor(self.atoms.get_cell(complete=True),
                             dtype=self.dtype, device=self.device)
-        pbc = torch.tensor(self.atoms.get_pbc().astype(numpy.uint8), dtype=torch.uint8,
+        pbc = torch.tensor(self.atoms.get_pbc(), dtype=torch.bool,
                            device=self.device)
-        pbc_enabled = bool(pbc.any().item())
+        pbc_enabled = pbc.any().item()
         species = self.species_to_tensor(self.atoms.get_chemical_symbols()).to(self.device)
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions())
@@ -98,9 +94,11 @@ class Calculator(ase.calculators.calculator.Calculator):
                 strain_y = self.strain(cell, displacement_y, 1)
                 strain_z = self.strain(cell, displacement_z, 2)
                 cell = cell + strain_x + strain_y + strain_z
-            _, energy = self.whole((species, coordinates, cell, pbc))
+            _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
         else:
-            _, energy = self.whole((species, coordinates))
+            _, aev = self.aev_computer((species, coordinates))
+
+        _, energy = self.nn((species, aev))
         energy *= ase.units.Hartree
         self.results['energy'] = energy.item()
         self.results['free_energy'] = energy.item()

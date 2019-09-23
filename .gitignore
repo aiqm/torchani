@@ -25,4 +25,8 @@ benchmark_xyz
 datacache
 dist
 *.pckl
-
+# No vim swap files
+*.swp
+*.swo
+/download
+/download.tar.xz

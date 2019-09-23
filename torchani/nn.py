@@ -1,5 +1,6 @@
 import torch
 from . import utils
+from typing import Tuple
 
 
 class ANIModel(torch.nn.ModuleList):
@@ -34,6 +35,7 @@ class ANIModel(torch.nn.ModuleList):
         self.padding_fill = padding_fill
 
     def forward(self, species_aev):
+        # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
         species, aev = species_aev
         species_ = species.flatten()
         present_species = utils.present_species(species)
@@ -53,9 +55,29 @@ class Ensemble(torch.nn.ModuleList):
     """Compute the average output of an ensemble of modules."""
 
     def forward(self, species_input):
+        # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
         outputs = [x(species_input)[1] for x in self]
         species, _ = species_input
         return species, sum(outputs) / len(outputs)
+
+
+class Sequential(torch.nn.Module):
+    """Modified Sequential module that accept Tuple type as input"""
+
+    def __init__(self, *args):
+        super(Sequential, self).__init__()
+        if len(args) == 1 and isinstance(args[0], torch.OrderedDict):
+            for key, module in args[0].items():
+                self.add_module(key, module)
+        else:
+            for idx, module in enumerate(args):
+                self.add_module(str(idx), module)
+
+    def forward(self, input):
+        # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
+        for module in self._modules.values():
+            input = module(input)
+        return input
 
 
 class Gaussian(torch.nn.Module):

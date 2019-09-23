@@ -26,14 +26,14 @@ TorchANI is a pytorch implementation of ANI. It is currently under alpha release
 TorchANI requires the latest preview version of PyTorch. You can install PyTorch by the following commands (assuming cuda10):
 
 ```bash
-pip install numpy torchvision_nightly
-pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
+pip install numpy
+pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
 ```
 
 If you updated TorchANI, you may also need to update PyTorch:
 
 ```bash
-pip install --upgrade torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
+pip install --upgrade --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
 ```
 
 After installing the correct PyTorch, you can install TorchANI by:
@@ -45,6 +45,12 @@ pip install torchani
 See also [PyTorch's official site](https://pytorch.org/get-started/locally/) for instructions of installing latest preview version of PyTorch.
 
 Please install nightly PyTorch through `pip install` instead of `conda install`. If your PyTorch is installed through `conda install`, then `pip` would mistakenly recognize the package name as `torch` instead of `torch-nightly`, which would cause dependency issue when installing TorchANI.
+
+To run the tests and examples, you must manually download a data package
+
+```bash
+./download.sh
+```
 
 # Paper
 
@@ -72,6 +78,8 @@ install dependencies:
 pip install sphinx sphinx-gallery pillow matplotlib sphinx_rtd_theme
 ```
 
+To manually run unit tests, do `python setup.py nosetests`
+
 # Note to TorchANI developers
 
 Never commit to the master branch directly. If you need to change something, create a new branch, submit a PR on GitHub.
@@ -79,5 +87,3 @@ Never commit to the master branch directly. If you need to change something, cre
 You must pass all the tests on GitHub before your PR can be merged.
 
 Code review is required before merging pull request.
-
-To manually run unit tests, do `python setup.py test`

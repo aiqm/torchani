@@ -6,7 +6,7 @@ import pickle
 import argparse
 
 
-builtins = torchani.neurochem.Builtins()
+ani1x = torchani.models.ANI1x()
 
 # parse command line arguments
 parser = argparse.ArgumentParser()
@@ -22,13 +22,13 @@ parser.add_argument('--batch_size',
                     default=1024, type=int)
 parser.add_argument('--const_file',
                     help='File storing constants',
-                    default=builtins.const_file)
+                    default=ani1x.const_file)
 parser.add_argument('--sae_file',
                     help='File storing self atomic energies',
-                    default=builtins.sae_file)
+                    default=ani1x.sae_file)
 parser.add_argument('--network_dir',
                     help='Directory or prefix of directories storing networks',
-                    default=builtins.ensemble_prefix + '0/networks')
+                    default=ani1x.ensemble_prefix + '0/networks')
 parser.add_argument('--compare_with',
                     help='The TorchANI model to compare with', default=None)
 parser = parser.parse_args()
@@ -47,7 +47,7 @@ container = container.to(device)
 if parser.dataset_path.endswith('.h5') or \
    parser.dataset_path.endswith('.hdf5') or \
    os.path.isdir(parser.dataset_path):
-    dataset = torchani.data.BatchedANIDataset(
+    dataset = torchani.data.load_ani_dataset(
         parser.dataset_path, consts.species_to_tensor, parser.batch_size,
         device=device, transform=[shift_energy.subtract_from_dataset])
     datasets = [dataset]
