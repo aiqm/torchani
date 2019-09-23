@@ -11,7 +11,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 class TestAEVBenzeneMD(_TestAEVBase):
 
     def testBenzeneMD(self):
-        for i in range(10):
+        for i in [1, 5, 9]:
             datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, expected_radial, expected_angular, _, _, cell, pbc \
