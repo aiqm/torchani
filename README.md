@@ -1,15 +1,8 @@
 # <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo1.png width=180/>  Accurate Neural Network Potential on PyTorch
 
-Build:
+Checks:
 
-[![flake8](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/flake8)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=3)
-[![docs](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/docs)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=4)
-[![runnable submodules](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/runnable-submodules)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=5)
-[![unit tests](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/unit-tests)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=6)
-[![tools](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/tools)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=7)
-[![Python2 Inference](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/python2?branchName=master)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=11&branchName=master)
 [![CodeFactor](https://www.codefactor.io/repository/github/aiqm/torchani/badge/master)](https://www.codefactor.io/repository/github/aiqm/torchani/overview/master)
-[![codecov](https://codecov.io/gh/aiqm/torchani/branch/master/graph/badge.svg)](https://codecov.io/gh/aiqm/torchani)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/aiqm/torchani.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/aiqm/torchani/alerts/)
 
 Deploy (these builds only succeed on tagged commits):
