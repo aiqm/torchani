@@ -1,3 +1,10 @@
+import random
+import unittest
+
+
+path = os.path.dirname(os.path.realpath(__file__))
+
+
 class _TestAEVBase(unittest.TestCase):
 
     def setUp(self):

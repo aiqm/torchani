@@ -5,6 +5,7 @@ import torchani
 import unittest
 from common_aev_test import _TestAEVBase
 
+
 class TestAEV2(_TestAEVBase):
 
     def testBenzeneMD(self):
