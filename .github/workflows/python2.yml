@@ -1,0 +1,27 @@
+name: python2
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [2.7]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        ci/install_dependencies_python2.sh
+        pip install .
+    - name: Run minimum python2 tests
+      run: |
+        python2 examples/energy_force.py
+        python2 examples/ase_interface.py
