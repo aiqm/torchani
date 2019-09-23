@@ -1,7 +1,6 @@
 import os
 import torch
 import pickle
-import torchani
 import unittest
 from common_aev_test import _TestAEVBase
 

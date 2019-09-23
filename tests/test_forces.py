@@ -66,25 +66,6 @@ class TestForce(unittest.TestCase):
             max_diff = (forces + derivative).abs().max().item()
             self.assertLess(max_diff, self.tolerance)
 
-    def testTripeptideMD(self):
-        tolerance = 2e-6
-        for i in range(100):
-            datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
-            with open(datafile, 'rb') as f:
-                coordinates, species, _, _, _, forces, _, _ \
-                    = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0).requires_grad_(True)
-                species = torch.from_numpy(species).unsqueeze(0)
-                forces = torch.from_numpy(forces)
-                coordinates = self.transform(coordinates)
-                species = self.transform(species)
-                forces = self.transform(forces)
-                _, energies_ = self.model((species, coordinates))
-                derivative = torch.autograd.grad(energies_.sum(),
-                                                 coordinates)[0]
-                max_diff = (forces + derivative).abs().max().item()
-                self.assertLess(max_diff, tolerance)
-
 
 if __name__ == '__main__':
     unittest.main()
