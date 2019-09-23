@@ -248,7 +248,7 @@ tensorboard = torch.utils.tensorboard.SummaryWriter()
 mse = torch.nn.MSELoss(reduction='none')
 
 print("training starting from epoch", AdamW_scheduler.last_epoch + 1)
-max_epochs = 20
+max_epochs = 10
 early_stopping_learning_rate = 1.0E-5
 force_coefficient = 0.1  # controls the importance of energy loss vs force loss
 best_model_checkpoint = 'force-training-best.pt'
