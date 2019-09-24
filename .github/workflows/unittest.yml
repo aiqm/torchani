@@ -7,9 +7,9 @@ jobs:
 
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: [3.6, 3.7]
-        fail-fast: false
         test-filenames: [test_aev.py, test_aev_benzene_md.py, test_aev_nist.py, test_aev_tripeptide_md.py, test_data_new.py, test_ignite.py, test_utils.py, test_ase.py, test_energies.py, test_neurochem.py, test_vibrational.py, test_ensemble.py, test_padding.py, test_data.py, test_forces.py, test_structure_optim.py]
 
     steps:
