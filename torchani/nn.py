@@ -66,12 +66,6 @@ class Sequential(torch.nn.Module):
 
     def __init__(self, *args):
         super(Sequential, self).__init__()
-        if len(args) == 1 and isinstance(args[0], torch.OrderedDict):
-            for key, module in args[0].items():
-                self.add_module(key, module)
-        else:
-            for idx, module in enumerate(args):
-                self.add_module(str(idx), module)
         self.modules_list = torch.nn.ModuleList([module for module in self._modules.values()])
 
     def forward(self, input):
