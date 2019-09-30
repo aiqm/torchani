@@ -72,10 +72,11 @@ class Sequential(torch.nn.Module):
         else:
             for idx, module in enumerate(args):
                 self.add_module(str(idx), module)
+        self.modules_list = torch.nn.ModuleList([module for module in self._modules.values()])
 
     def forward(self, input):
         # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
-        for module in self._modules.values():
+        for module in self.modules_list:
             input = module(input)
         return input
 
