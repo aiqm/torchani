@@ -64,9 +64,9 @@ class Ensemble(torch.nn.ModuleList):
 class Sequential(torch.nn.Module):
     """Modified Sequential module that accept Tuple type as input"""
 
-    def __init__(self, *args):
+    def __init__(self, *modules):
         super(Sequential, self).__init__()
-        self.modules_list = torch.nn.ModuleList([module for module in self._modules.values()])
+        self.modules_list = torch.nn.ModuleList(modules)
 
     def forward(self, input):
         # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
