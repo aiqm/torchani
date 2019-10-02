@@ -51,12 +51,19 @@ class ANIModel(torch.nn.ModuleList):
         return species, self.reducer(output, dim=1)
 
 
-class Ensemble(torch.nn.ModuleList):
+class Ensemble(torch.nn.Module):
     """Compute the average output of an ensemble of modules."""
+
+    def __init__(self, modules):
+        super(Ensemble, self).__init__()
+        self.modules_list = torch.nn.ModuleList(modules)
+
+    def __getitem__(self, i):
+        return self.modules_list[i]
 
     def forward(self, species_input):
         # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
-        outputs = [x(species_input)[1] for x in self]
+        outputs = [x(species_input)[1] for x in self.modules_list]
         species, _ = species_input
         return species, sum(outputs) / len(outputs)
 
