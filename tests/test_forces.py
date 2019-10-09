@@ -67,5 +67,12 @@ class TestForce(unittest.TestCase):
             self.assertLess(max_diff, self.tolerance)
 
 
+class TestForceJIT(TestForce):
+
+    def setUp(self):
+        super().setUp()
+        self.model = torch.jit.script(self.model)
+
+
 if __name__ == '__main__':
     unittest.main()
