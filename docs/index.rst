@@ -16,6 +16,7 @@ Welcome to TorchANI's documentation!
 
     examples/energy_force
     examples/ase_interface
+    examples/jit
     examples/vibration_analysis
     examples/load_from_neurochem
     examples/nnp_training
