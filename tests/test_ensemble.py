@@ -41,12 +41,13 @@ class TestEnsemble(unittest.TestCase):
                 self._test_molecule(coordinates, species)
 
 
-class TestEnsembleJIT(TestEnsemble):
+# FIXME: Disabled for now, will bring back later
+# class TestEnsembleJIT(TestEnsemble):
 
-    def setUp(self):
-        super().setUp()
-        self.ensemble = torchani.nn.Sequential(self.aev_computer, self.model_iterator)
-        self.ensemble = torch.jit.script(self.ensemble)
+#     def setUp(self):
+#         super().setUp()
+#         self.ensemble = torchani.nn.Sequential(self.aev_computer, self.model_iterator)
+#         self.ensemble = torch.jit.script(self.ensemble)
 
 
 if __name__ == '__main__':

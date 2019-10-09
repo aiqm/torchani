@@ -65,9 +65,19 @@ class TestEnergies(unittest.TestCase):
 
 
 class TestEnergiesEnergyShifterJIT(TestEnergies):
+
     def setUp(self):
         super().setUp()
         self.energy_shifter = torch.jit.script(self.energy_shifter)
+        self.nn = torchani.nn.Sequential(self.nnp, self.energy_shifter)
+        self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
+
+
+class TestEnergiesANIModelJIT(TestEnergies):
+
+    def setUp(self):
+        super().setUp()
+        self.nnp = torch.jit.script(self.nnp)
         self.nn = torchani.nn.Sequential(self.nnp, self.energy_shifter)
         self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
 
