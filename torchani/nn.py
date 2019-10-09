@@ -30,6 +30,9 @@ class ANIModel(torch.nn.Module):
         self.module_list = torch.nn.ModuleList(modules)
         self.padding_fill = padding_fill
 
+    def __getitem__(self, i):
+        return self.module_list[i]
+
     def forward(self, species_aev):
         # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
         species, aev = species_aev
