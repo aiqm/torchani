@@ -2,7 +2,6 @@ import torch
 import torchani
 import unittest
 import os
-import pickle
 
 
 path = os.path.dirname(os.path.realpath(__file__))
