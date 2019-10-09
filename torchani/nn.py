@@ -99,11 +99,11 @@ class Sequential(torch.nn.Module):
         super(Sequential, self).__init__()
         self.modules_list = torch.nn.ModuleList(modules)
 
-    def forward(self, input):
+    def forward(self, input_):
         # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
         for module in self.modules_list:
-            input = module(input)
-        return input
+            input_ = module(input_)
+        return input_
 
 
 class Gaussian(torch.nn.Module):
