@@ -41,9 +41,11 @@ class ANIModel(torch.nn.Module):
         i = 0
         for m in self.module_list:
             mask = (species_ == i)
-            input_ = aev.index_select(0, mask.nonzero().squeeze())
-            output.masked_scatter_(mask, m(input_).squeeze())
             i += 1
+            midx = mask.nonzero().flatten()
+            if midx.shape[0] > 0:
+                input_ = aev.index_select(0, midx)
+                output.masked_scatter_(mask, m(input_).flatten())
         output = output.view_as(species)
         return species, torch.sum(output, dim=1)
 

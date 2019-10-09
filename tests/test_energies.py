@@ -82,5 +82,12 @@ class TestEnergiesANIModelJIT(TestEnergies):
         self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
 
 
+class TestEnergiesJIT(TestEnergies):
+
+    def setUp(self):
+        super().setUp()
+        self.model = torch.jit.script(self.model)
+
+
 if __name__ == '__main__':
     unittest.main()
