@@ -28,13 +28,22 @@ jobs:
     - name: Build documents
       run: sphinx-build docs build
     # try deploying to aiqm/torchani-test-docs
-    - name: Set up deploy keys
-      run: mkdir -p ~/.ssh && echo ${{secrets.zasdfgbnm_bot_private_key}} > ~/.ssh/id_rsa && chmod 0600 ~/.ssh/id_rsa && echo ${{secrets.zasdfgbnm_bot_public_key}} > ~/.ssh/id_rsa.pub
-    - name: Set up github keys
-      run: ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts && git config --global user.email "zasdfgbnm-bot@example.com" && git config --global user.name "zasdfgbnm-bot"
-    - name: Clone repository
-      run: git clone git@github.com:aiqm/torchani-test-docs.git deploy_dir -b gh-pages
-    - name: Replace with new files
-      run: rm -rf deploy_dir/* && cp -r build/* deploy_dir
+    - name: Set up environments
+      run: |
+        mkdir -p ~/.ssh
+        echo ${{secrets.zasdfgbnm_bot_private_key}} | base64 -d > ~/.ssh/id_rsa
+        chmod 0600 ~/.ssh/id_rsa
+        echo ${{secrets.zasdfgbnm_bot_public_key}} > ~/.ssh/id_rsa.pub
+        ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+        git config --global user.email "zasdfgbnm-bot@example.com"
+        git config --global user.name "zasdfgbnm-bot"
     - name: Deploy
-      run: cd deploy_dir && git add . && git commit -m "update" && git push
+      run: |
+        git clone git@github.com:aiqm/torchani-test-docs.git deploy_dir -b gh-pages
+        rm -rf deploy_dir/*
+        cp -r build/* deploy_dir
+        cd deploy_dir
+        git add .
+        git commit -m "update"
+        git push
+
