@@ -23,5 +23,6 @@ jobs:
         pip install twine wheel
     - name: Deploy
       run: |
+        git tag $(date +'v%Y.%m.%d.%H.%M.%S')
         python setup.py bdist bdist_wheel
         twine upload --repository-url https://test.pypi.org/legacy/ -u zasdfgbnm-bot -p $(zasdfgbnm_bot_test_pypi_password) dist/*
