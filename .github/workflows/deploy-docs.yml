@@ -1,6 +1,8 @@
-name: docs
+name: deploy-docs
 
-on: [push]
+on:
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -9,7 +11,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.6, 3.7]
+        python-version: [3.7]
 
     steps:
     - uses: actions/checkout@v1
@@ -24,10 +26,13 @@ jobs:
         pip install .
     - name: Download data files
       run: ./download.sh
+    # double check that this is indeed run under a release
+    - name: Fail build on non-release commits
+      run: git describe --exact-match --tags HEAD
     # build docs
     - name: Build documents
       run: sphinx-build docs build
-    # try deploying to aiqm/torchani-test-docs
+    # try deploying
     - name: Set up environments
       run: |
         mkdir -p ~/.ssh
@@ -39,7 +44,7 @@ jobs:
         git config --global user.name "zasdfgbnm-bot"
     - name: Deploy
       run: |
-        git clone git@github.com:aiqm/torchani-test-docs.git deploy_dir -b gh-pages
+        git clone git@github.com:aiqm/torchani.git deploy_dir -b gh-pages
         rm -rf deploy_dir/*
         touch deploy_dir/.nojekyll
         cp -r build/* deploy_dir
@@ -47,4 +52,3 @@ jobs:
         git add .
         git commit -m "update"
         git push
-
