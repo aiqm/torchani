@@ -180,7 +180,7 @@ nn.apply(init_params)
 
 ###############################################################################
 # Let's now create a pipeline of AEV Computer --> Neural Networks.
-model = torch.nn.Sequential(aev_computer, nn).to(device)
+model = torchani.nn.Sequential(aev_computer, nn).to(device)
 
 ###############################################################################
 # Now let's setup the optimizers. NeuroChem uses Adam with decoupled weight decay
@@ -308,7 +308,7 @@ tensorboard = torch.utils.tensorboard.SummaryWriter()
 mse = torch.nn.MSELoss(reduction='none')
 
 print("training starting from epoch", AdamW_scheduler.last_epoch + 1)
-max_epochs = 200
+max_epochs = 10
 early_stopping_learning_rate = 1.0E-5
 best_model_checkpoint = 'best.pt'
 

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Use Disk Cache of AEV to Boost Training &mdash; TorchANI 0.9 documentation</title>
+  <title>Use Disk Cache of AEV to Boost Training &mdash; TorchANI 1.0.1 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.9
+                1.0.1
               </div>
             
           
@@ -94,6 +94,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="jit.html">Using TorchScript to serialize and deploy model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
 <li class="toctree-l1"><a class="reference internal" href="load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training.html">Train Your Own Neural Network Potential</a></li>
@@ -245,26 +246,20 @@ but we do need to generate a disk cache for datasets</p>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>  0%|          | 0/11 [00:00&lt;?, ?it/s]
-  9%|9         | 1/11 [00:00&lt;00:01,  9.56it/s]
- 18%|#8        | 2/11 [00:00&lt;00:00,  9.28it/s]
- 36%|###6      | 4/11 [00:00&lt;00:00,  9.53it/s]
- 45%|####5     | 5/11 [00:00&lt;00:00,  9.65it/s]
- 55%|#####4    | 6/11 [00:00&lt;00:00,  9.56it/s]
- 64%|######3   | 7/11 [00:00&lt;00:00,  9.67it/s]
- 82%|########1 | 9/11 [00:00&lt;00:00,  9.78it/s]
- 91%|######### | 10/11 [00:01&lt;00:00,  9.49it/s]
-100%|##########| 11/11 [00:01&lt;00:00, 10.00it/s]
+ 18%|#8        | 2/11 [00:00&lt;00:00, 12.59it/s]
+ 36%|###6      | 4/11 [00:00&lt;00:00, 12.65it/s]
+ 55%|#####4    | 6/11 [00:00&lt;00:00, 12.55it/s]
+ 73%|#######2  | 8/11 [00:00&lt;00:00, 12.44it/s]
+ 91%|######### | 10/11 [00:00&lt;00:00, 12.51it/s]
+100%|##########| 11/11 [00:00&lt;00:00, 12.98it/s]
 
   0%|          | 0/11 [00:00&lt;?, ?it/s]
-  9%|9         | 1/11 [00:00&lt;00:01,  9.56it/s]
- 18%|#8        | 2/11 [00:00&lt;00:00,  9.64it/s]
- 27%|##7       | 3/11 [00:00&lt;00:00,  9.65it/s]
- 36%|###6      | 4/11 [00:00&lt;00:00,  9.65it/s]
- 55%|#####4    | 6/11 [00:00&lt;00:00,  9.80it/s]
- 73%|#######2  | 8/11 [00:00&lt;00:00,  9.85it/s]
- 82%|########1 | 9/11 [00:00&lt;00:00,  9.84it/s]
- 91%|######### | 10/11 [00:01&lt;00:00,  9.63it/s]
-100%|##########| 11/11 [00:01&lt;00:00, 10.16it/s]
+ 18%|#8        | 2/11 [00:00&lt;00:00, 11.95it/s]
+ 36%|###6      | 4/11 [00:00&lt;00:00, 12.03it/s]
+ 55%|#####4    | 6/11 [00:00&lt;00:00, 12.17it/s]
+ 73%|#######2  | 8/11 [00:00&lt;00:00, 12.26it/s]
+ 91%|######### | 10/11 [00:00&lt;00:00, 12.29it/s]
+100%|##########| 11/11 [00:00&lt;00:00, 12.78it/s]
 </pre></div>
 </div>
 <p>The codes that define the network are also the same</p>
@@ -292,41 +287,43 @@ but we do need to generate a disk cache for datasets</p>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>ANIModel(
-  (0): Sequential(
-    (0): Linear(in_features=384, out_features=128, bias=True)
-    (1): CELU(alpha=0.1)
-    (2): Linear(in_features=128, out_features=128, bias=True)
-    (3): CELU(alpha=0.1)
-    (4): Linear(in_features=128, out_features=64, bias=True)
-    (5): CELU(alpha=0.1)
-    (6): Linear(in_features=64, out_features=1, bias=True)
-  )
-  (1): Sequential(
-    (0): Linear(in_features=384, out_features=128, bias=True)
-    (1): CELU(alpha=0.1)
-    (2): Linear(in_features=128, out_features=128, bias=True)
-    (3): CELU(alpha=0.1)
-    (4): Linear(in_features=128, out_features=64, bias=True)
-    (5): CELU(alpha=0.1)
-    (6): Linear(in_features=64, out_features=1, bias=True)
-  )
-  (2): Sequential(
-    (0): Linear(in_features=384, out_features=128, bias=True)
-    (1): CELU(alpha=0.1)
-    (2): Linear(in_features=128, out_features=128, bias=True)
-    (3): CELU(alpha=0.1)
-    (4): Linear(in_features=128, out_features=64, bias=True)
-    (5): CELU(alpha=0.1)
-    (6): Linear(in_features=64, out_features=1, bias=True)
-  )
-  (3): Sequential(
-    (0): Linear(in_features=384, out_features=128, bias=True)
-    (1): CELU(alpha=0.1)
-    (2): Linear(in_features=128, out_features=128, bias=True)
-    (3): CELU(alpha=0.1)
-    (4): Linear(in_features=128, out_features=64, bias=True)
-    (5): CELU(alpha=0.1)
-    (6): Linear(in_features=64, out_features=1, bias=True)
+  (module_list): ModuleList(
+    (0): Sequential(
+      (0): Linear(in_features=384, out_features=128, bias=True)
+      (1): CELU(alpha=0.1)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): CELU(alpha=0.1)
+      (4): Linear(in_features=128, out_features=64, bias=True)
+      (5): CELU(alpha=0.1)
+      (6): Linear(in_features=64, out_features=1, bias=True)
+    )
+    (1): Sequential(
+      (0): Linear(in_features=384, out_features=128, bias=True)
+      (1): CELU(alpha=0.1)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): CELU(alpha=0.1)
+      (4): Linear(in_features=128, out_features=64, bias=True)
+      (5): CELU(alpha=0.1)
+      (6): Linear(in_features=64, out_features=1, bias=True)
+    )
+    (2): Sequential(
+      (0): Linear(in_features=384, out_features=128, bias=True)
+      (1): CELU(alpha=0.1)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): CELU(alpha=0.1)
+      (4): Linear(in_features=128, out_features=64, bias=True)
+      (5): CELU(alpha=0.1)
+      (6): Linear(in_features=64, out_features=1, bias=True)
+    )
+    (3): Sequential(
+      (0): Linear(in_features=384, out_features=128, bias=True)
+      (1): CELU(alpha=0.1)
+      (2): Linear(in_features=128, out_features=128, bias=True)
+      (3): CELU(alpha=0.1)
+      (4): Linear(in_features=128, out_features=64, bias=True)
+      (5): CELU(alpha=0.1)
+      (6): Linear(in_features=64, out_features=1, bias=True)
+    )
   )
 )
 </pre></div>
@@ -473,8 +470,8 @@ Epoch [3/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [3/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [3/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [3/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [3/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [3/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [3/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [3/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [3/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [3/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [3/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -496,8 +493,8 @@ Epoch [4/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [4/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [4/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [4/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [4/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [4/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [4/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [4/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [4/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [4/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [4/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -519,8 +516,8 @@ Epoch [5/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [5/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [5/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [5/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [5/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [5/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [5/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [5/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [5/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [5/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [5/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -542,8 +539,8 @@ Epoch [6/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [6/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [6/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [6/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [6/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [6/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [6/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [6/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [6/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [6/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [6/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -588,8 +585,8 @@ Epoch [8/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [8/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [8/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [8/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [8/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [8/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [8/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [8/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [8/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [8/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [8/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -611,8 +608,8 @@ Epoch [9/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [9/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [9/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [9/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [9/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [9/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [9/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [9/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [9/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [9/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [9/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -634,8 +631,8 @@ Epoch [10/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [10/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [10/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [10/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [10/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [10/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [10/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [10/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [10/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [10/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [10/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -657,8 +654,8 @@ Epoch [11/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [11/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [11/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [11/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [11/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [11/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [11/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [11/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [11/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [11/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [11/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -680,8 +677,8 @@ Epoch [12/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [12/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [12/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [12/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [12/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [12/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [12/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [12/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [12/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [12/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [12/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -703,8 +700,8 @@ Epoch [13/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [13/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [13/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [13/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [13/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [13/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [13/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [13/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [13/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [13/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [13/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -726,8 +723,8 @@ Epoch [14/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [14/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [14/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [14/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [14/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [14/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [14/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [14/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [14/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [14/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [14/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -749,8 +746,8 @@ Epoch [15/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [15/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [15/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [15/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [15/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [15/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [15/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [15/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [15/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [15/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [15/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -772,8 +769,8 @@ Epoch [16/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [16/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [16/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [16/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [16/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [16/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [16/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [16/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [16/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [16/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [16/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -795,8 +792,8 @@ Epoch [17/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [17/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [17/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [17/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [17/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [17/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [17/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [17/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [17/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [17/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [17/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -818,8 +815,8 @@ Epoch [18/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [18/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [18/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [18/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [18/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [18/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [18/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [18/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [18/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [18/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [18/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -841,8 +838,8 @@ Epoch [19/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [19/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [19/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [19/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [19/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [19/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [19/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [19/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [19/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [19/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [19/20]: [10/11]  91%|#########  [00:01&lt;00:00]
@@ -864,14 +861,14 @@ Epoch [20/20]: [6/11]  55%|#####4     [00:00&lt;00:00]
 Epoch [20/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [20/20]: [7/11]  64%|######3    [00:00&lt;00:00]
 Epoch [20/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
-Epoch [20/20]: [8/11]  73%|#######2   [00:01&lt;00:00]
-Epoch [20/20]: [9/11]  82%|########1  [00:01&lt;00:00]
+Epoch [20/20]: [8/11]  73%|#######2   [00:00&lt;00:00]
+Epoch [20/20]: [9/11]  82%|########1  [00:00&lt;00:00]
 Epoch [20/20]: [9/11]  82%|########1  [00:01&lt;00:00]
 Epoch [20/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 Epoch [20/20]: [10/11]  91%|#########  [00:01&lt;00:00]
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  39.755 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  34.713 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-cache-aev-py">
 <div class="sphx-glr-download docutils container">
 <a class="reference download internal" download="" href="../_downloads/7c95d8520df7931107daa7f4802a6bc0/cache_aev.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">cache_aev.py</span></code></a></div>

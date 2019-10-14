@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.aev &mdash; TorchANI 0.9 documentation</title>
+  <title>torchani.aev &mdash; TorchANI 1.0.1 documentation</title>
   
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                0.9
+                1.0.1
               </div>
             
           
@@ -92,6 +92,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/jit.html">Using TorchScript to serialize and deploy model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
@@ -177,17 +178,15 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">_six</span>  <span class="c1"># noqa:F401</span>
 <span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
 
 
-<span class="c1"># @torch.jit.script</span>
 <span class="k">def</span> <span class="nf">cutoff_cosine</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
     <span class="c1"># type: (torch.Tensor, float) -&gt; torch.Tensor</span>
     <span class="c1"># assuming all elements in distances are smaller than cutoff</span>
     <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">distances</span> <span class="o">*</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">cutoff</span><span class="p">))</span> <span class="o">+</span> <span class="mf">0.5</span>
 
 
-<span class="c1"># @torch.jit.script</span>
 <span class="k">def</span> <span class="nf">radial_terms</span><span class="p">(</span><span class="n">Rcr</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">distances</span><span class="p">):</span>
     <span class="c1"># type: (float, torch.Tensor, torch.Tensor, torch.Tensor) -&gt; torch.Tensor</span>
     <span class="sd">&quot;&quot;&quot;Compute the radial subAEV terms of the center atom given neighbors</span>
@@ -215,7 +214,6 @@
     <span class="k">return</span> <span class="n">ret</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
 
 
-<span class="c1"># @torch.jit.script</span>
 <span class="k">def</span> <span class="nf">angular_terms</span><span class="p">(</span><span class="n">Rca</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span><span class="p">,</span> <span class="n">vectors1</span><span class="p">,</span> <span class="n">vectors2</span><span class="p">):</span>
     <span class="c1"># type: (float, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor) -&gt; torch.Tensor</span>
     <span class="sd">&quot;&quot;&quot;Compute the angular subAEV terms of the center atom given neighbor pairs.</span>
@@ -252,8 +250,8 @@
     <span class="k">return</span> <span class="n">ret</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=-</span><span class="mi">4</span><span class="p">)</span>
 
 
-<span class="c1"># @torch.jit.script</span>
 <span class="k">def</span> <span class="nf">compute_shifts</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
+    <span class="c1"># type: (torch.Tensor, torch.Tensor, float) -&gt; torch.Tensor</span>
     <span class="sd">&quot;&quot;&quot;Compute the shifts of unit cell along the given cell vectors to make it</span>
 <span class="sd">    large enough to contain all pairs of neighbor atoms with PBC under</span>
 <span class="sd">    consideration</span>
@@ -270,14 +268,13 @@
 <span class="sd">        :class:`torch.Tensor`: long tensor of shifts. the center cell and</span>
 <span class="sd">            symmetric cells are not included.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># type: (torch.Tensor, torch.Tensor, float) -&gt; torch.Tensor</span>
     <span class="n">reciprocal_cell</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">inverse</span><span class="p">()</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
     <span class="n">inv_distances</span> <span class="o">=</span> <span class="n">reciprocal_cell</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">num_repeats</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">cutoff</span> <span class="o">*</span> <span class="n">inv_distances</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
     <span class="n">num_repeats</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">pbc</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">num_repeats</span><span class="p">))</span>
-    <span class="n">r1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-    <span class="n">r2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-    <span class="n">r3</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">r1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+    <span class="n">r2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+    <span class="n">r3</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
     <span class="n">o</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">r3</span><span class="p">),</span>
@@ -296,8 +293,8 @@
     <span class="p">])</span>
 
 
-<span class="c1"># @torch.jit.script</span>
 <span class="k">def</span> <span class="nf">neighbor_pairs</span><span class="p">(</span><span class="n">padding_mask</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">shifts</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
+    <span class="c1"># type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, float) -&gt; Tuple[torch.Tensor, torch.Tensor, torch.Tensor]</span>
     <span class="sd">&quot;&quot;&quot;Compute pairs of atoms that are neighbors</span>
 
 <span class="sd">    Arguments:</span>
@@ -310,21 +307,19 @@
 <span class="sd">        cutoff (float): the cutoff inside which atoms are considered pairs</span>
 <span class="sd">        shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, float) -&gt; Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]</span>
-
     <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
     <span class="n">cell</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
     <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">padding_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">all_atoms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">all_atoms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
 
     <span class="c1"># Step 2: center cell</span>
     <span class="n">p1_center</span><span class="p">,</span> <span class="n">p2_center</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">all_atoms</span><span class="p">)</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">shifts_center</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">p1_center</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">shifts_center</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">p1_center</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">shifts</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">shifts</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
     <span class="c1"># Step 3: cells with shifts</span>
     <span class="c1"># shape convention (shift index, molecule index, atom index, 3)</span>
     <span class="n">num_shifts</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">all_shifts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_shifts</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">all_shifts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_shifts</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
     <span class="n">shift_index</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">all_shifts</span><span class="p">,</span> <span class="n">all_atoms</span><span class="p">,</span> <span class="n">all_atoms</span><span class="p">)</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">shifts_outide</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shift_index</span><span class="p">)</span>
 
@@ -347,19 +342,19 @@
     <span class="k">return</span> <span class="n">molecule_index</span> <span class="o">+</span> <span class="n">atom_index1</span><span class="p">,</span> <span class="n">molecule_index</span> <span class="o">+</span> <span class="n">atom_index2</span><span class="p">,</span> <span class="n">shifts</span>
 
 
-<span class="c1"># torch.jit.script</span>
 <span class="k">def</span> <span class="nf">triu_index</span><span class="p">(</span><span class="n">num_species</span><span class="p">):</span>
-    <span class="n">species</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_species</span><span class="p">)</span>
+    <span class="c1"># type: (int) -&gt; torch.Tensor</span>
+    <span class="n">species</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_species</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
     <span class="n">species1</span><span class="p">,</span> <span class="n">species2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">with_replacement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">pair_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">species1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">pair_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">species1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
     <span class="n">ret</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_species</span><span class="p">,</span> <span class="n">num_species</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
     <span class="n">ret</span><span class="p">[</span><span class="n">species1</span><span class="p">,</span> <span class="n">species2</span><span class="p">]</span> <span class="o">=</span> <span class="n">pair_index</span>
     <span class="n">ret</span><span class="p">[</span><span class="n">species2</span><span class="p">,</span> <span class="n">species1</span><span class="p">]</span> <span class="o">=</span> <span class="n">pair_index</span>
     <span class="k">return</span> <span class="n">ret</span>
 
 
-<span class="c1"># torch.jit.script</span>
 <span class="k">def</span> <span class="nf">convert_pair_index</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+    <span class="c1"># type: (torch.Tensor) -&gt; Tuple[torch.Tensor, torch.Tensor]</span>
     <span class="sd">&quot;&quot;&quot;Let&#39;s say we have a pair:</span>
 <span class="sd">    index: 0 1 2 3 4 5 6 7 8 9 ...</span>
 <span class="sd">    elem1: 0 0 1 0 1 2 0 1 2 3 ...</span>
@@ -383,15 +378,15 @@
     <span class="k">return</span> <span class="n">index</span> <span class="o">-</span> <span class="n">num_elems</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span>
 
 
-<span class="c1"># torch.jit.script</span>
 <span class="k">def</span> <span class="nf">cumsum_from_zero</span><span class="p">(</span><span class="n">input_</span><span class="p">):</span>
+    <span class="c1"># type: (torch.Tensor) -&gt; torch.Tensor</span>
     <span class="n">cumsum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">input_</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">cumsum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">input_</span><span class="o">.</span><span class="n">new_tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">]),</span> <span class="n">cumsum</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+    <span class="n">cumsum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">input_</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">input_</span><span class="o">.</span><span class="n">device</span><span class="p">),</span> <span class="n">cumsum</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
     <span class="k">return</span> <span class="n">cumsum</span>
 
 
-<span class="c1"># torch.jit.script</span>
 <span class="k">def</span> <span class="nf">triple_by_molecule</span><span class="p">(</span><span class="n">atom_index1</span><span class="p">,</span> <span class="n">atom_index2</span><span class="p">):</span>
+    <span class="c1"># type: (torch.Tensor, torch.Tensor) -&gt; Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]</span>
     <span class="sd">&quot;&quot;&quot;Input: indices for pairs of atoms that are close to each other.</span>
 <span class="sd">    each pair only appear once, i.e. only one of the pairs (1, 2) and</span>
 <span class="sd">    (2, 1) exists.</span>
@@ -408,16 +403,18 @@
     <span class="n">sorted_ai1</span><span class="p">,</span> <span class="n">rev_indices</span> <span class="o">=</span> <span class="n">ai1</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
 
     <span class="c1"># sort and compute unique key</span>
-    <span class="n">uniqued_central_atom_index</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique_consecutive</span><span class="p">(</span><span class="n">sorted_ai1</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">unique_results</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique_consecutive</span><span class="p">(</span><span class="n">sorted_ai1</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">uniqued_central_atom_index</span> <span class="o">=</span> <span class="n">unique_results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">unique_results</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="c1"># do local combinations within unique key, assuming sorted</span>
-    <span class="n">pair_sizes</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">*</span> <span class="p">(</span><span class="n">counts</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">pair_sizes</span> <span class="o">=</span> <span class="p">(</span><span class="n">counts</span> <span class="o">*</span> <span class="p">(</span><span class="n">counts</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
     <span class="n">total_size</span> <span class="o">=</span> <span class="n">pair_sizes</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="n">pair_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">pair_sizes</span><span class="p">)</span>
     <span class="n">central_atom_index</span> <span class="o">=</span> <span class="n">uniqued_central_atom_index</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pair_indices</span><span class="p">)</span>
     <span class="n">cumsum</span> <span class="o">=</span> <span class="n">cumsum_from_zero</span><span class="p">(</span><span class="n">pair_sizes</span><span class="p">)</span>
     <span class="n">cumsum</span> <span class="o">=</span> <span class="n">cumsum</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pair_indices</span><span class="p">)</span>
-    <span class="n">sorted_local_pair_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">total_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cumsum</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-</span> <span class="n">cumsum</span>
+    <span class="n">sorted_local_pair_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">total_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cumsum</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span> <span class="o">-</span> <span class="n">cumsum</span>
     <span class="n">sorted_local_index1</span><span class="p">,</span> <span class="n">sorted_local_index2</span> <span class="o">=</span> <span class="n">convert_pair_index</span><span class="p">(</span><span class="n">sorted_local_pair_index</span><span class="p">)</span>
     <span class="n">cumsum</span> <span class="o">=</span> <span class="n">cumsum_from_zero</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
     <span class="n">cumsum</span> <span class="o">=</span> <span class="n">cumsum</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pair_indices</span><span class="p">)</span>
@@ -434,8 +431,8 @@
     <span class="k">return</span> <span class="n">central_atom_index</span><span class="p">,</span> <span class="n">local_index1</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="n">local_index2</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="n">sign1</span><span class="p">,</span> <span class="n">sign2</span>
 
 
-<span class="c1"># torch.jit.script</span>
 <span class="k">def</span> <span class="nf">compute_aev</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">shifts</span><span class="p">,</span> <span class="n">triu_index</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">sizes</span><span class="p">):</span>
+    <span class="c1"># type: (torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, Tuple[float, torch.Tensor, torch.Tensor, float, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor], Tuple[int, int, int, int, int, int]) &gt; torch.Tensor</span>
     <span class="n">Rcr</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">Rca</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span> <span class="o">=</span> <span class="n">constants</span>
     <span class="n">num_species</span><span class="p">,</span> <span class="n">radial_sublength</span><span class="p">,</span> <span class="n">radial_length</span><span class="p">,</span> <span class="n">angular_sublength</span><span class="p">,</span> <span class="n">angular_length</span><span class="p">,</span> <span class="n">aev_length</span> <span class="o">=</span> <span class="n">sizes</span>
     <span class="n">num_molecules</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -454,7 +451,7 @@
 
     <span class="c1"># compute radial aev</span>
     <span class="n">radial_terms_</span> <span class="o">=</span> <span class="n">radial_terms</span><span class="p">(</span><span class="n">Rcr</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">distances</span><span class="p">)</span>
-    <span class="n">radial_aev</span> <span class="o">=</span> <span class="n">radial_terms_</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">num_molecules</span> <span class="o">*</span> <span class="n">num_atoms</span> <span class="o">*</span> <span class="n">num_species</span><span class="p">,</span> <span class="n">radial_sublength</span><span class="p">)</span>
+    <span class="n">radial_aev</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_molecules</span> <span class="o">*</span> <span class="n">num_atoms</span> <span class="o">*</span> <span class="n">num_species</span><span class="p">,</span> <span class="n">radial_sublength</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">radial_terms_</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">radial_terms_</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
     <span class="n">index1</span> <span class="o">=</span> <span class="n">atom_index1</span> <span class="o">*</span> <span class="n">num_species</span> <span class="o">+</span> <span class="n">species2</span>
     <span class="n">index2</span> <span class="o">=</span> <span class="n">atom_index2</span> <span class="o">*</span> <span class="n">num_species</span> <span class="o">+</span> <span class="n">species1</span>
     <span class="n">radial_aev</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index1</span><span class="p">,</span> <span class="n">radial_terms_</span><span class="p">)</span>
@@ -477,7 +474,7 @@
     <span class="n">species1_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sign1</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="n">species2</span><span class="p">[</span><span class="n">pair_index1</span><span class="p">],</span> <span class="n">species1</span><span class="p">[</span><span class="n">pair_index1</span><span class="p">])</span>
     <span class="n">species2_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sign2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="n">species2</span><span class="p">[</span><span class="n">pair_index2</span><span class="p">],</span> <span class="n">species1</span><span class="p">[</span><span class="n">pair_index2</span><span class="p">])</span>
     <span class="n">angular_terms_</span> <span class="o">=</span> <span class="n">angular_terms</span><span class="p">(</span><span class="n">Rca</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span><span class="p">,</span> <span class="n">vec1</span><span class="p">,</span> <span class="n">vec2</span><span class="p">)</span>
-    <span class="n">angular_aev</span> <span class="o">=</span> <span class="n">angular_terms_</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">num_molecules</span> <span class="o">*</span> <span class="n">num_atoms</span> <span class="o">*</span> <span class="n">num_species_pairs</span><span class="p">,</span> <span class="n">angular_sublength</span><span class="p">)</span>
+    <span class="n">angular_aev</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_molecules</span> <span class="o">*</span> <span class="n">num_atoms</span> <span class="o">*</span> <span class="n">num_species_pairs</span><span class="p">,</span> <span class="n">angular_sublength</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">angular_terms_</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">angular_terms_</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
     <span class="n">index</span> <span class="o">=</span> <span class="n">central_atom_index</span> <span class="o">*</span> <span class="n">num_species_pairs</span> <span class="o">+</span> <span class="n">triu_index</span><span class="p">[</span><span class="n">species1_</span><span class="p">,</span> <span class="n">species2_</span><span class="p">]</span>
     <span class="n">angular_aev</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">angular_terms_</span><span class="p">)</span>
     <span class="n">angular_aev</span> <span class="o">=</span> <span class="n">angular_aev</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_molecules</span><span class="p">,</span> <span class="n">num_atoms</span><span class="p">,</span> <span class="n">angular_length</span><span class="p">)</span>
@@ -555,23 +552,24 @@
     <span class="k">def</span> <span class="nf">constants</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfZ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">EtaA</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Zeta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfA</span>
 
-    <span class="c1"># @torch.jit.script_method</span>
-<div class="viewcode-block" id="AEVComputer.forward"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_</span><span class="p">):</span>
+<div class="viewcode-block" id="AEVComputer.forward"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_</span><span class="p">,</span> <span class="n">cell</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pbc</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># type: (Tuple[torch.Tensor, torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor]) -&gt; Tuple[torch.Tensor, torch.Tensor]</span>
         <span class="sd">&quot;&quot;&quot;Compute AEVs</span>
 
 <span class="sd">        Arguments:</span>
 <span class="sd">            input_ (tuple): Can be one of the following two cases:</span>
 
 <span class="sd">                If you don&#39;t care about periodic boundary conditions at all,</span>
-<span class="sd">                then input can be a tuple of two tensors: species and coordinates.</span>
-<span class="sd">                species must have shape ``(C, A)`` and coordinates must have</span>
-<span class="sd">                shape ``(C, A, 3)``, where ``C`` is the number of molecules</span>
-<span class="sd">                in a chunk, and ``A`` is the number of atoms.</span>
+<span class="sd">                then input can be a tuple of two tensors: species, coordinates.</span>
+<span class="sd">                species must have shape ``(C, A)``, coordinates must have shape</span>
+<span class="sd">                ``(C, A, 3)`` where ``C`` is the number of molecules in a chunk,</span>
+<span class="sd">                and ``A`` is the number of atoms.</span>
 
 <span class="sd">                If you want to apply periodic boundary conditions, then the input</span>
-<span class="sd">                would be a tuple of four tensors: species, coordinates, cell, pbc</span>
-<span class="sd">                where species and coordinates are the same as described above, cell</span>
-<span class="sd">                is a tensor of shape (3, 3) of the three vectors defining unit cell:</span>
+<span class="sd">                would be a tuple of two tensors (species, coordinates) and two keyword</span>
+<span class="sd">                arguments `cell=...` , and `pbc=...` where species and coordinates are</span>
+<span class="sd">                the same as described above, cell is a tensor of shape (3, 3) of the</span>
+<span class="sd">                three vectors defining unit cell:</span>
 
 <span class="sd">                .. code-block:: python</span>
 
@@ -587,15 +585,16 @@
 <span class="sd">            unchanged, and AEVs is a tensor of shape</span>
 <span class="sd">            ``(C, A, self.aev_length())``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span> <span class="o">=</span> <span class="n">input_</span>
+        <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span> <span class="o">=</span> <span class="n">input_</span>
+
+        <span class="k">if</span> <span class="n">cell</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_cell</span>
             <span class="n">shifts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_shifts</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
-            <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span> <span class="o">=</span> <span class="n">input_</span>
+            <span class="k">assert</span> <span class="p">(</span><span class="n">cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
             <span class="n">cutoff</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span><span class="p">)</span>
             <span class="n">shifts</span> <span class="o">=</span> <span class="n">compute_shifts</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">species</span><span class="p">,</span> <span class="n">compute_aev</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">shifts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">triu_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span></div></div>
 </pre></div>
 

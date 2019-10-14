@@ -138,9 +138,9 @@ Due to padding, part of the forces might be 0
 
  .. code-block:: none
 
-    tensor([[ 6.8817e-02, -1.3156e-02, -5.4563e-17],
-            [-5.3386e-02,  1.2442e-01, -3.6696e-16],
-            [-1.5431e-02, -1.1127e-01,  4.1988e-16],
+    tensor([[ 5.3234e-04, -1.8075e-01, -1.8686e-16],
+            [ 1.0464e-02, -1.5251e-01, -5.9224e-17],
+            [-1.0997e-02,  3.3326e-01,  2.4608e-16],
             [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
             [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
             [ 0.0000e+00,  0.0000e+00,  0.0000e+00]])
@@ -207,41 +207,43 @@ The code to define networks, optimizers, are mostly the same
  .. code-block:: none
 
     ANIModel(
-      (0): Sequential(
-        (0): Linear(in_features=384, out_features=160, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=160, out_features=128, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=128, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (1): Sequential(
-        (0): Linear(in_features=384, out_features=144, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=144, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (2): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (3): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
+      (module_list): ModuleList(
+        (0): Sequential(
+          (0): Linear(in_features=384, out_features=160, bias=True)
+          (1): CELU(alpha=0.1)
+          (2): Linear(in_features=160, out_features=128, bias=True)
+          (3): CELU(alpha=0.1)
+          (4): Linear(in_features=128, out_features=96, bias=True)
+          (5): CELU(alpha=0.1)
+          (6): Linear(in_features=96, out_features=1, bias=True)
+        )
+        (1): Sequential(
+          (0): Linear(in_features=384, out_features=144, bias=True)
+          (1): CELU(alpha=0.1)
+          (2): Linear(in_features=144, out_features=112, bias=True)
+          (3): CELU(alpha=0.1)
+          (4): Linear(in_features=112, out_features=96, bias=True)
+          (5): CELU(alpha=0.1)
+          (6): Linear(in_features=96, out_features=1, bias=True)
+        )
+        (2): Sequential(
+          (0): Linear(in_features=384, out_features=128, bias=True)
+          (1): CELU(alpha=0.1)
+          (2): Linear(in_features=128, out_features=112, bias=True)
+          (3): CELU(alpha=0.1)
+          (4): Linear(in_features=112, out_features=96, bias=True)
+          (5): CELU(alpha=0.1)
+          (6): Linear(in_features=96, out_features=1, bias=True)
+        )
+        (3): Sequential(
+          (0): Linear(in_features=384, out_features=128, bias=True)
+          (1): CELU(alpha=0.1)
+          (2): Linear(in_features=128, out_features=112, bias=True)
+          (3): CELU(alpha=0.1)
+          (4): Linear(in_features=112, out_features=96, bias=True)
+          (5): CELU(alpha=0.1)
+          (6): Linear(in_features=96, out_features=1, bias=True)
+        )
       )
     )
 
@@ -282,7 +284,7 @@ Let's now create a pipeline of AEV Computer --> Neural Networks.
 
 .. code-block:: default
 
-    model = torch.nn.Sequential(aev_computer, nn).to(device)
+    model = torchani.nn.Sequential(aev_computer, nn).to(device)
 
 
 
@@ -441,7 +443,9 @@ In the training loop, we need to compute force, and loss for forces
     mse = torch.nn.MSELoss(reduction='none')
 
     print("training starting from epoch", AdamW_scheduler.last_epoch + 1)
-    max_epochs = 20
+    # We only train 3 epoches here in able to generate the docs quickly.
+    # Real training should take much more than 3 epoches.
+    max_epochs = 3
     early_stopping_learning_rate = 1.0E-5
     force_coefficient = 0.1  # controls the importance of energy loss vs force loss
     best_model_checkpoint = 'force-training-best.pt'
@@ -540,53 +544,19 @@ In the training loop, we need to compute force, and loss for forces
  .. code-block:: none
 
     training starting from epoch 0
-    RMSE: 75.8929130522091 at epoch 0
-    epoch 0:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 0:  25%|##5       | 1/4 [00:06<00:18,  6.02s/it]    epoch 0:  50%|#####     | 2/4 [00:12<00:12,  6.05s/it]    epoch 0:  75%|#######5  | 3/4 [00:18<00:06,  6.05s/it]    epoch 0: 100%|##########| 4/4 [00:21<00:00,  5.35s/it]    epoch 0: 100%|##########| 4/4 [00:21<00:00,  5.48s/it]
-    RMSE: 186.21316366794608 at epoch 1
-    epoch 1:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 1:  25%|##5       | 1/4 [00:06<00:18,  6.10s/it]    epoch 1:  50%|#####     | 2/4 [00:12<00:12,  6.07s/it]    epoch 1:  75%|#######5  | 3/4 [00:18<00:06,  6.06s/it]    epoch 1: 100%|##########| 4/4 [00:21<00:00,  5.36s/it]    epoch 1: 100%|##########| 4/4 [00:21<00:00,  5.46s/it]
-    RMSE: 91.2227767069203 at epoch 2
-    epoch 2:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 2:  25%|##5       | 1/4 [00:05<00:17,  5.89s/it]    epoch 2:  50%|#####     | 2/4 [00:11<00:11,  5.89s/it]    epoch 2:  75%|#######5  | 3/4 [00:17<00:05,  5.89s/it]    epoch 2: 100%|##########| 4/4 [00:21<00:00,  5.22s/it]    epoch 2: 100%|##########| 4/4 [00:21<00:00,  5.33s/it]
-    RMSE: 31.141569351464238 at epoch 3
-    epoch 3:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 3:  25%|##5       | 1/4 [00:05<00:17,  5.94s/it]    epoch 3:  50%|#####     | 2/4 [00:11<00:11,  5.93s/it]    epoch 3:  75%|#######5  | 3/4 [00:18<00:06,  6.02s/it]    epoch 3: 100%|##########| 4/4 [00:21<00:00,  5.35s/it]    epoch 3: 100%|##########| 4/4 [00:21<00:00,  5.47s/it]
-    RMSE: 70.63606015327305 at epoch 4
-    epoch 4:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 4:  25%|##5       | 1/4 [00:05<00:17,  5.98s/it]    epoch 4:  50%|#####     | 2/4 [00:12<00:11,  5.99s/it]    epoch 4:  75%|#######5  | 3/4 [00:17<00:05,  5.99s/it]    epoch 4: 100%|##########| 4/4 [00:21<00:00,  5.32s/it]    epoch 4: 100%|##########| 4/4 [00:21<00:00,  5.44s/it]
-    RMSE: 25.532529880393724 at epoch 5
-    epoch 5:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 5:  25%|##5       | 1/4 [00:06<00:18,  6.06s/it]    epoch 5:  50%|#####     | 2/4 [00:12<00:12,  6.08s/it]    epoch 5:  75%|#######5  | 3/4 [00:18<00:06,  6.05s/it]    epoch 5: 100%|##########| 4/4 [00:21<00:00,  5.33s/it]    epoch 5: 100%|##########| 4/4 [00:21<00:00,  5.45s/it]
-    RMSE: 39.79452422632365 at epoch 6
-    epoch 6:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 6:  25%|##5       | 1/4 [00:05<00:17,  5.89s/it]    epoch 6:  50%|#####     | 2/4 [00:12<00:11,  5.96s/it]    epoch 6:  75%|#######5  | 3/4 [00:17<00:05,  5.94s/it]    epoch 6: 100%|##########| 4/4 [00:21<00:00,  5.26s/it]    epoch 6: 100%|##########| 4/4 [00:21<00:00,  5.39s/it]
-    RMSE: 26.63938557516863 at epoch 7
-    epoch 7:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 7:  25%|##5       | 1/4 [00:05<00:17,  5.92s/it]    epoch 7:  50%|#####     | 2/4 [00:11<00:11,  5.96s/it]    epoch 7:  75%|#######5  | 3/4 [00:18<00:05,  5.98s/it]    epoch 7: 100%|##########| 4/4 [00:21<00:00,  5.31s/it]    epoch 7: 100%|##########| 4/4 [00:21<00:00,  5.44s/it]
-    RMSE: 25.981702950971584 at epoch 8
-    epoch 8:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 8:  25%|##5       | 1/4 [00:06<00:18,  6.00s/it]    epoch 8:  50%|#####     | 2/4 [00:12<00:12,  6.03s/it]    epoch 8:  75%|#######5  | 3/4 [00:18<00:06,  6.02s/it]    epoch 8: 100%|##########| 4/4 [00:21<00:00,  5.32s/it]    epoch 8: 100%|##########| 4/4 [00:21<00:00,  5.44s/it]
-    RMSE: 24.18719049532164 at epoch 9
-    epoch 9:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 9:  25%|##5       | 1/4 [00:06<00:18,  6.09s/it]    epoch 9:  50%|#####     | 2/4 [00:12<00:12,  6.07s/it]    epoch 9:  75%|#######5  | 3/4 [00:18<00:06,  6.06s/it]    epoch 9: 100%|##########| 4/4 [00:21<00:00,  5.38s/it]    epoch 9: 100%|##########| 4/4 [00:21<00:00,  5.49s/it]
-    RMSE: 20.17957989177682 at epoch 10
-    epoch 10:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 10:  25%|##5       | 1/4 [00:05<00:17,  5.96s/it]    epoch 10:  50%|#####     | 2/4 [00:12<00:11,  5.99s/it]    epoch 10:  75%|#######5  | 3/4 [00:18<00:06,  6.01s/it]    epoch 10: 100%|##########| 4/4 [00:21<00:00,  5.31s/it]    epoch 10: 100%|##########| 4/4 [00:21<00:00,  5.44s/it]
-    RMSE: 22.88735369033856 at epoch 11
-    epoch 11:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 11:  25%|##5       | 1/4 [00:06<00:18,  6.03s/it]    epoch 11:  50%|#####     | 2/4 [00:12<00:12,  6.04s/it]    epoch 11:  75%|#######5  | 3/4 [00:18<00:06,  6.05s/it]    epoch 11: 100%|##########| 4/4 [00:21<00:00,  5.33s/it]    epoch 11: 100%|##########| 4/4 [00:21<00:00,  5.46s/it]
-    RMSE: 19.897710888355252 at epoch 12
-    epoch 12:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 12:  25%|##5       | 1/4 [00:05<00:17,  5.94s/it]    epoch 12:  50%|#####     | 2/4 [00:11<00:11,  5.95s/it]    epoch 12:  75%|#######5  | 3/4 [00:17<00:05,  5.94s/it]    epoch 12: 100%|##########| 4/4 [00:21<00:00,  5.28s/it]    epoch 12: 100%|##########| 4/4 [00:21<00:00,  5.39s/it]
-    RMSE: 20.954103992549253 at epoch 13
-    epoch 13:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 13:  25%|##5       | 1/4 [00:06<00:18,  6.13s/it]    epoch 13:  50%|#####     | 2/4 [00:12<00:12,  6.07s/it]    epoch 13:  75%|#######5  | 3/4 [00:18<00:06,  6.05s/it]    epoch 13: 100%|##########| 4/4 [00:21<00:00,  5.33s/it]    epoch 13: 100%|##########| 4/4 [00:21<00:00,  5.42s/it]
-    RMSE: 20.810216834095097 at epoch 14
-    epoch 14:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 14:  25%|##5       | 1/4 [00:05<00:17,  5.88s/it]    epoch 14:  50%|#####     | 2/4 [00:11<00:11,  5.86s/it]    epoch 14:  75%|#######5  | 3/4 [00:17<00:05,  5.94s/it]    epoch 14: 100%|##########| 4/4 [00:21<00:00,  5.26s/it]    epoch 14: 100%|##########| 4/4 [00:21<00:00,  5.38s/it]
-    RMSE: 20.565616781490665 at epoch 15
-    epoch 15:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 15:  25%|##5       | 1/4 [00:05<00:17,  5.94s/it]    epoch 15:  50%|#####     | 2/4 [00:11<00:11,  5.95s/it]    epoch 15:  75%|#######5  | 3/4 [00:17<00:05,  5.95s/it]    epoch 15: 100%|##########| 4/4 [00:21<00:00,  5.26s/it]    epoch 15: 100%|##########| 4/4 [00:21<00:00,  5.38s/it]
-    RMSE: 20.96162508039544 at epoch 16
-    epoch 16:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 16:  25%|##5       | 1/4 [00:05<00:17,  5.98s/it]    epoch 16:  50%|#####     | 2/4 [00:11<00:11,  5.99s/it]    epoch 16:  75%|#######5  | 3/4 [00:17<00:05,  5.98s/it]    epoch 16: 100%|##########| 4/4 [00:21<00:00,  5.31s/it]    epoch 16: 100%|##########| 4/4 [00:21<00:00,  5.42s/it]
-    RMSE: 20.970444177669897 at epoch 17
-    epoch 17:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 17:  25%|##5       | 1/4 [00:06<00:18,  6.02s/it]    epoch 17:  50%|#####     | 2/4 [00:12<00:12,  6.06s/it]    epoch 17:  75%|#######5  | 3/4 [00:18<00:06,  6.06s/it]    epoch 17: 100%|##########| 4/4 [00:22<00:00,  5.37s/it]    epoch 17: 100%|##########| 4/4 [00:22<00:00,  5.50s/it]
-    RMSE: 20.932766480393312 at epoch 18
-    epoch 18:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 18:  25%|##5       | 1/4 [00:05<00:17,  5.96s/it]    epoch 18:  50%|#####     | 2/4 [00:11<00:11,  5.96s/it]    epoch 18:  75%|#######5  | 3/4 [00:17<00:05,  5.95s/it]    epoch 18: 100%|##########| 4/4 [00:21<00:00,  5.26s/it]    epoch 18: 100%|##########| 4/4 [00:21<00:00,  5.37s/it]
-    RMSE: 21.054816813235675 at epoch 19
-    epoch 19:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 19:  25%|##5       | 1/4 [00:05<00:17,  5.79s/it]    epoch 19:  50%|#####     | 2/4 [00:11<00:11,  5.87s/it]    epoch 19:  75%|#######5  | 3/4 [00:17<00:05,  5.90s/it]    epoch 19: 100%|##########| 4/4 [00:21<00:00,  5.22s/it]    epoch 19: 100%|##########| 4/4 [00:21<00:00,  5.37s/it]
+    RMSE: 71.44308396907043 at epoch 0
+    epoch 0:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 0:  25%|##5       | 1/4 [00:04<00:14,  4.75s/it]    epoch 0:  50%|#####     | 2/4 [00:09<00:09,  4.75s/it]    epoch 0:  75%|#######5  | 3/4 [00:14<00:04,  4.73s/it]    epoch 0: 100%|##########| 4/4 [00:17<00:00,  4.18s/it]    epoch 0: 100%|##########| 4/4 [00:17<00:00,  4.27s/it]
+    RMSE: 160.64623051688483 at epoch 1
+    epoch 1:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 1:  25%|##5       | 1/4 [00:04<00:14,  4.70s/it]    epoch 1:  50%|#####     | 2/4 [00:09<00:09,  4.73s/it]    epoch 1:  75%|#######5  | 3/4 [00:14<00:04,  4.72s/it]    epoch 1: 100%|##########| 4/4 [00:17<00:00,  4.20s/it]    epoch 1: 100%|##########| 4/4 [00:17<00:00,  4.29s/it]
+    RMSE: 94.63710499833358 at epoch 2
+    epoch 2:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 2:  25%|##5       | 1/4 [00:04<00:14,  4.75s/it]    epoch 2:  50%|#####     | 2/4 [00:09<00:09,  4.75s/it]    epoch 2:  75%|#######5  | 3/4 [00:14<00:04,  4.74s/it]    epoch 2: 100%|##########| 4/4 [00:17<00:00,  4.21s/it]    epoch 2: 100%|##########| 4/4 [00:17<00:00,  4.29s/it]
 
 
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 7 minutes  32.862 seconds)
+   **Total running time of the script:** ( 0 minutes  53.648 seconds)
 
 
 .. _sphx_glr_download_examples_nnp_training_force.py:

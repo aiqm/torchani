@@ -92,6 +92,26 @@ Examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Models in TorchANI&#x27;s model zoo support TorchScript. TorchScript is a way to create serializable...">
+
+.. only:: html
+
+    .. figure:: /examples/images/thumb/sphx_glr_jit_thumb.png
+
+        :ref:`sphx_glr_examples_jit.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/jit
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This tutorial illustrates how to manually load model from `NeuroChem files`_.">
 
 .. only:: html
@@ -203,13 +223,13 @@ Examples
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Python source code: examples_python.zip <//home/vsts/work/1/s/docs/examples/examples_python.zip>`
+    :download:`Download all examples in Python source code: examples_python.zip <//home/runner/work/torchani/torchani/docs/examples/examples_python.zip>`
 
 
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Jupyter notebooks: examples_jupyter.zip <//home/vsts/work/1/s/docs/examples/examples_jupyter.zip>`
+    :download:`Download all examples in Jupyter notebooks: examples_jupyter.zip <//home/runner/work/torchani/torchani/docs/examples/examples_jupyter.zip>`
 
 
 .. only:: html

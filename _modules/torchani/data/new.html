@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.data.new &mdash; TorchANI 0.9 documentation</title>
+  <title>torchani.data.new &mdash; TorchANI 1.0.1 documentation</title>
   
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                0.9
+                1.0.1
               </div>
             
           
@@ -92,6 +92,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/jit.html">Using TorchScript to serialize and deploy model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
@@ -205,32 +206,48 @@
 <span class="sd">    Arguments:</span>
 <span class="sd">        file_path (str): Path to one hdf5 file.</span>
 <span class="sd">        batch_size (int): batch size.</span>
+<span class="sd">        device (str): ``&#39;cuda&#39;`` or ``&#39;cpu&#39;``, cache to CPU or GPU. Commonly, &#39;cpu&#39; is already fast enough.</span>
+<span class="sd">            Default is ``&#39;cpu&#39;``.</span>
 <span class="sd">        chunk_threshold (int): threshould to split batch into chunks. Set to ``None`` will not split chunks.</span>
+<span class="sd">            Use ``torchani.data.find_threshold`` to find resonable ``chunk_threshold``.</span>
+<span class="sd">        other_properties (dict): A dict which is used to extract properties other than</span>
+<span class="sd">            ``energies`` from dataset with correct padding, shape and dtype.\n</span>
+<span class="sd">            The example below will extract ``dipoles`` and ``forces``.\n</span>
+<span class="sd">            ``padding_values``: set to ``None`` means there is no need to pad for this property.</span>
+
+<span class="sd">            .. code-block:: python</span>
+
+<span class="sd">                other_properties = {&#39;properties&#39;: [&#39;dipoles&#39;, &#39;forces&#39;],</span>
+<span class="sd">                                    &#39;padding_values&#39;: [None, 0],</span>
+<span class="sd">                                    &#39;padded_shapes&#39;: [(batch_size, 3), (batch_size, -1, 3)],</span>
+<span class="sd">                                    &#39;dtypes&#39;: [torch.float32, torch.float32]</span>
+<span class="sd">                                    }</span>
+
+<span class="sd">        include_energies (bool): Whether include energies into properties. Default is ``True``.</span>
 <span class="sd">        species_order (list): a list which specify how species are transfomed to int.</span>
 <span class="sd">            for example: ``[&#39;H&#39;, &#39;C&#39;, &#39;N&#39;, &#39;O&#39;]`` means ``{&#39;H&#39;: 0, &#39;C&#39;: 1, &#39;N&#39;: 2, &#39;O&#39;: 3}``.</span>
 <span class="sd">        subtract_self_energies (bool): whether subtract self energies from ``energies``.</span>
 <span class="sd">        self_energies (list): if `subtract_self_energies` is True, the order should keep</span>
 <span class="sd">            the same as ``species_order``.</span>
 <span class="sd">            for example :``[-0.600953, -38.08316, -54.707756, -75.194466]`` will be converted</span>
-<span class="sd">            to ``{&#39;H&#39;: -0.600953, &#39;C&#39;: -38.08316, &#39;N&#39;: -54.707756, &#39;O&#39;: -75.194466}``..</span>
+<span class="sd">            to ``{&#39;H&#39;: -0.600953, &#39;C&#39;: -38.08316, &#39;N&#39;: -54.707756, &#39;O&#39;: -75.194466}``.</span>
 
 <span class="sd">    .. note::</span>
 <span class="sd">        The resulting dataset will be:</span>
 <span class="sd">        ``([chunk1, chunk2, ...], {&#39;energies&#39;, &#39;force&#39;, ...})`` in which chunk1 is a</span>
 <span class="sd">        tuple of ``(species, coordinates)``.</span>
 
-<span class="sd">        e.g. the shape of</span>
-
-<span class="sd">        chunk1: ``[[1807, 21], [1807, 21, 3]]``</span>
-
-<span class="sd">        chunk2: ``[[193, 50], [193, 50, 3]]``</span>
-
+<span class="sd">        e.g. the shape of\n</span>
+<span class="sd">        chunk1: ``[[1807, 21], [1807, 21, 3]]``\n</span>
+<span class="sd">        chunk2: ``[[193, 50], [193, 50, 3]]``\n</span>
 <span class="sd">        &#39;energies&#39;: ``[2000, 1]``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span>
                  <span class="n">batch_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
                  <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
                  <span class="n">chunk_threshold</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                 <span class="n">other_properties</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">include_energies</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                  <span class="n">species_order</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">],</span>
                  <span class="n">subtract_self_energies</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                  <span class="n">self_energies</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.600953</span><span class="p">,</span> <span class="o">-</span><span class="mf">38.08316</span><span class="p">,</span> <span class="o">-</span><span class="mf">54.707756</span><span class="p">,</span> <span class="o">-</span><span class="mf">75.194466</span><span class="p">]):</span>
@@ -246,42 +263,53 @@
             <span class="n">species_dict</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
             <span class="n">self_energies_dict</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">self_energies</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_species</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_coordinates</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data_energies</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data_self_energies</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">data_self_energies</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span> <span class="o">=</span> <span class="n">other_properties</span>
 
+        <span class="c1"># whether include energies to properties</span>
+        <span class="k">if</span> <span class="n">include_energies</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_energies_to_properties</span><span class="p">()</span>
+        <span class="c1"># let user check the properties will be loaded</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_properties</span><span class="p">()</span>
+
+        <span class="c1"># anidataloader</span>
         <span class="n">anidata</span> <span class="o">=</span> <span class="n">anidataloader</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
         <span class="n">anidata_size</span> <span class="o">=</span> <span class="n">anidata</span><span class="o">.</span><span class="n">group_size</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enable_pkbar</span> <span class="o">=</span> <span class="n">anidata_size</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="ow">and</span> <span class="n">PKBAR_INSTALLED</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_pkbar</span><span class="p">:</span>
             <span class="n">pbar</span> <span class="o">=</span> <span class="n">pkbar</span><span class="o">.</span><span class="n">Pbar</span><span class="p">(</span><span class="s1">&#39;=&gt; loading h5 dataset into cpu memory, total molecules: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">anidata_size</span><span class="p">),</span> <span class="n">anidata_size</span><span class="p">)</span>
 
+        <span class="c1"># load h5 data into cpu memory as lists</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">molecule</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">anidata</span><span class="p">):</span>
+            <span class="c1"># conformations</span>
             <span class="n">num_conformations</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">molecule</span><span class="p">[</span><span class="s1">&#39;coordinates&#39;</span><span class="p">])</span>
             <span class="c1"># species and coordinates</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data_coordinates</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">molecule</span><span class="p">[</span><span class="s1">&#39;coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_conformations</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
             <span class="n">species</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">species_dict</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">molecule</span><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data_species</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="p">(</span><span class="n">num_conformations</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
-            <span class="c1"># energies</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data_energies</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">molecule</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+            <span class="c1"># if subtract_self_energies</span>
             <span class="k">if</span> <span class="n">subtract_self_energies</span><span class="p">:</span>
                 <span class="n">self_energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="n">self_energies_dict</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">molecule</span><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]]))</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">data_self_energies</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">self_energies</span><span class="p">,</span> <span class="p">(</span><span class="n">num_conformations</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
-
+                <span class="n">data_self_energies</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">self_energies</span><span class="p">,</span> <span class="p">(</span><span class="n">num_conformations</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+            <span class="c1"># properties</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">molecule</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_conformations</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="c1"># pkbar update</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_pkbar</span><span class="p">:</span>
                 <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">subtract_self_energies</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data_energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_energies</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_self_energies</span><span class="p">)</span>
-            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_self_energies</span>
-            <span class="k">del</span> <span class="n">self_energies</span>
+        <span class="c1"># if subtract self energies</span>
+        <span class="k">if</span> <span class="n">subtract_self_energies</span> <span class="ow">and</span> <span class="s1">&#39;energies&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_self_energies</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">data_self_energies</span>
             <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_species</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">shuffled_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_species</span><span class="p">))</span>
         <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shuffled_index</span><span class="p">)</span>
 
@@ -289,6 +317,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_threshold</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">chunk_threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
 
+        <span class="c1"># clean trash</span>
         <span class="n">anidata</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
         <span class="k">del</span> <span class="n">num_conformations</span>
         <span class="k">del</span> <span class="n">species</span>
@@ -306,7 +335,6 @@
 
         <span class="n">batch_species</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_species</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">batch_indices_shuffled</span><span class="p">]</span>
         <span class="n">batch_coordinates</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">batch_indices_shuffled</span><span class="p">]</span>
-        <span class="n">batch_energies</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_energies</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">batch_indices_shuffled</span><span class="p">]</span>
 
         <span class="c1"># get sort index</span>
         <span class="n">num_atoms_each_mole</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">batch_species</span><span class="p">]</span>
@@ -316,7 +344,6 @@
         <span class="c1"># sort each batch of data</span>
         <span class="n">batch_species</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sort_list_with_index</span><span class="p">(</span><span class="n">batch_species</span><span class="p">,</span> <span class="n">sorted_atoms_idx</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
         <span class="n">batch_coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sort_list_with_index</span><span class="p">(</span><span class="n">batch_coordinates</span><span class="p">,</span> <span class="n">sorted_atoms_idx</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-        <span class="n">batch_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sort_list_with_index</span><span class="p">(</span><span class="n">batch_energies</span><span class="p">,</span> <span class="n">sorted_atoms_idx</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 
         <span class="c1"># get chunk size</span>
         <span class="n">output</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="nb">sorted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -327,19 +354,32 @@
         <span class="c1"># split into chunks</span>
         <span class="n">chunks_batch_species</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_list_with_size</span><span class="p">(</span><span class="n">batch_species</span><span class="p">,</span> <span class="n">chunk_size_list</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
         <span class="n">chunks_batch_coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_list_with_size</span><span class="p">(</span><span class="n">batch_coordinates</span><span class="p">,</span> <span class="n">chunk_size_list</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
-        <span class="n">batch_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split_list_with_size</span><span class="p">(</span><span class="n">batch_energies</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">]))</span>
 
         <span class="c1"># padding each data</span>
         <span class="n">chunks_batch_species</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pad_and_convert_to_tensor</span><span class="p">(</span><span class="n">chunks_batch_species</span><span class="p">,</span> <span class="n">padding_value</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">chunks_batch_coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pad_and_convert_to_tensor</span><span class="p">(</span><span class="n">chunks_batch_coordinates</span><span class="p">)</span>
-        <span class="n">batch_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pad_and_convert_to_tensor</span><span class="p">(</span><span class="n">batch_energies</span><span class="p">,</span> <span class="n">no_padding</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
+        <span class="c1"># chunks</span>
         <span class="n">chunks</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">chunks_batch_species</span><span class="p">,</span> <span class="n">chunks_batch_coordinates</span><span class="p">))</span>
-
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chunks</span><span class="p">):</span>
             <span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 
-        <span class="n">properties</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;energies&#39;</span><span class="p">:</span> <span class="n">batch_energies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()}</span>
+        <span class="c1"># properties</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]):</span>
+            <span class="c1"># get a batch of property</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">batch_indices_shuffled</span><span class="p">]</span>
+            <span class="c1"># sort with number of atoms</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sort_list_with_index</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">sorted_atoms_idx</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+            <span class="c1"># padding and convert to tensor</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padding_values&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pad_and_convert_to_tensor</span><span class="p">([</span><span class="n">prop</span><span class="p">],</span> <span class="n">no_padding</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pad_and_convert_to_tensor</span><span class="p">([</span><span class="n">prop</span><span class="p">],</span> <span class="n">padding_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padding_values&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># set property shape and dtype</span>
+            <span class="n">padded_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padded_shapes&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">padded_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># the last batch may does not have one batch data</span>
+            <span class="n">properties</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">padded_shape</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;dtypes&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
 
         <span class="c1"># return: [chunk1, chunk2, ...], {&quot;energies&quot;, &quot;force&quot;, ...} in which chunk1=(species, coordinates)</span>
         <span class="c1"># e.g. chunk1 = [[1807, 21], [1807, 21, 3]], chunk2 = [[193, 50], [193, 50, 3]]</span>
@@ -385,6 +425,32 @@
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_pkbar</span><span class="p">:</span>
                 <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">add_energies_to_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># if user does not provide energies info</span>
+        <span class="k">if</span> <span class="s1">&#39;properties&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span> <span class="ow">and</span> <span class="s1">&#39;energies&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]:</span>
+            <span class="c1"># setup energies info, so the user does not need to input energies</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padding_values&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padded_shapes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;dtypes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="c1"># if no properties provided</span>
+        <span class="k">if</span> <span class="s1">&#39;properties&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">],</span>
+                                    <span class="s1">&#39;padding_values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">],</span>
+                                    <span class="s1">&#39;padded_shapes&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="p">)],</span>
+                                    <span class="s1">&#39;dtypes&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+                                    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">check_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># print properties information</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;... The following properties will be loaded:&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">prop</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: (dtype: </span><span class="si">{}</span><span class="s1">, padding_value: </span><span class="si">{}</span><span class="s1">, padded_shape: </span><span class="si">{}</span><span class="s1">)&#39;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;dtypes&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padding_values&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padded_shapes&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]))</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">sort_list_with_index</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
@@ -442,7 +508,10 @@
 
 
 <div class="viewcode-block" id="ShuffledDataset"><a class="viewcode-back" href="../../../api.html#torchani.data.ShuffledDataset">[docs]</a><span class="k">def</span> <span class="nf">ShuffledDataset</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span>
-                    <span class="n">batch_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">chunk_threshold</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                    <span class="n">batch_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">chunk_threshold</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                    <span class="n">other_properties</span><span class="o">=</span><span class="p">{},</span>
+                    <span class="n">include_energies</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                     <span class="n">validation_split</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
                     <span class="n">species_order</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">],</span>
                     <span class="n">subtract_self_energies</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -455,8 +524,22 @@
 <span class="sd">        num_workers (int): multiple process to prepare dataset at background when</span>
 <span class="sd">            training is going.</span>
 <span class="sd">        shuffle (bool): whether to shuffle.</span>
-<span class="sd">        chunk_threshold (int): threshould to split batch into chunks. Set to ``None``</span>
-<span class="sd">            will not split chunks.</span>
+<span class="sd">        chunk_threshold (int): threshould to split batch into chunks. Set to ``None`` will not split chunks.</span>
+<span class="sd">            Use ``torchani.data.find_threshold`` to find resonable ``chunk_threshold``.</span>
+<span class="sd">        other_properties (dict): A dict which is used to extract properties other than</span>
+<span class="sd">            ``energies`` from dataset with correct padding, shape and dtype.\n</span>
+<span class="sd">            The example below will extract ``dipoles`` and ``forces``.\n</span>
+<span class="sd">            ``padding_values``: set to ``None`` means there is no need to pad for this property.</span>
+
+<span class="sd">            .. code-block:: python</span>
+
+<span class="sd">                other_properties = {&#39;properties&#39;: [&#39;dipoles&#39;, &#39;forces&#39;],</span>
+<span class="sd">                                    &#39;padding_values&#39;: [None, 0],</span>
+<span class="sd">                                    &#39;padded_shapes&#39;: [(batch_size, 3), (batch_size, -1, 3)],</span>
+<span class="sd">                                    &#39;dtypes&#39;: [torch.float32, torch.float32]</span>
+<span class="sd">                                    }</span>
+
+<span class="sd">        include_energies (bool): Whether include energies into properties. Default is ``True``.</span>
 <span class="sd">        validation_split (float): Float between 0 and 1. Fraction of the dataset to be used</span>
 <span class="sd">            as validation data.</span>
 <span class="sd">        species_order (list): a list which specify how species are transfomed to int.</span>
@@ -471,24 +554,27 @@
 <span class="sd">        Return a dataloader that, when iterating, you will get</span>
 
 <span class="sd">        ``([chunk1, chunk2, ...], {&#39;energies&#39;, &#39;force&#39;, ...})`` in which chunk1 is a</span>
-<span class="sd">        tuple of ``(species, coordinates)``.</span>
-
-<span class="sd">        e.g. the shape of</span>
-
-<span class="sd">        chunk1: ``[[1807, 21], [1807, 21, 3]]``</span>
-
-<span class="sd">        chunk2: ``[[193, 50], [193, 50, 3]]``</span>
-
+<span class="sd">        tuple of ``(species, coordinates)``.\n</span>
+<span class="sd">        e.g. the shape of\n</span>
+<span class="sd">        chunk1: ``[[1807, 21], [1807, 21, 3]]``\n</span>
+<span class="sd">        chunk2: ``[[193, 50], [193, 50, 3]]``\n</span>
 <span class="sd">        &#39;energies&#39;: ``[2000, 1]``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">dataset</span> <span class="o">=</span> <span class="n">TorchData</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">species_order</span><span class="p">,</span> <span class="n">subtract_self_energies</span><span class="p">,</span> <span class="n">self_energies</span><span class="p">)</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">TorchData</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span>
+                        <span class="n">batch_size</span><span class="p">,</span>
+                        <span class="n">other_properties</span><span class="p">,</span>
+                        <span class="n">include_energies</span><span class="p">,</span>
+                        <span class="n">species_order</span><span class="p">,</span>
+                        <span class="n">subtract_self_energies</span><span class="p">,</span>
+                        <span class="n">self_energies</span><span class="p">)</span>
+    <span class="n">properties_info</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">get_properties_info</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">chunk_threshold</span><span class="p">:</span>
         <span class="n">chunk_threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
 
-    <span class="k">def</span> <span class="nf">my_collate_fn</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">chunk_threshold</span><span class="o">=</span><span class="n">chunk_threshold</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">collate_fn</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">chunk_threshold</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">my_collate_fn</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">chunk_threshold</span><span class="o">=</span><span class="n">chunk_threshold</span><span class="p">,</span> <span class="n">properties_info</span><span class="o">=</span><span class="n">properties_info</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">collate_fn</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">chunk_threshold</span><span class="p">,</span> <span class="n">properties_info</span><span class="p">)</span>
 
     <span class="n">val_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">validation_split</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">))</span>
     <span class="n">train_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span> <span class="o">-</span> <span class="n">val_size</span>
@@ -515,7 +601,13 @@
 
 <span class="k">class</span> <span class="nc">TorchData</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">species_order</span><span class="p">,</span> <span class="n">subtract_self_energies</span><span class="p">,</span> <span class="n">self_energies</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span>
+                 <span class="n">batch_size</span><span class="p">,</span>
+                 <span class="n">other_properties</span><span class="p">,</span>
+                 <span class="n">include_energies</span><span class="p">,</span>
+                 <span class="n">species_order</span><span class="p">,</span>
+                 <span class="n">subtract_self_energies</span><span class="p">,</span>
+                 <span class="n">self_energies</span><span class="p">):</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">TorchData</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -525,38 +617,55 @@
             <span class="n">species_dict</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
             <span class="n">self_energies_dict</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">self_energies</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_species</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_coordinates</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data_energies</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data_self_energies</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">data_self_energies</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span> <span class="o">=</span> <span class="n">other_properties</span>
 
+        <span class="c1"># whether include energies to properties</span>
+        <span class="k">if</span> <span class="n">include_energies</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_energies_to_properties</span><span class="p">()</span>
+        <span class="c1"># let user check the properties will be loaded</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_properties</span><span class="p">()</span>
+
+        <span class="c1"># anidataloader</span>
         <span class="n">anidata</span> <span class="o">=</span> <span class="n">anidataloader</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
         <span class="n">anidata_size</span> <span class="o">=</span> <span class="n">anidata</span><span class="o">.</span><span class="n">group_size</span><span class="p">()</span>
-        <span class="n">enable_pkbar</span> <span class="o">=</span> <span class="n">anidata_size</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="ow">and</span> <span class="n">PKBAR_INSTALLED</span>
-        <span class="k">if</span> <span class="n">enable_pkbar</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enable_pkbar</span> <span class="o">=</span> <span class="n">anidata_size</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="ow">and</span> <span class="n">PKBAR_INSTALLED</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_pkbar</span><span class="p">:</span>
             <span class="n">pbar</span> <span class="o">=</span> <span class="n">pkbar</span><span class="o">.</span><span class="n">Pbar</span><span class="p">(</span><span class="s1">&#39;=&gt; loading h5 dataset into cpu memory, total molecules: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">anidata_size</span><span class="p">),</span> <span class="n">anidata_size</span><span class="p">)</span>
 
+        <span class="c1"># load h5 data into cpu memory as lists</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">molecule</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">anidata</span><span class="p">):</span>
+            <span class="c1"># conformations</span>
             <span class="n">num_conformations</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">molecule</span><span class="p">[</span><span class="s1">&#39;coordinates&#39;</span><span class="p">])</span>
+            <span class="c1"># species and coordinates</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data_coordinates</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">molecule</span><span class="p">[</span><span class="s1">&#39;coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_conformations</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data_energies</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">molecule</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
             <span class="n">species</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">species_dict</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">molecule</span><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data_species</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="p">(</span><span class="n">num_conformations</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+            <span class="c1"># if subtract_self_energies</span>
             <span class="k">if</span> <span class="n">subtract_self_energies</span><span class="p">:</span>
                 <span class="n">self_energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="n">self_energies_dict</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">molecule</span><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]]))</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">data_self_energies</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">self_energies</span><span class="p">,</span> <span class="p">(</span><span class="n">num_conformations</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
-            <span class="k">if</span> <span class="n">enable_pkbar</span><span class="p">:</span>
+                <span class="n">data_self_energies</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">self_energies</span><span class="p">,</span> <span class="p">(</span><span class="n">num_conformations</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+            <span class="c1"># properties</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">molecule</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_conformations</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="c1"># pkbar update</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_pkbar</span><span class="p">:</span>
                 <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">subtract_self_energies</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data_energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_energies</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_self_energies</span><span class="p">)</span>
-            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_self_energies</span>
-            <span class="k">del</span> <span class="n">self_energies</span>
+        <span class="c1"># if subtract self energies</span>
+        <span class="k">if</span> <span class="n">subtract_self_energies</span> <span class="ow">and</span> <span class="s1">&#39;energies&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_self_energies</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">data_self_energies</span>
             <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_species</span><span class="p">)</span>
-        <span class="n">anidata</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
 
+        <span class="c1"># clean trash</span>
+        <span class="n">anidata</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
         <span class="k">del</span> <span class="n">num_conformations</span>
         <span class="k">del</span> <span class="n">species</span>
         <span class="k">del</span> <span class="n">anidata</span>
@@ -569,20 +678,52 @@
 
         <span class="n">species</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_species</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
         <span class="n">coordinates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_coordinates</span><span class="p">[</span><span class="n">index</span><span class="p">])</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
-        <span class="n">energies</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_energies</span><span class="p">[</span><span class="n">index</span><span class="p">])</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="n">properties</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">:</span>
+            <span class="n">properties</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">index</span><span class="p">])</span>
 
-        <span class="k">return</span> <span class="p">[</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">energies</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">properties</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span>
 
+    <span class="k">def</span> <span class="nf">add_energies_to_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># if user does not provide energies info</span>
+        <span class="k">if</span> <span class="s1">&#39;properties&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span> <span class="ow">and</span> <span class="s1">&#39;energies&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]:</span>
+            <span class="c1"># setup energies info, so the user does not need to input energies</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;energies&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padding_values&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padded_shapes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;dtypes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="c1"># if no properties provided</span>
+        <span class="k">if</span> <span class="s1">&#39;properties&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">],</span>
+                                    <span class="s1">&#39;padding_values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">],</span>
+                                    <span class="s1">&#39;padded_shapes&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="p">)],</span>
+                                    <span class="s1">&#39;dtypes&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+                                    <span class="p">}</span>
 
-<span class="k">def</span> <span class="nf">collate_fn</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">chunk_threshold</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">check_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># print properties information</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;... The following properties will be loaded:&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">prop</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_properties</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: (dtype: </span><span class="si">{}</span><span class="s1">, padding_value: </span><span class="si">{}</span><span class="s1">, padded_shape: </span><span class="si">{}</span><span class="s1">)&#39;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;dtypes&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padding_values&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padded_shapes&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]))</span>
+
+    <span class="k">def</span> <span class="nf">get_properties_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties_info</span>
+
+
+<span class="k">def</span> <span class="nf">collate_fn</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">chunk_threshold</span><span class="p">,</span> <span class="n">properties_info</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Creates a batch of chunked data.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># unzip a batch of molecules (each molecule is a list)</span>
-    <span class="n">batch_species</span><span class="p">,</span> <span class="n">batch_coordinates</span><span class="p">,</span> <span class="n">batch_energies</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">batch_species</span><span class="p">,</span> <span class="n">batch_coordinates</span><span class="p">,</span> <span class="n">batch_properties</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">data</span><span class="p">)</span>
+
     <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_species</span><span class="p">)</span>
 
     <span class="c1"># padding - time: 13.2s</span>
@@ -592,7 +733,6 @@
     <span class="n">batch_coordinates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">rnn</span><span class="o">.</span><span class="n">pad_sequence</span><span class="p">(</span><span class="n">batch_coordinates</span><span class="p">,</span>
                                                         <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                                         <span class="n">padding_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">batch_energies</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">batch_energies</span><span class="p">)</span>
 
     <span class="c1"># sort - time: 0.7s</span>
     <span class="n">atoms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="p">(</span><span class="n">batch_species</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
@@ -600,7 +740,6 @@
 
     <span class="n">batch_species</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">batch_species</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">sorted_atoms_idx</span><span class="p">)</span>
     <span class="n">batch_coordinates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">batch_coordinates</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">sorted_atoms_idx</span><span class="p">)</span>
-    <span class="n">batch_energies</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">batch_energies</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">sorted_atoms_idx</span><span class="p">)</span>
 
     <span class="c1"># get chunk size - time: 2.1s</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="nb">sorted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -623,7 +762,24 @@
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chunks</span><span class="p">):</span>
         <span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
 
-    <span class="n">properties</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;energies&#39;</span><span class="p">:</span> <span class="n">batch_energies</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()}</span>
+    <span class="c1"># properties</span>
+    <span class="n">properties</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]):</span>
+        <span class="c1"># get a batch of property</span>
+        <span class="n">prop</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">batch_properties</span><span class="p">)</span>
+        <span class="c1"># padding and convert to tensor</span>
+        <span class="k">if</span> <span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padding_values&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">prop</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">rnn</span><span class="o">.</span><span class="n">pad_sequence</span><span class="p">(</span><span class="n">batch_species</span><span class="p">,</span>
+                                                   <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                   <span class="n">padding_value</span><span class="o">=</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padding_values&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+        <span class="c1"># sort with number of atoms</span>
+        <span class="n">prop</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">sorted_atoms_idx</span><span class="p">)</span>
+        <span class="c1"># set property shape and dtype</span>
+        <span class="n">padded_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;padded_shapes&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">padded_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># the last batch may does not have one batch data</span>
+        <span class="n">properties</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">prop</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">padded_shape</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">properties_info</span><span class="p">[</span><span class="s1">&#39;dtypes&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
 
     <span class="c1"># return: [chunk1, chunk2, ...], {&quot;energies&quot;, &quot;force&quot;, ...} in which chunk1=(species, coordinates)</span>
     <span class="c1"># e.g. chunk1 = [[1807, 21], [1807, 21, 3]], chunk2 = [[193, 50], [193, 50, 3]]</span>

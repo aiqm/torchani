@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>TorchANI &mdash; TorchANI 0.9 documentation</title>
+  <title>TorchANI &mdash; TorchANI 1.0.1 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.9
+                1.0.1
               </div>
             
           
@@ -93,6 +93,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="examples/energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/jit.html">Using TorchScript to serialize and deploy model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/vibration_analysis.html">Computing Vibrational Frequencies Using Analytical Hessian</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
@@ -186,23 +187,23 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>Rcr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – <span class="math notranslate nohighlight">\(R_C\)</span> in equation (2) when used at equation (3)
+<li><strong>Rcr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a>) – <span class="math notranslate nohighlight">\(R_C\)</span> in equation (2) when used at equation (3)
 in the <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI paper</a>.</li>
-<li><strong>Rca</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – <span class="math notranslate nohighlight">\(R_C\)</span> in equation (2) when used at equation (4)
+<li><strong>Rca</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a>) – <span class="math notranslate nohighlight">\(R_C\)</span> in equation (2) when used at equation (4)
 in the <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI paper</a>.</li>
-<li><strong>EtaR</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(\eta\)</span> in
+<li><strong>EtaR</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(\eta\)</span> in
 equation (3) in the <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI paper</a>.</li>
-<li><strong>ShfR</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(R_s\)</span> in
+<li><strong>ShfR</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(R_s\)</span> in
 equation (3) in the <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI paper</a>.</li>
-<li><strong>EtaA</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(\eta\)</span> in
+<li><strong>EtaA</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(\eta\)</span> in
 equation (4) in the <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI paper</a>.</li>
-<li><strong>Zeta</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(\zeta\)</span> in
+<li><strong>Zeta</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(\zeta\)</span> in
 equation (4) in the <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI paper</a>.</li>
-<li><strong>ShfA</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(R_s\)</span> in
+<li><strong>ShfA</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(R_s\)</span> in
 equation (4) in the <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI paper</a>.</li>
-<li><strong>ShfZ</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(\theta_s\)</span> in
+<li><strong>ShfZ</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – The 1D tensor of <span class="math notranslate nohighlight">\(\theta_s\)</span> in
 equation (4) in the <a class="reference external" href="http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract">ANI paper</a>.</li>
-<li><strong>num_species</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of supported atom types.</li>
+<li><strong>num_species</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – Number of supported atom types.</li>
 </ul>
 </td>
 </tr>
@@ -210,22 +211,23 @@ equation (4) in the <a class="reference external" href="http://pubs.rsc.org/en/C
 </table>
 <dl class="method">
 <dt id="torchani.AEVComputer.forward">
-<code class="descname">forward</code><span class="sig-paren">(</span><em>input_</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchani/aev.html#AEVComputer.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchani.AEVComputer.forward" title="Permalink to this definition">¶</a></dt>
+<code class="descname">forward</code><span class="sig-paren">(</span><em>input_</em>, <em>cell=None</em>, <em>pbc=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchani/aev.html#AEVComputer.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchani.AEVComputer.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute AEVs</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>input_</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)"><em>tuple</em></a>) – <p>Can be one of the following two cases:</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>input_</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.8)"><em>tuple</em></a>) – <p>Can be one of the following two cases:</p>
 <p>If you don’t care about periodic boundary conditions at all,
-then input can be a tuple of two tensors: species and coordinates.
-species must have shape <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">A)</span></code> and coordinates must have
-shape <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">A,</span> <span class="pre">3)</span></code>, where <code class="docutils literal notranslate"><span class="pre">C</span></code> is the number of molecules
-in a chunk, and <code class="docutils literal notranslate"><span class="pre">A</span></code> is the number of atoms.</p>
+then input can be a tuple of two tensors: species, coordinates.
+species must have shape <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">A)</span></code>, coordinates must have shape
+<code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">A,</span> <span class="pre">3)</span></code> where <code class="docutils literal notranslate"><span class="pre">C</span></code> is the number of molecules in a chunk,
+and <code class="docutils literal notranslate"><span class="pre">A</span></code> is the number of atoms.</p>
 <p>If you want to apply periodic boundary conditions, then the input
-would be a tuple of four tensors: species, coordinates, cell, pbc
-where species and coordinates are the same as described above, cell
-is a tensor of shape (3, 3) of the three vectors defining unit cell:</p>
+would be a tuple of two tensors (species, coordinates) and two keyword
+arguments <cite>cell=…</cite> , and <cite>pbc=…</cite> where species and coordinates are
+the same as described above, cell is a tensor of shape (3, 3) of the
+three vectors defining unit cell:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tensor</span><span class="p">([[</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">z1</span><span class="p">],</span>
         <span class="p">[</span><span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">z2</span><span class="p">],</span>
         <span class="p">[</span><span class="n">x3</span><span class="p">,</span> <span class="n">y3</span><span class="p">,</span> <span class="n">z3</span><span class="p">]])</span>
@@ -239,7 +241,7 @@ for that direction.</p>
 unchanged, and AEVs is a tensor of shape
 <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">A,</span> <span class="pre">self.aev_length())</span></code></td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.8)">tuple</a></td>
 </tr>
 </tbody>
 </table>
@@ -249,7 +251,7 @@ unchanged, and AEVs is a tensor of shape
 
 <dl class="class">
 <dt id="torchani.ANIModel">
-<em class="property">class </em><code class="descclassname">torchani.</code><code class="descname">ANIModel</code><span class="sig-paren">(</span><em>modules</em>, <em>reducer=&lt;built-in method sum of type object&gt;</em>, <em>padding_fill=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchani/nn.html#ANIModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchani.ANIModel" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchani.</code><code class="descname">ANIModel</code><span class="sig-paren">(</span><em>modules</em>, <em>padding_fill=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchani/nn.html#ANIModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchani.ANIModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>ANI model that compute properties from species and AEVs.</p>
 <p>Different atom types might have different modules, when computing
 properties, for each atom, the module for its corresponding atom type will
@@ -260,21 +262,18 @@ different atoms to obtain molecular properties.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>modules</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a>) – Modules for each atom
+<li><strong>modules</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a>) – Modules for each atom
 types. Atom types are distinguished by their order in
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">modules</span></code>, which means, for example <code class="docutils literal notranslate"><span class="pre">modules[i]</span></code> must be
 the module for atom type <code class="docutils literal notranslate"><span class="pre">i</span></code>. Different atom types can share a
 module by putting the same reference in <code class="xref py py-attr docutils literal notranslate"><span class="pre">modules</span></code>.</li>
-<li><strong>reducer</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Callable</span></code></a>) – The callable that reduce
-atomic outputs into molecular outputs. It must have signature
-<code class="docutils literal notranslate"><span class="pre">(tensor,</span> <span class="pre">dim)-&gt;tensor</span></code>.</li>
-<li><strong>padding_fill</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – The value to fill output of padding atoms.
+<li><strong>padding_fill</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a>) – The value to fill output of padding atoms.
 Padding values will participate in reducing, so this value should
 be appropriately chosen so that it has no effect on the result. For
-example, if the reducer is <a class="reference external" href="https://pytorch.org/docs/master/torch.html#torch.sum" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.sum()</span></code></a>, then
+example, if the reducer is <a class="reference external" href="https://pytorch.org/docs/master/torch.html#torch.sum" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.sum()</span></code></a>, then
 <code class="xref py py-attr docutils literal notranslate"><span class="pre">padding_fill</span></code> should be 0, and if the reducer is
-<a class="reference external" href="https://pytorch.org/docs/master/torch.html#torch.min" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.min()</span></code></a>, then <code class="xref py py-attr docutils literal notranslate"><span class="pre">padding_fill</span></code> should be
-<a class="reference external" href="https://docs.python.org/3/library/math.html#math.inf" title="(in Python v3.7)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">math.inf</span></code></a>.</li>
+<a class="reference external" href="https://pytorch.org/docs/master/torch.html#torch.min" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.min()</span></code></a>, then <code class="xref py py-attr docutils literal notranslate"><span class="pre">padding_fill</span></code> should be
+<a class="reference external" href="https://docs.python.org/3/library/math.html#math.inf" title="(in Python v3.8)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">math.inf</span></code></a>.</li>
 </ul>
 </td>
 </tr>
@@ -284,7 +283,7 @@ example, if the reducer is <a class="reference external" href="https://pytorch.o
 
 <dl class="class">
 <dt id="torchani.Ensemble">
-<em class="property">class </em><code class="descclassname">torchani.</code><code class="descname">Ensemble</code><span class="sig-paren">(</span><em>modules=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchani/nn.html#Ensemble"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchani.Ensemble" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchani.</code><code class="descname">Ensemble</code><span class="sig-paren">(</span><em>modules</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchani/nn.html#Ensemble"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchani.Ensemble" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the average output of an ensemble of modules.</p>
 </dd></dl>
 
@@ -292,17 +291,17 @@ example, if the reducer is <a class="reference external" href="https://pytorch.o
 <dt id="torchani.EnergyShifter">
 <em class="property">class </em><code class="descclassname">torchani.</code><code class="descname">EnergyShifter</code><span class="sig-paren">(</span><em>self_energies</em>, <em>fit_intercept=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchani/utils.html#EnergyShifter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchani.EnergyShifter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper class for adding and subtracting self atomic energies</p>
-<p>This is a subclass of <a class="reference external" href="https://pytorch.org/docs/master/nn.html#torch.nn.Module" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></a>, so it can be used directly
+<p>This is a subclass of <a class="reference external" href="https://pytorch.org/docs/master/nn.html#torch.nn.Module" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></a>, so it can be used directly
 in a pipeline as <code class="docutils literal notranslate"><span class="pre">[input-&gt;AEVComputer-&gt;ANIModel-&gt;EnergyShifter-&gt;output]</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>self_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a>) – Sequence of floating
+<li><strong>self_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a>) – Sequence of floating
 numbers for the self energy of each atom type. The numbers should
 be in order, i.e. <code class="docutils literal notranslate"><span class="pre">self_energies[i]</span></code> should be atom type <code class="docutils literal notranslate"><span class="pre">i</span></code>.</li>
-<li><strong>fit_intercept</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to calculate the intercept during the LSTSQ
+<li><strong>fit_intercept</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to calculate the intercept during the LSTSQ
 fit. The intercept will also be taken into account to shift energies.</li>
 </ul>
 </td>
@@ -324,13 +323,13 @@ fit. The intercept will also be taken into account to shift energies.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>species</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – Long tensor in shape
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>species</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – Long tensor in shape
 <code class="docutils literal notranslate"><span class="pre">(conformations,</span> <span class="pre">atoms)</span></code>.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">1D vector in shape <code class="docutils literal notranslate"><span class="pre">(conformations,)</span></code>
 for molecular self energies.</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a></td>
 </tr>
 </tbody>
 </table>
@@ -366,7 +365,7 @@ subtract self energies.</p>
 <p>The ANI model zoo that stores public ANI models.</p>
 <p>Currently the model zoo has two models: ANI-1x and ANI-1ccx. The classes
 of these two models are <a class="reference internal" href="#torchani.models.ANI1x" title="torchani.models.ANI1x"><code class="xref py py-class docutils literal notranslate"><span class="pre">ANI1x</span></code></a> and <a class="reference internal" href="#torchani.models.ANI1ccx" title="torchani.models.ANI1ccx"><code class="xref py py-class docutils literal notranslate"><span class="pre">ANI1ccx</span></code></a>,
-these are subclasses of <a class="reference external" href="https://pytorch.org/docs/master/nn.html#torch.nn.Module" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></a>.
+these are subclasses of <a class="reference external" href="https://pytorch.org/docs/master/nn.html#torch.nn.Module" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></a>.
 To use the models just instantiate them and either
 directly calculate energies or get an ASE calculator. For example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ani1x</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1x</span><span class="p">()</span>
@@ -420,9 +419,9 @@ atom types.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Path to one hdf5 files.</li>
-<li><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – batch size.</li>
-<li><strong>threshold_max</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – max threshould to test.</li>
+<li><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Path to one hdf5 files.</li>
+<li><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – batch size.</li>
+<li><strong>threshold_max</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – max threshould to test.</li>
 </ul>
 </td>
 </tr>
@@ -432,26 +431,39 @@ atom types.</p>
 
 <dl class="function">
 <dt id="torchani.data.ShuffledDataset">
-<code class="descclassname">torchani.data.</code><code class="descname">ShuffledDataset</code><span class="sig-paren">(</span><em>file_path, batch_size=1000, num_workers=0, shuffle=True, chunk_threshold=20, validation_split=0.0, species_order=['H', 'C', 'N', 'O'], subtract_self_energies=False, self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchani/data/new.html#ShuffledDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchani.data.ShuffledDataset" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">torchani.data.</code><code class="descname">ShuffledDataset</code><span class="sig-paren">(</span><em>file_path, batch_size=1000, num_workers=0, shuffle=True, chunk_threshold=20, other_properties={}, include_energies=True, validation_split=0.0, species_order=['H', 'C', 'N', 'O'], subtract_self_energies=False, self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchani/data/new.html#ShuffledDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchani.data.ShuffledDataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Shuffled Dataset which using <cite>torch.utils.data.DataLoader</cite>, it will shuffle at every epoch.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Path to one hdf5 file.</li>
-<li><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – batch size.</li>
-<li><strong>num_workers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – multiple process to prepare dataset at background when
+<li><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Path to one hdf5 file.</li>
+<li><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – batch size.</li>
+<li><strong>num_workers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – multiple process to prepare dataset at background when
 training is going.</li>
-<li><strong>shuffle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – whether to shuffle.</li>
-<li><strong>chunk_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – threshould to split batch into chunks. Set to <code class="docutils literal notranslate"><span class="pre">None</span></code>
-will not split chunks.</li>
-<li><strong>validation_split</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Float between 0 and 1. Fraction of the dataset to be used
+<li><strong>shuffle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – whether to shuffle.</li>
+<li><strong>chunk_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – threshould to split batch into chunks. Set to <code class="docutils literal notranslate"><span class="pre">None</span></code> will not split chunks.
+Use <code class="docutils literal notranslate"><span class="pre">torchani.data.find_threshold</span></code> to find resonable <code class="docutils literal notranslate"><span class="pre">chunk_threshold</span></code>.</li>
+<li><strong>other_properties</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – <p>A dict which is used to extract properties other than
+<code class="docutils literal notranslate"><span class="pre">energies</span></code> from dataset with correct padding, shape and dtype.</p>
+<p>The example below will extract <code class="docutils literal notranslate"><span class="pre">dipoles</span></code> and <code class="docutils literal notranslate"><span class="pre">forces</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">padding_values</span></code>: set to <code class="docutils literal notranslate"><span class="pre">None</span></code> means there is no need to pad for this property.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">other_properties</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;dipoles&#39;</span><span class="p">,</span> <span class="s1">&#39;forces&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;padding_values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                    <span class="s1">&#39;padded_shapes&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)],</span>
+                    <span class="s1">&#39;dtypes&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">]</span>
+                    <span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><strong>include_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether include energies into properties. Default is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</li>
+<li><strong>validation_split</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a>) – Float between 0 and 1. Fraction of the dataset to be used
 as validation data.</li>
-<li><strong>species_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – a list which specify how species are transfomed to int.
+<li><strong>species_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a>) – a list which specify how species are transfomed to int.
 for example: <code class="docutils literal notranslate"><span class="pre">['H',</span> <span class="pre">'C',</span> <span class="pre">'N',</span> <span class="pre">'O']</span></code> means <code class="docutils literal notranslate"><span class="pre">{'H':</span> <span class="pre">0,</span> <span class="pre">'C':</span> <span class="pre">1,</span> <span class="pre">'N':</span> <span class="pre">2,</span> <span class="pre">'O':</span> <span class="pre">3}</span></code>.</li>
-<li><strong>subtract_self_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – whether subtract self energies from <code class="docutils literal notranslate"><span class="pre">energies</span></code>.</li>
-<li><strong>self_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – if <cite>subtract_self_energies</cite> is True, the order should keep
+<li><strong>subtract_self_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – whether subtract self energies from <code class="docutils literal notranslate"><span class="pre">energies</span></code>.</li>
+<li><strong>self_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a>) – if <cite>subtract_self_energies</cite> is True, the order should keep
 the same as <code class="docutils literal notranslate"><span class="pre">species_order</span></code>.
 for example :<code class="docutils literal notranslate"><span class="pre">[-0.600953,</span> <span class="pre">-38.08316,</span> <span class="pre">-54.707756,</span> <span class="pre">-75.194466]</span></code> will be
 converted to <code class="docutils literal notranslate"><span class="pre">{'H':</span> <span class="pre">-0.600953,</span> <span class="pre">'C':</span> <span class="pre">-38.08316,</span> <span class="pre">'N':</span> <span class="pre">-54.707756,</span> <span class="pre">'O':</span> <span class="pre">-75.194466}</span></code>.</li>
@@ -474,23 +486,39 @@ tuple of <code class="docutils literal notranslate"><span class="pre">(species,<
 
 <dl class="class">
 <dt id="torchani.data.CachedDataset">
-<em class="property">class </em><code class="descclassname">torchani.data.</code><code class="descname">CachedDataset</code><span class="sig-paren">(</span><em>file_path, batch_size=1000, device='cpu', chunk_threshold=20, species_order=['H', 'C', 'N', 'O'], subtract_self_energies=False, self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchani/data/new.html#CachedDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchani.data.CachedDataset" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">torchani.data.</code><code class="descname">CachedDataset</code><span class="sig-paren">(</span><em>file_path, batch_size=1000, device='cpu', chunk_threshold=20, other_properties={}, include_energies=True, species_order=['H', 'C', 'N', 'O'], subtract_self_energies=False, self_energies=[-0.600953, -38.08316, -54.707756, -75.194466]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchani/data/new.html#CachedDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchani.data.CachedDataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cached Dataset which is shuffled once, but the dataset keeps the same at every epoch.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Path to one hdf5 file.</li>
-<li><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – batch size.</li>
-<li><strong>chunk_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – threshould to split batch into chunks. Set to <code class="docutils literal notranslate"><span class="pre">None</span></code> will not split chunks.</li>
-<li><strong>species_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – a list which specify how species are transfomed to int.
+<li><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Path to one hdf5 file.</li>
+<li><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – batch size.</li>
+<li><strong>device</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – <code class="docutils literal notranslate"><span class="pre">'cuda'</span></code> or <code class="docutils literal notranslate"><span class="pre">'cpu'</span></code>, cache to CPU or GPU. Commonly, ‘cpu’ is already fast enough.
+Default is <code class="docutils literal notranslate"><span class="pre">'cpu'</span></code>.</li>
+<li><strong>chunk_threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – threshould to split batch into chunks. Set to <code class="docutils literal notranslate"><span class="pre">None</span></code> will not split chunks.
+Use <code class="docutils literal notranslate"><span class="pre">torchani.data.find_threshold</span></code> to find resonable <code class="docutils literal notranslate"><span class="pre">chunk_threshold</span></code>.</li>
+<li><strong>other_properties</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – <p>A dict which is used to extract properties other than
+<code class="docutils literal notranslate"><span class="pre">energies</span></code> from dataset with correct padding, shape and dtype.</p>
+<p>The example below will extract <code class="docutils literal notranslate"><span class="pre">dipoles</span></code> and <code class="docutils literal notranslate"><span class="pre">forces</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">padding_values</span></code>: set to <code class="docutils literal notranslate"><span class="pre">None</span></code> means there is no need to pad for this property.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">other_properties</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;dipoles&#39;</span><span class="p">,</span> <span class="s1">&#39;forces&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;padding_values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                    <span class="s1">&#39;padded_shapes&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)],</span>
+                    <span class="s1">&#39;dtypes&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">]</span>
+                    <span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><strong>include_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether include energies into properties. Default is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</li>
+<li><strong>species_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a>) – a list which specify how species are transfomed to int.
 for example: <code class="docutils literal notranslate"><span class="pre">['H',</span> <span class="pre">'C',</span> <span class="pre">'N',</span> <span class="pre">'O']</span></code> means <code class="docutils literal notranslate"><span class="pre">{'H':</span> <span class="pre">0,</span> <span class="pre">'C':</span> <span class="pre">1,</span> <span class="pre">'N':</span> <span class="pre">2,</span> <span class="pre">'O':</span> <span class="pre">3}</span></code>.</li>
-<li><strong>subtract_self_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – whether subtract self energies from <code class="docutils literal notranslate"><span class="pre">energies</span></code>.</li>
-<li><strong>self_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – if <cite>subtract_self_energies</cite> is True, the order should keep
+<li><strong>subtract_self_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – whether subtract self energies from <code class="docutils literal notranslate"><span class="pre">energies</span></code>.</li>
+<li><strong>self_energies</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a>) – if <cite>subtract_self_energies</cite> is True, the order should keep
 the same as <code class="docutils literal notranslate"><span class="pre">species_order</span></code>.
 for example :<code class="docutils literal notranslate"><span class="pre">[-0.600953,</span> <span class="pre">-38.08316,</span> <span class="pre">-54.707756,</span> <span class="pre">-75.194466]</span></code> will be converted
-to <code class="docutils literal notranslate"><span class="pre">{'H':</span> <span class="pre">-0.600953,</span> <span class="pre">'C':</span> <span class="pre">-38.08316,</span> <span class="pre">'N':</span> <span class="pre">-54.707756,</span> <span class="pre">'O':</span> <span class="pre">-75.194466}</span></code>..</li>
+to <code class="docutils literal notranslate"><span class="pre">{'H':</span> <span class="pre">-0.600953,</span> <span class="pre">'C':</span> <span class="pre">-38.08316,</span> <span class="pre">'N':</span> <span class="pre">-54.707756,</span> <span class="pre">'O':</span> <span class="pre">-75.194466}</span></code>.</li>
 </ul>
 </td>
 </tr>
@@ -520,7 +548,7 @@ tuple of <code class="docutils literal notranslate"><span class="pre">(species,<
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>validation_split</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Float between 0 and 1. Fraction of the dataset to be used
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>validation_split</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a>) – Float between 0 and 1. Fraction of the dataset to be used
 as validation data.</td>
 </tr>
 </tbody>
@@ -557,40 +585,40 @@ working with ignite.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Path to hdf5 files. If <code class="xref py py-attr docutils literal notranslate"><span class="pre">path</span></code> is a file, then that
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Path to hdf5 files. If <code class="xref py py-attr docutils literal notranslate"><span class="pre">path</span></code> is a file, then that
 file would be loaded using <a class="reference external" href="https://github.com/isayev/ASE_ANI/blob/master/lib/pyanitools.py">pyanitools.py</a>. If <code class="xref py py-attr docutils literal notranslate"><span class="pre">path</span></code> is
 a directory, then all files with suffix <cite>.h5</cite> or <cite>.hdf5</cite> will be
 loaded.</li>
-<li><strong>species_tensor_converter</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Callable</span></code></a>) – A
+<li><strong>species_tensor_converter</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Callable</span></code></a>) – A
 callable that convert species in the format of list of strings
 to 1D tensor.</li>
-<li><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of different 3D structures in a single
+<li><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – Number of different 3D structures in a single
 minibatch.</li>
-<li><strong>shuffle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to shuffle the whole dataset.</li>
-<li><strong>rm_outlier</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to discard the outlier energy conformers
+<li><strong>shuffle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to shuffle the whole dataset.</li>
+<li><strong>rm_outlier</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to discard the outlier energy conformers
 from a given dataset.</li>
-<li><strong>properties</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of keys of <cite>molecular</cite> properties in the
+<li><strong>properties</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a>) – List of keys of <cite>molecular</cite> properties in the
 dataset to be loaded. Here <cite>molecular</cite> means, no matter the number
 of atoms that property always have fixed size, i.e. the tensor
 shape of molecular properties should be (molecule, …). An example
 of molecular property is the molecular energies. <code class="docutils literal notranslate"><span class="pre">'species'</span></code> and
 <code class="docutils literal notranslate"><span class="pre">'coordinates'</span></code> are always loaded and need not to be specified
 anywhere.</li>
-<li><strong>atomic_properties</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of keys of <cite>atomic</cite> properties in the
+<li><strong>atomic_properties</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a>) – List of keys of <cite>atomic</cite> properties in the
 dataset to be loaded. Here <cite>atomic</cite> means, the size of property
 is proportional to the number of atoms in the molecule, i.e. the
 tensor shape of atomic properties should be (molecule, atoms, …).
 An example of atomic property is the forces. <code class="docutils literal notranslate"><span class="pre">'species'</span></code> and
 <code class="docutils literal notranslate"><span class="pre">'coordinates'</span></code> are always loaded and need not to be specified
 anywhere.</li>
-<li><strong>transform</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – List of <a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Callable</span></code></a> that
+<li><strong>transform</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a>) – List of <a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Callable</span></code></a> that
 transform the data. Callables must take atomic properties,
 properties as arguments, and return the transformed atomic
 properties and properties.</li>
 <li><strong>dtype</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">torch.dtype</span></code>) – dtype of coordinates and properties to
 to convert the dataset to.</li>
 <li><strong>device</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">torch.dtype</span></code>) – device to put tensors when iterating.</li>
-<li><strong>split</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – as sequence of integers or floats or <code class="docutils literal notranslate"><span class="pre">None</span></code>. Integers
+<li><strong>split</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a>) – as sequence of integers or floats or <code class="docutils literal notranslate"><span class="pre">None</span></code>. Integers
 are interpreted as number of elements, floats are interpreted as
 percentage, and <code class="docutils literal notranslate"><span class="pre">None</span></code> are interpreted as the rest of the dataset
 and can only appear as the last element of <code class="xref py py-class docutils literal notranslate"><span class="pre">split</span></code>. For
@@ -623,9 +651,9 @@ classes according to <code class="xref py py-attr docutils literal notranslate">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>dataset</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">torchani.data.PaddedBatchChunkDataset</span></code>) – the dataset to be cached</li>
 <li><strong>aev_computer</strong> (<a class="reference internal" href="#torchani.AEVComputer" title="torchani.AEVComputer"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchani.AEVComputer</span></code></a>) – the AEV computer used to compute aev</li>
-<li><strong>output</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – path to the directory where cache will be stored</li>
-<li><strong>progress_bar</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – whether to show progress bar</li>
-<li><strong>encoder</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Callable</span></code></a>) – The callable
+<li><strong>output</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – path to the directory where cache will be stored</li>
+<li><strong>progress_bar</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – whether to show progress bar</li>
+<li><strong>encoder</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Callable</span></code></a>) – The callable
 (species, aev) -&gt; (encoded_species, encoded_aev) that encode species and aev</li>
 </ul>
 </td>
@@ -653,7 +681,7 @@ rather than compute it from scratch everytime we use it.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>disk_cache</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Directory storing disk caches.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>disk_cache</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Directory storing disk caches.</td>
 </tr>
 </tbody>
 </table>
@@ -676,13 +704,13 @@ shape.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>species</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a>) – sequence of species.
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>species</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a>) – sequence of species.
 Species must be of shape <code class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">A)</span></code>, where <code class="docutils literal notranslate"><span class="pre">N</span></code> is the number of
 3D structures, <code class="docutils literal notranslate"><span class="pre">A</span></code> is the number of atoms.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">species batched together.</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a></td>
 </tr>
 </tbody>
 </table>
@@ -699,9 +727,9 @@ are <cite>{‘species’: padded_tensor, …}</cite></p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>species_coordinates</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a>) – sequence of
+<li><strong>species_coordinates</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a>) – sequence of
 atomic properties.</li>
-<li><strong>padding_values</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – the value to fill to pad tensors to same size</li>
+<li><strong>padding_values</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – the value to fill to pad tensors to same size</li>
 </ul>
 </td>
 </tr>
@@ -717,11 +745,11 @@ atomic properties.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>species</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – 1D vector of shape <code class="docutils literal notranslate"><span class="pre">(atoms,)</span></code></td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>species</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – 1D vector of shape <code class="docutils literal notranslate"><span class="pre">(atoms,)</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">1D vector storing present atom types sorted.</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a></td>
 </tr>
 </tbody>
 </table>
@@ -735,11 +763,11 @@ atomic properties.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>atomic_properties</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – properties to strip</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>atomic_properties</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – properties to strip</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">same set of properties with redundant padding atoms stripped.</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)">dict</a></td>
 </tr>
 </tbody>
 </table>
@@ -754,7 +782,7 @@ atomic properties.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>cell</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – <p>tensor of shape (3, 3) of the three
+<li><strong>cell</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – <p>tensor of shape (3, 3) of the three
 vectors defining unit cell:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tensor</span><span class="p">([[</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">z1</span><span class="p">],</span>
         <span class="p">[</span><span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">z2</span><span class="p">],</span>
@@ -762,9 +790,9 @@ vectors defining unit cell:</p>
 </pre></div>
 </div>
 </li>
-<li><strong>coordinates</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – Tensor of shape
+<li><strong>coordinates</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – Tensor of shape
 <code class="docutils literal notranslate"><span class="pre">(molecules,</span> <span class="pre">atoms,</span> <span class="pre">3)</span></code>.</li>
-<li><strong>pbc</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – boolean vector of size 3 storing
+<li><strong>pbc</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – boolean vector of size 3 storing
 if pbc is enabled for that direction.</li>
 </ul>
 </td>
@@ -772,7 +800,7 @@ if pbc is enabled for that direction.</li>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">coordinates of atoms mapped back to unit cell.</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a></p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a></p>
 </td>
 </tr>
 </tbody>
@@ -787,7 +815,7 @@ if pbc is enabled for that direction.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>all_species</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – sequence of all supported species, in order.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>all_species</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – sequence of all supported species, in order.</td>
 </tr>
 </tbody>
 </table>
@@ -802,11 +830,11 @@ if pbc is enabled for that direction.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>coordinates</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – Tensor of shape <cite>(molecules, atoms, 3)</cite></li>
-<li><strong>energies</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – Tensor of shape <cite>(molecules,)</cite>, if specified,
+<li><strong>coordinates</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – Tensor of shape <cite>(molecules, atoms, 3)</cite></li>
+<li><strong>energies</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – Tensor of shape <cite>(molecules,)</cite>, if specified,
 then <cite>forces</cite> must be <cite>None</cite>. This energies must be computed from
 <cite>coordinates</cite> in a graph.</li>
-<li><strong>forces</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – Tensor of shape <cite>(molecules, atoms, 3)</cite>, if specified,
+<li><strong>forces</strong> (<a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a>) – Tensor of shape <cite>(molecules, atoms, 3)</cite>, if specified,
 then <cite>energies</cite> must be <cite>None</cite>. This forces must be computed from
 <cite>coordinates</cite> in a graph.</li>
 </ul>
@@ -816,7 +844,7 @@ then <cite>energies</cite> must be <cite>None</cite>. This forces must be comput
 atoms in each molecule</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a></p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code></a></p>
 </td>
 </tr>
 </tbody>
@@ -865,7 +893,7 @@ NeuroChem sae file</p>
 <dl class="function">
 <dt id="torchani.neurochem.load_atomic_network">
 <code class="descclassname">torchani.neurochem.</code><code class="descname">load_atomic_network</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/torchani/neurochem.html#load_atomic_network"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#torchani.neurochem.load_atomic_network" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns an instance of <a class="reference external" href="https://pytorch.org/docs/master/nn.html#torch.nn.Sequential" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Sequential</span></code></a> with hyperparameters
+<dd><p>Returns an instance of <a class="reference external" href="https://pytorch.org/docs/master/nn.html#torch.nn.Sequential" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.Sequential</span></code></a> with hyperparameters
 and parameters loaded NeuroChem’s .nnf, .wparam and .bparam files.</p>
 </dd></dl>
 
@@ -879,9 +907,9 @@ NeuroChem’s network directory.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>species</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a>) – Sequence of strings for
+<li><strong>species</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a>) – Sequence of strings for
 chemical symbols of each supported atom type in correct order.</li>
-<li><strong>dir_</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – String for directory storing network configurations.</li>
+<li><strong>dir_</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – String for directory storing network configurations.</li>
 </ul>
 </td>
 </tr>
@@ -899,11 +927,11 @@ NeuroChem’s network directories beginning with the given prefix.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>species</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a>) – Sequence of strings for
+<li><strong>species</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a>) – Sequence of strings for
 chemical symbols of each supported atom type in correct order.</li>
-<li><strong>prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Prefix of paths of directory that networks configurations
+<li><strong>prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Prefix of paths of directory that networks configurations
 are stored.</li>
-<li><strong>count</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of models in the ensemble.</li>
+<li><strong>count</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – Number of models in the ensemble.</li>
 </ul>
 </td>
 </tr>
@@ -920,13 +948,13 @@ are stored.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Input file name</li>
+<li><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Input file name</li>
 <li><strong>device</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">torch.device</span></code>) – device to train the model</li>
-<li><strong>tqdm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – whether to enable tqdm</li>
-<li><strong>tensorboard</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Directory to store tensorboard log file, set to
+<li><strong>tqdm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – whether to enable tqdm</li>
+<li><strong>tensorboard</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Directory to store tensorboard log file, set to
 <code class="docutils literal notranslate"><span class="pre">None</span></code> to disable tensorboard.</li>
-<li><strong>aev_caching</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Whether to use AEV caching.</li>
-<li><strong>checkpoint_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of the checkpoint file, checkpoints
+<li><strong>aev_caching</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Whether to use AEV caching.</li>
+<li><strong>checkpoint_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Name of the checkpoint file, checkpoints
 will be stored in the network directory with this file name.</li>
 </ul>
 </td>
@@ -970,13 +998,13 @@ directory, otherwise it should be path to the dataset.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>species</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – sequence of all supported species, in order.</li>
+<li><strong>species</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequence</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – sequence of all supported species, in order.</li>
 <li><strong>aev_computer</strong> (<a class="reference internal" href="#torchani.AEVComputer" title="torchani.AEVComputer"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchani.AEVComputer</span></code></a>) – AEV computer.</li>
 <li><strong>model</strong> (<a class="reference internal" href="#torchani.ANIModel" title="torchani.ANIModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchani.ANIModel</span></code></a> or <a class="reference internal" href="#torchani.Ensemble" title="torchani.Ensemble"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchani.Ensemble</span></code></a>) – neural network potential models.</li>
 <li><strong>energy_shifter</strong> (<a class="reference internal" href="#torchani.EnergyShifter" title="torchani.EnergyShifter"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchani.EnergyShifter</span></code></a>) – Energy shifter.</li>
 <li><strong>dtype</strong> (<a class="reference internal" href="#torchani.EnergyShifter" title="torchani.EnergyShifter"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchani.EnergyShifter</span></code></a>) – data type to use,
 by dafault <code class="docutils literal notranslate"><span class="pre">torch.float64</span></code>.</li>
-<li><strong>overwrite</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – After wrapping atoms into central box, whether
+<li><strong>overwrite</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – After wrapping atoms into central box, whether
 to replace the original positions stored in <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#ase.Atoms" title="(in ASE)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ase.Atoms</span></code></a>
 object with the wrapped positions.</li>
 </ul>
@@ -1002,12 +1030,12 @@ object with the wrapped positions.</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>params</strong> (<em>iterable</em>) – iterable of parameters to optimize or dicts defining
 parameter groups</li>
-<li><strong>lr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em>, </em><em>optional</em>) – learning rate (default: 1e-3)</li>
-<li><strong>betas</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em>]</em><em>, </em><em>optional</em>) – coefficients used for computing
+<li><strong>lr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a><em>, </em><em>optional</em>) – learning rate (default: 1e-3)</li>
+<li><strong>betas</strong> (<em>Tuple</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a><em>]</em><em>, </em><em>optional</em>) – coefficients used for computing
 running averages of gradient and its square (default: (0.9, 0.999))</li>
-<li><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em>, </em><em>optional</em>) – term added to the denominator to improve
+<li><strong>eps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a><em>, </em><em>optional</em>) – term added to the denominator to improve
 numerical stability (default: 1e-8)</li>
-<li><strong>weight_decay</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em>, </em><em>optional</em>) – weight decay factor (default: 0)</li>
+<li><strong>weight_decay</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a><em>, </em><em>optional</em>) – weight decay factor (default: 0)</li>
 <li><strong>amsgrad</strong> (<em>boolean</em><em>, </em><em>optional</em>) – whether to use the AMSGrad variant of this
 algorithm from the paper <a class="reference external" href="https://openreview.net/forum?id=ryQu7f-RZ">On the Convergence of Adam and Beyond</a>
 (default: False)</li>
@@ -1033,8 +1061,8 @@ ignite. This class is designed to solve this issue.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>modules</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Mapping</span></code></a>) – same as the argument in
-<a class="reference external" href="https://pytorch.org/docs/master/nn.html#torch.nn.ModuleDict" title="(in PyTorch vmaster (1.3.0a0+664555c ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.ModuleDict</span></code></a>.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>modules</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Mapping</span></code></a>) – same as the argument in
+<a class="reference external" href="https://pytorch.org/docs/master/nn.html#torch.nn.ModuleDict" title="(in PyTorch vmaster (1.4.0a0+104bb57 ))"><code class="xref py py-class docutils literal notranslate"><span class="pre">torch.nn.ModuleDict</span></code></a>.</td>
 </tr>
 </tbody>
 </table>
