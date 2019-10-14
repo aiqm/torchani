@@ -82,6 +82,10 @@ pip install sphinx sphinx-gallery pillow matplotlib sphinx_rtd_theme
 
 To manually run unit tests, do `python setup.py nosetests`
 
+If you opened a pull request, you could see your generated documents at https://aiqm.github.io/torchani-test-docs/ after you `docs` check succeed.
+Keep in mind that this repository is only for the purpose of convenience of development, and only keeps the latest push.
+The CI runing for other pull requests might overwrite this repository. You could rerun the `docs` check to overwrite this repo to your build.
+
 # Note to TorchANI developers
 
 Never commit to the master branch directly. If you need to change something, create a new branch, submit a PR on GitHub.
