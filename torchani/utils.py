@@ -215,8 +215,8 @@ class EnergyShifter(torch.nn.Module):
         """(species, molecular energies)->(species, molecular energies + sae)
         """
         species, energies = species_energies
-        sae = self.sae(species).to(energies.dtype).to(energies.device)
-        return species, energies + sae
+        sae = self.sae(species).to(energies.device)
+        return species, energies.to(sae.dtype) + sae
 
 
 class ChemicalSymbolsToInts:
