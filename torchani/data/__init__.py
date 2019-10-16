@@ -317,9 +317,9 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
         mean = scaled_diff[torch.abs(scaled_diff) < 15.0].mean()
         std = scaled_diff[torch.abs(scaled_diff) < 15.0].std()
 
-        # -15 * std + mean < scaled_diff < +11 * std + mean
-        tol = 13.0 * std + mean
-        low_idx = (torch.abs(scaled_diff + 2.0 * std) < tol).nonzero().squeeze()
+        # -8 * std + mean < scaled_diff < +8 * std + mean
+        tol = 8.0 * std + mean
+        low_idx = (torch.abs(scaled_diff) < tol).nonzero().squeeze()
         outlier_count = molecules - low_idx.numel()
 
         # discard outlier energy conformers if exist
