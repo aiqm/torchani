@@ -40,7 +40,7 @@ class ANIModel(torch.nn.Module):
         aev = aev.flatten(0, 1)
 
         output = torch.full(species_.shape, self.padding_fill,
-                            dtype=aev.dtype)
+                            dtype=aev.dtype, device=species.device)
         i = 0
         for m in self.module_list:
             mask = (species_ == i)
