@@ -1,11 +1,4 @@
 #-*- coding: utf-8 -*-
-import torch
-import torchani
-import os
-import math
-import tqdm
-import pickle
-
 """
 .. _dipole-training-example:
 Train Neural Network Potential To Both Energies and Dipoles
@@ -14,6 +7,13 @@ We have seen how to train a neural network potential by manually writing
 training loop in :ref:`training-example`. This tutorial shows how to modify
 that script to train to dipoles.
 """
+
+import torch
+import torchani
+import os
+import math
+import tqdm
+
 
 ###############################################################################
 # Most part of the script are the same as :ref:`training-example`, we will omit
@@ -321,7 +321,6 @@ def validate():
         true_dipoles *= 0.20819434
         predicted_energies = []
         predicted_dipoles = []
-        excess_charge = []
         for chunk_species, chunk_coordinates in batch_x:
             s, chunk_energies, chunk_dipoles = model((chunk_species, chunk_coordinates))
             predicted_energies.append(chunk_energies)

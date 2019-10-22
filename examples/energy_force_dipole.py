@@ -185,7 +185,6 @@ O_network = torch.nn.Sequential(
 nn = ANIModelDipole([H_network, C_network, N_network, O_network], aev_computer)
 
 
-species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
 latest_checkpoint = 'latest.pt'
 checkpoint = torch.load(latest_checkpoint)
 nn.load_state_dict(checkpoint['nn'])
