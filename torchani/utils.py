@@ -192,7 +192,7 @@ class EnergyShifter(torch.nn.Module):
             intercept = self.self_energies[-1]
 
         self_energies = self.self_energies[species]
-        self_energies[species == torch.tensor(-1, device=species.device)] = torch.tensor(0, device=species.device)
+        self_energies[species == torch.tensor(-1, device=species.device)] = torch.tensor(0, device=self_energies.device)
         return self_energies.sum(dim=1) + intercept
 
     def subtract_from_dataset(self, atomic_properties, properties):
