@@ -8,7 +8,6 @@ import tqdm
 
 
 HARTREE2KCAL = 627.509
-dtype = torch.float32
 
 # parse command line arguments
 parser = argparse.ArgumentParser()
@@ -21,7 +20,7 @@ parser.add_argument('-d', '--device',
 parser = parser.parse_args()
 
 # run benchmark
-ani1x = torchani.models.ANI1x().to(dtype).to(parser.device)
+ani1x = torchani.models.ANI1x().to(parser.device)
 
 
 def recursive_h5_files(base):
@@ -80,14 +79,11 @@ def do_benchmark(model):
     rmse_averager_force = Averager()
     for i in tqdm.tqdm(dataset, position=0, desc="dataset"):
         # read
-        coordinates = torch.tensor(
-            i['coordinates'], dtype=dtype, device=parser.device)
+        coordinates = torch.tensor(i['coordinates'], device=parser.device)
         species = model.species_to_tensor(i['species']) \
                        .unsqueeze(0).expand(coordinates.shape[0], -1)
-        energies = torch.tensor(i['energies'], dtype=dtype,
-                                device=parser.device)
-        forces = torch.tensor(i['forces'], dtype=dtype,
-                              device=parser.device)
+        energies = torch.tensor(i['energies'], device=parser.device)
+        forces = torch.tensor(i['forces'], device=parser.device)
         # compute
         energies2, forces2 = by_batch(species, coordinates, model)
         ediff = energies - energies2
