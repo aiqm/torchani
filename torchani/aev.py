@@ -339,7 +339,7 @@ class AEVComputer(torch.nn.Module):
         self.Rcr = Rcr
         self.Rca = Rca
         assert Rca <= Rcr, "Current implementation of AEVComputer assumes Rca <= Rcr"
-        z# convert constant tensors to a ready-to-broadcast shape
+        # convert constant tensors to a ready-to-broadcast shape
         # shape convension (..., EtaR, ShfR)
         self.register_buffer('EtaR', EtaR.view(-1, 1))
         self.register_buffer('ShfR', ShfR.view(1, -1))
