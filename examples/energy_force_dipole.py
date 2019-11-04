@@ -13,7 +13,8 @@ import torchani
 # Let's now manually specify the device we want TorchANI to run:
 device = torch.device('cpu')
 
-#Next we define the ANI Model we will use
+# Next we define the ANI Model we will use
+
 
 class ANIModelDipole(torch.nn.ModuleList):
     """ANI model that computes dipoles and energies from species and AEVs.
@@ -52,30 +53,30 @@ class ANIModelDipole(torch.nn.ModuleList):
         return padding_mask
 
     def get_atom_neighbor_mask(self, atom_mask):
-        atom_neighbor_mask = atom_mask.unsqueeze(1)*atom_mask.unsqueeze(2)
+        atom_neighbor_mask = atom_mask.unsqueeze(1) * atom_mask.unsqueeze(2)
         assert atom_neighbor_mask.sum() > 1.e-6
         return atom_neighbor_mask
 
     def get_coulomb(self, charges, coordinates, species):
-        dist=coordinates.unsqueeze(1) - coordinates.unsqueeze(2)
-        #add 1e-6 to prevent sqrt(0) errors
-        distances=torch.sqrt(torch.sum(dist**2,dim=-1)+1e-6).unsqueeze(-1)
+        dist = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)
+        # add 1e-6 to prevent sqrt(0) errors
+        distances = torch.sqrt(torch.sum(dist**2, dim=-1) + 1e-6).unsqueeze(-1)
         # Mask for padding atoms in distance matrix.
         distance_matrix_mask = self.get_atom_neighbor_mask(self.get_atom_mask(species))
         charges = charges.unsqueeze(2)
-        charge_products = charges.unsqueeze(1)*charges.unsqueeze(2)
-        coulomb = charge_products/distances
+        charge_products = charges.unsqueeze(1) * charges.unsqueeze(2)
+        coulomb = charge_products / distances
         coulomb = coulomb * distance_matrix_mask
         coulomb = coulomb.squeeze(-1)
         coulomb = torch.triu(coulomb, diagonal=1)
-        coulomb = torch.sum(coulomb, dim=(1,2))
+        coulomb = torch.sum(coulomb, dim=(1, 2))
         return coulomb
 
     def get_dipole(self, xyz, charge):
         charge = charge.unsqueeze(1)
-        xyz = xyz.permute(0,2,1)
-        dipole = charge*xyz
-        dipole = dipole.permute(0,2,1)
+        xyz = xyz.permute(0, 2, 1)
+        dipole = charge * xyz
+        dipole = dipole.permute(0, 2, 1)
         dipole = torch.sum(dipole,dim=1)
         return dipole
 
@@ -89,7 +90,7 @@ class ANIModelDipole(torch.nn.ModuleList):
         output = torch.full_like(species_, self.padding_fill,
                                  dtype=aev.dtype)
         output_c = torch.full_like(species_, self.padding_fill,
-                                 dtype=aev.dtype)
+                                   dtype=aev.dtype)
         for i in present_species:
             # Check that none of the weights are nan.
             for parameter in self[i].parameters():
@@ -97,26 +98,22 @@ class ANIModelDipole(torch.nn.ModuleList):
             mask = (species_ == i)
             input_ = aev.index_select(0, mask.nonzero().squeeze())
             res = self[i](input_)
-            output.masked_scatter_(mask, res[:,0].squeeze())
-            output_c.masked_scatter_(mask, res[:,1].squeeze())
+            output.masked_scatter_(mask, res[:, 0].squeeze())
+            output_c.masked_scatter_(mask, res[:, 1].squeeze())
         output = output.view_as(species)
         output_c = output_c.view_as(species)
 
-        #Maintain conservation of charge
-        excess_charge = (torch.full_like(output_c[:,0],total_charge)-torch.sum(output_c,dim=1))/output_c.shape[1]
+        # Maintain conservation of charge
+        excess_charge = (torch.full_like(output_c[:, 0], total_charge) - torch.sum(output_c, dim=1)) / output_c.shape[1]
         excess_charge = excess_charge.unsqueeze(1)
-        output_c+=excess_charge
+        output_c += excess_charge
 
         coulomb = self.get_coulomb(output_c, coordinates, species)
 
-        output=self.reducer(output,dim=1)
-        output+=coulomb
-        dipole=self.get_dipole(coordinates, output_c)
+        output = self.reducer(output, dim=1)
+        output += coulomb
+        dipole = self.get_dipole(coordinates, output_c)
         return species, output, dipole
-
-
-
-
 
 
 Rcr = 5.2000e+00
@@ -131,7 +128,7 @@ num_species = 4
 aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
 species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
 
-#Define the values for the energy shifter
+# Define the values for the energy shifter
 energy_shifter = torchani.utils.EnergyShifter([
     -0.600952980000,  # H
     -38.08316124000,  # C
@@ -141,7 +138,7 @@ energy_shifter = torchani.utils.EnergyShifter([
 
 ###############################################################################
 
-#Define the network architecture. MAke sure this is the same as the network that will be loaded.
+# Define the network architecture. MAke sure this is the same as the network that will be loaded.
 H_network = torch.nn.Sequential(
     torch.nn.Linear(384, 60),
     torch.nn.CELU(0.1),

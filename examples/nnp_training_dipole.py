@@ -1,23 +1,19 @@
+# -*- coding: utf-8 -*-
 """
-.. _dipole-training-example:
-Train Neural Network Potential To Both Energies and Dipoles
-==========================================================
-We have seen how to train a neural network potential by manually writing
-training loop in :ref:`training-example`. This tutorial shows how to modify
-that script to train to dipoles.
+Computing Energy, Force, And Dipole Using Model
 """
-
-#-*- coding: utf-8 -*-
-import torch
-import torchani
-import os
-import math
-import tqdm
 
 ###############################################################################
-# Most part of the script are the same as :ref:`training-example`, we will omit
-# the comments for these parts. Please refer to :ref:`training-example` for more
-# information
+# To begin with, let's first import the modules we will use:
+from __future__ import print_function
+import torch
+import torchani
+
+###############################################################################
+# Let's now manually specify the device we want TorchANI to run:
+device = torch.device('cpu')
+
+# Next we define the ANI Model we will use
 
 
 class ANIModelDipole(torch.nn.ModuleList):
@@ -44,8 +40,9 @@ class ANIModelDipole(torch.nn.ModuleList):
             :obj:`math.inf`.
     """
 
-    def __init__(self, modules, aev_computer, padding_fill=0):
+    def __init__(self, modules, aev_computer, reducer=torch.sum, padding_fill=0):
         super(ANIModelDipole, self).__init__(modules)
+        self.reducer = reducer
         self.padding_fill = padding_fill
         self.aev_computer = aev_computer
 
@@ -56,30 +53,30 @@ class ANIModelDipole(torch.nn.ModuleList):
         return padding_mask
 
     def get_atom_neighbor_mask(self, atom_mask):
-        atom_neighbor_mask = atom_mask.unsqueeze(1)*atom_mask.unsqueeze(2)
+        atom_neighbor_mask = atom_mask.unsqueeze(1) * atom_mask.unsqueeze(2)
         assert atom_neighbor_mask.sum() > 1.e-6
         return atom_neighbor_mask
 
     def get_coulomb(self, charges, coordinates, species):
-        dist=coordinates.unsqueeze(1) - coordinates.unsqueeze(2)
-        #add 1e-6 to prevent sqrt(0) errors
-        distances=torch.sqrt(torch.sum(dist**2,dim=-1)+1e-6).unsqueeze(-1)
+        dist = coordinates.unsqueeze(1) - coordinates.unsqueeze(2)
+        # add 1e-6 to prevent sqrt(0) errors
+        distances = torch.sqrt(torch.sum(dist**2, dim=-1) + 1e-6).unsqueeze(-1)
         # Mask for padding atoms in distance matrix.
         distance_matrix_mask = self.get_atom_neighbor_mask(self.get_atom_mask(species))
         charges = charges.unsqueeze(2)
-        charge_products = charges.unsqueeze(1)*charges.unsqueeze(2)
-        coulomb = charge_products/distances
+        charge_products = charges.unsqueeze(1) * charges.unsqueeze(2)
+        coulomb = charge_products / distances
         coulomb = coulomb * distance_matrix_mask
         coulomb = coulomb.squeeze(-1)
         coulomb = torch.triu(coulomb, diagonal=1)
-        coulomb = torch.sum(coulomb, dim=(1,2))
+        coulomb = torch.sum(coulomb, dim=(1, 2))
         return coulomb
 
     def get_dipole(self, xyz, charge):
         charge = charge.unsqueeze(1)
-        xyz = xyz.permute(0,2,1)
-        dipole = charge*xyz
-        dipole = dipole.permute(0,2,1)
+        xyz = xyz.permute(0, 2, 1)
+        dipole = charge * xyz
+        dipole = dipole.permute(0, 2, 1)
         dipole = torch.sum(dipole,dim=1)
         return dipole
 
@@ -93,7 +90,7 @@ class ANIModelDipole(torch.nn.ModuleList):
         output = torch.full_like(species_, self.padding_fill,
                                  dtype=aev.dtype)
         output_c = torch.full_like(species_, self.padding_fill,
-                                 dtype=aev.dtype)
+                                   dtype=aev.dtype)
         for i in present_species:
             # Check that none of the weights are nan.
             for parameter in self[i].parameters():
@@ -101,26 +98,24 @@ class ANIModelDipole(torch.nn.ModuleList):
             mask = (species_ == i)
             input_ = aev.index_select(0, mask.nonzero().squeeze())
             res = self[i](input_)
-            output.masked_scatter_(mask, res[:,0].squeeze())
-            output_c.masked_scatter_(mask, res[:,1].squeeze())
+            output.masked_scatter_(mask, res[:, 0].squeeze())
+            output_c.masked_scatter_(mask, res[:, 1].squeeze())
         output = output.view_as(species)
         output_c = output_c.view_as(species)
 
-        #Maintain conservation of charge
-        excess_charge = (torch.full_like(output_c[:,0],total_charge)-torch.sum(output_c,dim=1))/output_c.shape[1]
+        # Maintain conservation of charge
+        excess_charge = (torch.full_like(output_c[:, 0], total_charge) - torch.sum(output_c, dim=1)) / output_c.shape[1]
         excess_charge = excess_charge.unsqueeze(1)
-        output_c+=excess_charge
-        
+        output_c += excess_charge
+
         coulomb = self.get_coulomb(output_c, coordinates, species)
 
-        output=torch.sum(output,dim=1)
-        output+=coulomb
-        dipole=self.get_dipole(coordinates, output_c)
+        output = self.reducer(output, dim=1)
+        output += coulomb
+        dipole = self.get_dipole(coordinates, output_c)
         return species, output, dipole
 
 
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 Rcr = 5.2000e+00
 Rca = 3.5000e+00
 EtaR = torch.tensor([1.6000000e+01], device=device)
@@ -131,36 +126,19 @@ EtaA = torch.tensor([8.0000000e+00], device=device)
 ShfA = torch.tensor([9.0000000e-01, 1.5500000e+00, 2.2000000e+00, 2.8500000e+00], device=device)
 num_species = 4
 aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
-energy_shifter = torchani.utils.EnergyShifter(None)
 species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
 
-try:
-    path = os.path.dirname(os.path.realpath(__file__))
-except NameError:
-    path = os.getcwd()
-dspath = os.path.join(path, '../datasets/mini_tz_dipoles.h5')
-
-
-batch_size=1280
-
-training, validation = torchani.data.load_ani_dataset(
-    dspath,
-    species_to_tensor,
-    batch_size,
-    device=device,
-    properties=['energies', 'dipoles'],
-    rm_outlier=True,
-    transform=[energy_shifter.subtract_from_dataset],
-    split=[0.8,None])
-
-
+# Define the values for the energy shifter
+energy_shifter = torchani.utils.EnergyShifter([
+    -0.600952980000,  # H
+    -38.08316124000,  # C
+    -54.70775770000,  # N
+    -75.19446356000,  # O
+])
 
 ###############################################################################
-# The neural network now outputs two values for each atom instead of one. 
-# An atomic contribution to energy, and a partial atomic charge which will
-# be used to determine the dipole moment of the molecule and coulombic 
-# contribution to energy.
 
+# Define the network architecture. MAke sure this is the same as the network that will be loaded.
 H_network = torch.nn.Sequential(
     torch.nn.Linear(384, 60),
     torch.nn.CELU(0.1),
@@ -201,204 +179,42 @@ O_network = torch.nn.Sequential(
     torch.nn.Linear(20, 2)
 )
 
-
 nn = ANIModelDipole([H_network, C_network, N_network, O_network], aev_computer)
-print(nn)
-
-###############################################################################
-# Initialize the weights and biases.
-#
-# .. note::
-#   Pytorch default initialization for the weights and biases in linear layers
-#   is Kaiming uniform. See: `TORCH.NN.MODULES.LINEAR`_
-#   We initialize the weights similarly but from the normal distribution.
-#   The biases were initialized to zero.
-#
-# .. _TORCH.NN.MODULES.LINEAR:
-#   https://pytorch.org/docs/stable/_modules/torch/nn/modules/linear.html#Linear
 
 
-def init_params(m):
-    if isinstance(m, torch.nn.Linear):
-        torch.nn.init.kaiming_normal_(m.weight, a=1.0)
-        torch.nn.init.zeros_(m.bias)
-
-
-nn.apply(init_params)
+latest_checkpoint = 'dipole-training-latest.pt'
+checkpoint = torch.load(latest_checkpoint)
+nn.load_state_dict(checkpoint['nn'])
 
 
 model = torch.nn.Sequential(nn).to(device)
 
-###############################################################################
-# Here we will use Adam with weight decay for the weights and Stochastic Gradient
-# Descent for biases.
+# Now let's define the coordinate and species. If you just want to compute the
+# energy, force, and dipole for a single structure like in this example, you need to
+# make the coordinate tensor has shape ``(1, Na, 3)`` and species has shape
+# ``(1, Na)``, where ``Na`` is the number of atoms in the molecule, the
+# preceding ``1`` in the shape is here to support batch processing like in
+# training. If you have ``N`` different structures to compute, then make it
+# ``N``.
 
-AdamW = torchani.optim.AdamW([
-    # H networks
-    {'params': [H_network[0].weight]},
-    {'params': [H_network[2].weight], 'weight_decay': 0.00001},
-    {'params': [H_network[4].weight], 'weight_decay': 0.000001},
-    {'params': [H_network[6].weight]},
-    # C networks
-    {'params': [C_network[0].weight]},
-    {'params': [C_network[2].weight], 'weight_decay': 0.00001},
-    {'params': [C_network[4].weight], 'weight_decay': 0.000001},
-    {'params': [C_network[6].weight]},
-    # N networks
-    {'params': [N_network[0].weight]},
-    {'params': [N_network[2].weight], 'weight_decay': 0.00001},
-    {'params': [N_network[4].weight], 'weight_decay': 0.000001},
-    {'params': [N_network[6].weight]},
-    # O networks
-    {'params': [O_network[0].weight]},
-    {'params': [O_network[2].weight], 'weight_decay': 0.00001},
-    {'params': [O_network[4].weight], 'weight_decay': 0.000001},
-    {'params': [O_network[6].weight]},
-])
+coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
+                             [-0.83140486, 0.39370209, -0.26395324],
+                             [-0.66518241, -0.84461308, 0.20759389],
+                             [0.45554739, 0.54289633, 0.81170881],
+                             [0.66091919, -0.16799635, -0.91037834]]],
+                           requires_grad=True, device=device)
+species = species_to_tensor('CHHHH').unsqueeze(0).to(device)
 
-SGD = torch.optim.SGD([
-    # H networks
-    {'params': [H_network[0].bias]},
-    {'params': [H_network[2].bias]},
-    {'params': [H_network[4].bias]},
-    {'params': [H_network[6].bias]},
-    # C networks
-    {'params': [C_network[0].bias]},
-    {'params': [C_network[2].bias]},
-    {'params': [C_network[4].bias]},
-    {'params': [C_network[6].bias]},
-    # N networks
-    {'params': [N_network[0].bias]},
-    {'params': [N_network[2].bias]},
-    {'params': [N_network[4].bias]},
-    {'params': [N_network[6].bias]},
-    # O networks
-    {'params': [O_network[0].bias]},
-    {'params': [O_network[2].bias]},
-    {'params': [O_network[4].bias]},
-    {'params': [O_network[6].bias]},
-], lr=1e-3)
-
-AdamW_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(AdamW, factor=0.5, patience=100, threshold=0)
-SGD_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(SGD, factor=0.5, patience=100, threshold=0)
 
 ###############################################################################
-# This part of the code is also the same
-latest_checkpoint = 'dipole-training-latest.pt'
+# Now let's compute energy, force:, and dipole
+_, energy, dipole = model((species, coordinates))
+_, energy = energy_shifter((species, energy))
+derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
+force = -derivative
 
 ###############################################################################
-# Resume training from previously saved checkpoints:
-if os.path.isfile(latest_checkpoint):
-    checkpoint = torch.load(latest_checkpoint)
-    nn.load_state_dict(checkpoint['nn'])
-    AdamW.load_state_dict(checkpoint['AdamW'])
-    SGD.load_state_dict(checkpoint['SGD'])
-    AdamW_scheduler.load_state_dict(checkpoint['AdamW_scheduler'])
-    SGD_scheduler.load_state_dict(checkpoint['SGD_scheduler'])
-
-###############################################################################
-# During training, we need to validate on validation set and if validation error
-# is better than the best, then save the new best model to a checkpoint
-
-# helper function to convert energy unit from Hartree to kcal/mol
-def hartree2kcal(x):
-    return 627.509 * x
-
-
-def validate():
-    # run validation
-    mse_sum = torch.nn.MSELoss(reduction='sum')
-    total_energy_mse = 0.0
-    total_dipole_mse = 0.0
-    count = 0
-    for batch_x, batch_y in validation:
-        true_energies = batch_y['energies']
-        true_dipoles = batch_y['dipoles']
-        predicted_energies = []
-        predicted_dipoles = []
-        for chunk_species, chunk_coordinates in batch_x:
-            s, chunk_energies, chunk_dipoles = model((chunk_species, chunk_coordinates))
-            predicted_energies.append(chunk_energies)
-            predicted_dipoles.append(chunk_dipoles)
-        predicted_energies = torch.cat(predicted_energies)
-        predicted_dipoles = torch.cat(predicted_dipoles)
-        total_dipole_mse += mse_sum(predicted_dipoles, true_dipoles).item()
-        total_energy_mse += mse_sum(predicted_energies, true_energies).item()
-        count += predicted_energies.shape[0]
-    return hartree2kcal(math.sqrt(total_energy_mse / count)), math.sqrt(total_dipole_mse/count)
-
-###############################################################################
-# In the training loop, we need to compute dipoles, and loss for dipoles
-mse = torch.nn.MSELoss(reduction='none')
-
-print("training starting from epoch", AdamW_scheduler.last_epoch + 1)
-# We only train 3 epoches here in able to generate the docs quickly.
-# Real training should take much more than 3 epoches.
-max_epochs = 3
-early_stopping_learning_rate = 1.0E-5
-best_model_checkpoint = 'dipole-training-best.pt'
-
-dipole_coefficient = 1.0
-energy_coefficient = 1.0
-
-for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
-    energy_rmse, dipole_rmse = validate()
-    total_rmse = energy_rmse+dipole_rmse
-    print('Epoch:', AdamW_scheduler.last_epoch+1)
-    print('Energy RMSE:', energy_rmse)
-    print('Dipole RMSE:', dipole_rmse)
-    print('Total RMSE:', total_rmse)
-
-    learning_rate = AdamW.param_groups[0]['lr']
-    
-    if learning_rate < early_stopping_learning_rate:
-        break
-
-    # checkpoint
-    if AdamW_scheduler.is_better(total_rmse, AdamW_scheduler.best):
-        torch.save(nn.state_dict(), best_model_checkpoint)
-
-    AdamW_scheduler.step(total_rmse)
-    SGD_scheduler.step(total_rmse)
-
-    for i, (batch_x, batch_y) in tqdm.tqdm(enumerate(training), total=len(training)):
-        true_energies = batch_y['energies']
-        true_dipoles = batch_y['dipoles']
-        predicted_energies = []
-        predicted_dipoles = []
-        num_atoms = []
-        force_loss = []
-        for chunk in batch_y['atomic']:
-            chunk_species = chunk['species']
-            chunk_coordinates = chunk['coordinates']
-            chunk_num_atoms = (chunk_species >=0).sum(dim=1).to(true_energies.dtype)
-            num_atoms.append(chunk_num_atoms)
-            chunk_coordinates.requires_grad_(True)
-            s, chunk_energies, chunk_dipoles = model((chunk_species, chunk_coordinates))
-            predicted_energies.append(chunk_energies)
-            predicted_dipoles.append(chunk_dipoles)
-            
-        num_atoms = torch.cat(num_atoms).to(true_energies.dtype)
-        predicted_energies = torch.cat(predicted_energies)
-        predicted_dipoles = torch.cat(predicted_dipoles)
-
-        # Now the total loss has two parts, energy loss and dipole loss
-        loss=0
-        energy_loss = (mse(predicted_energies, true_energies) / num_atoms).mean()
-        loss += energy_coefficient * energy_loss
-        dipole_loss = (torch.sum(torch.abs(predicted_dipoles-true_dipoles),dim=1) / num_atoms).mean()
-        loss += dipole_coefficient * dipole_loss
-
-        AdamW.zero_grad()
-        SGD.zero_grad()
-        loss.backward()
-        AdamW.step()
-        SGD.step()
-
-    torch.save({
-        'nn': nn.state_dict(),
-        'AdamW': AdamW.state_dict(),
-        'SGD': SGD.state_dict(),
-        'AdamW_scheduler': AdamW_scheduler.state_dict(),
-        'SGD_scheduler': SGD_scheduler.state_dict(),
-    }, latest_checkpoint)
+# And print to see the result:
+print('Energy:', energy.item())
+print('Dipole', dipole)
+print('Force:', force.squeeze())
