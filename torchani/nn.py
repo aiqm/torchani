@@ -69,6 +69,7 @@ class Ensemble(torch.nn.Module):
     def __getitem__(self, i):
         return self.modules_list[i]
 
+
 class Sequential(torch.nn.Module):
     """Modified Sequential module that accept Tuple type as input"""
 
