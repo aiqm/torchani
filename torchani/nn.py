@@ -95,20 +95,6 @@ class Ensemble(torch.nn.Module):
         return species, sum_ / 8.0
 
 
-class Sequential(torch.nn.Module):
-    """Modified Sequential module that accept Tuple type as input"""
-
-    def __init__(self, *modules):
-        super(Sequential, self).__init__()
-        self.modules_list = torch.nn.ModuleList(modules)
-
-    def forward(self, input_):
-        # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
-        for module in self.modules_list:
-            input_ = module(input_)
-        return input_
-
-
 class Gaussian(torch.nn.Module):
     """Gaussian activation"""
     def forward(self, x):

@@ -31,7 +31,7 @@ import torch
 from typing import Tuple
 from pkg_resources import resource_filename
 from . import neurochem
-from .nn import Sequential
+from torch.nn import Sequential
 from .aev import AEVComputer
 
 
