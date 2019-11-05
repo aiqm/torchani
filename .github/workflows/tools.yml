@@ -1,6 +1,12 @@
 name: tools
 
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   build:
