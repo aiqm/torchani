@@ -310,17 +310,16 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
         atomic_properties_, properties_ = t(atomic_properties_, properties_)
 
     if rm_outlier:
-        # This is how NeuroChem discard the outliers
         transformed_energies = properties_['energies']
         num_atoms = (atomic_properties_['species'] >= 0).to(transformed_energies.dtype).sum(dim=1)
         scaled_diff = transformed_energies / num_atoms.sqrt()
 
         mean = scaled_diff[torch.abs(scaled_diff) < 15.0].mean()
-        std = torch.abs(scaled_diff[torch.abs(scaled_diff) < 15.0]).std()
+        std = scaled_diff[torch.abs(scaled_diff) < 15.0].std()
 
-        # -15 * std + mean < scaled_diff < +11 * std + mean
-        tol = 13.0 * std + mean
-        low_idx = (torch.abs(scaled_diff + 2.0 * std) < tol).nonzero().squeeze()
+        # -8 * std + mean < scaled_diff < +8 * std + mean
+        tol = 8.0 * std + mean
+        low_idx = (torch.abs(scaled_diff) < tol).nonzero().squeeze()
         outlier_count = molecules - low_idx.numel()
 
         # discard outlier energy conformers if exist

@@ -192,7 +192,7 @@ class EnergyShifter(torch.nn.Module):
             intercept = self.self_energies[-1]
 
         self_energies = self.self_energies[species]
-        self_energies[species == torch.tensor(-1)] = torch.tensor(0)
+        self_energies[species == torch.tensor(-1, device=species.device)] = torch.tensor(0, device=species.device, dtype=torch.double)
         return self_energies.sum(dim=1) + intercept
 
     def subtract_from_dataset(self, atomic_properties, properties):
@@ -215,8 +215,8 @@ class EnergyShifter(torch.nn.Module):
         """(species, molecular energies)->(species, molecular energies + sae)
         """
         species, energies = species_energies
-        sae = self.sae(species).to(energies.dtype).to(energies.device)
-        return species, energies + sae
+        sae = self.sae(species).to(energies.device)
+        return species, energies.to(sae.dtype) + sae
 
 
 class ChemicalSymbolsToInts:
