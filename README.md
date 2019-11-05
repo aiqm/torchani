@@ -1,6 +1,11 @@
 # <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo1.png width=180/>  Accurate Neural Network Potential on PyTorch
 
-Build:
+Metrics:
+
+![PyPI](https://img.shields.io/pypi/v/torchani.svg)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/torchani.svg)
+
+Checks:
 
 [![Actions Status](https://github.com/aiqm/torchani/workflows/docs/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/flake8/badge.svg)](https://github.com/aiqm/torchani/actions)
@@ -8,16 +13,13 @@ Build:
 [![Actions Status](https://github.com/aiqm/torchani/workflows/runnable%20submodules/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/tools/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/unit%20tests/badge.svg)](https://github.com/aiqm/torchani/actions)
-
-Checks:
-
 [![CodeFactor](https://www.codefactor.io/repository/github/aiqm/torchani/badge/master)](https://www.codefactor.io/repository/github/aiqm/torchani/overview/master)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/aiqm/torchani.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/aiqm/torchani/alerts/)
 
-Deploy (these builds only succeed on tagged commits):
+Deploy:
 
-[![Build Status](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/Deploy%20docs?branchName=master)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=9?branchName=master)
-[![Build Status](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/Deploy%20PYPI?branchName=master)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=10?branchName=master)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-docs/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-pypi/badge.svg)](https://github.com/aiqm/torchani/actions)
 
 TorchANI is a pytorch implementation of ANI. It is currently under alpha release, which means, the API is not stable yet. If you find a bug of TorchANI, or have some feature request, feel free to open an issue on GitHub, or send us a pull request.
 
@@ -81,6 +83,10 @@ pip install sphinx sphinx-gallery pillow matplotlib sphinx_rtd_theme
 ```
 
 To manually run unit tests, do `python setup.py nosetests`
+
+If you opened a pull request, you could see your generated documents at https://aiqm.github.io/torchani-test-docs/ after you `docs` check succeed.
+Keep in mind that this repository is only for the purpose of convenience of development, and only keeps the latest push.
+The CI runing for other pull requests might overwrite this repository. You could rerun the `docs` check to overwrite this repo to your build.
 
 # Note to TorchANI developers
 

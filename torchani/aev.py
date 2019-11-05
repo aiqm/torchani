@@ -362,7 +362,7 @@ class AEVComputer(torch.nn.Module):
         self.aev_length = self.radial_length + self.angular_length
         self.sizes = self.num_species, self.radial_sublength, self.radial_length, self.angular_sublength, self.angular_length, self.aev_length
 
-        self.register_buffer('triu_index', triu_index(num_species))
+        self.register_buffer('triu_index', triu_index(num_species).to(device=self.EtaR.device))
 
         # Set up default cell and compute default shifts.
         # These values are used when cell and pbc switch are not given.
