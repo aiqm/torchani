@@ -95,6 +95,9 @@ class Ensemble(torch.nn.Module):
         return species, sum_ / 8.0
 
 
+Sequential = torch.nn.Sequential
+
+
 class Gaussian(torch.nn.Module):
     """Gaussian activation"""
     def forward(self, x):
