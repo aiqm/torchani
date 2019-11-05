@@ -40,8 +40,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # .. note::
 #
 #   Besides defining these hyperparameters programmatically,
-#   :mod:`torchani.neurochem` provide tools to read them from file. See also
-#   :ref:`training-example-ignite` for an example of usage.
+#   :mod:`torchani.neurochem` provide tools to read them from file.
 #
 # .. _rHCNO-5.2R_16-3.5A_a4-8.params:
 #   https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params
