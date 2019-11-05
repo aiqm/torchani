@@ -3,6 +3,8 @@ name: python2
 on:
   pull_request:
   push:
+    branches:
+      - master
   schedule:
     - cron: '0 0 * * *'
 
