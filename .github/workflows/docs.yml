@@ -1,6 +1,10 @@
 name: docs
 
-on: [pull_request]
+on:
+  pull_request
+  push
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   build:
