@@ -77,18 +77,3 @@ TorchANI Optimizater
 
 .. automodule:: torchani.optim
 .. autoclass:: torchani.optim.AdamW
-
-
-Ignite Helpers
-==============
-
-.. automodule:: torchani.ignite
-.. autoclass:: torchani.ignite.Container
-    :members:
-.. autoclass:: torchani.ignite.DictLoss
-.. autoclass:: torchani.ignite.PerAtomDictLoss
-.. autoclass:: torchani.ignite.TransformedLoss
-.. autofunction:: torchani.ignite.MSELoss
-.. autoclass:: torchani.ignite.DictMetric
-.. autofunction:: torchani.ignite.RMSEMetric
-.. autofunction:: torchani.ignite.MaxAEMetric
