@@ -23,9 +23,5 @@ After installing the correct PyTorch, you can install TorchANI by:
 
 See also `PyTorch's official site`_ for instructions of installing latest preview version of PyTorch.
 
-.. warning::
-
-    Please install nightly PyTorch through ``pip install`` instead of ``conda install``. If your PyTorch is installed through ``conda install``, then `pip` would mistakenly recognize the package name as `torch` instead of `torch-nightly`, which would cause dependency issue when installing TorchANI.
-
 .. _PyTorch's official site:
     https://pytorch.org/get-started/locally/
