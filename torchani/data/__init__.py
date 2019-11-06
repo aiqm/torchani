@@ -6,10 +6,7 @@ from os.path import join, isfile, isdir
 import os
 from ._pyanitools import anidataloader
 import torch
-from .. import utils, neurochem, aev, models
-import pickle
-import numpy as np
-from scipy.sparse import bsr_matrix
+from .. import utils
 import warnings
 from .new import CachedDataset, ShuffledDataset, find_threshold
 
