@@ -211,7 +211,7 @@ def triple_by_molecule(atom_index1, atom_index2):
     central_atom_index = uniqued_central_atom_index.index_select(0, pair_indices)
 
     # do local combinations within unique key, assuming sorted
-    m = counts.max()
+    m = counts.max().item() if counts.numel() > 0 else 0
     n = pair_sizes.shape[0]
     intra_pair_indices = torch.tril_indices(m, m, -1).t().unsqueeze(0).expand(n, -1, -1)
     mask = (torch.arange(intra_pair_indices.shape[1]) < pair_sizes.unsqueeze(1)).flatten()
