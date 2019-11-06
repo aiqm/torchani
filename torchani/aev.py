@@ -213,8 +213,8 @@ def triple_by_molecule(atom_index1, atom_index2):
     # do local combinations within unique key, assuming sorted
     m = counts.max().item() if counts.numel() > 0 else 0
     n = pair_sizes.shape[0]
-    intra_pair_indices = torch.tril_indices(m, m, -1).t().unsqueeze(0).expand(n, -1, -1)
-    mask = (torch.arange(intra_pair_indices.shape[1]) < pair_sizes.unsqueeze(1)).flatten()
+    intra_pair_indices = torch.tril_indices(m, m, -1, device=ai1.device).t().unsqueeze(0).expand(n, -1, -1)
+    mask = (torch.arange(intra_pair_indices.shape[1], device=ai1.device) < pair_sizes.unsqueeze(1)).flatten()
     sorted_local_index1, sorted_local_index2 = intra_pair_indices.flatten(0, 1)[mask, :].unbind(-1)
     cumsum = cumsum_from_zero(counts).index_select(0, pair_indices)
     sorted_local_index1 += cumsum
