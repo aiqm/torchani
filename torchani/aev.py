@@ -214,10 +214,8 @@ def triple_by_molecule(atom_index1, atom_index2):
     m = counts.max()
     n = pair_sizes.shape[0]
     intra_pair_indices = torch.tril_indices(m, m, -1).t().unsqueeze(0).expand(n, -1, -1)
-    print(torch.tril_indices(m, m, -1).t())
     mask = (torch.arange(intra_pair_indices.shape[1]) < pair_sizes.unsqueeze(1)).flatten()
     sorted_local_index1, sorted_local_index2 = intra_pair_indices.flatten(0, 1)[mask, :].unbind(-1)
-    print(torch.stack([central_atom_index, sorted_local_index1, sorted_local_index2], dim=1))
     cumsum = cumsum_from_zero(counts).index_select(0, pair_indices)
     sorted_local_index1 += cumsum
     sorted_local_index2 += cumsum
@@ -227,6 +225,7 @@ def triple_by_molecule(atom_index1, atom_index2):
     local_index2 = rev_indices[sorted_local_index2]
 
     # compute mapping between representation of central-other to pair
+    n = atom_index1.shape[0]
     sign1 = ((local_index1 < n).to(torch.long) * 2) - 1
     sign2 = ((local_index2 < n).to(torch.long) * 2) - 1
     return central_atom_index, local_index1 % n, local_index2 % n, sign1, sign2
