@@ -58,12 +58,15 @@ class Ensemble(torch.nn.Module):
     def __init__(self, modules):
         super(Ensemble, self).__init__()
         self.modules_list = torch.nn.ModuleList(modules)
+        self.size = len(self.modules_list)
 
     def forward(self, species_input):
         # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
-        outputs = [x(species_input)[1] for x in self.modules_list]
+        sum_ = 0
+        for x in self.modules_list:
+            sum_ += x(species_input)[1]
         species, _ = species_input
-        return species, sum(outputs) / len(outputs)
+        return species, sum_ / self.size
 
     def __getitem__(self, i):
         return self.modules_list[i]
