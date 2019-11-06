@@ -29,10 +29,8 @@ Datasets
 .. autoclass:: torchani.data.CachedDataset
     :members:
 .. autofunction:: torchani.data.load_ani_dataset
-.. autofunction:: torchani.data.create_aev_cache
 .. autoclass:: torchani.data.BatchedANIDataset
-.. autoclass:: torchani.data.AEVCacheLoader
-.. automodule:: torchani.data.cache_aev
+
 
 
 Utilities
