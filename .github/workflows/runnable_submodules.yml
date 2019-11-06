@@ -1,6 +1,12 @@
 name: runnable submodules
 
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   build:
@@ -26,6 +32,5 @@ jobs:
       run: ./download.sh
     - name: Run submodules
       run: |
-        python -m torchani.data.cache_aev tmp dataset/ani1-up_to_gdb4/ani_gdb_s01.h5 256
         python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.ipt  dataset/ani1-up_to_gdb4/ani_gdb_s01.h5 dataset/ani1-up_to_gdb4/ani_gdb_s01.h5
         python -m torchani.neurochem.trainer --tqdm tests/test_data/inputtrain.yaml  dataset/ani1-up_to_gdb4/ani_gdb_s01.h5 dataset/ani1-up_to_gdb4/ani_gdb_s01.h5

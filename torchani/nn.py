@@ -16,19 +16,11 @@ class ANIModel(torch.nn.Module):
             :attr:`modules`, which means, for example ``modules[i]`` must be
             the module for atom type ``i``. Different atom types can share a
             module by putting the same reference in :attr:`modules`.
-        padding_fill (float): The value to fill output of padding atoms.
-            Padding values will participate in reducing, so this value should
-            be appropriately chosen so that it has no effect on the result. For
-            example, if the reducer is :func:`torch.sum`, then
-            :attr:`padding_fill` should be 0, and if the reducer is
-            :func:`torch.min`, then :attr:`padding_fill` should be
-            :obj:`math.inf`.
     """
 
-    def __init__(self, modules, padding_fill=0):
+    def __init__(self, modules):
         super(ANIModel, self).__init__()
         self.module_list = torch.nn.ModuleList(modules)
-        self.padding_fill = padding_fill
 
     def __getitem__(self, i):
         return self.module_list[i]
@@ -39,12 +31,10 @@ class ANIModel(torch.nn.Module):
         species_ = species.flatten()
         aev = aev.flatten(0, 1)
 
-        output = torch.full(species_.shape, self.padding_fill,
-                            dtype=aev.dtype, device=species.device)
-        i = 0
-        for m in self.module_list:
+        output = aev.new_zeros(species_.shape)
+
+        for i, m in enumerate(self.module_list):
             mask = (species_ == i)
-            i += 1
             midx = mask.nonzero().flatten()
             if midx.shape[0] > 0:
                 input_ = aev.index_select(0, midx)
@@ -56,43 +46,21 @@ class ANIModel(torch.nn.Module):
 class Ensemble(torch.nn.Module):
     """Compute the average output of an ensemble of modules."""
 
-    # FIXME: due to PyTorch bug, we have to hard code the
-    # ensemble size to 8.
-
-    # def __init__(self, modules):
-    #     super(Ensemble, self).__init__()
-    #     self.modules_list = torch.nn.ModuleList(modules)
-
-    # def forward(self, species_input):
-    #     # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
-    #     outputs = [x(species_input)[1] for x in self.modules_list]
-    #     species, _ = species_input
-    #     return species, sum(outputs) / len(outputs)
-
     def __init__(self, modules):
         super(Ensemble, self).__init__()
-        assert len(modules) == 8
-        self.model0 = modules[0]
-        self.model1 = modules[1]
-        self.model2 = modules[2]
-        self.model3 = modules[3]
-        self.model4 = modules[4]
-        self.model5 = modules[5]
-        self.model6 = modules[6]
-        self.model7 = modules[7]
-
-    def __getitem__(self, i):
-        return [self.model0, self.model1, self.model2, self.model3,
-                self.model4, self.model5, self.model6, self.model7][i]
+        self.modules_list = torch.nn.ModuleList(modules)
+        self.size = len(self.modules_list)
 
     def forward(self, species_input):
         # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
+        sum_ = 0
+        for x in self.modules_list:
+            sum_ += x(species_input)[1]
         species, _ = species_input
-        sum_ = self.model0(species_input)[1] + self.model1(species_input)[1] \
-            + self.model2(species_input)[1] + self.model3(species_input)[1] \
-            + self.model4(species_input)[1] + self.model5(species_input)[1] \
-            + self.model6(species_input)[1] + self.model7(species_input)[1]
-        return species, sum_ / 8.0
+        return species, sum_ / self.size
+
+    def __getitem__(self, i):
+        return self.modules_list[i]
 
 
 class Sequential(torch.nn.Module):
