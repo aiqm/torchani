@@ -48,8 +48,6 @@ pip install torchani
 
 See also [PyTorch's official site](https://pytorch.org/get-started/locally/) for instructions of installing latest preview version of PyTorch.
 
-Please install nightly PyTorch through `pip install` instead of `conda install`. If your PyTorch is installed through `conda install`, then `pip` would mistakenly recognize the package name as `torch` instead of `torch-nightly`, which would cause dependency issue when installing TorchANI.
-
 To run the tests and examples, you must manually download a data package
 
 ```bash
