@@ -274,24 +274,20 @@ if sys.version_info[0] > 2:
             tqdm (bool): whether to enable tqdm
             tensorboard (str): Directory to store tensorboard log file, set to
                 ``None`` to disable tensorboard.
-            aev_caching (bool): Whether to use AEV caching.
             checkpoint_name (str): Name of the checkpoint file, checkpoints
                 will be stored in the network directory with this file name.
         """
 
         def __init__(self, filename, device=torch.device('cuda'), tqdm=False,
-                     tensorboard=None, aev_caching=False,
-                     checkpoint_name='model.pt'):
+                     tensorboard=None, checkpoint_name='model.pt'):
 
             from ..data import load_ani_dataset  # noqa: E402
-            from ..data import AEVCacheLoader  # noqa: E402
 
             class dummy:
                 pass
 
             self.imports = dummy()
             self.imports.load_ani_dataset = load_ani_dataset
-            self.imports.AEVCacheLoader = AEVCacheLoader
 
             self.filename = filename
             self.device = device
@@ -556,23 +552,15 @@ if sys.version_info[0] > 2:
             self.best_validation_rmse = math.inf
 
         def load_data(self, training_path, validation_path):
-            """Load training and validation dataset from file.
-
-            If AEV caching is enabled, then the arguments are path to the cache
-            directory, otherwise it should be path to the dataset.
-            """
-            if self.aev_caching:
-                self.training_set = self.imports.AEVCacheLoader(training_path)
-                self.validation_set = self.imports.AEVCacheLoader(validation_path)
-            else:
-                self.training_set = self.imports.load_ani_dataset(
-                    training_path, self.consts.species_to_tensor,
-                    self.training_batch_size, rm_outlier=True, device=self.device,
-                    transform=[self.shift_energy.subtract_from_dataset])
-                self.validation_set = self.imports.load_ani_dataset(
-                    validation_path, self.consts.species_to_tensor,
-                    self.validation_batch_size, rm_outlier=True, device=self.device,
-                    transform=[self.shift_energy.subtract_from_dataset])
+            """Load training and validation dataset from file."""
+            self.training_set = self.imports.load_ani_dataset(
+                training_path, self.consts.species_to_tensor,
+                self.training_batch_size, rm_outlier=True, device=self.device,
+                transform=[self.shift_energy.subtract_from_dataset])
+            self.validation_set = self.imports.load_ani_dataset(
+                validation_path, self.consts.species_to_tensor,
+                self.validation_batch_size, rm_outlier=True, device=self.device,
+                transform=[self.shift_energy.subtract_from_dataset])
 
         def evaluate(self, dataset):
             """Run the evaluation"""
