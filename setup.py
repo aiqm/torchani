@@ -11,7 +11,7 @@ setup_attrs = {
     'long_description_content_type': "text/markdown",
     'url': 'https://github.com/aiqm/torchani',
     'author': 'Xiang Gao',
-    'author_email': 'qasdfgtyuiop@gmail.edu',
+    'author_email': 'qasdfgtyuiop@gmail.com',
     'license': 'MIT',
     'packages': find_packages(),
     'include_package_data': True,
