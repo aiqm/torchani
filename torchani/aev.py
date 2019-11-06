@@ -168,7 +168,7 @@ def neighbor_pairs(padding_mask, coordinates, cell, shifts, cutoff):
 
 def triu_index(num_species):
     # type: (int) -> torch.Tensor
-    species1, species2 = torch.triu_indices(num_species, num_species).unbind(-1)
+    species1, species2 = torch.triu_indices(num_species, num_species).unbind(0)
     pair_index = torch.arange(species1.shape[0], dtype=torch.long)
     ret = torch.zeros(num_species, num_species, dtype=torch.long)
     ret[species1, species2] = pair_index
