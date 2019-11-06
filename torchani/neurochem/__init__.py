@@ -291,7 +291,6 @@ if sys.version_info[0] > 2:
 
             self.filename = filename
             self.device = device
-            self.aev_caching = aev_caching
             self.checkpoint_name = checkpoint_name
             self.weights = []
             self.biases = []
@@ -536,11 +535,7 @@ if sys.version_info[0] > 2:
 
             # initialize weights and biases
             self.nn.apply(init_params)
-
-            if self.aev_caching:
-                self.model = self.nn.to(self.device)
-            else:
-                self.model = Sequential(self.aev_computer, self.nn).to(self.device)
+            self.model = Sequential(self.aev_computer, self.nn).to(self.device)
 
             # loss functions
             self.mse_se = torch.nn.MSELoss(reduction='none')
