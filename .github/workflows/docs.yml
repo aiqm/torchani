@@ -9,9 +9,9 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  build:
+  runs-on: ubuntu-latest
 
-    runs-on: ubuntu-latest
+  build:
     strategy:
       max-parallel: 4
       matrix:
@@ -33,6 +33,9 @@ jobs:
     # build docs
     - name: Build documents
       run: sphinx-build docs build
+
+  deploy:
+    steps:
     # try deploying to aiqm/torchani-test-docs
     - name: Set up environments
       run: |
@@ -44,7 +47,6 @@ jobs:
         git config --global user.email "zasdfgbnm-bot@example.com"
         git config --global user.name "zasdfgbnm-bot"
     - name: Deploy
-      if: ${{ matrix.python-version }} == 3.7
       run: |
         git clone git@github.com:aiqm/torchani-test-docs.git deploy_dir -b gh-pages
         rm -rf deploy_dir/*
