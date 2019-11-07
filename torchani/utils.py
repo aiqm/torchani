@@ -1,4 +1,5 @@
 import torch
+from torch import Tensor
 import torch.utils.data
 import math
 import numpy as np
@@ -210,8 +211,7 @@ class EnergyShifter(torch.nn.Module):
         properties['energies'] = energies
         return atomic_properties, properties
 
-    def forward(self, species_energies):
-        # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
+    def forward(self, species_energies: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
         """(species, molecular energies)->(species, molecular energies + sae)
         """
         species, energies = species_energies
