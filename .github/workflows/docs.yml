@@ -9,10 +9,10 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  runs-on: ubuntu-latest
 
   build:
     strategy:
+      runs-on: ubuntu-latest
       max-parallel: 4
       matrix:
         python-version: [3.6, 3.7]
