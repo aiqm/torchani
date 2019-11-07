@@ -2,7 +2,6 @@ import os
 import torch
 import torchani
 import unittest
-from torchani.data.cache_aev import cache_aev, cache_sparse_aev
 
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, '../dataset/ani1-up_to_gdb4')
@@ -86,38 +85,6 @@ class TestData(unittest.TestCase):
                 species, _ = input_
                 non_padding = (species >= 0)[:, -1].nonzero()
                 self.assertGreater(non_padding.numel(), 0)
-
-    def testAEVCacheLoader(self):
-        tmpdir = os.path.join(os.getcwd(), 'tmp')
-        if not os.path.exists(tmpdir):
-            os.makedirs(tmpdir)
-        cache_aev(tmpdir, dataset_path2, 64, enable_tqdm=False)
-        loader = torchani.data.AEVCacheLoader(tmpdir)
-        ds = loader.dataset
-        aev_computer_dev = aev_computer.to(loader.dataset.device)
-        for _ in range(3):
-            for (species_aevs, _), (species_coordinates, _) in zip(loader, ds):
-                for (s1, a), (s2, c) in zip(species_aevs, species_coordinates):
-                    self._assertTensorEqual(s1, s2)
-                    s2, a2 = aev_computer_dev((s2, c))
-                    self._assertTensorEqual(s1, s2)
-                    self._assertTensorEqual(a, a2)
-
-    def testSparseAEVCacheLoader(self):
-        tmpdir = os.path.join(os.getcwd(), 'tmp')
-        if not os.path.exists(tmpdir):
-            os.makedirs(tmpdir)
-        cache_sparse_aev(tmpdir, dataset_path2, 64, enable_tqdm=False)
-        loader = torchani.data.SparseAEVCacheLoader(tmpdir)
-        ds = loader.dataset
-        aev_computer_dev = aev_computer.to(loader.dataset.device)
-        for _ in range(3):
-            for (species_aevs, _), (species_coordinates, _) in zip(loader, ds):
-                for (s1, a), (s2, c) in zip(species_aevs, species_coordinates):
-                    self._assertTensorEqual(s1, s2)
-                    s2, a2 = aev_computer_dev((s2, c))
-                    self._assertTensorEqual(s1, s2)
-                    self._assertTensorEqual(a, a2)
 
 
 if __name__ == '__main__':
