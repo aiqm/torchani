@@ -1,4 +1,5 @@
 import torch
+from torch import Tensor
 from typing import Tuple
 
 
@@ -25,8 +26,7 @@ class ANIModel(torch.nn.Module):
     def __getitem__(self, i):
         return self.module_list[i]
 
-    def forward(self, species_aev):
-        # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
+    def forward(self, species_aev: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
         species, aev = species_aev
         species_ = species.flatten()
         aev = aev.flatten(0, 1)
@@ -51,8 +51,7 @@ class Ensemble(torch.nn.Module):
         self.modules_list = torch.nn.ModuleList(modules)
         self.size = len(self.modules_list)
 
-    def forward(self, species_input):
-        # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
+    def forward(self, species_input: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
         sum_ = 0
         for x in self.modules_list:
             sum_ += x(species_input)[1]
@@ -70,8 +69,7 @@ class Sequential(torch.nn.Module):
         super(Sequential, self).__init__()
         self.modules_list = torch.nn.ModuleList(modules)
 
-    def forward(self, input_):
-        # type: (Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
+    def forward(self, input_: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
         for module in self.modules_list:
             input_ = module(input_)
         return input_
@@ -79,5 +77,5 @@ class Sequential(torch.nn.Module):
 
 class Gaussian(torch.nn.Module):
     """Gaussian activation"""
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         return torch.exp(- x * x)
