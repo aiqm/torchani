@@ -93,7 +93,6 @@ if __name__ == "__main__":
     torchani.aev.compute_shifts = time_func('torchani.aev.compute_shifts', torchani.aev.compute_shifts)
     torchani.aev.neighbor_pairs = time_func('torchani.aev.neighbor_pairs', torchani.aev.neighbor_pairs)
     torchani.aev.triu_index = time_func('torchani.aev.triu_index', torchani.aev.triu_index)
-    torchani.aev.convert_pair_index = time_func('torchani.aev.convert_pair_index', torchani.aev.convert_pair_index)
     torchani.aev.cumsum_from_zero = time_func('torchani.aev.cumsum_from_zero', torchani.aev.cumsum_from_zero)
     torchani.aev.triple_by_molecule = time_func('torchani.aev.triple_by_molecule', torchani.aev.triple_by_molecule)
     torchani.aev.compute_aev = time_func('torchani.aev.compute_aev', torchani.aev.compute_aev)

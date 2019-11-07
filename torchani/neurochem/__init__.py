@@ -9,7 +9,6 @@ import struct
 import itertools
 import math
 import timeit
-from . import _six  # noqa:F401
 import collections
 import sys
 from ..nn import ANIModel, Ensemble, Gaussian, Sequential
