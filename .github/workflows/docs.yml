@@ -11,8 +11,8 @@ on:
 jobs:
 
   build:
+    runs-on: ubuntu-latest
     strategy:
-      runs-on: ubuntu-latest
       max-parallel: 4
       matrix:
         python-version: [3.6, 3.7]
@@ -35,8 +35,7 @@ jobs:
       run: sphinx-build docs build
 
   deploy:
-    strategy:
-      runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
     # try deploying to aiqm/torchani-test-docs
     - name: Set up environments
