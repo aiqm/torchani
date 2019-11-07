@@ -77,5 +77,5 @@ class Sequential(torch.nn.Module):
 
 class Gaussian(torch.nn.Module):
     """Gaussian activation"""
-    def forward(self, x : Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return torch.exp(- x * x)
