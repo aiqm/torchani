@@ -35,6 +35,8 @@ jobs:
       run: sphinx-build docs build
 
   deploy:
+    strategy:
+      runs-on: ubuntu-latest
     steps:
     # try deploying to aiqm/torchani-test-docs
     - name: Set up environments
