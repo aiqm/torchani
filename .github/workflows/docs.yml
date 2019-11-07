@@ -44,6 +44,7 @@ jobs:
         git config --global user.email "zasdfgbnm-bot@example.com"
         git config --global user.name "zasdfgbnm-bot"
     - name: Deploy
+      if: ${{ matrix.python-version }} == 3.7
       run: |
         git clone git@github.com:aiqm/torchani-test-docs.git deploy_dir -b gh-pages
         rm -rf deploy_dir/*
