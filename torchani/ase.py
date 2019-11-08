@@ -5,7 +5,6 @@
     https://wiki.fysik.dtu.dk/ase
 """
 
-from __future__ import absolute_import
 import torch
 from .nn import Sequential
 import ase.neighborlist
