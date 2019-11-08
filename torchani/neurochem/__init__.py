@@ -121,8 +121,11 @@ def load_atomic_network(filename):
 
         start: inputsize atom_net
 
+        nans: "-"?"nan"
+
         value : SIGNED_INT
               | SIGNED_FLOAT
+              | nans
               | "FILE" ":" FILENAME "[" INT "]"
 
         FILENAME : ("_"|"-"|"."|LETTER|DIGIT)+
@@ -150,6 +153,10 @@ def load_atomic_network(filename):
             def value(self, v):
                 if len(v) == 1:
                     v = v[0]
+                    if isinstance(v, lark.tree.Tree):
+                        assert v.data == 'nans'
+                        return math.nan
+                    assert isinstance(v, lark.lexer.Token)
                     if v.type == 'FILENAME':
                         v = v.value
                     elif v.type == 'SIGNED_INT' or v.type == 'INT':
