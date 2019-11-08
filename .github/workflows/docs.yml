@@ -9,8 +9,8 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-
   build:
+
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -33,10 +33,6 @@ jobs:
     # build docs
     - name: Build documents
       run: sphinx-build docs build
-
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
     # try deploying to aiqm/torchani-test-docs
     - name: Set up environments
       run: |
@@ -56,5 +52,5 @@ jobs:
         cd deploy_dir
         git add .
         git commit -m "update"
-        git push --force
+        git push --force || true
 
