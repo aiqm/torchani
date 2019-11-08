@@ -9,7 +9,6 @@ TorchANI and can be used directly.
 
 ###############################################################################
 # To begin with, let's first import the modules we will use:
-from __future__ import print_function
 import torch
 import torchani
 
@@ -43,7 +42,7 @@ species = model.species_to_tensor('CHHHH').to(device).unsqueeze(0)
 
 ###############################################################################
 # Now let's compute energy and force:
-_, energy = model((species, coordinates))
+energy = model((species, coordinates)).energies
 derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
 force = -derivative
 
