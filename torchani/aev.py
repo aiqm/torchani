@@ -1,8 +1,13 @@
 import torch
 from torch import Tensor
 import math
-from typing import Tuple, Optional
+from typing import Tuple, Optional, NamedTuple
 from torch.jit import Final
+
+
+class SpeciesAEV(NamedTuple):
+    species: Tensor
+    aevs: Tensor
 
 
 def cutoff_cosine(distances: Tensor, cutoff: float) -> Tensor:
@@ -356,7 +361,7 @@ class AEVComputer(torch.nn.Module):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
     def forward(self, input_: Tuple[Tensor, Tensor], cell: Optional[Tensor] = None,
-                pbc: Optional[Tensor] = None) -> Tuple[Tensor, Tensor]:
+                pbc: Optional[Tensor] = None) -> SpeciesAEV:
         """Compute AEVs
 
         Arguments:
@@ -384,7 +389,7 @@ class AEVComputer(torch.nn.Module):
                 for that direction.
 
         Returns:
-            tuple: Species and AEVs. species are the species from the input
+            NamedTuple: Species and AEVs. species are the species from the input
             unchanged, and AEVs is a tensor of shape
             ``(C, A, self.aev_length())``
         """
@@ -398,4 +403,5 @@ class AEVComputer(torch.nn.Module):
             cutoff = max(self.Rcr, self.Rca)
             shifts = compute_shifts(cell, pbc, cutoff)
 
-        return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
+        aev = compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
+        return SpeciesAEV(species, aev)

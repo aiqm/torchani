@@ -4,7 +4,8 @@ import torch.utils.data
 import math
 import numpy as np
 from collections import defaultdict
-from typing import Tuple
+from typing import Tuple, NamedTuple
+from .nn import SpeciesEnergies
 
 
 def pad(species):
@@ -211,12 +212,12 @@ class EnergyShifter(torch.nn.Module):
         properties['energies'] = energies
         return atomic_properties, properties
 
-    def forward(self, species_energies: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
+    def forward(self, species_energies: Tuple[Tensor, Tensor]) -> SpeciesEnergies:
         """(species, molecular energies)->(species, molecular energies + sae)
         """
         species, energies = species_energies
         sae = self.sae(species).to(energies.device)
-        return species, energies.to(sae.dtype) + sae
+        return SpeciesEnergies(species, energies.to(sae.dtype) + sae)
 
 
 class ChemicalSymbolsToInts:
@@ -269,6 +270,11 @@ def hessian(coordinates, energies=None, forces=None):
     ], dim=1)
 
 
+class FreqsModes(NamedTuple):
+    freqs: Tensor
+    modes: Tensor
+
+
 def vibrational_analysis(masses, hessian, unit='cm^-1'):
     """Computing the vibrational wavenumbers from hessian."""
     if unit != 'cm^-1':
@@ -292,7 +298,7 @@ def vibrational_analysis(masses, hessian, unit='cm^-1'):
     # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1
     wavenumbers = frequencies * 17092
     modes = (eigenvectors.t() * inv_sqrt_mass).reshape(frequencies.numel(), -1, 3)
-    return wavenumbers, modes
+    return FreqsModes(wavenumbers, modes)
 
 
 __all__ = ['pad', 'pad_atomic_properties', 'present_species', 'hessian',

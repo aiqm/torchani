@@ -46,9 +46,9 @@ species = model.species_to_tensor('CHHHH').unsqueeze(0)
 
 ###############################################################################
 # And here is the result:
-_, energies_ensemble = model((species, coordinates))
-_, energies_single = model[0]((species, coordinates))
-_, energies_ensemble_jit = loaded_compiled_model((species, coordinates))
-_, energies_single_jit = loaded_compiled_model0((species, coordinates))
+energies_ensemble = model((species, coordinates)).energies
+energies_single = model[0]((species, coordinates)).energies
+energies_ensemble_jit = loaded_compiled_model((species, coordinates)).energies
+energies_single_jit = loaded_compiled_model0((species, coordinates)).energies
 print('Ensemble energy, eager mode vs loaded jit:', energies_ensemble.item(), energies_ensemble_jit.item())
 print('Single network energy, eager mode vs loaded jit:', energies_single.item(), energies_single_jit.item())
