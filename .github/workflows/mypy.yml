@@ -27,4 +27,4 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install mypy
-        mypy --no-site-packages --ignore-missing-imports .
+        mypy --no-site-packages --ignore-missing-imports torchani/{aev,nn,utils,models,ase}.py
