@@ -29,9 +29,9 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint_name',
                         help='Name of checkpoint file',
                         default='model.pt')
-    parser = parser.parse_args()
+    args = parser.parse_args()
 
-    d = torch.device(parser.device)
-    trainer = Trainer(parser.config_path, d, parser.tqdm, parser.tensorboard, parser.checkpoint_name)
-    trainer.load_data(parser.training_path, parser.validation_path)
+    d = torch.device(args.device)
+    trainer = Trainer(args.config_path, d, args.tqdm, args.tensorboard, args.checkpoint_name)
+    trainer.load_data(args.training_path, args.validation_path)
     trainer.run()
