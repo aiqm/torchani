@@ -54,7 +54,7 @@ masses = element_masses[species]
 # To do vibration analysis, we first need to generate a graph that computes
 # energies from species and coordinates. The code to generate a graph of energy
 # is the same as the code to compute energy:
-_, energies = model((species, coordinates))
+energies = model((species, coordinates)).energies
 
 ###############################################################################
 # We can now use the energy graph to compute analytical Hessian matrix:

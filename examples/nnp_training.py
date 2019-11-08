@@ -286,7 +286,7 @@ def validate():
         true_energies = batch_y['energies']
         predicted_energies = []
         for chunk_species, chunk_coordinates in batch_x:
-            _, chunk_energies = model((chunk_species, chunk_coordinates))
+            chunk_energies = model((chunk_species, chunk_coordinates)).energies
             predicted_energies.append(chunk_energies)
         predicted_energies = torch.cat(predicted_energies)
         total_mse += mse_sum(predicted_energies, true_energies).item()
@@ -343,7 +343,7 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
 
         for chunk_species, chunk_coordinates in batch_x:
             num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
-            _, chunk_energies = model((chunk_species, chunk_coordinates))
+            chunk_energies = model((chunk_species, chunk_coordinates)).energies
             predicted_energies.append(chunk_energies)
 
         num_atoms = torch.cat(num_atoms)
