@@ -1,6 +1,11 @@
 import torch
 from torch import Tensor
-from typing import Tuple
+from typing import Tuple, NamedTuple
+
+
+class SpeciesEnergies(NamedTuple):
+    species: Tensor
+    energies: Tensor
 
 
 class ANIModel(torch.nn.Module):
@@ -26,7 +31,7 @@ class ANIModel(torch.nn.Module):
     def __getitem__(self, i):
         return self.module_list[i]
 
-    def forward(self, species_aev: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
+    def forward(self, species_aev: Tuple[Tensor, Tensor]) -> SpeciesEnergies:
         species, aev = species_aev
         species_ = species.flatten()
         aev = aev.flatten(0, 1)
@@ -40,7 +45,7 @@ class ANIModel(torch.nn.Module):
                 input_ = aev.index_select(0, midx)
                 output.masked_scatter_(mask, m(input_).flatten())
         output = output.view_as(species)
-        return species, torch.sum(output, dim=1)
+        return SpeciesEnergies(species, torch.sum(output, dim=1))
 
 
 class Ensemble(torch.nn.Module):
@@ -51,12 +56,12 @@ class Ensemble(torch.nn.Module):
         self.modules_list = torch.nn.ModuleList(modules)
         self.size = len(self.modules_list)
 
-    def forward(self, species_input: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
+    def forward(self, species_input: Tuple[Tensor, Tensor]) -> SpeciesEnergies:
         sum_ = 0
         for x in self.modules_list:
             sum_ += x(species_input)[1]
         species, _ = species_input
-        return species, sum_ / self.size
+        return SpeciesEnergies(species, sum_ / self.size)
 
     def __getitem__(self, i):
         return self.modules_list[i]
@@ -69,7 +74,7 @@ class Sequential(torch.nn.Module):
         super(Sequential, self).__init__()
         self.modules_list = torch.nn.ModuleList(modules)
 
-    def forward(self, input_: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
+    def forward(self, input_: Tuple[Tensor, Tensor]):
         for module in self.modules_list:
             input_ = module(input_)
         return input_
