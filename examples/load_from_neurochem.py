@@ -75,7 +75,7 @@ methane = ase.Atoms('CHHHH', positions=coordinates.squeeze().detach().numpy())
 
 ###############################################################################
 # Now let's compute energies using the ensemble directly:
-_, energy = nnp1((species, coordinates))
+energy = nnp1((species, coordinates)).energies
 derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
 force = -derivative
 print('Energy:', energy.item())
@@ -89,7 +89,7 @@ print('Force:', methane.get_forces() / ase.units.Hartree)
 
 ###############################################################################
 # We can do the same thing with the single model:
-_, energy = nnp2((species, coordinates))
+energy = nnp2((species, coordinates)).energies
 derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
 force = -derivative
 print('Energy:', energy.item())
