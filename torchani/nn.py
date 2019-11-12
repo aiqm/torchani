@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from typing import Tuple, NamedTuple
+from typing import Tuple, NamedTuple, Optional
 
 
 class SpeciesEnergies(NamedTuple):
@@ -31,7 +31,11 @@ class ANIModel(torch.nn.Module):
     def __getitem__(self, i):
         return self.module_list[i]
 
-    def forward(self, species_aev: Tuple[Tensor, Tensor]) -> SpeciesEnergies:
+    def forward(self, species_aev: Tuple[Tensor, Tensor],
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None) -> SpeciesEnergies:
+        assert cell is None
+        assert pbc is None
         species, aev = species_aev
         species_ = species.flatten()
         aev = aev.flatten(0, 1)
@@ -56,7 +60,11 @@ class Ensemble(torch.nn.Module):
         self.modules_list = torch.nn.ModuleList(modules)
         self.size = len(self.modules_list)
 
-    def forward(self, species_input: Tuple[Tensor, Tensor]) -> SpeciesEnergies:
+    def forward(self, species_input: Tuple[Tensor, Tensor],
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None) -> SpeciesEnergies:
+        assert cell is None
+        assert pbc is None
         sum_ = 0
         for x in self.modules_list:
             sum_ += x(species_input)[1]
@@ -74,9 +82,13 @@ class Sequential(torch.nn.Module):
         super(Sequential, self).__init__()
         self.modules_list = torch.nn.ModuleList(modules)
 
-    def forward(self, input_: Tuple[Tensor, Tensor]):
+    def forward(self, input_: Tuple[Tensor, Tensor],
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None):
         for module in self.modules_list:
-            input_ = module(input_)
+            input_ = module(input_, cell=cell, pbc=pbc)
+            cell = None
+            pbc = None
         return input_
 
 
