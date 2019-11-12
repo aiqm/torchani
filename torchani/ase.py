@@ -65,7 +65,9 @@ class Calculator(ase.calculators.calculator.Calculator):
                 cell = cell @ scaling
             aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc).aevs
         else:
-            energy = self.model((species, coordinates)).energies
+            aev = self.aev_computer((species, coordinates)).aevs
+
+        energy = self.model((species, coordinates)).energies
 
         energy *= ase.units.Hartree
         self.results['energy'] = energy.item()
