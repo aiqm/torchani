@@ -6,12 +6,9 @@
 """
 
 import torch
-from .nn import Sequential
-import ase.neighborlist
 from . import utils
 import ase.calculators.calculator
 import ase.units
-import copy
 
 
 class Calculator(ase.calculators.calculator.Calculator):
@@ -20,12 +17,8 @@ class Calculator(ase.calculators.calculator.Calculator):
     Arguments:
         species (:class:`collections.abc.Sequence` of :class:`str`):
             sequence of all supported species, in order.
-        aev_computer (:class:`torchani.AEVComputer`): AEV computer.
-        model (:class:`torchani.ANIModel` or :class:`torchani.Ensemble`):
-            neural network potential models.
-        energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter.
-        dtype (:class:`torchani.EnergyShifter`): data type to use,
-            by dafault ``torch.float64``.
+        model (:class:`torch.nn.Module`): neural network potential model
+            that convert coordinates into energies.
         overwrite (bool): After wrapping atoms into central box, whether
             to replace the original positions stored in :class:`ase.Atoms`
             object with the wrapped positions.
@@ -33,24 +26,15 @@ class Calculator(ase.calculators.calculator.Calculator):
 
     implemented_properties = ['energy', 'forces', 'stress', 'free_energy']
 
-    def __init__(self, species, aev_computer, model, energy_shifter, dtype=torch.float64, overwrite=False):
+    def __init__(self, species, model, overwrite=False):
         super(Calculator, self).__init__()
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
-        # aev_computer.neighborlist will be changed later, so we need a copy to
-        # make sure we do not change the original object
-        aev_computer = copy.deepcopy(aev_computer)
-        self.aev_computer = aev_computer.to(dtype)
-        self.model = copy.deepcopy(model)
-        self.energy_shifter = copy.deepcopy(energy_shifter)
+        self.model = model
         self.overwrite = overwrite
 
-        self.device = self.aev_computer.EtaR.device
-        self.dtype = dtype
-
-        self.nn = Sequential(
-            self.model,
-            self.energy_shifter
-        ).to(dtype)
+        a_parameter = next(self.model.parameters())
+        self.device = a_parameter.device
+        self.dtype = a_parameter.dtype
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=ase.calculators.calculator.all_changes):
@@ -79,11 +63,10 @@ class Calculator(ase.calculators.calculator.Calculator):
         if pbc_enabled:
             if 'stress' in properties:
                 cell = cell @ scaling
-            aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc).aevs
+            energy = self.model((species, coordinates), cell=cell, pbc=pbc).energies
         else:
-            aev = self.aev_computer((species, coordinates)).aevs
+            energy = self.model((species, coordinates)).energies
 
-        energy = self.nn((species, aev)).energies
         energy *= ase.units.Hartree
         self.results['energy'] = energy.item()
         self.results['free_energy'] = energy.item()
