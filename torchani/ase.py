@@ -20,12 +20,8 @@ class Calculator(ase.calculators.calculator.Calculator):
     Arguments:
         species (:class:`collections.abc.Sequence` of :class:`str`):
             sequence of all supported species, in order.
-        aev_computer (:class:`torchani.AEVComputer`): AEV computer.
-        model (:class:`torchani.ANIModel` or :class:`torchani.Ensemble`):
-            neural network potential models.
-        energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter.
-        dtype (:class:`torchani.EnergyShifter`): data type to use,
-            by dafault ``torch.float64``.
+        model (:class:`torch.nn.Module`): neural network potential model
+            that convert coordinates into energies.
         overwrite (bool): After wrapping atoms into central box, whether
             to replace the original positions stored in :class:`ase.Atoms`
             object with the wrapped positions.
