@@ -6,12 +6,9 @@
 """
 
 import torch
-from .nn import Sequential
-import ase.neighborlist
 from . import utils
 import ase.calculators.calculator
 import ase.units
-import copy
 
 
 class Calculator(ase.calculators.calculator.Calculator):
