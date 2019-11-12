@@ -29,7 +29,7 @@ shouldn't be used anymore.
 
 import torch
 from torch import Tensor
-from typing import Tuple
+from typing import Tuple, Optional
 from pkg_resources import resource_filename
 from . import neurochem
 from .nn import Sequential
@@ -89,16 +89,20 @@ class BuiltinNet(torch.nn.Module):
         self.neural_networks = neurochem.load_model_ensemble(
             self.species, self.ensemble_prefix, self.ensemble_size)
 
-    def forward(self, species_coordinates: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
+    def forward(self, species_coordinates: Tuple[Tensor, Tensor],
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None) -> Tuple[Tensor, Tensor]:
         """Calculates predicted properties for minibatch of configurations
 
         Args:
             species_coordinates: minibatch of configurations
+            cell: the cell used in PBC computation, set to None if PBC is not enabled
+            pbc: the bool tensor indicating which direction PBC is enabled, set to None if PBC is not enabled
 
         Returns:
             species_energies: energies for the given configurations
         """
-        species_aevs = self.aev_computer(species_coordinates)
+        species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
         species_energies = self.neural_networks(species_aevs)
         return self.energy_shifter(species_energies)
 
@@ -126,11 +130,7 @@ class BuiltinNet(torch.nn.Module):
         def ase(**kwargs):
             """Attach an ase calculator """
             from . import ase
-            return ase.Calculator(self.species,
-                                  self.aev_computer,
-                                  self.neural_networks[index],
-                                  self.energy_shifter,
-                                  **kwargs)
+            return ase.Calculator(self.species, ret, **kwargs)
 
         ret.ase = ase
         ret.species_to_tensor = self.consts.species_to_tensor
@@ -154,9 +154,7 @@ class BuiltinNet(torch.nn.Module):
             calculator (:class:`int`): A calculator to be used with ASE
         """
         from . import ase
-        return ase.Calculator(self.species, self.aev_computer,
-                              self.neural_networks, self.energy_shifter,
-                              **kwargs)
+        return ase.Calculator(self.species, self, **kwargs)
 
     def species_to_tensor(self, *args, **kwargs):
         """Convert species from strings to tensor.
