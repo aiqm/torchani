@@ -55,10 +55,8 @@ print(nnp2)
 
 ###############################################################################
 # You can also create an ASE calculator using the ensemble or single model:
-calculator1 = torchani.ase.Calculator(consts.species, aev_computer,
-                                      ensemble, energy_shifter)
-calculator2 = torchani.ase.Calculator(consts.species, aev_computer,
-                                      model, energy_shifter)
+calculator1 = torchani.ase.Calculator(consts.species, nnp1)
+calculator2 = torchani.ase.Calculator(consts.species, nnp2)
 print(calculator1)
 print(calculator1)
 

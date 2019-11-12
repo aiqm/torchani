@@ -24,9 +24,12 @@ def get_numeric_force(atoms, eps):
 
 class TestASE(unittest.TestCase):
 
+    def setUp(self):
+        self.model = torchani.models.ANI1x().double()[0]
+
     def testWithNumericalForceWithPBCEnabled(self):
         atoms = Diamond(symbol="C", pbc=True)
-        calculator = torchani.models.ANI1x().ase()
+        calculator = self.model.ase()
         atoms.set_calculator(calculator)
         dyn = Langevin(atoms, 5 * units.fs, 30000000 * units.kB, 0.002)
         dyn.run(100)
@@ -40,7 +43,7 @@ class TestASE(unittest.TestCase):
     def testWithNumericalStressWithPBCEnabled(self):
         filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.cif')
         benzene = read(filename)
-        calculator = torchani.models.ANI1x().ase()
+        calculator = self.model.ase()
         benzene.set_calculator(calculator)
         dyn = NPTBerendsen(benzene, timestep=0.1 * units.fs,
                            temperature=300 * units.kB,
