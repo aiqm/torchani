@@ -17,6 +17,7 @@ class TestStructureOptimization(unittest.TestCase):
         self.tolerance = 1e-6
         self.ani1x = torchani.models.ANI1x()
         self.calculator = self.ani1x[0].ase()
+
     def testRMSE(self):
         datafile = os.path.join(path, 'test_data/NeuroChemOptimized/all')
         with open(datafile, 'rb') as f:
