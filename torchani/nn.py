@@ -1,14 +1,22 @@
 import torch
-from . import utils
+from torch import Tensor
+from typing import Tuple, NamedTuple, Optional
 
 
-class ANIModel(torch.nn.ModuleList):
-    """ANI model that compute properties from species and AEVs.
+class SpeciesEnergies(NamedTuple):
+    species: Tensor
+    energies: Tensor
+
+
+class ANIModel(torch.nn.Module):
+    """ANI model that compute energies from species and AEVs.
 
     Different atom types might have different modules, when computing
-    properties, for each atom, the module for its corresponding atom type will
+    energies, for each atom, the module for its corresponding atom type will
     be applied to its AEV, after that, outputs of modules will be reduced along
-    different atoms to obtain molecular properties.
+    different atoms to obtain molecular energies.
+
+    The resulting energies are in Hartree.
 
     Arguments:
         modules (:class:`collections.abc.Sequence`): Modules for each atom
@@ -16,49 +24,77 @@ class ANIModel(torch.nn.ModuleList):
             :attr:`modules`, which means, for example ``modules[i]`` must be
             the module for atom type ``i``. Different atom types can share a
             module by putting the same reference in :attr:`modules`.
-        reducer (:class:`collections.abc.Callable`): The callable that reduce
-            atomic outputs into molecular outputs. It must have signature
-            ``(tensor, dim)->tensor``.
-        padding_fill (float): The value to fill output of padding atoms.
-            Padding values will participate in reducing, so this value should
-            be appropriately chosen so that it has no effect on the result. For
-            example, if the reducer is :func:`torch.sum`, then
-            :attr:`padding_fill` should be 0, and if the reducer is
-            :func:`torch.min`, then :attr:`padding_fill` should be
-            :obj:`math.inf`.
     """
 
-    def __init__(self, modules, reducer=torch.sum, padding_fill=0):
-        super(ANIModel, self).__init__(modules)
-        self.reducer = reducer
-        self.padding_fill = padding_fill
+    def __init__(self, modules):
+        super(ANIModel, self).__init__()
+        self.module_list = torch.nn.ModuleList(modules)
 
-    def forward(self, species_aev):
+    def __getitem__(self, i):
+        return self.module_list[i]
+
+    def forward(self, species_aev: Tuple[Tensor, Tensor],
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None) -> SpeciesEnergies:
+        assert cell is None
+        assert pbc is None
         species, aev = species_aev
         species_ = species.flatten()
-        present_species = utils.present_species(species)
         aev = aev.flatten(0, 1)
 
-        output = torch.full_like(species_, self.padding_fill,
-                                 dtype=aev.dtype)
-        for i in present_species:
+        output = aev.new_zeros(species_.shape)
+
+        for i, m in enumerate(self.module_list):
             mask = (species_ == i)
-            input_ = aev.index_select(0, mask.nonzero().squeeze())
-            output.masked_scatter_(mask, self[i](input_).squeeze())
+            midx = mask.nonzero().flatten()
+            if midx.shape[0] > 0:
+                input_ = aev.index_select(0, midx)
+                output.masked_scatter_(mask, m(input_).flatten())
         output = output.view_as(species)
-        return species, self.reducer(output, dim=1)
+        return SpeciesEnergies(species, torch.sum(output, dim=1))
 
 
-class Ensemble(torch.nn.ModuleList):
+class Ensemble(torch.nn.Module):
     """Compute the average output of an ensemble of modules."""
 
-    def forward(self, species_input):
-        outputs = [x(species_input)[1] for x in self]
+    def __init__(self, modules):
+        super(Ensemble, self).__init__()
+        self.modules_list = torch.nn.ModuleList(modules)
+        self.size = len(self.modules_list)
+
+    def forward(self, species_input: Tuple[Tensor, Tensor],
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None) -> SpeciesEnergies:
+        assert cell is None
+        assert pbc is None
+        sum_ = 0
+        for x in self.modules_list:
+            sum_ += x(species_input)[1]
         species, _ = species_input
-        return species, sum(outputs) / len(outputs)
+        return SpeciesEnergies(species, sum_ / self.size)
+
+    def __getitem__(self, i):
+        return self.modules_list[i]
+
+
+class Sequential(torch.nn.Module):
+    """Modified Sequential module that accept Tuple type as input"""
+
+    def __init__(self, *modules):
+        super(Sequential, self).__init__()
+        self.modules_list = torch.nn.ModuleList(modules)
+
+    def forward(self, input_: Tuple[Tensor, Tensor],
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None):
+        for module in self.modules_list:
+            input_ = module(input_, cell=cell, pbc=pbc)
+            cell = None
+            pbc = None
+        return input_
 
 
 class Gaussian(torch.nn.Module):
     """Gaussian activation"""
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         return torch.exp(- x * x)

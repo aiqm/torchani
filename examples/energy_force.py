@@ -9,7 +9,6 @@ TorchANI and can be used directly.
 
 ###############################################################################
 # To begin with, let's first import the modules we will use:
-from __future__ import print_function
 import torch
 import torchani
 
@@ -33,6 +32,8 @@ model = torchani.models.ANI1ccx()
 # preceding ``1`` in the shape is here to support batch processing like in
 # training. If you have ``N`` different structures to compute, then make it
 # ``N``.
+#
+# The coordinates are in Angstrom, and the energies you get are in Hartree
 coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
                              [-0.83140486, 0.39370209, -0.26395324],
                              [-0.66518241, -0.84461308, 0.20759389],
@@ -43,7 +44,7 @@ species = model.species_to_tensor('CHHHH').to(device).unsqueeze(0)
 
 ###############################################################################
 # Now let's compute energy and force:
-_, energy = model((species, coordinates))
+energy = model((species, coordinates)).energies
 derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
 force = -derivative
 

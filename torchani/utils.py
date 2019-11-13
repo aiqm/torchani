@@ -1,8 +1,11 @@
 import torch
+from torch import Tensor
 import torch.utils.data
 import math
 import numpy as np
 from collections import defaultdict
+from typing import Tuple, NamedTuple, Optional
+from .nn import SpeciesEnergies
 
 
 def pad(species):
@@ -171,7 +174,7 @@ class EnergyShifter(torch.nn.Module):
             X = torch.cat((X, torch.ones(X.shape[0], 1).to(torch.double)), dim=-1)
         y = energies.unsqueeze(dim=-1)
         coeff_, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
-        return coeff_.squeeze()
+        return coeff_.squeeze(-1)
 
     def sae(self, species):
         """Compute self energies for molecules.
@@ -191,7 +194,7 @@ class EnergyShifter(torch.nn.Module):
             intercept = self.self_energies[-1]
 
         self_energies = self.self_energies[species]
-        self_energies[species == -1] = 0
+        self_energies[species == torch.tensor(-1, device=species.device)] = torch.tensor(0, device=species.device, dtype=torch.double)
         return self_energies.sum(dim=1) + intercept
 
     def subtract_from_dataset(self, atomic_properties, properties):
@@ -209,12 +212,16 @@ class EnergyShifter(torch.nn.Module):
         properties['energies'] = energies
         return atomic_properties, properties
 
-    def forward(self, species_energies):
+    def forward(self, species_energies: Tuple[Tensor, Tensor],
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         """(species, molecular energies)->(species, molecular energies + sae)
         """
+        assert cell is None
+        assert pbc is None
         species, energies = species_energies
-        sae = self.sae(species).to(energies.dtype).to(energies.device)
-        return species, energies + sae
+        sae = self.sae(species).to(energies.device)
+        return SpeciesEnergies(species, energies.to(sae.dtype) + sae)
 
 
 class ChemicalSymbolsToInts:
@@ -267,6 +274,11 @@ def hessian(coordinates, energies=None, forces=None):
     ], dim=1)
 
 
+class FreqsModes(NamedTuple):
+    freqs: Tensor
+    modes: Tensor
+
+
 def vibrational_analysis(masses, hessian, unit='cm^-1'):
     """Computing the vibrational wavenumbers from hessian."""
     if unit != 'cm^-1':
@@ -290,7 +302,7 @@ def vibrational_analysis(masses, hessian, unit='cm^-1'):
     # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1
     wavenumbers = frequencies * 17092
     modes = (eigenvectors.t() * inv_sqrt_mass).reshape(frequencies.numel(), -1, 3)
-    return wavenumbers, modes
+    return FreqsModes(wavenumbers, modes)
 
 
 __all__ = ['pad', 'pad_atomic_properties', 'present_species', 'hessian',

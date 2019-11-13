@@ -40,8 +40,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # .. note::
 #
 #   Besides defining these hyperparameters programmatically,
-#   :mod:`torchani.neurochem` provide tools to read them from file. See also
-#   :ref:`training-example-ignite` for an example of usage.
+#   :mod:`torchani.neurochem` provide tools to read them from file.
 #
 # .. _rHCNO-5.2R_16-3.5A_a4-8.params:
 #   https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params
@@ -180,7 +179,7 @@ nn.apply(init_params)
 
 ###############################################################################
 # Let's now create a pipeline of AEV Computer --> Neural Networks.
-model = torch.nn.Sequential(aev_computer, nn).to(device)
+model = torchani.nn.Sequential(aev_computer, nn).to(device)
 
 ###############################################################################
 # Now let's setup the optimizers. NeuroChem uses Adam with decoupled weight decay
@@ -287,7 +286,7 @@ def validate():
         true_energies = batch_y['energies']
         predicted_energies = []
         for chunk_species, chunk_coordinates in batch_x:
-            _, chunk_energies = model((chunk_species, chunk_coordinates))
+            chunk_energies = model((chunk_species, chunk_coordinates)).energies
             predicted_energies.append(chunk_energies)
         predicted_energies = torch.cat(predicted_energies)
         total_mse += mse_sum(predicted_energies, true_energies).item()
@@ -308,7 +307,7 @@ tensorboard = torch.utils.tensorboard.SummaryWriter()
 mse = torch.nn.MSELoss(reduction='none')
 
 print("training starting from epoch", AdamW_scheduler.last_epoch + 1)
-max_epochs = 200
+max_epochs = 10
 early_stopping_learning_rate = 1.0E-5
 best_model_checkpoint = 'best.pt'
 
@@ -344,7 +343,7 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
 
         for chunk_species, chunk_coordinates in batch_x:
             num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
-            _, chunk_energies = model((chunk_species, chunk_coordinates))
+            chunk_energies = model((chunk_species, chunk_coordinates)).energies
             predicted_energies.append(chunk_energies)
 
         num_atoms = torch.cat(num_atoms)

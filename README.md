@@ -1,21 +1,25 @@
 # <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo1.png width=180/>  Accurate Neural Network Potential on PyTorch
 
-Build:
+Metrics:
 
-[![flake8](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/flake8)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=3)
-[![docs](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/docs)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=4)
-[![runnable submodules](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/runnable-submodules)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=5)
-[![unit tests](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/unit-tests)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=6)
-[![tools](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/tools)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=7)
-[![Python2 Inference](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/python2?branchName=master)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=11&branchName=master)
+![PyPI](https://img.shields.io/pypi/v/torchani.svg)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/torchani.svg)
+
+Checks:
+
+[![Actions Status](https://github.com/aiqm/torchani/workflows/docs/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/flake8/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/mypy/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/runnable%20submodules/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/tools/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/unit%20tests/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![CodeFactor](https://www.codefactor.io/repository/github/aiqm/torchani/badge/master)](https://www.codefactor.io/repository/github/aiqm/torchani/overview/master)
-[![codecov](https://codecov.io/gh/aiqm/torchani/branch/master/graph/badge.svg)](https://codecov.io/gh/aiqm/torchani)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/aiqm/torchani.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/aiqm/torchani/alerts/)
 
-Deploy (these builds only succeed on tagged commits):
+Deploy:
 
-[![Build Status](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/Deploy%20docs?branchName=master)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=9?branchName=master)
-[![Build Status](https://zasdfgbnm.visualstudio.com/torchani/_apis/build/status/Deploy%20PYPI?branchName=master)](https://zasdfgbnm.visualstudio.com/torchani/_build/latest?definitionId=10?branchName=master)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-docs/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-pypi/badge.svg)](https://github.com/aiqm/torchani/actions)
 
 TorchANI is a pytorch implementation of ANI. It is currently under alpha release, which means, the API is not stable yet. If you find a bug of TorchANI, or have some feature request, feel free to open an issue on GitHub, or send us a pull request.
 
@@ -27,13 +31,13 @@ TorchANI requires the latest preview version of PyTorch. You can install PyTorch
 
 ```bash
 pip install numpy
-pip install torch -f https://download.pytorch.org/whl/nightly/cu100/torch.html
+pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
 ```
 
 If you updated TorchANI, you may also need to update PyTorch:
 
 ```bash
-pip install --upgrade torch -f https://download.pytorch.org/whl/nightly/cu100/torch.html
+pip install --upgrade --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
 ```
 
 After installing the correct PyTorch, you can install TorchANI by:
@@ -43,8 +47,6 @@ pip install torchani
 ```
 
 See also [PyTorch's official site](https://pytorch.org/get-started/locally/) for instructions of installing latest preview version of PyTorch.
-
-Please install nightly PyTorch through `pip install` instead of `conda install`. If your PyTorch is installed through `conda install`, then `pip` would mistakenly recognize the package name as `torch` instead of `torch-nightly`, which would cause dependency issue when installing TorchANI.
 
 To run the tests and examples, you must manually download a data package
 
@@ -79,6 +81,10 @@ pip install sphinx sphinx-gallery pillow matplotlib sphinx_rtd_theme
 ```
 
 To manually run unit tests, do `python setup.py nosetests`
+
+If you opened a pull request, you could see your generated documents at https://aiqm.github.io/torchani-test-docs/ after you `docs` check succeed.
+Keep in mind that this repository is only for the purpose of convenience of development, and only keeps the latest push.
+The CI runing for other pull requests might overwrite this repository. You could rerun the `docs` check to overwrite this repo to your build.
 
 # Note to TorchANI developers
 

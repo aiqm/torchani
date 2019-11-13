@@ -1,0 +1,41 @@
+name: unit tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.6, 3.7]
+        test-filenames: [
+          test_aev.py, test_aev_benzene_md.py, test_aev_nist.py, test_aev_tripeptide_md.py,
+          test_data_new.py, test_utils.py, test_ase.py, test_energies.py,
+          test_neurochem.py, test_vibrational.py, test_ensemble.py, test_padding.py,
+          test_data.py, test_forces.py, test_structure_optim.py, test_jit_builtin_models.py]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Fetch submodules
+      run: git submodule update --init
+    - name: Install dependencies
+      run: |
+        ci/install_dependencies.sh
+        pip install -r test_requirements.txt
+        pip install .
+    - name: Download data files
+      run: ./download.sh
+    - name: Run single test
+      run: python tests/${{ matrix.test-filenames }}

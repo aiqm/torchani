@@ -1,9 +1,11 @@
 import torch
 import torchani
-import time
-import timeit
 import argparse
 import pkbar
+
+
+WARM_UP_BATCHES = 50
+PROFILE_BATCHES = 10
 
 
 def atomic():
@@ -20,13 +22,11 @@ def atomic():
 
 
 def time_func(key, func):
-    timers[key] = 0
 
     def wrapper(*args, **kwargs):
-        start = timeit.default_timer()
+        torch.cuda.nvtx.range_push(key)
         ret = func(*args, **kwargs)
-        end = timeit.default_timer()
-        timers[key] += end - start
+        torch.cuda.nvtx.range_pop()
         return ret
 
     return wrapper
@@ -36,15 +36,25 @@ def hartree2kcal(x):
     return 627.509 * x
 
 
+def enable_timers(model):
+    torchani.aev.cutoff_cosine = time_func('cutoff_cosine', torchani.aev.cutoff_cosine)
+    torchani.aev.radial_terms = time_func('radial_terms', torchani.aev.radial_terms)
+    torchani.aev.angular_terms = time_func('angular_terms', torchani.aev.angular_terms)
+    torchani.aev.compute_shifts = time_func('compute_shifts', torchani.aev.compute_shifts)
+    torchani.aev.neighbor_pairs = time_func('neighbor_pairs', torchani.aev.neighbor_pairs)
+    torchani.aev.triu_index = time_func('triu_index', torchani.aev.triu_index)
+    torchani.aev.cumsum_from_zero = time_func('cumsum_from_zero', torchani.aev.cumsum_from_zero)
+    torchani.aev.triple_by_molecule = time_func('triple_by_molecule', torchani.aev.triple_by_molecule)
+    torchani.aev.compute_aev = time_func('compute_aev', torchani.aev.compute_aev)
+    model[1].forward = time_func('nn forward', model[1].forward)
+
+
 if __name__ == "__main__":
     # parse command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset_path',
                         help='Path of the dataset, can a hdf5 file \
                             or a directory containing hdf5 files')
-    parser.add_argument('-d', '--device',
-                        help='Device of modules and tensors',
-                        default=('cuda' if torch.cuda.is_available() else 'cpu'))
     parser.add_argument('-b', '--batch_size',
                         help='Number of conformations of each batch',
                         default=2560, type=int)
@@ -64,10 +74,8 @@ if __name__ == "__main__":
                         action='store_const',
                         const='cache')
     parser.set_defaults(dataset='shuffle')
-    parser.add_argument('-n', '--num_epochs',
-                        help='epochs',
-                        default=1, type=int)
     parser = parser.parse_args()
+    parser.device = torch.device('cuda')
 
     Rcr = 5.2000e+00
     Rca = 3.5000e+00
@@ -84,23 +92,8 @@ if __name__ == "__main__":
     model = torch.nn.Sequential(aev_computer, nn).to(parser.device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.000001)
     mse = torch.nn.MSELoss(reduction='none')
-    timers = {}
-
-    # enable timers
-    torchani.aev.cutoff_cosine = time_func('torchani.aev.cutoff_cosine', torchani.aev.cutoff_cosine)
-    torchani.aev.radial_terms = time_func('torchani.aev.radial_terms', torchani.aev.radial_terms)
-    torchani.aev.angular_terms = time_func('torchani.aev.angular_terms', torchani.aev.angular_terms)
-    torchani.aev.compute_shifts = time_func('torchani.aev.compute_shifts', torchani.aev.compute_shifts)
-    torchani.aev.neighbor_pairs = time_func('torchani.aev.neighbor_pairs', torchani.aev.neighbor_pairs)
-    torchani.aev.triu_index = time_func('torchani.aev.triu_index', torchani.aev.triu_index)
-    torchani.aev.cumsum_from_zero = time_func('torchani.aev.cumsum_from_zero', torchani.aev.cumsum_from_zero)
-    torchani.aev.triple_by_molecule = time_func('torchani.aev.triple_by_molecule', torchani.aev.triple_by_molecule)
-    torchani.aev.compute_aev = time_func('torchani.aev.compute_aev', torchani.aev.compute_aev)
-    model[0].forward = time_func('total', model[0].forward)
-    model[1].forward = time_func('forward', model[1].forward)
 
     if parser.dataset == 'shuffle':
-        torchani.data.ShuffledDataset = time_func('data_loading', torchani.data.ShuffledDataset)
         print('using shuffle dataset API')
         print('=> loading dataset...')
         dataset = torchani.data.ShuffledDataset(file_path=parser.dataset_path,
@@ -111,7 +104,6 @@ if __name__ == "__main__":
         print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
         chunks, properties = iter(dataset).next()
     elif parser.dataset == 'original':
-        torchani.data.load_ani_dataset = time_func('data_loading', torchani.data.load_ani_dataset)
         print('using original dataset API')
         print('=> loading dataset...')
         energy_shifter = torchani.utils.EnergyShifter(None)
@@ -122,7 +114,6 @@ if __name__ == "__main__":
         print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
         chunks, properties = dataset[0]
     elif parser.dataset == 'cache':
-        torchani.data.CachedDataset = time_func('data_loading', torchani.data.CachedDataset)
         print('using cache dataset API')
         print('=> loading dataset...')
         dataset = torchani.data.CachedDataset(file_path=parser.dataset_path,
@@ -142,42 +133,64 @@ if __name__ == "__main__":
         print('chunk{}'.format(i + 1), list(chunk[0].size()), list(chunk[1].size()))
     print('energies', list(properties['energies'].size()))
 
-    print('=> start training')
-    start = time.time()
+    print('=> start warming up')
+    total_batch_counter = 0
+    for epoch in range(0, WARM_UP_BATCHES + 1):
 
-    for epoch in range(0, parser.num_epochs):
-
-        print('Epoch: %d/%d' % (epoch + 1, parser.num_epochs))
+        print('Epoch: %d/inf' % (epoch + 1,))
         progbar = pkbar.Kbar(target=len(dataset) - 1, width=8)
 
         for i, (batch_x, batch_y) in enumerate(dataset):
+
+            if total_batch_counter == WARM_UP_BATCHES:
+                print('=> warm up finished, start profiling')
+                enable_timers(model)
+                torch.cuda.cudart().cudaProfilerStart()
+
+            if total_batch_counter >= WARM_UP_BATCHES:
+                torch.cuda.nvtx.range_push("batch{}".format(total_batch_counter))
 
             true_energies = batch_y['energies'].to(parser.device)
             predicted_energies = []
             num_atoms = []
 
-            for chunk_species, chunk_coordinates in batch_x:
+            for j, (chunk_species, chunk_coordinates) in enumerate(batch_x):
+                if total_batch_counter >= WARM_UP_BATCHES:
+                    torch.cuda.nvtx.range_push("chunk{}".format(j))
                 chunk_species = chunk_species.to(parser.device)
                 chunk_coordinates = chunk_coordinates.to(parser.device)
                 num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
                 _, chunk_energies = model((chunk_species, chunk_coordinates))
                 predicted_energies.append(chunk_energies)
+                if total_batch_counter >= WARM_UP_BATCHES:
+                    torch.cuda.nvtx.range_pop()
 
             num_atoms = torch.cat(num_atoms)
             predicted_energies = torch.cat(predicted_energies).to(true_energies.dtype)
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
             rmse = hartree2kcal((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
+
+            if total_batch_counter >= WARM_UP_BATCHES:
+                torch.cuda.nvtx.range_push("backward")
             loss.backward()
+            if total_batch_counter >= WARM_UP_BATCHES:
+                torch.cuda.nvtx.range_pop()
+
+            if total_batch_counter >= WARM_UP_BATCHES:
+                torch.cuda.nvtx.range_push("optimizer.step()")
             optimizer.step()
+            if total_batch_counter >= WARM_UP_BATCHES:
+                torch.cuda.nvtx.range_pop()
 
             progbar.update(i, values=[("rmse", rmse)])
-    stop = time.time()
 
-    print('=> more detail about benchmark')
-    for k in timers:
-        if k.startswith('torchani.'):
-            print('{} - {:.1f}s'.format(k, timers[k]))
-    print('Total AEV - {:.1f}s'.format(timers['total']))
-    print('Data Loading - {:.1f}s'.format(timers['data_loading']))
-    print('NN - {:.1f}s'.format(timers['forward']))
-    print('Epoch time - {:.1f}s'.format(stop - start))
+            if total_batch_counter >= WARM_UP_BATCHES:
+                torch.cuda.nvtx.range_pop()
+
+            total_batch_counter += 1
+            if total_batch_counter > WARM_UP_BATCHES + PROFILE_BATCHES:
+                break
+
+        if total_batch_counter > WARM_UP_BATCHES + PROFILE_BATCHES:
+            print('=> profiling terminate after {} batches'.format(PROFILE_BATCHES))
+            break

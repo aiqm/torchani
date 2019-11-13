@@ -14,8 +14,8 @@ class TestForce(unittest.TestCase):
         self.tolerance = 1e-5
         ani1x = torchani.models.ANI1x()
         self.aev_computer = ani1x.aev_computer
-        nnp = ani1x.neural_networks[0]
-        self.model = torch.nn.Sequential(self.aev_computer, nnp)
+        self.nnp = ani1x.neural_networks[0]
+        self.model = torchani.nn.Sequential(self.aev_computer, self.nnp)
 
     def random_skip(self):
         return False
@@ -66,63 +66,12 @@ class TestForce(unittest.TestCase):
             max_diff = (forces + derivative).abs().max().item()
             self.assertLess(max_diff, self.tolerance)
 
-    def testBenzeneMD(self):
-        tolerance = 1e-5
-        for i in range(10):
-            datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
-            with open(datafile, 'rb') as f:
-                coordinates, species, _, _, _, forces, cell, pbc \
-                    = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0).requires_grad_(True)
-                species = torch.from_numpy(species).unsqueeze(0)
-                cell = torch.from_numpy(cell).float()
-                pbc = torch.from_numpy(pbc)
-                forces = torch.from_numpy(forces)
-                coordinates = torchani.utils.map2central(cell, coordinates, pbc)
-                coordinates = self.transform(coordinates)
-                species = self.transform(species)
-                forces = self.transform(forces)
-                _, energies_ = self.model((species, coordinates, cell, pbc))
-                derivative = torch.autograd.grad(energies_.sum(),
-                                                 coordinates)[0]
-                max_diff = (forces + derivative).abs().max().item()
-                self.assertLess(max_diff, tolerance)
 
-    def testTripeptideMD(self):
-        tolerance = 2e-6
-        for i in range(100):
-            datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
-            with open(datafile, 'rb') as f:
-                coordinates, species, _, _, _, forces, _, _ \
-                    = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0).requires_grad_(True)
-                species = torch.from_numpy(species).unsqueeze(0)
-                forces = torch.from_numpy(forces)
-                coordinates = self.transform(coordinates)
-                species = self.transform(species)
-                forces = self.transform(forces)
-                _, energies_ = self.model((species, coordinates))
-                derivative = torch.autograd.grad(energies_.sum(),
-                                                 coordinates)[0]
-                max_diff = (forces + derivative).abs().max().item()
-                self.assertLess(max_diff, tolerance)
+class TestForceJIT(TestForce):
 
-    def testNIST(self):
-        datafile = os.path.join(path, 'test_data/NIST/all')
-        with open(datafile, 'rb') as f:
-            data = pickle.load(f)
-            for coordinates, species, _, _, _, forces in data:
-                if self.random_skip():
-                    continue
-                coordinates = torch.from_numpy(coordinates).to(torch.float) \
-                                   .requires_grad_(True)
-                species = torch.from_numpy(species)
-                forces = torch.from_numpy(forces).to(torch.float)
-                _, energies = self.model((species, coordinates))
-                derivative = torch.autograd.grad(energies.sum(),
-                                                 coordinates)[0]
-                max_diff = (forces + derivative).abs().max().item()
-                self.assertLess(max_diff, self.tolerance)
+    def setUp(self):
+        super().setUp()
+        self.model = torch.jit.script(self.model)
 
 
 if __name__ == '__main__':
