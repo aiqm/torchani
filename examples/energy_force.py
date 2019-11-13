@@ -32,6 +32,8 @@ model = torchani.models.ANI1ccx()
 # preceding ``1`` in the shape is here to support batch processing like in
 # training. If you have ``N`` different structures to compute, then make it
 # ``N``.
+#
+# The coordinates are in Angstrom, and the energies you get are in Hartree
 coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
                              [-0.83140486, 0.39370209, -0.26395324],
                              [-0.66518241, -0.84461308, 0.20759389],
