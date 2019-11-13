@@ -9,12 +9,14 @@ class SpeciesEnergies(NamedTuple):
 
 
 class ANIModel(torch.nn.Module):
-    """ANI model that compute properties from species and AEVs.
+    """ANI model that compute energies from species and AEVs.
 
     Different atom types might have different modules, when computing
-    properties, for each atom, the module for its corresponding atom type will
+    energies, for each atom, the module for its corresponding atom type will
     be applied to its AEV, after that, outputs of modules will be reduced along
-    different atoms to obtain molecular properties.
+    different atoms to obtain molecular energies.
+
+    The resulting energies are in Hartree.
 
     Arguments:
         modules (:class:`collections.abc.Sequence`): Modules for each atom
