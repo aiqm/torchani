@@ -101,6 +101,9 @@ class BuiltinNet(torch.nn.Module):
 
         Returns:
             species_energies: energies for the given configurations
+
+        .. note:: The coordinates, and cell are in Angstrom, and the energies
+            will be in Hartree.
         """
         species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
         species_energies = self.neural_networks(species_aevs)

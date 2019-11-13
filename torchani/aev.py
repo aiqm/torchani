@@ -389,10 +389,11 @@ class AEVComputer(torch.nn.Module):
                 and pbc is boolean vector of size 3 storing if pbc is enabled
                 for that direction.
 
+                The coordinates, and cell are in Angstrom.
+
         Returns:
             NamedTuple: Species and AEVs. species are the species from the input
-            unchanged, and AEVs is a tensor of shape
-            ``(C, A, self.aev_length())``
+            unchanged, and AEVs is a tensor of shape ``(C, A, self.aev_length())``
         """
         species, coordinates = input_
 
