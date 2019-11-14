@@ -26,7 +26,7 @@ jobs:
     - name: Install dependencies
       run: |
         ci/install_dependencies.sh
-        pip install h5py tb-nightly sphinx https://github.com/aiqm/torchani-test-docs matplotlib pillow sphinx-gallery
+        pip install h5py tb-nightly sphinx pytorch_sphinx_theme matplotlib pillow sphinx-gallery
         pip install .
     - name: Download data files
       run: ./download.sh
