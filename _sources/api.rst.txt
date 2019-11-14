@@ -29,10 +29,8 @@ Datasets
 .. autoclass:: torchani.data.CachedDataset
     :members:
 .. autofunction:: torchani.data.load_ani_dataset
-.. autofunction:: torchani.data.create_aev_cache
 .. autoclass:: torchani.data.BatchedANIDataset
-.. autoclass:: torchani.data.AEVCacheLoader
-.. automodule:: torchani.data.cache_aev
+
 
 
 Utilities
@@ -77,18 +75,3 @@ TorchANI Optimizater
 
 .. automodule:: torchani.optim
 .. autoclass:: torchani.optim.AdamW
-
-
-Ignite Helpers
-==============
-
-.. automodule:: torchani.ignite
-.. autoclass:: torchani.ignite.Container
-    :members:
-.. autoclass:: torchani.ignite.DictLoss
-.. autoclass:: torchani.ignite.PerAtomDictLoss
-.. autoclass:: torchani.ignite.TransformedLoss
-.. autofunction:: torchani.ignite.MSELoss
-.. autoclass:: torchani.ignite.DictMetric
-.. autofunction:: torchani.ignite.RMSEMetric
-.. autofunction:: torchani.ignite.MaxAEMetric

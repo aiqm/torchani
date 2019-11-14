@@ -132,46 +132,6 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="We have seen how to train a neural network potential by manually writing training loop in train...">
-
-.. only:: html
-
-    .. figure:: /examples/images/thumb/sphx_glr_nnp_training_ignite_thumb.png
-
-        :ref:`sphx_glr_examples_nnp_training_ignite.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/nnp_training_ignite
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="In the previous training-example example, AEVs are computed everytime when needed. This is not ...">
-
-.. only:: html
-
-    .. figure:: /examples/images/thumb/sphx_glr_cache_aev_thumb.png
-
-        :ref:`sphx_glr_examples_cache_aev.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/cache_aev
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI to train a neural network potential with the setup ident...">
 
 .. only:: html

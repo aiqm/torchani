@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.nn &mdash; TorchANI 1.0.1 documentation</title>
+  <title>torchani.nn &mdash; TorchANI 1.1 documentation</title>
   
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                1.0.1
+                1.1
               </div>
             
           
@@ -97,8 +97,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training_ignite.html">Train Your Own Neural Network Potential, Using PyTorch-Ignite</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../examples/cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
 <p class="caption"><span class="caption-text">TorchANI's API</span></p>
@@ -110,7 +108,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.optim">TorchANI Optimizater</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 
             
@@ -175,16 +172,24 @@
             
   <h1>Source code for torchani.nn</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="k">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span>
 
 
-<div class="viewcode-block" id="ANIModel"><a class="viewcode-back" href="../../api.html#torchani.ANIModel">[docs]</a><span class="k">class</span> <span class="nc">ANIModel</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;ANI model that compute properties from species and AEVs.</span>
+<span class="k">class</span> <span class="nc">SpeciesEnergies</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+    <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span>
+    <span class="n">energies</span><span class="p">:</span> <span class="n">Tensor</span>
+
+
+<div class="viewcode-block" id="ANIModel"><a class="viewcode-back" href="../../api.html#torchani.ANIModel">[docs]</a><span class="k">class</span> <span class="nc">ANIModel</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;ANI model that compute energies from species and AEVs.</span>
 
 <span class="sd">    Different atom types might have different modules, when computing</span>
-<span class="sd">    properties, for each atom, the module for its corresponding atom type will</span>
+<span class="sd">    energies, for each atom, the module for its corresponding atom type will</span>
 <span class="sd">    be applied to its AEV, after that, outputs of modules will be reduced along</span>
-<span class="sd">    different atoms to obtain molecular properties.</span>
+<span class="sd">    different atoms to obtain molecular energies.</span>
+
+<span class="sd">    The resulting energies are in Hartree.</span>
 
 <span class="sd">    Arguments:</span>
 <span class="sd">        modules (:class:`collections.abc.Sequence`): Modules for each atom</span>
@@ -192,102 +197,70 @@
 <span class="sd">            :attr:`modules`, which means, for example ``modules[i]`` must be</span>
 <span class="sd">            the module for atom type ``i``. Different atom types can share a</span>
 <span class="sd">            module by putting the same reference in :attr:`modules`.</span>
-<span class="sd">        padding_fill (float): The value to fill output of padding atoms.</span>
-<span class="sd">            Padding values will participate in reducing, so this value should</span>
-<span class="sd">            be appropriately chosen so that it has no effect on the result. For</span>
-<span class="sd">            example, if the reducer is :func:`torch.sum`, then</span>
-<span class="sd">            :attr:`padding_fill` should be 0, and if the reducer is</span>
-<span class="sd">            :func:`torch.min`, then :attr:`padding_fill` should be</span>
-<span class="sd">            :obj:`math.inf`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">padding_fill</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">ANIModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module_list</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">padding_fill</span> <span class="o">=</span> <span class="n">padding_fill</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modules</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ANIModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">module_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_aev</span><span class="p">):</span>
-        <span class="c1"># type: (Tuple[torch.Tensor, torch.Tensor]) -&gt; Tuple[torch.Tensor, torch.Tensor]</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_aev</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
+                <span class="n">cell</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">pbc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpeciesEnergies</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">cell</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="n">species</span><span class="p">,</span> <span class="n">aev</span> <span class="o">=</span> <span class="n">species_aev</span>
         <span class="n">species_</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
         <span class="n">aev</span> <span class="o">=</span> <span class="n">aev</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
-        <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">species_</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding_fill</span><span class="p">,</span>
-                            <span class="n">dtype</span><span class="o">=</span><span class="n">aev</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">module_list</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">aev</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">species_</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">species_</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span>
-            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">midx</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">midx</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">input_</span> <span class="o">=</span> <span class="n">aev</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">midx</span><span class="p">)</span>
                 <span class="n">output</span><span class="o">.</span><span class="n">masked_scatter_</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">m</span><span class="p">(</span><span class="n">input_</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">view_as</span><span class="p">(</span><span class="n">species</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">species</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">SpeciesEnergies</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="Ensemble"><a class="viewcode-back" href="../../api.html#torchani.Ensemble">[docs]</a><span class="k">class</span> <span class="nc">Ensemble</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Ensemble"><a class="viewcode-back" href="../../api.html#torchani.Ensemble">[docs]</a><span class="k">class</span> <span class="nc">Ensemble</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Compute the average output of an ensemble of modules.&quot;&quot;&quot;</span>
 
-    <span class="c1"># FIXME: due to PyTorch bug, we have to hard code the</span>
-    <span class="c1"># ensemble size to 8.</span>
-
-    <span class="c1"># def __init__(self, modules):</span>
-    <span class="c1">#     super(Ensemble, self).__init__()</span>
-    <span class="c1">#     self.modules_list = torch.nn.ModuleList(modules)</span>
-
-    <span class="c1"># def forward(self, species_input):</span>
-    <span class="c1">#     # type: (Tuple[torch.Tensor, torch.Tensor]) -&gt; Tuple[torch.Tensor, torch.Tensor]</span>
-    <span class="c1">#     outputs = [x(species_input)[1] for x in self.modules_list]</span>
-    <span class="c1">#     species, _ = species_input</span>
-    <span class="c1">#     return species, sum(outputs) / len(outputs)</span>
-
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modules</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">Ensemble</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model0</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model1</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model2</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model3</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model4</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model5</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model6</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model7</span> <span class="o">=</span> <span class="n">modules</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Ensemble</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">model0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model3</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model4</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model6</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model7</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
-
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_input</span><span class="p">):</span>
-        <span class="c1"># type: (Tuple[torch.Tensor, torch.Tensor]) -&gt; Tuple[torch.Tensor, torch.Tensor]</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_input</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
+                <span class="n">cell</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">pbc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpeciesEnergies</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">cell</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="n">sum_</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">sum_</span> <span class="o">+=</span> <span class="n">x</span><span class="p">(</span><span class="n">species_input</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">species</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">species_input</span>
-        <span class="n">sum_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model0</span><span class="p">(</span><span class="n">species_input</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">model1</span><span class="p">(</span><span class="n">species_input</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> \
-            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">model2</span><span class="p">(</span><span class="n">species_input</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">model3</span><span class="p">(</span><span class="n">species_input</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> \
-            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">model4</span><span class="p">(</span><span class="n">species_input</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">model5</span><span class="p">(</span><span class="n">species_input</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> \
-            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">model6</span><span class="p">(</span><span class="n">species_input</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">model7</span><span class="p">(</span><span class="n">species_input</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">species</span><span class="p">,</span> <span class="n">sum_</span> <span class="o">/</span> <span class="mf">8.0</span></div>
+        <span class="k">return</span> <span class="n">SpeciesEnergies</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">sum_</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span></div>
 
 
-<span class="k">class</span> <span class="nc">Sequential</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Sequential</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Modified Sequential module that accept Tuple type as input&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">modules</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">Sequential</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modules_list</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Sequential</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_</span><span class="p">):</span>
-        <span class="c1"># type: (Tuple[torch.Tensor, torch.Tensor]) -&gt; Tuple[torch.Tensor, torch.Tensor]</span>
-        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules_list</span><span class="p">:</span>
-            <span class="n">input_</span> <span class="o">=</span> <span class="n">module</span><span class="p">(</span><span class="n">input_</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
+                <span class="n">cell</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">pbc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">input_</span> <span class="o">=</span> <span class="n">module</span><span class="p">(</span><span class="n">input_</span><span class="p">,</span> <span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="o">=</span><span class="n">pbc</span><span class="p">)</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">pbc</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">input_</span>
 
 
 <div class="viewcode-block" id="Gaussian"><a class="viewcode-back" href="../../api.html#torchani.Gaussian">[docs]</a><span class="k">class</span> <span class="nc">Gaussian</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Gaussian activation&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span></div>
 </pre></div>
 

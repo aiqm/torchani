@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Welcome to TorchANI’s documentation! &mdash; TorchANI 1.0.1 documentation</title>
+  <title>Welcome to TorchANI’s documentation! &mdash; TorchANI 1.1 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.0.1
+                1.1
               </div>
             
           
@@ -98,8 +98,6 @@
 <li class="toctree-l1"><a class="reference internal" href="examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/nnp_training_ignite.html">Train Your Own Neural Network Potential, Using PyTorch-Ignite</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
 <p class="caption"><span class="caption-text">TorchANI's API</span></p>
@@ -111,7 +109,6 @@
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.neurochem">NeuroChem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.optim">TorchANI Optimizater</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 
             
@@ -184,8 +181,7 @@ the <a class="reference external" href="https://roitberg.chem.ufl.edu/">Roitberg
 be pipelined to compute molecular energies from the 3D coordinates of
 molecules.  It also include tools to: deal with ANI datasets(e.g. <a class="reference external" href="https://www.nature.com/articles/sdata2017193">ANI-1</a>,
 <a class="reference external" href="https://aip.scitation.org/doi/abs/10.1063/1.5023802">ANI-1x</a>, <a class="reference external" href="https://doi.org/10.26434/chemrxiv.6744440.v1">ANI-1ccx</a>, etc.) at <a class="reference internal" href="api.html#module-torchani.data" title="torchani.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.data</span></code></a>, import various file
-formats of NeuroChem at <a class="reference internal" href="api.html#module-torchani.neurochem" title="torchani.neurochem"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.neurochem</span></code></a>, help working with ignite
-at <a class="reference internal" href="api.html#module-torchani.ignite" title="torchani.ignite"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.ignite</span></code></a>, and more at <a class="reference internal" href="api.html#module-torchani.utils" title="torchani.utils"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.utils</span></code></a>.</p>
+formats of NeuroChem at <a class="reference internal" href="api.html#module-torchani.neurochem" title="torchani.neurochem"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.neurochem</span></code></a>, and more at <a class="reference internal" href="api.html#module-torchani.utils" title="torchani.utils"><code class="xref py py-attr docutils literal notranslate"><span class="pre">torchani.utils</span></code></a>.</p>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul>
@@ -202,8 +198,6 @@ at <a class="reference internal" href="api.html#module-torchani.ignite" title="t
 <li class="toctree-l1"><a class="reference internal" href="examples/load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/nnp_training.html">Train Your Own Neural Network Potential</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/nnp_training_ignite.html">Train Your Own Neural Network Potential, Using PyTorch-Ignite</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples/cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
 </div>
@@ -217,7 +211,6 @@ at <a class="reference internal" href="api.html#module-torchani.ignite" title="t
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.neurochem">NeuroChem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.optim">TorchANI Optimizater</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 </div>
 <div class="section" id="indices-and-tables">

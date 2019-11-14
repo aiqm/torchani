@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Train Your Own Neural Network Potential &mdash; TorchANI 1.0.1 documentation</title>
+  <title>Train Your Own Neural Network Potential &mdash; TorchANI 1.1 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                1.0.1
+                1.1
               </div>
             
           
@@ -99,8 +99,6 @@
 <li class="toctree-l1"><a class="reference internal" href="load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Train Your Own Neural Network Potential</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nnp_training_ignite.html">Train Your Own Neural Network Potential, Using PyTorch-Ignite</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
 <p class="caption"><span class="caption-text">TorchANI's API</span></p>
@@ -112,7 +110,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.optim">TorchANI Optimizater</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 
             
@@ -211,8 +208,7 @@ is provided as an argument to the object of <code class="xref py py-class docuti
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Besides defining these hyperparameters programmatically,
-<a class="reference internal" href="../api.html#module-torchani.neurochem" title="torchani.neurochem"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchani.neurochem</span></code></a> provide tools to read them from file. See also
-<a class="reference internal" href="nnp_training_ignite.html#training-example-ignite"><span class="std std-ref">Train Your Own Neural Network Potential, Using PyTorch-Ignite</span></a> for an example of usage.</p>
+<a class="reference internal" href="../api.html#module-torchani.neurochem" title="torchani.neurochem"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchani.neurochem</span></code></a> provide tools to read them from file.</p>
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Rcr</span> <span class="o">=</span> <span class="mf">5.2000e+00</span>
 <span class="n">Rca</span> <span class="o">=</span> <span class="mf">3.5000e+00</span>
@@ -324,43 +320,41 @@ allows us to extend TorchANI in the future to training forces and properties.</p
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>ANIModel(
-  (module_list): ModuleList(
-    (0): Sequential(
-      (0): Linear(in_features=384, out_features=160, bias=True)
-      (1): CELU(alpha=0.1)
-      (2): Linear(in_features=160, out_features=128, bias=True)
-      (3): CELU(alpha=0.1)
-      (4): Linear(in_features=128, out_features=96, bias=True)
-      (5): CELU(alpha=0.1)
-      (6): Linear(in_features=96, out_features=1, bias=True)
-    )
-    (1): Sequential(
-      (0): Linear(in_features=384, out_features=144, bias=True)
-      (1): CELU(alpha=0.1)
-      (2): Linear(in_features=144, out_features=112, bias=True)
-      (3): CELU(alpha=0.1)
-      (4): Linear(in_features=112, out_features=96, bias=True)
-      (5): CELU(alpha=0.1)
-      (6): Linear(in_features=96, out_features=1, bias=True)
-    )
-    (2): Sequential(
-      (0): Linear(in_features=384, out_features=128, bias=True)
-      (1): CELU(alpha=0.1)
-      (2): Linear(in_features=128, out_features=112, bias=True)
-      (3): CELU(alpha=0.1)
-      (4): Linear(in_features=112, out_features=96, bias=True)
-      (5): CELU(alpha=0.1)
-      (6): Linear(in_features=96, out_features=1, bias=True)
-    )
-    (3): Sequential(
-      (0): Linear(in_features=384, out_features=128, bias=True)
-      (1): CELU(alpha=0.1)
-      (2): Linear(in_features=128, out_features=112, bias=True)
-      (3): CELU(alpha=0.1)
-      (4): Linear(in_features=112, out_features=96, bias=True)
-      (5): CELU(alpha=0.1)
-      (6): Linear(in_features=96, out_features=1, bias=True)
-    )
+  (0): Sequential(
+    (0): Linear(in_features=384, out_features=160, bias=True)
+    (1): CELU(alpha=0.1)
+    (2): Linear(in_features=160, out_features=128, bias=True)
+    (3): CELU(alpha=0.1)
+    (4): Linear(in_features=128, out_features=96, bias=True)
+    (5): CELU(alpha=0.1)
+    (6): Linear(in_features=96, out_features=1, bias=True)
+  )
+  (1): Sequential(
+    (0): Linear(in_features=384, out_features=144, bias=True)
+    (1): CELU(alpha=0.1)
+    (2): Linear(in_features=144, out_features=112, bias=True)
+    (3): CELU(alpha=0.1)
+    (4): Linear(in_features=112, out_features=96, bias=True)
+    (5): CELU(alpha=0.1)
+    (6): Linear(in_features=96, out_features=1, bias=True)
+  )
+  (2): Sequential(
+    (0): Linear(in_features=384, out_features=128, bias=True)
+    (1): CELU(alpha=0.1)
+    (2): Linear(in_features=128, out_features=112, bias=True)
+    (3): CELU(alpha=0.1)
+    (4): Linear(in_features=112, out_features=96, bias=True)
+    (5): CELU(alpha=0.1)
+    (6): Linear(in_features=96, out_features=1, bias=True)
+  )
+  (3): Sequential(
+    (0): Linear(in_features=384, out_features=128, bias=True)
+    (1): CELU(alpha=0.1)
+    (2): Linear(in_features=128, out_features=112, bias=True)
+    (3): CELU(alpha=0.1)
+    (4): Linear(in_features=112, out_features=96, bias=True)
+    (5): CELU(alpha=0.1)
+    (6): Linear(in_features=96, out_features=1, bias=True)
   )
 )
 </pre></div>
@@ -483,7 +477,7 @@ is better than the best, then save the new best model to a checkpoint</p>
         <span class="n">true_energies</span> <span class="o">=</span> <span class="n">batch_y</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span>
         <span class="n">predicted_energies</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span> <span class="ow">in</span> <span class="n">batch_x</span><span class="p">:</span>
-            <span class="n">_</span><span class="p">,</span> <span class="n">chunk_energies</span> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span><span class="p">))</span>
+            <span class="n">chunk_energies</span> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span><span class="p">))</span><span class="o">.</span><span class="n">energies</span>
             <span class="n">predicted_energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk_energies</span><span class="p">)</span>
         <span class="n">predicted_energies</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">predicted_energies</span><span class="p">)</span>
         <span class="n">total_mse</span> <span class="o">+=</span> <span class="n">mse_sum</span><span class="p">(</span><span class="n">predicted_energies</span><span class="p">,</span> <span class="n">true_energies</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
@@ -538,7 +532,7 @@ set to a much larger value</p>
 
         <span class="k">for</span> <span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span> <span class="ow">in</span> <span class="n">batch_x</span><span class="p">:</span>
             <span class="n">num_atoms</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk_species</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">true_energies</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-            <span class="n">_</span><span class="p">,</span> <span class="n">chunk_energies</span> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span><span class="p">))</span>
+            <span class="n">chunk_energies</span> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span><span class="p">))</span><span class="o">.</span><span class="n">energies</span>
             <span class="n">predicted_energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk_energies</span><span class="p">)</span>
 
         <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">)</span>
@@ -564,90 +558,82 @@ set to a much larger value</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>training starting from epoch 0
-RMSE: 225.08531025965672 at epoch 0
-
-epoch 0:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 0:  25%|##5       | 1/4 [00:00&lt;00:01,  2.18it/s]
-epoch 0:  50%|#####     | 2/4 [00:00&lt;00:00,  2.16it/s]
-epoch 0:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.15it/s]
-epoch 0: 100%|##########| 4/4 [00:01&lt;00:00,  2.62it/s]
-epoch 0: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
-RMSE: 96.19253410438691 at epoch 1
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>training starting from epoch 1
+RMSE: 29.85097884466839 at epoch 1
 
 epoch 1:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 1:  25%|##5       | 1/4 [00:00&lt;00:01,  2.20it/s]
-epoch 1:  50%|#####     | 2/4 [00:00&lt;00:00,  2.17it/s]
-epoch 1:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.15it/s]
-epoch 1: 100%|##########| 4/4 [00:01&lt;00:00,  2.63it/s]
-epoch 1: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
-RMSE: 57.3516128578844 at epoch 2
+epoch 1:  25%|##5       | 1/4 [00:00&lt;00:01,  2.36it/s]
+epoch 1:  50%|#####     | 2/4 [00:00&lt;00:00,  2.33it/s]
+epoch 1:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.33it/s]
+epoch 1: 100%|##########| 4/4 [00:01&lt;00:00,  2.84it/s]
+epoch 1: 100%|##########| 4/4 [00:01&lt;00:00,  2.72it/s]
+RMSE: 258.9300804051728 at epoch 2
 
 epoch 2:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 2:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
-epoch 2:  50%|#####     | 2/4 [00:00&lt;00:00,  2.16it/s]
-epoch 2:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.13it/s]
-epoch 2: 100%|##########| 4/4 [00:01&lt;00:00,  2.57it/s]
-epoch 2: 100%|##########| 4/4 [00:01&lt;00:00,  2.48it/s]
-RMSE: 46.40685698854555 at epoch 3
+epoch 2:  25%|##5       | 1/4 [00:00&lt;00:01,  2.36it/s]
+epoch 2:  50%|#####     | 2/4 [00:00&lt;00:00,  2.36it/s]
+epoch 2:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.32it/s]
+epoch 2: 100%|##########| 4/4 [00:01&lt;00:00,  2.79it/s]
+epoch 2: 100%|##########| 4/4 [00:01&lt;00:00,  2.70it/s]
+RMSE: 119.39653021097756 at epoch 3
 
 epoch 3:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 3:  25%|##5       | 1/4 [00:00&lt;00:01,  2.20it/s]
-epoch 3:  50%|#####     | 2/4 [00:00&lt;00:00,  2.15it/s]
-epoch 3:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.15it/s]
-epoch 3: 100%|##########| 4/4 [00:01&lt;00:00,  2.62it/s]
-epoch 3: 100%|##########| 4/4 [00:01&lt;00:00,  2.51it/s]
-RMSE: 66.60131343507426 at epoch 4
+epoch 3:  25%|##5       | 1/4 [00:00&lt;00:01,  2.29it/s]
+epoch 3:  50%|#####     | 2/4 [00:00&lt;00:00,  2.30it/s]
+epoch 3:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.31it/s]
+epoch 3: 100%|##########| 4/4 [00:01&lt;00:00,  2.81it/s]
+epoch 3: 100%|##########| 4/4 [00:01&lt;00:00,  2.72it/s]
+RMSE: 39.06811907938216 at epoch 4
 
 epoch 4:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 4:  25%|##5       | 1/4 [00:00&lt;00:01,  2.19it/s]
-epoch 4:  50%|#####     | 2/4 [00:00&lt;00:00,  2.18it/s]
-epoch 4:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.15it/s]
-epoch 4: 100%|##########| 4/4 [00:01&lt;00:00,  2.61it/s]
-epoch 4: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
-RMSE: 29.3416239276426 at epoch 5
+epoch 4:  25%|##5       | 1/4 [00:00&lt;00:01,  2.30it/s]
+epoch 4:  50%|#####     | 2/4 [00:00&lt;00:00,  2.27it/s]
+epoch 4:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.25it/s]
+epoch 4: 100%|##########| 4/4 [00:01&lt;00:00,  2.73it/s]
+epoch 4: 100%|##########| 4/4 [00:01&lt;00:00,  2.62it/s]
+RMSE: 95.46007043020673 at epoch 5
 
 epoch 5:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 5:  25%|##5       | 1/4 [00:00&lt;00:01,  2.16it/s]
-epoch 5:  50%|#####     | 2/4 [00:00&lt;00:00,  2.15it/s]
-epoch 5:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.15it/s]
-epoch 5: 100%|##########| 4/4 [00:01&lt;00:00,  2.62it/s]
-epoch 5: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
-RMSE: 26.203046487466327 at epoch 6
+epoch 5:  25%|##5       | 1/4 [00:00&lt;00:01,  2.28it/s]
+epoch 5:  50%|#####     | 2/4 [00:00&lt;00:00,  2.28it/s]
+epoch 5:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.28it/s]
+epoch 5: 100%|##########| 4/4 [00:01&lt;00:00,  2.75it/s]
+epoch 5: 100%|##########| 4/4 [00:01&lt;00:00,  2.66it/s]
+RMSE: 34.08586539462155 at epoch 6
 
 epoch 6:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 6:  25%|##5       | 1/4 [00:00&lt;00:01,  2.13it/s]
-epoch 6:  50%|#####     | 2/4 [00:00&lt;00:00,  2.12it/s]
-epoch 6:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.14it/s]
-epoch 6: 100%|##########| 4/4 [00:01&lt;00:00,  2.59it/s]
-epoch 6: 100%|##########| 4/4 [00:01&lt;00:00,  2.50it/s]
-RMSE: 31.479220085682194 at epoch 7
+epoch 6:  25%|##5       | 1/4 [00:00&lt;00:01,  2.28it/s]
+epoch 6:  50%|#####     | 2/4 [00:00&lt;00:00,  2.27it/s]
+epoch 6:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.28it/s]
+epoch 6: 100%|##########| 4/4 [00:01&lt;00:00,  2.76it/s]
+epoch 6: 100%|##########| 4/4 [00:01&lt;00:00,  2.67it/s]
+RMSE: 45.62495539276582 at epoch 7
 
 epoch 7:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 7:  25%|##5       | 1/4 [00:00&lt;00:01,  2.15it/s]
-epoch 7:  50%|#####     | 2/4 [00:00&lt;00:00,  2.15it/s]
-epoch 7:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.15it/s]
-epoch 7: 100%|##########| 4/4 [00:01&lt;00:00,  2.62it/s]
-epoch 7: 100%|##########| 4/4 [00:01&lt;00:00,  2.52it/s]
-RMSE: 17.612530385949146 at epoch 8
+epoch 7:  25%|##5       | 1/4 [00:00&lt;00:01,  2.41it/s]
+epoch 7:  50%|#####     | 2/4 [00:00&lt;00:00,  2.39it/s]
+epoch 7:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.39it/s]
+epoch 7: 100%|##########| 4/4 [00:01&lt;00:00,  2.90it/s]
+epoch 7: 100%|##########| 4/4 [00:01&lt;00:00,  2.79it/s]
+RMSE: 36.40111551934829 at epoch 8
 
 epoch 8:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 8:  25%|##5       | 1/4 [00:00&lt;00:01,  2.18it/s]
-epoch 8:  50%|#####     | 2/4 [00:00&lt;00:00,  2.18it/s]
-epoch 8:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.18it/s]
-epoch 8: 100%|##########| 4/4 [00:01&lt;00:00,  2.65it/s]
-epoch 8: 100%|##########| 4/4 [00:01&lt;00:00,  2.55it/s]
-RMSE: 16.105631446983555 at epoch 9
+epoch 8:  25%|##5       | 1/4 [00:00&lt;00:01,  2.40it/s]
+epoch 8:  50%|#####     | 2/4 [00:00&lt;00:00,  2.38it/s]
+epoch 8:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.37it/s]
+epoch 8: 100%|##########| 4/4 [00:01&lt;00:00,  2.87it/s]
+epoch 8: 100%|##########| 4/4 [00:01&lt;00:00,  2.76it/s]
+RMSE: 16.88692660087354 at epoch 9
 
 epoch 9:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 9:  25%|##5       | 1/4 [00:00&lt;00:01,  2.20it/s]
-epoch 9:  50%|#####     | 2/4 [00:00&lt;00:00,  2.16it/s]
-epoch 9:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.17it/s]
-epoch 9: 100%|##########| 4/4 [00:01&lt;00:00,  2.65it/s]
-epoch 9: 100%|##########| 4/4 [00:01&lt;00:00,  2.54it/s]
+epoch 9:  25%|##5       | 1/4 [00:00&lt;00:01,  2.21it/s]
+epoch 9:  50%|#####     | 2/4 [00:00&lt;00:00,  2.24it/s]
+epoch 9:  75%|#######5  | 3/4 [00:01&lt;00:00,  2.23it/s]
+epoch 9: 100%|##########| 4/4 [00:01&lt;00:00,  2.71it/s]
+epoch 9: 100%|##########| 4/4 [00:01&lt;00:00,  2.62it/s]
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  18.275 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  15.241 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-nnp-training-py">
 <div class="sphx-glr-download docutils container">
 <a class="reference download internal" download="" href="../_downloads/1a1c456fc1c08da39ec892b2971889ce/nnp_training.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">nnp_training.py</span></code></a></div>

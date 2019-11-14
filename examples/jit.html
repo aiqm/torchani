@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Using TorchScript to serialize and deploy model &mdash; TorchANI 1.0.1 documentation</title>
+  <title>Using TorchScript to serialize and deploy model &mdash; TorchANI 1.1 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                1.0.1
+                1.1
               </div>
             
           
@@ -99,8 +99,6 @@
 <li class="toctree-l1"><a class="reference internal" href="load_from_neurochem.html">Construct Model From NeuroChem Files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training.html">Train Your Own Neural Network Potential</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nnp_training_ignite.html">Train Your Own Neural Network Potential, Using PyTorch-Ignite</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cache_aev.html">Use Disk Cache of AEV to Boost Training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
 <p class="caption"><span class="caption-text">TorchANI's API</span></p>
@@ -112,7 +110,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.optim">TorchANI Optimizater</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ignite">Ignite Helpers</a></li>
 </ul>
 
             
@@ -222,20 +219,20 @@ produces the same output as the original model:</p>
 </pre></div>
 </div>
 <p>And here is the result:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">_</span><span class="p">,</span> <span class="n">energies_ensemble</span> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span>
-<span class="n">_</span><span class="p">,</span> <span class="n">energies_single</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="mi">0</span><span class="p">]((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span>
-<span class="n">_</span><span class="p">,</span> <span class="n">energies_ensemble_jit</span> <span class="o">=</span> <span class="n">loaded_compiled_model</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span>
-<span class="n">_</span><span class="p">,</span> <span class="n">energies_single_jit</span> <span class="o">=</span> <span class="n">loaded_compiled_model0</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">energies_ensemble</span> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span><span class="o">.</span><span class="n">energies</span>
+<span class="n">energies_single</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="mi">0</span><span class="p">]((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span><span class="o">.</span><span class="n">energies</span>
+<span class="n">energies_ensemble_jit</span> <span class="o">=</span> <span class="n">loaded_compiled_model</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span><span class="o">.</span><span class="n">energies</span>
+<span class="n">energies_single_jit</span> <span class="o">=</span> <span class="n">loaded_compiled_model0</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span><span class="o">.</span><span class="n">energies</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Ensemble energy, eager mode vs loaded jit:&#39;</span><span class="p">,</span> <span class="n">energies_ensemble</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">energies_ensemble_jit</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Single network energy, eager mode vs loaded jit:&#39;</span><span class="p">,</span> <span class="n">energies_single</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">energies_single_jit</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Ensemble energy, eager mode vs loaded jit: -40.425621032714844 -40.425621032714844
-Single network energy, eager mode vs loaded jit: -40.42878341674805 -40.42878341674805
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Ensemble energy, eager mode vs loaded jit: -40.425620573407016 -40.425620573407016
+Single network energy, eager mode vs loaded jit: -40.42878345662912 -40.42878345662912
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  7.561 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  2.542 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-jit-py">
 <div class="sphx-glr-download docutils container">
 <a class="reference download internal" download="" href="../_downloads/fc02d4b5c363f001bb660e86661c89f5/jit.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">jit.py</span></code></a></div>
