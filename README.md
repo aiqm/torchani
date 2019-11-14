@@ -77,7 +77,7 @@ pip install -e .
 After TorchANI has been installed, you can build the documents by running `sphinx-build docs build`. But make sure you
 install dependencies:
 ```bash
-pip install sphinx sphinx-gallery pillow matplotlib sphinx_rtd_theme
+pip install sphinx sphinx-gallery pillow matplotlib pytorch_sphinx_theme
 ```
 
 To manually run unit tests, do `python setup.py nosetests`

@@ -1,5 +1,5 @@
 import torchani  # noqa: F401
-import sphinx_rtd_theme
+import pytorch_sphinx_theme
 
 project = 'TorchANI'
 copyright = '2018, Roitberg Group'
@@ -24,10 +24,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 pygments_style = 'sphinx'
 html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme_path = [pytorch_sphinx_theme.get_html_theme_path()]
 htmlhelp_basename = 'TorchANIdoc'
-# Temporary fix for bug in HTML5 support in the RTD theme
-html4_writer = True
 
 sphinx_gallery_conf = {
     'examples_dirs': '../examples',
