@@ -190,7 +190,7 @@ class ANI1x(BuiltinNet):
     """
 
     def __init__(self):
-        super(ANI1x, self).__init__('ani-1x_8x.info')
+        super().__init__('ani-1x_8x.info')
 
 
 class ANI1ccx(BuiltinNet):
@@ -210,4 +210,4 @@ class ANI1ccx(BuiltinNet):
     """
 
     def __init__(self):
-        super(ANI1ccx, self).__init__('ani-1ccx_8x.info')
+        super().__init__('ani-1ccx_8x.info')
