@@ -497,8 +497,8 @@ if sys.version_info[0] > 2:
             input_size, network_setup = network_setup
             if input_size != self.aev_computer.aev_length:
                 raise ValueError('AEV size and input size does not match')
-            atomic_nets = {}
-            for atom_type in network_setup:
+            atomic_nets = OrderedDict()
+            for atom_type in self.consts.species:
                 layers = network_setup[atom_type]
                 modules = []
                 i = input_size
@@ -538,7 +538,7 @@ if sys.version_info[0] > 2:
                             'unrecognized parameter in layer setup')
                     i = o
                 atomic_nets[atom_type] = torch.nn.Sequential(*modules)
-            self.nn = ANIModel([atomic_nets[s] for s in self.consts.species])
+            self.nn = ANIModel(atomic_nets)
 
             # initialize weights and biases
             self.nn.apply(init_params)
