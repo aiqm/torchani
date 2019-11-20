@@ -55,6 +55,10 @@ class ANIModel(torch.nn.ModuleList):
 class Ensemble(torch.nn.ModuleList):
     """Compute the average output of an ensemble of modules."""
 
+    def __init__(self, modules):
+        super().__init__(modules)
+        self.size = len(modules)
+
     def forward(self, species_input: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
@@ -64,7 +68,7 @@ class Ensemble(torch.nn.ModuleList):
         for x in self:
             sum_ += x(species_input)[1]
         species, _ = species_input
-        return SpeciesEnergies(species, sum_ / len(self))
+        return SpeciesEnergies(species, sum_ / self.size)
 
 
 class Sequential(torch.nn.ModuleList):
