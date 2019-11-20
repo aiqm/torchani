@@ -31,7 +31,6 @@ from . import neurochem
 from . import models
 from . import optim
 from pkg_resources import get_distribution, DistributionNotFound
-import sys
 
 try:
     __version__ = get_distribution(__name__).version
