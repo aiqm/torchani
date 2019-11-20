@@ -1,4 +1,5 @@
 import torch
+from collections import OrderedDict
 from torch import Tensor
 from typing import Tuple, NamedTuple, Optional
 
@@ -13,7 +14,7 @@ class SpeciesCoordinates(NamedTuple):
     coordinates: Tensor
 
 
-class ANIModel(torch.nn.ModuleList):
+class ANIModel(torch.nn.ModuleDict):
     """ANI model that compute energies from species and AEVs.
 
     Different atom types might have different modules, when computing
@@ -31,6 +32,18 @@ class ANIModel(torch.nn.ModuleList):
             module by putting the same reference in :attr:`modules`.
     """
 
+    @staticmethod
+    def ensureOrderedDict(modules):
+        if isinstance(modules, OrderedDict):
+            return modules
+        od = OrderedDict()
+        for i, m in enumerate(modules):
+            od[str(i)] = m
+        return od
+
+    def __init__(self, modules):
+        super(ANIModel, self).__init__(self.ensureOrderedDict(modules))
+
     def forward(self, species_aev: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
@@ -42,7 +55,7 @@ class ANIModel(torch.nn.ModuleList):
 
         output = aev.new_zeros(species_.shape)
 
-        for i, m in enumerate(self):
+        for i, (_, m) in enumerate(self.items()):
             mask = (species_ == i)
             midx = mask.nonzero().flatten()
             if midx.shape[0] > 0:
