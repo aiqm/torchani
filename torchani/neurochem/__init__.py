@@ -15,6 +15,7 @@ from ..nn import ANIModel, Ensemble, Gaussian, Sequential
 from ..utils import EnergyShifter, ChemicalSymbolsToInts
 from ..aev import AEVComputer
 from ..optim import AdamW
+from collections import OrderedDict
 
 
 class Constants(collections.abc.Mapping):
@@ -240,10 +241,10 @@ def load_model(species, dir_):
             chemical symbols of each supported atom type in correct order.
         dir_ (str): String for directory storing network configurations.
     """
-    models = []
+    models = OrderedDict()
     for i in species:
         filename = os.path.join(dir_, 'ANN-{}.nnf'.format(i))
-        models.append(load_atomic_network(filename))
+        models[i] = load_atomic_network(filename)
     return ANIModel(models)
 
 
