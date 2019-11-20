@@ -64,7 +64,7 @@ class Ensemble(torch.nn.ModuleList):
         for x in self:
             sum_ += x(species_input)[1]
         species, _ = species_input
-        return SpeciesEnergies(species, sum_ / self.size)
+        return SpeciesEnergies(species, sum_ / len(self))
 
 
 class Sequential(torch.nn.ModuleList):
