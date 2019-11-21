@@ -43,8 +43,6 @@ class TestBuiltinNetPeriodicTableIndex(unittest.TestCase):
         species1 = model1.species_to_tensor('CHHHH').unsqueeze(0)
         species2 = torch.tensor([[6, 1, 1, 1, 1]])
 
-        ###############################################################################
-        # Now let's compute energy and force:
         energy1 = model1((species1, coordinates)).energies
         energy2 = model2((species2, coordinates)).energies
         derivative1 = torch.autograd.grad(energy1.sum(), coordinates)[0]
