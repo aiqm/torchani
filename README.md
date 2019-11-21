@@ -22,6 +22,7 @@ Deploy:
 [![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-pypi/badge.svg)](https://github.com/aiqm/torchani/actions)
 
 We only provide compatibility with nightly PyTorch, but you can check if stable PyTorch happens to be supported by looking at the following badge:
+
 [![Actions Status](https://github.com/aiqm/torchani/workflows/stable-torch/badge.svg)](https://github.com/aiqm/torchani/actions)
 
 
