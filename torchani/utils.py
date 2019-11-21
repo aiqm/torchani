@@ -217,8 +217,6 @@ class EnergyShifter(torch.nn.Module):
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         """(species, molecular energies)->(species, molecular energies + sae)
         """
-        assert cell is None
-        assert pbc is None
         species, energies = species_energies
         sae = self.sae(species).to(energies.device)
         return SpeciesEnergies(species, energies.to(sae.dtype) + sae)

@@ -14,7 +14,7 @@ import torchani
 
 ###############################################################################
 # Let's now manually specify the device we want TorchANI to run:
-device = torch.device('cpu')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 ###############################################################################
 # Let's now load the built-in ANI-1ccx models. The builtin ANI-1ccx contains 8
@@ -22,7 +22,10 @@ device = torch.device('cpu')
 # using the average of the 8 models outperform using a single model, so it is
 # always recommended to use an ensemble, unless the speed of computation is an
 # issue in your application.
-model = torchani.models.ANI1ccx()
+#
+# The ``periodic_table_index`` arguments tells TorchANI to use element index
+# in periodic table to index species.
+model = torchani.models.ANI1ccx(periodic_table_index=True).to(device)
 
 ###############################################################################
 # Now let's define the coordinate and species. If you just want to compute the
@@ -40,7 +43,8 @@ coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
                              [0.45554739, 0.54289633, 0.81170881],
                              [0.66091919, -0.16799635, -0.91037834]]],
                            requires_grad=True, device=device)
-species = model.species_to_tensor('CHHHH').to(device).unsqueeze(0)
+# In periodic table, C = 6 and H = 1
+species = torch.tensor([[6, 1, 1, 1, 1]], device=device)
 
 ###############################################################################
 # Now let's compute energy and force:
