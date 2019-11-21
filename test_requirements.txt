@@ -4,3 +4,4 @@ ase
 h5py
 pillow
 pkbar
+pyyaml

@@ -28,7 +28,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install torch tqdm pyyaml future pkbar ase
+        pip install torch pytest
         pip install -r test_requirements.txt
         pip install .
     - name: Download data files
