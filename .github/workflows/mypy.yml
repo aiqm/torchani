@@ -1,0 +1,30 @@
+name: mypy
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Type checking with mypy
+      run: |
+        pip install --upgrade pip
+        pip install mypy
+        mypy --no-site-packages --ignore-missing-imports torchani/{aev,nn,utils,models,ase}.py

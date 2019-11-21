@@ -16,7 +16,7 @@ import torchani
 ###############################################################################
 # Let's now load the built-in ANI-1ccx models. The builtin ANI-1ccx contains 8
 # models trained with diffrent initialization.
-model = torchani.models.ANI1ccx()
+model = torchani.models.ANI1ccx(periodic_table_index=True)
 
 ###############################################################################
 # It is very easy to compile and save the model using `torch.jit`.
@@ -42,7 +42,8 @@ coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
                              [-0.66518241, -0.84461308, 0.20759389],
                              [0.45554739, 0.54289633, 0.81170881],
                              [0.66091919, -0.16799635, -0.91037834]]])
-species = model.species_to_tensor('CHHHH').unsqueeze(0)
+# In periodic table, C = 6 and H = 1
+species = torch.tensor([[6, 1, 1, 1, 1]])
 
 ###############################################################################
 # And here is the result:

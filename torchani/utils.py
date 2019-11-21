@@ -4,7 +4,7 @@ import torch.utils.data
 import math
 import numpy as np
 from collections import defaultdict
-from typing import Tuple, NamedTuple
+from typing import Tuple, NamedTuple, Optional
 from .nn import SpeciesEnergies
 
 
@@ -212,7 +212,9 @@ class EnergyShifter(torch.nn.Module):
         properties['energies'] = energies
         return atomic_properties, properties
 
-    def forward(self, species_energies: Tuple[Tensor, Tensor]) -> SpeciesEnergies:
+    def forward(self, species_energies: Tuple[Tensor, Tensor],
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         """(species, molecular energies)->(species, molecular energies + sae)
         """
         species, energies = species_energies

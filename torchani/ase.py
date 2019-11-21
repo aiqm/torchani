@@ -6,12 +6,9 @@
 """
 
 import torch
-from .nn import Sequential
-import ase.neighborlist
 from . import utils
 import ase.calculators.calculator
 import ase.units
-import copy
 
 
 class Calculator(ase.calculators.calculator.Calculator):
@@ -20,12 +17,8 @@ class Calculator(ase.calculators.calculator.Calculator):
     Arguments:
         species (:class:`collections.abc.Sequence` of :class:`str`):
             sequence of all supported species, in order.
-        aev_computer (:class:`torchani.AEVComputer`): AEV computer.
-        model (:class:`torchani.ANIModel` or :class:`torchani.Ensemble`):
-            neural network potential models.
-        energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter.
-        dtype (:class:`torchani.EnergyShifter`): data type to use,
-            by dafault ``torch.float64``.
+        model (:class:`torch.nn.Module`): neural network potential model
+            that convert coordinates into energies.
         overwrite (bool): After wrapping atoms into central box, whether
             to replace the original positions stored in :class:`ase.Atoms`
             object with the wrapped positions.
@@ -33,31 +26,15 @@ class Calculator(ase.calculators.calculator.Calculator):
 
     implemented_properties = ['energy', 'forces', 'stress', 'free_energy']
 
-    def __init__(self, species, aev_computer, model, energy_shifter, dtype=torch.float64, overwrite=False):
+    def __init__(self, species, model, overwrite=False):
         super(Calculator, self).__init__()
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
-        # aev_computer.neighborlist will be changed later, so we need a copy to
-        # make sure we do not change the original object
-        aev_computer = copy.deepcopy(aev_computer)
-        self.aev_computer = aev_computer.to(dtype)
-        self.model = copy.deepcopy(model)
-        self.energy_shifter = copy.deepcopy(energy_shifter)
+        self.model = model
         self.overwrite = overwrite
 
-        self.device = self.aev_computer.EtaR.device
-        self.dtype = dtype
-
-        self.nn = Sequential(
-            self.model,
-            self.energy_shifter
-        ).to(dtype)
-
-    @staticmethod
-    def strain(tensor, displacement, surface_normal_axis):
-        displacement_of_tensor = torch.zeros_like(tensor)
-        for axis in range(3):
-            displacement_of_tensor[..., axis] = tensor[..., surface_normal_axis] * displacement[axis]
-        return displacement_of_tensor
+        a_parameter = next(self.model.parameters())
+        self.device = a_parameter.device
+        self.dtype = a_parameter.dtype
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=ase.calculators.calculator.all_changes):
@@ -70,7 +47,7 @@ class Calculator(ase.calculators.calculator.Calculator):
         species = self.species_to_tensor(self.atoms.get_chemical_symbols()).to(self.device)
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions())
-        coordinates = coordinates.unsqueeze(0).to(self.device).to(self.dtype) \
+        coordinates = coordinates.to(self.device).to(self.dtype) \
                                  .requires_grad_('forces' in properties)
 
         if pbc_enabled:
@@ -79,25 +56,17 @@ class Calculator(ase.calculators.calculator.Calculator):
                 atoms.set_positions(coordinates.detach().cpu().reshape(-1, 3).numpy())
 
         if 'stress' in properties:
-            displacements = torch.zeros(3, 3, requires_grad=True,
-                                        dtype=self.dtype, device=self.device)
-            displacement_x, displacement_y, displacement_z = displacements
-            strain_x = self.strain(coordinates, displacement_x, 0)
-            strain_y = self.strain(coordinates, displacement_y, 1)
-            strain_z = self.strain(coordinates, displacement_z, 2)
-            coordinates = coordinates + strain_x + strain_y + strain_z
+            scaling = torch.eye(3, requires_grad=True, dtype=self.dtype, device=self.device)
+            coordinates = coordinates @ scaling
+        coordinates = coordinates.unsqueeze(0)
 
         if pbc_enabled:
             if 'stress' in properties:
-                strain_x = self.strain(cell, displacement_x, 0)
-                strain_y = self.strain(cell, displacement_y, 1)
-                strain_z = self.strain(cell, displacement_z, 2)
-                cell = cell + strain_x + strain_y + strain_z
-            aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc).aevs
+                cell = cell @ scaling
+            energy = self.model((species, coordinates), cell=cell, pbc=pbc).energies
         else:
-            aev = self.aev_computer((species, coordinates)).aevs
+            energy = self.model((species, coordinates)).energies
 
-        energy = self.nn((species, aev)).energies
         energy *= ase.units.Hartree
         self.results['energy'] = energy.item()
         self.results['free_energy'] = energy.item()
@@ -108,5 +77,5 @@ class Calculator(ase.calculators.calculator.Calculator):
 
         if 'stress' in properties:
             volume = self.atoms.get_volume()
-            stress = torch.autograd.grad(energy.squeeze(), displacements)[0] / volume
+            stress = torch.autograd.grad(energy.squeeze(), scaling)[0] / volume
             self.results['stress'] = stress.cpu().numpy()
