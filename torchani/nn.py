@@ -47,8 +47,6 @@ class ANIModel(torch.nn.ModuleDict):
     def forward(self, species_aev: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
-        assert cell is None
-        assert pbc is None
         species, aev = species_aev
         species_ = species.flatten()
         aev = aev.flatten(0, 1)
@@ -75,8 +73,6 @@ class Ensemble(torch.nn.ModuleList):
     def forward(self, species_input: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
-        assert cell is None
-        assert pbc is None
         sum_ = 0
         for x in self:
             sum_ += x(species_input)[1]
@@ -95,8 +91,6 @@ class Sequential(torch.nn.ModuleList):
                 pbc: Optional[Tensor] = None):
         for module in self:
             input_ = module(input_, cell=cell, pbc=pbc)
-            cell = None
-            pbc = None
         return input_
 
 
