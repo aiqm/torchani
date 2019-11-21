@@ -244,7 +244,7 @@ class ChemicalSymbolsToInts:
         return len(self.rev_species)
 
 
-def hessian(coordinates, energies=None, forces=None):
+def hessian(coordinates: Tensor, energies: Optional[Tensor] = None, forces: Optional[Tensor] = None) -> Tensor:
     """Compute analytical hessian from the energy graph or force graph.
 
     Arguments:
@@ -265,6 +265,7 @@ def hessian(coordinates, energies=None, forces=None):
     if energies is not None and forces is not None:
         raise ValueError('Energies or forces can not be specified at the same time')
     if forces is None:
+        assert energies is not None
         forces = -torch.autograd.grad([energies.sum()], [coordinates], create_graph=True)[0]
     flattened_force = forces.flatten(start_dim=1)
     force_components = flattened_force.unbind(dim=1)
