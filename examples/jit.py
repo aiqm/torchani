@@ -61,13 +61,6 @@ print('Single network energy, eager mode vs loaded jit:', energies_single.item()
 
 
 ###############################################################################
-# Let's print separator between sections:
-print()
-print('=' * 80)
-print()
-
-
-###############################################################################
 # Customize the model and script
 # ------------------------------
 #
