@@ -91,7 +91,9 @@ class CustomModule(torch.nn.Module):
         forces: Optional[Tensor] = None  # noqa: E701
         hessians: Optional[Tensor] = None
         if return_forces or return_hessians:
-            forces = torch.autograd.grad([energies.sum()], [coordinates], create_graph=return_hessians)[0]
+            grad = torch.autograd.grad([energies.sum()], [coordinates], create_graph=return_hessians)[0]
+            assert grad is not None
+            forces = -grad
             if return_hessians:
                 hessians = torchani.utils.hessian(coordinates, forces=forces)
         return energies, forces, hessians
