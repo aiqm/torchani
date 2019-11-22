@@ -9,6 +9,7 @@ Welcome to TorchANI's documentation!
     :caption: Getting Started
 
     start
+    tips
 
 .. toctree::
     :maxdepth: 2
