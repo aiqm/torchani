@@ -66,10 +66,11 @@ print('Single network energy, eager mode vs loaded jit:', energies_single.item()
 #
 # You could also customize the model you want to export. For example, let's do
 # the following customization to the model:
-# 1. uses double as dtype instead of float
-# 2. don't care about periodic boundary condition
-# 3. in addition to energies, allow returnsing optionally forces, and hessians
-# 4. when indexing atom species, use its index in the periodic table instead of 0, 1, 2, 3, ...
+#
+# - uses double as dtype instead of float
+# - don't care about periodic boundary condition
+# - in addition to energies, allow returnsing optionally forces, and hessians
+# - when indexing atom species, use its index in the periodic table instead of 0, 1, 2, 3, ...
 #
 # you could do the following:
 class CustomModule(torch.nn.Module):
