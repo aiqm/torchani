@@ -32,7 +32,7 @@ from torch import Tensor
 from typing import Tuple, Optional
 from pkg_resources import resource_filename
 from . import neurochem
-from .nn import Sequential, SpeciesConverter
+from .nn import Sequential, SpeciesConverter, SpeciesEnergies
 from .aev import AEVComputer
 
 
@@ -97,7 +97,7 @@ class BuiltinNet(torch.nn.Module):
 
     def forward(self, species_coordinates: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
-                pbc: Optional[Tensor] = None) -> Tuple[Tensor, Tensor]:
+                pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         """Calculates predicted properties for minibatch of configurations
 
         Args:
