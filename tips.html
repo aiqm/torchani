@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation &mdash; TorchANI 1.2 documentation</title>
+  <title>Tips &mdash; TorchANI 1.2 documentation</title>
   
 
   
@@ -37,8 +37,8 @@
   <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Tips" href="tips.html" />
-    <link rel="prev" title="Welcome to TorchANI’s documentation!" href="index.html" /> 
+    <link rel="next" title="Computing Energy and Force Using Models Inside Model Zoo" href="examples/energy_force.html" />
+    <link rel="prev" title="Installation" href="start.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -88,8 +88,8 @@
             
               <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tips.html">Tips</a></li>
+<li class="toctree-l1"><a class="reference internal" href="start.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tips</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -156,13 +156,13 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Installation</li>
+      <li>Tips</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/start.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/tips.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -175,22 +175,26 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="installation">
-<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>TorchANI requires the latest preview version of PyTorch. You can install PyTorch by the following commands (assuming cuda10):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install numpy
-pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
-</pre></div>
-</div>
-<p>If you updated TorchANI, you may also need to update PyTorch:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
-</pre></div>
-</div>
-<p>After installing the correct PyTorch, you can install TorchANI by:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install torchani
-</pre></div>
-</div>
-<p>See also <a class="reference external" href="https://pytorch.org/get-started/locally/">PyTorch’s official site</a> for instructions of installing latest preview version of PyTorch.</p>
+  <div class="section" id="tips">
+<h1>Tips<a class="headerlink" href="#tips" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt>Coordinates are in Angstrom, energies are in Hartree</dt><dd><ul>
+<li>Therefore, forces are in Hartree/Angstrom</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Species are indexed by 0, 1, 2, 3, ….</dt><dd><ul>
+<li>You could use <a class="reference internal" href="api.html#torchani.SpeciesConverter" title="torchani.SpeciesConverter"><code class="xref py py-class docutils literal notranslate"><span class="pre">torchani.SpeciesConverter</span></code></a> to convert from periodic table element index to 0, 1, 2, 3, …</li>
+<li>Builtin models has an argument <code class="docutils literal notranslate"><span class="pre">periodic_table_index</span></code> in its constructor. You can set this to <code class="docutils literal notranslate"><span class="pre">True</span></code> when
+constructing models to switch to periodic table indexing.</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
 </div>
 
 
@@ -201,10 +205,10 @@ pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="tips.html" class="btn btn-neutral float-right" title="Tips" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="examples/energy_force.html" class="btn btn-neutral float-right" title="Computing Energy and Force Using Models Inside Model Zoo" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to TorchANI’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="start.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

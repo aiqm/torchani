@@ -12,33 +12,13 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI has a model zoo trained by NeuroChem. These models are shipped with TorchANI and can b...">
-
-.. only:: html
-
-    .. figure:: /examples/images/thumb/sphx_glr_energy_force_thumb.png
-
-        :ref:`sphx_glr_examples_energy_force.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/energy_force
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="This example is modified from the official home page and `Constant temperature MD`_ to use the ...">
 
 .. only:: html
 
-    .. figure:: /examples/images/thumb/sphx_glr_ase_interface_thumb.png
+ .. figure:: /examples/images/thumb/sphx_glr_ase_interface_thumb.png
 
-        :ref:`sphx_glr_examples_ase_interface.py`
+     :ref:`sphx_glr_examples_ase_interface.py`
 
 .. raw:: html
 
@@ -52,13 +32,33 @@ Examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI has a model zoo trained by NeuroChem. These models are shipped with TorchANI and can b...">
+
+.. only:: html
+
+ .. figure:: /examples/images/thumb/sphx_glr_energy_force_thumb.png
+
+     :ref:`sphx_glr_examples_energy_force.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/energy_force
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="TorchANI is able to use ASE interface to do structure optimization and vibration analysis, but ...">
 
 .. only:: html
 
-    .. figure:: /examples/images/thumb/sphx_glr_vibration_analysis_thumb.png
+ .. figure:: /examples/images/thumb/sphx_glr_vibration_analysis_thumb.png
 
-        :ref:`sphx_glr_examples_vibration_analysis.py`
+     :ref:`sphx_glr_examples_vibration_analysis.py`
 
 .. raw:: html
 
@@ -76,9 +76,9 @@ Examples
 
 .. only:: html
 
-    .. figure:: /examples/images/thumb/sphx_glr_neurochem_trainer_thumb.png
+ .. figure:: /examples/images/thumb/sphx_glr_neurochem_trainer_thumb.png
 
-        :ref:`sphx_glr_examples_neurochem_trainer.py`
+     :ref:`sphx_glr_examples_neurochem_trainer.py`
 
 .. raw:: html
 
@@ -92,33 +92,13 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Models in TorchANI&#x27;s model zoo support TorchScript. TorchScript is a way to create serializable...">
-
-.. only:: html
-
-    .. figure:: /examples/images/thumb/sphx_glr_jit_thumb.png
-
-        :ref:`sphx_glr_examples_jit.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/jit
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="This tutorial illustrates how to manually load model from `NeuroChem files`_.">
 
 .. only:: html
 
-    .. figure:: /examples/images/thumb/sphx_glr_load_from_neurochem_thumb.png
+ .. figure:: /examples/images/thumb/sphx_glr_load_from_neurochem_thumb.png
 
-        :ref:`sphx_glr_examples_load_from_neurochem.py`
+     :ref:`sphx_glr_examples_load_from_neurochem.py`
 
 .. raw:: html
 
@@ -132,13 +112,33 @@ Examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Models in TorchANI&#x27;s model zoo support TorchScript. TorchScript is a way to create serializable...">
+
+.. only:: html
+
+ .. figure:: /examples/images/thumb/sphx_glr_jit_thumb.png
+
+     :ref:`sphx_glr_examples_jit.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/jit
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI to train a neural network potential with the setup ident...">
 
 .. only:: html
 
-    .. figure:: /examples/images/thumb/sphx_glr_nnp_training_thumb.png
+ .. figure:: /examples/images/thumb/sphx_glr_nnp_training_thumb.png
 
-        :ref:`sphx_glr_examples_nnp_training.py`
+     :ref:`sphx_glr_examples_nnp_training.py`
 
 .. raw:: html
 
@@ -156,9 +156,9 @@ Examples
 
 .. only:: html
 
-    .. figure:: /examples/images/thumb/sphx_glr_nnp_training_force_thumb.png
+ .. figure:: /examples/images/thumb/sphx_glr_nnp_training_force_thumb.png
 
-        :ref:`sphx_glr_examples_nnp_training_force.py`
+     :ref:`sphx_glr_examples_nnp_training_force.py`
 
 .. raw:: html
 
@@ -171,7 +171,7 @@ Examples
    /examples/nnp_training_force
 .. raw:: html
 
-    <div style='clear:both'></div>
+    <div class="sphx-glr-clear"></div>
 
 
 

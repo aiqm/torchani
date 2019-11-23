@@ -21,12 +21,18 @@ To begin with, let's first import the modules we will use:
 
     import torch
     import torchani
+    from typing import Tuple, Optional
+    from torch import Tensor
 
 
 
 
 
 
+
+
+Scripting builtin model directly
+--------------------------------
 
 Let's now load the built-in ANI-1ccx models. The builtin ANI-1ccx contains 8
 models trained with diffrent initialization.
@@ -34,7 +40,8 @@ models trained with diffrent initialization.
 
 .. code-block:: default
 
-    model = torchani.models.ANI1ccx()
+    model = torchani.models.ANI1ccx(periodic_table_index=True)
+
 
 
 
@@ -56,6 +63,7 @@ It is very easy to compile and save the model using `torch.jit`.
 
 
 
+
 Besides compiling the ensemble, it is also possible to compile a single network
 
 
@@ -63,6 +71,7 @@ Besides compiling the ensemble, it is also possible to compile a single network
 
     compiled_model0 = torch.jit.script(model[0])
     torch.jit.save(compiled_model0, 'compiled_model0.pt')
+
 
 
 
@@ -86,6 +95,7 @@ produces the same output as the original model:
 
 
 
+
 We use the molecule below to test:
 
 
@@ -96,7 +106,9 @@ We use the molecule below to test:
                                  [-0.66518241, -0.84461308, 0.20759389],
                                  [0.45554739, 0.54289633, 0.81170881],
                                  [0.66091919, -0.16799635, -0.91037834]]])
-    species = model.species_to_tensor('CHHHH').unsqueeze(0)
+    # In periodic table, C = 6 and H = 1
+    species = torch.tensor([[6, 1, 1, 1, 1]])
+
 
 
 
@@ -119,6 +131,8 @@ And here is the result:
 
 
 
+
+
 .. rst-class:: sphx-glr-script-out
 
  Out:
@@ -131,9 +145,124 @@ And here is the result:
 
 
 
+Customize the model and script
+------------------------------
+
+You could also customize the model you want to export. For example, let's do
+the following customization to the model:
+
+- uses double as dtype instead of float
+- don't care about periodic boundary condition
+- in addition to energies, allow returnsing optionally forces, and hessians
+- when indexing atom species, use its index in the periodic table instead of 0, 1, 2, 3, ...
+
+you could do the following:
+
+
+.. code-block:: default
+
+    class CustomModule(torch.nn.Module):
+
+        def __init__(self):
+            super().__init__()
+            self.model = torchani.models.ANI1x(periodic_table_index=True).double()
+            # self.model = torchani.models.ANI1x(periodic_table_index=True)[0].double()
+            # self.model = torchani.models.ANI1ccx(periodic_table_index=True).double()
+
+        def forward(self, species: Tensor, coordinates: Tensor, return_forces: bool = False,
+                    return_hessians: bool = False) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+            if return_forces or return_hessians:
+                coordinates.requires_grad_(True)
+
+            energies = self.model((species, coordinates)).energies
+
+            forces: Optional[Tensor] = None  # noqa: E701
+            hessians: Optional[Tensor] = None
+            if return_forces or return_hessians:
+                grad = torch.autograd.grad([energies.sum()], [coordinates], create_graph=return_hessians)[0]
+                assert grad is not None
+                forces = -grad
+                if return_hessians:
+                    hessians = torchani.utils.hessian(coordinates, forces=forces)
+            return energies, forces, hessians
+
+
+    custom_model = CustomModule()
+    compiled_custom_model = torch.jit.script(custom_model)
+    torch.jit.save(compiled_custom_model, 'compiled_custom_model.pt')
+    loaded_compiled_custom_model = torch.jit.load('compiled_custom_model.pt')
+    energies, forces, hessians = custom_model(species, coordinates, True, True)
+    energies_jit, forces_jit, hessians_jit = loaded_compiled_custom_model(species, coordinates, True, True)
+
+    print('Energy, eager mode vs loaded jit:', energies.item(), energies_jit.item())
+    print()
+    print('Force, eager mode vs loaded jit:\n', forces.squeeze(0), '\n', forces_jit.squeeze(0))
+    print()
+    torch.set_printoptions(sci_mode=False, linewidth=1000)
+    print('Hessian, eager mode vs loaded jit:\n', hessians.squeeze(0), '\n', hessians_jit.squeeze(0))
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    Energy, eager mode vs loaded jit: -40.45902210640358 -40.45902210640358
+
+    Force, eager mode vs loaded jit:
+     tensor([[ 0.0306, -0.1316, -0.0527],
+            [-0.1293,  0.1639, -0.0774],
+            [ 0.0856, -0.0429,  0.0408],
+            [ 0.0268,  0.0060,  0.0381],
+            [-0.0138,  0.0046,  0.0511]], grad_fn=<SqueezeBackward1>) 
+     tensor([[ 0.0306, -0.1316, -0.0527],
+            [-0.1293,  0.1639, -0.0774],
+            [ 0.0856, -0.0429,  0.0408],
+            [ 0.0268,  0.0060,  0.0381],
+            [-0.0138,  0.0046,  0.0511]], grad_fn=<SqueezeBackward1>)
+
+    Hessian, eager mode vs loaded jit:
+     tensor([[     3.1488,     -0.0349,      0.5574,     -1.7151,      0.6854,     -0.5222,     -0.5876,     -0.3823,      0.0821,     -0.3981,     -0.3054,     -0.4091,     -0.4481,      0.0371,      0.2918],
+            [    -0.0349,      1.7647,      0.2874,      0.7956,     -0.4302,      0.2531,     -0.4938,     -0.6864,      0.0953,     -0.2923,     -0.4588,     -0.5438,      0.0253,     -0.1893,     -0.0921],
+            [     0.5574,      0.2874,      2.0966,     -0.5563,      0.2095,     -0.2213,      0.1038,      0.1282,     -0.2887,     -0.3800,     -0.5247,     -0.9347,      0.2750,     -0.1004,     -0.6520],
+            [    -1.7151,      0.7956,     -0.5563,      1.7562,     -0.8145,      0.5842,      0.0646,     -0.0487,      0.0142,     -0.0480,      0.0304,     -0.0217,     -0.0578,      0.0372,     -0.0204],
+            [     0.6854,     -0.4302,      0.2095,     -0.8145,      0.6239,     -0.3470,      0.1909,     -0.2080,      0.1456,     -0.0709,      0.0176,     -0.0234,      0.0090,     -0.0033,      0.0153],
+            [    -0.5222,      0.2531,     -0.2213,      0.5842,     -0.3470,      0.1989,     -0.0651,      0.0972,      0.0325,     -0.0840,      0.0401,     -0.0391,      0.0871,     -0.0435,      0.0289],
+            [    -0.5876,     -0.4938,      0.1038,      0.0646,      0.1909,     -0.0651,      0.5552,      0.3968,     -0.0841,     -0.0123,     -0.0344,      0.0188,     -0.0199,     -0.0595,      0.0265],
+            [    -0.3823,     -0.6864,      0.1282,     -0.0487,     -0.2080,      0.0972,      0.3968,      0.8926,     -0.2345,      0.0128,     -0.0120,      0.0199,      0.0214,      0.0138,     -0.0108],
+            [     0.0821,      0.0953,     -0.2887,      0.0142,      0.1456,      0.0325,     -0.0841,     -0.2345,      0.2229,     -0.0435,     -0.0703,      0.0345,      0.0313,      0.0640,     -0.0012],
+            [    -0.3981,     -0.2923,     -0.3800,     -0.0480,     -0.0709,     -0.0840,     -0.0123,      0.0128,     -0.0435,      0.4076,      0.3160,      0.4598,      0.0508,      0.0343,      0.0477],
+            [    -0.3054,     -0.4588,     -0.5247,      0.0304,      0.0176,      0.0401,     -0.0344,     -0.0120,     -0.0703,      0.3160,      0.4539,      0.5845,     -0.0066,     -0.0008,     -0.0296],
+            [    -0.4091,     -0.5438,     -0.9347,     -0.0217,     -0.0234,     -0.0391,      0.0188,      0.0199,      0.0345,      0.4598,      0.5845,      1.0041,     -0.0478,     -0.0372,     -0.0649],
+            [    -0.4481,      0.0253,      0.2750,     -0.0578,      0.0090,      0.0871,     -0.0199,      0.0214,      0.0313,      0.0508,     -0.0066,     -0.0478,      0.4749,     -0.0491,     -0.3456],
+            [     0.0371,     -0.1893,     -0.1004,      0.0372,     -0.0033,     -0.0435,     -0.0595,      0.0138,      0.0640,      0.0343,     -0.0008,     -0.0372,     -0.0491,      0.1795,      0.1171],
+            [     0.2918,     -0.0921,     -0.6520,     -0.0204,      0.0153,      0.0289,      0.0265,     -0.0108,     -0.0012,      0.0477,     -0.0296,     -0.0649,     -0.3456,      0.1171,      0.6892]]) 
+     tensor([[     3.1488,     -0.0349,      0.5574,     -1.7151,      0.6854,     -0.5222,     -0.5876,     -0.3823,      0.0821,     -0.3981,     -0.3054,     -0.4091,     -0.4481,      0.0371,      0.2918],
+            [    -0.0349,      1.7647,      0.2874,      0.7956,     -0.4302,      0.2531,     -0.4938,     -0.6864,      0.0953,     -0.2923,     -0.4588,     -0.5438,      0.0253,     -0.1893,     -0.0921],
+            [     0.5574,      0.2874,      2.0966,     -0.5563,      0.2095,     -0.2213,      0.1038,      0.1282,     -0.2887,     -0.3800,     -0.5247,     -0.9347,      0.2750,     -0.1004,     -0.6520],
+            [    -1.7151,      0.7956,     -0.5563,      1.7562,     -0.8145,      0.5842,      0.0646,     -0.0487,      0.0142,     -0.0480,      0.0304,     -0.0217,     -0.0578,      0.0372,     -0.0204],
+            [     0.6854,     -0.4302,      0.2095,     -0.8145,      0.6239,     -0.3470,      0.1909,     -0.2080,      0.1456,     -0.0709,      0.0176,     -0.0234,      0.0090,     -0.0033,      0.0153],
+            [    -0.5222,      0.2531,     -0.2213,      0.5842,     -0.3470,      0.1989,     -0.0651,      0.0972,      0.0325,     -0.0840,      0.0401,     -0.0391,      0.0871,     -0.0435,      0.0289],
+            [    -0.5876,     -0.4938,      0.1038,      0.0646,      0.1909,     -0.0651,      0.5552,      0.3968,     -0.0841,     -0.0123,     -0.0344,      0.0188,     -0.0199,     -0.0595,      0.0265],
+            [    -0.3823,     -0.6864,      0.1282,     -0.0487,     -0.2080,      0.0972,      0.3968,      0.8926,     -0.2345,      0.0128,     -0.0120,      0.0199,      0.0214,      0.0138,     -0.0108],
+            [     0.0821,      0.0953,     -0.2887,      0.0142,      0.1456,      0.0325,     -0.0841,     -0.2345,      0.2229,     -0.0435,     -0.0703,      0.0345,      0.0313,      0.0640,     -0.0012],
+            [    -0.3981,     -0.2923,     -0.3800,     -0.0480,     -0.0709,     -0.0840,     -0.0123,      0.0128,     -0.0435,      0.4076,      0.3160,      0.4598,      0.0508,      0.0343,      0.0477],
+            [    -0.3054,     -0.4588,     -0.5247,      0.0304,      0.0176,      0.0401,     -0.0344,     -0.0120,     -0.0703,      0.3160,      0.4539,      0.5845,     -0.0066,     -0.0008,     -0.0296],
+            [    -0.4091,     -0.5438,     -0.9347,     -0.0217,     -0.0234,     -0.0391,      0.0188,      0.0199,      0.0345,      0.4598,      0.5845,      1.0041,     -0.0478,     -0.0372,     -0.0649],
+            [    -0.4481,      0.0253,      0.2750,     -0.0578,      0.0090,      0.0871,     -0.0199,      0.0214,      0.0313,      0.0508,     -0.0066,     -0.0478,      0.4749,     -0.0491,     -0.3456],
+            [     0.0371,     -0.1893,     -0.1004,      0.0372,     -0.0033,     -0.0435,     -0.0595,      0.0138,      0.0640,      0.0343,     -0.0008,     -0.0372,     -0.0491,      0.1795,      0.1171],
+            [     0.2918,     -0.0921,     -0.6520,     -0.0204,      0.0153,      0.0289,      0.0265,     -0.0108,     -0.0012,      0.0477,     -0.0296,     -0.0649,     -0.3456,      0.1171,      0.6892]])
+
+
+
+
+
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.542 seconds)
+   **Total running time of the script:** ( 0 minutes  6.416 seconds)
 
 
 .. _sphx_glr_download_examples_jit.py:

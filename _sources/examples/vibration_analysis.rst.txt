@@ -33,12 +33,14 @@ vibration analysis analytically, thanks to the super power of `torch.autograd`.
 
 
 
+
 Let's now manually specify the device we want TorchANI to run:
 
 
 .. code-block:: default
 
     model = torchani.models.ANI1x().double()
+
 
 
 
@@ -72,14 +74,16 @@ Let's first construct a water molecule and do structure optimization:
  .. code-block:: none
 
           Step     Time          Energy         fmax
-    BFGS:    0 05:53:29    -2078.633392        0.6576
-    BFGS:    1 05:53:29    -2078.637244        0.1905
-    BFGS:    2 05:53:29    -2078.637801        0.0292
-    BFGS:    3 05:53:29    -2078.637827        0.0183
-    BFGS:    4 05:53:29    -2078.637849        0.0014
-    BFGS:    5 05:53:29    -2078.637849        0.0001
-    BFGS:    6 05:53:29    -2078.637849        0.0000
-    BFGS:    7 05:53:29    -2078.637849        0.0000
+    BFGS:    0 18:56:20    -2078.633392        0.6576
+    BFGS:    1 18:56:20    -2078.637244        0.1905
+    BFGS:    2 18:56:20    -2078.637801        0.0292
+    BFGS:    3 18:56:20    -2078.637827        0.0183
+    BFGS:    4 18:56:20    -2078.637849        0.0014
+    BFGS:    5 18:56:20    -2078.637849        0.0001
+    BFGS:    6 18:56:20    -2078.637849        0.0000
+    BFGS:    7 18:56:20    -2078.637849        0.0000
+
+    True
 
 
 
@@ -91,6 +95,7 @@ TorchANI:
 
     species = model.species_to_tensor(molecule.get_chemical_symbols()).unsqueeze(0)
     coordinates = torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_grad_(True)
+
 
 
 
@@ -118,6 +123,7 @@ analysis:
 
 
 
+
 To do vibration analysis, we first need to generate a graph that computes
 energies from species and coordinates. The code to generate a graph of energy
 is the same as the code to compute energy:
@@ -133,12 +139,14 @@ is the same as the code to compute energy:
 
 
 
+
 We can now use the energy graph to compute analytical Hessian matrix:
 
 
 .. code-block:: default
 
     hessian = torchani.utils.hessian(coordinates, energies=energies)
+
 
 
 
@@ -165,6 +173,7 @@ one molecule to compute, 9 means `3 atoms * 3D space = 9 degree of freedom`.
  .. code-block:: none
 
     torch.Size([1, 9, 9])
+
 
 
 
@@ -207,9 +216,10 @@ frequencies. Only the frequencies of the 3 vibrational modes are interesting.
 
 
 
+
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.074 seconds)
+   **Total running time of the script:** ( 0 minutes  2.085 seconds)
 
 
 .. _sphx_glr_download_examples_vibration_analysis.py:

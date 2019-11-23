@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.aev &mdash; TorchANI 1.1 documentation</title>
+  <title>torchani.aev &mdash; TorchANI 1.2 documentation</title>
   
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                1.1
+                1.2
               </div>
             
           
@@ -87,6 +87,7 @@
               <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../start.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tips.html">Tips</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -547,6 +548,14 @@
 <span class="sd">                ``(C, A, 3)`` where ``C`` is the number of molecules in a chunk,</span>
 <span class="sd">                and ``A`` is the number of atoms.</span>
 
+<span class="sd">                .. warning::</span>
+
+<span class="sd">                    The species must be indexed in 0, 1, 2, 3, ..., not the element</span>
+<span class="sd">                    index in periodic table. Check :class:`torchani.SpeciesConverter`</span>
+<span class="sd">                    if you want periodic table indexing.</span>
+
+<span class="sd">                .. note:: The coordinates, and cell are in Angstrom.</span>
+
 <span class="sd">                If you want to apply periodic boundary conditions, then the input</span>
 <span class="sd">                would be a tuple of two tensors (species, coordinates) and two keyword</span>
 <span class="sd">                arguments `cell=...` , and `pbc=...` where species and coordinates are</span>
@@ -561,8 +570,6 @@
 
 <span class="sd">                and pbc is boolean vector of size 3 storing if pbc is enabled</span>
 <span class="sd">                for that direction.</span>
-
-<span class="sd">                The coordinates, and cell are in Angstrom.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            NamedTuple: Species and AEVs. species are the species from the input</span>

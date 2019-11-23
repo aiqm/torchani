@@ -61,6 +61,7 @@ information
 
 
 
+
 The code to create the dataset is a bit different: we need to manually
 specify that ``atomic_properties=['forces']`` so that forces will be read
 from hdf5 files.
@@ -87,6 +88,7 @@ from hdf5 files.
  .. code-block:: none
 
     Self atomic energies:  tensor([-19.3542, -19.3542, -54.7122, -75.1628], dtype=torch.float64)
+
 
 
 
@@ -120,6 +122,7 @@ containing forces:
 
 
 
+
 Due to padding, part of the forces might be 0
 
 
@@ -137,12 +140,13 @@ Due to padding, part of the forces might be 0
 
  .. code-block:: none
 
-    tensor([[ 1.7090e-02,  2.7658e-02,  1.2231e-16],
-            [-1.0791e-03, -6.6708e-02,  6.4457e-17],
-            [-1.6011e-02,  3.9050e-02, -1.8533e-16],
-            [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
-            [ 0.0000e+00,  0.0000e+00,  0.0000e+00],
-            [ 0.0000e+00,  0.0000e+00,  0.0000e+00]])
+    tensor([[     0.0083,     -0.0745,      0.0000],
+            [    -0.0024,     -0.0433,      0.0000],
+            [    -0.0059,      0.1177,     -0.0000],
+            [     0.0000,      0.0000,      0.0000],
+            [     0.0000,      0.0000,      0.0000],
+            [     0.0000,      0.0000,      0.0000]])
+
 
 
 
@@ -246,6 +250,7 @@ The code to define networks, optimizers, are mostly the same
 
 
 
+
 Initialize the weights and biases.
 
 .. note::
@@ -274,6 +279,52 @@ Initialize the weights and biases.
 
 
 
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+
+    ANIModel(
+      (0): Sequential(
+        (0): Linear(in_features=384, out_features=160, bias=True)
+        (1): CELU(alpha=0.1)
+        (2): Linear(in_features=160, out_features=128, bias=True)
+        (3): CELU(alpha=0.1)
+        (4): Linear(in_features=128, out_features=96, bias=True)
+        (5): CELU(alpha=0.1)
+        (6): Linear(in_features=96, out_features=1, bias=True)
+      )
+      (1): Sequential(
+        (0): Linear(in_features=384, out_features=144, bias=True)
+        (1): CELU(alpha=0.1)
+        (2): Linear(in_features=144, out_features=112, bias=True)
+        (3): CELU(alpha=0.1)
+        (4): Linear(in_features=112, out_features=96, bias=True)
+        (5): CELU(alpha=0.1)
+        (6): Linear(in_features=96, out_features=1, bias=True)
+      )
+      (2): Sequential(
+        (0): Linear(in_features=384, out_features=128, bias=True)
+        (1): CELU(alpha=0.1)
+        (2): Linear(in_features=128, out_features=112, bias=True)
+        (3): CELU(alpha=0.1)
+        (4): Linear(in_features=112, out_features=96, bias=True)
+        (5): CELU(alpha=0.1)
+        (6): Linear(in_features=96, out_features=1, bias=True)
+      )
+      (3): Sequential(
+        (0): Linear(in_features=384, out_features=128, bias=True)
+        (1): CELU(alpha=0.1)
+        (2): Linear(in_features=128, out_features=112, bias=True)
+        (3): CELU(alpha=0.1)
+        (4): Linear(in_features=112, out_features=96, bias=True)
+        (5): CELU(alpha=0.1)
+        (6): Linear(in_features=96, out_features=1, bias=True)
+      )
+    )
+
 
 
 Let's now create a pipeline of AEV Computer --> Neural Networks.
@@ -282,6 +333,7 @@ Let's now create a pipeline of AEV Computer --> Neural Networks.
 .. code-block:: default
 
     model = torchani.nn.Sequential(aev_computer, nn).to(device)
+
 
 
 
@@ -351,12 +403,14 @@ Descent for biases.
 
 
 
+
 This part of the code is also the same
 
 
 .. code-block:: default
 
     latest_checkpoint = 'force-training-latest.pt'
+
 
 
 
@@ -376,6 +430,7 @@ Resume training from previously saved checkpoints:
         SGD.load_state_dict(checkpoint['SGD'])
         AdamW_scheduler.load_state_dict(checkpoint['AdamW_scheduler'])
         SGD_scheduler.load_state_dict(checkpoint['SGD_scheduler'])
+
 
 
 
@@ -419,12 +474,14 @@ is better than the best, then save the new best model to a checkpoint
 
 
 
+
 We will also use TensorBoard to visualize our training process
 
 
 .. code-block:: default
 
     tensorboard = torch.utils.tensorboard.SummaryWriter()
+
 
 
 
@@ -541,17 +598,18 @@ In the training loop, we need to compute force, and loss for forces
  .. code-block:: none
 
     training starting from epoch 1
-    RMSE: 115.63623435471612 at epoch 1
-    epoch 1:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 1:  25%|##5       | 1/4 [00:04<00:13,  4.41s/it]    epoch 1:  50%|#####     | 2/4 [00:08<00:08,  4.41s/it]    epoch 1:  75%|#######5  | 3/4 [00:13<00:04,  4.41s/it]    epoch 1: 100%|##########| 4/4 [00:15<00:00,  3.90s/it]    epoch 1: 100%|##########| 4/4 [00:15<00:00,  3.99s/it]
-    RMSE: 156.94220936042777 at epoch 2
-    epoch 2:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 2:  25%|##5       | 1/4 [00:04<00:13,  4.48s/it]    epoch 2:  50%|#####     | 2/4 [00:08<00:08,  4.47s/it]    epoch 2:  75%|#######5  | 3/4 [00:13<00:04,  4.46s/it]    epoch 2: 100%|##########| 4/4 [00:16<00:00,  3.92s/it]    epoch 2: 100%|##########| 4/4 [00:16<00:00,  4.01s/it]
+    RMSE: 46.60869369722377 at epoch 1
+    epoch 1:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 1:  25%|##5       | 1/4 [00:02<00:08,  2.96s/it]    epoch 1:  50%|#####     | 2/4 [00:05<00:05,  2.94s/it]    epoch 1:  75%|#######5  | 3/4 [00:08<00:02,  2.90s/it]    epoch 1: 100%|##########| 4/4 [00:10<00:00,  2.58s/it]    epoch 1: 100%|##########| 4/4 [00:10<00:00,  2.62s/it]
+    RMSE: 61.549629275930776 at epoch 2
+    epoch 2:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 2:  25%|##5       | 1/4 [00:02<00:08,  2.85s/it]    epoch 2:  50%|#####     | 2/4 [00:05<00:05,  2.87s/it]    epoch 2:  75%|#######5  | 3/4 [00:08<00:02,  2.87s/it]    epoch 2: 100%|##########| 4/4 [00:10<00:00,  2.55s/it]    epoch 2: 100%|##########| 4/4 [00:10<00:00,  2.61s/it]
+
 
 
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  33.366 seconds)
+   **Total running time of the script:** ( 0 minutes  21.895 seconds)
 
 
 .. _sphx_glr_download_examples_nnp_training_force.py:

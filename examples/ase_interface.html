@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 1.1 documentation</title>
+  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 1.2 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                1.1
+                1.2
               </div>
             
           
@@ -89,6 +89,7 @@
               <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../start.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tips.html">Tips</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
@@ -185,8 +186,8 @@
 calculator.</p>
 <p>To begin with, let’s first import the modules we will use:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ase.lattice.cubic</span> <span class="k">import</span> <span class="n">Diamond</span>
-<span class="kn">from</span> <span class="nn">ase.md.langevin</span> <span class="k">import</span> <span class="n">Langevin</span>
-<span class="kn">from</span> <span class="nn">ase.optimize</span> <span class="k">import</span> <span class="n">BFGS</span>
+<span class="kn">from</span> <span class="nn">ase.md.langevin</span> <span class="k">import</span> <a href="https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.langevin.Langevin" title="View documentation for ase.md.langevin.Langevin"><span class="n">Langevin</span></a>
+<span class="kn">from</span> <span class="nn">ase.optimize</span> <span class="k">import</span> <a href="https://wiki.fysik.dtu.dk/ase/ase/optimize.html#ase.optimize.BFGS" title="View documentation for ase.optimize.BFGS"><span class="n">BFGS</span></a>
 <span class="kn">from</span> <span class="nn">ase</span> <span class="k">import</span> <span class="n">units</span>
 <span class="kn">import</span> <span class="nn">torchani</span>
 </pre></div>
@@ -221,15 +222,15 @@ large for structure minimization. If you insist on using
 </div>
 <p>Now let’s minimize the structure:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Begin minimizing...&quot;</span><span class="p">)</span>
-<span class="n">opt</span> <span class="o">=</span> <span class="n">BFGS</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
-<span class="n">opt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">fmax</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
+<a href="https://wiki.fysik.dtu.dk/ase/ase/optimize.html#ase.optimize.BFGS" title="View documentation for ase.optimize.BFGS"><span class="n">opt</span></a> <span class="o">=</span> <a href="https://wiki.fysik.dtu.dk/ase/ase/optimize.html#ase.optimize.BFGS" title="View documentation for ase.optimize.BFGS"><span class="n">BFGS</span></a><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+<a href="https://wiki.fysik.dtu.dk/ase/ase/optimize.html#ase.optimize.BFGS" title="View documentation for ase.optimize.BFGS"><span class="n">opt</span></a><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">fmax</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">()</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Begin minimizing...
       Step     Time          Energy         fmax
-BFGS:    0 05:52:51    -8311.226180        0.0000
+BFGS:    0 18:55:45    -8311.226180        0.0000
 </pre></div>
 </div>
 <p>Now create a callback function that print interesting physical quantities:</p>
@@ -244,33 +245,35 @@ BFGS:    0 05:52:51    -8311.226180        0.0000
 <p>We want to run MD with constant energy using the Langevin algorithm
 with a time step of 1 fs, the temperature 300K and the friction
 coefficient to 0.02 atomic units.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dyn</span> <span class="o">=</span> <span class="n">Langevin</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span> <span class="mi">300</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">kB</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
-<span class="n">dyn</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">printenergy</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.langevin.Langevin" title="View documentation for ase.md.langevin.Langevin"><span class="n">dyn</span></a> <span class="o">=</span> <a href="https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.langevin.Langevin" title="View documentation for ase.md.langevin.Langevin"><span class="n">Langevin</span></a><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="mi">1</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span> <span class="mi">300</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">kB</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span>
+<a href="https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.langevin.Langevin" title="View documentation for ase.md.langevin.Langevin"><span class="n">dyn</span></a><span class="o">.</span><span class="n">attach</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#object" title="View documentation for builtins.object"><span class="n">printenergy</span></a><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now run the dynamics:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Beginning dynamics...&quot;</span><span class="p">)</span>
-<span class="n">printenergy</span><span class="p">()</span>
-<span class="n">dyn</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+<a href="https://docs.python.org/3/library/functions.html#object" title="View documentation for builtins.object"><span class="n">printenergy</span></a><span class="p">()</span>
+<a href="https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.langevin.Langevin" title="View documentation for ase.md.langevin.Langevin"><span class="n">dyn</span></a><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Beginning dynamics...
 Energy per atom: Epot = -1038.903eV  Ekin = 0.000eV (T=  0K)  Etot = -1038.903eV
 Energy per atom: Epot = -1038.903eV  Ekin = 0.000eV (T=  0K)  Etot = -1038.903eV
-Energy per atom: Epot = -1038.882eV  Ekin = 0.017eV (T=134K)  Etot = -1038.865eV
-Energy per atom: Epot = -1038.877eV  Ekin = 0.027eV (T=208K)  Etot = -1038.850eV
-Energy per atom: Epot = -1038.878eV  Ekin = 0.036eV (T=280K)  Etot = -1038.842eV
-Energy per atom: Epot = -1038.882eV  Ekin = 0.020eV (T=153K)  Etot = -1038.862eV
-Energy per atom: Epot = -1038.872eV  Ekin = 0.023eV (T=179K)  Etot = -1038.848eV
-Energy per atom: Epot = -1038.885eV  Ekin = 0.032eV (T=245K)  Etot = -1038.853eV
-Energy per atom: Epot = -1038.883eV  Ekin = 0.028eV (T=218K)  Etot = -1038.855eV
-Energy per atom: Epot = -1038.871eV  Ekin = 0.026eV (T=198K)  Etot = -1038.845eV
-Energy per atom: Epot = -1038.873eV  Ekin = 0.032eV (T=251K)  Etot = -1038.840eV
-Energy per atom: Epot = -1038.859eV  Ekin = 0.028eV (T=213K)  Etot = -1038.831eV
+Energy per atom: Epot = -1038.874eV  Ekin = 0.012eV (T= 94K)  Etot = -1038.861eV
+Energy per atom: Epot = -1038.871eV  Ekin = 0.028eV (T=215K)  Etot = -1038.843eV
+Energy per atom: Epot = -1038.884eV  Ekin = 0.051eV (T=392K)  Etot = -1038.833eV
+Energy per atom: Epot = -1038.875eV  Ekin = 0.033eV (T=252K)  Etot = -1038.842eV
+Energy per atom: Epot = -1038.868eV  Ekin = 0.026eV (T=201K)  Etot = -1038.842eV
+Energy per atom: Epot = -1038.867eV  Ekin = 0.024eV (T=184K)  Etot = -1038.843eV
+Energy per atom: Epot = -1038.875eV  Ekin = 0.020eV (T=155K)  Etot = -1038.855eV
+Energy per atom: Epot = -1038.882eV  Ekin = 0.032eV (T=248K)  Etot = -1038.849eV
+Energy per atom: Epot = -1038.872eV  Ekin = 0.038eV (T=297K)  Etot = -1038.834eV
+Energy per atom: Epot = -1038.881eV  Ekin = 0.031eV (T=240K)  Etot = -1038.850eV
+
+True
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  37.574 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  32.974 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-ase-interface-py">
 <div class="sphx-glr-download docutils container">
 <a class="reference download internal" download="" href="../_downloads/63fc96e3617a5d12dad01b74efe5c292/ase_interface.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">ase_interface.py</span></code></a></div>

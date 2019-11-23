@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.nn &mdash; TorchANI 1.1 documentation</title>
+  <title>torchani.nn &mdash; TorchANI 1.2 documentation</title>
   
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                1.1
+                1.2
               </div>
             
           
@@ -87,6 +87,7 @@
               <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../start.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tips.html">Tips</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul>
@@ -172,6 +173,7 @@
             
   <h1>Source code for torchani.nn</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="k">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span>
 
@@ -181,7 +183,12 @@
     <span class="n">energies</span><span class="p">:</span> <span class="n">Tensor</span>
 
 
-<div class="viewcode-block" id="ANIModel"><a class="viewcode-back" href="../../api.html#torchani.ANIModel">[docs]</a><span class="k">class</span> <span class="nc">ANIModel</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">SpeciesCoordinates</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+    <span class="n">species</span><span class="p">:</span> <span class="n">Tensor</span>
+    <span class="n">coordinates</span><span class="p">:</span> <span class="n">Tensor</span>
+
+
+<div class="viewcode-block" id="ANIModel"><a class="viewcode-back" href="../../api.html#torchani.ANIModel">[docs]</a><span class="k">class</span> <span class="nc">ANIModel</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;ANI model that compute energies from species and AEVs.</span>
 
 <span class="sd">    Different atom types might have different modules, when computing</span>
@@ -189,7 +196,13 @@
 <span class="sd">    be applied to its AEV, after that, outputs of modules will be reduced along</span>
 <span class="sd">    different atoms to obtain molecular energies.</span>
 
-<span class="sd">    The resulting energies are in Hartree.</span>
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The species must be indexed in 0, 1, 2, 3, ..., not the element</span>
+<span class="sd">        index in periodic table. Check :class:`torchani.SpeciesConverter`</span>
+<span class="sd">        if you want periodic table indexing.</span>
+
+<span class="sd">    .. note:: The resulting energies are in Hartree.</span>
 
 <span class="sd">    Arguments:</span>
 <span class="sd">        modules (:class:`collections.abc.Sequence`): Modules for each atom</span>
@@ -199,21 +212,28 @@
 <span class="sd">            module by putting the same reference in :attr:`modules`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">ensureOrderedDict</span><span class="p">(</span><span class="n">modules</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">modules</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">modules</span>
+        <span class="n">od</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">modules</span><span class="p">):</span>
+            <span class="n">od</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">m</span>
+        <span class="k">return</span> <span class="n">od</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modules</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">ANIModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ANIModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ensureOrderedDict</span><span class="p">(</span><span class="n">modules</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_aev</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
                 <span class="n">cell</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">pbc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpeciesEnergies</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">cell</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="k">assert</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="n">species</span><span class="p">,</span> <span class="n">aev</span> <span class="o">=</span> <span class="n">species_aev</span>
         <span class="n">species_</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
         <span class="n">aev</span> <span class="o">=</span> <span class="n">aev</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
         <span class="n">output</span> <span class="o">=</span> <span class="n">aev</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">species_</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
             <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">species_</span> <span class="o">==</span> <span class="n">i</span><span class="p">)</span>
             <span class="n">midx</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">midx</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -227,14 +247,12 @@
     <span class="sd">&quot;&quot;&quot;Compute the average output of an ensemble of modules.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modules</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">Ensemble</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species_input</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
                 <span class="n">cell</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">pbc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpeciesEnergies</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">cell</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="k">assert</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="n">sum_</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">sum_</span> <span class="o">+=</span> <span class="n">x</span><span class="p">(</span><span class="n">species_input</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
@@ -253,8 +271,6 @@
                 <span class="n">pbc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">input_</span> <span class="o">=</span> <span class="n">module</span><span class="p">(</span><span class="n">input_</span><span class="p">,</span> <span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="p">,</span> <span class="n">pbc</span><span class="o">=</span><span class="n">pbc</span><span class="p">)</span>
-            <span class="n">cell</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="n">pbc</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">input_</span>
 
 
@@ -262,6 +278,35 @@
     <span class="sd">&quot;&quot;&quot;Gaussian activation&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SpeciesConverter"><a class="viewcode-back" href="../../api.html#torchani.SpeciesConverter">[docs]</a><span class="k">class</span> <span class="nc">SpeciesConverter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert from element index in the periodic table to 0, 1, 2, 3, ...&quot;&quot;&quot;</span>
+
+    <span class="n">periodic_table</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    H                                                                                                                           He</span>
+<span class="s2">    Li  Be                                                                                                  B   C   N   O   F   Ne</span>
+<span class="s2">    Na  Mg                                                                                                  Al  Si  P   S   Cl  Ar</span>
+<span class="s2">    K   Ca  Sc                                                          Ti  V   Cr  Mn  Fe  Co  Ni  Cu  Zn  Ga  Ge  As  Se  Br  Kr</span>
+<span class="s2">    Rb  Sr  Y                                                           Zr  Nb  Mo  Tc  Ru  Rh  Pd  Ag  Cd  In  Sn  Sb  Te  I   Xe</span>
+<span class="s2">    Cs  Ba  La  Ce  Pr  Nd  Pm  Sm  Eu  Gd  Tb  Dy  Ho  Er  Tm  Yb  Lu  Hf  Ta  W   Re  Os  Ir  Pt  Au  Hg  Tl  Pb  Bi  Po  At  Rn</span>
+<span class="s2">    Fr  Ra  Ac  Th  Pa  U   Np  Pu  Am  Cm  Bk  Cf  Es  Fm  Md  No  Lr  Rf  Db  Sg  Bh  Hs  Mt  Ds  Rg  Cn  Nh  Fl  Mc  Lv  Ts  Og</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">rev_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">periodic_table</span><span class="p">,</span> <span class="mi">1</span><span class="p">)}</span>
+        <span class="n">maxidx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">rev_idx</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;conv_tensor&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">maxidx</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,),</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">species</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conv_tensor</span><span class="p">[</span><span class="n">rev_idx</span><span class="p">[</span><span class="n">s</span><span class="p">]]</span> <span class="o">=</span> <span class="n">i</span>
+
+<div class="viewcode-block" id="SpeciesConverter.forward"><a class="viewcode-back" href="../../api.html#torchani.SpeciesConverter.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
+                <span class="n">cell</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">pbc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert species from periodic table element index to 0, 1, 2, 3, ... indexing&quot;&quot;&quot;</span>
+        <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span> <span class="o">=</span> <span class="n">input_</span>
+        <span class="k">return</span> <span class="n">SpeciesCoordinates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_tensor</span><span class="p">[</span><span class="n">species</span><span class="p">],</span> <span class="n">coordinates</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>

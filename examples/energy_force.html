@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Computing Energy and Force Using Models Inside Model Zoo &mdash; TorchANI 1.1 documentation</title>
+  <title>Computing Energy and Force Using Models Inside Model Zoo &mdash; TorchANI 1.2 documentation</title>
   
 
   
@@ -38,7 +38,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Structure minimization and constant temperature MD using ASE interface" href="ase_interface.html" />
-    <link rel="prev" title="Installation" href="../start.html" /> 
+    <link rel="prev" title="Tips" href="../tips.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                1.1
+                1.2
               </div>
             
           
@@ -89,6 +89,7 @@
               <p class="caption"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../start.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tips.html">Tips</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples</span></p>
 <ul class="current">
@@ -188,7 +189,7 @@ TorchANI and can be used directly.</p>
 </pre></div>
 </div>
 <p>Let’s now manually specify the device we want TorchANI to run:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <a href="https://pytorch.org/docs/master/cuda.html#torch.cuda.is_available" title="View documentation for torch.cuda.is_available"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Let’s now load the built-in ANI-1ccx models. The builtin ANI-1ccx contains 8
@@ -196,7 +197,10 @@ models trained with diffrent initialization. Predicting the energy and force
 using the average of the 8 models outperform using a single model, so it is
 always recommended to use an ensemble, unless the speed of computation is an
 issue in your application.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1ccx</span><span class="p">()</span>
+<p>The <code class="docutils literal notranslate"><span class="pre">periodic_table_index</span></code> arguments tells TorchANI to use element index
+in periodic table to index species. If not specified, you need to use
+0, 1, 2, 3, … to index species</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1ccx</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now let’s define the coordinate and species. If you just want to compute the
@@ -206,25 +210,29 @@ make the coordinate tensor has shape <code class="docutils literal notranslate">
 preceding <code class="docutils literal notranslate"><span class="pre">1</span></code> in the shape is here to support batch processing like in
 training. If you have <code class="docutils literal notranslate"><span class="pre">N</span></code> different structures to compute, then make it
 <code class="docutils literal notranslate"><span class="pre">N</span></code>.</p>
-<p>The coordinates are in Angstrom, and the energies you get are in Hartree</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[[</span><span class="mf">0.03192167</span><span class="p">,</span> <span class="mf">0.00638559</span><span class="p">,</span> <span class="mf">0.01301679</span><span class="p">],</span>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The coordinates are in Angstrom, and the energies you get are in Hartree</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="View documentation for torch.Tensor"><span class="n">coordinates</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/torch.html#torch.tensor" title="View documentation for torch.tensor"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([[[</span><span class="mf">0.03192167</span><span class="p">,</span> <span class="mf">0.00638559</span><span class="p">,</span> <span class="mf">0.01301679</span><span class="p">],</span>
                              <span class="p">[</span><span class="o">-</span><span class="mf">0.83140486</span><span class="p">,</span> <span class="mf">0.39370209</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.26395324</span><span class="p">],</span>
                              <span class="p">[</span><span class="o">-</span><span class="mf">0.66518241</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.84461308</span><span class="p">,</span> <span class="mf">0.20759389</span><span class="p">],</span>
                              <span class="p">[</span><span class="mf">0.45554739</span><span class="p">,</span> <span class="mf">0.54289633</span><span class="p">,</span> <span class="mf">0.81170881</span><span class="p">],</span>
                              <span class="p">[</span><span class="mf">0.66091919</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.16799635</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.91037834</span><span class="p">]]],</span>
                            <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
-<span class="n">species</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">(</span><span class="s1">&#39;CHHHH&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="c1"># In periodic table, C = 6 and H = 1</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="View documentation for torch.Tensor"><span class="n">species</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/torch.html#torch.tensor" title="View documentation for torch.tensor"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now let’s compute energy and force:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">energy</span> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span><span class="o">.</span><span class="n">energies</span>
-<span class="n">derivative</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">energy</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">coordinates</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">force</span> <span class="o">=</span> <span class="o">-</span><span class="n">derivative</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="View documentation for torch.Tensor"><span class="n">energy</span></a> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="View documentation for torch.Tensor"><span class="n">species</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="View documentation for torch.Tensor"><span class="n">coordinates</span></a><span class="p">))</span><span class="o">.</span><span class="n">energies</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="View documentation for torch.Tensor"><span class="n">derivative</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/autograd.html#torch.autograd.grad" title="View documentation for torch.autograd.grad"><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor.sum" title="View documentation for torch.Tensor.sum"><span class="n">energy</span><span class="o">.</span><span class="n">sum</span></a><span class="p">(),</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="View documentation for torch.Tensor"><span class="n">coordinates</span></a><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="View documentation for torch.Tensor"><span class="n">force</span></a> <span class="o">=</span> <span class="o">-</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="View documentation for torch.Tensor"><span class="n">derivative</span></a>
 </pre></div>
 </div>
 <p>And print to see the result:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <span class="n">energy</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <span class="n">force</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor.item" title="View documentation for torch.Tensor.item"><span class="n">energy</span><span class="o">.</span><span class="n">item</span></a><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor.squeeze" title="View documentation for torch.Tensor.squeeze"><span class="n">force</span><span class="o">.</span><span class="n">squeeze</span></a><span class="p">())</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
@@ -236,7 +244,7 @@ Force: tensor([[ 0.0312, -0.1272, -0.0511],
         [-0.0187,  0.0049,  0.0521]])
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.656 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.702 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-energy-force-py">
 <div class="sphx-glr-download docutils container">
 <a class="reference download internal" download="" href="../_downloads/45cd52b8df9d781ce483dcbafddf1cd2/energy_force.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">energy_force.py</span></code></a></div>
@@ -257,7 +265,7 @@ Force: tensor([[ 0.0312, -0.1272, -0.0511],
         <a href="ase_interface.html" class="btn btn-neutral float-right" title="Structure minimization and constant temperature MD using ASE interface" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="../start.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../tips.html" class="btn btn-neutral float-left" title="Tips" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

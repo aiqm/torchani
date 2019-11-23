@@ -27,12 +27,14 @@ To begin with, let's first import the modules we will use:
 
 
 
+
 Let's now manually specify the device we want TorchANI to run:
 
 
 .. code-block:: default
 
-    device = torch.device('cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 
 
@@ -46,10 +48,15 @@ using the average of the 8 models outperform using a single model, so it is
 always recommended to use an ensemble, unless the speed of computation is an
 issue in your application.
 
+The ``periodic_table_index`` arguments tells TorchANI to use element index
+in periodic table to index species. If not specified, you need to use
+0, 1, 2, 3, ... to index species
+
 
 .. code-block:: default
 
-    model = torchani.models.ANI1ccx()
+    model = torchani.models.ANI1ccx(periodic_table_index=True).to(device)
+
 
 
 
@@ -65,7 +72,7 @@ preceding ``1`` in the shape is here to support batch processing like in
 training. If you have ``N`` different structures to compute, then make it
 ``N``.
 
-The coordinates are in Angstrom, and the energies you get are in Hartree
+.. note:: The coordinates are in Angstrom, and the energies you get are in Hartree
 
 
 .. code-block:: default
@@ -76,7 +83,9 @@ The coordinates are in Angstrom, and the energies you get are in Hartree
                                  [0.45554739, 0.54289633, 0.81170881],
                                  [0.66091919, -0.16799635, -0.91037834]]],
                                requires_grad=True, device=device)
-    species = model.species_to_tensor('CHHHH').to(device).unsqueeze(0)
+    # In periodic table, C = 6 and H = 1
+    species = torch.tensor([[6, 1, 1, 1, 1]], device=device)
+
 
 
 
@@ -92,6 +101,7 @@ Now let's compute energy and force:
     energy = model((species, coordinates)).energies
     derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
     force = -derivative
+
 
 
 
@@ -126,9 +136,10 @@ And print to see the result:
 
 
 
+
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.656 seconds)
+   **Total running time of the script:** ( 0 minutes  1.702 seconds)
 
 
 .. _sphx_glr_download_examples_energy_force.py:
