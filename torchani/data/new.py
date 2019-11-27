@@ -2,10 +2,10 @@ import numpy as np
 import torch
 import functools
 from ._pyanitools import anidataloader
-import importlib
+from importlib import util as u
 import gc
 
-PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None
+PKBAR_INSTALLED = u.find_spec('pkbar') is not None
 if PKBAR_INSTALLED:
     import pkbar
 
