@@ -52,5 +52,5 @@ jobs:
         cd deploy_dir
         git add .
         git commit -m "update"
-        git push --force
+        git push --force || true
 

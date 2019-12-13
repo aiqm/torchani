@@ -42,7 +42,7 @@ def by_batch(species, coordinates, model):
     energies = []
     forces = []
     for s, c in zip(species, coordinates):
-        _, e = model((s, c))
+        e = model((s, c)).energies
         f, = torch.autograd.grad(e.sum(), c)
         energies.append(e)
         forces.append(f)

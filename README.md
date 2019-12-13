@@ -9,6 +9,7 @@ Checks:
 
 [![Actions Status](https://github.com/aiqm/torchani/workflows/docs/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/flake8/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/mypy/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/runnable%20submodules/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/tools/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/unit%20tests/badge.svg)](https://github.com/aiqm/torchani/actions)
@@ -19,6 +20,11 @@ Deploy:
 
 [![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-docs/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-pypi/badge.svg)](https://github.com/aiqm/torchani/actions)
+
+We only provide compatibility with nightly PyTorch, but you can check if stable PyTorch happens to be supported by looking at the following badge:
+
+[![Actions Status](https://github.com/aiqm/torchani/workflows/stable-torch/badge.svg)](https://github.com/aiqm/torchani/actions)
+
 
 TorchANI is a pytorch implementation of ANI. It is currently under alpha release, which means, the API is not stable yet. If you find a bug of TorchANI, or have some feature request, feel free to open an issue on GitHub, or send us a pull request.
 

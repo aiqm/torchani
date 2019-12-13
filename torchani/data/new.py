@@ -2,10 +2,10 @@ import numpy as np
 import torch
 import functools
 from ._pyanitools import anidataloader
-import importlib
+from importlib import util as u
 import gc
 
-PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None
+PKBAR_INSTALLED = u.find_spec('pkbar') is not None
 if PKBAR_INSTALLED:
     import pkbar
 
@@ -593,7 +593,7 @@ def collate_fn(data, chunk_threshold, properties_info):
         if properties_info['padding_values'][i] is None:
             prop = torch.stack(prop)
         else:
-            prop = torch.nn.utils.rnn.pad_sequence(batch_species,
+            prop = torch.nn.utils.rnn.pad_sequence(prop,
                                                    batch_first=True,
                                                    padding_value=properties_info['padding_values'][i])
         # sort with number of atoms

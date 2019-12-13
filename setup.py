@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-import sys
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -22,8 +21,5 @@ setup_attrs = {
         'lark-parser',
     ],
 }
-
-if sys.version_info[0] < 3:
-    setup_attrs['install_requires'].append('typing')
 
 setup(**setup_attrs)

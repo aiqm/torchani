@@ -4,7 +4,8 @@ import torch.utils.data
 import math
 import numpy as np
 from collections import defaultdict
-from typing import Tuple
+from typing import Tuple, NamedTuple, Optional
+from .nn import SpeciesEnergies
 
 
 def pad(species):
@@ -211,12 +212,14 @@ class EnergyShifter(torch.nn.Module):
         properties['energies'] = energies
         return atomic_properties, properties
 
-    def forward(self, species_energies: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
+    def forward(self, species_energies: Tuple[Tensor, Tensor],
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         """(species, molecular energies)->(species, molecular energies + sae)
         """
         species, energies = species_energies
         sae = self.sae(species).to(energies.device)
-        return species, energies.to(sae.dtype) + sae
+        return SpeciesEnergies(species, energies.to(sae.dtype) + sae)
 
 
 class ChemicalSymbolsToInts:
@@ -239,7 +242,13 @@ class ChemicalSymbolsToInts:
         return len(self.rev_species)
 
 
-def hessian(coordinates, energies=None, forces=None):
+def _get_derivatives_not_none(x: Tensor, y: Tensor, retain_graph: Optional[bool] = None, create_graph: bool = False) -> Tensor:
+    ret = torch.autograd.grad([y.sum()], [x], retain_graph=retain_graph, create_graph=create_graph)[0]
+    assert ret is not None
+    return ret
+
+
+def hessian(coordinates: Tensor, energies: Optional[Tensor] = None, forces: Optional[Tensor] = None) -> Tensor:
     """Compute analytical hessian from the energy graph or force graph.
 
     Arguments:
@@ -260,13 +269,19 @@ def hessian(coordinates, energies=None, forces=None):
     if energies is not None and forces is not None:
         raise ValueError('Energies or forces can not be specified at the same time')
     if forces is None:
-        forces = -torch.autograd.grad(energies.sum(), coordinates, create_graph=True)[0]
+        assert energies is not None
+        forces = -_get_derivatives_not_none(coordinates, energies, create_graph=True)
     flattened_force = forces.flatten(start_dim=1)
     force_components = flattened_force.unbind(dim=1)
     return -torch.stack([
-        torch.autograd.grad(f.sum(), coordinates, retain_graph=True)[0].flatten(start_dim=1)
+        _get_derivatives_not_none(coordinates, f, retain_graph=True).flatten(start_dim=1)
         for f in force_components
     ], dim=1)
+
+
+class FreqsModes(NamedTuple):
+    freqs: Tensor
+    modes: Tensor
 
 
 def vibrational_analysis(masses, hessian, unit='cm^-1'):
@@ -292,7 +307,7 @@ def vibrational_analysis(masses, hessian, unit='cm^-1'):
     # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1
     wavenumbers = frequencies * 17092
     modes = (eigenvectors.t() * inv_sqrt_mass).reshape(frequencies.numel(), -1, 3)
-    return wavenumbers, modes
+    return FreqsModes(wavenumbers, modes)
 
 
 __all__ = ['pad', 'pad_atomic_properties', 'present_species', 'hessian',

@@ -1,7 +1,6 @@
-name: unit tests
+name: stable-torch
 
 on:
-  pull_request:
   push:
     branches:
       - master
@@ -15,12 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6, 3.7]
-        test-filenames: [
-          test_aev.py, test_aev_benzene_md.py, test_aev_nist.py, test_aev_tripeptide_md.py,
-          test_data_new.py, test_utils.py, test_ase.py, test_energies.py, test_periodic_table_indexing.py,
-          test_neurochem.py, test_vibrational.py, test_ensemble.py, test_padding.py,
-          test_data.py, test_forces.py, test_structure_optim.py, test_jit_builtin_models.py]
+        python-version: [3.7]
 
     steps:
     - uses: actions/checkout@v1
@@ -32,10 +26,11 @@ jobs:
       run: git submodule update --init
     - name: Install dependencies
       run: |
-        ci/install_dependencies.sh
+        pip install --upgrade pip
+        pip install torch pytest
         pip install -r test_requirements.txt
         pip install .
     - name: Download data files
       run: ./download.sh
-    - name: Run single test
-      run: python tests/${{ matrix.test-filenames }}
+    - name: Run tests
+      run: pytest
