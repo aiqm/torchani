@@ -73,7 +73,7 @@ class Calculator(ase.calculators.calculator.Calculator):
 
         if 'forces' in properties:
             forces = -torch.autograd.grad(energy.squeeze(), coordinates)[0]
-            self.results['forces'] = forces.squeeze().to('cpu').numpy()
+            self.results['forces'] = forces.squeeze(0).to('cpu').numpy()
 
         if 'stress' in properties:
             volume = self.atoms.get_volume()
