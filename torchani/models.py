@@ -29,10 +29,10 @@ shouldn't be used anymore.
 
 import torch
 from torch import Tensor
-from typing import Tuple
+from typing import Tuple, Optional
 from pkg_resources import resource_filename
 from . import neurochem
-from .nn import Sequential
+from .nn import Sequential, SpeciesConverter, SpeciesEnergies
 from .aev import AEVComputer
 
 
@@ -61,10 +61,15 @@ class BuiltinNet(torch.nn.Module):
         aev_computer (:class:`torchani.AEVComputer`): AEV computer with
             builtin constants
         neural_networks (:class:`torchani.Ensemble`): Ensemble of ANIModel networks
+        periodic_table_index (bool): Whether to use element number in periodic table
+            to index species. If set to `False`, then indices must be `0, 1, 2, ..., N - 1`
+            where `N` is the number of parametrized species.
     """
 
-    def __init__(self, info_file):
+    def __init__(self, info_file, periodic_table_index=False):
         super(BuiltinNet, self).__init__()
+        self.periodic_table_index = periodic_table_index
+
         package_name = '.'.join(__name__.split('.')[:-1])
         info_file = 'resources/' + info_file
         self.info_file = resource_filename(package_name, info_file)
@@ -84,21 +89,31 @@ class BuiltinNet(torch.nn.Module):
 
         self.consts = neurochem.Constants(self.const_file)
         self.species = self.consts.species
+        self.species_converter = SpeciesConverter(self.species)
         self.aev_computer = AEVComputer(**self.consts)
         self.energy_shifter = neurochem.load_sae(self.sae_file)
         self.neural_networks = neurochem.load_model_ensemble(
             self.species, self.ensemble_prefix, self.ensemble_size)
 
-    def forward(self, species_coordinates: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
+    def forward(self, species_coordinates: Tuple[Tensor, Tensor],
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         """Calculates predicted properties for minibatch of configurations
 
         Args:
             species_coordinates: minibatch of configurations
+            cell: the cell used in PBC computation, set to None if PBC is not enabled
+            pbc: the bool tensor indicating which direction PBC is enabled, set to None if PBC is not enabled
 
         Returns:
             species_energies: energies for the given configurations
+
+        .. note:: The coordinates, and cell are in Angstrom, and the energies
+            will be in Hartree.
         """
-        species_aevs = self.aev_computer(species_coordinates)
+        if self.periodic_table_index:
+            species_coordinates = self.species_converter(species_coordinates)
+        species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
         species_energies = self.neural_networks(species_aevs)
         return self.energy_shifter(species_energies)
 
@@ -117,20 +132,24 @@ class BuiltinNet(torch.nn.Module):
             ret: (:class:`Sequential`): Sequential model ready for
                 calculations
         """
-        ret = Sequential(
-            self.aev_computer,
-            self.neural_networks[index],
-            self.energy_shifter
-        )
+        if self.periodic_table_index:
+            ret = Sequential(
+                self.species_converter,
+                self.aev_computer,
+                self.neural_networks[index],
+                self.energy_shifter
+            )
+        else:
+            ret = Sequential(
+                self.aev_computer,
+                self.neural_networks[index],
+                self.energy_shifter
+            )
 
         def ase(**kwargs):
             """Attach an ase calculator """
             from . import ase
-            return ase.Calculator(self.species,
-                                  self.aev_computer,
-                                  self.neural_networks[index],
-                                  self.energy_shifter,
-                                  **kwargs)
+            return ase.Calculator(self.species, ret, **kwargs)
 
         ret.ase = ase
         ret.species_to_tensor = self.consts.species_to_tensor
@@ -154,9 +173,7 @@ class BuiltinNet(torch.nn.Module):
             calculator (:class:`int`): A calculator to be used with ASE
         """
         from . import ase
-        return ase.Calculator(self.species, self.aev_computer,
-                              self.neural_networks, self.energy_shifter,
-                              **kwargs)
+        return ase.Calculator(self.species, self, **kwargs)
 
     def species_to_tensor(self, *args, **kwargs):
         """Convert species from strings to tensor.
@@ -188,8 +205,8 @@ class ANI1x(BuiltinNet):
         https://aip.scitation.org/doi/abs/10.1063/1.5023802
     """
 
-    def __init__(self):
-        super(ANI1x, self).__init__('ani-1x_8x.info')
+    def __init__(self, *args, **kwargs):
+        super().__init__('ani-1x_8x.info', *args, **kwargs)
 
 
 class ANI1ccx(BuiltinNet):
@@ -208,5 +225,5 @@ class ANI1ccx(BuiltinNet):
         https://doi.org/10.26434/chemrxiv.6744440.v1
     """
 
-    def __init__(self):
-        super(ANI1ccx, self).__init__('ani-1ccx_8x.info')
+    def __init__(self, *args, **kwargs):
+        super().__init__('ani-1ccx_8x.info', *args, **kwargs)

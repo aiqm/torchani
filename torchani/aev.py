@@ -1,7 +1,13 @@
 import torch
 from torch import Tensor
 import math
-from typing import Tuple, Optional
+from typing import Tuple, Optional, NamedTuple
+from torch.jit import Final
+
+
+class SpeciesAEV(NamedTuple):
+    species: Tensor
+    aevs: Tensor
 
 
 def cutoff_cosine(distances: Tensor, cutoff: float) -> Tensor:
@@ -92,9 +98,9 @@ def compute_shifts(cell: Tensor, pbc: Tensor, cutoff: float) -> Tensor:
     inv_distances = reciprocal_cell.norm(2, -1)
     num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
     num_repeats = torch.where(pbc, num_repeats, torch.zeros_like(num_repeats))
-    r1 = torch.arange(1, num_repeats[0] + 1, device=cell.device, dtype=torch.long)
-    r2 = torch.arange(1, num_repeats[1] + 1, device=cell.device, dtype=torch.long)
-    r3 = torch.arange(1, num_repeats[2] + 1, device=cell.device, dtype=torch.long)
+    r1 = torch.arange(1, num_repeats[0] + 1, device=cell.device)
+    r2 = torch.arange(1, num_repeats[1] + 1, device=cell.device)
+    r3 = torch.arange(1, num_repeats[2] + 1, device=cell.device)
     o = torch.zeros(1, dtype=torch.long, device=cell.device)
     return torch.cat([
         torch.cartesian_prod(r1, r2, r3),
@@ -130,7 +136,7 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
     coordinates = coordinates.detach()
     cell = cell.detach()
     num_atoms = padding_mask.shape[1]
-    all_atoms = torch.arange(num_atoms, device=cell.device, dtype=torch.long)
+    all_atoms = torch.arange(num_atoms, device=cell.device)
 
     # Step 2: center cell
     p1_center, p2_center = torch.combinations(all_atoms).unbind(-1)
@@ -139,7 +145,7 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
     # Step 3: cells with shifts
     # shape convention (shift index, molecule index, atom index, 3)
     num_shifts = shifts.shape[0]
-    all_shifts = torch.arange(num_shifts, device=cell.device, dtype=torch.long)
+    all_shifts = torch.arange(num_shifts, device=cell.device)
     shift_index, p1, p2 = torch.cartesian_prod(all_shifts, all_atoms, all_atoms).unbind(-1)
     shifts_outide = shifts.index_select(0, shift_index)
 
@@ -226,9 +232,9 @@ def triple_by_molecule(atom_index1: Tensor, atom_index2: Tensor) -> Tuple[Tensor
 def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
                 shifts: Tensor, triu_index: Tensor,
                 constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
-                sizes: Tuple[int, int, int, int, int, int]) -> Tensor:
+                sizes: Tuple[int, int, int, int, int]) -> Tensor:
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
-    num_species, radial_sublength, radial_length, angular_sublength, angular_length, aev_length = sizes
+    num_species, radial_sublength, radial_length, angular_sublength, angular_length = sizes
     num_molecules = species.shape[0]
     num_atoms = species.shape[1]
     num_species_pairs = angular_length // angular_sublength
@@ -300,15 +306,24 @@ class AEVComputer(torch.nn.Module):
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
     """
-    __constants__ = ['Rcr', 'Rca', 'num_species', 'radial_sublength',
-                     'radial_length', 'angular_sublength', 'angular_length',
-                     'aev_length']
+    Rcr: Final[float]
+    Rca: Final[float]
+    num_species: Final[int]
+
+    radial_sublength: Final[int]
+    radial_length: Final[int]
+    angular_sublength: Final[int]
+    angular_length: Final[int]
+    aev_length: Final[int]
+    sizes: Final[Tuple[int, int, int, int, int]]
 
     def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species):
         super(AEVComputer, self).__init__()
         self.Rcr = Rcr
         self.Rca = Rca
         assert Rca <= Rcr, "Current implementation of AEVComputer assumes Rca <= Rcr"
+        self.num_species = num_species
+
         # convert constant tensors to a ready-to-broadcast shape
         # shape convension (..., EtaR, ShfR)
         self.register_buffer('EtaR', EtaR.view(-1, 1))
@@ -319,7 +334,6 @@ class AEVComputer(torch.nn.Module):
         self.register_buffer('ShfA', ShfA.view(1, 1, -1, 1))
         self.register_buffer('ShfZ', ShfZ.view(1, 1, 1, -1))
 
-        self.num_species = num_species
         # The length of radial subaev of a single species
         self.radial_sublength = self.EtaR.numel() * self.ShfR.numel()
         # The length of full radial aev
@@ -330,7 +344,7 @@ class AEVComputer(torch.nn.Module):
         self.angular_length = (self.num_species * (self.num_species + 1)) // 2 * self.angular_sublength
         # The length of full aev
         self.aev_length = self.radial_length + self.angular_length
-        self.sizes = self.num_species, self.radial_sublength, self.radial_length, self.angular_sublength, self.angular_length, self.aev_length
+        self.sizes = self.num_species, self.radial_sublength, self.radial_length, self.angular_sublength, self.angular_length
 
         self.register_buffer('triu_index', triu_index(num_species).to(device=self.EtaR.device))
 
@@ -346,8 +360,9 @@ class AEVComputer(torch.nn.Module):
     def constants(self):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
 
-    def forward(self, input_: Tuple[Tensor, Tensor], cell: Optional[Tensor] = None,
-                pbc: Optional[Tensor] = None) -> Tuple[Tensor, Tensor]:
+    def forward(self, input_: Tuple[Tensor, Tensor],
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None) -> SpeciesAEV:
         """Compute AEVs
 
         Arguments:
@@ -358,6 +373,14 @@ class AEVComputer(torch.nn.Module):
                 species must have shape ``(C, A)``, coordinates must have shape
                 ``(C, A, 3)`` where ``C`` is the number of molecules in a chunk,
                 and ``A`` is the number of atoms.
+
+                .. warning::
+
+                    The species must be indexed in 0, 1, 2, 3, ..., not the element
+                    index in periodic table. Check :class:`torchani.SpeciesConverter`
+                    if you want periodic table indexing.
+
+                .. note:: The coordinates, and cell are in Angstrom.
 
                 If you want to apply periodic boundary conditions, then the input
                 would be a tuple of two tensors (species, coordinates) and two keyword
@@ -375,9 +398,8 @@ class AEVComputer(torch.nn.Module):
                 for that direction.
 
         Returns:
-            tuple: Species and AEVs. species are the species from the input
-            unchanged, and AEVs is a tensor of shape
-            ``(C, A, self.aev_length())``
+            NamedTuple: Species and AEVs. species are the species from the input
+            unchanged, and AEVs is a tensor of shape ``(C, A, self.aev_length())``
         """
         species, coordinates = input_
 
@@ -389,4 +411,5 @@ class AEVComputer(torch.nn.Module):
             cutoff = max(self.Rcr, self.Rca)
             shifts = compute_shifts(cell, pbc, cutoff)
 
-        return species, compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
+        aev = compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
+        return SpeciesAEV(species, aev)

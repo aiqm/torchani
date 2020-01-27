@@ -15,6 +15,7 @@ from ..nn import ANIModel, Ensemble, Gaussian, Sequential
 from ..utils import EnergyShifter, ChemicalSymbolsToInts
 from ..aev import AEVComputer
 from ..optim import AdamW
+from collections import OrderedDict
 
 
 class Constants(collections.abc.Mapping):
@@ -121,8 +122,11 @@ def load_atomic_network(filename):
 
         start: inputsize atom_net
 
+        nans: "-"?"nan"
+
         value : SIGNED_INT
               | SIGNED_FLOAT
+              | nans
               | "FILE" ":" FILENAME "[" INT "]"
 
         FILENAME : ("_"|"-"|"."|LETTER|DIGIT)+
@@ -150,6 +154,10 @@ def load_atomic_network(filename):
             def value(self, v):
                 if len(v) == 1:
                     v = v[0]
+                    if isinstance(v, lark.tree.Tree):
+                        assert v.data == 'nans'
+                        return math.nan
+                    assert isinstance(v, lark.lexer.Token)
                     if v.type == 'FILENAME':
                         v = v.value
                     elif v.type == 'SIGNED_INT' or v.type == 'INT':
@@ -233,10 +241,10 @@ def load_model(species, dir_):
             chemical symbols of each supported atom type in correct order.
         dir_ (str): String for directory storing network configurations.
     """
-    models = []
+    models = OrderedDict()
     for i in species:
         filename = os.path.join(dir_, 'ANN-{}.nnf'.format(i))
-        models.append(load_atomic_network(filename))
+        models[i] = load_atomic_network(filename)
     return ANIModel(models)
 
 
@@ -489,8 +497,8 @@ if sys.version_info[0] > 2:
             input_size, network_setup = network_setup
             if input_size != self.aev_computer.aev_length:
                 raise ValueError('AEV size and input size does not match')
-            atomic_nets = {}
-            for atom_type in network_setup:
+            atomic_nets = OrderedDict()
+            for atom_type in self.consts.species:
                 layers = network_setup[atom_type]
                 modules = []
                 i = input_size
@@ -530,7 +538,7 @@ if sys.version_info[0] > 2:
                             'unrecognized parameter in layer setup')
                     i = o
                 atomic_nets[atom_type] = torch.nn.Sequential(*modules)
-            self.nn = ANIModel([atomic_nets[s] for s in self.consts.species])
+            self.nn = ANIModel(atomic_nets)
 
             # initialize weights and biases
             self.nn.apply(init_params)
