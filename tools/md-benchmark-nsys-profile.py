@@ -18,6 +18,7 @@ dyn = ase.md.verlet.VelocityVerlet(molecule, timestep=1 * ase.units.fs)
 
 dyn.run(1000)  # warm up
 
+
 def time_func(key, func):
 
     def wrapper(*args, **kwargs):
@@ -27,6 +28,7 @@ def time_func(key, func):
         return ret
 
     return wrapper
+
 
 torchani.aev.cutoff_cosine = time_func('cutoff_cosine', torchani.aev.cutoff_cosine)
 torchani.aev.radial_terms = time_func('radial_terms', torchani.aev.radial_terms)
