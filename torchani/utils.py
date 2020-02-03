@@ -283,9 +283,31 @@ class FreqsModes(NamedTuple):
     freqs: Tensor
     modes: Tensor
 
+class VibAnalysis(NamedTuple):
+    freqs: Tensor
+    modes: Tensor
+    fconstants: Tensor
+    rmasses: Tensor
 
-def vibrational_analysis(masses, hessian, unit='cm^-1'):
-    """Computing the vibrational wavenumbers from hessian."""
+
+def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
+    """Computing the vibrational wavenumbers from hessian.
+
+    Note that normal modes in many popular software packages such as
+    Gaussian and ORCA are output as mass deweighted normalized (MDN). 
+    Normal modes in ASE are output as mass deweighted unnormalized (MDU).
+    Some packages such as Psi4 let ychoose different normalizations.
+    Force constants and reduced masses are calculated as in Gaussian.
+
+    mode_type should be one of:
+    - MWN (mass weighted normalized)
+    - MDU (mass deweighted unnormalized)
+    - MDN (mass deweighted normalized)
+
+    MDU modes are orthogonal but not normalized, MDN modes are normalized
+    but not orthogonal. MWN modes are orthonormal, but they correspond
+    to mass weighted cartesian coordinates (x' = sqrt(m)x). 
+    """
     if unit != 'cm^-1':
         raise ValueError('Only cm^-1 are supported right now')
     assert hessian.shape[0] == 1, 'Currently only supporting computing one molecule a time'
@@ -306,8 +328,25 @@ def vibrational_analysis(masses, hessian, unit='cm^-1'):
     frequencies = angular_frequencies / (2 * math.pi)
     # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1
     wavenumbers = frequencies * 17092
-    modes = (eigenvectors.t() * inv_sqrt_mass).reshape(frequencies.numel(), -1, 3)
-    return FreqsModes(wavenumbers, modes)
+    
+    #Note that the normal modes are the COLUMNS of the eigenvectors matrix
+    mw_normalized = eigenvectors.t()
+    md_unnormalized = mw_normalized * inv_sqrt_mass
+    norm_factors =  1/torch.norm(md_unnormalized, dim=1) # units are sqrt(AMU)
+    md_normalized = md_unnormalized*norm_factors.unsqueeze(1)
+
+    rmasses = norm_factors**2 # units are AMU
+    # The conversion factor for Ha/(AMU*A^2) to mDyne/(A*AMU) is 4.3597482
+    fconstants = eigenvalues*rmasses*4.3597482  # units are mDyne/A
+
+    if mode_type == 'MDN':
+        modes = (md_normalized).reshape(frequencies.numel(), -1, 3)
+    elif mode_type == 'MDU':
+        modes = (md_unnormalized).reshape(frequencies.numel(), -1, 3)
+    elif mode_type == 'MWN':
+        modes = (mw_normalized).reshape(frequencies.numel(), -1, 3)
+
+    return VibAnalysis(wavenumbers, modes, fconstants, rmasses)
 
 
 __all__ = ['pad', 'pad_atomic_properties', 'present_species', 'hessian',

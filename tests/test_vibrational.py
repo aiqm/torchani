@@ -40,7 +40,7 @@ class TestVibrational(unittest.TestCase):
         coordinates = torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_grad_(True)
         _, energies = model((species, coordinates))
         hessian = torchani.utils.hessian(coordinates, energies=energies)
-        freq2, modes2 = torchani.utils.vibrational_analysis(masses[species], hessian)
+        freq2, modes2, _, _ = torchani.utils.vibrational_analysis(masses[species], hessian)
         freq2 = freq2[6:].float()
         modes2 = modes2[6:]
         ratio = freq2 / freq
