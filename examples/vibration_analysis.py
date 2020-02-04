@@ -69,9 +69,11 @@ print(hessian.shape)
 # We are now ready to compute vibrational frequencies. The output has unit
 # cm^-1. Since there are in total 9 degree of freedom, there are in total 9
 # frequencies. Only the frequencies of the 3 vibrational modes are interesting.
-freq, modes = torchani.utils.vibrational_analysis(masses, hessian)
-freq = freq[-3:]
-modes = modes[-3:]
+# We output the modes as MDU (mass deweighted unnormalized), to compare with ASE.
+freq, modes, fconstants, rmasses = torchani.utils.vibrational_analysis(masses, hessian, mode_type='MDU')
+torch.set_printoptions(precision=3, sci_mode=False)
 
-print('Frequencies (cm^-1):', freq)
-print('Modes:', modes)
+print('Frequencies (cm^-1):', freq[6:])
+print('Force Constants (mDyne/A):', fconstants[6:])
+print('Reduced masses (AMU):', rmasses[6:])
+print('Modes:', modes[6:])
