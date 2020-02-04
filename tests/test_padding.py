@@ -80,29 +80,6 @@ class TestPaddings(unittest.TestCase):
         self.assertEqual((atomic_properties['species'] - expected_species).abs().max().item(), 0)
         self.assertEqual(atomic_properties['coordinates'].abs().max().item(), 0)
 
-    def testPadSpecies(self):
-        species1 = torch.tensor([
-            [0, 2, 3, 1],
-            [0, 2, 3, 1],
-            [0, 2, 3, 1],
-            [0, 2, 3, 1],
-            [0, 2, 3, 1],
-        ])
-        species2 = torch.tensor([[3, 2, 0, 1, 0]]).expand(2, 5)
-        species = torchani.utils.pad([species1, species2])
-        self.assertEqual(species.shape[0], 7)
-        self.assertEqual(species.shape[1], 5)
-        expected_species = torch.tensor([
-            [0, 2, 3, 1, -1],
-            [0, 2, 3, 1, -1],
-            [0, 2, 3, 1, -1],
-            [0, 2, 3, 1, -1],
-            [0, 2, 3, 1, -1],
-            [3, 2, 0, 1, 0],
-            [3, 2, 0, 1, 0],
-        ])
-        self.assertEqual((species - expected_species).abs().max().item(), 0)
-
     def testPresentSpecies(self):
         species = torch.tensor([0, 1, 1, 0, 3, 7, -1, -1])
         present_species = torchani.utils.present_species(species)
