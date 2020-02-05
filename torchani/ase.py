@@ -47,8 +47,8 @@ class Calculator(ase.calculators.calculator.Calculator):
         species = self.species_to_tensor(self.atoms.get_chemical_symbols()).to(self.device)
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions())
-        coordinates = coordinates.to(self.device).to(self.dtype) \
-                                 .requires_grad_('forces' in properties)
+        coordinates = coordinates.to(self.device) \ 
+            .to(self.dtype).requires_grad_('forces' in properties or 'stress' in properties)
 
         if pbc_enabled:
             coordinates = utils.map2central(cell, coordinates, pbc)
