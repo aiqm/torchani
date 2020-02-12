@@ -36,7 +36,7 @@ def radial_terms(Rcr: float, EtaR: Tensor, ShfR: Tensor, distances: Tensor) -> T
     ret = 0.25 * torch.exp(-EtaR * (distances - ShfR)**2) * fc
     # At this point, ret now have shape
     # (conformations, atoms, N, ?, ?) where ? depend on constants.
-    # We then should flat the last 4 dimensions to view the subAEV as one
+    # We then should flat the last 2 dimensions to view the subAEV as one
     # dimension vector
     return ret.flatten(start_dim=-2)
 
