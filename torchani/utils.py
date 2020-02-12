@@ -8,33 +8,6 @@ from typing import Tuple, NamedTuple, Optional
 from .nn import SpeciesEnergies
 
 
-def pad(species):
-    """Put different species together into single tensor.
-
-    If the species are from molecules of different number of total atoms, then
-    ghost atoms with atom type -1 will be added to make it fit into the same
-    shape.
-
-    Arguments:
-        species (:class:`collections.abc.Sequence`): sequence of species.
-            Species must be of shape ``(N, A)``, where ``N`` is the number of
-            3D structures, ``A`` is the number of atoms.
-
-    Returns:
-        :class:`torch.Tensor`: species batched together.
-    """
-    max_atoms = max([s.shape[1] for s in species])
-    padded_species = []
-    for s in species:
-        natoms = s.shape[1]
-        if natoms < max_atoms:
-            padding = torch.full((s.shape[0], max_atoms - natoms), -1,
-                                 dtype=torch.long, device=s.device)
-            s = torch.cat([s, padding], dim=1)
-        padded_species.append(s)
-    return torch.cat(padded_species)
-
-
 def pad_atomic_properties(atomic_properties, padding_values=defaultdict(lambda: 0.0, species=-1)):
     """Put a sequence of atomic properties together into single tensor.
 
@@ -284,8 +257,31 @@ class FreqsModes(NamedTuple):
     modes: Tensor
 
 
-def vibrational_analysis(masses, hessian, unit='cm^-1'):
-    """Computing the vibrational wavenumbers from hessian."""
+class VibAnalysis(NamedTuple):
+    freqs: Tensor
+    modes: Tensor
+    fconstants: Tensor
+    rmasses: Tensor
+
+
+def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
+    """Computing the vibrational wavenumbers from hessian.
+
+    Note that normal modes in many popular software packages such as
+    Gaussian and ORCA are output as mass deweighted normalized (MDN).
+    Normal modes in ASE are output as mass deweighted unnormalized (MDU).
+    Some packages such as Psi4 let ychoose different normalizations.
+    Force constants and reduced masses are calculated as in Gaussian.
+
+    mode_type should be one of:
+    - MWN (mass weighted normalized)
+    - MDU (mass deweighted unnormalized)
+    - MDN (mass deweighted normalized)
+
+    MDU modes are orthogonal but not normalized, MDN modes are normalized
+    but not orthogonal. MWN modes are orthonormal, but they correspond
+    to mass weighted cartesian coordinates (x' = sqrt(m)x).
+    """
     if unit != 'cm^-1':
         raise ValueError('Only cm^-1 are supported right now')
     assert hessian.shape[0] == 1, 'Currently only supporting computing one molecule a time'
@@ -306,10 +302,27 @@ def vibrational_analysis(masses, hessian, unit='cm^-1'):
     frequencies = angular_frequencies / (2 * math.pi)
     # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1
     wavenumbers = frequencies * 17092
-    modes = (eigenvectors.t() * inv_sqrt_mass).reshape(frequencies.numel(), -1, 3)
-    return FreqsModes(wavenumbers, modes)
+
+    # Note that the normal modes are the COLUMNS of the eigenvectors matrix
+    mw_normalized = eigenvectors.t()
+    md_unnormalized = mw_normalized * inv_sqrt_mass
+    norm_factors = 1 / torch.norm(md_unnormalized, dim=1)  # units are sqrt(AMU)
+    md_normalized = md_unnormalized * norm_factors.unsqueeze(1)
+
+    rmasses = norm_factors**2  # units are AMU
+    # The conversion factor for Ha/(AMU*A^2) to mDyne/(A*AMU) is 4.3597482
+    fconstants = eigenvalues * rmasses * 4.3597482  # units are mDyne/A
+
+    if mode_type == 'MDN':
+        modes = (md_normalized).reshape(frequencies.numel(), -1, 3)
+    elif mode_type == 'MDU':
+        modes = (md_unnormalized).reshape(frequencies.numel(), -1, 3)
+    elif mode_type == 'MWN':
+        modes = (mw_normalized).reshape(frequencies.numel(), -1, 3)
+
+    return VibAnalysis(wavenumbers, modes, fconstants, rmasses)
 
 
-__all__ = ['pad', 'pad_atomic_properties', 'present_species', 'hessian',
+__all__ = ['pad_atomic_properties', 'present_species', 'hessian',
            'vibrational_analysis', 'strip_redundant_padding',
            'ChemicalSymbolsToInts']

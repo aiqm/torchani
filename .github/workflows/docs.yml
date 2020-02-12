@@ -15,7 +15,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.6, 3.7]
+        python-version: [3.6, 3.8]
 
     steps:
     - uses: actions/checkout@v1
@@ -45,6 +45,7 @@ jobs:
         git config --global user.name "zasdfgbnm-bot"
     - name: Deploy
       run: |
+        [ ! -z "$GITHUB_HEAD_REF" ] && exit
         git clone git@github.com:aiqm/torchani-test-docs.git deploy_dir -b gh-pages
         rm -rf deploy_dir/*
         touch deploy_dir/.nojekyll
@@ -52,5 +53,5 @@ jobs:
         cd deploy_dir
         git add .
         git commit -m "update"
-        git push --force || true
+        sh -c 'git push --force || true'
 
