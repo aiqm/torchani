@@ -147,7 +147,9 @@ if __name__ == "__main__":
                 enable_timers(model)
                 torch.cuda.cudart().cudaProfilerStart()
 
-            if total_batch_counter >= WARM_UP_BATCHES:
+            PROFILING_STARTED = (total_batch_counter >= WARM_UP_BATCHES)
+
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_push("batch{}".format(total_batch_counter))
 
             true_energies = batch_y['energies'].to(parser.device)
@@ -155,14 +157,15 @@ if __name__ == "__main__":
             num_atoms = []
 
             for j, (chunk_species, chunk_coordinates) in enumerate(batch_x):
-                if total_batch_counter >= WARM_UP_BATCHES:
+                if PROFILING_STARTED:
                     torch.cuda.nvtx.range_push("chunk{}".format(j))
                 chunk_species = chunk_species.to(parser.device)
                 chunk_coordinates = chunk_coordinates.to(parser.device)
                 num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
-                _, chunk_energies = model((chunk_species, chunk_coordinates))
+                with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
+                    _, chunk_energies = model((chunk_species, chunk_coordinates))
                 predicted_energies.append(chunk_energies)
-                if total_batch_counter >= WARM_UP_BATCHES:
+                if PROFILING_STARTED:
                     torch.cuda.nvtx.range_pop()
 
             num_atoms = torch.cat(num_atoms)
@@ -170,21 +173,23 @@ if __name__ == "__main__":
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
             rmse = hartree2kcal((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
 
-            if total_batch_counter >= WARM_UP_BATCHES:
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_push("backward")
-            loss.backward()
-            if total_batch_counter >= WARM_UP_BATCHES:
+            with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
+                loss.backward()
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_pop()
 
-            if total_batch_counter >= WARM_UP_BATCHES:
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_push("optimizer.step()")
-            optimizer.step()
-            if total_batch_counter >= WARM_UP_BATCHES:
+            with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
+                optimizer.step()
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_pop()
 
             progbar.update(i, values=[("rmse", rmse)])
 
-            if total_batch_counter >= WARM_UP_BATCHES:
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_pop()
 
             total_batch_counter += 1

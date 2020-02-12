@@ -22,7 +22,13 @@ class ANIModel(torch.nn.ModuleDict):
     be applied to its AEV, after that, outputs of modules will be reduced along
     different atoms to obtain molecular energies.
 
-    The resulting energies are in Hartree.
+    .. warning::
+
+        The species must be indexed in 0, 1, 2, 3, ..., not the element
+        index in periodic table. Check :class:`torchani.SpeciesConverter`
+        if you want periodic table indexing.
+
+    .. note:: The resulting energies are in Hartree.
 
     Arguments:
         modules (:class:`collections.abc.Sequence`): Modules for each atom
@@ -124,5 +130,6 @@ class SpeciesConverter(torch.nn.Module):
     def forward(self, input_: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None):
+        """Convert species from periodic table element index to 0, 1, 2, 3, ... indexing"""
         species, coordinates = input_
         return SpeciesCoordinates(self.conv_tensor[species], coordinates)

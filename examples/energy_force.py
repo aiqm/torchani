@@ -24,7 +24,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # issue in your application.
 #
 # The ``periodic_table_index`` arguments tells TorchANI to use element index
-# in periodic table to index species.
+# in periodic table to index species. If not specified, you need to use
+# 0, 1, 2, 3, ... to index species
 model = torchani.models.ANI1ccx(periodic_table_index=True).to(device)
 
 ###############################################################################
@@ -36,7 +37,7 @@ model = torchani.models.ANI1ccx(periodic_table_index=True).to(device)
 # training. If you have ``N`` different structures to compute, then make it
 # ``N``.
 #
-# The coordinates are in Angstrom, and the energies you get are in Hartree
+# .. note:: The coordinates are in Angstrom, and the energies you get are in Hartree
 coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
                              [-0.83140486, 0.39370209, -0.26395324],
                              [-0.66518241, -0.84461308, 0.20759389],

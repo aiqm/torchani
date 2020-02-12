@@ -36,7 +36,7 @@ def radial_terms(Rcr: float, EtaR: Tensor, ShfR: Tensor, distances: Tensor) -> T
     ret = 0.25 * torch.exp(-EtaR * (distances - ShfR)**2) * fc
     # At this point, ret now have shape
     # (conformations, atoms, N, ?, ?) where ? depend on constants.
-    # We then should flat the last 4 dimensions to view the subAEV as one
+    # We then should flat the last 2 dimensions to view the subAEV as one
     # dimension vector
     return ret.flatten(start_dim=-2)
 
@@ -374,6 +374,14 @@ class AEVComputer(torch.nn.Module):
                 ``(C, A, 3)`` where ``C`` is the number of molecules in a chunk,
                 and ``A`` is the number of atoms.
 
+                .. warning::
+
+                    The species must be indexed in 0, 1, 2, 3, ..., not the element
+                    index in periodic table. Check :class:`torchani.SpeciesConverter`
+                    if you want periodic table indexing.
+
+                .. note:: The coordinates, and cell are in Angstrom.
+
                 If you want to apply periodic boundary conditions, then the input
                 would be a tuple of two tensors (species, coordinates) and two keyword
                 arguments `cell=...` , and `pbc=...` where species and coordinates are
@@ -388,8 +396,6 @@ class AEVComputer(torch.nn.Module):
 
                 and pbc is boolean vector of size 3 storing if pbc is enabled
                 for that direction.
-
-                The coordinates, and cell are in Angstrom.
 
         Returns:
             NamedTuple: Species and AEVs. species are the species from the input

@@ -5,6 +5,8 @@ TorchANI
     :members:
 .. autoclass:: torchani.ANIModel
 .. autoclass:: torchani.Ensemble
+.. autoclass:: torchani.SpeciesConverter
+    :members:
 .. autoclass:: torchani.EnergyShifter
     :members:
 .. autoclass:: torchani.nn.Gaussian
