@@ -139,7 +139,9 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
     all_atoms = torch.arange(num_atoms, device=cell.device)
 
     # Step 2: center cell
-    p1_center, p2_center = torch.combinations(all_atoms).unbind(-1)
+    # torch.triu_indices is faster than combinations
+    p1_center, p2_center = torch.triu_indices(num_atoms, num_atoms, 1,
+                                              device=cell.device).unbind(0)
     shifts_center = shifts.new_zeros((p1_center.shape[0], 3))
 
     # Step 3: cells with shifts
