@@ -169,8 +169,9 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
     shifts = shifts_all.index_select(0, pair_index)
     return molecule_index + atom_index1, molecule_index + atom_index2, shifts
 
+
 def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
-                   shifts: Tensor, cutoff: float) -> Tuple[Tensor, Tensor, Tensor]:
+                         shifts: Tensor, cutoff: float) -> Tuple[Tensor, Tensor, Tensor]:
     """Compute pairs of atoms that are neighbors (doesn't use PBC)
 
     This function bypasses the calculation of shifts and duplication
@@ -187,7 +188,7 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cell: Tensor
     current_device = coordinates.device
     num_atoms = padding_mask.shape[1]
     p1_all, p2_all = torch.triu_indices(num_atoms, num_atoms, 1,
-            device=current_device).unbind(0)
+                                        device=current_device).unbind(0)
 
     distances = (coordinates.index_select(1, p1_all) - coordinates.index_select(1, p2_all)).norm(2, -1)
     padding_mask = (padding_mask.index_select(1, p1_all)) | (padding_mask.index_select(1, p2_all))
@@ -198,7 +199,7 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cell: Tensor
     atom_index1 = p1_all[pair_index] + molecule_index
     atom_index2 = p2_all[pair_index] + molecule_index
     # shifts
-    shifts= shifts.new_zeros((p1_all.shape[0], 3)).index_select(0, pair_index)
+    shifts = shifts.new_zeros((p1_all.shape[0], 3)).index_select(0, pair_index)
     return atom_index1, atom_index2, shifts
 
 
@@ -261,6 +262,7 @@ def triple_by_molecule(atom_index1: Tensor, atom_index2: Tensor) -> Tuple[Tensor
     sign1 = ((local_index1 < n).to(torch.long) * 2) - 1
     sign2 = ((local_index2 < n).to(torch.long) * 2) - 1
     return central_atom_index, local_index1 % n, local_index2 % n, sign1, sign2
+
 
 def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
                 shifts: Tensor, triu_index: Tensor,
