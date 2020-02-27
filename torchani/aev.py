@@ -186,7 +186,6 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cell: Tensor
     coordinates = coordinates.detach()
     current_device = coordinates.device
     num_atoms = padding_mask.shape[1]
-    all_atoms = torch.arange(num_atoms, device=current_device)
     p1_all, p2_all = torch.triu_indices(num_atoms, num_atoms, 1,
             device=current_device).unbind(0)
 
