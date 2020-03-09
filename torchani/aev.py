@@ -274,7 +274,7 @@ def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
     num_atoms = species.shape[1]
     num_species_pairs = angular_length // angular_sublength
     # PBC calculation is bypassed if there are no shifts
-    if shifts.numel() == 0:
+    if shifts.numel() == 1:
         atom_index1, atom_index2, shifts = neighbor_pairs_nopbc(species == -1, coordinates, cell, shifts, Rcr)
     else:
         atom_index1, atom_index2, shifts = neighbor_pairs(species == -1, coordinates, cell, shifts, Rcr)
