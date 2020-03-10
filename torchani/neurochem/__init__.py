@@ -16,6 +16,7 @@ from ..utils import EnergyShifter, ChemicalSymbolsToInts
 from ..aev import AEVComputer
 from ..optim import AdamW
 from collections import OrderedDict
+from units import hartree2kcalmol
 
 
 class Constants(collections.abc.Mapping):
@@ -264,10 +265,6 @@ def load_model_ensemble(species, prefix, count):
         network_dir = os.path.join('{}{}'.format(prefix, i), 'networks')
         models.append(load_model(species, network_dir))
     return Ensemble(models)
-
-
-def hartree2kcal(x):
-    return 627.509 * x
 
 
 if sys.version_info[0] > 2:
@@ -577,7 +574,7 @@ if sys.version_info[0] > 2:
                 predicted_energies = torch.cat(predicted_energies)
                 total_mse += self.mse_sum(predicted_energies, true_energies).item()
                 count += predicted_energies.shape[0]
-            return hartree2kcal(math.sqrt(total_mse / count))
+            return hartree2kcalmol(math.sqrt(total_mse / count))
 
         def run(self):
             """Run the training"""
