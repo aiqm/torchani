@@ -79,4 +79,5 @@ class Calculator(ase.calculators.calculator.Calculator):
         if 'stress' in properties:
             volume = self.atoms.get_volume()
             stress = torch.autograd.grad(energy.squeeze(), scaling)[0] / volume
+            stress *= ase.units.Hartree
             self.results['stress'] = stress.cpu().numpy()
