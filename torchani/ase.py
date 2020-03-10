@@ -73,6 +73,7 @@ class Calculator(ase.calculators.calculator.Calculator):
 
         if 'forces' in properties:
             forces = -torch.autograd.grad(energy.squeeze(), coordinates, retain_graph='stress' in properties)[0]
+            forces *= ase.units.Hartree
             self.results['forces'] = forces.squeeze(0).to('cpu').numpy()
 
         if 'stress' in properties:
