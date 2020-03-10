@@ -16,7 +16,7 @@ from ..utils import EnergyShifter, ChemicalSymbolsToInts
 from ..aev import AEVComputer
 from ..optim import AdamW
 from collections import OrderedDict
-from units import hartree2kcalmol
+from torchani.units import hartree2kcalmol
 
 
 class Constants(collections.abc.Mapping):
