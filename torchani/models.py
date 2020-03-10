@@ -148,8 +148,8 @@ class BuiltinNet(torch.nn.Module):
 
         def ase(**kwargs):
             """Attach an ase calculator """
-            from . import ase
-            return ase.Calculator(self.species, ret, **kwargs)
+            from . import ase_ani
+            return ase_ani.Calculator(self.species, ret, **kwargs)
 
         ret.ase = ase
         ret.species_to_tensor = self.consts.species_to_tensor
@@ -172,8 +172,8 @@ class BuiltinNet(torch.nn.Module):
         Returns:
             calculator (:class:`int`): A calculator to be used with ASE
         """
-        from . import ase
-        return ase.Calculator(self.species, self, **kwargs)
+        from . import ase_ani
+        return ase_ani.Calculator(self.species, self, **kwargs)
 
     def species_to_tensor(self, *args, **kwargs):
         """Convert species from strings to tensor.

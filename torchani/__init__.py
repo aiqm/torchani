@@ -43,8 +43,8 @@ __all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble', 'SpeciesConve
            'utils', 'neurochem', 'models', 'optim']
 
 try:
-    from . import ase  # noqa: F401
-    __all__.append('ase')
+    from . import ase_ani  # noqa: F401
+    __all__.append('ase_ani')
 except ImportError:
     pass
 
