@@ -42,7 +42,7 @@ EV_TO_KJOULEMOL = EV_TO_JOULE * AVOGADROS_NUMBER / 1000
 # then we convert angstroms to meters and divide by 1/ speed_of_light (to
 # convert seconds into meters). Finally divide by 100 to get inverse cm
 # The resulting value should be close to 17092
-INVCM_TO_EV = 0.0001239841973964072
+INVCM_TO_EV = 0.0001239841973964072 # equal to ase.units.invcm
 SQRT_MHESSIAN_TO_INVCM = ( math.sqrt(HARTREE_TO_JOULE / AMU_TO_KG) / ANGSTROM_TO_METER / SPEED_OF_LIGHT ) / 100
 SQRT_MHESSIAN_TO_MILLIEV = SQRT_MHESSIAN_TO_INVCM * INVCM_TO_EV * 1000
 # To convert units form mass-scaled hessian units into mDyne / Angstrom (force
