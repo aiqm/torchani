@@ -10,7 +10,7 @@ import torchani
 class TestPickledModels(unittest.TestCase):
 
     def setUp(self):
-        self.pt_list = torchani.utils.prebuild_models()
+        self.pt_list = torchani.models.prebuild_models()
 
     def tearDown(self):
         for path in self.pt_list:
