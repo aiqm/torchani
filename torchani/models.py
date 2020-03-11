@@ -258,6 +258,7 @@ class ANI1ccx(BuiltinNet):
             model = super(ANI1ccx, cls).from_pt(pt_file='ani-1ccx_8x_PTI.pt', periodic_table_index=periodic_table_index, force_build=force_build)
         return model
 
+
 def prebuild_models():
     r"""Build pickle files (pt) for all builtin models,
 

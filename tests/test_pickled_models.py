@@ -9,6 +9,7 @@ import torchani
 # set and unset since these models are different.
 class TestPickledModels(unittest.TestCase):
 
+
     def setUp(self):
         self.pt_list = torchani.models.prebuild_models()
 
@@ -16,7 +17,6 @@ class TestPickledModels(unittest.TestCase):
         for path in self.pt_list:
             if os.path.isfile(path):
                 os.remove(path)
-
 
     @staticmethod
     def count_elements(model):
@@ -50,12 +50,13 @@ class TestPickledModels(unittest.TestCase):
         model_from_pt = torchani.models.ANI1ccx.from_pt(periodic_table_index=False)
         self.assertEqual(self.count_elements(model_init), self.count_elements(model_from_pt))
         self.assertTrue(self.have_same_parameters(model_init, model_from_pt))
-        
+
         # ANI1ccx PTI
         model_init = torchani.models.ANI1ccx(periodic_table_index=True)
         model_from_pt = torchani.models.ANI1ccx.from_pt(periodic_table_index=True)
         self.assertEqual(self.count_elements(model_init), self.count_elements(model_from_pt))
         self.assertTrue(self.have_same_parameters(model_init, model_from_pt))
+
 
 if __name__ == '__main__':
     unittest.main()
