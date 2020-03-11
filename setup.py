@@ -2,29 +2,33 @@ from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+
 class _JITCompileInstall(install):
-   # Custom setup command to JIT compile models
-   # This command JIT-compiles all builtin ANI models when the package is
-   # installed  It is run only in non develop installations
-   def run(self):
-       super().run()
-       import torchani
-       torchani.models.prebuild_models()
+    # Custom setup command to JIT compile models
+    # This command JIT-compiles all builtin ANI models when the package is
+    # installed  It is run only in non develop installations
+    def run(self):
+        super().run()
+        import torchani
+        torchani.models.prebuild_models()
+
 
 class _JITCompileDevelop(develop):
-   # Custom setup command to JIT compile models
-   # This command JIT-compiles all builtin ANI models when the package is
-   # installed  It is run only in develop installations
-   def run(self):
-       super().run()
-       import torchani
-       torchani.models.prebuild_models()
+    # Custom setup command to JIT compile models
+    # This command JIT-compiles all builtin ANI models when the package is
+    # installed  It is run only in develop installations
+    def run(self):
+        super().run()
+        import torchani
+        torchani.models.prebuild_models()
+
 
 setup_attrs = {
-        'cmdclass': {'install': _JITCompileInstall, 'develop': _JITCompileDevelop}, 
+    'cmdclass': {'install': _JITCompileInstall, 'develop': _JITCompileDevelop},
     'name': 'torchani',
     'description': 'PyTorch implementation of ANI',
     'long_description': long_description,
