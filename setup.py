@@ -11,18 +11,16 @@ class _JITCompileInstall(install):
     # This command JIT-compiles all builtin ANI models when the package is
     # installed  It is run only in non develop installations
 
-    user_options = install.user_options + [('no-compilation', None, "Installs without compiling the builtin models")]
-
-    def initialize_options(self):
-        super().initialize_options()
-        self.no_compilation = False
-
     def run(self):
-        if self.no_compilation:
-            return
-        install.run(self)
+        super().run()
         import torchani
-        torchani.models.prebuild_models()
+        try:
+            torchani.models.prebuild_models()
+        except:
+            # if compilation fails we don't do anything since 
+            # pip swallows output anyways
+            pass
+            
 
 
 class _JITCompileDevelop(develop):
@@ -30,18 +28,19 @@ class _JITCompileDevelop(develop):
     # This command JIT-compiles all builtin ANI models when the package is
     # installed  It is run only in develop installations
 
-    user_options = develop.user_options + [('no-compilation', None, "Installs without compiling the builtin models")]
-
     def initialize_options(self):
         super().initialize_options()
         self.no_compilation = False
 
     def run(self):
-        develop.run(self)
-        if self.no_compilation:
-            return
+        super().run()
         import torchani
-        torchani.models.prebuild_models()
+        try:
+            torchani.models.prebuild_models()
+        except:
+            # if compilation fails we don't do anything since 
+            # pip swallows output anyways
+            pass
 
 
 setup_attrs = {
