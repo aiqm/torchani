@@ -8,8 +8,8 @@ with open("README.md", "r") as fh:
 
 
 class _PrebuildInstall(install):
-    # Custom setup command to JIT compile models
-    # This command JIT-compiles all builtin ANI models when the package is
+    # Custom setup command to prebuild models
+    # This command prebuilds all builtin ANI models when the package is
     # installed  It is run only in non develop installations
 
     def run(self):
@@ -19,14 +19,14 @@ class _PrebuildInstall(install):
             torchani.models.prebuild_models()
         except Exception as e:
             print(e)
-            # if compilation fails we don't do anything
+            # if pickling fails we don't do anything
             # pip swallows output but this gets printed with
             # a raw `python setup.py install` call
 
 
 class _PrebuildDevelop(develop):
-    # Custom setup command to JIT compile models
-    # This command JIT-compiles all builtin ANI models when the package is
+    # Custom setup command to prebuild models
+    # This command prebuilds all builtin ANI models when the package is
     # installed  It is run only in develop installations
 
     def initialize_options(self):
@@ -40,7 +40,7 @@ class _PrebuildDevelop(develop):
             torchani.models.prebuild_models()
         except Exception as e:
             print(e)
-            # if compilation fails we don't do anything
+            # if pickling fails we don't do anything
             # pip swallows output but this gets printed with
             # a raw `python setup.py develop` call
 
