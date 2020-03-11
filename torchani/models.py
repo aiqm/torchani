@@ -260,8 +260,8 @@ class ANI1ccx(BuiltinNet):
         return model
 
 
-def prebuild_models():
-    r"""Build pickle files (pt) for all builtin models,
+def jitcompile_models():
+    r"""Build pickle files (pt) for all jitted builtin models,
 
     Pre-building pickle files for all models makes loading
     them faster afterwards

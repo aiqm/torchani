@@ -16,7 +16,7 @@ class _JITCompileInstall(install):
         super().run()
         import torchani
         try:
-            torchani.models.prebuild_models()
+            torchani.models.jitcompile_models()
         except Exception as e:
             print(e)
             # if compilation fails we don't do anything
@@ -37,7 +37,7 @@ class _JITCompileDevelop(develop):
         super().run()
         import torchani
         try:
-            torchani.models.prebuild_models()
+            torchani.models.jitcompile_models()
         except Exception as e:
             print(e)
             # if compilation fails we don't do anything
