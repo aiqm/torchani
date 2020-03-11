@@ -26,7 +26,7 @@ AVOGADROS_NUMBER = 6.022140857e+23  # equal to ase.units._Nav
 SPEED_OF_LIGHT = 299792458.0 # equal to ase.units._c 
 AMU_TO_KG = 1.660539040e-27 # equal to ase.units._amu
 ANGSTROM_TO_METER = 1e-10
-NEWTON_TO_MDYNE = 1e8 # exact relation
+NEWTON_TO_MILLIDYNE = 1e8 # exact relation
 
 HARTREE_TO_KCALMOL = HARTREE_TO_JOULE * JOULE_TO_KCAL * AVOGADROS_NUMBER
 HARTREE_TO_KJOULEMOL = HARTREE_TO_JOULE * AVOGADROS_NUMBER / 1000
@@ -42,10 +42,13 @@ EV_TO_KJOULEMOL = EV_TO_JOULE * AVOGADROS_NUMBER / 1000
 # then we convert angstroms to meters and divide by 1/ speed_of_light (to
 # convert seconds into meters). Finally divide by 100 to get inverse cm
 # The resulting value should be close to 17092
+INVCM_TO_EV = 0.0001239841973964072
 SQRT_MHESSIAN_TO_INVCM = ( math.sqrt(HARTREE_TO_JOULE / AMU_TO_KG) / ANGSTROM_TO_METER / SPEED_OF_LIGHT ) / 100
+SQRT_MHESSIAN_TO_MILLIEV = SQRT_MHESSIAN_TO_INVCM * INVCM_TO_EV * 1000
 # To convert units form mass-scaled hessian units into mDyne / Angstrom (force
 # constant units) factor should be close to 4.36
-MHESSIAN_TO_FCONST = HARTREE_TO_JOULE * NEWTON_TO_MDYNE / ANGSTROM_TO_METER
+MHESSIAN_TO_FCONST = HARTREE_TO_JOULE * NEWTON_TO_MILLIDYNE / ANGSTROM_TO_METER
+
 
 # Comments on ASE:
 
@@ -65,6 +68,16 @@ def sqrt_mhessian2invcm(x):
     convert the eigenvalues of the hessian into wavenumbers it is 
     necessary to multiply by an extra factor of 1/ (2 pi)"""
     return x * SQRT_MHESSIAN_TO_INVCM
+
+def sqrt_mhessian2mev(x):
+    r"""Convert from sqrt_mhessian into millieV
+    
+    Converts form units of sqrt(hartree / (amu * A^2) ) 
+    which are the units of the mass-scaled hessian matrix 
+    into units of milli-electronvolts. Take into account that to 
+    convert the eigenvalues of the hessian into wavenumbers it is 
+    necessary to multiply by an extra factor of 1/ (2 pi)"""
+    return x * SQRT_MHESSIAN_TO_MILLIEV
 
 def mhessian2fconst(x):
     r"""Converts form the mhessian into mDyne/A
