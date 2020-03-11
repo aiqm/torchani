@@ -5,7 +5,7 @@ import math
 import numpy as np
 from collections import defaultdict
 from typing import Tuple, NamedTuple, Optional
-from torchani.units import sqrt_mhessian2invcm, mhessian2fconst
+from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
 from .nn import SpeciesEnergies
 
 
@@ -284,8 +284,13 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     MWN modes are orthonormal, but they correspond
     to mass weighted cartesian coordinates (x' = sqrt(m)x).
     """
-    if unit != 'cm^-1':
-        raise ValueError('Only cm^-1 are supported right now')
+    if unit == 'meV':
+        unit_converter = sqrt_mhessian2milliev
+    elif unit == 'cm^-1':
+        unit_converter = sqrt_mhessian2invcm
+    else:
+        raise ValueError(f'Only meV and cm^-1 are supported right now')
+
     assert hessian.shape[0] == 1, 'Currently only supporting computing one molecule a time'
     # Solving the eigenvalue problem: Hq = w^2 * T q
     # where H is the Hessian matrix, q is the normal coordinates,
@@ -302,8 +307,8 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     eigenvalues, eigenvectors = torch.symeig(mass_scaled_hessian, eigenvectors=True)
     angular_frequencies = eigenvalues.sqrt()
     frequencies = angular_frequencies / (2 * math.pi)
-    # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1
-    wavenumbers = sqrt_mhessian2invcm(frequencies)
+    # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1 or meV
+    wavenumbers = unit_converter(frequencies)
 
     # Note that the normal modes are the COLUMNS of the eigenvectors matrix
     mw_normalized = eigenvectors.t()

@@ -69,7 +69,7 @@ def sqrt_mhessian2invcm(x):
     necessary to multiply by an extra factor of 1/ (2 pi)"""
     return x * SQRT_MHESSIAN_TO_INVCM
 
-def sqrt_mhessian2mev(x):
+def sqrt_mhessian2milliev(x):
     r"""Convert from sqrt_mhessian into millieV
     
     Converts form units of sqrt(hartree / (amu * A^2) ) 
