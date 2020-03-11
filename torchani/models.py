@@ -226,9 +226,9 @@ class ANI1x(BuiltinNet):
     @classmethod
     def from_pt(cls, periodic_table_index=False, force_build=False):
         if periodic_table_index:
-            model = super(ANI1x, cls).from_pt(pt_file='ani-1x_8x.pt', periodic_table_index=periodic_table_index, force_build=force_build)
-        else:
             model = super(ANI1x, cls).from_pt(pt_file='ani-1x_8x_PTI.pt', periodic_table_index=periodic_table_index, force_build=force_build)
+        else:
+            model = super(ANI1x, cls).from_pt(pt_file='ani-1x_8x.pt', periodic_table_index=periodic_table_index, force_build=force_build)
         return model
 
 
