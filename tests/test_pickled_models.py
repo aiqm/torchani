@@ -1,5 +1,6 @@
 import unittest
 import torch
+import os
 import torchani
 
 # This test checks that building the model with the default constructor
@@ -7,6 +8,15 @@ import torchani
 # The test is done for models pickled with the periodic_table_index flag
 # set and unset since these models are different.
 class TestPickledModels(unittest.TestCase):
+
+    def setUp(self):
+        self.pt_list = torchani.utils.prebuild_models()
+
+    def tearDown(self):
+        for path in self.pt_list:
+            if os.path.isfile(path):
+                os.remove(path)
+
 
     @staticmethod
     def count_elements(model):
@@ -22,30 +32,30 @@ class TestPickledModels(unittest.TestCase):
                 return False
         return True
 
-    def testANI1x_noPTI(self):
+    def testModelParamsEqual(self):
+        # ANI1x
         model_init = torchani.models.ANI1x(periodic_table_index=False)
         model_from_pt = torchani.models.ANI1x.from_pt(periodic_table_index=False)
         self.assertEqual(self.count_elements(model_init), self.count_elements(model_from_pt))
         self.assertTrue(self.have_same_parameters(model_init, model_from_pt))
 
-    def testANI1x_PTI(self):
+        # ANI1x PTI
         model_init = torchani.models.ANI1x(periodic_table_index=True)
         model_from_pt = torchani.models.ANI1x.from_pt(periodic_table_index=True)
         self.assertEqual(self.count_elements(model_init), self.count_elements(model_from_pt))
         self.assertTrue(self.have_same_parameters(model_init, model_from_pt))
 
-    def testANI1ccx_noPTI(self):
+        # ANI1ccx
         model_init = torchani.models.ANI1ccx(periodic_table_index=False)
         model_from_pt = torchani.models.ANI1ccx.from_pt(periodic_table_index=False)
         self.assertEqual(self.count_elements(model_init), self.count_elements(model_from_pt))
         self.assertTrue(self.have_same_parameters(model_init, model_from_pt))
-
-    def testANI1ccx_PTI(self):
+        
+        # ANI1ccx PTI
         model_init = torchani.models.ANI1ccx(periodic_table_index=True)
         model_from_pt = torchani.models.ANI1ccx.from_pt(periodic_table_index=True)
         self.assertEqual(self.count_elements(model_init), self.count_elements(model_from_pt))
         self.assertTrue(self.have_same_parameters(model_init, model_from_pt))
-
 
 if __name__ == '__main__':
     unittest.main()
