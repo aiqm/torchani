@@ -8,6 +8,24 @@ from typing import Tuple, NamedTuple, Optional
 from .nn import SpeciesEnergies
 
 
+def prebuild_models():
+    r"""Build pickle files (pt) for all builtin models,
+
+    Pre-building pickle files for all models makes loading
+    them faster afterwards
+
+    Returns:
+        list(str): A list of paths to the pickle files of the models"""
+
+    models = ['ANI1x', 'ANI1ccx']
+    for model_name in models:
+        m = getattr(torchani.models,model_name).from_pt(periodic_table_index=False, force_build=True)
+        m_pti = getattr(torchani.models,model_name).from_pt(periodic_table_index=True, force_build=True)
+        pt_list.append(m.pt_file)
+        pt_list.append(m_pti.pt_file)
+    return pt_list
+
+
 def pad_atomic_properties(atomic_properties, padding_values=defaultdict(lambda: 0.0, species=-1)):
     """Put a sequence of atomic properties together into single tensor.
 
