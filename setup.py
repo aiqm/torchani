@@ -6,6 +6,7 @@ from setuptools.command.install import install
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+
 class _JITCompileInstall(install):
     # Custom setup command to JIT compile models
     # This command JIT-compiles all builtin ANI models when the package is
@@ -16,11 +17,12 @@ class _JITCompileInstall(install):
         import torchani
         try:
             torchani.models.prebuild_models()
-        except:
-            # if compilation fails we don't do anything since 
-            # pip swallows output anyways
+        except Exception as e:
+            print(e)
+            # if compilation fails we don't do anything
+            # pip swallows output but this gets printed with
+            # a raw `python setup.py install` call
             pass
-            
 
 
 class _JITCompileDevelop(develop):
@@ -37,9 +39,11 @@ class _JITCompileDevelop(develop):
         import torchani
         try:
             torchani.models.prebuild_models()
-        except:
-            # if compilation fails we don't do anything since 
-            # pip swallows output anyways
+        except Exception as e:
+            print(e)
+            # if compilation fails we don't do anything
+            # pip swallows output but this gets printed with
+            # a raw `python setup.py develop` call
             pass
 
 
