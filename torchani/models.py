@@ -104,6 +104,8 @@ class BuiltinNet(torch.nn.Module):
             model = cls(periodic_table_index=periodic_table_index)
             torch.save(model, pt_file)
         model = torch.load(pt_file)
+        # Add an attribute so you can check where the model was built from
+        model.pt_file = pt_file
         model.eval()
         return model
 
