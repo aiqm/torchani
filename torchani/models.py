@@ -96,15 +96,21 @@ class BuiltinNet(torch.nn.Module):
             self.species, self.ensemble_prefix, self.ensemble_size)
 
     @classmethod
-    def from_pt(cls, pt_file, periodic_table_index=False, force_build=False):
+    def from_pt(cls, pt_file, periodic_table_index=False, force_build=False, jit=False):
         package_name = '.'.join(__name__.split('.')[:-1])
         pt_file = 'resources/prebuilt_models/' + pt_file
         pt_file = resource_filename(package_name, pt_file)
-        if force_build:
-            model = cls(periodic_table_index=periodic_table_index)
-            compiled_model = torch.jit.script(model)
-            torch.jit.save(compiled_model, pt_file)
-        model = torch.jit.load(pt_file)
+        if jit:
+            if force_build:
+                model = cls(periodic_table_index=periodic_table_index)
+                compiled_model = torch.jit.script(model)
+                torch.jit.save(compiled_model, pt_file)
+            model = torch.jit.load(pt_file)
+        else:
+            if force_build:
+                model = cls(periodic_table_index=periodic_table_index)
+                torch.save(model, pt_file)
+            model = torch.load(pt_file)
         # Add an attribute so you can check where the model was built from
         model.pt_file = pt_file
         model.eval()
@@ -224,11 +230,13 @@ class ANI1x(BuiltinNet):
         super().__init__('ani-1x_8x.info', *args, **kwargs)
 
     @classmethod
-    def from_pt(cls, periodic_table_index=False, force_build=False):
+    def from_pt(cls, periodic_table_index=False, force_build=False, jit=False):
+        pt_file = 'ani-1x_8x.pt'
         if periodic_table_index:
-            model = super(ANI1x, cls).from_pt(pt_file='ani-1x_8x_PTI.pt', periodic_table_index=periodic_table_index, force_build=force_build)
-        else:
-            model = super(ANI1x, cls).from_pt(pt_file='ani-1x_8x.pt', periodic_table_index=periodic_table_index, force_build=force_build)
+            pt_file = 'pti_' + pt_file
+        if jit:
+            pt_file = 'jit_' + pt_file
+        model = super(ANI1x, cls).from_pt(pt_file=pt_file, periodic_table_index=periodic_table_index, force_build=force_build, jit=jit)
         return model
 
 
@@ -252,19 +260,23 @@ class ANI1ccx(BuiltinNet):
         super().__init__('ani-1ccx_8x.info', *args, **kwargs)
 
     @classmethod
-    def from_pt(cls, periodic_table_index=False, force_build=False):
+    def from_pt(cls, periodic_table_index=False, force_build=False, jit=False):
+        pt_file = 'ani-1ccx_8x.pt'
         if periodic_table_index:
-            model = super(ANI1ccx, cls).from_pt(pt_file='ani-1ccx_8x_PTI.pt', periodic_table_index=periodic_table_index, force_build=force_build)
-        else:
-            model = super(ANI1ccx, cls).from_pt(pt_file='ani-1ccx_8x.pt', periodic_table_index=periodic_table_index, force_build=force_build)
+            pt_file = 'pti_' + pt_file
+        if jit:
+            pt_file = 'jit_' + pt_file
+        model = super(ANI1ccx, cls).from_pt(pt_file=pt_file, periodic_table_index=periodic_table_index, force_build=force_build, jit=jit)
         return model
 
 
-def jitcompile_models():
-    r"""Build pickle files (pt) for all jitted builtin models,
+def prebuild_models(jit=False):
+    r"""Build pickle files (pt) for all builtin models,
 
     Pre-building pickle files for all models makes loading
-    them faster afterwards
+    them faster afterwards, you can also choose to jit-compile them, 
+    but if you do that you won't be able to call .ase() or access
+    individual submodels.
 
     Returns:
         list(str): A list of paths to the pickle files of the models"""
@@ -272,8 +284,8 @@ def jitcompile_models():
     models = [ANI1x, ANI1ccx]
     pt_list = []
     for class_ in models:
-        m = class_.from_pt(periodic_table_index=False, force_build=True)
-        m_pti = class_.from_pt(periodic_table_index=True, force_build=True)
+        m = class_.from_pt(periodic_table_index=False, force_build=True, jit=jit)
+        m_pti = class_.from_pt(periodic_table_index=True, force_build=True, jit=jit)
         pt_list.append(m.pt_file)
         pt_list.append(m_pti.pt_file)
     return pt_list

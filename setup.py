@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
-class _JITCompileInstall(install):
+class _PrebuildInstall(install):
     # Custom setup command to JIT compile models
     # This command JIT-compiles all builtin ANI models when the package is
     # installed  It is run only in non develop installations
@@ -16,7 +16,7 @@ class _JITCompileInstall(install):
         super().run()
         import torchani
         try:
-            torchani.models.jitcompile_models()
+            torchani.models.prebuild_models()
         except Exception as e:
             print(e)
             # if compilation fails we don't do anything
@@ -24,7 +24,7 @@ class _JITCompileInstall(install):
             # a raw `python setup.py install` call
 
 
-class _JITCompileDevelop(develop):
+class _PrebuildDevelop(develop):
     # Custom setup command to JIT compile models
     # This command JIT-compiles all builtin ANI models when the package is
     # installed  It is run only in develop installations
@@ -37,7 +37,7 @@ class _JITCompileDevelop(develop):
         super().run()
         import torchani
         try:
-            torchani.models.jitcompile_models()
+            torchani.models.prebuild_models()
         except Exception as e:
             print(e)
             # if compilation fails we don't do anything
@@ -46,7 +46,7 @@ class _JITCompileDevelop(develop):
 
 
 setup_attrs = {
-    'cmdclass': {'install': _JITCompileInstall, 'develop': _JITCompileDevelop},
+    'cmdclass': {'install': _PrebuildInstall, 'develop': _PrebuildDevelop},
     'name': 'torchani',
     'description': 'PyTorch implementation of ANI',
     'long_description': long_description,
