@@ -255,3 +255,13 @@ class ANI1ccx(BuiltinNet):
         else:
             model = super(ANI1ccx, cls).from_pt(pt_file='ani-1ccx_8x_PTI.pt', periodic_table_index=periodic_table_index, force_build=force_build)
         return model
+
+def prebuild_models():
+    r"""Build pickle files (pt) for all builtin models,
+
+    Pre-building pickle files for all models makes loading
+    them faster afterwards"""
+    ANI1ccx.from_pt(periodic_table_index=True, force_build=True)
+    ANI1x.from_pt(periodic_table_index=True, force_build=True)
+    ANI1ccx.from_pt(periodic_table_index=False, force_build=True)
+    ANI1x.from_pt(periodic_table_index=False, force_build=True)
