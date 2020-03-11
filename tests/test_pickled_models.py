@@ -10,6 +10,17 @@ import torchani
 # set and unset since these models are different.
 class TestPickledModels(unittest.TestCase):
 
+
+    def setUp(self):
+         self.pt_list = torchani.models.prebuild_models()
+
+
+    def tearDown(self):
+        for path in self.pt_list:
+            if os.path.isfile(path):
+                 os.remove(path)
+
+
     @staticmethod
     def count_elements(model):
         n = 0
