@@ -3,12 +3,12 @@ import torch
 import os
 import torchani
 
+
 # This test checks that building the model with the default constructor
 # gives the same model as loading the model from the pytorch pickled file
 # The test is done for models pickled with the periodic_table_index flag
 # set and unset since these models are different.
 class TestPickledModels(unittest.TestCase):
-
 
     def setUp(self):
         self.pt_list = torchani.models.prebuild_models()
