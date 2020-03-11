@@ -22,7 +22,6 @@ class _JITCompileInstall(install):
             # if compilation fails we don't do anything
             # pip swallows output but this gets printed with
             # a raw `python setup.py install` call
-            pass
 
 
 class _JITCompileDevelop(develop):
@@ -44,7 +43,6 @@ class _JITCompileDevelop(develop):
             # if compilation fails we don't do anything
             # pip swallows output but this gets printed with
             # a raw `python setup.py develop` call
-            pass
 
 
 setup_attrs = {
