@@ -27,7 +27,7 @@ jobs:
       run: |
         ci/install_dependencies.sh
         pip install h5py .
-        pip install --install-option='--no-compilation' .
+        pip install .
     - name: Download data files
       run: ./download.sh
     - name: Run submodules

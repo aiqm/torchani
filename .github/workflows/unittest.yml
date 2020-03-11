@@ -34,7 +34,7 @@ jobs:
       run: |
         ci/install_dependencies.sh
         pip install -r test_requirements.txt
-        pip install --install-option='--no-compilation' .
+        pip install .
     - name: Download data files
       run: ./download.sh
     - name: Run single test
