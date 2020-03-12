@@ -76,3 +76,9 @@ TorchANI Optimizater
 
 .. automodule:: torchani.optim
 .. autoclass:: torchani.optim.AdamW
+
+
+Units
+=====
+
+.. automodule:: torchani.units
