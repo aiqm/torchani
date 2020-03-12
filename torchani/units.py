@@ -2,21 +2,22 @@ r"""Unit conversion factors used in torchani
 
 The torchani networks themselves works internally entirely in Hartrees (energy)
 and Angstroms (distance). In some example code and scripts we convert to other
-more commonly used units. Our conversion factors are consistent with CODATA
-2014, which is also consistent with the way ASE defines its units.
-(https://wiki.fysik.dtu.dk/ase/ase/units.html#units).  All the conversion
-factors we use are defined in this module.
+more commonly used units. Our conversion factors are consistent with `CODATA
+2014 recommendations`_, which is also consistent with the `units used in ASE`_.
+Joule-to-kcal conversion taken from the `IUPAC Goldbook`_. All the
+conversion factors we use are defined in this module.
 
-All values derived from:
-    CODATA Recommended Values of the Fundamental Physical Constants: 2014
-    Peter J. Mohr, David B. Newell, Barry N. Taylor
-    November 22, 2016
 
-Except from the Joule-to-kcal conversion, taken to be 1 cal = 4.184 J
-    IUPAC's Gold Book, IUPAC. Compendium of Chemical Terminology, 2nd ed.,
-    the "thermochemical calorie".
+.. _units used in ASE:
+    https://wiki.fysik.dtu.dk/ase/ase/units.html#units
+
+.. _CODATA 2014 recommendations:
+    https://arxiv.org/pdf/1507.07956.pdf
+
+.. _IUPAC Goldbook:
+    https://goldbook.iupac.org/terms/view/C00784
+
 """
-
 import math
 
 
@@ -66,66 +67,62 @@ MHESSIAN_TO_FCONST = HARTREE_TO_JOULE * NEWTON_TO_MILLIDYNE / ANGSTROM_TO_METER
 
 
 def sqrt_mhessian2invcm(x):
-    r"""Convert from sqrt_mhessian into cm^-1
+    r"""Converts sqrt(mass-scaled hessian units) into cm^-1
 
-    Converts form units of sqrt(hartree / (amu * A^2) )
-    which are the units of the mass-scaled hessian matrix
-    into units of inverse centimeters. Take into account that to
-    convert the eigenvalues of the hessian into wavenumbers it is
-    necessary to multiply by an extra factor of 1/ (2 pi)"""
+    Converts form units of sqrt(Hartree / (amu * Angstrom^2))
+    which are sqrt(units of the mass-scaled hessian matrix)
+    into units of inverse centimeters. 
+
+    Take into account that to convert the actual eigenvalues of the hessian
+    into wavenumbers it is necessary to multiply by an extra factor of 1 / (2 *
+    pi)
+    """
     return x * SQRT_MHESSIAN_TO_INVCM
 
 
 def sqrt_mhessian2milliev(x):
-    r"""Convert from sqrt_mhessian into millieV
+    r"""Converts sqrt(mass-scaled hessian units) into meV
 
-    Converts form units of sqrt(hartree / (amu * A^2) )
-    which are the units of the mass-scaled hessian matrix
-    into units of milli-electronvolts. Take into account that to
-    convert the eigenvalues of the hessian into wavenumbers it is
-    necessary to multiply by an extra factor of 1/ (2 pi)"""
+    Converts form units of sqrt(Hartree / (amu * Angstrom^2))
+    which are sqrt(units of the mass-scaled hessian matrix)
+    into units of milli-electronvolts.
+
+    Take into account that to convert the actual eigenvalues of the hessian
+    into wavenumbers it is necessary to multiply by an extra factor of 1 / (2 *
+    pi)
+    """
     return x * SQRT_MHESSIAN_TO_MILLIEV
 
 
 def mhessian2fconst(x):
-    r"""Converts form the mhessian into mDyne/A
+    r"""Converts mass-scaled hessian units into mDyne/Angstrom
 
-    Converts from units of mass-scaled hessian (hartree / (amu * A^2)
-    into force constant units (mDyne/Angstom)
+    Converts from units of mass-scaled hessian (Hartree / (amu * Angstrom^2)
+    into force constant units (mDyne/Angstom), where 1 N = 1 * 10^8 mDyne
     """
     return x * MHESSIAN_TO_FCONST
 
 
 def hartree2ev(x):
-    r"""Hartree to Electronvolt conversion factor
-
-    Ha-to-eV factor, calculated from 2014 CODATA recommended values"""
+    r"""Hartree to eV conversion factor from 2014 CODATA"""
     return x * HARTREE_TO_EV
 
 
 def ev2kjoulemol(x):
-    r"""Electronvolt to kJ/mol conversion factor
-
-    eV-to-kJ/mol factor, calculated from 2014 CODATA recommended values"""
+    r"""Electronvolt to kJ/mol conversion factor from CODATA 2014"""
     return x * EV_TO_KJOULEMOL
 
 
 def ev2kcalmol(x):
-    r"""Electronvolt to kcal/mole conversion factor,
-
-    eV-to-kcal/mol factor, calculated from 2014 CODATA recommended values"""
+    r"""Electronvolt to kcal/mol conversion factor from CODATA 2014"""
     return x * EV_TO_KCALMOL
 
 
 def hartree2kjoulemol(x):
-    r"""Hartree to kJ/mol conversion factor
-
-    Ha-to-kJ/mol factor, calculated from 2014 CODATA recommended values"""
+    r"""Hartree to kJ/mol conversion factor from CODATA 2014"""
     return x * HARTREE_TO_KJOULEMOL
 
 
 def hartree2kcalmol(x):
-    r"""Hartree to kJ/mol conversion factor
-
-    Ha-to-kcal/mol factor, calculated from 2014 CODATA recommended values"""
+    r"""Hartree to kJ/mol conversion factor from CODATA 2014"""
     return x * HARTREE_TO_KCALMOL
