@@ -274,7 +274,7 @@ def prebuild_models(jit=False):
     r"""Build pickle files (pt) for all builtin models,
 
     Pre-building pickle files for all models makes loading
-    them faster afterwards, you can also choose to jit-compile them, 
+    them faster afterwards, you can also choose to jit-compile them,
     but if you do that you won't be able to call .ase() or access
     individual submodels.
 
