@@ -75,7 +75,7 @@ def sqrt_mhessian2invcm(x):
 
     Converts form units of sqrt(Hartree / (amu * Angstrom^2))
     which are sqrt(units of the mass-scaled hessian matrix)
-    into units of inverse centimeters. 
+    into units of inverse centimeters.
 
     Take into account that to convert the actual eigenvalues of the hessian
     into wavenumbers it is necessary to multiply by an extra factor of 1 / (2 *
@@ -127,6 +127,7 @@ def hartree2kjoulemol(x):
 def hartree2kcalmol(x):
     r"""Hartree to kJ/mol conversion factor from CODATA 2014"""
     return x * HARTREE_TO_KCALMOL
+
 
 # Add actual values to docstrings on import
 hartree2ev.__doc__ += f'\n\n1 Hartree = {hartree2ev(1)} eV'
