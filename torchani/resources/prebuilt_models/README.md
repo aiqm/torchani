@@ -1,1 +1,1 @@
-# Directory with prebuilt jit-compiled ANI models
+# Directory with prebuilt and/or jit-compiled ANI models
