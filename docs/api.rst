@@ -82,3 +82,11 @@ Units
 =====
 
 .. automodule:: torchani.units
+.. autofunction:: torchani.units.hartree2ev
+.. autofunction:: torchani.units.hartree2kcalmol
+.. autofunction:: torchani.units.hartree2kjoulemol
+.. autofunction:: torchani.units.ev2kcalmol
+.. autofunction:: torchani.units.ev2kjoulemol
+.. autofunction:: torchani.units.mhessian2fconst
+.. autofunction:: torchani.units.sqrt_mhessian2invcm
+.. autofunction:: torchani.units.sqrt_mhessian2milliev
