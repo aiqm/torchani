@@ -26,6 +26,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        ci/install_dependencies.sh
         pip install .
     - name: Lint with flake8
       run: |
