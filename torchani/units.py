@@ -130,11 +130,11 @@ def hartree2kcalmol(x):
 
 
 # Add actual values to docstrings on import
-hartree2ev.__doc__ += f'\n\n1 Hartree = {hartree2ev(1)} eV'
-hartree2kcalmol.__doc__ += f'\n\n1 Hartree = {hartree2kcalmol(1)} kcal/mol'
-hartree2kjoulemol.__doc__ += f'\n\n1 Hartree = {hartree2kjoulemol(1)} kJ/mol'
-ev2kjoulemol.__doc__ += f'\n\n1 eV = {ev2kjoulemol(1)} kJ/mol'
-ev2kcalmol.__doc__ += f'\n\n1 eV = {ev2kcalmol(1)} kcal/mol'
-mhessian2fconst.__doc__ += f'\n\n1 Hartree / (AMU * Angstrom^2) = {ev2kcalmol(1)} mDyne/Angstrom'
-sqrt_mhessian2milliev.__doc__ += f'\n\n1 sqrt(Hartree / (AMU * Angstrom^2)) = {sqrt_mhessian2milliev(1)} meV'
-sqrt_mhessian2invcm.__doc__ += f'\n\n1 sqrt(Hartree / (AMU * Angstrom^2)) = {sqrt_mhessian2invcm(1)} cm^-1'
+hartree2ev.__doc__ += f"""\n\n1 Hartree = {hartree2ev(1)} eV"""
+hartree2kcalmol.__doc__ += f"""\n\n1 Hartree = {hartree2kcalmol(1)} kcal/mol"""
+hartree2kjoulemol.__doc__ += f"""\n\n1 Hartree = {hartree2kjoulemol(1)} kJ/mol"""
+ev2kjoulemol.__doc__ += f"""\n\n1 eV = {ev2kjoulemol(1)} kJ/mol"""
+ev2kcalmol.__doc__ += f"""\n\n1 eV = {ev2kcalmol(1)} kcal/mol"""
+mhessian2fconst.__doc__ += f"""\n\n1 Hartree / (AMU * Angstrom^2) = {ev2kcalmol(1)} mDyne/Angstrom"""
+sqrt_mhessian2milliev.__doc__ += f"""\n\n1 sqrt(Hartree / (AMU * Angstrom^2)) = {sqrt_mhessian2milliev(1)} meV"""
+sqrt_mhessian2invcm.__doc__ += f"""\n\n1 sqrt(Hartree / (AMU * Angstrom^2)) = {sqrt_mhessian2invcm(1)} cm^-1"""
