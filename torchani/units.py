@@ -1,4 +1,11 @@
-r"""Unit conversion factors
+r"""Unit conversion factors used in torchani
+
+The torchani networks themselves works internally entirely in Hartrees (energy)
+and Angstroms (distance). In some example code and scripts we convert to other
+more commonly used units. Our conversion factors are consistent with CODATA
+2014, which is also consistent with the way ASE defines its units.
+(https://wiki.fysik.dtu.dk/ase/ase/units.html#units).  All the conversion
+factors we use are defined in this module.
 
 All values derived from:
     CODATA Recommended Values of the Fundamental Physical Constants: 2014
@@ -12,42 +19,6 @@ Except from the Joule-to-kcal conversion, taken to be 1 cal = 4.184 J
 
 import math
 
-# General conversion
-
-# the codata value for hartree in units of eV can be obtained from
-# m_e * e^3 / ( 16 * pi^2 * eps_0^2 hbar^2 )
-HARTREE_TO_EV = 27.211386024367243  # equal to ase.units.Hartree
-EV_TO_JOULE = 1.6021766208e-19  # equal to ase.units._e (electron charge)
-JOULE_TO_KCAL = 1 / 4184.  # exact
-HARTREE_TO_JOULE = HARTREE_TO_EV * EV_TO_JOULE
-
-AVOGADROS_NUMBER = 6.022140857e+23  # equal to ase.units._Nav
-SPEED_OF_LIGHT = 299792458.0  # equal to ase.units._c
-AMU_TO_KG = 1.660539040e-27  # equal to ase.units._amu
-ANGSTROM_TO_METER = 1e-10
-NEWTON_TO_MILLIDYNE = 1e8  # exact relation
-
-HARTREE_TO_KCALMOL = HARTREE_TO_JOULE * JOULE_TO_KCAL * AVOGADROS_NUMBER
-HARTREE_TO_KJOULEMOL = HARTREE_TO_JOULE * AVOGADROS_NUMBER / 1000
-
-EV_TO_KCALMOL = EV_TO_JOULE * JOULE_TO_KCAL * AVOGADROS_NUMBER
-EV_TO_KJOULEMOL = EV_TO_JOULE * AVOGADROS_NUMBER / 1000
-
-# For vibrational analysis:
-
-# To convert from the sqrt of eigenvalues (mass-scaled hessian units of
-# sqrt(hartree / (amu * A^2)) into cm^-1
-# it is necessary to multiply by the sqrt ( HARTREE_TO_JOULE / AMU_TO_KG ),
-# then we convert angstroms to meters and divide by 1/ speed_of_light (to
-# convert seconds into meters). Finally divide by 100 to get inverse cm
-# The resulting value should be close to 17092
-INVCM_TO_EV = 0.0001239841973964072  # equal to ase.units.invcm
-SQRT_MHESSIAN_TO_INVCM = (math.sqrt(HARTREE_TO_JOULE / AMU_TO_KG) / ANGSTROM_TO_METER / SPEED_OF_LIGHT) / 100
-SQRT_MHESSIAN_TO_MILLIEV = SQRT_MHESSIAN_TO_INVCM * INVCM_TO_EV * 1000
-# To convert units form mass-scaled hessian units into mDyne / Angstrom (force
-# constant units) factor should be close to 4.36
-MHESSIAN_TO_FCONST = HARTREE_TO_JOULE * NEWTON_TO_MILLIDYNE / ANGSTROM_TO_METER
-
 
 # Comments on ASE:
 
@@ -57,6 +28,42 @@ MHESSIAN_TO_FCONST = HARTREE_TO_JOULE * NEWTON_TO_MILLIDYNE / ANGSTROM_TO_METER
 # we define here our own units for our own purposes, but right now we define
 # them to be consistent with ASE values (i. e. our values are also CODATA 2014)
 # the difference between CODATA 2014 and CODATA 2018 is negligible.
+
+
+# General conversion:
+
+# the codata value for hartree in units of eV can be obtained from
+# m_e * e^3 / ( 16 * pi^2 * eps_0^2 hbar^2 )
+HARTREE_TO_EV = 27.211386024367243  # equal to ase.units.Hartree
+EV_TO_JOULE = 1.6021766208e-19  # equal to ase.units._e (electron charge)
+JOULE_TO_KCAL = 1 / 4184.  # exact
+HARTREE_TO_JOULE = HARTREE_TO_EV * EV_TO_JOULE
+AVOGADROS_NUMBER = 6.022140857e+23  # equal to ase.units._Nav
+SPEED_OF_LIGHT = 299792458.0  # equal to ase.units._c
+AMU_TO_KG = 1.660539040e-27  # equal to ase.units._amu
+ANGSTROM_TO_METER = 1e-10
+NEWTON_TO_MILLIDYNE = 1e8  # exact relation
+HARTREE_TO_KCALMOL = HARTREE_TO_JOULE * JOULE_TO_KCAL * AVOGADROS_NUMBER
+HARTREE_TO_KJOULEMOL = HARTREE_TO_JOULE * AVOGADROS_NUMBER / 1000
+EV_TO_KCALMOL = EV_TO_JOULE * JOULE_TO_KCAL * AVOGADROS_NUMBER
+EV_TO_KJOULEMOL = EV_TO_JOULE * AVOGADROS_NUMBER / 1000
+
+# For vibrational analysis:
+
+INVCM_TO_EV = 0.0001239841973964072  # equal to ase.units.invcm
+# To convert from the sqrt of eigenvalues (mass-scaled hessian units of
+# sqrt(hartree / (amu * A^2)) into cm^-1
+# it is necessary to multiply by the sqrt ( HARTREE_TO_JOULE / AMU_TO_KG ),
+# then we convert angstroms to meters and divide by 1/ speed_of_light (to
+# convert seconds into meters). Finally divide by 100 to get inverse cm
+# The resulting value should be close to 17092
+SQRT_MHESSIAN_TO_INVCM = (math.sqrt(HARTREE_TO_JOULE / AMU_TO_KG) / ANGSTROM_TO_METER / SPEED_OF_LIGHT) / 100
+# meV is other common unit used to present vibrational transition energies
+SQRT_MHESSIAN_TO_MILLIEV = SQRT_MHESSIAN_TO_INVCM * INVCM_TO_EV * 1000
+# To convert units form mass-scaled hessian units into mDyne / Angstrom (force
+# constant units) factor should be close to 4.36
+MHESSIAN_TO_FCONST = HARTREE_TO_JOULE * NEWTON_TO_MILLIDYNE / ANGSTROM_TO_METER
+
 
 def sqrt_mhessian2invcm(x):
     r"""Convert from sqrt_mhessian into cm^-1
