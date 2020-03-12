@@ -1,11 +1,15 @@
 r"""Unit conversion factors used in torchani
 
-The torchani networks themselves works internally entirely in Hartrees (energy)
-and Angstroms (distance). In some example code and scripts we convert to other
-more commonly used units. Our conversion factors are consistent with `CODATA
-2014 recommendations`_, which is also consistent with the `units used in ASE`_.
-Joule-to-kcal conversion taken from the `IUPAC Goldbook`_. All the
-conversion factors we use are defined in this module.
+The torchani networks themselves works internally entirely in Hartrees
+(energy), Angstroms (distance) and AMU (mass). In some example code and scripts
+we convert to other more commonly used units. Our conversion factors are
+consistent with `CODATA 2014 recommendations`_, which is also consistent with
+the `units used in ASE`_. (However, take into account that ASE uses
+electronvolt as its base energy unit, so the appropriate conversion factors
+should always be applied when converting from ASE to torchani) Joule-to-kcal
+conversion taken from the `IUPAC Goldbook`_.  All the conversion factors we use
+are defined in this module, and convenience functions to convert between
+different units are provided.
 
 
 .. _units used in ASE:
@@ -75,8 +79,7 @@ def sqrt_mhessian2invcm(x):
 
     Take into account that to convert the actual eigenvalues of the hessian
     into wavenumbers it is necessary to multiply by an extra factor of 1 / (2 *
-    pi)
-    """
+    pi)"""
     return x * SQRT_MHESSIAN_TO_INVCM
 
 
@@ -89,8 +92,7 @@ def sqrt_mhessian2milliev(x):
 
     Take into account that to convert the actual eigenvalues of the hessian
     into wavenumbers it is necessary to multiply by an extra factor of 1 / (2 *
-    pi)
-    """
+    pi)"""
     return x * SQRT_MHESSIAN_TO_MILLIEV
 
 
@@ -98,8 +100,7 @@ def mhessian2fconst(x):
     r"""Converts mass-scaled hessian units into mDyne/Angstrom
 
     Converts from units of mass-scaled hessian (Hartree / (amu * Angstrom^2)
-    into force constant units (mDyne/Angstom), where 1 N = 1 * 10^8 mDyne
-    """
+    into force constant units (mDyne/Angstom), where 1 N = 1 * 10^8 mDyne"""
     return x * MHESSIAN_TO_FCONST
 
 
@@ -126,3 +127,13 @@ def hartree2kjoulemol(x):
 def hartree2kcalmol(x):
     r"""Hartree to kJ/mol conversion factor from CODATA 2014"""
     return x * HARTREE_TO_KCALMOL
+
+# Add actual values to docstrings on import
+hartree2ev.__doc__ += f'\n\n1 Hartree = {hartree2ev(1)} eV'
+hartree2kcalmol.__doc__ += f'\n\n1 Hartree = {hartree2kcalmol(1)} kcal/mol'
+hartree2kjoulemol.__doc__ += f'\n\n1 Hartree = {hartree2kjoulemol(1)} kJ/mol'
+ev2kjoulemol.__doc__ += f'\n\n1 eV = {ev2kjoulemol(1)} kJ/mol'
+ev2kcalmol.__doc__ += f'\n\n1 eV = {ev2kcalmol(1)} kcal/mol'
+mhessian2fconst.__doc__ += f'\n\n1 Hartree / (AMU * Angstrom^2) = {ev2kcalmol(1)} mDyne/Angstrom'
+sqrt_mhessian2milliev.__doc__ += f'\n\n1 sqrt(Hartree / (AMU * Angstrom^2)) = {sqrt_mhessian2milliev(1)} meV'
+sqrt_mhessian2invcm.__doc__ += f'\n\n1 sqrt(Hartree / (AMU * Angstrom^2)) = {sqrt_mhessian2invcm(1)} cm^-1'
