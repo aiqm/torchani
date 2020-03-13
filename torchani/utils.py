@@ -197,7 +197,27 @@ class EnergyShifter(torch.nn.Module):
 
 
 class ChemicalSymbolsToInts:
-    """Helper that can be called to convert chemical symbol string to integers
+    r"""Helper that can be called to convert chemical symbol string to integers
+
+    On initialization the class should be supplied with a :class:`list` (or in
+    general :class:`collections.abc.Sequence`) of :class:`str`. The returned
+    instance is a callable object, which can be called with an arbitrary list
+    of the supported species that is converted into a tensor of dtype
+    :class:`torch.long`. Usage example:
+
+    .. code-block:: python
+
+       from torchani.utils import ChemicalSymbolsToInts
+       
+
+       # We initialize ChemicalSymbolsToInts with the supported species
+       species_to_tensor = ChemicalSymbolsToInts(['H', 'C', 'Fe', 'Cl'])
+
+       # We have a species list which we want to convert to an index tensor
+       index_tensor = species_to_tensor(['H', 'C', 'H', 'H', 'C', 'Cl', 'Fe'])
+
+       # index_tensor is now [0 1 0 0 1 3 2]
+
 
     .. warning::
 
@@ -205,7 +225,8 @@ class ChemicalSymbolsToInts:
         characters, this means that a string such as 'CHClFe' will be
         intepreted as 'C' 'H' 'C' 'l' 'F' 'e'. It is recommended that you
         input either a list or a numpy.ndarray ['C', 'H', 'Cl', 'Fe'],
-        and not a string.
+        and not a string. The output of this call does NOT correspond to a
+        tensor of atomic numbers.
 
     Arguments:
         all_species (:class:`collections.abc.Sequence` of :class:`str`):
@@ -216,24 +237,7 @@ class ChemicalSymbolsToInts:
         self.rev_species = {s: i for i, s in enumerate(all_species)}
 
     def __call__(self, species):
-        """Convert species from sequence of strings to 1D tensor
-
-        .. warning::
-
-            If the input to init is a string python will iterate over
-            characters, this means that a string such as 'CHClFe' will be
-            intepreted as 'C' 'H' 'C' 'l' 'F' 'e'. It is recommended that you
-            input either a list or a numpy.ndarray ['C', 'H', 'Cl', 'Fe'],
-            and not a string. The output of this call does NOT correspond to a
-            tensor of atomic numbers.
-
-        Arguments:
-            species (:class:`collections.abc.Sequence` of :class:`str`):
-                sequence of species
-        Returns:
-            :class:`torch.Tensor`
-                A tensor of dtype torch.long with indices
-        """
+        r"""Convert species from sequence of strings to 1D tensor"""
         rev = [self.rev_species[s] for s in species]
         return torch.tensor(rev, dtype=torch.long)
 
