@@ -199,6 +199,14 @@ class EnergyShifter(torch.nn.Module):
 class ChemicalSymbolsToInts:
     """Helper that can be called to convert chemical symbol string to integers
 
+    .. warning::
+
+        If the input to the call is a string python will iterate over 
+        characters, this means that a string such as 'CHClFe' will be 
+        intepreted as 'C' 'H' 'C' 'l' 'F' 'e'. It is recommended that you
+        input either a list or a numpy.ndarray ['C', 'H', 'Cl', 'Fe'], 
+        and not a string.
+
     Arguments:
         all_species (:class:`collections.abc.Sequence` of :class:`str`):
             sequence of all supported species, in order.
