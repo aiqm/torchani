@@ -5,6 +5,7 @@ import math
 import numpy as np
 from collections import defaultdict
 from typing import Tuple, NamedTuple, Optional
+from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
 from .nn import SpeciesEnergies
 
 
@@ -278,12 +279,18 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     - MDU (mass deweighted unnormalized)
     - MDN (mass deweighted normalized)
 
-    MDU modes are orthogonal but not normalized, MDN modes are normalized
-    but not orthogonal. MWN modes are orthonormal, but they correspond
+    MDU modes are not orthogonal, and not normalized,
+    MDN modes are not orthogonal, and normalized.
+    MWN modes are orthonormal, but they correspond
     to mass weighted cartesian coordinates (x' = sqrt(m)x).
     """
-    if unit != 'cm^-1':
-        raise ValueError('Only cm^-1 are supported right now')
+    if unit == 'meV':
+        unit_converter = sqrt_mhessian2milliev
+    elif unit == 'cm^-1':
+        unit_converter = sqrt_mhessian2invcm
+    else:
+        raise ValueError(f'Only meV and cm^-1 are supported right now')
+
     assert hessian.shape[0] == 1, 'Currently only supporting computing one molecule a time'
     # Solving the eigenvalue problem: Hq = w^2 * T q
     # where H is the Hessian matrix, q is the normal coordinates,
@@ -300,8 +307,8 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     eigenvalues, eigenvectors = torch.symeig(mass_scaled_hessian, eigenvectors=True)
     angular_frequencies = eigenvalues.sqrt()
     frequencies = angular_frequencies / (2 * math.pi)
-    # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1
-    wavenumbers = frequencies * 17092
+    # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1 or meV
+    wavenumbers = unit_converter(frequencies)
 
     # Note that the normal modes are the COLUMNS of the eigenvectors matrix
     mw_normalized = eigenvectors.t()
@@ -310,8 +317,8 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     md_normalized = md_unnormalized * norm_factors.unsqueeze(1)
 
     rmasses = norm_factors**2  # units are AMU
-    # The conversion factor for Ha/(AMU*A^2) to mDyne/(A*AMU) is 4.3597482
-    fconstants = eigenvalues * rmasses * 4.3597482  # units are mDyne/A
+    # The conversion factor for Ha/(AMU*A^2) to mDyne/(A*AMU) is about 4.3597482
+    fconstants = mhessian2fconst(eigenvalues) * rmasses  # units are mDyne/A
 
     if mode_type == 'MDN':
         modes = (md_normalized).reshape(frequencies.numel(), -1, 3)

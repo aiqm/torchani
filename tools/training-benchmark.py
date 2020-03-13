@@ -4,6 +4,7 @@ import time
 import timeit
 import argparse
 import pkbar
+from torchani.units import hartree2kcalmol
 
 
 def atomic():
@@ -30,10 +31,6 @@ def time_func(key, func):
         return ret
 
     return wrapper
-
-
-def hartree2kcal(x):
-    return 627.509 * x
 
 
 if __name__ == "__main__":
@@ -166,7 +163,7 @@ if __name__ == "__main__":
             num_atoms = torch.cat(num_atoms)
             predicted_energies = torch.cat(predicted_energies).to(true_energies.dtype)
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
-            rmse = hartree2kcal((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
+            rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
             loss.backward()
             optimizer.step()
 
