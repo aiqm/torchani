@@ -104,7 +104,7 @@ if __name__ == "__main__":
         print('using original dataset API')
         print('=> loading dataset...')
         energy_shifter = torchani.utils.EnergyShifter(None)
-        species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
+        species_to_tensor = torchani.utils.ChemicalSymbolsToInts(['H', 'C', 'N', 'O'])
         dataset = torchani.data.load_ani_dataset(parser.dataset_path, species_to_tensor,
                                                  parser.batch_size, device=parser.device,
                                                  transform=[energy_shifter.subtract_from_dataset])
