@@ -39,7 +39,6 @@ Utilities
 =========
 
 .. automodule:: torchani.utils
-.. autofunction:: torchani.utils.pad
 .. autofunction:: torchani.utils.pad_atomic_properties
 .. autofunction:: torchani.utils.present_species
 .. autofunction:: torchani.utils.strip_redundant_padding
@@ -77,3 +76,17 @@ TorchANI Optimizater
 
 .. automodule:: torchani.optim
 .. autoclass:: torchani.optim.AdamW
+
+
+Units
+=====
+
+.. automodule:: torchani.units
+.. autofunction:: torchani.units.hartree2ev
+.. autofunction:: torchani.units.hartree2kcalmol
+.. autofunction:: torchani.units.hartree2kjoulemol
+.. autofunction:: torchani.units.ev2kcalmol
+.. autofunction:: torchani.units.ev2kjoulemol
+.. autofunction:: torchani.units.mhessian2fconst
+.. autofunction:: torchani.units.sqrt_mhessian2invcm
+.. autofunction:: torchani.units.sqrt_mhessian2milliev

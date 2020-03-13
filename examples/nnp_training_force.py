@@ -22,6 +22,9 @@ import math
 import torch.utils.tensorboard
 import tqdm
 
+# helper function to convert energy unit from Hartree to kcal/mol
+from torchani.units import hartree2kcalmol
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 Rcr = 5.2000e+00
@@ -217,11 +220,6 @@ if os.path.isfile(latest_checkpoint):
 # is better than the best, then save the new best model to a checkpoint
 
 
-# helper function to convert energy unit from Hartree to kcal/mol
-def hartree2kcal(x):
-    return 627.509 * x
-
-
 def validate():
     # run validation
     mse_sum = torch.nn.MSELoss(reduction='sum')
@@ -236,7 +234,7 @@ def validate():
         predicted_energies = torch.cat(predicted_energies)
         total_mse += mse_sum(predicted_energies, true_energies).item()
         count += predicted_energies.shape[0]
-    return hartree2kcal(math.sqrt(total_mse / count))
+    return hartree2kcalmol(math.sqrt(total_mse / count))
 
 
 ###############################################################################
