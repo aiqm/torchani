@@ -221,11 +221,11 @@ class ChemicalSymbolsToInts:
 
     .. warning::
 
-        If the input to init is a string python will iterate over
+        If the input is a string python will iterate over
         characters, this means that a string such as 'CHClFe' will be
         intepreted as 'C' 'H' 'C' 'l' 'F' 'e'. It is recommended that you
-        input either a list or a numpy.ndarray ['C', 'H', 'Cl', 'Fe'],
-        and not a string. The output of this call does NOT correspond to a
+        input either a :class:`list` or a :class:`numpy.ndarray` ['C', 'H', 'Cl', 'Fe'],
+        and not a string. The output of a call does NOT correspond to a
         tensor of atomic numbers.
 
     Arguments:
