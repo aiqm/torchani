@@ -360,16 +360,26 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
 
 
 def get_atomic_masses(species):
-    # Atomic masses for the first 119 elements are taken from:
-    #
-    # Atomic weights of the elements 2013 (IUPAC Technical Report). Meija, J.,
-    # Coplen, T., Berglund, M., et al. (2016). Pure and Applied Chemistry, 88(3), pp.
-    # 265-291. Retrieved 30 Nov. 2016, from doi:10.1515/pac-2015-0305
-    #
-    # and are consistent with those used in ASE
-    #
-    # They are in periodic table order
-    # Note that there should not be any atoms with index zero
+    r"""Convert a tensor of znumbers into a tensor of atomic masses
+
+    Atomic masses supported are the first 119 elements, and are taken from:
+    
+    Atomic weights of the elements 2013 (IUPAC Technical Report). Meija, J.,
+    Coplen, T., Berglund, M., et al. (2016). Pure and Applied Chemistry, 88(3), pp.
+    265-291. Retrieved 30 Nov. 2016, from doi:10.1515/pac-2015-0305
+    
+    They are all consistent with those used in ASE
+
+    Arguments:
+        species (:class:`torch.Tensor`): tensor with atomic numbers
+
+    Returns:
+        :class:`torch.Tensor`: Tensor of dtype :class:`torch.double`, with
+        atomic masses, with the same shape as the input.
+    """
+    # Note that there should not be any atoms with index zero, because that is 
+    # not an element
+    assert len((species == 0).nonzero()) == 0
     default_atomic_masses = torch.tensor([0., 1.008,   4.002602,   6.94,
              9.0121831 ,  10.81      ,  12.011     ,  14.007     ,
             15.999     ,  18.99840316,  20.1797    ,  22.98976928,
@@ -399,11 +409,11 @@ def get_atomic_masses(species):
            267.122     , 268.126     , 271.134     , 270.133     ,
            269.1338    , 278.156     , 281.165     , 281.166     ,
            285.177     , 286.182     , 289.19      , 289.194     ,
-           293.204     , 293.208     , 294.214], dtype=torch.float, device=species.device)
+           293.204     , 293.208     , 294.214], dtype=torch.double, device=species.device)
     masses = default_atomic_masses[species]
     return masses
 
 
 __all__ = ['pad_atomic_properties', 'present_species', 'hessian',
            'vibrational_analysis', 'strip_redundant_padding',
-           'ChemicalSymbolsToInts']
+           'ChemicalSymbolsToInts', 'get_atomic_masses']
