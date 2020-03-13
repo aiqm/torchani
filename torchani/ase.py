@@ -44,7 +44,13 @@ class Calculator(ase.calculators.calculator.Calculator):
         pbc = torch.tensor(self.atoms.get_pbc(), dtype=torch.bool,
                            device=self.device)
         pbc_enabled = pbc.any().item()
-        species = self.species_to_tensor(self.atoms.get_chemical_symbols()).to(self.device)
+
+        if self.model.periodic_table_index:
+            # if the index is atomic numbers then species should just be the atomic numbers
+            species = torch.tensor(self.atoms.get_atomic_numbers(), dtype=torch.long, device=self.device)
+        else:
+            species = self.species_to_tensor(self.atoms.get_chemical_symbols()).to(self.device)
+
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions())
         coordinates = coordinates.to(self.device).to(self.dtype) \
