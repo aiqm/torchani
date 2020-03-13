@@ -208,7 +208,7 @@ class ChemicalSymbolsToInts:
     .. code-block:: python
 
        from torchani.utils import ChemicalSymbolsToInts
-       
+
 
        # We initialize ChemicalSymbolsToInts with the supported species
        species_to_tensor = ChemicalSymbolsToInts(['H', 'C', 'Fe', 'Cl'])
