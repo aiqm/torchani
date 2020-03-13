@@ -201,7 +201,7 @@ class ChemicalSymbolsToInts:
 
     .. warning::
 
-        If the input to the call is a string python will iterate over
+        If the input to init is a string python will iterate over
         characters, this means that a string such as 'CHClFe' will be
         intepreted as 'C' 'H' 'C' 'l' 'F' 'e'. It is recommended that you
         input either a list or a numpy.ndarray ['C', 'H', 'Cl', 'Fe'],
@@ -216,7 +216,23 @@ class ChemicalSymbolsToInts:
         self.rev_species = {s: i for i, s in enumerate(all_species)}
 
     def __call__(self, species):
-        """Convert species from squence of strings to 1D tensor"""
+        """Convert species from squence of strings to 1D tensor
+
+        .. warning::
+
+            If the input to init is a string python will iterate over
+            characters, this means that a string such as 'CHClFe' will be
+            intepreted as 'C' 'H' 'C' 'l' 'F' 'e'. It is recommended that you
+            input either a list or a numpy.ndarray ['C', 'H', 'Cl', 'Fe'],
+            and not a string.
+
+        Arguments:
+            species (:class:`collections.abc.Sequence` of :class:`str`):
+                sequence of species
+        Returns:
+            :class:`torch.Tensor`
+                A tensor of dtype torch.long with indices
+        """
         rev = [self.rev_species[s] for s in species]
         return torch.tensor(rev, dtype=torch.long)
 
