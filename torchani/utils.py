@@ -201,10 +201,10 @@ class ChemicalSymbolsToInts:
 
     .. warning::
 
-        If the input to the call is a string python will iterate over 
-        characters, this means that a string such as 'CHClFe' will be 
+        If the input to the call is a string python will iterate over
+        characters, this means that a string such as 'CHClFe' will be
         intepreted as 'C' 'H' 'C' 'l' 'F' 'e'. It is recommended that you
-        input either a list or a numpy.ndarray ['C', 'H', 'Cl', 'Fe'], 
+        input either a list or a numpy.ndarray ['C', 'H', 'Cl', 'Fe'],
         and not a string.
 
     Arguments:
