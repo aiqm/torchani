@@ -172,9 +172,7 @@ class EnergyShifter(torch.nn.Module):
         return self_energies.sum(dim=1) + intercept
 
     def subtract_from_dataset(self, atomic_properties, properties):
-        """Transformer for :class:`torchani.data.BatchedANIDataset` that
-        subtract self energies.
-        """
+        """Transformer that subtracts self energies from a dataset"""
         if self.self_energies is None:
             self_energies = self.sae_from_dataset(atomic_properties, properties)
             self.self_energies = torch.tensor(self_energies, dtype=torch.double)
