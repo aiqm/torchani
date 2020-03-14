@@ -7,7 +7,6 @@ import os
 from ._pyanitools import anidataloader
 import torch
 from .. import utils
-import warnings
 from .new import CachedDataset, ShuffledDataset, find_threshold
 
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
