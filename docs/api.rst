@@ -31,7 +31,7 @@ Datasets
 .. autoclass:: torchani.data.CachedDataset
     :members:
 .. autofunction:: torchani.data.load_ani_dataset
-.. autoclass:: torchani.data.BatchedANIDataset
+.. autoclass:: torchani.data.PaddedBatchChunkDataset
 
 
 

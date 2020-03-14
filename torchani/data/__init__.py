@@ -7,7 +7,6 @@ import os
 from ._pyanitools import anidataloader
 import torch
 from .. import utils
-import warnings
 from .new import CachedDataset, ShuffledDataset, find_threshold
 
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -159,6 +158,13 @@ def split_whole_into_batches_and_chunks(atomic_properties, properties, batch_siz
 
 
 class PaddedBatchChunkDataset(Dataset):
+    r""" Dataset that contains batches in 'chunks', with padded structures
+
+    This dataset acts as a container of batches to be used when training. Each
+    of the batches is broken up into 'chunks', each of which is a tensor has
+    molecules with a smiliar number of atoms, but which have been padded with
+    dummy atoms in order for them to have the same tensor dimensions.
+    """
 
     def __init__(self, atomic_properties, properties, batch_size,
                  dtype=torch.get_default_dtype(), device=default_device):
@@ -191,26 +197,6 @@ class PaddedBatchChunkDataset(Dataset):
 
     def __len__(self):
         return len(self.batches)
-
-
-class BatchedANIDataset(PaddedBatchChunkDataset):
-    """Same as :func:`torchani.data.load_ani_dataset`. This API has been deprecated."""
-
-    def __init__(self, path, species_tensor_converter, batch_size,
-                 shuffle=True, properties=('energies',), atomic_properties=(), transform=(),
-                 dtype=torch.get_default_dtype(), device=default_device):
-        self.properties = properties
-        self.atomic_properties = atomic_properties
-        warnings.warn("BatchedANIDataset is deprecated; use load_ani_dataset()", DeprecationWarning)
-
-        atomic_properties, properties = load_and_pad_whole_dataset(
-            path, species_tensor_converter, shuffle, properties, atomic_properties)
-
-        # do transformations on data
-        for t in transform:
-            atomic_properties, properties = t(atomic_properties, properties)
-
-        super().__init__(atomic_properties, properties, batch_size, dtype, device)
 
 
 def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
@@ -361,4 +347,4 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
     return tuple(ret)
 
 
-__all__ = ['load_ani_dataset', 'BatchedANIDataset', 'CachedDataset', 'ShuffledDataset', 'find_threshold']
+__all__ = ['load_ani_dataset', 'PaddedBatchChunkDataset', 'CachedDataset', 'ShuffledDataset', 'find_threshold']
