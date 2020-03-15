@@ -47,6 +47,7 @@ Utilities
     :members:
 .. autofunction:: torchani.utils.hessian
 .. autofunction:: torchani.utils.vibrational_analysis
+.. autofunction:: torchani.utils.get_atomic_masses
 
 
 NeuroChem

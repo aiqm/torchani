@@ -19,7 +19,8 @@ import math
 
 ###############################################################################
 # Let's now manually specify the device we want TorchANI to run:
-model = torchani.models.ANI1x().double()
+device = torch.device('cpu')
+model = torchani.models.ANI1x(periodic_table_index=True).to(device).double()
 
 ###############################################################################
 # Let's first construct a water molecule and do structure optimization:
@@ -36,19 +37,14 @@ opt.run(fmax=1e-6)
 ###############################################################################
 # Now let's extract coordinates and species from ASE to use it directly with
 # TorchANI:
-species = model.species_to_tensor(molecule.get_chemical_symbols()).unsqueeze(0)
+species = torch.tensor(molecule.get_atomic_numbers(), device=device, dtype=torch.long).unsqueeze(0)
 coordinates = torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_grad_(True)
 
 ###############################################################################
-# TorchANI needs to know the mass of each atom in amu in order to do vibration
-# analysis:
-element_masses = torch.tensor([
-    1.008,  # H
-    12.011,  # C
-    14.007,  # N
-    15.999,  # O
-], dtype=torch.double)
-masses = element_masses[species]
+# TorchANI needs the masses of elements in AMU to compute vibrations. The
+# masses in AMU can be obtained from a tensor with atomic numbers by using
+# this utility:
+masses = torchani.utils.get_atomic_masses(species)
 
 ###############################################################################
 # To do vibration analysis, we first need to generate a graph that computes
