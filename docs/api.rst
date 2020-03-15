@@ -31,7 +31,7 @@ Datasets
 .. autoclass:: torchani.data.CachedDataset
     :members:
 .. autofunction:: torchani.data.load_ani_dataset
-.. autoclass:: torchani.data.BatchedANIDataset
+.. autoclass:: torchani.data.PaddedBatchChunkDataset
 
 
 
@@ -47,6 +47,7 @@ Utilities
     :members:
 .. autofunction:: torchani.utils.hessian
 .. autofunction:: torchani.utils.vibrational_analysis
+.. autofunction:: torchani.utils.get_atomic_masses
 
 
 NeuroChem

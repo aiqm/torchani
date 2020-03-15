@@ -35,6 +35,14 @@ class Calculator(ase.calculators.calculator.Calculator):
         a_parameter = next(self.model.parameters())
         self.device = a_parameter.device
         self.dtype = a_parameter.dtype
+        try:
+            # We assume that the model has a "periodic_table_index" attribute
+            # if it doesn't we set the calculator's attribute to false and we
+            # assume that species will be correctly transformed by
+            # species_to_tensor
+            self.periodic_table_index = model.periodic_table_index
+        except AttributeError:
+            self.periodic_table_index = False
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=ase.calculators.calculator.all_changes):
@@ -44,7 +52,12 @@ class Calculator(ase.calculators.calculator.Calculator):
         pbc = torch.tensor(self.atoms.get_pbc(), dtype=torch.bool,
                            device=self.device)
         pbc_enabled = pbc.any().item()
-        species = self.species_to_tensor(self.atoms.get_chemical_symbols()).to(self.device)
+
+        if self.periodic_table_index:
+            species = torch.tensor(self.atoms.get_atomic_numbers(), dtype=torch.long, device=self.device)
+        else:
+            species = self.species_to_tensor(self.atoms.get_chemical_symbols()).to(self.device)
+
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions())
         coordinates = coordinates.to(self.device).to(self.dtype) \

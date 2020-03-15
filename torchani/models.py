@@ -174,6 +174,7 @@ class BuiltinNet(torch.nn.Module):
 
         ret.ase = ase
         ret.species_to_tensor = self.consts.species_to_tensor
+        ret.periodic_table_index = self.periodic_table_index
         return ret
 
     def __len__(self):

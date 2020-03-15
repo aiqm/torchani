@@ -59,5 +59,30 @@ class TestASE(unittest.TestCase):
         dyn.run(120)
 
 
+class TestASEWithPTI(unittest.TestCase):
+
+    def setUp(self):
+        self.model_pti = torchani.models.ANI1x(periodic_table_index=True).double()
+        self.model = torchani.models.ANI1x().double()
+
+    def testEqualEnsemblePTI(self):
+        calculator_pti = self.model_pti.ase()
+        calculator = self.model.ase()
+        atoms = Diamond(symbol="C", pbc=True)
+        atoms_pti = Diamond(symbol="C", pbc=True)
+        atoms.set_calculator(calculator)
+        atoms_pti.set_calculator(calculator_pti)
+        self.assertEqual(atoms.get_potential_energy(), atoms_pti.get_potential_energy())
+
+    def testEqualOneModelPTI(self):
+        calculator_pti = self.model_pti[0].ase()
+        calculator = self.model[0].ase()
+        atoms = Diamond(symbol="C", pbc=True)
+        atoms_pti = Diamond(symbol="C", pbc=True)
+        atoms.set_calculator(calculator)
+        atoms_pti.set_calculator(calculator_pti)
+        self.assertEqual(atoms.get_potential_energy(), atoms_pti.get_potential_energy())
+
+
 if __name__ == '__main__':
     unittest.main()

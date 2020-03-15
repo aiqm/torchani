@@ -172,9 +172,7 @@ class EnergyShifter(torch.nn.Module):
         return self_energies.sum(dim=1) + intercept
 
     def subtract_from_dataset(self, atomic_properties, properties):
-        """Transformer for :class:`torchani.data.BatchedANIDataset` that
-        subtract self energies.
-        """
+        """Transformer that subtracts self energies from a dataset"""
         if self.self_energies is None:
             self_energies = self.sae_from_dataset(atomic_properties, properties)
             self.self_energies = torch.tensor(self_energies, dtype=torch.double)
@@ -197,7 +195,36 @@ class EnergyShifter(torch.nn.Module):
 
 
 class ChemicalSymbolsToInts:
-    """Helper that can be called to convert chemical symbol string to integers
+    r"""Helper that can be called to convert chemical symbol string to integers
+
+    On initialization the class should be supplied with a :class:`list` (or in
+    general :class:`collections.abc.Sequence`) of :class:`str`. The returned
+    instance is a callable object, which can be called with an arbitrary list
+    of the supported species that is converted into a tensor of dtype
+    :class:`torch.long`. Usage example:
+
+    .. code-block:: python
+
+       from torchani.utils import ChemicalSymbolsToInts
+
+
+       # We initialize ChemicalSymbolsToInts with the supported species
+       species_to_tensor = ChemicalSymbolsToInts(['H', 'C', 'Fe', 'Cl'])
+
+       # We have a species list which we want to convert to an index tensor
+       index_tensor = species_to_tensor(['H', 'C', 'H', 'H', 'C', 'Cl', 'Fe'])
+
+       # index_tensor is now [0 1 0 0 1 3 2]
+
+
+    .. warning::
+
+        If the input is a string python will iterate over
+        characters, this means that a string such as 'CHClFe' will be
+        intepreted as 'C' 'H' 'C' 'l' 'F' 'e'. It is recommended that you
+        input either a :class:`list` or a :class:`numpy.ndarray` ['C', 'H', 'Cl', 'Fe'],
+        and not a string. The output of a call does NOT correspond to a
+        tensor of atomic numbers.
 
     Arguments:
         all_species (:class:`collections.abc.Sequence` of :class:`str`):
@@ -208,7 +235,7 @@ class ChemicalSymbolsToInts:
         self.rev_species = {s: i for i, s in enumerate(all_species)}
 
     def __call__(self, species):
-        """Convert species from squence of strings to 1D tensor"""
+        r"""Convert species from sequence of strings to 1D tensor"""
         rev = [self.rev_species[s] for s in species]
         return torch.tensor(rev, dtype=torch.long)
 
@@ -330,6 +357,63 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     return VibAnalysis(wavenumbers, modes, fconstants, rmasses)
 
 
+def get_atomic_masses(species):
+    r"""Convert a tensor of znumbers into a tensor of atomic masses
+
+    Atomic masses supported are the first 119 elements, and are taken from:
+
+    Atomic weights of the elements 2013 (IUPAC Technical Report). Meija, J.,
+    Coplen, T., Berglund, M., et al. (2016). Pure and Applied Chemistry, 88(3), pp.
+    265-291. Retrieved 30 Nov. 2016, from doi:10.1515/pac-2015-0305
+
+    They are all consistent with those used in ASE
+
+    Arguments:
+        species (:class:`torch.Tensor`): tensor with atomic numbers
+
+    Returns:
+        :class:`torch.Tensor`: Tensor of dtype :class:`torch.double`, with
+        atomic masses, with the same shape as the input.
+    """
+    # Note that there should not be any atoms with index zero, because that is
+    # not an element
+    assert len((species == 0).nonzero()) == 0
+    default_atomic_masses = torch.tensor(
+            [0.        ,   1.008     ,   4.002602  ,   6.94      , # noqa
+             9.0121831 ,  10.81      ,  12.011     ,  14.007     , # noqa
+            15.999     ,  18.99840316,  20.1797    ,  22.98976928, # noqa
+            24.305     ,  26.9815385 ,  28.085     ,  30.973762  , # noqa
+            32.06      ,  35.45      ,  39.948     ,  39.0983    , # noqa
+            40.078     ,  44.955908  ,  47.867     ,  50.9415    , # noqa
+            51.9961    ,  54.938044  ,  55.845     ,  58.933194  , # noqa
+            58.6934    ,  63.546     ,  65.38      ,  69.723     , # noqa
+            72.63      ,  74.921595  ,  78.971     ,  79.904     , # noqa
+            83.798     ,  85.4678    ,  87.62      ,  88.90584   , # noqa
+            91.224     ,  92.90637   ,  95.95      ,  97.90721   , # noqa
+           101.07      , 102.9055    , 106.42      , 107.8682    , # noqa
+           112.414     , 114.818     , 118.71      , 121.76      , # noqa
+           127.6       , 126.90447   , 131.293     , 132.90545196, # noqa
+           137.327     , 138.90547   , 140.116     , 140.90766   , # noqa
+           144.242     , 144.91276   , 150.36      , 151.964     , # noqa
+           157.25      , 158.92535   , 162.5       , 164.93033   , # noqa
+           167.259     , 168.93422   , 173.054     , 174.9668    , # noqa
+           178.49      , 180.94788   , 183.84      , 186.207     , # noqa
+           190.23      , 192.217     , 195.084     , 196.966569  , # noqa
+           200.592     , 204.38      , 207.2       , 208.9804    , # noqa
+           208.98243   , 209.98715   , 222.01758   , 223.01974   , # noqa
+           226.02541   , 227.02775   , 232.0377    , 231.03588   , # noqa
+           238.02891   , 237.04817   , 244.06421   , 243.06138   , # noqa
+           247.07035   , 247.07031   , 251.07959   , 252.083     , # noqa
+           257.09511   , 258.09843   , 259.101     , 262.11      , # noqa
+           267.122     , 268.126     , 271.134     , 270.133     , # noqa
+           269.1338    , 278.156     , 281.165     , 281.166     , # noqa
+           285.177     , 286.182     , 289.19      , 289.194     , # noqa
+           293.204     , 293.208     , 294.214], # noqa
+           dtype=torch.double, device=species.device)
+    masses = default_atomic_masses[species]
+    return masses
+
+
 __all__ = ['pad_atomic_properties', 'present_species', 'hessian',
            'vibrational_analysis', 'strip_redundant_padding',
-           'ChemicalSymbolsToInts']
+           'ChemicalSymbolsToInts', 'get_atomic_masses']
