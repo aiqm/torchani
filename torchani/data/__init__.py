@@ -12,77 +12,6 @@ from .new import CachedDataset, ShuffledDataset, find_threshold
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-def chunk_counts(counts, split):
-    split = [x + 1 for x in split] + [None]
-    count_chunks = []
-    start = 0
-    for i in split:
-        count_chunks.append(counts[start:i])
-        start = i
-    chunk_molecules = [sum([y[1] for y in x]) for x in count_chunks]
-    chunk_maxatoms = [x[-1][0] for x in count_chunks]
-    return chunk_molecules, chunk_maxatoms
-
-
-def split_cost(counts, split):
-    split_min_cost = 40000
-    cost = 0
-    chunk_molecules, chunk_maxatoms = chunk_counts(counts, split)
-    for molecules, maxatoms in zip(chunk_molecules, chunk_maxatoms):
-        cost += max(molecules * maxatoms ** 2, split_min_cost)
-    return cost
-
-
-def split_batch(natoms, atomic_properties):
-
-    # count number of conformation by natoms
-    natoms = natoms.tolist()
-    counts = []
-    for i in natoms:
-        if not counts:
-            counts.append([i, 1])
-            continue
-        if i == counts[-1][0]:
-            counts[-1][1] += 1
-        else:
-            counts.append([i, 1])
-
-    # find best split using greedy strategy
-    split = []
-    cost = split_cost(counts, split)
-    improved = True
-    while improved:
-        improved = False
-        cycle_split = split
-        cycle_cost = cost
-        for i in range(len(counts) - 1):
-            if i not in split:
-                s = sorted(split + [i])
-                c = split_cost(counts, s)
-                if c < cycle_cost:
-                    improved = True
-                    cycle_cost = c
-                    cycle_split = s
-        if improved:
-            split = cycle_split
-            cost = cycle_cost
-
-    # do split
-    chunk_molecules, _ = chunk_counts(counts, split)
-    num_chunks = None
-    for k in atomic_properties:
-        atomic_properties[k] = atomic_properties[k].split(chunk_molecules)
-        if num_chunks is None:
-            num_chunks = len(atomic_properties[k])
-        else:
-            assert num_chunks == len(atomic_properties[k])
-    chunks = []
-    for i in range(num_chunks):
-        chunk = {k: atomic_properties[k][i] for k in atomic_properties}
-        chunks.append(utils.strip_redundant_padding(chunk))
-    return chunks
-
-
 def load_and_pad_whole_dataset(path, species_tensor_converter, shuffle=True,
                                properties=('energies',), atomic_properties=()):
     # get name of files storing data
@@ -127,7 +56,7 @@ def load_and_pad_whole_dataset(path, species_tensor_converter, shuffle=True,
     return atomic_properties, properties
 
 
-def split_whole_into_batches_and_chunks(atomic_properties, properties, batch_size):
+def split_whole_into_batches(atomic_properties, properties, batch_size):
     molecules = atomic_properties['species'].shape[0]
     # split into minibatches
     for k in properties:
@@ -135,36 +64,20 @@ def split_whole_into_batches_and_chunks(atomic_properties, properties, batch_siz
     for k in atomic_properties:
         atomic_properties[k] = atomic_properties[k].split(batch_size)
 
-    # further split batch into chunks and strip redundant padding
+    # strip redundant padding
     batches = []
     num_batches = (molecules + batch_size - 1) // batch_size
     for i in range(num_batches):
         batch_properties = {k: v[i] for k, v in properties.items()}
         batch_atomic_properties = {k: v[i] for k, v in atomic_properties.items()}
-        species = batch_atomic_properties['species']
-        natoms = (species >= 0).to(torch.long).sum(1)
-
-        # sort batch by number of atoms to prepare for splitting
-        natoms, indices = natoms.sort()
-        for k in batch_properties:
-            batch_properties[k] = batch_properties[k].index_select(0, indices)
-        for k in batch_atomic_properties:
-            batch_atomic_properties[k] = batch_atomic_properties[k].index_select(0, indices)
-
-        batch_atomic_properties = split_batch(natoms, batch_atomic_properties)
+        batch_atomic_properties = utils.strip_redundant_padding(batch_atomic_properties)
         batches.append((batch_atomic_properties, batch_properties))
 
     return batches
 
 
-class PaddedBatchChunkDataset(Dataset):
-    r""" Dataset that contains batches in 'chunks', with padded structures
-
-    This dataset acts as a container of batches to be used when training. Each
-    of the batches is broken up into 'chunks', each of which is a tensor has
-    molecules with a smiliar number of atoms, but which have been padded with
-    dummy atoms in order for them to have the same tensor dimensions.
-    """
+class PaddedDataset(Dataset):
+    r""" Dataset that contains batches with padded structures"""
 
     def __init__(self, atomic_properties, properties, batch_size,
                  dtype=torch.get_default_dtype(), device=default_device):
@@ -180,20 +93,13 @@ class PaddedBatchChunkDataset(Dataset):
                 continue
             atomic_properties[k] = atomic_properties[k].to(dtype)
 
-        self.batches = split_whole_into_batches_and_chunks(atomic_properties, properties, batch_size)
+        self.batches = split_whole_into_batches(atomic_properties, properties, batch_size)
 
     def __getitem__(self, idx):
         atomic_properties, properties = self.batches[idx]
-        atomic_properties, properties = atomic_properties.copy(), properties.copy()
-        species_coordinates = []
-        for chunk in atomic_properties:
-            for k in chunk:
-                chunk[k] = chunk[k].to(self.device)
-            species_coordinates.append((chunk['species'], chunk['coordinates']))
-        for k in properties:
-            properties[k] = properties[k].to(self.device)
-        properties['atomic'] = atomic_properties
-        return species_coordinates, properties
+        atomic_properties_ = {k: v.to(self.device).to(self.dtype) for k,v in atomic_properties.items()}
+        properties_ = {k: v.to(self.device).to(self.dtype) for k,v in properties.items()}
+        return atomic_properties_, properties_
 
     def __len__(self):
         return len(self.batches)
@@ -338,7 +244,7 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
     # consturct batched dataset
     ret = []
     for ap, p in splitted:
-        ds = PaddedBatchChunkDataset(ap, p, batch_size, dtype, device)
+        ds = PaddedDataset(ap, p, batch_size, dtype, device)
         ds.properties = properties
         ds.atomic_properties = atomic_properties
         ret.append(ds)
@@ -347,4 +253,4 @@ def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
     return tuple(ret)
 
 
-__all__ = ['load_ani_dataset', 'PaddedBatchChunkDataset', 'CachedDataset', 'ShuffledDataset', 'find_threshold']
+__all__ = ['load_ani_dataset', 'PaddedDataset', 'CachedDataset', 'ShuffledDataset', 'find_threshold']
