@@ -86,7 +86,6 @@ batch_size = 2560
 training, validation = torchani.data.load_ani_dataset(
     dspath, species_to_tensor, batch_size, rm_outlier=True, device=device,
     transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
-
 print('Self atomic energies: ', energy_shifter.self_energies)
 
 ###############################################################################
@@ -338,14 +337,17 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         true_energies = batch_y['energies']
         predicted_energies = []
         num_atoms = []
+        atomic_properties = []
 
         for chunk_species, chunk_coordinates in batch_x:
+            atomic_chunk = {'species':chunk_species, 'coordinates': chunk_coordinates}
+            atomic_properties.append(atomic_chunk)
             num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
-            chunk_energies = model((chunk_species, chunk_coordinates)).energies
-            predicted_energies.append(chunk_energies)
+
+        atomic_properties = torchani.utils.pad_atomic_properties(atomic_properties)
+        predicted_energies = model((atomic_properties['species'], atomic_properties['coordinates'])).energies
 
         num_atoms = torch.cat(num_atoms)
-        predicted_energies = torch.cat(predicted_energies)
         loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
 
         AdamW.zero_grad()
