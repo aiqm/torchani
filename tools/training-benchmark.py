@@ -99,6 +99,7 @@ if __name__ == "__main__":
     torchani.aev.angular_terms = time_func('torchani.aev.angular_terms', torchani.aev.angular_terms)
     torchani.aev.compute_shifts = time_func('torchani.aev.compute_shifts', torchani.aev.compute_shifts)
     torchani.aev.neighbor_pairs = time_func('torchani.aev.neighbor_pairs', torchani.aev.neighbor_pairs)
+    torchani.aev.neighbor_pairs_nopbc = time_func('torchani.aev.neighbor_pairs_nopbc', torchani.aev.neighbor_pairs_nopbc)
     torchani.aev.triu_index = time_func('torchani.aev.triu_index', torchani.aev.triu_index)
     torchani.aev.cumsum_from_zero = time_func('torchani.aev.cumsum_from_zero', torchani.aev.cumsum_from_zero)
     torchani.aev.triple_by_molecule = time_func('torchani.aev.triple_by_molecule', torchani.aev.triple_by_molecule)
