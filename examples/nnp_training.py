@@ -282,10 +282,13 @@ def validate():
     for batch_x, batch_y in validation:
         true_energies = batch_y['energies']
         predicted_energies = []
+        atomic_properties = []
         for chunk_species, chunk_coordinates in batch_x:
-            chunk_energies = model((chunk_species, chunk_coordinates)).energies
-            predicted_energies.append(chunk_energies)
-        predicted_energies = torch.cat(predicted_energies)
+            atomic_chunk = {'species': chunk_species, 'coordinates': chunk_coordinates}
+            atomic_properties.append(atomic_chunk)
+
+        atomic_properties = torchani.utils.pad_atomic_properties(atomic_properties)
+        predicted_energies = model((atomic_properties['species'], atomic_properties['coordinates'])).energies
         total_mse += mse_sum(predicted_energies, true_energies).item()
         count += predicted_energies.shape[0]
     return hartree2kcalmol(math.sqrt(total_mse / count))
