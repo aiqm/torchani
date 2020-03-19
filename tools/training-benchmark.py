@@ -8,6 +8,7 @@ from torchani.units import hartree2kcalmol
 
 synchronize = False
 
+
 def atomic():
     model = torch.nn.Sequential(
         torch.nn.Linear(384, 128),
@@ -71,7 +72,7 @@ if __name__ == "__main__":
                         help='epochs',
                         default=1, type=int)
     parser = parser.parse_args()
-    
+
     if parser.synchronize:
         synchronize = True
 
