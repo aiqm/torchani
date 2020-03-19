@@ -166,7 +166,9 @@ if __name__ == "__main__":
             atomic_properties = []
 
             for chunk_species, chunk_coordinates in batch_x:
-                atomic_chunk = {'species': chunk_species.to(parser.device), 'coordinates': chunk_coordinates.to(parser.device)}
+                chunk_species = chunk_species.to(parser.device)
+                chunk_coordiantes = chunk_coordinates.to(parser.device)
+                atomic_chunk = {'species': chunk_species, 'coordinates': chunk_coordinates}
                 atomic_properties.append(atomic_chunk)
                 num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
 
