@@ -340,7 +340,7 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         atomic_properties = []
 
         for chunk_species, chunk_coordinates in batch_x:
-            atomic_chunk = {'species':chunk_species, 'coordinates': chunk_coordinates}
+            atomic_chunk = {'species': chunk_species, 'coordinates': chunk_coordinates}
             atomic_properties.append(atomic_chunk)
             num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
 
