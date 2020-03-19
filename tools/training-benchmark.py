@@ -6,6 +6,7 @@ import argparse
 import pkbar
 from torchani.units import hartree2kcalmol
 
+synchronize = False
 
 def atomic():
     model = torch.nn.Sequential(
@@ -26,6 +27,8 @@ def time_func(key, func):
     def wrapper(*args, **kwargs):
         start = timeit.default_timer()
         ret = func(*args, **kwargs)
+        if synchronize:
+            torch.cuda.synchronize()
         end = timeit.default_timer()
         timers[key] += end - start
         return ret
@@ -60,11 +63,17 @@ if __name__ == "__main__":
                         dest='dataset',
                         action='store_const',
                         const='cache')
+    parser.add_argument('-y', '--synchronize',
+                        action='store_true',
+                        help='whether to insert torch.cuda.synchronize() at the end of each function')
     parser.set_defaults(dataset='shuffle')
     parser.add_argument('-n', '--num_epochs',
                         help='epochs',
                         default=1, type=int)
     parser = parser.parse_args()
+    
+    if parser.synchronize:
+        synchronize = True
 
     Rcr = 5.2000e+00
     Rca = 3.5000e+00
@@ -168,6 +177,8 @@ if __name__ == "__main__":
             optimizer.step()
 
             progbar.update(i, values=[("rmse", rmse)])
+    if synchronize:
+        torch.cuda.synchronize()
     stop = time.time()
 
     print('=> more detail about benchmark')
