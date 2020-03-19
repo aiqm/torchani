@@ -163,16 +163,19 @@ if __name__ == "__main__":
             true_energies = batch_y['energies'].to(parser.device)
             predicted_energies = []
             num_atoms = []
+            atomic_properties = []
 
             for chunk_species, chunk_coordinates in batch_x:
                 chunk_species = chunk_species.to(parser.device)
-                chunk_coordinates = chunk_coordinates.to(parser.device)
+                chunk_coordiantes = chunk_coordinates.to(parser.device)
+                atomic_chunk = {'species': chunk_species, 'coordinates': chunk_coordinates}
+                atomic_properties.append(atomic_chunk)
                 num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
-                _, chunk_energies = model((chunk_species, chunk_coordinates))
-                predicted_energies.append(chunk_energies)
+
+            atomic_properties = torchani.utils.pad_atomic_properties(atomic_properties)
+            predicted_energies = model((atomic_properties['species'], atomic_properties['coordinates'])).energies.to(true_energies.dtype)
 
             num_atoms = torch.cat(num_atoms)
-            predicted_energies = torch.cat(predicted_energies).to(true_energies.dtype)
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
             rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
             loss.backward()
