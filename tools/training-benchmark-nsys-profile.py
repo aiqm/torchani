@@ -137,9 +137,9 @@ if __name__ == "__main__":
                 enable_timers(model)
                 torch.cuda.cudart().cudaProfilerStart()
 
-            PROFILING_STARTED = (total_batch_counter >= WARM_UP_BATCHES)
+            PROFILING_STARTED = not parser.dry_run and (total_batch_counter >= WARM_UP_BATCHES)
 
-            if not parser.dry_run and PROFILING_STARTED:
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_push("batch{}".format(total_batch_counter))
 
             species = atomic_properties['species']
@@ -151,23 +151,23 @@ if __name__ == "__main__":
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
             rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
 
-            if not parser.dry_run and PROFILING_STARTED:
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_push("backward")
             with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
                 loss.backward()
-            if not parser.dry_run and PROFILING_STARTED:
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_pop()
 
-            if not parser.dry_run and PROFILING_STARTED:
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_push("optimizer.step()")
             with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
                 optimizer.step()
-            if not parser.dry_run and PROFILING_STARTED:
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_pop()
 
             progbar.update(i, values=[("rmse", rmse)])
 
-            if not parser.dry_run and PROFILING_STARTED:
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_pop()
 
             total_batch_counter += 1
