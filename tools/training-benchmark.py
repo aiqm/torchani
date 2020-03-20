@@ -158,24 +158,12 @@ if __name__ == "__main__":
         print('Epoch: %d/%d' % (epoch + 1, parser.num_epochs))
         progbar = pkbar.Kbar(target=len(dataset) - 1, width=8)
 
-        for i, (batch_x, batch_y) in enumerate(dataset):
-
-            true_energies = batch_y['energies'].to(parser.device)
-            predicted_energies = []
-            num_atoms = []
-            atomic_properties = []
-
-            for chunk_species, chunk_coordinates in batch_x:
-                chunk_species = chunk_species.to(parser.device)
-                chunk_coordiantes = chunk_coordinates.to(parser.device)
-                atomic_chunk = {'species': chunk_species, 'coordinates': chunk_coordinates}
-                atomic_properties.append(atomic_chunk)
-                num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
-
-            atomic_properties = torchani.utils.pad_atomic_properties(atomic_properties)
-            predicted_energies = model((atomic_properties['species'], atomic_properties['coordinates'])).energies.to(true_energies.dtype)
-
-            num_atoms = torch.cat(num_atoms)
+        for i, (atomic_properties, properties) in enumerate(dataset):
+            species = atomic_properties['species']
+            num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+            coordinates = atomic_properties['coordinates']
+            _, predicted_energies = model((species, coordinates))
+            true_energies = properties['energies']
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
             rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
             loss.backward()
