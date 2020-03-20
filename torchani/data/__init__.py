@@ -22,6 +22,8 @@ class Transformations:
 
     @staticmethod
     def species_to_indices(iter, species_order=('H', 'C', 'N', 'O', 'F', 'Cl', 'S')):
+        if species_order == 'periodic_table':
+            species_order = utils.PERIODIC_TABLE
         idx = {k: i for i, k in enumerate(species_order)}
         for d in iter:
             d['species'] = [idx[s] for s in d['species']]
