@@ -51,7 +51,7 @@ batch_size = 2560
 
 dataset = torchani.data.load(dspath).subtract_self_energies(energy_shifter).remove_outliers().species_to_indices().shuffle()
 size = len(dataset)
-training, validation = dataset.split([int(0.8 * size), None])
+training, validation = dataset.split(int(0.8 * size), None)
 training = training.collate(batch_size)
 validation = validation.collate(batch_size)
 

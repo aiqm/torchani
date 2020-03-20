@@ -161,13 +161,14 @@ class TransformableIterator:
 
     def split(self, *nums):
         iters = []
+        self_iter = iter(self)
         for n in nums:
             list_ = []
             if n is not None:
                 for _ in range(n):
-                    list_.append(next(self))
+                    list_.append(next(self_iter))
             else:
-                for i in self:
+                for i in self_iter:
                     list_.append(i)
             iters.append(TransformableIterator(list_, self.transformations + ('split',)))
 
