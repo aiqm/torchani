@@ -123,10 +123,15 @@ class Transformations:
             i += 1
             if i == batch_size:
                 i = 0
-                yield torch.utils.pad_atomic_properties(batch)
+                yield utils.pad_atomic_properties(batch, PADDING)
                 batch = []
         if len(batch) > 0:
-            yield torch.utils.pad_atomic_properties(batch)
+            yield utils.pad_atomic_properties(batch, PADDING)
+
+    @staticmethod
+    def to_tensor(iter_, pin_memory=False):
+        for d in iter_:
+            yield {k: torch.as_tensor(d[k]) for k in d}
 
 
 class TransformableIterator:
@@ -153,7 +158,7 @@ class TransformableIterator:
 
 
 def load(path, additional_properties=()):
-    properties = PROPERTIES.keys() + additional_properties
+    properties = PROPERTIES + additional_properties
 
     def h5_files(path):
         """yield file name of all h5 files in a path"""

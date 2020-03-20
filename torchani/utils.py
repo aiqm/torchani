@@ -9,22 +9,20 @@ from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2
 from .nn import SpeciesEnergies
 
 
-def pad_atomic_properties(atomic_properties, padding_values=defaultdict(lambda: 0.0, species=-1)):
+def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, species=-1)):
     """Put a sequence of atomic properties together into single tensor.
 
     Inputs are `[{'species': ..., ...}, {'species': ..., ...}, ...]` and the outputs
     are `{'species': padded_tensor, ...}`
 
     Arguments:
-        atomic_properties (:class:`collections.abc.Sequence`): sequence of
-             atomic properties.
+        properties (:class:`collections.abc.Sequence`): sequence of properties.
         padding_values (dict): the value to fill to pad tensors to same size
     """
-    keys = list(atomic_properties[0])
-    anykey = keys[0]
-    max_atoms = max(x[anykey].shape[1] for x in atomic_properties)
+    keys = list(properties[0].keys())
+    max_atoms = {k: max(x[k].shape[1] for x in properties) for k in keys}
     padded = {k: [] for k in keys}
-    for p in atomic_properties:
+    for p in properties:
         num_molecules = 1
         for v in p.values():
             assert num_molecules in {1, v.shape[0]}, 'Number of molecules in different atomic properties mismatch'
@@ -32,7 +30,7 @@ def pad_atomic_properties(atomic_properties, padding_values=defaultdict(lambda: 
                 num_molecules = v.shape[0]
         for k, v in p.items():
             shape = list(v.shape)
-            padatoms = max_atoms - shape[1]
+            padatoms = max_atoms[k] - shape[1]
             shape[1] = padatoms
             padding = v.new_full(shape, padding_values[k])
             v = torch.cat([v, padding], dim=1)
