@@ -132,24 +132,6 @@ class EnergyShifter(torch.nn.Module):
 
         self.register_buffer('self_energies', self_energies)
 
-    def sae_from_dataset(self, atomic_properties, properties):
-        """Compute atomic self energies from dataset.
-
-        Least-squares solution to a linear equation is calculated to output
-        ``self_energies`` when ``self_energies = None`` is passed to
-        :class:`torchani.EnergyShifter`
-        """
-        species = atomic_properties['species']
-        energies = properties['energies']
-        present_species_ = present_species(species)
-        X = (species.unsqueeze(-1) == present_species_).sum(dim=1).to(torch.double)
-        # Concatenate a vector of ones to find fit intercept
-        if self.fit_intercept:
-            X = torch.cat((X, torch.ones(X.shape[0], 1).to(torch.double)), dim=-1)
-        y = energies.unsqueeze(dim=-1)
-        coeff_, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
-        return coeff_.squeeze(-1)
-
     def sae(self, species):
         """Compute self energies for molecules.
 
@@ -170,19 +152,6 @@ class EnergyShifter(torch.nn.Module):
         self_energies = self.self_energies[species]
         self_energies[species == torch.tensor(-1, device=species.device)] = torch.tensor(0, device=species.device, dtype=torch.double)
         return self_energies.sum(dim=1) + intercept
-
-    def subtract_from_dataset(self, atomic_properties, properties):
-        """Transformer that subtracts self energies from a dataset"""
-        if self.self_energies is None:
-            self_energies = self.sae_from_dataset(atomic_properties, properties)
-            self.self_energies = torch.tensor(self_energies, dtype=torch.double)
-
-        species = atomic_properties['species']
-        energies = properties['energies']
-        device = energies.device
-        energies = energies.to(torch.double) - self.sae(species).to(device)
-        properties['energies'] = energies
-        return atomic_properties, properties
 
     def forward(self, species_energies: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
