@@ -290,13 +290,13 @@ if sys.version_info[0] > 2:
         def __init__(self, filename, device=torch.device('cuda'), tqdm=False,
                      tensorboard=None, checkpoint_name='model.pt'):
 
-            from ..data import load_ani_dataset  # noqa: E402
+            from ..data import load  # noqa: E402
 
             class dummy:
                 pass
 
             self.imports = dummy()
-            self.imports.load_ani_dataset = load_ani_dataset
+            self.imports.load = load
 
             self.filename = filename
             self.device = device
@@ -557,8 +557,8 @@ if sys.version_info[0] > 2:
 
         def load_data(self, training_path, validation_path):
             """Load training and validation dataset from file."""
-            self.training_set = torchani.data.load(training_path).subtract_self_energies(self.sae).remove_outliers().species_to_indices().shuffle().collate(self.training_batch_size).cache()
-            self.validation_set = torchani.data.load(validation_path).subtract_self_energies(self.sae).remove_outliers().species_to_indices().shuffle().collate(self.validation_batch_size).cache()
+            self.training_set = self.imports.load(training_path).subtract_self_energies(self.sae).remove_outliers().species_to_indices().shuffle().collate(self.training_batch_size).cache()
+            self.validation_set = self.imports.load(validation_path).subtract_self_energies(self.sae).remove_outliers().species_to_indices().shuffle().collate(self.validation_batch_size).cache()
 
         def evaluate(self, dataset):
             """Run the evaluation"""
