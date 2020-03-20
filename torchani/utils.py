@@ -20,7 +20,7 @@ def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, sp
         padding_values (dict): the value to fill to pad tensors to same size
     """
     keys = list(properties[0].keys())
-    max_atoms = {k: max(x[k].shape[1] for x in properties) for k in keys}
+    max_atoms = {k: max(x[k].shape[1] if x[k].dim() > 1 else 1 for x in properties) for k in keys}
     padded = {k: [] for k in keys}
     for p in properties:
         num_molecules = 1

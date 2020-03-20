@@ -129,9 +129,14 @@ class Transformations:
             yield utils.pad_atomic_properties(batch, PADDING)
 
     @staticmethod
-    def to_tensor(iter_, pin_memory=False):
+    def to_tensor(iter_):
         for d in iter_:
             yield {k: torch.as_tensor(d[k]) for k in d}
+
+    @staticmethod
+    def pin_memory(iter_):
+        for d in iter_:
+            yield {k: d[k].pin_memory() for k in d}
 
 
 class TransformableIterator:
