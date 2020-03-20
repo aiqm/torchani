@@ -71,8 +71,11 @@ if __name__ == "__main__":
                         action='store_const',
                         const='cache')
     parser.set_defaults(dataset='shuffle')
+    parser.add_argument('-d', '--dry-run'
+                        help='just run it in a CI without GPU',
+                        action='store_true')
     parser = parser.parse_args()
-    parser.device = torch.device('cuda')
+    parser.device = torch.device('cpu' if parser.dry_run else 'cuda')
 
     Rcr = 5.2000e+00
     Rca = 3.5000e+00
@@ -137,7 +140,7 @@ if __name__ == "__main__":
         print('Epoch: %d/inf' % (epoch + 1,))
         progbar = pkbar.Kbar(target=len(dataset) - 1, width=8)
 
-        for i, (batch_x, batch_y) in enumerate(dataset):
+        for i, (atomic_properties, properties) in enumerate(dataset):
 
             if total_batch_counter == WARM_UP_BATCHES:
                 print('=> warm up finished, start profiling')
@@ -149,24 +152,12 @@ if __name__ == "__main__":
             if PROFILING_STARTED:
                 torch.cuda.nvtx.range_push("batch{}".format(total_batch_counter))
 
-            true_energies = batch_y['energies'].to(parser.device)
-            predicted_energies = []
-            num_atoms = []
-
-            for j, (chunk_species, chunk_coordinates) in enumerate(batch_x):
-                if PROFILING_STARTED:
-                    torch.cuda.nvtx.range_push("chunk{}".format(j))
-                chunk_species = chunk_species.to(parser.device)
-                chunk_coordinates = chunk_coordinates.to(parser.device)
-                num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
-                with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
-                    _, chunk_energies = model((chunk_species, chunk_coordinates))
-                predicted_energies.append(chunk_energies)
-                if PROFILING_STARTED:
-                    torch.cuda.nvtx.range_pop()
-
-            num_atoms = torch.cat(num_atoms)
-            predicted_energies = torch.cat(predicted_energies).to(true_energies.dtype)
+            species = atomic_properties['species']
+            num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+            coordinates = atomic_properties['coordinates']
+            with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
+                _, predicted_energies = model((species, coordinates))
+            true_energies = properties['energies']
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
             rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
 
