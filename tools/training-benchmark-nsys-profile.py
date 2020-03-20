@@ -100,8 +100,8 @@ if __name__ == "__main__":
                 torch.cuda.nvtx.range_push("batch{}".format(total_batch_counter))
 
             species = properties['species'].to(parser.device)
-            coordinates = properties['coordinates'].to(parser.device)
-            true_energies = properties['energies'].to(parser.device)
+            coordinates = properties['coordinates'].to(parser.device).float()
+            true_energies = properties['energies'].to(parser.device).float()
             num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
             with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
                 _, predicted_energies = model((species, coordinates))

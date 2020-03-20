@@ -104,8 +104,8 @@ if __name__ == "__main__":
 
         for i, properties in enumerate(dataset):
             species = properties['species'].to(parser.device)
-            coordinates = properties['coordinates'].float().to(parser.device)
-            true_energies = properties['energies'].float().to(parser.device)
+            coordinates = properties['coordinates'].to(parser.device).float()
+            true_energies = properties['energies'].to(parser.device).float()
             num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
             _, predicted_energies = model((species, coordinates))
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
