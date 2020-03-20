@@ -123,6 +123,5 @@ if __name__ == "__main__":
         if k.startswith('torchani.'):
             print('{} - {:.1f}s'.format(k, timers[k]))
     print('Total AEV - {:.1f}s'.format(timers['total']))
-    print('Data Loading - {:.1f}s'.format(timers['data_loading']))
     print('NN - {:.1f}s'.format(timers['forward']))
     print('Epoch time - {:.1f}s'.format(stop - start))
