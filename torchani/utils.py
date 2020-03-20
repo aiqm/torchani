@@ -2,7 +2,6 @@ import torch
 from torch import Tensor
 import torch.utils.data
 import math
-import numpy as np
 from collections import defaultdict
 from typing import Tuple, NamedTuple, Optional
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst

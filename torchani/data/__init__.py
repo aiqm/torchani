@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tools for loading, shuffling, and batching ANI datasets"""
 
-from torch.utils.data import Dataset
 from os.path import join, isfile, isdir
 import os
 from ._pyanitools import anidataloader
@@ -106,9 +105,9 @@ class Transformations:
 
     @staticmethod
     def shuffle(iter_):
-        l = list(iter_)
-        random.shuffle(l)
-        return iter(l)
+        list_ = list(iter_)
+        random.shuffle(list_)
+        return iter(list_)
 
     @staticmethod
     def cache(iter_):
