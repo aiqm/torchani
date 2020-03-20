@@ -552,23 +552,17 @@ if sys.version_info[0] > 2:
 
         def load_data(self, training_path, validation_path):
             """Load training and validation dataset from file."""
-            self.training_set = self.imports.load_ani_dataset(
-                training_path, self.consts.species_to_tensor,
-                self.training_batch_size, rm_outlier=True, device=self.device,
-                transform=[self.shift_energy.subtract_from_dataset])
-            self.validation_set = self.imports.load_ani_dataset(
-                validation_path, self.consts.species_to_tensor,
-                self.validation_batch_size, rm_outlier=True, device=self.device,
-                transform=[self.shift_energy.subtract_from_dataset])
+            self.training_set = torchani.data.load(training_path).subtract_self_energies(energy_shifter).remove_outliers().species_to_indices().shuffle().collate(self.training_batch_size).cache()
+            self.validation_set = torchani.data.load(validation_path).subtract_self_energies(energy_shifter).remove_outliers().species_to_indices().shuffle().collate(self.validation_batch_size).cache()
 
         def evaluate(self, dataset):
             """Run the evaluation"""
             total_mse = 0.0
             count = 0
-            for atomic_properties, properties in dataset:
-                species = atomic_properties['species']
-                coordinates = atomic_properties['coordinates']
-                true_energies = properties['energies']
+            for properties in dataset:
+                species = properties['species'].to(self.device)
+                coordinates = properties['coordinates'].to(self.device).float()
+                true_energies = properties['energies'].to(self.device).float()
                 _, predicted_energies = self.model((species, coordinates))
                 total_mse += self.mse_sum(predicted_energies, true_energies).item()
                 count += predicted_energies.shape[0]
@@ -623,9 +617,9 @@ if sys.version_info[0] > 2:
                     total=len(self.training_set),
                     desc='epoch {}'.format(AdamW_scheduler.last_epoch)
                 ):
-                    species = atomic_properties['species']
-                    coordinates = atomic_properties['coordinates']
-                    true_energies = properties['energies']
+                    species = atomic_properties['species'].to(self.device)
+                    coordinates = atomic_properties['coordinates'].to(self.device).float()
+                    true_energies = properties['energies'].to(self.device).float()
                     num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
                     _, predicted_energies = self.model((species, coordinates))
                     loss = (self.mse_se(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
