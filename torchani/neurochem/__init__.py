@@ -78,7 +78,7 @@ def load_sae(filename, return_dict=False):
     with open(filename) as f:
         for i in f:
             line = [x.strip() for x in i.split('=')]
-            species = int(line[0].split(',')[1].strip())
+            species = line[0].split(',')[0].strip()
             index = int(line[0].split(',')[1].strip())
             value = float(line[1])
             d[species] = value
