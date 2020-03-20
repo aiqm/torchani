@@ -7,108 +7,64 @@ import os
 from ._pyanitools import anidataloader
 import torch
 from .. import utils
-from .new import CachedDataset, ShuffledDataset, find_threshold
+import importlib
+
+PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None
+if PKBAR_INSTALLED:
+    import pkbar
 
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
+verbose = True
+
+class RawIterator:
+    PROPERTIES = ('energies', 'forces')
+
+    def __init__(self, path, additional_properties=()):
+        self.path = path
+        self.properties = self.PROPERTIES + additional_properties
+
+    @staticmethod
+    def h5_files(path):
+        """yield file name of all h5 files in a path"""
+        if isdir(path):
+            for f in os.listdir(path):
+                f = join(path, f)
+                yield from RawIterator.h5_files(f)
+        elif isfile(path) and (path.endswith('.h5') or path.endswith('.hdf5')):
+            yield path
+
+    def molecules(self):
+        for f in self.h5_files(self.path):
+            anidata = anidataloader(f)
+            anidata_size = anidata.size()
+            use_pbar = PKBAR_INSTALLED and verbose
+            if use_pbar:
+                pbar = pkbar.Pbar('=> loading {}, total molecules: {}'.format(f, anidata_size), anidata_size)
+            for i, m in enumerate(anidata):
+                yield m
+                if use_pbar:
+                    pbar.update(i)
+
+    def conformations(self):
+        for m in self.molecules():
+            species = m['species']
+            coordinates = m['coordinates']
+            for i in range(coordinates.shape[0]):
+                ret = {'species': species, 'coordinates': coordinates[i]}
+                for k in self.properties:
+                    if k in m:
+                        ret[k] = m[k][i]
+                yield ret
+
+    def __iter__(self):
+        return self.conformations()
 
 
-def load_and_pad_whole_dataset(path, species_tensor_converter, shuffle=True,
-                               properties=('energies',), atomic_properties=()):
-    # get name of files storing data
-    files = []
-    if isdir(path):
-        for f in os.listdir(path):
-            f = join(path, f)
-            if isfile(f) and (f.endswith('.h5') or f.endswith('.hdf5')):
-                files.append(f)
-    elif isfile(path):
-        files = [path]
-    else:
-        raise ValueError('Bad path')
-
-    # load full dataset
-    atomic_properties_ = []
-    properties = {k: [] for k in properties}
-    for f in files:
-        for m in anidataloader(f):
-            atomic_properties_.append(dict(
-                species=species_tensor_converter(m['species']).unsqueeze(0),
-                **{
-                    k: torch.from_numpy(m[k]).to(torch.double)
-                    for k in ['coordinates'] + list(atomic_properties)
-                }
-            ))
-            for i in properties:
-                p = torch.from_numpy(m[i]).to(torch.double)
-                properties[i].append(p)
-    atomic_properties = utils.pad_atomic_properties(atomic_properties_)
-    for i in properties:
-        properties[i] = torch.cat(properties[i])
-
-    # shuffle if required
-    molecules = atomic_properties['species'].shape[0]
-    if shuffle:
-        indices = torch.randperm(molecules)
-        for i in properties:
-            properties[i] = properties[i].index_select(0, indices)
-        for i in atomic_properties:
-            atomic_properties[i] = atomic_properties[i].index_select(0, indices)
-    return atomic_properties, properties
-
-
-def split_whole_into_batches(atomic_properties, properties, batch_size):
-    molecules = atomic_properties['species'].shape[0]
-    # split into minibatches
-    for k in properties:
-        properties[k] = properties[k].split(batch_size)
-    for k in atomic_properties:
-        atomic_properties[k] = atomic_properties[k].split(batch_size)
-
-    # strip redundant padding
-    batches = []
-    num_batches = (molecules + batch_size - 1) // batch_size
-    for i in range(num_batches):
-        batch_properties = {k: v[i] for k, v in properties.items()}
-        batch_atomic_properties = {k: v[i] for k, v in atomic_properties.items()}
-        batch_atomic_properties = utils.strip_redundant_padding(batch_atomic_properties)
-        batches.append((batch_atomic_properties, batch_properties))
-
-    return batches
-
-
-class PaddedDataset(Dataset):
-    r""" Dataset that contains batches with padded structures"""
-
-    def __init__(self, atomic_properties, properties, batch_size,
-                 dtype=torch.get_default_dtype(), device=default_device):
-        super().__init__()
-        self.device = device
-        self.dtype = dtype
-
-        # convert to desired dtype
-        for k in properties:
-            properties[k] = properties[k].to(dtype)
-        for k in atomic_properties:
-            if k == 'species':
-                continue
-            atomic_properties[k] = atomic_properties[k].to(dtype)
-
-        self.batches = split_whole_into_batches(atomic_properties, properties, batch_size)
-
-    def __getitem__(self, idx):
-        atomic_properties, properties = self.batches[idx]
-
-        def convert(v):
-            v = v.to(self.device)
-            if torch.is_floating_point(v):
-                return v.to(self.dtype)
-            return v
-        atomic_properties_ = {k: convert(v) for k, v in atomic_properties.items()}
-        properties_ = {k: convert(v) for k, v in properties.items()}
-        return atomic_properties_, properties_
-
-    def __len__(self):
-        return len(self.batches)
+def species_to_indices(iter, species_order=('H', 'C', 'N', 'O', 'F', 'Cl', 'S')):
+    idx = {k: i for i, k in enumerate(species_order)}
+    for d in iter:
+        d['species'] = [idx[s] for s in d['species']]
+        yield d
 
 
 def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
@@ -265,10 +221,6 @@ import functools
 from ._pyanitools import anidataloader
 from importlib import util as u
 import gc
-
-PKBAR_INSTALLED = u.find_spec('pkbar') is not None
-if PKBAR_INSTALLED:
-    import pkbar
 
 
 class CachedDataset(torch.utils.data.Dataset):
