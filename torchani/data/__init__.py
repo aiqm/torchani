@@ -136,7 +136,6 @@ class Transformations:
             yield {k: d[k].pin_memory() for k in d}
 
 
-
 class TransformableIterator:
     def __init__(self, wrapped_iter, transformations=()):
         self.wrapped_iter = wrapped_iter

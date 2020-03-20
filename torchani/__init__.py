@@ -31,7 +31,6 @@ from . import neurochem
 from . import models
 from . import optim
 from . import units
-from . import data
 from pkg_resources import get_distribution, DistributionNotFound
 
 try:
