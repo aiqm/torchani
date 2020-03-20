@@ -54,7 +54,7 @@ class TransformableIterator:
 
         @functools.wraps(transformation)
         def f(*args, **kwargs):
-            return transformation(self, *args, **kwargs)
+            return TransformableIterator(transformation(self.wrapped_iter, *args, **kwargs))
 
         return f
 
