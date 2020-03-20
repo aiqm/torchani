@@ -89,10 +89,7 @@ training, validation = torchani.data.load_ani_dataset(
 print('Self atomic energies: ', energy_shifter.self_energies)
 
 ###############################################################################
-# When iterating the dataset, we will get pairs (atomic_properties, properties),
-# where `atomic_properties` is a `dict` containing species, coordinates, and
-# maybe forces and other properties whose second dimension is number of atoms.
-# Everything else goes to `properties`.
+# When iterating the dataset, we will get a dict of name->property mapping
 #
 ###############################################################################
 # Now let's define atomic neural networks.
