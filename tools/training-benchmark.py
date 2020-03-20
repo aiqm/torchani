@@ -92,7 +92,7 @@ if __name__ == "__main__":
     model[1].forward = time_func('forward', model[1].forward)
 
     print('=> loading dataset...')
-    shifter = torch.utils.EnergyShifter(None)
+    shifter = torchani.EnergyShifter(None)
     dataset = list(torchani.data.load(parser.dataset_path).subtract_self_energies(shifter).species_to_indices().shuffle().collate(parser.batch_size))
 
     print('=> start training')

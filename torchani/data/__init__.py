@@ -136,6 +136,7 @@ class Transformations:
             yield {k: d[k].pin_memory() for k in d}
 
 
+
 class TransformableIterator:
     def __init__(self, wrapped_iter, transformations=()):
         self.wrapped_iter = wrapped_iter
@@ -157,6 +158,18 @@ class TransformableIterator:
                 self.transformations + (name,))
 
         return f
+
+    def split(self, *nums):
+        iters = []
+        for n in nums:
+            list_ = []
+            if n is not None:
+                for _ in range(n):
+                    list_.append(next(self))
+            else:
+                for i in self:
+                    list_.append(i)
+            iters.append(TransformableIterator(iter(list_), self.transformations + ('split',)))
 
 
 def load(path, additional_properties=()):
