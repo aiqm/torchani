@@ -89,28 +89,10 @@ training, validation = torchani.data.load_ani_dataset(
 print('Self atomic energies: ', energy_shifter.self_energies)
 
 ###############################################################################
-# When iterating the dataset, we will get pairs of input and output
-# ``(species_coordinates, properties)``, where ``species_coordinates`` is the
-# input and ``properties`` is the output.
-#
-# ``species_coordinates`` is a list of species-coordinate pairs, with shape
-# ``(N, Na)`` and ``(N, Na, 3)``. The reason for getting this type is, when
-# loading the dataset and generating minibatches, the whole dataset are
-# shuffled and each minibatch contains structures of molecules with a wide
-# range of number of atoms. Molecules of different number of atoms are batched
-# into single by padding. The way padding works is: adding ghost atoms, with
-# species 'X', and do computations as if they were normal atoms. But when
-# computing AEVs, atoms with species `X` would be ignored. To avoid computation
-# wasting on padding atoms, minibatches are further splitted into chunks. Each
-# chunk contains structures of molecules of similar size, which minimize the
-# total number of padding atoms required to add. The input list
-# ``species_coordinates`` contains chunks of that minibatch we are getting. The
-# batching and chunking happens automatically, so the user does not need to
-# worry how to construct chunks, but the user need to compute the energies for
-# each chunk and concat them into single tensor.
-#
-# The output, i.e. ``properties`` is a dictionary holding each property. This
-# allows us to extend TorchANI in the future to training forces and properties.
+# When iterating the dataset, we will get pairs (atomic_properties, properties),
+# where `atomic_properties` is a `dict` containing species, coordinates, and
+# maybe forces and other properties whose second dimension is number of atoms.
+# Everything else goes to `properties`.
 #
 ###############################################################################
 # Now let's define atomic neural networks.
@@ -279,16 +261,11 @@ def validate():
     mse_sum = torch.nn.MSELoss(reduction='sum')
     total_mse = 0.0
     count = 0
-    for batch_x, batch_y in validation:
-        true_energies = batch_y['energies']
-        predicted_energies = []
-        atomic_properties = []
-        for chunk_species, chunk_coordinates in batch_x:
-            atomic_chunk = {'species': chunk_species, 'coordinates': chunk_coordinates}
-            atomic_properties.append(atomic_chunk)
-
-        atomic_properties = torchani.utils.pad_atomic_properties(atomic_properties)
-        predicted_energies = model((atomic_properties['species'], atomic_properties['coordinates'])).energies
+    for atomic_properties, properties in validation:
+        species = atomic_properties['species']
+        coordinates = atomic_properties['coordinates']
+        _, predicted_energies = model((species, coordinates))
+        true_energies = properties['energies']
         total_mse += mse_sum(predicted_energies, true_energies).item()
         count += predicted_energies.shape[0]
     return hartree2kcalmol(math.sqrt(total_mse / count))
@@ -331,26 +308,17 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
     tensorboard.add_scalar('best_validation_rmse', AdamW_scheduler.best, AdamW_scheduler.last_epoch)
     tensorboard.add_scalar('learning_rate', learning_rate, AdamW_scheduler.last_epoch)
 
-    for i, (batch_x, batch_y) in tqdm.tqdm(
+    for i, (atomic_properties, properties) in tqdm.tqdm(
         enumerate(training),
         total=len(training),
         desc="epoch {}".format(AdamW_scheduler.last_epoch)
     ):
+        species = atomic_properties['species']
+        num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+        coordinates = atomic_properties['coordinates']
+        _, predicted_energies = model((species, coordinates))
+        true_energies = properties['energies']
 
-        true_energies = batch_y['energies']
-        predicted_energies = []
-        num_atoms = []
-        atomic_properties = []
-
-        for chunk_species, chunk_coordinates in batch_x:
-            atomic_chunk = {'species': chunk_species, 'coordinates': chunk_coordinates}
-            atomic_properties.append(atomic_chunk)
-            num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
-
-        atomic_properties = torchani.utils.pad_atomic_properties(atomic_properties)
-        predicted_energies = model((atomic_properties['species'], atomic_properties['coordinates'])).energies
-
-        num_atoms = torch.cat(num_atoms)
         loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
 
         AdamW.zero_grad()
