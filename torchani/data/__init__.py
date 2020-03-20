@@ -97,8 +97,13 @@ class PaddedDataset(Dataset):
 
     def __getitem__(self, idx):
         atomic_properties, properties = self.batches[idx]
-        atomic_properties_ = {k: v.to(self.device).to(self.dtype) for k, v in atomic_properties.items()}
-        properties_ = {k: v.to(self.device).to(self.dtype) for k, v in properties.items()}
+        def convert(v):
+            v = v.to(self.device)
+            if torch.is_floating_point(v):
+                return v.to(self.dtype)
+            return v
+        atomic_properties_ = {k: convert(v) for k, v in atomic_properties.items()}
+        properties_ = {k: convert(v) for k, v in properties.items()}
         return atomic_properties_, properties_
 
     def __len__(self):
