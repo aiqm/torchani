@@ -565,13 +565,11 @@ if sys.version_info[0] > 2:
             """Run the evaluation"""
             total_mse = 0.0
             count = 0
-            for batch_x, batch_y in dataset:
-                true_energies = batch_y['energies']
-                predicted_energies = []
-                for chunk_species, chunk_coordinates in batch_x:
-                    _, chunk_energies = self.model((chunk_species, chunk_coordinates))
-                    predicted_energies.append(chunk_energies)
-                predicted_energies = torch.cat(predicted_energies)
+            for atomic_properties, properties in dataset:
+                species = atomic_properties['species']
+                coordinates = atomic_properties['coordinates']
+                _, predicted_energies = self.model((species, coordinates))
+                true_energies = properties['energies']
                 total_mse += self.mse_sum(predicted_energies, true_energies).item()
                 count += predicted_energies.shape[0]
             return hartree2kcalmol(math.sqrt(total_mse / count))
