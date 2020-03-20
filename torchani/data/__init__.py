@@ -158,9 +158,6 @@ class TransformableIterator:
 
         return f
 
-    def __len__(self):
-        return len(self.wrapped_iter)
-
 
 def load(path, additional_properties=()):
     properties = PROPERTIES + additional_properties
