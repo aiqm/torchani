@@ -38,7 +38,7 @@ class Transformations:
             for s in d['species']:
                 e += self_energies[s]
             d['energies'] -= e
-            yield e
+            yield d
 
     @staticmethod
     def remove_outliers(iter_, threshold1=15.0, threshold2=8.0):
@@ -59,7 +59,7 @@ class Transformations:
             mean += m['energies']
             std += m['energies'] ** 2
         mean /= n
-        std = std / n - mean ** 2
+        std = math.sqrt(std / n - mean ** 2)
 
         return filter(lambda x: abs(x['energies'] - mean) < threshold2 * std, filtered)
 
@@ -68,7 +68,6 @@ class Transformations:
         l = list(iter_)
         random.shuffle(l)
         return iter(l)
-
 
 
 class TransformableIterator:
