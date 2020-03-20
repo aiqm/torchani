@@ -207,8 +207,8 @@ def validate():
     count = 0
     for properties in validation:
         species = properties['species'].to(device)
-        coordinates = properties['coordinates'].to(device)
-        true_energies = properties['energies'].to(device)
+        coordinates = properties['coordinates'].to(device).float()
+        true_energies = properties['energies'].to(device).float()
         _, predicted_energies = model((species, coordinates))
         total_mse += mse_sum(predicted_energies, true_energies).item()
         count += predicted_energies.shape[0]
@@ -258,10 +258,10 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         total=len(training),
         desc="epoch {}".format(AdamW_scheduler.last_epoch)
     ):
-        species = properties['species']
-        coordinates = properties['coordinates'].requires_grad_(True)
-        true_energies = properties['energies']
-        true_forces = properties['forces']
+        species = properties['species'].to(device)
+        coordinates = properties['coordinates'].to(device).float().requires_grad_(True)
+        true_energies = properties['energies'].to(device).float()
+        true_forces = properties['forces'].to(device).float()
         num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
         _, predicted_energies = model((species, coordinates))
 
