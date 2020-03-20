@@ -263,7 +263,7 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         desc="epoch {}".format(AdamW_scheduler.last_epoch)
     ):
         species = atomic_properties['species']
-        coordinates = atomic_properties['coordinates']
+        coordinates = atomic_properties['coordinates'].requires_grad_(True)
         true_energies = properties['energies']
         true_forces = atomic_properties['forces']
         num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
