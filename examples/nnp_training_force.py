@@ -62,22 +62,6 @@ training, validation = torchani.data.load_ani_dataset(
 print('Self atomic energies: ', energy_shifter.self_energies)
 
 ###############################################################################
-# When iterating the dataset, we will get pairs of input and output
-# ``(species_coordinates, properties)``, in this case, ``properties`` would
-# contain a key ``'atomic'`` where ``properties['atomic']`` is a list of dict
-# containing forces:
-
-data = training[0]
-properties = data[1]
-atomic_properties = properties['atomic']
-print(type(atomic_properties))
-print(list(atomic_properties[0].keys()))
-
-###############################################################################
-# Due to padding, part of the forces might be 0
-print(atomic_properties[0]['forces'][0])
-
-###############################################################################
 # The code to define networks, optimizers, are mostly the same
 
 H_network = torch.nn.Sequential(
