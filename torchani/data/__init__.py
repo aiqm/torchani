@@ -61,18 +61,20 @@ class Transformations:
                     if len(counts[s]) != n + 1:
                         counts[s].append(0)
                 Y.append(d['energies'])
-            species = list(counts.keys())
+            species = sorted(list(counts.keys()))
             X = [counts[s] for s in species]
             if shifter.fit_intercept:
                 X.append([1] * n)
             X = numpy.array(X).transpose()
             Y = numpy.array(Y)
             sae, _, _, _ = numpy.linalg.lstsq(X, Y, rcond=None)
+            sae_ = sae
             if shifter.fit_intercept:
                 intercept = sae[-1]
-                sae = sae[:-1]
-            for s, e in zip(species, sae):
+                sae_ = sae[:-1]
+            for s, e in zip(species, sae_):
                 self_energies[s] = e
+            shifter.__init__(sae, shifter.fit_intercept)
         for d in iter_:
             e = intercept
             for s in d['species']:
