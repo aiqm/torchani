@@ -118,8 +118,9 @@ class Transformations:
     def collate(iter_, batch_size):
         batch = []
         i = 0
-        for m in iter_:
-            batch.append(m)
+        for d in iter_:
+            d = {k: torch.as_tensor(d[k]).unsqueeze(0) for k in d}
+            batch.append(d)
             i += 1
             if i == batch_size:
                 i = 0
