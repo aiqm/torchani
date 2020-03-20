@@ -160,10 +160,10 @@ if __name__ == "__main__":
 
         for i, (atomic_properties, properties) in enumerate(dataset):
             species = atomic_properties['species']
-            num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
             coordinates = atomic_properties['coordinates']
-            _, predicted_energies = model((species, coordinates))
             true_energies = properties['energies']
+            num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+            _, predicted_energies = model((species, coordinates))
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
             rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
             loss.backward()

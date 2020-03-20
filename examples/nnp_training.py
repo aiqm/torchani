@@ -264,8 +264,8 @@ def validate():
     for atomic_properties, properties in validation:
         species = atomic_properties['species']
         coordinates = atomic_properties['coordinates']
-        _, predicted_energies = model((species, coordinates))
         true_energies = properties['energies']
+        _, predicted_energies = model((species, coordinates))
         total_mse += mse_sum(predicted_energies, true_energies).item()
         count += predicted_energies.shape[0]
     return hartree2kcalmol(math.sqrt(total_mse / count))
@@ -314,10 +314,10 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         desc="epoch {}".format(AdamW_scheduler.last_epoch)
     ):
         species = atomic_properties['species']
-        num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
         coordinates = atomic_properties['coordinates']
-        _, predicted_energies = model((species, coordinates))
         true_energies = properties['energies']
+        num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+        _, predicted_energies = model((species, coordinates))
 
         loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
 

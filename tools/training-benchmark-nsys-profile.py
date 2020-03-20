@@ -71,7 +71,7 @@ if __name__ == "__main__":
                         action='store_const',
                         const='cache')
     parser.set_defaults(dataset='shuffle')
-    parser.add_argument('-d', '--dry-run'
+    parser.add_argument('-d', '--dry-run',
                         help='just run it in a CI without GPU',
                         action='store_true')
     parser = parser.parse_args()
@@ -153,11 +153,11 @@ if __name__ == "__main__":
                 torch.cuda.nvtx.range_push("batch{}".format(total_batch_counter))
 
             species = atomic_properties['species']
-            num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
             coordinates = atomic_properties['coordinates']
+            true_energies = properties['energies']
+            num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
             with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
                 _, predicted_energies = model((species, coordinates))
-            true_energies = properties['energies']
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
             rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
 

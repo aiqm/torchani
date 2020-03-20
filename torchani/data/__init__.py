@@ -97,8 +97,8 @@ class PaddedDataset(Dataset):
 
     def __getitem__(self, idx):
         atomic_properties, properties = self.batches[idx]
-        atomic_properties_ = {k: v.to(self.device).to(self.dtype) for k,v in atomic_properties.items()}
-        properties_ = {k: v.to(self.device).to(self.dtype) for k,v in properties.items()}
+        atomic_properties_ = {k: v.to(self.device).to(self.dtype) for k, v in atomic_properties.items()}
+        properties_ = {k: v.to(self.device).to(self.dtype) for k, v in properties.items()}
         return atomic_properties_, properties_
 
     def __len__(self):

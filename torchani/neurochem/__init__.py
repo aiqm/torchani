@@ -568,8 +568,8 @@ if sys.version_info[0] > 2:
             for atomic_properties, properties in dataset:
                 species = atomic_properties['species']
                 coordinates = atomic_properties['coordinates']
-                _, predicted_energies = self.model((species, coordinates))
                 true_energies = properties['energies']
+                _, predicted_energies = self.model((species, coordinates))
                 total_mse += self.mse_sum(predicted_energies, true_energies).item()
                 count += predicted_energies.shape[0]
             return hartree2kcalmol(math.sqrt(total_mse / count))
@@ -624,10 +624,10 @@ if sys.version_info[0] > 2:
                     desc='epoch {}'.format(AdamW_scheduler.last_epoch)
                 ):
                     species = atomic_properties['species']
-                    num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
                     coordinates = atomic_properties['coordinates']
-                    _, predicted_energies = self.model((species, coordinates))
                     true_energies = properties['energies']
+                    num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+                    _, predicted_energies = self.model((species, coordinates))
                     loss = (self.mse_se(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
                     AdamW_optim.zero_grad()
                     SGD_optim.zero_grad()
