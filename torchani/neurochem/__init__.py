@@ -70,17 +70,22 @@ class Constants(collections.abc.Mapping):
         return getattr(self, item)
 
 
-def load_sae(filename):
+def load_sae(filename, return_dict=False):
     """Returns an object of :class:`EnergyShifter` with self energies from
     NeuroChem sae file"""
     self_energies = []
+    d = {}
     with open(filename) as f:
         for i in f:
             line = [x.strip() for x in i.split('=')]
+            species = int(line[0].split(',')[1].strip())
             index = int(line[0].split(',')[1].strip())
             value = float(line[1])
+            d[species] = value
             self_energies.append((index, value))
     self_energies = [i for _, i in sorted(self_energies)]
+    if return_dict:
+        return EnergyShifter(self_energies), d
     return EnergyShifter(self_energies)
 
 
@@ -467,7 +472,7 @@ if sys.version_info[0] > 2:
             self.aev_computer = AEVComputer(**self.consts)
             del params['sflparamsfile']
             self.sae_file = os.path.join(dir_, params['atomEnergyFile'])
-            self.shift_energy = load_sae(self.sae_file)
+            self.shift_energy, self.sae = load_sae(self.sae_file, return_dict=True)
             del params['atomEnergyFile']
             network_dir = os.path.join(dir_, params['ntwkStoreDir'])
             if not os.path.exists(network_dir):
@@ -552,8 +557,8 @@ if sys.version_info[0] > 2:
 
         def load_data(self, training_path, validation_path):
             """Load training and validation dataset from file."""
-            self.training_set = torchani.data.load(training_path).subtract_self_energies(energy_shifter).remove_outliers().species_to_indices().shuffle().collate(self.training_batch_size).cache()
-            self.validation_set = torchani.data.load(validation_path).subtract_self_energies(energy_shifter).remove_outliers().species_to_indices().shuffle().collate(self.validation_batch_size).cache()
+            self.training_set = torchani.data.load(training_path).subtract_self_energies(self.sae).remove_outliers().species_to_indices().shuffle().collate(self.training_batch_size).cache()
+            self.validation_set = torchani.data.load(validation_path).subtract_self_energies(self.sae).remove_outliers().species_to_indices().shuffle().collate(self.validation_batch_size).cache()
 
         def evaluate(self, dataset):
             """Run the evaluation"""
