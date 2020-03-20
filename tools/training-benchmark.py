@@ -49,25 +49,9 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--batch_size',
                         help='Number of conformations of each batch',
                         default=2560, type=int)
-    parser.add_argument('-o', '--original_dataset_api',
-                        help='use original dataset api',
-                        dest='dataset',
-                        action='store_const',
-                        const='original')
-    parser.add_argument('-s', '--shuffle_dataset_api',
-                        help='use shuffle dataset api',
-                        dest='dataset',
-                        action='store_const',
-                        const='shuffle')
-    parser.add_argument('-c', '--cache_dataset_api',
-                        help='use cache dataset api',
-                        dest='dataset',
-                        action='store_const',
-                        const='cache')
     parser.add_argument('-y', '--synchronize',
                         action='store_true',
                         help='whether to insert torch.cuda.synchronize() at the end of each function')
-    parser.set_defaults(dataset='original')
     parser.add_argument('-n', '--num_epochs',
                         help='epochs',
                         default=1, type=int)
@@ -107,38 +91,8 @@ if __name__ == "__main__":
     model[0].forward = time_func('total', model[0].forward)
     model[1].forward = time_func('forward', model[1].forward)
 
-    if parser.dataset == 'shuffle':
-        torchani.data.ShuffledDataset = time_func('data_loading', torchani.data.ShuffledDataset)
-        print('using shuffle dataset API')
-        print('=> loading dataset...')
-        dataset = torchani.data.ShuffledDataset(file_path=parser.dataset_path,
-                                                species_order=['H', 'C', 'N', 'O'],
-                                                subtract_self_energies=True,
-                                                batch_size=parser.batch_size,
-                                                num_workers=2)
-    elif parser.dataset == 'original':
-        torchani.data.load_ani_dataset = time_func('data_loading', torchani.data.load_ani_dataset)
-        print('using original dataset API')
-        print('=> loading dataset...')
-        energy_shifter = torchani.utils.EnergyShifter(None)
-        species_to_tensor = torchani.utils.ChemicalSymbolsToInts(['H', 'C', 'N', 'O'])
-        dataset = torchani.data.load_ani_dataset(parser.dataset_path, species_to_tensor,
-                                                 parser.batch_size, device=parser.device,
-                                                 transform=[energy_shifter.subtract_from_dataset])
-    elif parser.dataset == 'cache':
-        torchani.data.CachedDataset = time_func('data_loading', torchani.data.CachedDataset)
-        print('using cache dataset API')
-        print('=> loading dataset...')
-        dataset = torchani.data.CachedDataset(file_path=parser.dataset_path,
-                                              species_order=['H', 'C', 'N', 'O'],
-                                              subtract_self_energies=True,
-                                              batch_size=parser.batch_size)
-        print('=> caching all dataset into cpu')
-        pbar = pkbar.Pbar('loading and processing dataset into cpu memory, total '
-                          + 'batches: {}, batch_size: {}'.format(len(dataset), parser.batch_size),
-                          len(dataset))
-        for i, t in enumerate(dataset):
-            pbar.update(i)
+    print('=> loading dataset...')
+    dataset = torchani.data.load(parser.dataset_path).species_to_indices().shuffle().collate(parser.batch_size).cache()
 
     print('=> start training')
     start = time.time()
