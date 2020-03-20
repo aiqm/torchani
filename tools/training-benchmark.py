@@ -67,7 +67,7 @@ if __name__ == "__main__":
     parser.add_argument('-y', '--synchronize',
                         action='store_true',
                         help='whether to insert torch.cuda.synchronize() at the end of each function')
-    parser.set_defaults(dataset='shuffle')
+    parser.set_defaults(dataset='original')
     parser.add_argument('-n', '--num_epochs',
                         help='epochs',
                         default=1, type=int)

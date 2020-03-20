@@ -70,7 +70,7 @@ if __name__ == "__main__":
                         dest='dataset',
                         action='store_const',
                         const='cache')
-    parser.set_defaults(dataset='shuffle')
+    parser.set_defaults(dataset='original')
     parser.add_argument('-d', '--dry-run',
                         help='just run it in a CI without GPU',
                         action='store_true')
