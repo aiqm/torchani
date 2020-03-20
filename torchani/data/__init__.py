@@ -109,11 +109,11 @@ class Transformations:
     def shuffle(iter_):
         list_ = list(iter_)
         random.shuffle(list_)
-        return iter(list_)
+        return list_
 
     @staticmethod
     def cache(iter_):
-        return iter(list(iter_))
+        return list(iter_)
 
     @staticmethod
     def collate(iter_, batch_size):
@@ -169,7 +169,10 @@ class TransformableIterator:
             else:
                 for i in self:
                     list_.append(i)
-            iters.append(TransformableIterator(iter(list_), self.transformations + ('split',)))
+            iters.append(TransformableIterator(list_, self.transformations + ('split',)))
+
+    def __len__(self):
+        return len(self.wrapped_iter)
 
 
 def load(path, additional_properties=()):

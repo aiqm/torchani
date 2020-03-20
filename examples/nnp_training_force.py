@@ -49,15 +49,11 @@ dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
 
 batch_size = 2560
 
-###############################################################################
-# The code to create the dataset is a bit different: we need to manually
-# specify that ``atomic_properties=['forces']`` so that forces will be read
-# from hdf5 files.
-
-training, validation = torchani.data.load_ani_dataset(
-    dspath, species_to_tensor, batch_size, rm_outlier=True,
-    device=device, atomic_properties=['forces'],
-    transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
+dataset = torchani.data.load(dspath).subtract_self_energies(energy_shifter).remove_outliers().species_to_indices().shuffle()
+size = len(dataset)
+training, validation = dataset.split([int(0.8 * size), None])
+training = training.collate(batch_size)
+validation = validation.collate(batch_size)
 
 print('Self atomic energies: ', energy_shifter.self_energies)
 

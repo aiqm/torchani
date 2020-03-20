@@ -80,12 +80,13 @@ try:
 except NameError:
     path = os.getcwd()
 dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
-
 batch_size = 2560
 
-training, validation = torchani.data.load_ani_dataset(
-    dspath, species_to_tensor, batch_size, rm_outlier=True, device=device,
-    transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
+dataset = torchani.data.load(dspath).subtract_self_energies(energy_shifter).remove_outliers().species_to_indices().shuffle()
+size = len(dataset)
+training, validation = dataset.split([int(0.8 * size), None])
+training = training.collate(batch_size)
+validation = validation.collate(batch_size)
 print('Self atomic energies: ', energy_shifter.self_energies)
 
 ###############################################################################
