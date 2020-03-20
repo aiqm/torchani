@@ -44,18 +44,21 @@ class Transformations:
             Y = []
             for n, d in enumerate(iter_):
                 species = d['species']
-                count = Counter
+                count = Counter()
                 for s in species:
                     count[s] += 1
-                for s, c in count.item():
+                for s, c in count.items():
                     if s not in counts:
                         counts[s] = [0] * n
                     counts[s].append(c)
+                for s in counts:
+                    if len(counts[s]) != n + 1:
+                        counts[s].append(0)
                 Y.append(d['energies'])
             species = list(counts.keys())
             X = [counts[s] for s in species]
             if shifter.fit_intercept:
-                X += [1] * n
+                X.append([1] * n)
             X = numpy.array(X).transpose()
             Y = numpy.array(Y)
             sae, _, _, _ = numpy.linalg.lstsq(X, Y, rcond=None)
