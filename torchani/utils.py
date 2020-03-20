@@ -16,7 +16,7 @@ def pad_atomic_properties(atomic_properties, padding_values=defaultdict(lambda: 
     are `{'species': padded_tensor, ...}`
 
     Arguments:
-        species_coordinates (:class:`collections.abc.Sequence`): sequence of
+        atomic_properties (:class:`collections.abc.Sequence`): sequence of
              atomic properties.
         padding_values (dict): the value to fill to pad tensors to same size
     """

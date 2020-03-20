@@ -18,8 +18,15 @@ PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None
 if PKBAR_INSTALLED:
     import pkbar
 
-default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 verbose = True
+
+
+PROPERTIES = ('energies', 'forces')
+PADDING = {
+    'species': -1,
+    'coordinates': 0.0,
+    'forces': 0.0,
+}
 
 
 class Transformations:
@@ -107,6 +114,20 @@ class Transformations:
     def cache(iter_):
         return iter(list(iter_))
 
+    @staticmethod
+    def collate(iter_, batch_size):
+        batch = []
+        i = 0
+        for m in iter_:
+            batch.append(m)
+            i += 1
+            if i == batch_size:
+                i = 0
+                yield torch.utils.pad_atomic_properties(batch)
+                batch = []
+        if len(batch) > 0:
+            yield torch.utils.pad_atomic_properties(batch)
+
 
 class TransformableIterator:
     def __init__(self, wrapped_iter, transformations=()):
@@ -132,8 +153,7 @@ class TransformableIterator:
 
 
 def load(path, additional_properties=()):
-    PROPERTIES = ('energies', 'forces')
-    properties = PROPERTIES + additional_properties
+    properties = PROPERTIES.keys() + additional_properties
 
     def h5_files(path):
         """yield file name of all h5 files in a path"""
