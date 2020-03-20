@@ -143,7 +143,7 @@ class TransformableIterator:
         self.transformations = transformations
 
     def __iter__(self):
-        return self
+        return iter(self.wrapped_iter)
 
     def __next__(self):
         return next(self.wrapped_iter)
@@ -171,6 +171,7 @@ class TransformableIterator:
                 for i in self_iter:
                     list_.append(i)
             iters.append(TransformableIterator(list_, self.transformations + ('split',)))
+        return iters
 
     def __len__(self):
         return len(self.wrapped_iter)

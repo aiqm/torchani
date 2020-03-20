@@ -259,9 +259,9 @@ def validate():
     mse_sum = torch.nn.MSELoss(reduction='sum')
     total_mse = 0.0
     count = 0
-    for atomic_properties, properties in validation:
-        species = atomic_properties['species']
-        coordinates = atomic_properties['coordinates']
+    for properties in validation:
+        species = properties['species']
+        coordinates = properties['coordinates']
         true_energies = properties['energies']
         _, predicted_energies = model((species, coordinates))
         total_mse += mse_sum(predicted_energies, true_energies).item()
@@ -306,13 +306,13 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
     tensorboard.add_scalar('best_validation_rmse', AdamW_scheduler.best, AdamW_scheduler.last_epoch)
     tensorboard.add_scalar('learning_rate', learning_rate, AdamW_scheduler.last_epoch)
 
-    for i, (atomic_properties, properties) in tqdm.tqdm(
+    for i, properties in tqdm.tqdm(
         enumerate(training),
         total=len(training),
         desc="epoch {}".format(AdamW_scheduler.last_epoch)
     ):
-        species = atomic_properties['species']
-        coordinates = atomic_properties['coordinates']
+        species = properties['species']
+        coordinates = properties['coordinates']
         true_energies = properties['energies']
         num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
         _, predicted_energies = model((species, coordinates))
