@@ -85,8 +85,8 @@ batch_size = 2560
 dataset = torchani.data.load(dspath).subtract_self_energies(energy_shifter).remove_outliers().species_to_indices().shuffle()
 size = len(dataset)
 training, validation = dataset.split(int(0.8 * size), None)
-training = training.collate(batch_size)
-validation = validation.collate(batch_size)
+training = training.collate(batch_size).cache()
+validation = validation.collate(batch_size).cache()
 print('Self atomic energies: ', energy_shifter.self_energies)
 
 ###############################################################################
@@ -260,9 +260,9 @@ def validate():
     total_mse = 0.0
     count = 0
     for properties in validation:
-        species = properties['species']
-        coordinates = properties['coordinates']
-        true_energies = properties['energies']
+        species = properties['species'].to(device)
+        coordinates = properties['coordinates'].to(device)
+        true_energies = properties['energies'].to(device)
         _, predicted_energies = model((species, coordinates))
         total_mse += mse_sum(predicted_energies, true_energies).item()
         count += predicted_energies.shape[0]
