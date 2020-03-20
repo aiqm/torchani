@@ -97,6 +97,7 @@ class PaddedDataset(Dataset):
 
     def __getitem__(self, idx):
         atomic_properties, properties = self.batches[idx]
+
         def convert(v):
             v = v.to(self.device)
             if torch.is_floating_point(v):
