@@ -101,8 +101,6 @@ if __name__ == "__main__":
                                                 subtract_self_energies=True,
                                                 batch_size=parser.batch_size,
                                                 num_workers=2)
-        print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
-        chunks, properties = iter(dataset).next()
     elif parser.dataset == 'original':
         print('using original dataset API')
         print('=> loading dataset...')
@@ -111,8 +109,6 @@ if __name__ == "__main__":
         dataset = torchani.data.load_ani_dataset(parser.dataset_path, species_to_tensor,
                                                  parser.batch_size, device=parser.device,
                                                  transform=[energy_shifter.subtract_from_dataset])
-        print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
-        chunks, properties = dataset[0]
     elif parser.dataset == 'cache':
         print('using cache dataset API')
         print('=> loading dataset...')
@@ -126,12 +122,6 @@ if __name__ == "__main__":
                           len(dataset))
         for i, t in enumerate(dataset):
             pbar.update(i)
-        print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
-        chunks, properties = dataset[0]
-
-    for i, chunk in enumerate(chunks):
-        print('chunk{}'.format(i + 1), list(chunk[0].size()), list(chunk[1].size()))
-    print('energies', list(properties['energies'].size()))
 
     print('=> start warming up')
     total_batch_counter = 0
