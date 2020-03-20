@@ -620,21 +620,16 @@ if sys.version_info[0] > 2:
                     self.tensorboard.add_scalar('learning_rate', learning_rate, AdamW_scheduler.last_epoch)
                     self.tensorboard.add_scalar('no_improve_count_vs_epoch', no_improve_count, AdamW_scheduler.last_epoch)
 
-                for i, (batch_x, batch_y) in self.tqdm(
+                for i, (atomic_properties, properties) in self.tqdm(
                     enumerate(self.training_set),
                     total=len(self.training_set),
                     desc='epoch {}'.format(AdamW_scheduler.last_epoch)
                 ):
-
-                    true_energies = batch_y['energies']
-                    predicted_energies = []
-                    num_atoms = []
-                    for chunk_species, chunk_coordinates in batch_x:
-                        num_atoms.append((chunk_species >= 0).sum(dim=1))
-                        _, chunk_energies = self.model((chunk_species, chunk_coordinates))
-                        predicted_energies.append(chunk_energies)
-                    num_atoms = torch.cat(num_atoms).to(true_energies.dtype)
-                    predicted_energies = torch.cat(predicted_energies)
+                    species = atomic_properties['species']
+                    num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+                    coordinates = atomic_properties['coordinates']
+                    _, predicted_energies = self.model((species, coordinates))
+                    true_energies = properties['energies']
                     loss = (self.mse_se(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
                     AdamW_optim.zero_grad()
                     SGD_optim.zero_grad()
