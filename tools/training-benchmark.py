@@ -92,7 +92,7 @@ if __name__ == "__main__":
     model[1].forward = time_func('forward', model[1].forward)
 
     print('=> loading dataset...')
-    dataset = torchani.data.load(parser.dataset_path).species_to_indices().shuffle().collate(parser.batch_size).cache()
+    dataset = list(torchani.data.load(parser.dataset_path).species_to_indices().shuffle().collate(parser.batch_size))
 
     print('=> start training')
     start = time.time()
@@ -102,10 +102,10 @@ if __name__ == "__main__":
         print('Epoch: %d/%d' % (epoch + 1, parser.num_epochs))
         progbar = pkbar.Kbar(target=len(dataset) - 1, width=8)
 
-        for i, (atomic_properties, properties) in enumerate(dataset):
-            species = atomic_properties['species']
-            coordinates = atomic_properties['coordinates']
-            true_energies = properties['energies']
+        for i, properties in enumerate(dataset):
+            species = properties['species'].to(parser.device)
+            coordinates = properties['coordinates'].to(parser.device)
+            true_energies = properties['energies'].to(parser.device)
             num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
             _, predicted_energies = model((species, coordinates))
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
