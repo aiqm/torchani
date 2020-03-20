@@ -9,6 +9,8 @@ import torch
 from .. import utils
 import importlib
 import functools
+import math
+import random
 
 PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None
 if PKBAR_INSTALLED:
@@ -21,27 +23,58 @@ verbose = True
 class Transformations:
 
     @staticmethod
-    def species_to_indices(iter, species_order=('H', 'C', 'N', 'O', 'F', 'Cl', 'S')):
+    def species_to_indices(iter_, species_order=('H', 'C', 'N', 'O', 'F', 'Cl', 'S')):
         if species_order == 'periodic_table':
             species_order = utils.PERIODIC_TABLE
         idx = {k: i for i, k in enumerate(species_order)}
-        for d in iter:
+        for d in iter_:
             d['species'] = [idx[s] for s in d['species']]
             yield d
 
     @staticmethod
-    def subtract_self_energies(iter, self_energies):
-        for d in iter:
+    def subtract_self_energies(iter_, self_energies):
+        for d in iter_:
             e = 0
             for s in d['species']:
                 e += self_energies[s]
             d['energies'] -= e
             yield e
 
+    @staticmethod
+    def remove_outliers(iter_, threshold1=15.0, threshold2=8.0):
+        assert 'subtract_self_energies', "Transformation remove_outliers can only run after subtract_self_energies"
+
+        # pass 1: remove everything that has per-atom energy > threshold1
+        def scaled_energy(x):
+            num_atoms = len(x['species'])
+            return abs(x['energies']) / math.sqrt(num_atoms)
+        filtered = filter(lambda x: scaled_energy(x) < threshold1, iter_)
+
+        # pass 2: compute those that are outside the mean by threshold2 * std
+        n = 0
+        mean = 0
+        std = 0
+        for m in filtered:
+            n += 1
+            mean += m['energies']
+            std += m['energies'] ** 2
+        mean /= n
+        std = std / n - mean ** 2
+
+        return filter(lambda x: abs(x['energies'] - mean) < threshold2 * std, filtered)
+
+    @staticmethod
+    def shuffle(iter_):
+        l = list(iter_)
+        random.shuffle(l)
+        return iter(l)
+
+
 
 class TransformableIterator:
-    def __init__(self, wrapped_iter):
+    def __init__(self, wrapped_iter, transformations=()):
         self.wrapped_iter = wrapped_iter
+        self.transformations = transformations
 
     def __iter__(self):
         return self
@@ -54,7 +87,9 @@ class TransformableIterator:
 
         @functools.wraps(transformation)
         def f(*args, **kwargs):
-            return TransformableIterator(transformation(self.wrapped_iter, *args, **kwargs))
+            return TransformableIterator(
+                transformation(self, *args, **kwargs),
+                self.transformations + (name,))
 
         return f
 
