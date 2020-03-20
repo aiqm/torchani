@@ -8,6 +8,7 @@ from ._pyanitools import anidataloader
 import torch
 from .. import utils
 import importlib
+import functools
 
 PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None
 if PKBAR_INSTALLED:
@@ -16,25 +17,61 @@ if PKBAR_INSTALLED:
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 verbose = True
 
-class RawIterator:
-    PROPERTIES = ('energies', 'forces')
 
-    def __init__(self, path, additional_properties=()):
-        self.path = path
-        self.properties = self.PROPERTIES + additional_properties
+class Transformations:
 
     @staticmethod
+    def species_to_indices(iter, species_order=('H', 'C', 'N', 'O', 'F', 'Cl', 'S')):
+        idx = {k: i for i, k in enumerate(species_order)}
+        for d in iter:
+            d['species'] = [idx[s] for s in d['species']]
+            yield d
+
+    @staticmethod
+    def subtract_self_energies(iter, self_energies):
+        for d in iter:
+            e = 0
+            for s in d['species']:
+                e += self_energies[s]
+            d['energies'] -= e
+            yield e
+
+
+class TransformableIterator:
+    def __init__(self, wrapped_iter):
+        self.wrapped_iter = wrapped_iter
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self.wrapped_iter)
+
+    def __getattr__(self, name):
+        transformation = getattr(Transformations, name)
+
+        @functools.wraps(transformation)
+        def f(*args, **kwargs):
+            return transformation(self, *args, **kwargs)
+
+        return f
+
+
+def load(path, additional_properties=()):
+    PROPERTIES = ('energies', 'forces')
+    properties = PROPERTIES + additional_properties
+
     def h5_files(path):
         """yield file name of all h5 files in a path"""
         if isdir(path):
             for f in os.listdir(path):
                 f = join(path, f)
-                yield from RawIterator.h5_files(f)
+                yield from h5_files(f)
         elif isfile(path) and (path.endswith('.h5') or path.endswith('.hdf5')):
             yield path
 
-    def molecules(self):
-        for f in self.h5_files(self.path):
+    def molecules():
+        for f in h5_files(path):
             anidata = anidataloader(f)
             anidata_size = anidata.size()
             use_pbar = PKBAR_INSTALLED and verbose
@@ -45,26 +82,18 @@ class RawIterator:
                 if use_pbar:
                     pbar.update(i)
 
-    def conformations(self):
-        for m in self.molecules():
+    def conformations():
+        for m in molecules():
             species = m['species']
             coordinates = m['coordinates']
             for i in range(coordinates.shape[0]):
                 ret = {'species': species, 'coordinates': coordinates[i]}
-                for k in self.properties:
+                for k in properties:
                     if k in m:
                         ret[k] = m[k][i]
                 yield ret
 
-    def __iter__(self):
-        return self.conformations()
-
-
-def species_to_indices(iter, species_order=('H', 'C', 'N', 'O', 'F', 'Cl', 'S')):
-    idx = {k: i for i, k in enumerate(species_order)}
-    for d in iter:
-        d['species'] = [idx[s] for s in d['species']]
-        yield d
+    return TransformableIterator(conformations())
 
 
 def load_ani_dataset(path, species_tensor_converter, batch_size, shuffle=True,
