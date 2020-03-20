@@ -278,7 +278,7 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
 
         # Now the total loss has two parts, energy loss and force loss
         energy_loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
-        force_loss = mse(true_forces, forces).sum(dim=(1, 2)) / num_atoms
+        force_loss = (mse(true_forces, forces).sum(dim=(1, 2)) / num_atoms).mean()
         loss = energy_loss + force_coefficient * force_loss
 
         AdamW.zero_grad()
