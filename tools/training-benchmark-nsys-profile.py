@@ -78,7 +78,8 @@ if __name__ == "__main__":
     mse = torch.nn.MSELoss(reduction='none')
 
     print('=> loading dataset...')
-    dataset = list(torchani.data.load(parser.dataset_path).species_to_indices().shuffle().collate(parser.batch_size))
+    shifter = torch.utils.EnergyShifter(None)
+    dataset = list(torchani.data.load(parser.dataset_path).subtract_self_energies(shifter).species_to_indices().shuffle().collate(parser.batch_size))
 
     print('=> start warming up')
     total_batch_counter = 0
