@@ -612,13 +612,13 @@ if sys.version_info[0] > 2:
                     self.tensorboard.add_scalar('learning_rate', learning_rate, AdamW_scheduler.last_epoch)
                     self.tensorboard.add_scalar('no_improve_count_vs_epoch', no_improve_count, AdamW_scheduler.last_epoch)
 
-                for i, (atomic_properties, properties) in self.tqdm(
+                for i, properties in self.tqdm(
                     enumerate(self.training_set),
                     total=len(self.training_set),
                     desc='epoch {}'.format(AdamW_scheduler.last_epoch)
                 ):
-                    species = atomic_properties['species'].to(self.device)
-                    coordinates = atomic_properties['coordinates'].to(self.device).float()
+                    species = properties['species'].to(self.device)
+                    coordinates = properties['coordinates'].to(self.device).float()
                     true_energies = properties['energies'].to(self.device).float()
                     num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
                     _, predicted_energies = self.model((species, coordinates))
