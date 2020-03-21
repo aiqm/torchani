@@ -17,6 +17,8 @@ def broadcast_first_dim(properties):
             assert n == 1 or n == num_molecule, "unable to broadcast"
         else:
             num_molecule = n
+    for k, v in properties.items():
+        shape = list(v.shape)
         shape[0] = num_molecule
         properties[k] = v.expand(shape)
     return properties
