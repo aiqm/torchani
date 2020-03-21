@@ -26,12 +26,6 @@ Datasets
 ========
 
 .. automodule:: torchani.data
-.. autofunction:: torchani.data.find_threshold
-.. autofunction:: torchani.data.ShuffledDataset
-.. autoclass:: torchani.data.CachedDataset
-    :members:
-.. autofunction:: torchani.data.load_ani_dataset
-.. autoclass:: torchani.data.PaddedBatchChunkDataset
 
 
 

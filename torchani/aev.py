@@ -408,8 +408,8 @@ class AEVComputer(torch.nn.Module):
 
                 If you don't care about periodic boundary conditions at all,
                 then input can be a tuple of two tensors: species, coordinates.
-                species must have shape ``(C, A)``, coordinates must have shape
-                ``(C, A, 3)`` where ``C`` is the number of molecules in a chunk,
+                species must have shape ``(N, A)``, coordinates must have shape
+                ``(N, A, 3)`` where ``N`` is the number of molecules in a batch,
                 and ``A`` is the number of atoms.
 
                 .. warning::
@@ -437,7 +437,7 @@ class AEVComputer(torch.nn.Module):
 
         Returns:
             NamedTuple: Species and AEVs. species are the species from the input
-            unchanged, and AEVs is a tensor of shape ``(C, A, self.aev_length())``
+            unchanged, and AEVs is a tensor of shape ``(N, A, self.aev_length())``
         """
         species, coordinates = input_
 
