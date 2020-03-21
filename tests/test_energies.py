@@ -54,7 +54,8 @@ class TestEnergies(unittest.TestCase):
                 coordinates = self.transform(coordinates)
                 species = self.transform(species)
                 e = self.transform(e)
-                species_coordinates.append({'species': species, 'coordinates': coordinates})
+                species_coordinates.append(
+                    torchani.utils.broadcast_first_dim({'species': species, 'coordinates': coordinates}))
                 energies.append(e)
         species_coordinates = torchani.utils.pad_atomic_properties(
             species_coordinates)

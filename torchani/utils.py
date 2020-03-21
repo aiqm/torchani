@@ -8,6 +8,19 @@ from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2
 from .nn import SpeciesEnergies
 
 
+def broadcast_first_dim(properties):
+    num_molecule = 1
+    for k, v in properties.items():
+        shape = list(v.shape)
+        n = shape[0]
+        if num_molecule != 1:
+            assert n == 1 or n == num_molecule, "unable to broadcast"
+        else:
+            num_molecule = n
+        shape[0] = num_molecule
+        properties[k] = v.expand(shape)
+    return properties
+
 def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, species=-1)):
     """Put a sequence of atomic properties together into single tensor.
 
@@ -31,13 +44,14 @@ def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, sp
         shape = list(tensor.shape)
         device = tensor.device
         dtype = tensor.dtype
-        original_size = shape[1]
         shape[0] = total_num_molecules
         shape[1] = padded_sizes[k]
         output[k] = torch.full(shape, padding_values[k], device=device, dtype=dtype)
         index0 = 0
         for n, x in zip(num_molecules, properties):
-            x[k][index0: index0 + n, 0: original_size, ...] = tensor
+            original_size = x[k].shape[1]
+            output[k][index0: index0 + n, 0: original_size, ...] = x[k]
+            index0 += n
     return output
 
 
