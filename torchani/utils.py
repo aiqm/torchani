@@ -23,6 +23,7 @@ def broadcast_first_dim(properties):
         properties[k] = v.expand(shape)
     return properties
 
+
 def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, species=-1)):
     """Put a sequence of atomic properties together into single tensor.
 
