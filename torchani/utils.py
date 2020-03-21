@@ -9,7 +9,6 @@ from .nn import SpeciesEnergies
 
 
 def stack_with_padding(properties, padding):
-    keys = list(properties[0].keys())
     output = defaultdict(lambda: [])
     for p in properties:
         for k, v in p.items():
