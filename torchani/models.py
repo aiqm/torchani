@@ -91,7 +91,7 @@ class BuiltinNet(torch.nn.Module):
         self.species = self.consts.species
         self.species_converter = SpeciesConverter(self.species)
         self.aev_computer = AEVComputer(**self.consts)
-        self.energy_shifter = neurochem.load_sae(self.sae_file)
+        self.energy_shifter, self.sae_dict = neurochem.load_sae(self.sae_file, return_dict=True)
         self.neural_networks = neurochem.load_model_ensemble(
             self.species, self.ensemble_prefix, self.ensemble_size)
 

@@ -32,3 +32,5 @@ dist
 /download.tar.xz
 *.qdrep
 *.qdstrm
+*.zip
+Untitled.ipynb

@@ -118,7 +118,8 @@ class TestAEV(_TestAEVBase):
                 species = self.transform(species)
                 radial = self.transform(radial)
                 angular = self.transform(angular)
-                species_coordinates.append({'species': species, 'coordinates': coordinates})
+                species_coordinates.append(torchani.utils.broadcast_first_dim(
+                    {'species': species, 'coordinates': coordinates}))
                 radial_angular.append((radial, angular))
         species_coordinates = torchani.utils.pad_atomic_properties(
             species_coordinates)

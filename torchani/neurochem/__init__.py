@@ -70,17 +70,22 @@ class Constants(collections.abc.Mapping):
         return getattr(self, item)
 
 
-def load_sae(filename):
+def load_sae(filename, return_dict=False):
     """Returns an object of :class:`EnergyShifter` with self energies from
     NeuroChem sae file"""
     self_energies = []
+    d = {}
     with open(filename) as f:
         for i in f:
             line = [x.strip() for x in i.split('=')]
+            species = line[0].split(',')[0].strip()
             index = int(line[0].split(',')[1].strip())
             value = float(line[1])
+            d[species] = value
             self_energies.append((index, value))
     self_energies = [i for _, i in sorted(self_energies)]
+    if return_dict:
+        return EnergyShifter(self_energies), d
     return EnergyShifter(self_energies)
 
 
@@ -285,13 +290,13 @@ if sys.version_info[0] > 2:
         def __init__(self, filename, device=torch.device('cuda'), tqdm=False,
                      tensorboard=None, checkpoint_name='model.pt'):
 
-            from ..data import load_ani_dataset  # noqa: E402
+            from ..data import load  # noqa: E402
 
             class dummy:
                 pass
 
             self.imports = dummy()
-            self.imports.load_ani_dataset = load_ani_dataset
+            self.imports.load = load
 
             self.filename = filename
             self.device = device
@@ -467,7 +472,7 @@ if sys.version_info[0] > 2:
             self.aev_computer = AEVComputer(**self.consts)
             del params['sflparamsfile']
             self.sae_file = os.path.join(dir_, params['atomEnergyFile'])
-            self.shift_energy = load_sae(self.sae_file)
+            self.shift_energy, self.sae = load_sae(self.sae_file, return_dict=True)
             del params['atomEnergyFile']
             network_dir = os.path.join(dir_, params['ntwkStoreDir'])
             if not os.path.exists(network_dir):
@@ -552,26 +557,18 @@ if sys.version_info[0] > 2:
 
         def load_data(self, training_path, validation_path):
             """Load training and validation dataset from file."""
-            self.training_set = self.imports.load_ani_dataset(
-                training_path, self.consts.species_to_tensor,
-                self.training_batch_size, rm_outlier=True, device=self.device,
-                transform=[self.shift_energy.subtract_from_dataset])
-            self.validation_set = self.imports.load_ani_dataset(
-                validation_path, self.consts.species_to_tensor,
-                self.validation_batch_size, rm_outlier=True, device=self.device,
-                transform=[self.shift_energy.subtract_from_dataset])
+            self.training_set = self.imports.load(training_path).subtract_self_energies(self.sae).species_to_indices().shuffle().collate(self.training_batch_size).cache()
+            self.validation_set = self.imports.load(validation_path).subtract_self_energies(self.sae).species_to_indices().shuffle().collate(self.validation_batch_size).cache()
 
         def evaluate(self, dataset):
             """Run the evaluation"""
             total_mse = 0.0
             count = 0
-            for batch_x, batch_y in dataset:
-                true_energies = batch_y['energies']
-                predicted_energies = []
-                for chunk_species, chunk_coordinates in batch_x:
-                    _, chunk_energies = self.model((chunk_species, chunk_coordinates))
-                    predicted_energies.append(chunk_energies)
-                predicted_energies = torch.cat(predicted_energies)
+            for properties in dataset:
+                species = properties['species'].to(self.device)
+                coordinates = properties['coordinates'].to(self.device).float()
+                true_energies = properties['energies'].to(self.device).float()
+                _, predicted_energies = self.model((species, coordinates))
                 total_mse += self.mse_sum(predicted_energies, true_energies).item()
                 count += predicted_energies.shape[0]
             return hartree2kcalmol(math.sqrt(total_mse / count))
@@ -620,21 +617,16 @@ if sys.version_info[0] > 2:
                     self.tensorboard.add_scalar('learning_rate', learning_rate, AdamW_scheduler.last_epoch)
                     self.tensorboard.add_scalar('no_improve_count_vs_epoch', no_improve_count, AdamW_scheduler.last_epoch)
 
-                for i, (batch_x, batch_y) in self.tqdm(
+                for i, properties in self.tqdm(
                     enumerate(self.training_set),
                     total=len(self.training_set),
                     desc='epoch {}'.format(AdamW_scheduler.last_epoch)
                 ):
-
-                    true_energies = batch_y['energies']
-                    predicted_energies = []
-                    num_atoms = []
-                    for chunk_species, chunk_coordinates in batch_x:
-                        num_atoms.append((chunk_species >= 0).sum(dim=1))
-                        _, chunk_energies = self.model((chunk_species, chunk_coordinates))
-                        predicted_energies.append(chunk_energies)
-                    num_atoms = torch.cat(num_atoms).to(true_energies.dtype)
-                    predicted_energies = torch.cat(predicted_energies)
+                    species = properties['species'].to(self.device)
+                    coordinates = properties['coordinates'].to(self.device).float()
+                    true_energies = properties['energies'].to(self.device).float()
+                    num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+                    _, predicted_energies = self.model((species, coordinates))
                     loss = (self.mse_se(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
                     AdamW_optim.zero_grad()
                     SGD_optim.zero_grad()

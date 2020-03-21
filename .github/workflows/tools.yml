@@ -39,3 +39,5 @@ jobs:
       run: python tools/comp6.py dataset/COMP6/COMP6v1/s66x8
     - name: Training Benchmark
       run: python tools/training-benchmark.py dataset/ani1-up_to_gdb4/ani_gdb_s01.h5
+    - name: Training Benchmark Nsight System
+      run: python tools/training-benchmark-nsys-profile.py --dry-run dataset/ani1-up_to_gdb4/ani_gdb_s01.h5

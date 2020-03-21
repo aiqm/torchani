@@ -274,7 +274,7 @@ def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
     num_atoms = species.shape[1]
     num_species_pairs = angular_length // angular_sublength
     # PBC calculation is bypassed if there are no shifts
-    if shifts.numel() == 1:
+    if shifts.numel() == 0:
         atom_index1, atom_index2, shifts = neighbor_pairs_nopbc(species == -1, coordinates, cell, shifts, Rcr)
     else:
         atom_index1, atom_index2, shifts = neighbor_pairs(species == -1, coordinates, cell, shifts, Rcr)
@@ -408,8 +408,8 @@ class AEVComputer(torch.nn.Module):
 
                 If you don't care about periodic boundary conditions at all,
                 then input can be a tuple of two tensors: species, coordinates.
-                species must have shape ``(C, A)``, coordinates must have shape
-                ``(C, A, 3)`` where ``C`` is the number of molecules in a chunk,
+                species must have shape ``(N, A)``, coordinates must have shape
+                ``(N, A, 3)`` where ``N`` is the number of molecules in a batch,
                 and ``A`` is the number of atoms.
 
                 .. warning::
@@ -437,7 +437,7 @@ class AEVComputer(torch.nn.Module):
 
         Returns:
             NamedTuple: Species and AEVs. species are the species from the input
-            unchanged, and AEVs is a tensor of shape ``(C, A, self.aev_length())``
+            unchanged, and AEVs is a tensor of shape ``(N, A, self.aev_length())``
         """
         species, coordinates = input_
 
