@@ -28,49 +28,17 @@ def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, sp
         output[k] = torch.stack([x[k] for x in properties])
     for k in vectors:
         tensor = properties[0][k]
-        shape = tensor.shape
+        shape = list(tensor.shape)
         device = tensor.device
         dtype = tensor.dtype
         original_size = shape[1]
         shape[0] = total_num_molecules
         shape[1] = padded_sizes[k]
-        output[k] = torch.new_full(shape, padding_values[k], device=device, dtype=dtype)
+        output[k] = torch.full(shape, padding_values[k], device=device, dtype=dtype)
         index0 = 0
         for n, x in zip(num_molecules, properties):
             x[k][index0: index0 + n, 0: original_size, ...] = tensor
     return output
-
-def _pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, species=-1)):
-    """Put a sequence of atomic properties together into single tensor.
-
-    Inputs are `[{'species': ..., ...}, {'species': ..., ...}, ...]` and the outputs
-    are `{'species': padded_tensor, ...}`
-
-    Arguments:
-        properties (:class:`collections.abc.Sequence`): sequence of properties.
-        padding_values (dict): the value to fill to pad tensors to same size
-    """
-    keys = list(properties[0].keys())
-    max_atoms = {k: max((x[k].shape[1] if x[k].dim() > 1 else 1) for x in properties) for k in keys}
-    padded = {k: [] for k in keys}
-    for p in properties:
-        num_molecules = 1
-        for v in p.values():
-            assert num_molecules in {1, v.shape[0]}, 'Number of molecules in different atomic properties mismatch'
-            if v.shape[0] != 1:
-                num_molecules = v.shape[0]
-        for k, v in p.items():
-            if v.dim() > 1:
-                shape = list(v.shape)
-                padatoms = max_atoms[k] - shape[1]
-                shape[1] = padatoms
-                padding = v.new_full(shape, padding_values[k])
-                v = torch.cat([v, padding], dim=1)
-            shape = list(v.shape)
-            shape[0] = num_molecules
-            v = v.expand(*shape)
-            padded[k].append(v)
-    return {k: torch.cat(v) for k, v in padded.items()}
 
 
 # @torch.jit.script
