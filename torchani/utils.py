@@ -18,6 +18,38 @@ def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, sp
         properties (:class:`collections.abc.Sequence`): sequence of properties.
         padding_values (dict): the value to fill to pad tensors to same size
     """
+    vectors = [k for k in properties[0].keys() if properties[0][k].dim() > 1]
+    scalars = [k for k in properties[0].keys() if properties[0][k].dim() == 1]
+    padded_sizes = {k: max(x[k].shape[1] for x in properties) for k in vectors}
+    num_molecules = [x[vectors[0]].shape[0] for x in properties]
+    total_num_molecules = sum(num_molecules)
+    output = {}
+    for k in scalars:
+        output[k] = torch.stack([x[k] for x in properties])
+    for k in vectors:
+        tensor = properties[0][k]
+        shape = tensor.shape
+        device = tensor.device
+        dtype = tensor.dtype
+        original_size = shape[1]
+        shape[0] = total_num_molecules
+        shape[1] = padded_sizes[k]
+        output[k] = torch.new_full(shape, padding_values[k], device=device, dtype=dtype)
+        index0 = 0
+        for n, x in zip(num_molecules, properties):
+            x[k][index0: index0 + n, 0: original_size, ...] = tensor
+    return output
+
+def _pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, species=-1)):
+    """Put a sequence of atomic properties together into single tensor.
+
+    Inputs are `[{'species': ..., ...}, {'species': ..., ...}, ...]` and the outputs
+    are `{'species': padded_tensor, ...}`
+
+    Arguments:
+        properties (:class:`collections.abc.Sequence`): sequence of properties.
+        padding_values (dict): the value to fill to pad tensors to same size
+    """
     keys = list(properties[0].keys())
     max_atoms = {k: max((x[k].shape[1] if x[k].dim() > 1 else 1) for x in properties) for k in keys}
     padded = {k: [] for k in keys}
