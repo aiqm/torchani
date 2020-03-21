@@ -20,6 +20,25 @@ Available transformations are listed below:
     together to get a batch.
 - `pin_memory` copy the tensor to pinned memory so that later transfer
     to cuda could be faster.
+
+You can also use `split` to split the iterable to pieces. Use `split` as:
+
+.. code-block:: python
+
+    it.split(size1, size2, None)
+
+where the None in the end indicate that we want to use all of the the rest
+
+Example:
+
+.. code-block:: python
+
+    energy_shifter = torchani.utils.EnergyShifter(None)
+    dataset = torchani.data.load(path).subtract_self_energies(energy_shifter).species_to_indices().shuffle()
+    size = len(dataset)
+    training, validation = dataset.split(int(0.8 * size), None)
+    training = training.collate(batch_size).cache()
+    validation = validation.collate(batch_size).cache()
 """
 
 from os.path import join, isfile, isdir
