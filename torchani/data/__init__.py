@@ -125,10 +125,10 @@ class Transformations:
             i += 1
             if i == batch_size:
                 i = 0
-                yield utils.pad_atomic_properties(batch, PADDING)
+                yield utils.stack_with_padding(batch, PADDING)
                 batch = []
         if len(batch) > 0:
-            yield utils.pad_atomic_properties(batch, PADDING)
+            yield utils.stack_with_padding(batch, PADDING)
 
     @staticmethod
     def pin_memory(iter_):

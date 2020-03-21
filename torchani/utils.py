@@ -8,6 +8,17 @@ from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2
 from .nn import SpeciesEnergies
 
 
+def stack_with_padding(properties):
+    keys = list(properties[0].keys())
+    output = defaultdict(lambda: [])
+    for p in properties:
+        for k, v in p.items():
+            output['k'].append(v)
+    for k, v in output:
+        output[k] = torch.nn.utils.rnn.pad_sequence(v, True)
+    return output
+
+
 def broadcast_first_dim(properties):
     num_molecule = 1
     for k, v in properties.items():
