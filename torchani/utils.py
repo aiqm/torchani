@@ -8,14 +8,17 @@ from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2
 from .nn import SpeciesEnergies
 
 
-def stack_with_padding(properties):
+def stack_with_padding(properties, padding):
     keys = list(properties[0].keys())
     output = defaultdict(lambda: [])
     for p in properties:
         for k, v in p.items():
-            output['k'].append(v)
-    for k, v in output:
-        output[k] = torch.nn.utils.rnn.pad_sequence(v, True)
+            output[k].append(v)
+    for k, v in output.items():
+        if v[0].dim() == 0:
+            output[k] = torch.stack(v)
+        else:
+            output[k] = torch.nn.utils.rnn.pad_sequence(v, True, padding[k])
     return output
 
 

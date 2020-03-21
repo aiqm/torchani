@@ -25,6 +25,7 @@ PADDING = {
     'species': -1,
     'coordinates': 0.0,
     'forces': 0.0,
+    'energies': 0.0
 }
 
 
@@ -120,7 +121,7 @@ class Transformations:
         batch = []
         i = 0
         for d in iter_:
-            d = {k: torch.as_tensor(d[k]).unsqueeze(0) for k in d}
+            d = {k: torch.as_tensor(d[k]) for k in d}
             batch.append(d)
             i += 1
             if i == batch_size:
