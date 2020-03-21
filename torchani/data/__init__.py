@@ -1,5 +1,26 @@
 # -*- coding: utf-8 -*-
-"""Tools for loading, shuffling, and batching ANI datasets"""
+"""Tools for loading, shuffling, and batching ANI datasets
+
+The `torchani.data.load(path)` creates an iterable of raw data,
+where species are strings, and coordinates are numpy ndarrays.
+
+You can transform these iterable by using transformations.
+To do transformation, just do `it.transformation_name()`.
+
+Available transformations are listed below:
+
+- `species_to_indices` converts species from strings to numbers.
+- `subtract_self_energies` subtracts self energies, you can pass.
+    a dict of self energies, or an `EnergyShifter` to let it infer
+    self energy from dataset and store the result to the given shifter.
+- `remove_outliers`
+- `shuffle`
+- `cache` cache the result of previous transformations.
+- `collate` pad the dataset, convert it to tensor, and stack them
+    together to get a batch.
+- `pin_memory` copy the tensor to pinned memory so that later transfer
+    to cuda could be faster.
+"""
 
 from os.path import join, isfile, isdir
 import os
@@ -37,7 +58,7 @@ class Transformations:
             species_order = utils.PERIODIC_TABLE
         idx = {k: i for i, k in enumerate(species_order)}
         for d in iter_:
-            d['species'] = [idx[s] for s in d['species']]
+            d['species'] = numpy.array([idx[s] for s in d['species']])
             yield d
 
     @staticmethod
@@ -137,7 +158,7 @@ class Transformations:
             yield {k: d[k].pin_memory() for k in d}
 
 
-class TransformableIterator:
+class TransformableIterable:
     def __init__(self, wrapped_iter, transformations=()):
         self.wrapped_iter = wrapped_iter
         self.transformations = transformations
@@ -153,7 +174,7 @@ class TransformableIterator:
 
         @functools.wraps(transformation)
         def f(*args, **kwargs):
-            return TransformableIterator(
+            return TransformableIterable(
                 transformation(self, *args, **kwargs),
                 self.transformations + (name,))
 
@@ -170,7 +191,7 @@ class TransformableIterator:
             else:
                 for i in self_iter:
                     list_.append(i)
-            iters.append(TransformableIterator(list_, self.transformations + ('split',)))
+            iters.append(TransformableIterable(list_, self.transformations + ('split',)))
         return iters
 
     def __len__(self):
@@ -212,7 +233,7 @@ def load(path, additional_properties=()):
                         ret[k] = m[k][i]
                 yield ret
 
-    return TransformableIterator(conformations())
+    return TransformableIterable(conformations())
 
 
 __all__ = ['load']
