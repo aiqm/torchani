@@ -557,8 +557,8 @@ if sys.version_info[0] > 2:
 
         def load_data(self, training_path, validation_path):
             """Load training and validation dataset from file."""
-            self.training_set = self.imports.load(training_path).subtract_self_energies(self.sae).remove_outliers().species_to_indices().shuffle().collate(self.training_batch_size).cache()
-            self.validation_set = self.imports.load(validation_path).subtract_self_energies(self.sae).remove_outliers().species_to_indices().shuffle().collate(self.validation_batch_size).cache()
+            self.training_set = self.imports.load(training_path).subtract_self_energies(self.sae).species_to_indices().shuffle().collate(self.training_batch_size).cache()
+            self.validation_set = self.imports.load(validation_path).subtract_self_energies(self.sae).species_to_indices().shuffle().collate(self.validation_batch_size).cache()
 
         def evaluate(self, dataset):
             """Run the evaluation"""
