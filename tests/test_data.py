@@ -1,4 +1,5 @@
 import os
+import torch
 import torchani
 import unittest
 
@@ -107,6 +108,13 @@ class TestData(unittest.TestCase):
         len(ds)
         ds = ds.collate(batch_size)
         len(ds)
+
+    def testDataloader(self):
+        shifter = torchani.EnergyShifter(None)
+        dataset = list(torchani.data.load(dataset_path).subtract_self_energies(shifter).species_to_indices().shuffle())
+        loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, collate_fn=torchani.data.collate_fn, num_workers=64)
+        for i in loader:
+            pass
 
 
 if __name__ == '__main__':
