@@ -69,26 +69,38 @@ PADDING = {
 }
 
 
+class IterableAdapter:
+    """https://stackoverflow.com/a/39564774"""
+    def __init__(self, iterable_factory):
+        self.iterable_factory = iterable_factory
+
+    def __iter__(self):
+        return iter(self.iterable_factory())
+
+
 class Transformations:
+    """Convert one reenterable iterable to another reenterable iterable"""
 
     @staticmethod
-    def species_to_indices(iterable, species_order=('H', 'C', 'N', 'O', 'F', 'Cl', 'S')):
+    def species_to_indices(reenterable_iterable, species_order=('H', 'C', 'N', 'O', 'F', 'Cl', 'S')):
         if species_order == 'periodic_table':
             species_order = utils.PERIODIC_TABLE
         idx = {k: i for i, k in enumerate(species_order)}
-        for d in iterable:
-            d['species'] = numpy.array([idx[s] for s in d['species']])
-            yield d
+        def reenterable_iterable_factory():
+            for d in reenterable_iterable:
+                d['species'] = numpy.array([idx[s] for s in d['species']])
+                yield d
+        return IterableAdapter(reenterable_iterable_factory)
 
     @staticmethod
-    def subtract_self_energies(iterable, self_energies=None):
+    def subtract_self_energies(reenterable_iterable, self_energies=None):
         intercept = 0.0
         if isinstance(self_energies, utils.EnergyShifter):
             shifter = self_energies
             self_energies = {}
             counts = {}
             Y = []
-            for n, d in enumerate(iterable):
+            for n, d in enumerate(reenterable_iterable):
                 species = d['species']
                 count = Counter()
                 for s in species:
@@ -115,22 +127,24 @@ class Transformations:
             for s, e in zip(species, sae_):
                 self_energies[s] = e
             shifter.__init__(sae, shifter.fit_intercept)
-        for d in iterable:
-            e = intercept
-            for s in d['species']:
-                e += self_energies[s]
-            d['energies'] -= e
-            yield d
+        def reenterable_iterable_factory():
+            for d in reenterable_iterable:
+                e = intercept
+                for s in d['species']:
+                    e += self_energies[s]
+                d['energies'] -= e
+                yield d
+        return IterableAdapter(reenterable_iterable_factory)
 
     @staticmethod
-    def remove_outliers(iterable, threshold1=15.0, threshold2=8.0):
+    def remove_outliers(reenterable_iterable, threshold1=15.0, threshold2=8.0):
         assert 'subtract_self_energies', "Transformation remove_outliers can only run after subtract_self_energies"
 
         # pass 1: remove everything that has per-atom energy > threshold1
         def scaled_energy(x):
             num_atoms = len(x['species'])
             return abs(x['energies']) / math.sqrt(num_atoms)
-        filtered = [x for x in iterable if scaled_energy(x) < threshold1]
+        filtered = IterableAdapter(lambda: (x for x in reenterable_iterable if scaled_energy(x) < threshold1))
 
         # pass 2: compute those that are outside the mean by threshold2 * std
         n = 0
@@ -143,46 +157,41 @@ class Transformations:
         mean /= n
         std = math.sqrt(std / n - mean ** 2)
 
-        return filter(lambda x: abs(x['energies'] - mean) < threshold2 * std, filtered)
+        return IterableAdapter(lambda: filter(lambda x: abs(x['energies'] - mean) < threshold2 * std, filtered))
 
     @staticmethod
-    def shuffle(iterable):
-        list_ = list(iterable)
+    def shuffle(reenterable_iterable):
+        list_ = list(reenterable_iterable)
         random.shuffle(list_)
         return list_
 
     @staticmethod
-    def cache(iterable):
-        return list(iterable)
+    def cache(reenterable_iterable):
+        return list(reenterable_iterable)
 
     @staticmethod
-    def collate(iterable, batch_size):
-        batch = []
-        i = 0
-        for d in iterable:
-            d = {k: torch.as_tensor(d[k]) for k in d}
-            batch.append(d)
-            i += 1
-            if i == batch_size:
-                i = 0
+    def collate(reenterable_iterable, batch_size):
+        def reenterable_iterable_factory():
+            batch = []
+            i = 0
+            for d in reenterable_iterable:
+                d = {k: torch.as_tensor(d[k]) for k in d}
+                batch.append(d)
+                i += 1
+                if i == batch_size:
+                    i = 0
+                    yield utils.stack_with_padding(batch, PADDING)
+                    batch = []
+            if len(batch) > 0:
                 yield utils.stack_with_padding(batch, PADDING)
-                batch = []
-        if len(batch) > 0:
-            yield utils.stack_with_padding(batch, PADDING)
+        return IterableAdapter(reenterable_iterable_factory)
 
     @staticmethod
-    def pin_memory(iterable):
-        for d in iterable:
-            yield {k: d[k].pin_memory() for k in d}
-
-
-class IterableAdapter:
-    """https://stackoverflow.com/a/39564774"""
-    def __init__(self, iterable_factory):
-        self.iterable_factory = iterable_factory
-
-    def __iter__(self):
-        return iter(self.iterable_factory())
+    def pin_memory(reenterable_iterable):
+        def reenterable_iterable_factory():
+            for d in reenterable_iterable:
+                yield {k: d[k].pin_memory() for k in d}
+        return IterableAdapter(reenterable_iterable_factory)
 
 
 class TransformableIterable:
@@ -198,8 +207,8 @@ class TransformableIterable:
 
         @functools.wraps(transformation)
         def f(*args, **kwargs):
-            return TransformableIterable(IterableAdapter(
-                lambda: transformation(self.wrapped_iterable, *args, **kwargs)),
+            return TransformableIterable(
+                transformation(self.wrapped_iterable, *args, **kwargs),
                 self.transformations + (name,))
 
         return f
@@ -219,7 +228,7 @@ class TransformableIterable:
         return iters
 
     def __len__(self):
-        return len(self.wrapped_iter)
+        return len(self.wrapped_iterable)
 
 
 def load(path, additional_properties=()):
