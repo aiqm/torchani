@@ -25,7 +25,7 @@ You can also use `split` to split the iterable to pieces. Use `split` as:
 
 .. code-block:: python
 
-    it.split(size1, size2, None)
+    it.split(ratio1, ratio2, None)
 
 where the None in the end indicate that we want to use all of the the rest
 
@@ -34,9 +34,7 @@ Example:
 .. code-block:: python
 
     energy_shifter = torchani.utils.EnergyShifter(None)
-    dataset = torchani.data.load(path).subtract_self_energies(energy_shifter).species_to_indices().shuffle()
-    size = len(dataset)
-    training, validation = dataset.split(int(0.8 * size), None)
+    training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices().shuffle().split(int(0.8 * size), None)
     training = training.collate(batch_size).cache()
     validation = validation.collate(batch_size).cache()
 """
@@ -52,6 +50,7 @@ import math
 import random
 from collections import Counter
 import numpy
+import gc
 
 PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None  # type: ignore
 if PKBAR_INSTALLED:
@@ -144,6 +143,7 @@ class Transformations:
             for s, e in zip(species, sae_):
                 self_energies[s] = e
             shifter.__init__(sae, shifter.fit_intercept)
+        gc.collect()
 
         def reenterable_iterable_factory():
             for d in reenterable_iterable:
@@ -182,12 +182,17 @@ class Transformations:
     @staticmethod
     def shuffle(reenterable_iterable):
         list_ = list(reenterable_iterable)
+        del reenterable_iterable
+        gc.collect()
         random.shuffle(list_)
         return list_
 
     @staticmethod
     def cache(reenterable_iterable):
-        return list(reenterable_iterable)
+        ret = list(reenterable_iterable)
+        del reenterable_iterable
+        gc.collect()
+        return ret
 
     @staticmethod
     def collate(reenterable_iterable, batch_size):
@@ -241,17 +246,20 @@ class TransformableIterable:
         return f
 
     def split(self, *nums):
+        length = len(self)
         iters = []
         self_iter = iter(self)
         for n in nums:
             list_ = []
             if n is not None:
-                for _ in range(n):
+                for _ in range(int(n * length)):
                     list_.append(next(self_iter))
             else:
                 for i in self_iter:
                     list_.append(i)
             iters.append(TransformableIterable(list_, self.transformations + ('split',)))
+        del self_iter
+        gc.collect()
         return iters
 
     def __len__(self):
