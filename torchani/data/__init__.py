@@ -72,23 +72,23 @@ PADDING = {
 class Transformations:
 
     @staticmethod
-    def species_to_indices(iter_, species_order=('H', 'C', 'N', 'O', 'F', 'Cl', 'S')):
+    def species_to_indices(iterable, species_order=('H', 'C', 'N', 'O', 'F', 'Cl', 'S')):
         if species_order == 'periodic_table':
             species_order = utils.PERIODIC_TABLE
         idx = {k: i for i, k in enumerate(species_order)}
-        for d in iter_:
+        for d in iterable:
             d['species'] = numpy.array([idx[s] for s in d['species']])
             yield d
 
     @staticmethod
-    def subtract_self_energies(iter_, self_energies=None):
+    def subtract_self_energies(iterable, self_energies=None):
         intercept = 0.0
         if isinstance(self_energies, utils.EnergyShifter):
             shifter = self_energies
             self_energies = {}
             counts = {}
             Y = []
-            for n, d in enumerate(iter_):
+            for n, d in enumerate(iterable):
                 species = d['species']
                 count = Counter()
                 for s in species:
@@ -115,7 +115,7 @@ class Transformations:
             for s, e in zip(species, sae_):
                 self_energies[s] = e
             shifter.__init__(sae, shifter.fit_intercept)
-        for d in iter_:
+        for d in iterable:
             e = intercept
             for s in d['species']:
                 e += self_energies[s]
@@ -123,14 +123,14 @@ class Transformations:
             yield d
 
     @staticmethod
-    def remove_outliers(iter_, threshold1=15.0, threshold2=8.0):
+    def remove_outliers(iterable, threshold1=15.0, threshold2=8.0):
         assert 'subtract_self_energies', "Transformation remove_outliers can only run after subtract_self_energies"
 
         # pass 1: remove everything that has per-atom energy > threshold1
         def scaled_energy(x):
             num_atoms = len(x['species'])
             return abs(x['energies']) / math.sqrt(num_atoms)
-        filtered = [x for x in iter_ if scaled_energy(x) < threshold1]
+        filtered = [x for x in iterable if scaled_energy(x) < threshold1]
 
         # pass 2: compute those that are outside the mean by threshold2 * std
         n = 0
@@ -146,20 +146,20 @@ class Transformations:
         return filter(lambda x: abs(x['energies'] - mean) < threshold2 * std, filtered)
 
     @staticmethod
-    def shuffle(iter_):
-        list_ = list(iter_)
+    def shuffle(iterable):
+        list_ = list(iterable)
         random.shuffle(list_)
         return list_
 
     @staticmethod
-    def cache(iter_):
-        return list(iter_)
+    def cache(iterable):
+        return list(iterable)
 
     @staticmethod
-    def collate(iter_, batch_size):
+    def collate(iterable, batch_size):
         batch = []
         i = 0
-        for d in iter_:
+        for d in iterable:
             d = {k: torch.as_tensor(d[k]) for k in d}
             batch.append(d)
             i += 1
@@ -171,26 +171,35 @@ class Transformations:
             yield utils.stack_with_padding(batch, PADDING)
 
     @staticmethod
-    def pin_memory(iter_):
-        for d in iter_:
+    def pin_memory(iterable):
+        for d in iterable:
             yield {k: d[k].pin_memory() for k in d}
 
 
+class IterableAdapter:
+    """https://stackoverflow.com/a/39564774"""
+    def __init__(self, iterable_factory):
+        self.iterable_factory = iterable_factory
+
+    def __iter__(self):
+        return iter(self.iterable_factory())
+
+
 class TransformableIterable:
-    def __init__(self, wrapped_iter, transformations=()):
-        self.wrapped_iter = wrapped_iter
+    def __init__(self, wrapped_iterable, transformations=()):
+        self.wrapped_iterable = wrapped_iterable
         self.transformations = transformations
 
     def __iter__(self):
-        return iter(self.wrapped_iter)
+        return iter(self.wrapped_iterable)
 
     def __getattr__(self, name):
         transformation = getattr(Transformations, name)
 
         @functools.wraps(transformation)
         def f(*args, **kwargs):
-            return TransformableIterable(
-                transformation(self, *args, **kwargs),
+            return TransformableIterable(IterableAdapter(
+                lambda: transformation(self.wrapped_iterable, *args, **kwargs)),
                 self.transformations + (name,))
 
         return f
@@ -215,14 +224,6 @@ class TransformableIterable:
 
 def load(path, additional_properties=()):
     properties = PROPERTIES + additional_properties
-
-    # https://stackoverflow.com/a/39564774
-    class IterableAdapter:
-        def __init__(self, iterator_factory):
-            self.iterator_factory = iterator_factory
-
-        def __iter__(self):
-            return self.iterator_factory()
 
     def h5_files(path):
         """yield file name of all h5 files in a path"""
