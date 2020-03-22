@@ -78,6 +78,7 @@ class IterableAdapter:
     def __iter__(self):
         return iter(self.iterable_factory())
 
+
 class IterableAdapterWithLength(IterableAdapter):
 
     def __init__(self, iterable_factory, length):
@@ -96,13 +97,14 @@ class Transformations:
         if species_order == 'periodic_table':
             species_order = utils.PERIODIC_TABLE
         idx = {k: i for i, k in enumerate(species_order)}
+
         def reenterable_iterable_factory():
             for d in reenterable_iterable:
                 d['species'] = numpy.array([idx[s] for s in d['species']])
                 yield d
         try:
             return IterableAdapterWithLength(reenterable_iterable_factory, len(reenterable_iterable))
-        except:
+        except TypeError:
             return IterableAdapter(reenterable_iterable_factory)
 
     @staticmethod
@@ -142,6 +144,7 @@ class Transformations:
             for s, e in zip(species, sae_):
                 self_energies[s] = e
             shifter.__init__(sae, shifter.fit_intercept)
+
         def reenterable_iterable_factory():
             for d in reenterable_iterable:
                 e = intercept
@@ -204,7 +207,7 @@ class Transformations:
         try:
             length = (len(reenterable_iterable) + batch_size - 1) // batch_size
             return IterableAdapterWithLength(reenterable_iterable_factory, length)
-        except:
+        except TypeError:
             return IterableAdapter(reenterable_iterable_factory)
 
     @staticmethod
@@ -214,7 +217,7 @@ class Transformations:
                 yield {k: d[k].pin_memory() for k in d}
         try:
             return IterableAdapterWithLength(reenterable_iterable_factory, len(reenterable_iterable))
-        except:
+        except TypeError:
             return IterableAdapter(reenterable_iterable_factory)
 
 
