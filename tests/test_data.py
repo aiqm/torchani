@@ -97,6 +97,17 @@ class TestData(unittest.TestCase):
             entered = True
         self.assertTrue(entered)
 
+    def testShapeInference(self):
+        shifter = torchani.EnergyShifter(None)
+        ds = torchani.data.load(dataset_path).subtract_self_energies(shifter)
+        len(ds)
+        ds = ds.species_to_indices()
+        len(ds)
+        ds = ds.shuffle()
+        len(ds)
+        ds = ds.collate(batch_size)
+        len(ds)
+
 
 if __name__ == '__main__':
     unittest.main()

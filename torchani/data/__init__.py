@@ -71,11 +71,21 @@ PADDING = {
 
 class IterableAdapter:
     """https://stackoverflow.com/a/39564774"""
-    def __init__(self, iterable_factory):
+    def __init__(self, iterable_factory, length=None):
         self.iterable_factory = iterable_factory
+        self.length = length
 
     def __iter__(self):
         return iter(self.iterable_factory())
+
+class IterableAdapterWithLength(IterableAdapter):
+
+    def __init__(self, iterable_factory, length):
+        super().__init__(iterable_factory)
+        self.length = length
+
+    def __len__(self):
+        return self.length
 
 
 class Transformations:
@@ -90,12 +100,17 @@ class Transformations:
             for d in reenterable_iterable:
                 d['species'] = numpy.array([idx[s] for s in d['species']])
                 yield d
-        return IterableAdapter(reenterable_iterable_factory)
+        try:
+            return IterableAdapterWithLength(reenterable_iterable_factory, len(reenterable_iterable))
+        except:
+            return IterableAdapter(reenterable_iterable_factory)
 
     @staticmethod
     def subtract_self_energies(reenterable_iterable, self_energies=None):
         intercept = 0.0
+        shape_inference = False
         if isinstance(self_energies, utils.EnergyShifter):
+            shape_inference = True
             shifter = self_energies
             self_energies = {}
             counts = {}
@@ -134,6 +149,8 @@ class Transformations:
                     e += self_energies[s]
                 d['energies'] -= e
                 yield d
+        if shape_inference:
+            return IterableAdapterWithLength(reenterable_iterable_factory, n)
         return IterableAdapter(reenterable_iterable_factory)
 
     @staticmethod
@@ -184,14 +201,21 @@ class Transformations:
                     batch = []
             if len(batch) > 0:
                 yield utils.stack_with_padding(batch, PADDING)
-        return IterableAdapter(reenterable_iterable_factory)
+        try:
+            length = (len(reenterable_iterable) + batch_size - 1) // batch_size
+            return IterableAdapterWithLength(reenterable_iterable_factory, length)
+        except:
+            return IterableAdapter(reenterable_iterable_factory)
 
     @staticmethod
     def pin_memory(reenterable_iterable):
         def reenterable_iterable_factory():
             for d in reenterable_iterable:
                 yield {k: d[k].pin_memory() for k in d}
-        return IterableAdapter(reenterable_iterable_factory)
+        try:
+            return IterableAdapterWithLength(reenterable_iterable_factory, len(reenterable_iterable))
+        except:
+            return IterableAdapter(reenterable_iterable_factory)
 
 
 class TransformableIterable:
