@@ -37,12 +37,20 @@ Example:
     training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices().shuffle().split(int(0.8 * size), None)
     training = training.collate(batch_size).cache()
     validation = validation.collate(batch_size).cache()
+
+If the above approach takes too much memory for you, you can then use dataloader
+with multiprocessing to achieve comparable performance with less memory usage:
+
+.. code-block:: python
+
+    training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices().shuffle().split(0.8, None)
+    training = torch.utils.data.DataLoader(list(training), batch_size=batch_size, collate_fn=torchani.data.collate_fn, num_workers=64)
+    validation = torch.utils.data.DataLoader(list(validation), batch_size=batch_size, collate_fn=torchani.data.collate_fn, num_workers=64)
 """
 
 from os.path import join, isfile, isdir
 import os
 from ._pyanitools import anidataloader
-import torch
 from .. import utils
 import importlib
 import functools
@@ -66,6 +74,10 @@ PADDING = {
     'forces': 0.0,
     'energies': 0.0
 }
+
+
+def collate_fn(samples):
+    return utils.stack_with_padding(samples, PADDING)
 
 
 class IterableAdapter:
@@ -200,15 +212,14 @@ class Transformations:
             batch = []
             i = 0
             for d in reenterable_iterable:
-                d = {k: torch.as_tensor(d[k]) for k in d}
                 batch.append(d)
                 i += 1
                 if i == batch_size:
                     i = 0
-                    yield utils.stack_with_padding(batch, PADDING)
+                    yield collate_fn(batch)
                     batch = []
             if len(batch) > 0:
-                yield utils.stack_with_padding(batch, PADDING)
+                yield collate_fn(batch)
         try:
             length = (len(reenterable_iterable) + batch_size - 1) // batch_size
             return IterableAdapterWithLength(reenterable_iterable_factory, length)
@@ -304,4 +315,4 @@ def load(path, additional_properties=()):
     return TransformableIterable(IterableAdapter(lambda: conformations()))
 
 
-__all__ = ['load']
+__all__ = ['load', 'collate_fn']
