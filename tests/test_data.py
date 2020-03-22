@@ -34,6 +34,70 @@ class TestData(unittest.TestCase):
             non_padding = (species >= 0)[:, -1].nonzero()
             self.assertGreater(non_padding.numel(), 0)
 
+    def testReEnter(self):
+        ds = torchani.data.load(dataset_path)
+        for d in ds:
+            pass
+        entered = False
+        for d in ds:
+            entered = True
+        self.assertTrue(entered)
+
+        ds = ds.subtract_self_energies(sae_dict)
+        entered = False
+        for d in ds:
+            entered = True
+            pass
+        self.assertTrue(entered)
+        entered = False
+        for d in ds:
+            entered = True
+        self.assertTrue(entered)
+
+        ds = ds.species_to_indices()
+        entered = False
+        for d in ds:
+            entered = True
+            pass
+        self.assertTrue(entered)
+        entered = False
+        for d in ds:
+            entered = True
+        self.assertTrue(entered)
+
+        ds = ds.shuffle()
+        entered = False
+        for d in ds:
+            entered = True
+            pass
+        self.assertTrue(entered)
+        entered = False
+        for d in ds:
+            entered = True
+        self.assertTrue(entered)
+
+        ds = ds.collate(batch_size)
+        entered = False
+        for d in ds:
+            entered = True
+            pass
+        self.assertTrue(entered)
+        entered = False
+        for d in ds:
+            entered = True
+        self.assertTrue(entered)
+
+        ds = ds.cache()
+        entered = False
+        for d in ds:
+            entered = True
+            pass
+        self.assertTrue(entered)
+        entered = False
+        for d in ds:
+            entered = True
+        self.assertTrue(entered)
+
 
 if __name__ == '__main__':
     unittest.main()
