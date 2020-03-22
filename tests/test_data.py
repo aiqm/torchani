@@ -35,6 +35,7 @@ class TestData(unittest.TestCase):
             self.assertGreater(non_padding.numel(), 0)
 
     def testReEnter(self):
+        # make sure that a dataset can be iterated multiple times
         ds = torchani.data.load(dataset_path)
         for d in ds:
             pass
@@ -47,7 +48,6 @@ class TestData(unittest.TestCase):
         entered = False
         for d in ds:
             entered = True
-            pass
         self.assertTrue(entered)
         entered = False
         for d in ds:
@@ -58,7 +58,6 @@ class TestData(unittest.TestCase):
         entered = False
         for d in ds:
             entered = True
-            pass
         self.assertTrue(entered)
         entered = False
         for d in ds:
