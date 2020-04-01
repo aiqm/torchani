@@ -180,26 +180,27 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: floa
         padding_mask (:class:`torch.Tensor`): boolean tensor of shape
             (molecules, atoms) for padding mask. 1 == is padding.
         coordinates (:class:`torch.Tensor`): tensor of shape
-            (molecules, atoms, 3) for atom coordinates.
+            (molecules * atoms, 3) for atom coordinates.
         cutoff (float): the cutoff inside which atoms are considered pairs
     """
     coordinates = coordinates.detach()
     current_device = coordinates.device
     num_atoms = padding_mask.shape[1]
-    p1_all, p2_all = torch.triu_indices(num_atoms, num_atoms, 1,
-                                        device=current_device).unbind(0)
+    num_mols = padding_mask.shape[0]
+    p12_all = torch.triu_indices(num_atoms, num_atoms, 1, device=current_device)
+    p12_all_flattened = p12_all.view(-1)
 
-    distances = (coordinates.index_select(1, p1_all) - coordinates.index_select(1, p2_all)).norm(2, -1)
-    padding_mask = (padding_mask.index_select(1, p1_all)) | (padding_mask.index_select(1, p2_all))
+    pair_coordinates = coordinates.index_select(1, p12_all_flattened).view(num_mols, 2, -1, 3)
+    distances = (pair_coordinates[:, 0, ...] - pair_coordinates[:, 1, ...]).norm(2, -1)
+    padding_mask = padding_mask.index_select(1, p12_all_flattened).view(num_mols, 2, -1).any(dim=1)
     distances.masked_fill_(padding_mask, math.inf)
     in_cutoff = (distances <= cutoff).nonzero()
     molecule_index, pair_index = in_cutoff.unbind(1)
     molecule_index *= num_atoms
-    atom_index1 = p1_all[pair_index] + molecule_index
-    atom_index2 = p2_all[pair_index] + molecule_index
+    atom_index12 = p12_all[:, pair_index] + molecule_index
     # shifts
-    shifts = p1_all.new_zeros((p1_all.shape[0], 3)).index_select(0, pair_index)
-    return atom_index1, atom_index2, shifts
+    shifts = p12_all.new_zeros((pair_index.shape[0], 3))
+    return *atom_index12.unbind(0), shifts
 
 
 def triu_index(num_species: int) -> Tensor:
