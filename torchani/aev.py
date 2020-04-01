@@ -248,20 +248,17 @@ def triple_by_molecule(atom_index1: Tensor, atom_index2: Tensor) -> Tuple[Tensor
     n = pair_sizes.shape[0]
     intra_pair_indices = torch.tril_indices(m, m, -1, device=ai1.device).t().unsqueeze(0).expand(n, -1, -1)
     mask = (torch.arange(intra_pair_indices.shape[1], device=ai1.device) < pair_sizes.unsqueeze(1)).flatten()
-    sorted_local_index1, sorted_local_index2 = intra_pair_indices.flatten(0, 1)[mask, :].unbind(-1)
+    sorted_local_index12 = intra_pair_indices.flatten(0, 1)[mask, :]
     cumsum = cumsum_from_zero(counts).index_select(0, pair_indices)
-    sorted_local_index1 += cumsum
-    sorted_local_index2 += cumsum
+    sorted_local_index12 += cumsum.unsqueeze(-1)
 
     # unsort result from last part
-    local_index1 = rev_indices[sorted_local_index1]
-    local_index2 = rev_indices[sorted_local_index2]
+    local_index12 = rev_indices[sorted_local_index12]
 
     # compute mapping between representation of central-other to pair
     n = atom_index1.shape[0]
-    sign1 = ((local_index1 < n).to(torch.long) * 2) - 1
-    sign2 = ((local_index2 < n).to(torch.long) * 2) - 1
-    return central_atom_index, local_index1 % n, local_index2 % n, sign1, sign2
+    sign12 = ((local_index12 < n).to(torch.long) * 2) - 1
+    return central_atom_index, *(local_index12 % n).unbind(-1), *sign12.unbind(-1)
 
 
 def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
