@@ -258,7 +258,7 @@ def triple_by_molecule(atom_index1: Tensor, atom_index2: Tensor) -> Tuple[Tensor
     # compute mapping between representation of central-other to pair
     n = atom_index1.shape[0]
     sign12 = ((local_index12 < n).to(torch.long) * 2) - 1
-    return (central_atom_index, *(local_index12 % n).unbind(-1), *sign12.unbind(-1))
+    return central_atom_index, *(local_index12 % n).unbind(-1), *sign12.unbind(-1)
 
 
 def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
