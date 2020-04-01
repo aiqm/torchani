@@ -170,8 +170,7 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
     return molecule_index + atom_index1, molecule_index + atom_index2, shifts
 
 
-def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
-                         shifts: Tensor, cutoff: float) -> Tuple[Tensor, Tensor, Tensor]:
+def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: float) -> Tuple[Tensor, Tensor, Tensor]:
     """Compute pairs of atoms that are neighbors (doesn't use PBC)
 
     This function bypasses the calculation of shifts and duplication
@@ -199,7 +198,7 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cell: Tensor
     atom_index1 = p1_all[pair_index] + molecule_index
     atom_index2 = p2_all[pair_index] + molecule_index
     # shifts
-    shifts = shifts.new_zeros((p1_all.shape[0], 3)).index_select(0, pair_index)
+    shifts = p1_all.new_zeros((p1_all.shape[0], 3)).index_select(0, pair_index)
     return atom_index1, atom_index2, shifts
 
 
@@ -213,8 +212,8 @@ def triu_index(num_species: int) -> Tensor:
 
 
 def cumsum_from_zero(input_: Tensor) -> Tensor:
-    cumsum = torch.cumsum(input_, dim=0)
-    cumsum = torch.cat([input_.new_zeros(1), cumsum[:-1]])
+    cumsum = torch.zeros_like(input_)
+    torch.cumsum(input_[:-1], dim=0, out=cumsum[1:])
     return cumsum
 
 
@@ -239,7 +238,7 @@ def triple_by_molecule(atom_index1: Tensor, atom_index2: Tensor) -> Tuple[Tensor
     counts = unique_results[-1]
 
     # compute central_atom_index
-    pair_sizes = (counts * (counts - 1) / 2).long()
+    pair_sizes = counts * (counts - 1) // 2
     pair_indices = torch.repeat_interleave(pair_sizes)
     central_atom_index = uniqued_central_atom_index.index_select(0, pair_indices)
 
@@ -275,7 +274,7 @@ def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
     num_species_pairs = angular_length // angular_sublength
     # PBC calculation is bypassed if there are no shifts
     if shifts.numel() == 0:
-        atom_index1, atom_index2, shifts = neighbor_pairs_nopbc(species == -1, coordinates, cell, shifts, Rcr)
+        atom_index1, atom_index2, shifts = neighbor_pairs_nopbc(species == -1, coordinates, Rcr)
     else:
         atom_index1, atom_index2, shifts = neighbor_pairs(species == -1, coordinates, cell, shifts, Rcr)
     coordinates = coordinates.flatten(0, 1)
