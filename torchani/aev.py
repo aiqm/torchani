@@ -170,8 +170,7 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
     return molecule_index + atom_index1, molecule_index + atom_index2, shifts
 
 
-def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
-                         shifts: Tensor, cutoff: float) -> Tuple[Tensor, Tensor, Tensor]:
+def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: float) -> Tuple[Tensor, Tensor, Tensor]:
     """Compute pairs of atoms that are neighbors (doesn't use PBC)
 
     This function bypasses the calculation of shifts and duplication
@@ -199,7 +198,7 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cell: Tensor
     atom_index1 = p1_all[pair_index] + molecule_index
     atom_index2 = p2_all[pair_index] + molecule_index
     # shifts
-    shifts = shifts.new_zeros((p1_all.shape[0], 3)).index_select(0, pair_index)
+    shifts = p1_all.new_zeros((p1_all.shape[0], 3)).index_select(0, pair_index)
     return atom_index1, atom_index2, shifts
 
 
