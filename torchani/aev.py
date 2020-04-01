@@ -47,7 +47,7 @@ def radial_terms(Rcr: float, EtaR: Tensor, ShfR: Tensor, distances: Tensor) -> T
 
 
 def angular_terms(Rca: float, ShfZ: Tensor, EtaA: Tensor, Zeta: Tensor,
-                  ShfA: Tensor, vectors1: Tensor, vectors2: Tensor) -> Tensor:
+                  ShfA: Tensor, vectors12: Tensor) -> Tensor:
     """Compute the angular subAEV terms of the center atom given neighbor pairs.
 
     This correspond to equation (4) in the `ANI paper`_. This function just
@@ -60,21 +60,18 @@ def angular_terms(Rca: float, ShfZ: Tensor, EtaA: Tensor, Zeta: Tensor,
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
     """
-    vectors1 = vectors1.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-    vectors2 = vectors2.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-    distances1 = vectors1.norm(2, dim=-5)
-    distances2 = vectors2.norm(2, dim=-5)
+    vectors12 = vectors12.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+    distances12 = vectors12.norm(2, dim=-5)
 
     # 0.95 is multiplied to the cos values to prevent acos from
     # returning NaN.
-    cos_angles = 0.95 * torch.nn.functional.cosine_similarity(vectors1, vectors2, dim=-5)
+    cos_angles = 0.95 * torch.nn.functional.cosine_similarity(vectors12[0], vectors12[1], dim=-5)
     angles = torch.acos(cos_angles)
 
-    fcj1 = cutoff_cosine(distances1, Rca)
-    fcj2 = cutoff_cosine(distances2, Rca)
+    fcj12 = cutoff_cosine(distances12, Rca)
     factor1 = ((1 + torch.cos(angles - ShfZ)) / 2) ** Zeta
-    factor2 = torch.exp(-EtaA * ((distances1 + distances2) / 2 - ShfA) ** 2)
-    ret = 2 * factor1 * factor2 * fcj1 * fcj2
+    factor2 = torch.exp(-EtaA * (distances12.sum(0) / 2 - ShfA) ** 2)
+    ret = 2 * factor1 * factor2 * fcj12.prod(0)
     # At this point, ret now have shape
     # (conformations, atoms, N, ?, ?, ?, ?) where ? depend on constants.
     # We then should flat the last 4 dimensions to view the subAEV as one
@@ -311,7 +308,7 @@ def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
     central_atom_index, pair_index12, sign12 = triple_by_molecule(atom_index1, atom_index2)
     vec12 = vec.index_select(0, pair_index12.view(-1)).view(2, -1, 3) * sign12.unsqueeze(-1)
     species12_ = torch.where(sign12 == 1, species2[pair_index12], species1[pair_index12])
-    angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec12[0], vec12[1])
+    angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec12)
     angular_aev = angular_terms_.new_zeros((num_molecules * num_atoms * num_species_pairs, angular_sublength))
     index = central_atom_index * num_species_pairs + triu_index[species12_[0], species12_[1]]
     angular_aev.index_add_(0, index, angular_terms_)
