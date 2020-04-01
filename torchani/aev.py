@@ -212,8 +212,8 @@ def triu_index(num_species: int) -> Tensor:
 
 
 def cumsum_from_zero(input_: Tensor) -> Tensor:
-    cumsum = torch.cumsum(input_, dim=0)
-    cumsum = torch.cat([input_.new_zeros(1), cumsum[:-1]])
+    cumsum = torch.zeros_like(input_)
+    torch.cumsum(input_[:-1], dim=0, out=cumsum[1:])
     return cumsum
 
 
