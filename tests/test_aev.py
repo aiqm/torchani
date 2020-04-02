@@ -132,7 +132,7 @@ class TestAEV(_TestAEVBase):
             start += conformations
             self.assertAEVEqual(expected_radial, expected_angular, aev_)
 
-    @unittest.skipIf(True, "Too slow on CPU")
+    @unittest.skipIf(not torch.cuda.is_available(), "Too slow on CPU")
     def testGradient(self):
         """Test validity of autodiff by comparing analytical and numerical
         gradients.
