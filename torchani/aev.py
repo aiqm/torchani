@@ -122,7 +122,7 @@ def compute_shifts(cell: Tensor, pbc: Tensor, cutoff: float) -> Tensor:
 
 
 def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
-                   shifts: Tensor, cutoff: float) -> Tuple[Tensor, Tensor, Tensor]:
+                   shifts: Tensor, cutoff: float) -> Tuple[Tensor, Tensor]:
     """Compute pairs of atoms that are neighbors
 
     Arguments:
@@ -173,7 +173,7 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
     return molecule_index + atom_index12, shifts
 
 
-def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: float) -> Tuple[Tensor, Tensor, Tensor]:
+def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: float) -> Tuple[Tensor, Tensor]:
     """Compute pairs of atoms that are neighbors (doesn't use PBC)
 
     This function bypasses the calculation of shifts and duplication
@@ -221,7 +221,7 @@ def cumsum_from_zero(input_: Tensor) -> Tensor:
     return cumsum
 
 # @snoop
-def triple_by_molecule(atom_index1: Tensor, atom_index2: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+def triple_by_molecule(atom_index12: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
     """Input: indices for pairs of atoms that are close to each other.
     each pair only appear once, i.e. only one of the pairs (1, 2) and
     (2, 1) exists.
@@ -233,7 +233,7 @@ def triple_by_molecule(atom_index1: Tensor, atom_index2: Tensor) -> Tuple[Tensor
     are (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
     """
     # convert representation from pair to central-others
-    ai1 = torch.cat([atom_index1, atom_index2])
+    ai1 = atom_index12.view(-1)
     sorted_ai1, rev_indices = ai1.sort()
 
     # sort and compute unique key
@@ -258,7 +258,7 @@ def triple_by_molecule(atom_index1: Tensor, atom_index2: Tensor) -> Tuple[Tensor
     local_index12 = rev_indices[sorted_local_index12]
 
     # compute mapping between representation of central-other to pair
-    n = atom_index1.shape[0]
+    n = atom_index12.shape[1]
     sign12 = ((local_index12 < n).to(torch.long) * 2) - 1
     return central_atom_index, local_index12 % n, sign12
 
@@ -303,9 +303,8 @@ def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
     vec = vec.index_select(0, even_closer_indices)
 
     # compute angular aev
-    atom_index1, atom_index2 = atom_index12.unbind(0)
     species1, species2 = species12.unbind(0)
-    central_atom_index, pair_index12, sign12 = triple_by_molecule(atom_index1, atom_index2)
+    central_atom_index, pair_index12, sign12 = triple_by_molecule(atom_index12)
     vec12 = vec.index_select(0, pair_index12.view(-1)).view(2, -1, 3) * sign12.unsqueeze(-1)
     species12_ = torch.where(sign12 == 1, species2[pair_index12], species1[pair_index12])
     angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec12)
