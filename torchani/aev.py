@@ -202,7 +202,7 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: floa
     molecule_index *= num_atoms
     atom_index12 = p12_all[:, pair_index] + molecule_index
     # shifts
-    shifts = p12_all.new_zeros((pair_index.shape[0], 3))
+    shifts = coordinates.new_zeros((pair_index.shape[0], 3))
     return atom_index12, shifts
 
 
