@@ -259,7 +259,7 @@ def triple_by_molecule(atom_index12: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
 
     # compute mapping between representation of central-other to pair
     n = atom_index12.shape[1]
-    sign12 = ((local_index12 < n).to(torch.long) * 2) - 1
+    sign12 = ((local_index12 < n).to(torch.int8) * 2) - 1
     return central_atom_index, local_index12 % n, sign12
 
 # @snoop
