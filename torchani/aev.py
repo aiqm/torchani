@@ -277,35 +277,34 @@ def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
         atom_index12, shifts = neighbor_pairs_nopbc(species == -1, coordinates, Rcr)
     else:
         atom_index12, shifts = neighbor_pairs(species == -1, coordinates, cell, shifts, Rcr)
-    atom_index1, atom_index2 = atom_index12.unbind(0)
     coordinates = coordinates.flatten(0, 1)
     shift_values = shifts.to(cell.dtype) @ cell
-    vec = coordinates.index_select(0, atom_index1) - coordinates.index_select(0, atom_index2) + shift_values
+    selected_coordinates = coordinates.index_select(0, atom_index12.view(-1))
+    selected_coordinates = selected_coordinates.view(2, -1, 3)
+    vec = selected_coordinates[0] - selected_coordinates[1] + shift_values
     species = species.flatten()
-    species1 = species[atom_index1]
-    species2 = species[atom_index2]
+    species12 = species[atom_index12]
 
     distances = vec.norm(2, -1)
 
     # compute radial aev
     radial_terms_ = radial_terms(Rcr, EtaR, ShfR, distances)
     radial_aev = radial_terms_.new_zeros((num_molecules * num_atoms * num_species, radial_sublength))
-    index1 = atom_index1 * num_species + species2
-    index2 = atom_index2 * num_species + species1
-    radial_aev.index_add_(0, index1, radial_terms_)
-    radial_aev.index_add_(0, index2, radial_terms_)
+    index12 = atom_index12 * num_species + species12.flip(0)
+    radial_aev.index_add_(0, index12[0], radial_terms_)
+    radial_aev.index_add_(0, index12[1], radial_terms_)
     radial_aev = radial_aev.reshape(num_molecules, num_atoms, radial_length)
 
     # Rca is usually much smaller than Rcr, using neighbor list with cutoff=Rcr is a waste of resources
     # Now we will get a smaller neighbor list that only cares about atoms with distances <= Rca
     even_closer_indices = (distances <= Rca).nonzero().flatten()
-    atom_index1 = atom_index1.index_select(0, even_closer_indices)
-    atom_index2 = atom_index2.index_select(0, even_closer_indices)
-    species1 = species1.index_select(0, even_closer_indices)
-    species2 = species2.index_select(0, even_closer_indices)
+    atom_index12 = atom_index12.index_select(1, even_closer_indices)
+    species12 = species12.index_select(1, even_closer_indices)
     vec = vec.index_select(0, even_closer_indices)
 
     # compute angular aev
+    atom_index1, atom_index2 = atom_index12.unbind(0)
+    species1, species2 = species12.unbind(0)
     central_atom_index, pair_index12, sign12 = triple_by_molecule(atom_index1, atom_index2)
     vec12 = vec.index_select(0, pair_index12.view(-1)).view(2, -1, 3) * sign12.unsqueeze(-1)
     species12_ = torch.where(sign12 == 1, species2[pair_index12], species1[pair_index12])
