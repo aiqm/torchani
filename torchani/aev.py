@@ -3,11 +3,6 @@ from torch import Tensor
 import math
 from typing import Tuple, Optional, NamedTuple
 from torch.jit import Final
-import torchsnooper
-import snoop
-
-
-torchsnooper.register_snoop()
 
 
 class SpeciesAEV(NamedTuple):
@@ -220,7 +215,7 @@ def cumsum_from_zero(input_: Tensor) -> Tensor:
     torch.cumsum(input_[:-1], dim=0, out=cumsum[1:])
     return cumsum
 
-# @snoop
+
 def triple_by_molecule(atom_index12: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
     """Input: indices for pairs of atoms that are close to each other.
     each pair only appear once, i.e. only one of the pairs (1, 2) and
@@ -262,7 +257,7 @@ def triple_by_molecule(atom_index12: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
     sign12 = ((local_index12 < n).to(torch.int8) * 2) - 1
     return central_atom_index, local_index12 % n, sign12
 
-# @snoop
+
 def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
                 shifts: Tensor, triu_index: Tensor,
                 constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
@@ -303,10 +298,10 @@ def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
     vec = vec.index_select(0, even_closer_indices)
 
     # compute angular aev
-    species1, species2 = species12.unbind(0)
     central_atom_index, pair_index12, sign12 = triple_by_molecule(atom_index12)
+    species12_small = species12[:, pair_index12]
     vec12 = vec.index_select(0, pair_index12.view(-1)).view(2, -1, 3) * sign12.unsqueeze(-1)
-    species12_ = torch.where(sign12 == 1, species2[pair_index12], species1[pair_index12])
+    species12_ = torch.where(sign12 == 1, species12_small[1], species12_small[0])
     angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec12)
     angular_aev = angular_terms_.new_zeros((num_molecules * num_atoms * num_species_pairs, angular_sublength))
     index = central_atom_index * num_species_pairs + triu_index[species12_[0], species12_[1]]
