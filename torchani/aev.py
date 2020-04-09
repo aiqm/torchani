@@ -435,7 +435,7 @@ class AEVComputer(torch.nn.Module):
         if cell is None and pbc is None:
             cell = self.default_cell
             shifts = self.default_shifts
-            aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes)
+            aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, None)
         else:
             assert (cell is not None and pbc is not None)
             cutoff = max(self.Rcr, self.Rca)
