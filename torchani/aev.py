@@ -88,17 +88,17 @@ def compute_shifts(cell: Tensor, pbc: Tensor, cutoff: float) -> Tensor:
             if pbc is enabled for that direction.
 
     Returns:
-        :class:`torch.Tensor`: long tensor of shifts. the center cell and
+        :class:`torch.Tensor`: short tensor of shifts. the center cell and
             symmetric cells are not included.
     """
     reciprocal_cell = cell.inverse().t()
     inv_distances = reciprocal_cell.norm(2, -1)
-    num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
+    num_repeats = torch.ceil(cutoff * inv_distances).to(torch.short)
     num_repeats = torch.where(pbc, num_repeats, torch.zeros_like(num_repeats))
-    r1 = torch.arange(1, num_repeats[0] + 1, device=cell.device)
-    r2 = torch.arange(1, num_repeats[1] + 1, device=cell.device)
-    r3 = torch.arange(1, num_repeats[2] + 1, device=cell.device)
-    o = torch.zeros(1, dtype=torch.long, device=cell.device)
+    r1 = torch.arange(1, num_repeats[0] + 1, device=cell.device, dtype=torch.short)
+    r2 = torch.arange(1, num_repeats[1] + 1, device=cell.device, dtype=torch.short)
+    r3 = torch.arange(1, num_repeats[2] + 1, device=cell.device, dtype=torch.short)
+    o = torch.zeros(1, dtype=torch.short, device=cell.device, dtype=torch.short)
     return torch.cat([
         torch.cartesian_prod(r1, r2, r3),
         torch.cartesian_prod(r1, r2, o),
@@ -134,17 +134,17 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
     cell = cell.detach()
     num_atoms = padding_mask.shape[1]
     num_mols = padding_mask.shape[0]
-    all_atoms = torch.arange(num_atoms, device=cell.device)
+    all_atoms = torch.arange(num_atoms, device=cell.device, dtype=torch.short)
 
     # Step 2: center cell
     # torch.triu_indices is faster than combinations
-    p12_center = torch.triu_indices(num_atoms, num_atoms, 1, device=cell.device)
-    shifts_center = shifts.new_zeros((p12_center.shape[1], 3))
+    p12_center = torch.triu_indices(num_atoms, num_atoms, 1, device=cell.device, dtype=torch.short)
+    shifts_center = shifts.new_zeros((p12_center.shape[1], 3), dtype=torch.short)
 
     # Step 3: cells with shifts
     # shape convention (shift index, molecule index, atom index, 3)
     num_shifts = shifts.shape[0]
-    all_shifts = torch.arange(num_shifts, device=cell.device)
+    all_shifts = torch.arange(num_shifts, device=cell.device, dtype=torch.short)
     prod = torch.cartesian_prod(all_shifts, all_atoms, all_atoms).t()
     shift_index = prod[0]
     p12 = prod[1:]
@@ -185,7 +185,7 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: floa
     current_device = coordinates.device
     num_atoms = padding_mask.shape[1]
     num_mols = padding_mask.shape[0]
-    p12_all = torch.triu_indices(num_atoms, num_atoms, 1, device=current_device)
+    p12_all = torch.triu_indices(num_atoms, num_atoms, 1, device=current_device, dtype=torch.short)
     p12_all_flattened = p12_all.view(-1)
 
     pair_coordinates = coordinates.index_select(1, p12_all_flattened).view(num_mols, 2, -1, 3)
@@ -203,8 +203,8 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: floa
 
 def triu_index(num_species: int) -> Tensor:
     species1, species2 = torch.triu_indices(num_species, num_species).unbind(0)
-    pair_index = torch.arange(species1.shape[0], dtype=torch.long)
-    ret = torch.zeros(num_species, num_species, dtype=torch.long)
+    pair_index = torch.arange(species1.shape[0], dtype=torch.uint8)
+    ret = torch.zeros(num_species, num_species, dtype=torch.uint8)
     ret[species1, species2] = pair_index
     ret[species2, species1] = pair_index
     return ret
