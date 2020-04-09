@@ -98,7 +98,7 @@ def compute_shifts(cell: Tensor, pbc: Tensor, cutoff: float) -> Tensor:
     r1 = torch.arange(1, num_repeats[0] + 1, device=cell.device, dtype=torch.short)
     r2 = torch.arange(1, num_repeats[1] + 1, device=cell.device, dtype=torch.short)
     r3 = torch.arange(1, num_repeats[2] + 1, device=cell.device, dtype=torch.short)
-    o = torch.zeros(1, dtype=torch.short, device=cell.device, dtype=torch.short)
+    o = torch.zeros(1, device=cell.device, dtype=torch.short)
     return torch.cat([
         torch.cartesian_prod(r1, r2, r3),
         torch.cartesian_prod(r1, r2, o),
