@@ -256,10 +256,9 @@ def triple_by_molecule(atom_index12: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
     return central_atom_index, local_index12 % n, sign12
 
 
-def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
-                shifts: Tensor, triu_index: Tensor,
+def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
                 constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
-                sizes: Tuple[int, int, int, int, int]) -> Tensor:
+                sizes: Tuple[int, int, int, int, int], cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     num_species, radial_sublength, radial_length, angular_sublength, angular_length = sizes
     num_molecules = species.shape[0]
@@ -274,6 +273,7 @@ def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
         selected_coordinates = coordinates.index_select(0, atom_index12.view(-1)).view(2, -1, 3)
         vec = selected_coordinates[0] - selected_coordinates[1]
     else:
+        cell, shifts = cell_shifts
         atom_index12, shifts = neighbor_pairs(species == -1, coordinates_, cell, shifts, Rcr)
         shift_values = shifts.to(cell.dtype) @ cell
         selected_coordinates = coordinates.index_select(0, atom_index12.view(-1)).view(2, -1, 3)
@@ -437,10 +437,11 @@ class AEVComputer(torch.nn.Module):
         if cell is None and pbc is None:
             cell = self.default_cell
             shifts = self.default_shifts
+            aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, None)
         else:
             assert (cell is not None and pbc is not None)
             cutoff = max(self.Rcr, self.Rca)
             shifts = compute_shifts(cell, pbc, cutoff)
+            aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, (cell, shifts))
 
-        aev = compute_aev(species, coordinates, cell, shifts, self.triu_index, self.constants(), self.sizes)
         return SpeciesAEV(species, aev)
