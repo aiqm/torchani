@@ -268,7 +268,7 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     coordinates = coordinates_.flatten(0, 1)
 
     # PBC calculation is bypassed if there are no shifts
-    if shifts.numel() == 0:
+    if cell_shifts is None:
         atom_index12 = neighbor_pairs_nopbc(species == -1, coordinates_, Rcr)
         selected_coordinates = coordinates.index_select(0, atom_index12.view(-1)).view(2, -1, 3)
         vec = selected_coordinates[0] - selected_coordinates[1]
