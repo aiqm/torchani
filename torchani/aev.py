@@ -168,7 +168,7 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
     return molecule_index + atom_index12, shifts
 
 
-def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: float) -> Tuple[Tensor, Tensor]:
+def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: float) -> Tensor:
     """Compute pairs of atoms that are neighbors (doesn't use PBC)
 
     This function bypasses the calculation of shifts and duplication
@@ -196,9 +196,7 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: floa
     molecule_index, pair_index = in_cutoff.unbind(1)
     molecule_index *= num_atoms
     atom_index12 = p12_all[:, pair_index] + molecule_index
-    # shifts
-    shifts = coordinates.new_zeros((pair_index.shape[0], 3))
-    return atom_index12, shifts
+    return atom_index12
 
 
 def triu_index(num_species: int) -> Tensor:
@@ -266,17 +264,21 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     num_molecules = species.shape[0]
     num_atoms = species.shape[1]
     num_species_pairs = angular_length // angular_sublength
+    coordinates_ = coordinates
+    coordinates = coordinates_.flatten(0, 1)
+
     # PBC calculation is bypassed if there are no shifts
-    if cell_shifts is None:
-        atom_index12, shifts = neighbor_pairs_nopbc(species == -1, coordinates, Rcr)
+    if shifts.numel() == 0:
+        atom_index12 = neighbor_pairs_nopbc(species == -1, coordinates_, Rcr)
+        selected_coordinates = coordinates.index_select(0, atom_index12.view(-1)).view(2, -1, 3)
+        vec = selected_coordinates[0] - selected_coordinates[1]
     else:
         cell, shifts = cell_shifts
-        atom_index12, shifts = neighbor_pairs(species == -1, coordinates, cell, shifts, Rcr)
-    coordinates = coordinates.flatten(0, 1)
-    shift_values = shifts.to(cell.dtype) @ cell
-    selected_coordinates = coordinates.index_select(0, atom_index12.view(-1))
-    selected_coordinates = selected_coordinates.view(2, -1, 3)
-    vec = selected_coordinates[0] - selected_coordinates[1] + shift_values
+        atom_index12, shifts = neighbor_pairs(species == -1, coordinates_, cell, shifts, Rcr)
+        shift_values = shifts.to(cell.dtype) @ cell
+        selected_coordinates = coordinates.index_select(0, atom_index12.view(-1)).view(2, -1, 3)
+        vec = selected_coordinates[0] - selected_coordinates[1] + shift_values
+
     species = species.flatten()
     species12 = species[atom_index12]
 
