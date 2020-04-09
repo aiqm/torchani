@@ -265,17 +265,20 @@ def compute_aev(species: Tensor, coordinates: Tensor, cell: Tensor,
     num_molecules = species.shape[0]
     num_atoms = species.shape[1]
     num_species_pairs = angular_length // angular_sublength
+    coordinates_ = coordinates
+    coordinates = coordinates_.flatten(0, 1)
+
     # PBC calculation is bypassed if there are no shifts
     if shifts.numel() == 0:
-        atom_index12 = neighbor_pairs_nopbc(species == -1, coordinates, Rcr)
-        shift_values = 0.0
+        atom_index12 = neighbor_pairs_nopbc(species == -1, coordinates_, Rcr)
+        selected_coordinates = coordinates.index_select(0, atom_index12.view(-1)).view(2, -1, 3)
+        vec = selected_coordinates[0] - selected_coordinates[1]
     else:
-        atom_index12, shifts = neighbor_pairs(species == -1, coordinates, cell, shifts, Rcr)
+        atom_index12, shifts = neighbor_pairs(species == -1, coordinates_, cell, shifts, Rcr)
         shift_values = shifts.to(cell.dtype) @ cell
-    coordinates = coordinates.flatten(0, 1)
-    selected_coordinates = coordinates.index_select(0, atom_index12.view(-1))
-    selected_coordinates = selected_coordinates.view(2, -1, 3)
-    vec = selected_coordinates[0] - selected_coordinates[1] + shift_values
+        selected_coordinates = coordinates.index_select(0, atom_index12.view(-1)).view(2, -1, 3)
+        vec = selected_coordinates[0] - selected_coordinates[1] + shift_values
+
     species = species.flatten()
     species12 = species[atom_index12]
 
