@@ -141,7 +141,7 @@ class Transformations:
                     if len(counts[s]) != n + 1:
                         counts[s].append(0)
                 Y.append(d['energies'])
-            species = sorted(list(counts.keys()))
+            species = list(counts.keys())
             X = [counts[s] for s in species]
             if shifter.fit_intercept:
                 X.append([1] * n)
