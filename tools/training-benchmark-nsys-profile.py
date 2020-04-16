@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     print('=> loading dataset...')
     shifter = torchani.EnergyShifter(None)
-    dataset = list(torchani.data.load(parser.dataset_path).subtract_self_energies(shifter).species_to_indices().shuffle().collate(parser.batch_size))
+    dataset = list(torchani.data.load(parser.dataset_path).species_to_indices().subtract_self_energies(shifter).shuffle().collate(parser.batch_size))
 
     print('=> start warming up')
     total_batch_counter = 0

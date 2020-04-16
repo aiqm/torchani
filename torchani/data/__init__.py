@@ -34,7 +34,7 @@ Example:
 .. code-block:: python
 
     energy_shifter = torchani.utils.EnergyShifter(None)
-    training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices().shuffle().split(int(0.8 * size), None)
+    training, validation = torchani.data.load(dspath).species_to_indices().subtract_self_energies(energy_shifter).shuffle().split(int(0.8 * size), None)
     training = training.collate(batch_size).cache()
     validation = validation.collate(batch_size).cache()
 
@@ -43,9 +43,13 @@ with multiprocessing to achieve comparable performance with less memory usage:
 
 .. code-block:: python
 
-    training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices().shuffle().split(0.8, None)
+    training, validation = torchani.data.load(dspath).species_to_indices().subtract_self_energies(energy_shifter).shuffle().split(0.8, None)
     training = torch.utils.data.DataLoader(list(training), batch_size=batch_size, collate_fn=torchani.data.collate_fn, num_workers=64)
     validation = torch.utils.data.DataLoader(list(validation), batch_size=batch_size, collate_fn=torchani.data.collate_fn, num_workers=64)
+
+.. warning::
+
+    The `species_to_indices` transformation must be applied prior to `subtract_self_energies`.
 """
 
 from os.path import join, isfile, isdir
@@ -104,7 +108,7 @@ class Transformations:
     """Convert one reenterable iterable to another reenterable iterable"""
 
     @staticmethod
-    def species_to_indices(reenterable_iterable, species_order=('H', 'C', 'N', 'O', 'F', 'Cl', 'S')):
+    def species_to_indices(reenterable_iterable, species_order=('H', 'C', 'N', 'O', 'F', 'S', 'Cl')):
         if species_order == 'periodic_table':
             species_order = utils.PERIODIC_TABLE
         idx = {k: i for i, k in enumerate(species_order)}

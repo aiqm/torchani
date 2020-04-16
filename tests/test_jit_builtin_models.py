@@ -19,7 +19,7 @@ class TestBuiltinModelsJIT(unittest.TestCase):
 
     def setUp(self):
         self.ani1ccx = torchani.models.ANI1ccx()
-        self.ds = torchani.data.load(dspath).subtract_self_energies(self.ani1ccx.sae_dict).species_to_indices().shuffle().collate(256).cache()
+        self.ds = torchani.data.load(dspath).species_to_indices().subtract_self_energies(self.ani1ccx.sae_dict).shuffle().collate(256).cache()
 
     def _test_model(self, model):
         properties = next(iter(self.ds))

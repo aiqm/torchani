@@ -15,7 +15,7 @@ aev_computer = ani1x.aev_computer
 class TestData(unittest.TestCase):
 
     def testTensorShape(self):
-        ds = torchani.data.load(dataset_path).subtract_self_energies(sae_dict).species_to_indices().shuffle().collate(batch_size).cache()
+        ds = torchani.data.load(dataset_path).species_to_indices().subtract_self_energies(sae_dict).shuffle().collate(batch_size).cache()
         for d in ds:
             species = d['species']
             coordinates = d['coordinates']
@@ -29,7 +29,7 @@ class TestData(unittest.TestCase):
             self.assertEqual(coordinates.shape[0], energies.shape[0])
 
     def testNoUnnecessaryPadding(self):
-        ds = torchani.data.load(dataset_path).subtract_self_energies(sae_dict).species_to_indices().shuffle().collate(batch_size).cache()
+        ds = torchani.data.load(dataset_path).species_to_indices().subtract_self_energies(sae_dict).shuffle().collate(batch_size).cache()
         for d in ds:
             species = d['species']
             non_padding = (species >= 0)[:, -1].nonzero()
@@ -111,7 +111,7 @@ class TestData(unittest.TestCase):
 
     def testDataloader(self):
         shifter = torchani.EnergyShifter(None)
-        dataset = list(torchani.data.load(dataset_path).subtract_self_energies(shifter).species_to_indices().shuffle())
+        dataset = list(torchani.data.load(dataset_path).species_to_indices().subtract_self_energies(shifter).shuffle())
         loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, collate_fn=torchani.data.collate_fn, num_workers=64)
         for i in loader:
             pass
