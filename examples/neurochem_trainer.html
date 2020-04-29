@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Train Neural Network Potential From NeuroChem Input File &mdash; TorchANI 1.2 documentation</title>
+  <title>Train Neural Network Potential From NeuroChem Input File &mdash; TorchANI 2.0 documentation</title>
   
 
   
@@ -21,11 +21,11 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -35,6 +35,8 @@
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="TorchANI" href="../api.html" />
@@ -62,7 +64,7 @@
             
             
               <div class="version">
-                1.2
+                2.0
               </div>
             
           
@@ -111,6 +113,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.optim">TorchANI Optimizater</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.units">Units</a></li>
 </ul>
 
             
@@ -177,7 +180,7 @@
             
   <div class="sphx-glr-download-link-note admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-neurochem-trainer-py"><span class="std std-ref">here</span></a> to download the full example code</p>
+<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-neurochem-trainer-py"><span class="std std-ref">here</span></a>     to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="train-neural-network-potential-from-neurochem-input-file">
 <span id="neurochem-training"></span><span id="sphx-glr-examples-neurochem-trainer-py"></span><h1>Train Neural Network Potential From NeuroChem Input File<a class="headerlink" href="#train-neural-network-potential-from-neurochem-input-file" title="Permalink to this headline">¶</a></h1>
@@ -200,21 +203,35 @@ set and validation set the <code class="docutils literal notranslate"><span clas
 allows this program to finish very quick, because that dataset is very small.
 But this is wrong and should be avoided for any serious training.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
-    <a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.path.html#os.path.dirname" title="View documentation for os.path.dirname"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/os.path.html#os.path.realpath" title="View documentation for os.path.realpath"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span></a><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+    <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.path.html#os.path.dirname" title="os.path.dirname" class="sphx-glr-backref-module-os-path sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/os.path.html#os.path.realpath" title="os.path.realpath" class="sphx-glr-backref-module-os-path sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span></a><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
 <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
-    <a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.html#os.getcwd" title="View documentation for os.getcwd"><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span></a><span class="p">()</span>
-<a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">cfg_path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.path.html#os.path.join" title="View documentation for os.path.join"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">path</span></a><span class="p">,</span> <span class="s1">&#39;../tests/test_data/inputtrain.ipt&#39;</span><span class="p">)</span>
-<a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">training_path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.path.html#os.path.join" title="View documentation for os.path.join"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">path</span></a><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
-<a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">validation_path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.path.html#os.path.join" title="View documentation for os.path.join"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">path</span></a><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+    <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.html#os.getcwd" title="os.getcwd" class="sphx-glr-backref-module-os sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span></a><span class="p">()</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">cfg_path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.path.html#os.path.join" title="os.path.join" class="sphx-glr-backref-module-os-path sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">path</span></a><span class="p">,</span> <span class="s1">&#39;../tests/test_data/inputtrain.ipt&#39;</span><span class="p">)</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">training_path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.path.html#os.path.join" title="os.path.join" class="sphx-glr-backref-module-os-path sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">path</span></a><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">validation_path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.path.html#os.path.join" title="os.path.join" class="sphx-glr-backref-module-os-path sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">path</span></a><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
 </pre></div>
 </div>
 <p>We also need to set the device to run the training:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">device_str</span></a> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <a href="https://pytorch.org/docs/master/cuda.html#torch.cuda.is_available" title="View documentation for torch.cuda.is_available"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span>
-<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">device_str</span></a><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device_str</span></a> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <a href="https://pytorch.org/docs/master/cuda.html#torch.cuda.is_available" title="torch.cuda.is_available" class="sphx-glr-backref-module-torch-cuda sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span>
+<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device_str</span></a><span class="p">)</span>
 
 
-<span class="n">trainer</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">cfg_path</span></a><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;runs&#39;</span><span class="p">)</span>
-<span class="n">trainer</span><span class="o">.</span><span class="n">load_data</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">training_path</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">validation_path</span></a><span class="p">)</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">cfg_path</span></a><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;runs&#39;</span><span class="p">)</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">load_data</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">training_path</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">validation_path</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>=&gt; loading /home/runner/work/torchani/torchani/examples/../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5, total molecules: 1
+
+1/1  [==============================] - 0.0s
+
+2/1  [============================================================] - 0.1s
+3/1  [==========================================================================================] - 0.1s=&gt; loading /home/runner/work/torchani/torchani/examples/../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5, total molecules: 1
+
+1/1  [==============================] - 0.0s
+
+2/1  [============================================================] - 0.0s
+3/1  [==========================================================================================] - 0.1s
 </pre></div>
 </div>
 <p>Once everything is set up, running NeuroChem is very easy. We simplify need a
@@ -222,10 +239,10 @@ But this is wrong and should be avoided for any serious training.</p>
 capture the output of tqdm, let’s do some hacking first to make tqdm to print
 its progressbar to stdout.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">my_tqdm</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><a href="https://docs.python.org/3/library/sys.html#sys.stdout" title="View documentation for sys.stdout"><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span></a><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><a href="https://docs.python.org/3/library/io.html#io.TextIOWrapper" title="io.TextIOWrapper" class="sphx-glr-backref-module-io sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span></a><span class="p">)</span>
 
 
-<span class="n">trainer</span><span class="o">.</span><span class="n">tqdm</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/functions.html#object" title="View documentation for builtins.object"><span class="n">my_tqdm</span></a>
+<span class="n">trainer</span><span class="o">.</span><span class="n">tqdm</span> <span class="o">=</span> <span class="n">my_tqdm</span>
 </pre></div>
 </div>
 <p>Now, let’s go!</p>
@@ -233,52 +250,34 @@ its progressbar to stdout.</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>epoch 1:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch 1:  20%|##        | 1/5 [00:00&lt;00:01,  2.86it/s]
-epoch 1:  40%|####      | 2/5 [00:00&lt;00:01,  2.89it/s]
-epoch 1:  60%|######    | 3/5 [00:01&lt;00:00,  2.91it/s]
-epoch 1:  80%|########  | 4/5 [00:01&lt;00:00,  2.88it/s]
-epoch 1: 100%|##########| 5/5 [00:01&lt;00:00,  3.39it/s]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>epoch 1:   0%|          | 0/5 [00:00&lt;?, ?it/s]/opt/hostedtoolcache/Python/3.8.2/x64/lib/python3.8/site-packages/torchani/optim.py:102: UserWarning: This overload of add_ is deprecated:
+        add_(Number alpha, Tensor other)
+Consider using one of the following signatures instead:
+        add_(Tensor other, *, Number alpha) (Triggered internally at  /pytorch/torch/csrc/utils/python_arg_parser.cpp:760.)
+  exp_avg.mul_(beta1).add_(1 - beta1, grad)
+
+epoch 1:  20%|##        | 1/5 [00:00&lt;00:01,  3.20it/s]
+epoch 1:  40%|####      | 2/5 [00:00&lt;00:00,  3.18it/s]
+epoch 1:  60%|######    | 3/5 [00:00&lt;00:00,  3.19it/s]
+epoch 1:  80%|########  | 4/5 [00:01&lt;00:00,  3.13it/s]
+epoch 1: 100%|##########| 5/5 [00:01&lt;00:00,  3.69it/s]
 
 epoch 2:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch 2:  20%|##        | 1/5 [00:00&lt;00:01,  2.56it/s]
-epoch 2:  40%|####      | 2/5 [00:00&lt;00:01,  2.62it/s]
-epoch 2:  60%|######    | 3/5 [00:01&lt;00:00,  2.69it/s]
-epoch 2:  80%|########  | 4/5 [00:01&lt;00:00,  2.70it/s]
-epoch 2: 100%|##########| 5/5 [00:01&lt;00:00,  3.45it/s]
-epoch 2: 100%|##########| 5/5 [00:01&lt;00:00,  3.18it/s]
-
-epoch 3:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch 3:  20%|##        | 1/5 [00:00&lt;00:01,  2.65it/s]
-epoch 3:  40%|####      | 2/5 [00:00&lt;00:01,  2.72it/s]
-epoch 3:  60%|######    | 3/5 [00:01&lt;00:00,  2.77it/s]
-epoch 3:  80%|########  | 4/5 [00:01&lt;00:00,  2.83it/s]
-epoch 3: 100%|##########| 5/5 [00:01&lt;00:00,  3.35it/s]
-
-epoch 4:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch 4:  20%|##        | 1/5 [00:00&lt;00:01,  2.78it/s]
-epoch 4:  40%|####      | 2/5 [00:00&lt;00:01,  2.80it/s]
-epoch 4:  60%|######    | 3/5 [00:01&lt;00:00,  2.82it/s]
-epoch 4:  80%|########  | 4/5 [00:01&lt;00:00,  2.80it/s]
-epoch 4: 100%|##########| 5/5 [00:01&lt;00:00,  3.57it/s]
-epoch 4: 100%|##########| 5/5 [00:01&lt;00:00,  3.28it/s]
-
-epoch 5:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch 5:  20%|##        | 1/5 [00:00&lt;00:01,  2.80it/s]
-epoch 5:  40%|####      | 2/5 [00:00&lt;00:01,  2.77it/s]
-epoch 5:  60%|######    | 3/5 [00:01&lt;00:00,  2.73it/s]
-epoch 5:  80%|########  | 4/5 [00:01&lt;00:00,  2.74it/s]
-epoch 5: 100%|##########| 5/5 [00:01&lt;00:00,  3.19it/s]
+epoch 2:  20%|##        | 1/5 [00:00&lt;00:01,  3.20it/s]
+epoch 2:  40%|####      | 2/5 [00:00&lt;00:00,  3.19it/s]
+epoch 2:  60%|######    | 3/5 [00:00&lt;00:00,  3.14it/s]
+epoch 2:  80%|########  | 4/5 [00:01&lt;00:00,  2.98it/s]
+epoch 2: 100%|##########| 5/5 [00:01&lt;00:00,  3.54it/s]
 </pre></div>
 </div>
 <p>Alternatively, you can run NeuroChem trainer directly using command line.
 There is no need for programming. Just run the following command for help
 <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">torchani.neurochem.trainer</span> <span class="pre">-h</span></code> for usage. For this demo, the
 equivalent command is:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="View documentation for builtins.list"><span class="n">cmd</span></a> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;python&#39;</span><span class="p">,</span> <span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;torchani.neurochem.trainer&#39;</span><span class="p">,</span> <span class="s1">&#39;-d&#39;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">device_str</span></a><span class="p">,</span>
-       <span class="s1">&#39;--tqdm&#39;</span><span class="p">,</span> <span class="s1">&#39;--tensorboard&#39;</span><span class="p">,</span> <span class="s1">&#39;runs&#39;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">cfg_path</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">training_path</span></a><span class="p">,</span>
-       <a href="https://docs.python.org/3/library/stdtypes.html#str" title="View documentation for builtins.str"><span class="n">validation_path</span></a><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="View documentation for builtins.list"><span class="n">cmd</span></a><span class="p">))</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">cmd</span></a> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;python&#39;</span><span class="p">,</span> <span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;torchani.neurochem.trainer&#39;</span><span class="p">,</span> <span class="s1">&#39;-d&#39;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device_str</span></a><span class="p">,</span>
+       <span class="s1">&#39;--tqdm&#39;</span><span class="p">,</span> <span class="s1">&#39;--tensorboard&#39;</span><span class="p">,</span> <span class="s1">&#39;runs&#39;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">cfg_path</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">training_path</span></a><span class="p">,</span>
+       <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">validation_path</span></a><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">cmd</span></a><span class="p">))</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
@@ -288,59 +287,71 @@ equivalent command is:</p>
 <p>Now let’s invoke this command to see what we get. Again, we redirect stderr
 to stdout simplify for sphinx-gallery to be able to capture it when
 generating this document:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">subprocess</span> <span class="k">import</span> <a href="https://docs.python.org/3/library/subprocess.html#subprocess.Popen" title="View documentation for subprocess.Popen"><span class="n">Popen</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/subprocess.html#subprocess.PIPE" title="View documentation for subprocess.PIPE"><span class="n">PIPE</span></a>  <span class="c1"># noqa: E402</span>
-<span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/subprocess.html#subprocess.Popen" title="View documentation for subprocess.Popen"><span class="n">Popen</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="View documentation for builtins.list"><span class="n">cmd</span></a><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><a href="https://docs.python.org/3/library/subprocess.html#subprocess.PIPE" title="View documentation for subprocess.PIPE"><span class="n">PIPE</span></a><span class="p">)</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <a href="https://docs.python.org/3/library/subprocess.html#subprocess.Popen" title="subprocess.Popen" class="sphx-glr-backref-module-subprocess sphx-glr-backref-type-py-class"><span class="n">Popen</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">PIPE</span></a>  <span class="c1"># noqa: E402</span>
+<span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/subprocess.html#subprocess.Popen" title="subprocess.Popen" class="sphx-glr-backref-module-subprocess sphx-glr-backref-type-py-class"><span class="n">Popen</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">cmd</span></a><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">PIPE</span></a><span class="p">)</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>epoch 1:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch 1:  20%|██        | 1/5 [00:00&lt;00:01,  2.83it/s]
-epoch 1:  40%|████      | 2/5 [00:00&lt;00:01,  2.86it/s]
-epoch 1:  60%|██████    | 3/5 [00:01&lt;00:00,  2.84it/s]
-epoch 1:  80%|████████  | 4/5 [00:01&lt;00:00,  2.83it/s]
-epoch 1: 100%|██████████| 5/5 [00:01&lt;00:00,  3.34it/s]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>epoch 1:   0%|          | 0/5 [00:00&lt;?, ?it/s]/opt/hostedtoolcache/Python/3.8.2/x64/lib/python3.8/site-packages/torchani/optim.py:102: UserWarning: This overload of add_ is deprecated:
+        add_(Number alpha, Tensor other)
+Consider using one of the following signatures instead:
+        add_(Tensor other, *, Number alpha) (Triggered internally at  /pytorch/torch/csrc/utils/python_arg_parser.cpp:760.)
+  exp_avg.mul_(beta1).add_(1 - beta1, grad)
+
+epoch 1:  20%|██        | 1/5 [00:00&lt;00:01,  3.09it/s]
+epoch 1:  40%|████      | 2/5 [00:00&lt;00:00,  3.12it/s]
+epoch 1:  60%|██████    | 3/5 [00:00&lt;00:00,  3.15it/s]
+epoch 1:  80%|████████  | 4/5 [00:01&lt;00:00,  3.15it/s]
+epoch 1: 100%|██████████| 5/5 [00:01&lt;00:00,  3.72it/s]
 
 epoch 2:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch 2:  20%|██        | 1/5 [00:00&lt;00:01,  2.84it/s]
-epoch 2:  40%|████      | 2/5 [00:00&lt;00:01,  2.84it/s]
-epoch 2:  60%|██████    | 3/5 [00:01&lt;00:00,  2.85it/s]
-epoch 2:  80%|████████  | 4/5 [00:01&lt;00:00,  2.86it/s]
-epoch 2: 100%|██████████| 5/5 [00:01&lt;00:00,  3.35it/s]
+epoch 2:  20%|██        | 1/5 [00:00&lt;00:01,  3.14it/s]
+epoch 2:  40%|████      | 2/5 [00:00&lt;00:00,  3.16it/s]
+epoch 2:  60%|██████    | 3/5 [00:00&lt;00:00,  3.13it/s]
+epoch 2:  80%|████████  | 4/5 [00:01&lt;00:00,  3.14it/s]
+epoch 2: 100%|██████████| 5/5 [00:01&lt;00:00,  3.70it/s]
 
 epoch 3:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch 3:  20%|██        | 1/5 [00:00&lt;00:01,  2.64it/s]
-epoch 3:  40%|████      | 2/5 [00:00&lt;00:01,  2.64it/s]
-epoch 3:  60%|██████    | 3/5 [00:01&lt;00:00,  2.67it/s]
-epoch 3:  80%|████████  | 4/5 [00:01&lt;00:00,  2.66it/s]
-epoch 3: 100%|██████████| 5/5 [00:01&lt;00:00,  3.14it/s]
+epoch 3:  20%|██        | 1/5 [00:00&lt;00:01,  3.00it/s]
+epoch 3:  40%|████      | 2/5 [00:00&lt;00:00,  3.02it/s]
+epoch 3:  60%|██████    | 3/5 [00:00&lt;00:00,  3.07it/s]
+epoch 3:  80%|████████  | 4/5 [00:01&lt;00:00,  3.11it/s]
+epoch 3: 100%|██████████| 5/5 [00:01&lt;00:00,  3.65it/s]
 
 epoch 4:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch 4:  20%|██        | 1/5 [00:00&lt;00:01,  2.76it/s]
-epoch 4:  40%|████      | 2/5 [00:00&lt;00:01,  2.76it/s]
-epoch 4:  60%|██████    | 3/5 [00:01&lt;00:00,  2.76it/s]
-epoch 4:  80%|████████  | 4/5 [00:01&lt;00:00,  2.75it/s]
-epoch 4: 100%|██████████| 5/5 [00:01&lt;00:00,  3.24it/s]
+epoch 4:  20%|██        | 1/5 [00:00&lt;00:01,  3.08it/s]
+epoch 4:  40%|████      | 2/5 [00:00&lt;00:00,  3.11it/s]
+epoch 4:  60%|██████    | 3/5 [00:00&lt;00:00,  3.14it/s]
+epoch 4:  80%|████████  | 4/5 [00:01&lt;00:00,  3.16it/s]
+epoch 4: 100%|██████████| 5/5 [00:01&lt;00:00,  3.72it/s]
 
 epoch 5:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch 5:  20%|██        | 1/5 [00:00&lt;00:01,  2.64it/s]
-epoch 5:  40%|████      | 2/5 [00:00&lt;00:01,  2.71it/s]
-epoch 5:  60%|██████    | 3/5 [00:01&lt;00:00,  2.71it/s]
-epoch 5:  80%|████████  | 4/5 [00:01&lt;00:00,  2.73it/s]
-epoch 5: 100%|██████████| 5/5 [00:01&lt;00:00,  3.24it/s]
+epoch 5:  20%|██        | 1/5 [00:00&lt;00:01,  3.15it/s]
+epoch 5:  40%|████      | 2/5 [00:00&lt;00:00,  3.14it/s]
+epoch 5:  60%|██████    | 3/5 [00:00&lt;00:00,  3.14it/s]
+epoch 5:  80%|████████  | 4/5 [00:01&lt;00:00,  3.14it/s]
+epoch 5: 100%|██████████| 5/5 [00:01&lt;00:00,  3.69it/s]
 
 epoch 6:   0%|          | 0/5 [00:00&lt;?, ?it/s]
-epoch 6:  20%|██        | 1/5 [00:00&lt;00:01,  2.75it/s]
-epoch 6:  40%|████      | 2/5 [00:00&lt;00:01,  2.79it/s]
-epoch 6:  60%|██████    | 3/5 [00:01&lt;00:00,  2.74it/s]
-epoch 6:  80%|████████  | 4/5 [00:01&lt;00:00,  2.70it/s]
-epoch 6: 100%|██████████| 5/5 [00:01&lt;00:00,  3.18it/s]
+epoch 6:  20%|██        | 1/5 [00:00&lt;00:01,  3.08it/s]
+epoch 6:  40%|████      | 2/5 [00:00&lt;00:00,  3.09it/s]
+epoch 6:  60%|██████    | 3/5 [00:00&lt;00:00,  3.09it/s]
+epoch 6:  80%|████████  | 4/5 [00:01&lt;00:00,  3.11it/s]
+epoch 6: 100%|██████████| 5/5 [00:01&lt;00:00,  3.67it/s]
+
+epoch 7:   0%|          | 0/5 [00:00&lt;?, ?it/s]
+epoch 7:  20%|██        | 1/5 [00:00&lt;00:01,  3.12it/s]
+epoch 7:  40%|████      | 2/5 [00:00&lt;00:00,  3.12it/s]
+epoch 7:  60%|██████    | 3/5 [00:00&lt;00:00,  3.13it/s]
+epoch 7:  80%|████████  | 4/5 [00:01&lt;00:00,  3.13it/s]
+epoch 7: 100%|██████████| 5/5 [00:01&lt;00:00,  3.68it/s]
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  27.167 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  21.145 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-neurochem-trainer-py">
-<div class="sphx-glr-download docutils container">
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
 <a class="reference download internal" download="" href="../_downloads/cca758d34ccbb1f250032c04edfb280b/neurochem_trainer.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">neurochem_trainer.py</span></code></a></div>
-<div class="sphx-glr-download docutils container">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <a class="reference download internal" download="" href="../_downloads/5d13693ea1043e9fd13bfe1a44eafeb0/neurochem_trainer.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">neurochem_trainer.ipynb</span></code></a></div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>

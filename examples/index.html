@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Examples &mdash; TorchANI 1.2 documentation</title>
+  <title>Examples &mdash; TorchANI 2.0 documentation</title>
   
 
   
@@ -21,11 +21,11 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script type="text/javascript" src="../_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -35,6 +35,8 @@
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
 </head>
@@ -60,7 +62,7 @@
             
             
               <div class="version">
-                1.2
+                2.0
               </div>
             
           
@@ -109,6 +111,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.optim">TorchANI Optimizater</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.units">Units</a></li>
 </ul>
 
             
@@ -187,15 +190,15 @@
 </div>
 </div><div class="toctree-wrapper compound">
 </div>
-<div class="sphx-glr-thumbcontainer" tooltip="TorchANI is able to use ASE interface to do structure optimization and vibration analysis, but ..."><div class="figure align-default" id="id3">
-<img alt="../_images/sphx_glr_vibration_analysis_thumb.png" src="../_images/sphx_glr_vibration_analysis_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="vibration_analysis.html#sphx-glr-examples-vibration-analysis-py"><span class="std std-ref">Computing Vibrational Frequencies Using Analytical Hessian</span></a></span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
+<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI&#x27;s NeuroChem trainer to read and run NeuroChem&#x27;s training..."><div class="figure align-default" id="id3">
+<img alt="../_images/sphx_glr_neurochem_trainer_thumb.png" src="../_images/sphx_glr_neurochem_trainer_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="neurochem_trainer.html#sphx-glr-examples-neurochem-trainer-py"><span class="std std-ref">Train Neural Network Potential From NeuroChem Input File</span></a></span><a class="headerlink" href="#id3" title="Permalink to this image">¶</a></p>
 </div>
 </div><div class="toctree-wrapper compound">
 </div>
-<div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI&#x27;s NeuroChem trainer to read and run NeuroChem&#x27;s training..."><div class="figure align-default" id="id4">
-<img alt="../_images/sphx_glr_neurochem_trainer_thumb.png" src="../_images/sphx_glr_neurochem_trainer_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="neurochem_trainer.html#sphx-glr-examples-neurochem-trainer-py"><span class="std std-ref">Train Neural Network Potential From NeuroChem Input File</span></a></span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
+<div class="sphx-glr-thumbcontainer" tooltip="TorchANI is able to use ASE interface to do structure optimization and vibration analysis, but ..."><div class="figure align-default" id="id4">
+<img alt="../_images/sphx_glr_vibration_analysis_thumb.png" src="../_images/sphx_glr_vibration_analysis_thumb.png" />
+<p class="caption"><span class="caption-text"><a class="reference internal" href="vibration_analysis.html#sphx-glr-examples-vibration-analysis-py"><span class="std std-ref">Computing Vibrational Frequencies Using Analytical Hessian</span></a></span><a class="headerlink" href="#id4" title="Permalink to this image">¶</a></p>
 </div>
 </div><div class="toctree-wrapper compound">
 </div>
@@ -224,9 +227,9 @@
 </div><div class="toctree-wrapper compound">
 </div>
 <div class="sphx-glr-clear"></div><div class="sphx-glr-footer class sphx-glr-footer-gallery docutils container">
-<div class="sphx-glr-download docutils container">
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
 <a class="reference download internal" download="" href="../_downloads/de8bd3f0ba79b92d033767b2ff0cdbbd/examples_python.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">examples_python.zip</span></code></a></div>
-<div class="sphx-glr-download docutils container">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <a class="reference download internal" download="" href="../_downloads/d70aa59666037ef4c3683d8bb078c3e6/examples_jupyter.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Jupyter</span> <span class="pre">notebooks:</span> <span class="pre">examples_jupyter.zip</span></code></a></div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>

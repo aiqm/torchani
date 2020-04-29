@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_examples_load_from_neurochem.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_examples_load_from_neurochem.py:
+        Click :ref:`here <sphx_glr_download_examples_load_from_neurochem.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_examples_load_from_neurochem.py:
 
 
 Construct Model From NeuroChem Files
@@ -497,8 +499,8 @@ You can also create an ASE calculator using the ensemble or single model:
 
  .. code-block:: none
 
-    <torchani.ase.Calculator object at 0x7f3a2b7f9510>
-    <torchani.ase.Calculator object at 0x7f3a2b7f9510>
+    <torchani.ase.Calculator object at 0x7ff3d55fdee0>
+    <torchani.ase.Calculator object at 0x7ff3d55fdee0>
 
 
 
@@ -546,11 +548,11 @@ Now let's compute energies using the ensemble directly:
  .. code-block:: none
 
     Energy: -40.459022101999686
-    Force: tensor([[ 0.0306, -0.1316, -0.0527],
-            [-0.1293,  0.1639, -0.0774],
-            [ 0.0856, -0.0429,  0.0408],
-            [ 0.0268,  0.0060,  0.0381],
-            [-0.0138,  0.0046,  0.0511]])
+    Force: tensor([[ 0.031, -0.132, -0.053],
+            [-0.129,  0.164, -0.077],
+            [ 0.086, -0.043,  0.041],
+            [ 0.027,  0.006,  0.038],
+            [-0.014,  0.005,  0.051]])
 
 
 
@@ -576,10 +578,10 @@ And using the ASE interface of the ensemble:
 
     Energy: -40.459022101999686
     Force: [[ 0.03062527 -0.13160461 -0.05265211]
-     [-0.12927505  0.16388634 -0.07736802]
-     [ 0.08563145 -0.04288923  0.04082093]
-     [ 0.02681219  0.00601403  0.03809873]
-     [-0.01379386  0.00459347  0.05110046]]
+     [-0.12927504  0.16388634 -0.07736802]
+     [ 0.08563144 -0.04288924  0.04082094]
+     [ 0.02681219  0.00601404  0.03809873]
+     [-0.01379385  0.00459347  0.05110046]]
 
 
 
@@ -608,18 +610,18 @@ We can do the same thing with the single model:
 
  .. code-block:: none
 
-    Energy: -40.46280036778884
-    Force: tensor([[ 0.0561, -0.1270, -0.0541],
-            [-0.1401,  0.1552, -0.0753],
-            [ 0.0753, -0.0374,  0.0395],
-            [ 0.0242,  0.0024,  0.0334],
-            [-0.0156,  0.0068,  0.0565]])
-    Energy: -40.46280036778883
-    Force: [[ 0.05614972 -0.12697156 -0.05413405]
-     [-0.14007528  0.15523371 -0.07533834]
-     [ 0.07532088 -0.0374411   0.03949669]
-     [ 0.02423097  0.00235086  0.03344227]
-     [-0.01562628  0.00682809  0.05653344]]
+    Energy: -40.46280037151413
+    Force: tensor([[ 0.056, -0.127, -0.054],
+            [-0.140,  0.155, -0.075],
+            [ 0.075, -0.037,  0.039],
+            [ 0.024,  0.002,  0.033],
+            [-0.016,  0.007,  0.057]])
+    Energy: -40.46280037151413
+    Force: [[ 0.05614965 -0.1269716  -0.05413404]
+     [-0.14007527  0.15523373 -0.07533834]
+     [ 0.0753209  -0.03744108  0.03949668]
+     [ 0.02423099  0.00235087  0.03344228]
+     [-0.01562626  0.00682809  0.05653343]]
 
 
 
@@ -627,7 +629,7 @@ We can do the same thing with the single model:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.999 seconds)
+   **Total running time of the script:** ( 0 minutes  1.984 seconds)
 
 
 .. _sphx_glr_download_examples_load_from_neurochem.py:
@@ -640,13 +642,13 @@ We can do the same thing with the single model:
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: load_from_neurochem.py <load_from_neurochem.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: load_from_neurochem.ipynb <load_from_neurochem.ipynb>`
 

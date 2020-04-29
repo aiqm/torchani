@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; TorchANI 1.2 documentation</title>
+  <title>Index &mdash; TorchANI 2.0 documentation</title>
   
 
   
@@ -22,11 +22,11 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -36,6 +36,8 @@
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="_static/gallery-dataframe.css" type="text/css" />
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" /> 
 </head>
@@ -61,7 +63,7 @@
             
             
               <div class="version">
-                1.2
+                2.0
               </div>
             
           
@@ -110,6 +112,7 @@
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.neurochem">NeuroChem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.optim">TorchANI Optimizater</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html#module-torchani.units">Units</a></li>
 </ul>
 
             
@@ -177,7 +180,6 @@
 
 <div class="genindex-jumpbox">
  <a href="#A"><strong>A</strong></a>
- | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
@@ -210,19 +212,9 @@
   </ul></td>
 </tr></table>
 
-<h2 id="B">B</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.data.BatchedANIDataset">BatchedANIDataset (class in torchani.data)</a>
-</li>
-  </ul></td>
-</tr></table>
-
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.data.CachedDataset">CachedDataset (class in torchani.data)</a>
-</li>
       <li><a href="api.html#torchani.ase.Calculator">Calculator (class in torchani.ase)</a>
 </li>
   </ul></td>
@@ -239,9 +231,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#torchani.EnergyShifter">EnergyShifter (class in torchani)</a>
 </li>
+      <li><a href="api.html#torchani.Ensemble">Ensemble (class in torchani)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.Ensemble">Ensemble (class in torchani)</a>
+      <li><a href="api.html#torchani.units.ev2kcalmol">ev2kcalmol() (in module torchani.units)</a>
+</li>
+      <li><a href="api.html#torchani.units.ev2kjoulemol">ev2kjoulemol() (in module torchani.units)</a>
 </li>
       <li><a href="api.html#torchani.neurochem.Trainer.evaluate">evaluate() (torchani.neurochem.Trainer method)</a>
 </li>
@@ -251,8 +247,6 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.data.find_threshold">find_threshold() (in module torchani.data)</a>
-</li>
       <li><a href="api.html#torchani.AEVComputer.forward">forward() (torchani.AEVComputer method)</a>
 
       <ul>
@@ -270,11 +264,23 @@
       <li><a href="api.html#torchani.nn.Gaussian">Gaussian (class in torchani.nn)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#torchani.utils.get_atomic_masses">get_atomic_masses() (in module torchani.utils)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="H">H</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#torchani.units.hartree2ev">hartree2ev() (in module torchani.units)</a>
+</li>
+      <li><a href="api.html#torchani.units.hartree2kcalmol">hartree2kcalmol() (in module torchani.units)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#torchani.units.hartree2kjoulemol">hartree2kjoulemol() (in module torchani.units)</a>
+</li>
       <li><a href="api.html#torchani.utils.hessian">hessian() (in module torchani.utils)</a>
 </li>
   </ul></td>
@@ -283,16 +289,12 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.data.CachedDataset.load">load() (torchani.data.CachedDataset method)</a>
-</li>
-      <li><a href="api.html#torchani.data.load_ani_dataset">load_ani_dataset() (in module torchani.data)</a>
-</li>
       <li><a href="api.html#torchani.neurochem.load_atomic_network">load_atomic_network() (in module torchani.neurochem)</a>
+</li>
+      <li><a href="api.html#torchani.neurochem.Trainer.load_data">load_data() (torchani.neurochem.Trainer method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.neurochem.Trainer.load_data">load_data() (torchani.neurochem.Trainer method)</a>
-</li>
       <li><a href="api.html#torchani.neurochem.load_model">load_model() (in module torchani.neurochem)</a>
 </li>
       <li><a href="api.html#torchani.neurochem.load_model_ensemble">load_model_ensemble() (in module torchani.neurochem)</a>
@@ -307,18 +309,41 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#torchani.utils.map2central">map2central() (in module torchani.utils)</a>
 </li>
+      <li><a href="api.html#torchani.units.mhessian2fconst">mhessian2fconst() (in module torchani.units)</a>
+</li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="index.html#module-torchani">torchani</a>
+</li>
+        <li><a href="api.html#module-torchani.ase">torchani.ase</a>
+</li>
+        <li><a href="api.html#module-torchani.data">torchani.data</a>
+</li>
+        <li><a href="api.html#module-torchani.models">torchani.models</a>
+</li>
+        <li><a href="api.html#module-torchani.neurochem">torchani.neurochem</a>
+</li>
+        <li><a href="api.html#module-torchani.neurochem.trainer">torchani.neurochem.trainer</a>
+</li>
+        <li><a href="api.html#module-torchani.optim">torchani.optim</a>
+</li>
+        <li><a href="api.html#module-torchani.units">torchani.units</a>
+</li>
+        <li><a href="api.html#module-torchani.utils">torchani.utils</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.utils.pad">pad() (in module torchani.utils)</a>
+      <li><a href="api.html#torchani.utils.pad_atomic_properties">pad_atomic_properties() (in module torchani.utils)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.utils.pad_atomic_properties">pad_atomic_properties() (in module torchani.utils)</a>
-</li>
       <li><a href="api.html#torchani.utils.present_species">present_species() (in module torchani.utils)</a>
 </li>
   </ul></td>
@@ -337,21 +362,17 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#torchani.EnergyShifter.sae">sae() (torchani.EnergyShifter method)</a>
 </li>
-      <li><a href="api.html#torchani.EnergyShifter.sae_from_dataset">sae_from_dataset() (torchani.EnergyShifter method)</a>
-</li>
-      <li><a href="api.html#torchani.data.ShuffledDataset">ShuffledDataset() (in module torchani.data)</a>
-</li>
       <li><a href="api.html#torchani.neurochem.Constants.species_to_tensor">species_to_tensor (torchani.neurochem.Constants attribute)</a>
+</li>
+      <li><a href="api.html#torchani.SpeciesConverter">SpeciesConverter (class in torchani)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#torchani.SpeciesConverter">SpeciesConverter (class in torchani)</a>
+      <li><a href="api.html#torchani.units.sqrt_mhessian2invcm">sqrt_mhessian2invcm() (in module torchani.units)</a>
 </li>
-      <li><a href="api.html#torchani.data.CachedDataset.split">split() (torchani.data.CachedDataset method)</a>
+      <li><a href="api.html#torchani.units.sqrt_mhessian2milliev">sqrt_mhessian2milliev() (in module torchani.units)</a>
 </li>
       <li><a href="api.html#torchani.utils.strip_redundant_padding">strip_redundant_padding() (in module torchani.utils)</a>
-</li>
-      <li><a href="api.html#torchani.EnergyShifter.subtract_from_dataset">subtract_from_dataset() (torchani.EnergyShifter method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -359,24 +380,71 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#module-torchani">torchani (module)</a>
+      <li>
+    torchani
+
+      <ul>
+        <li><a href="index.html#module-torchani">module</a>
 </li>
-      <li><a href="api.html#module-torchani.ase">torchani.ase (module)</a>
+      </ul></li>
+      <li>
+    torchani.ase
+
+      <ul>
+        <li><a href="api.html#module-torchani.ase">module</a>
 </li>
-      <li><a href="api.html#module-torchani.data">torchani.data (module)</a>
+      </ul></li>
+      <li>
+    torchani.data
+
+      <ul>
+        <li><a href="api.html#module-torchani.data">module</a>
 </li>
-      <li><a href="api.html#module-torchani.models">torchani.models (module)</a>
+      </ul></li>
+      <li>
+    torchani.models
+
+      <ul>
+        <li><a href="api.html#module-torchani.models">module</a>
 </li>
+      </ul></li>
+      <li>
+    torchani.neurochem
+
+      <ul>
+        <li><a href="api.html#module-torchani.neurochem">module</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#module-torchani.neurochem">torchani.neurochem (module)</a>
+      <li>
+    torchani.neurochem.trainer
+
+      <ul>
+        <li><a href="api.html#module-torchani.neurochem.trainer">module</a>
 </li>
-      <li><a href="api.html#module-torchani.neurochem.trainer">torchani.neurochem.trainer (module)</a>
+      </ul></li>
+      <li>
+    torchani.optim
+
+      <ul>
+        <li><a href="api.html#module-torchani.optim">module</a>
 </li>
-      <li><a href="api.html#module-torchani.optim">torchani.optim (module)</a>
+      </ul></li>
+      <li>
+    torchani.units
+
+      <ul>
+        <li><a href="api.html#module-torchani.units">module</a>
 </li>
-      <li><a href="api.html#module-torchani.utils">torchani.utils (module)</a>
+      </ul></li>
+      <li>
+    torchani.utils
+
+      <ul>
+        <li><a href="api.html#module-torchani.utils">module</a>
 </li>
+      </ul></li>
       <li><a href="api.html#torchani.neurochem.Trainer">Trainer (class in torchani.neurochem)</a>
 </li>
   </ul></td>

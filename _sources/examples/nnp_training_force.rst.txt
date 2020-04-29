@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_examples_nnp_training_force.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_examples_nnp_training_force.py:
+        Click :ref:`here <sphx_glr_download_examples_nnp_training_force.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_examples_nnp_training_force.py:
 
 
 .. _force-training-example:
@@ -31,6 +33,9 @@ information
     import torch.utils.tensorboard
     import tqdm
 
+    # helper function to convert energy unit from Hartree to kcal/mol
+    from torchani.units import hartree2kcalmol
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     Rcr = 5.2000e+00
@@ -41,10 +46,10 @@ information
     ShfZ = torch.tensor([1.9634954e-01, 5.8904862e-01, 9.8174770e-01, 1.3744468e+00, 1.7671459e+00, 2.1598449e+00, 2.5525440e+00, 2.9452431e+00], device=device)
     EtaA = torch.tensor([8.0000000e+00], device=device)
     ShfA = torch.tensor([9.0000000e-01, 1.5500000e+00, 2.2000000e+00, 2.8500000e+00], device=device)
-    num_species = 4
+    species_order = ['H', 'C', 'N', 'O']
+    num_species = len(species_order)
     aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
     energy_shifter = torchani.utils.EnergyShifter(None)
-    species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
 
 
     try:
@@ -55,25 +60,9 @@ information
 
     batch_size = 2560
 
-
-
-
-
-
-
-
-The code to create the dataset is a bit different: we need to manually
-specify that ``atomic_properties=['forces']`` so that forces will be read
-from hdf5 files.
-
-
-.. code-block:: default
-
-
-    training, validation = torchani.data.load_ani_dataset(
-        dspath, species_to_tensor, batch_size, rm_outlier=True,
-        device=device, atomic_properties=['forces'],
-        transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
+    training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices(species_order).shuffle().split(0.8, None)
+    training = training.collate(batch_size).cache()
+    validation = validation.collate(batch_size).cache()
 
     print('Self atomic energies: ', energy_shifter.self_energies)
 
@@ -87,65 +76,11 @@ from hdf5 files.
 
  .. code-block:: none
 
-    Self atomic energies:  tensor([-19.3542, -19.3542, -54.7122, -75.1628], dtype=torch.float64)
-
-
-
-
-When iterating the dataset, we will get pairs of input and output
-``(species_coordinates, properties)``, in this case, ``properties`` would
-contain a key ``'atomic'`` where ``properties['atomic']`` is a list of dict
-containing forces:
-
-
-.. code-block:: default
-
-
-    data = training[0]
-    properties = data[1]
-    atomic_properties = properties['atomic']
-    print(type(atomic_properties))
-    print(list(atomic_properties[0].keys()))
-
-
-
-
-
-.. rst-class:: sphx-glr-script-out
-
- Out:
-
- .. code-block:: none
-
-    <class 'list'>
-    ['species', 'coordinates', 'forces']
-
-
-
-
-Due to padding, part of the forces might be 0
-
-
-.. code-block:: default
-
-    print(atomic_properties[0]['forces'][0])
-
-
-
-
-
-.. rst-class:: sphx-glr-script-out
-
- Out:
-
- .. code-block:: none
-
-    tensor([[     0.0083,     -0.0745,      0.0000],
-            [    -0.0024,     -0.0433,      0.0000],
-            [    -0.0059,      0.1177,     -0.0000],
-            [     0.0000,      0.0000,      0.0000],
-            [     0.0000,      0.0000,      0.0000],
-            [     0.0000,      0.0000,      0.0000]])
+    => loading /home/runner/work/torchani/torchani/examples/../dataset/ani-1x/sample.h5, total molecules: 6
+    1/6  [====>.........................] - 0.0s    2/6  [=========>....................] - 0.0s    3/6  [==============>...............] - 0.0s    4/6  [===================>..........] - 0.1s    5/6  [========================>.....] - 0.1s    6/6  [==============================] - 0.1s
+    => loading /home/runner/work/torchani/torchani/examples/../dataset/ani-1x/sample.h5, total molecules: 6
+    1/6  [====>.........................] - 0.0s    2/6  [=========>....................] - 0.0s    3/6  [==============>...............] - 0.0s    4/6  [===================>..........] - 0.1s    5/6  [========================>.....] - 0.1s    6/6  [==============================] - 0.1s
+    Self atomic energies:  tensor([-19.354, -19.354, -54.712, -75.163], dtype=torch.float64)
 
 
 
@@ -155,9 +90,10 @@ The code to define networks, optimizers, are mostly the same
 
 .. code-block:: default
 
+    aev_dim = aev_computer.aev_length
 
     H_network = torch.nn.Sequential(
-        torch.nn.Linear(384, 160),
+        torch.nn.Linear(aev_dim, 160),
         torch.nn.CELU(0.1),
         torch.nn.Linear(160, 128),
         torch.nn.CELU(0.1),
@@ -167,7 +103,7 @@ The code to define networks, optimizers, are mostly the same
     )
 
     C_network = torch.nn.Sequential(
-        torch.nn.Linear(384, 144),
+        torch.nn.Linear(aev_dim, 144),
         torch.nn.CELU(0.1),
         torch.nn.Linear(144, 112),
         torch.nn.CELU(0.1),
@@ -177,7 +113,7 @@ The code to define networks, optimizers, are mostly the same
     )
 
     N_network = torch.nn.Sequential(
-        torch.nn.Linear(384, 128),
+        torch.nn.Linear(aev_dim, 128),
         torch.nn.CELU(0.1),
         torch.nn.Linear(128, 112),
         torch.nn.CELU(0.1),
@@ -187,7 +123,7 @@ The code to define networks, optimizers, are mostly the same
     )
 
     O_network = torch.nn.Sequential(
-        torch.nn.Linear(384, 128),
+        torch.nn.Linear(aev_dim, 128),
         torch.nn.CELU(0.1),
         torch.nn.Linear(128, 112),
         torch.nn.CELU(0.1),
@@ -446,26 +382,19 @@ is better than the best, then save the new best model to a checkpoint
 
 
 
-    # helper function to convert energy unit from Hartree to kcal/mol
-    def hartree2kcal(x):
-        return 627.509 * x
-
-
     def validate():
         # run validation
         mse_sum = torch.nn.MSELoss(reduction='sum')
         total_mse = 0.0
         count = 0
-        for batch_x, batch_y in validation:
-            true_energies = batch_y['energies']
-            predicted_energies = []
-            for chunk_species, chunk_coordinates in batch_x:
-                chunk_energies = model((chunk_species, chunk_coordinates)).energies
-                predicted_energies.append(chunk_energies)
-            predicted_energies = torch.cat(predicted_energies)
+        for properties in validation:
+            species = properties['species'].to(device)
+            coordinates = properties['coordinates'].to(device).float()
+            true_energies = properties['energies'].to(device).float()
+            _, predicted_energies = model((species, coordinates))
             total_mse += mse_sum(predicted_energies, true_energies).item()
             count += predicted_energies.shape[0]
-        return hartree2kcal(math.sqrt(total_mse / count))
+        return hartree2kcalmol(math.sqrt(total_mse / count))
 
 
 
@@ -526,49 +455,28 @@ In the training loop, we need to compute force, and loss for forces
 
         # Besides being stored in x, species and coordinates are also stored in y.
         # So here, for simplicity, we just ignore the x and use y for everything.
-        for i, (_, batch_y) in tqdm.tqdm(
+        for i, properties in tqdm.tqdm(
             enumerate(training),
             total=len(training),
             desc="epoch {}".format(AdamW_scheduler.last_epoch)
         ):
+            species = properties['species'].to(device)
+            coordinates = properties['coordinates'].to(device).float().requires_grad_(True)
+            true_energies = properties['energies'].to(device).float()
+            true_forces = properties['forces'].to(device).float()
+            num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+            _, predicted_energies = model((species, coordinates))
 
-            true_energies = batch_y['energies']
-            predicted_energies = []
-            num_atoms = []
-            force_loss = []
-
-            for chunk in batch_y['atomic']:
-                chunk_species = chunk['species']
-                chunk_coordinates = chunk['coordinates']
-                chunk_true_forces = chunk['forces']
-                chunk_num_atoms = (chunk_species >= 0).to(true_energies.dtype).sum(dim=1)
-                num_atoms.append(chunk_num_atoms)
-
-                # We must set `chunk_coordinates` to make it requires grad, so
-                # that we could compute force from it
-                chunk_coordinates.requires_grad_(True)
-
-                chunk_energies = model((chunk_species, chunk_coordinates)).energies
-
-                # We can use torch.autograd.grad to compute force. Remember to
-                # create graph so that the loss of the force can contribute to
-                # the gradient of parameters, and also to retain graph so that
-                # we can backward through it a second time when computing gradient
-                # w.r.t. parameters.
-                chunk_forces = -torch.autograd.grad(chunk_energies.sum(), chunk_coordinates, create_graph=True, retain_graph=True)[0]
-
-                # Now let's compute loss for force of this chunk
-                chunk_force_loss = mse(chunk_true_forces, chunk_forces).sum(dim=(1, 2)) / chunk_num_atoms
-
-                predicted_energies.append(chunk_energies)
-                force_loss.append(chunk_force_loss)
-
-            num_atoms = torch.cat(num_atoms)
-            predicted_energies = torch.cat(predicted_energies)
+            # We can use torch.autograd.grad to compute force. Remember to
+            # create graph so that the loss of the force can contribute to
+            # the gradient of parameters, and also to retain graph so that
+            # we can backward through it a second time when computing gradient
+            # w.r.t. parameters.
+            forces = -torch.autograd.grad(predicted_energies.sum(), coordinates, create_graph=True, retain_graph=True)[0]
 
             # Now the total loss has two parts, energy loss and force loss
             energy_loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
-            force_loss = torch.cat(force_loss).mean()
+            force_loss = (mse(true_forces, forces).sum(dim=(1, 2)) / num_atoms).mean()
             loss = energy_loss + force_coefficient * force_loss
 
             AdamW.zero_grad()
@@ -598,10 +506,10 @@ In the training loop, we need to compute force, and loss for forces
  .. code-block:: none
 
     training starting from epoch 1
-    RMSE: 46.60869369722377 at epoch 1
-    epoch 1:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 1:  25%|##5       | 1/4 [00:02<00:08,  2.96s/it]    epoch 1:  50%|#####     | 2/4 [00:05<00:05,  2.94s/it]    epoch 1:  75%|#######5  | 3/4 [00:08<00:02,  2.90s/it]    epoch 1: 100%|##########| 4/4 [00:10<00:00,  2.58s/it]    epoch 1: 100%|##########| 4/4 [00:10<00:00,  2.62s/it]
-    RMSE: 61.549629275930776 at epoch 2
-    epoch 2:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 2:  25%|##5       | 1/4 [00:02<00:08,  2.85s/it]    epoch 2:  50%|#####     | 2/4 [00:05<00:05,  2.87s/it]    epoch 2:  75%|#######5  | 3/4 [00:08<00:02,  2.87s/it]    epoch 2: 100%|##########| 4/4 [00:10<00:00,  2.55s/it]    epoch 2: 100%|##########| 4/4 [00:10<00:00,  2.61s/it]
+    RMSE: 82.69277634252397 at epoch 1
+    epoch 1:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 1:  25%|##5       | 1/4 [00:02<00:08,  2.72s/it]    epoch 1:  50%|#####     | 2/4 [00:05<00:05,  2.70s/it]    epoch 1:  75%|#######5  | 3/4 [00:08<00:02,  2.68s/it]    epoch 1: 100%|##########| 4/4 [00:09<00:00,  2.36s/it]    epoch 1: 100%|##########| 4/4 [00:09<00:00,  2.40s/it]
+    RMSE: 35.40795472206371 at epoch 2
+    epoch 2:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 2:  25%|##5       | 1/4 [00:02<00:08,  2.70s/it]    epoch 2:  50%|#####     | 2/4 [00:05<00:05,  2.68s/it]    epoch 2:  75%|#######5  | 3/4 [00:07<00:02,  2.66s/it]    epoch 2: 100%|##########| 4/4 [00:09<00:00,  2.33s/it]    epoch 2: 100%|##########| 4/4 [00:09<00:00,  2.38s/it]
 
 
 
@@ -609,7 +517,7 @@ In the training loop, we need to compute force, and loss for forces
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  21.895 seconds)
+   **Total running time of the script:** ( 0 minutes  20.907 seconds)
 
 
 .. _sphx_glr_download_examples_nnp_training_force.py:
@@ -622,13 +530,13 @@ In the training loop, we need to compute force, and loss for forces
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: nnp_training_force.py <nnp_training_force.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: nnp_training_force.ipynb <nnp_training_force.ipynb>`
 

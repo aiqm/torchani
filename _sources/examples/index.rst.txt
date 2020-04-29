@@ -52,26 +52,6 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI is able to use ASE interface to do structure optimization and vibration analysis, but ...">
-
-.. only:: html
-
- .. figure:: /examples/images/thumb/sphx_glr_vibration_analysis_thumb.png
-
-     :ref:`sphx_glr_examples_vibration_analysis.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/vibration_analysis
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI&#x27;s NeuroChem trainer to read and run NeuroChem&#x27;s training...">
 
 .. only:: html
@@ -89,6 +69,26 @@ Examples
    :hidden:
 
    /examples/neurochem_trainer
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI is able to use ASE interface to do structure optimization and vibration analysis, but ...">
+
+.. only:: html
+
+ .. figure:: /examples/images/thumb/sphx_glr_vibration_analysis_thumb.png
+
+     :ref:`sphx_glr_examples_vibration_analysis.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/vibration_analysis
 
 .. raw:: html
 
@@ -181,13 +181,13 @@ Examples
     :class: sphx-glr-footer-gallery
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
     :download:`Download all examples in Python source code: examples_python.zip <//home/runner/work/torchani/torchani/docs/examples/examples_python.zip>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
     :download:`Download all examples in Jupyter notebooks: examples_jupyter.zip <//home/runner/work/torchani/torchani/docs/examples/examples_jupyter.zip>`
 

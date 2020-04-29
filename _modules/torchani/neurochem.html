@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.neurochem &mdash; TorchANI 1.2 documentation</title>
+  <title>torchani.neurochem &mdash; TorchANI 2.0 documentation</title>
   
 
   
@@ -21,11 +21,11 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -35,6 +35,8 @@
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/gallery-dataframe.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
 </head>
@@ -60,7 +62,7 @@
             
             
               <div class="version">
-                1.2
+                2.0
               </div>
             
           
@@ -109,6 +111,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ase">ASE Interface</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.optim">TorchANI Optimizater</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.units">Units</a></li>
 </ul>
 
             
@@ -185,11 +188,12 @@
 <span class="kn">import</span> <span class="nn">timeit</span>
 <span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">from</span> <span class="nn">..nn</span> <span class="k">import</span> <span class="n">ANIModel</span><span class="p">,</span> <span class="n">Ensemble</span><span class="p">,</span> <span class="n">Gaussian</span><span class="p">,</span> <span class="n">Sequential</span>
-<span class="kn">from</span> <span class="nn">..utils</span> <span class="k">import</span> <span class="n">EnergyShifter</span><span class="p">,</span> <span class="n">ChemicalSymbolsToInts</span>
-<span class="kn">from</span> <span class="nn">..aev</span> <span class="k">import</span> <span class="n">AEVComputer</span>
-<span class="kn">from</span> <span class="nn">..optim</span> <span class="k">import</span> <span class="n">AdamW</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">..nn</span> <span class="kn">import</span> <span class="n">ANIModel</span><span class="p">,</span> <span class="n">Ensemble</span><span class="p">,</span> <span class="n">Gaussian</span><span class="p">,</span> <span class="n">Sequential</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">EnergyShifter</span><span class="p">,</span> <span class="n">ChemicalSymbolsToInts</span>
+<span class="kn">from</span> <span class="nn">..aev</span> <span class="kn">import</span> <span class="n">AEVComputer</span>
+<span class="kn">from</span> <span class="nn">..optim</span> <span class="kn">import</span> <span class="n">AdamW</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">torchani.units</span> <span class="kn">import</span> <span class="n">hartree2kcalmol</span>
 
 
 <div class="viewcode-block" id="Constants"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Constants">[docs]</a><span class="k">class</span> <span class="nc">Constants</span><span class="p">(</span><span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
@@ -201,7 +205,7 @@
 <span class="sd">            string chemical symbols to 1d long tensor.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
@@ -225,7 +229,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">species</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">species_to_tensor</span> <span class="o">=</span> <span class="n">ChemicalSymbolsToInts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">species</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">yield</span> <span class="s1">&#39;Rcr&#39;</span>
         <span class="k">yield</span> <span class="s1">&#39;Rca&#39;</span>
         <span class="k">yield</span> <span class="s1">&#39;EtaR&#39;</span>
@@ -236,24 +240,29 @@
         <span class="k">yield</span> <span class="s1">&#39;ShfZ&#39;</span>
         <span class="k">yield</span> <span class="s1">&#39;num_species&#39;</span>
 
-    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="mi">8</span>
 
-    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="load_sae"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_sae">[docs]</a><span class="k">def</span> <span class="nf">load_sae</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+<div class="viewcode-block" id="load_sae"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_sae">[docs]</a><span class="k">def</span> <span class="nf">load_sae</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">return_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns an object of :class:`EnergyShifter` with self energies from</span>
 <span class="sd">    NeuroChem sae file&quot;&quot;&quot;</span>
     <span class="n">self_energies</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">line</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">i</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)]</span>
+            <span class="n">species</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
             <span class="n">index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
             <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
             <span class="n">self_energies</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
     <span class="n">self_energies</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">self_energies</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">return_dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">EnergyShifter</span><span class="p">(</span><span class="n">self_energies</span><span class="p">),</span> <span class="n">d</span>
     <span class="k">return</span> <span class="n">EnergyShifter</span><span class="p">(</span><span class="n">self_energies</span><span class="p">)</span></div>
 
 
@@ -440,10 +449,6 @@
     <span class="k">return</span> <span class="n">Ensemble</span><span class="p">(</span><span class="n">models</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">hartree2kcal</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-    <span class="k">return</span> <span class="mf">627.509</span> <span class="o">*</span> <span class="n">x</span>
-
-
 <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
 
 <div class="viewcode-block" id="Trainer"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer">[docs]</a>    <span class="k">class</span> <span class="nc">Trainer</span><span class="p">:</span>
@@ -459,16 +464,16 @@
 <span class="sd">                will be stored in the network directory with this file name.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">),</span> <span class="n">tqdm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">),</span> <span class="n">tqdm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                      <span class="n">tensorboard</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">checkpoint_name</span><span class="o">=</span><span class="s1">&#39;model.pt&#39;</span><span class="p">):</span>
 
-            <span class="kn">from</span> <span class="nn">..data</span> <span class="k">import</span> <span class="n">load_ani_dataset</span>  <span class="c1"># noqa: E402</span>
+            <span class="kn">from</span> <span class="nn">..data</span> <span class="kn">import</span> <span class="n">load</span>  <span class="c1"># noqa: E402</span>
 
             <span class="k">class</span> <span class="nc">dummy</span><span class="p">:</span>
                 <span class="k">pass</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">imports</span> <span class="o">=</span> <span class="n">dummy</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="o">.</span><span class="n">load_ani_dataset</span> <span class="o">=</span> <span class="n">load_ani_dataset</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="o">.</span><span class="n">load</span> <span class="o">=</span> <span class="n">load</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
@@ -644,7 +649,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">aev_computer</span> <span class="o">=</span> <span class="n">AEVComputer</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="p">)</span>
             <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sflparamsfile&#39;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;atomEnergyFile&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">shift_energy</span> <span class="o">=</span> <span class="n">load_sae</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shift_energy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sae</span> <span class="o">=</span> <span class="n">load_sae</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sae_file</span><span class="p">,</span> <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;atomEnergyFile&#39;</span><span class="p">]</span>
             <span class="n">network_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ntwkStoreDir&#39;</span><span class="p">])</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">network_dir</span><span class="p">):</span>
@@ -729,29 +734,21 @@
 
 <div class="viewcode-block" id="Trainer.load_data"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer.load_data">[docs]</a>        <span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training_path</span><span class="p">,</span> <span class="n">validation_path</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;Load training and validation dataset from file.&quot;&quot;&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">training_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="o">.</span><span class="n">load_ani_dataset</span><span class="p">(</span>
-                <span class="n">training_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">training_batch_size</span><span class="p">,</span> <span class="n">rm_outlier</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
-                <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_energy</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">validation_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="o">.</span><span class="n">load_ani_dataset</span><span class="p">(</span>
-                <span class="n">validation_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">validation_batch_size</span><span class="p">,</span> <span class="n">rm_outlier</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
-                <span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_energy</span><span class="o">.</span><span class="n">subtract_from_dataset</span><span class="p">])</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">training_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_path</span><span class="p">)</span><span class="o">.</span><span class="n">subtract_self_energies</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sae</span><span class="p">)</span><span class="o">.</span><span class="n">species_to_indices</span><span class="p">()</span><span class="o">.</span><span class="n">shuffle</span><span class="p">()</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_batch_size</span><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validation_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">validation_path</span><span class="p">)</span><span class="o">.</span><span class="n">subtract_self_energies</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sae</span><span class="p">)</span><span class="o">.</span><span class="n">species_to_indices</span><span class="p">()</span><span class="o">.</span><span class="n">shuffle</span><span class="p">()</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">validation_batch_size</span><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Trainer.evaluate"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer.evaluate">[docs]</a>        <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;Run the evaluation&quot;&quot;&quot;</span>
             <span class="n">total_mse</span> <span class="o">=</span> <span class="mf">0.0</span>
             <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">batch_x</span><span class="p">,</span> <span class="n">batch_y</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
-                <span class="n">true_energies</span> <span class="o">=</span> <span class="n">batch_y</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span>
-                <span class="n">predicted_energies</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span> <span class="ow">in</span> <span class="n">batch_x</span><span class="p">:</span>
-                    <span class="n">_</span><span class="p">,</span> <span class="n">chunk_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">((</span><span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span><span class="p">))</span>
-                    <span class="n">predicted_energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk_energies</span><span class="p">)</span>
-                <span class="n">predicted_energies</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">predicted_energies</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">properties</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
+                <span class="n">species</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">coordinates</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+                <span class="n">true_energies</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">predicted_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span>
                 <span class="n">total_mse</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mse_sum</span><span class="p">(</span><span class="n">predicted_energies</span><span class="p">,</span> <span class="n">true_energies</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
                 <span class="n">count</span> <span class="o">+=</span> <span class="n">predicted_energies</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">return</span> <span class="n">hartree2kcal</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">total_mse</span> <span class="o">/</span> <span class="n">count</span><span class="p">))</span></div>
+            <span class="k">return</span> <span class="n">hartree2kcalmol</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">total_mse</span> <span class="o">/</span> <span class="n">count</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="Trainer.run"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer.run">[docs]</a>        <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;Run the training&quot;&quot;&quot;</span>
@@ -797,21 +794,16 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;no_improve_count_vs_epoch&#39;</span><span class="p">,</span> <span class="n">no_improve_count</span><span class="p">,</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span><span class="p">)</span>
 
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">batch_x</span><span class="p">,</span> <span class="n">batch_y</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">properties</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span>
                     <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_set</span><span class="p">),</span>
                     <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_set</span><span class="p">),</span>
                     <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;epoch </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span><span class="p">)</span>
                 <span class="p">):</span>
-
-                    <span class="n">true_energies</span> <span class="o">=</span> <span class="n">batch_y</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span>
-                    <span class="n">predicted_energies</span> <span class="o">=</span> <span class="p">[]</span>
-                    <span class="n">num_atoms</span> <span class="o">=</span> <span class="p">[]</span>
-                    <span class="k">for</span> <span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span> <span class="ow">in</span> <span class="n">batch_x</span><span class="p">:</span>
-                        <span class="n">num_atoms</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">chunk_species</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-                        <span class="n">_</span><span class="p">,</span> <span class="n">chunk_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">((</span><span class="n">chunk_species</span><span class="p">,</span> <span class="n">chunk_coordinates</span><span class="p">))</span>
-                        <span class="n">predicted_energies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk_energies</span><span class="p">)</span>
-                    <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">num_atoms</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">true_energies</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-                    <span class="n">predicted_energies</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">predicted_energies</span><span class="p">)</span>
+                    <span class="n">species</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+                    <span class="n">true_energies</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+                    <span class="n">num_atoms</span> <span class="o">=</span> <span class="p">(</span><span class="n">species</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">true_energies</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+                    <span class="n">_</span><span class="p">,</span> <span class="n">predicted_energies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">((</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">))</span>
                     <span class="n">loss</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mse_se</span><span class="p">(</span><span class="n">predicted_energies</span><span class="p">,</span> <span class="n">true_energies</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_atoms</span><span class="o">.</span><span class="n">sqrt</span><span class="p">())</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
                     <span class="n">AdamW_optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
                     <span class="n">SGD_optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>

@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_examples_vibration_analysis.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_examples_vibration_analysis.py:
+        Click :ref:`here <sphx_glr_download_examples_vibration_analysis.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_examples_vibration_analysis.py:
 
 
 Computing Vibrational Frequencies Using Analytical Hessian
@@ -39,7 +41,8 @@ Let's now manually specify the device we want TorchANI to run:
 
 .. code-block:: default
 
-    model = torchani.models.ANI1x().double()
+    device = torch.device('cpu')
+    model = torchani.models.ANI1x(periodic_table_index=True).to(device).double()
 
 
 
@@ -74,14 +77,14 @@ Let's first construct a water molecule and do structure optimization:
  .. code-block:: none
 
           Step     Time          Energy         fmax
-    BFGS:    0 18:56:20    -2078.633392        0.6576
-    BFGS:    1 18:56:20    -2078.637244        0.1905
-    BFGS:    2 18:56:20    -2078.637801        0.0292
-    BFGS:    3 18:56:20    -2078.637827        0.0183
-    BFGS:    4 18:56:20    -2078.637849        0.0014
-    BFGS:    5 18:56:20    -2078.637849        0.0001
-    BFGS:    6 18:56:20    -2078.637849        0.0000
-    BFGS:    7 18:56:20    -2078.637849        0.0000
+    BFGS:    0 06:40:35    -2078.633392        0.6576
+    BFGS:    1 06:40:35    -2078.637244        0.1905
+    BFGS:    2 06:40:35    -2078.637801        0.0292
+    BFGS:    3 06:40:35    -2078.637827        0.0183
+    BFGS:    4 06:40:35    -2078.637849        0.0014
+    BFGS:    5 06:40:36    -2078.637849        0.0001
+    BFGS:    6 06:40:36    -2078.637849        0.0000
+    BFGS:    7 06:40:36    -2078.637849        0.0000
 
     True
 
@@ -93,7 +96,7 @@ TorchANI:
 
 .. code-block:: default
 
-    species = model.species_to_tensor(molecule.get_chemical_symbols()).unsqueeze(0)
+    species = torch.tensor(molecule.get_atomic_numbers(), device=device, dtype=torch.long).unsqueeze(0)
     coordinates = torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_grad_(True)
 
 
@@ -103,19 +106,14 @@ TorchANI:
 
 
 
-TorchANI needs to know the mass of each atom in amu in order to do vibration
-analysis:
+TorchANI needs the masses of elements in AMU to compute vibrations. The
+masses in AMU can be obtained from a tensor with atomic numbers by using
+this utility:
 
 
 .. code-block:: default
 
-    element_masses = torch.tensor([
-        1.008,  # H
-        12.011,  # C
-        14.007,  # N
-        15.999,  # O
-    ], dtype=torch.double)
-    masses = element_masses[species]
+    masses = torchani.utils.get_atomic_masses(species)
 
 
 
@@ -180,16 +178,18 @@ one molecule to compute, 9 means `3 atoms * 3D space = 9 degree of freedom`.
 We are now ready to compute vibrational frequencies. The output has unit
 cm^-1. Since there are in total 9 degree of freedom, there are in total 9
 frequencies. Only the frequencies of the 3 vibrational modes are interesting.
+We output the modes as MDU (mass deweighted unnormalized), to compare with ASE.
 
 
 .. code-block:: default
 
-    freq, modes = torchani.utils.vibrational_analysis(masses, hessian)
-    freq = freq[-3:]
-    modes = modes[-3:]
+    freq, modes, fconstants, rmasses = torchani.utils.vibrational_analysis(masses, hessian, mode_type='MDU')
+    torch.set_printoptions(precision=3, sci_mode=False)
 
-    print('Frequencies (cm^-1):', freq)
-    print('Modes:', modes)
+    print('Frequencies (cm^-1):', freq[6:])
+    print('Force Constants (mDyne/A):', fconstants[6:])
+    print('Reduced masses (AMU):', rmasses[6:])
+    print('Modes:', modes[6:])
 
 
 
@@ -200,18 +200,20 @@ frequencies. Only the frequencies of the 3 vibrational modes are interesting.
 
  .. code-block:: none
 
-    Frequencies (cm^-1): tensor([1913.2332, 3882.4718, 3911.2534], dtype=torch.float64)
-    Modes: tensor([[[-1.4982e-02, -6.7708e-01,  1.8343e-16],
-             [-6.5173e-01, -1.8415e-01, -1.9865e-16],
-             [ 4.2006e-02,  5.4261e-02, -4.2585e-18]],
+    Frequencies (cm^-1): tensor([1913.200, 3882.404, 3911.185], dtype=torch.float64)
+    Force Constants (mDyne/A): tensor([2.339, 9.269, 9.743], dtype=torch.float64)
+    Reduced masses (AMU): tensor([1.085, 1.044, 1.081], dtype=torch.float64)
+    Modes: tensor([[[     0.015,      0.677,     -0.000],
+             [     0.652,      0.184,      0.000],
+             [    -0.042,     -0.054,     -0.000]],
 
-            [[-6.8921e-01,  5.3705e-02,  7.9943e-17],
-             [ 2.2467e-01, -6.5377e-01,  1.0366e-16],
-             [ 2.9268e-02,  3.7806e-02, -4.8400e-18]],
+            [[    -0.689,      0.054,     -0.000],
+             [     0.225,     -0.654,     -0.000],
+             [     0.029,      0.038,      0.000]],
 
-            [[-6.7842e-01, -6.3755e-03,  9.7086e-17],
-             [-1.6381e-01,  6.5838e-01,  6.4085e-17],
-             [ 5.3064e-02, -4.1079e-02, -6.2883e-18]]], dtype=torch.float64)
+            [[    -0.678,     -0.006,     -0.000],
+             [    -0.164,      0.658,     -0.000],
+             [     0.053,     -0.041,      0.000]]], dtype=torch.float64)
 
 
 
@@ -219,7 +221,7 @@ frequencies. Only the frequencies of the 3 vibrational modes are interesting.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.085 seconds)
+   **Total running time of the script:** ( 0 minutes  2.346 seconds)
 
 
 .. _sphx_glr_download_examples_vibration_analysis.py:
@@ -232,13 +234,13 @@ frequencies. Only the frequencies of the 3 vibrational modes are interesting.
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: vibration_analysis.py <vibration_analysis.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: vibration_analysis.ipynb <vibration_analysis.ipynb>`
 

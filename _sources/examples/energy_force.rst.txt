@@ -1,10 +1,12 @@
-.. note::
-    :class: sphx-glr-download-link-note
+.. only:: html
 
-    Click :ref:`here <sphx_glr_download_examples_energy_force.py>` to download the full example code
-.. rst-class:: sphx-glr-example-title
+    .. note::
+        :class: sphx-glr-download-link-note
 
-.. _sphx_glr_examples_energy_force.py:
+        Click :ref:`here <sphx_glr_download_examples_energy_force.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_examples_energy_force.py:
 
 
 Computing Energy and Force Using Models Inside Model Zoo
@@ -126,7 +128,7 @@ And print to see the result:
 
  .. code-block:: none
 
-    Energy: -40.425620573407016
+    Energy: -40.425620576200984
     Force: tensor([[ 0.0312, -0.1272, -0.0511],
             [-0.1200,  0.1628, -0.0761],
             [ 0.0856, -0.0448,  0.0407],
@@ -139,7 +141,7 @@ And print to see the result:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.702 seconds)
+   **Total running time of the script:** ( 0 minutes  1.749 seconds)
 
 
 .. _sphx_glr_download_examples_energy_force.py:
@@ -152,13 +154,13 @@ And print to see the result:
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-python
 
      :download:`Download Python source code: energy_force.py <energy_force.py>`
 
 
 
-  .. container:: sphx-glr-download
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
 
      :download:`Download Jupyter notebook: energy_force.ipynb <energy_force.ipynb>`
 

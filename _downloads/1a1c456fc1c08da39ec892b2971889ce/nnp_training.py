@@ -27,6 +27,9 @@ import math
 import torch.utils.tensorboard
 import tqdm
 
+# helper function to convert energy unit from Hartree to kcal/mol
+from torchani.units import hartree2kcalmol
+
 # device to run the training
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -55,10 +58,10 @@ Zeta = torch.tensor([3.2000000e+01], device=device)
 ShfZ = torch.tensor([1.9634954e-01, 5.8904862e-01, 9.8174770e-01, 1.3744468e+00, 1.7671459e+00, 2.1598449e+00, 2.5525440e+00, 2.9452431e+00], device=device)
 EtaA = torch.tensor([8.0000000e+00], device=device)
 ShfA = torch.tensor([9.0000000e-01, 1.5500000e+00, 2.2000000e+00, 2.8500000e+00], device=device)
-num_species = 4
+species_order = ['H', 'C', 'N', 'O']
+num_species = len(species_order)
 aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
 energy_shifter = torchani.utils.EnergyShifter(None)
-species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
 
 ###############################################################################
 # Now let's setup datasets. These paths assumes the user run this script under
@@ -77,44 +80,22 @@ try:
 except NameError:
     path = os.getcwd()
 dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
-
 batch_size = 2560
 
-training, validation = torchani.data.load_ani_dataset(
-    dspath, species_to_tensor, batch_size, rm_outlier=True, device=device,
-    transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
-
+training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices(species_order).shuffle().split(0.8, None)
+training = training.collate(batch_size).cache()
+validation = validation.collate(batch_size).cache()
 print('Self atomic energies: ', energy_shifter.self_energies)
 
 ###############################################################################
-# When iterating the dataset, we will get pairs of input and output
-# ``(species_coordinates, properties)``, where ``species_coordinates`` is the
-# input and ``properties`` is the output.
-#
-# ``species_coordinates`` is a list of species-coordinate pairs, with shape
-# ``(N, Na)`` and ``(N, Na, 3)``. The reason for getting this type is, when
-# loading the dataset and generating minibatches, the whole dataset are
-# shuffled and each minibatch contains structures of molecules with a wide
-# range of number of atoms. Molecules of different number of atoms are batched
-# into single by padding. The way padding works is: adding ghost atoms, with
-# species 'X', and do computations as if they were normal atoms. But when
-# computing AEVs, atoms with species `X` would be ignored. To avoid computation
-# wasting on padding atoms, minibatches are further splitted into chunks. Each
-# chunk contains structures of molecules of similar size, which minimize the
-# total number of padding atoms required to add. The input list
-# ``species_coordinates`` contains chunks of that minibatch we are getting. The
-# batching and chunking happens automatically, so the user does not need to
-# worry how to construct chunks, but the user need to compute the energies for
-# each chunk and concat them into single tensor.
-#
-# The output, i.e. ``properties`` is a dictionary holding each property. This
-# allows us to extend TorchANI in the future to training forces and properties.
+# When iterating the dataset, we will get a dict of name->property mapping
 #
 ###############################################################################
 # Now let's define atomic neural networks.
+aev_dim = aev_computer.aev_length
 
 H_network = torch.nn.Sequential(
-    torch.nn.Linear(384, 160),
+    torch.nn.Linear(aev_dim, 160),
     torch.nn.CELU(0.1),
     torch.nn.Linear(160, 128),
     torch.nn.CELU(0.1),
@@ -124,7 +105,7 @@ H_network = torch.nn.Sequential(
 )
 
 C_network = torch.nn.Sequential(
-    torch.nn.Linear(384, 144),
+    torch.nn.Linear(aev_dim, 144),
     torch.nn.CELU(0.1),
     torch.nn.Linear(144, 112),
     torch.nn.CELU(0.1),
@@ -134,7 +115,7 @@ C_network = torch.nn.Sequential(
 )
 
 N_network = torch.nn.Sequential(
-    torch.nn.Linear(384, 128),
+    torch.nn.Linear(aev_dim, 128),
     torch.nn.CELU(0.1),
     torch.nn.Linear(128, 112),
     torch.nn.CELU(0.1),
@@ -144,7 +125,7 @@ N_network = torch.nn.Sequential(
 )
 
 O_network = torch.nn.Sequential(
-    torch.nn.Linear(384, 128),
+    torch.nn.Linear(aev_dim, 128),
     torch.nn.CELU(0.1),
     torch.nn.Linear(128, 112),
     torch.nn.CELU(0.1),
@@ -272,26 +253,19 @@ if os.path.isfile(latest_checkpoint):
 # is better than the best, then save the new best model to a checkpoint
 
 
-# helper function to convert energy unit from Hartree to kcal/mol
-def hartree2kcal(x):
-    return 627.509 * x
-
-
 def validate():
     # run validation
     mse_sum = torch.nn.MSELoss(reduction='sum')
     total_mse = 0.0
     count = 0
-    for batch_x, batch_y in validation:
-        true_energies = batch_y['energies']
-        predicted_energies = []
-        for chunk_species, chunk_coordinates in batch_x:
-            chunk_energies = model((chunk_species, chunk_coordinates)).energies
-            predicted_energies.append(chunk_energies)
-        predicted_energies = torch.cat(predicted_energies)
+    for properties in validation:
+        species = properties['species'].to(device)
+        coordinates = properties['coordinates'].to(device).float()
+        true_energies = properties['energies'].to(device).float()
+        _, predicted_energies = model((species, coordinates))
         total_mse += mse_sum(predicted_energies, true_energies).item()
         count += predicted_energies.shape[0]
-    return hartree2kcal(math.sqrt(total_mse / count))
+    return hartree2kcalmol(math.sqrt(total_mse / count))
 
 
 ###############################################################################
@@ -331,23 +305,17 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
     tensorboard.add_scalar('best_validation_rmse', AdamW_scheduler.best, AdamW_scheduler.last_epoch)
     tensorboard.add_scalar('learning_rate', learning_rate, AdamW_scheduler.last_epoch)
 
-    for i, (batch_x, batch_y) in tqdm.tqdm(
+    for i, properties in tqdm.tqdm(
         enumerate(training),
         total=len(training),
         desc="epoch {}".format(AdamW_scheduler.last_epoch)
     ):
+        species = properties['species'].to(device)
+        coordinates = properties['coordinates'].to(device).float()
+        true_energies = properties['energies'].to(device).float()
+        num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+        _, predicted_energies = model((species, coordinates))
 
-        true_energies = batch_y['energies']
-        predicted_energies = []
-        num_atoms = []
-
-        for chunk_species, chunk_coordinates in batch_x:
-            num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
-            chunk_energies = model((chunk_species, chunk_coordinates)).energies
-            predicted_energies.append(chunk_energies)
-
-        num_atoms = torch.cat(num_atoms)
-        predicted_energies = torch.cat(predicted_energies)
         loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
 
         AdamW.zero_grad()
