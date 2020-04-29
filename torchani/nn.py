@@ -123,4 +123,4 @@ class SpeciesConverter(torch.nn.Module):
                 pbc: Optional[Tensor] = None):
         """Convert species from periodic table element index to 0, 1, 2, 3, ... indexing"""
         species, coordinates = input_
-        return SpeciesCoordinates(self.conv_tensor[species], coordinates)
+        return SpeciesCoordinates(self.conv_tensor[species].to(species.device), coordinates)
