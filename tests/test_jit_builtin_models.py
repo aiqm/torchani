@@ -6,13 +6,6 @@ import os
 
 path = os.path.dirname(os.path.realpath(__file__))
 dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
-batch_size = 256
-chunk_threshold = 5
-other_properties = {'properties': ['energies'],
-                    'padding_values': [None],
-                    'padded_shapes': [(batch_size, )],
-                    'dtypes': [torch.float64],
-                    }
 
 
 class TestBuiltinModelsJIT(unittest.TestCase):
