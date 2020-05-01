@@ -51,7 +51,7 @@ batch_size = 2560
 
 training, validation = torchani.data.load(
     dspath,
-    additional_properties=('dipoles',)
+    additional_properties=('forces',)
 ).subtract_self_energies(energy_shifter).species_to_indices(species_order).shuffle().split(0.8, None)
 
 training = training.collate(batch_size).cache()
