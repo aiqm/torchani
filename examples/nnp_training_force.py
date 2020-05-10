@@ -131,7 +131,7 @@ model = torchani.nn.Sequential(aev_computer, nn).to(device)
 # Here we will use Adam with weight decay for the weights and Stochastic Gradient
 # Descent for biases.
 
-AdamW = torchani.optim.AdamW([
+AdamW = torch.optim.AdamW([
     # H networks
     {'params': [H_network[0].weight]},
     {'params': [H_network[2].weight], 'weight_decay': 0.00001},
