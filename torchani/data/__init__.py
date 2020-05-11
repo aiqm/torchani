@@ -67,7 +67,7 @@ if PKBAR_INSTALLED:
 verbose = True
 
 
-PROPERTIES = ('energies', 'forces')
+PROPERTIES = ('energies',)
 PADDING = {
     'species': -1,
     'coordinates': 0.0,
