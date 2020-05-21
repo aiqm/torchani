@@ -317,7 +317,7 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     elif unit == 'cm^-1':
         unit_converter = sqrt_mhessian2invcm
     else:
-        raise ValueError(f'Only meV and cm^-1 are supported right now')
+        raise ValueError('Only meV and cm^-1 are supported right now')
 
     assert hessian.shape[0] == 1, 'Currently only supporting computing one molecule a time'
     # Solving the eigenvalue problem: Hq = w^2 * T q
@@ -410,7 +410,7 @@ def get_atomic_masses(species):
            269.1338    , 278.156     , 281.165     , 281.166     , # noqa
            285.177     , 286.182     , 289.19      , 289.194     , # noqa
            293.204     , 293.208     , 294.214], # noqa
-           dtype=torch.double, device=species.device)
+        dtype=torch.double, device=species.device) # noqa
     masses = default_atomic_masses[species]
     return masses
 
