@@ -181,6 +181,7 @@ class EnergyShifter(torch.nn.Module):
         if self.fit_intercept:
             intercept = self.self_energies[-1]
 
+        species = species.to(torch.long)  # possible torchscript bug
         self_energies = self.self_energies[species]
         self_energies[species == torch.tensor(-1, device=species.device)] = torch.tensor(0, device=species.device, dtype=torch.double)
         return self_energies.sum(dim=1) + intercept

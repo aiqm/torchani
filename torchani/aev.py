@@ -288,6 +288,7 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     radial_terms_ = radial_terms(Rcr, EtaR, ShfR, distances)
     radial_aev = radial_terms_.new_zeros((num_molecules * num_atoms * num_species, radial_sublength))
     index12 = atom_index12 * num_species + species12.flip(0)
+    index12 = index12.to(torch.long)  # possible torchscript bug
     radial_aev.index_add_(0, index12[0], radial_terms_)
     radial_aev.index_add_(0, index12[1], radial_terms_)
     radial_aev = radial_aev.reshape(num_molecules, num_atoms, radial_length)
@@ -306,7 +307,9 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     species12_ = torch.where(sign12 == 1, species12_small[1], species12_small[0])
     angular_terms_ = angular_terms(Rca, ShfZ, EtaA, Zeta, ShfA, vec12)
     angular_aev = angular_terms_.new_zeros((num_molecules * num_atoms * num_species_pairs, angular_sublength))
+    species12_ = species12_.to(torch.long)  # possible torchscript bug
     index = central_atom_index * num_species_pairs + triu_index[species12_[0], species12_[1]]
+    index = index.to(torch.long)  # possible torchscript bug
     angular_aev.index_add_(0, index, angular_terms_)
     angular_aev = angular_aev.reshape(num_molecules, num_atoms, angular_length)
     return torch.cat([radial_aev, angular_aev], dim=-1)
