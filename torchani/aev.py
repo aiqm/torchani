@@ -230,9 +230,7 @@ def triple_by_molecule(atom_index12: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
     sorted_ai1, rev_indices = ai1.sort()
 
     # sort and compute unique key
-    unique_results = torch.unique_consecutive(sorted_ai1, return_inverse=True, return_counts=True)
-    uniqued_central_atom_index = unique_results[0]
-    counts = unique_results[-1]
+    uniqued_central_atom_index, counts = torch.unique_consecutive(sorted_ai1, return_inverse=False, return_counts=True)
 
     # compute central_atom_index
     pair_sizes = counts * (counts - 1) // 2
