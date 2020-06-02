@@ -36,8 +36,6 @@ from .nn import SpeciesConverter, SpeciesEnergies
 from .aev import AEVComputer
 
 
-
-
 class BuiltinModel(torch.nn.Module):
     r"""Private template for the builtin ANI models """
     def __init__(self, species_converter, aev_computer, neural_networks, energy_shifter, species_to_tensor, periodic_table_index):
@@ -108,7 +106,6 @@ class BuiltinModel(torch.nn.Module):
         return ase.Calculator(self.species, self, **kwargs)
 
 
-
 class BuiltinEnsemble(BuiltinModel):
     """Private template for the builtin ANI ensemble models.
 
@@ -146,7 +143,7 @@ class BuiltinEnsemble(BuiltinModel):
     """
 
     def __init__(self, species_converter, aev_computer, neural_networks,
-            energy_shifter, species_to_tensor, periodic_table_index):
+                 energy_shifter, species_to_tensor, periodic_table_index):
         super(BuiltinEnsemble, self).__init__(species_converter,
                                               aev_computer,
                                               neural_networks,
@@ -173,20 +170,19 @@ class BuiltinEnsemble(BuiltinModel):
             sae_file = get_resource(sae_file_path)
             sae_file = get_resource(sae_file_path)
             ensemble_prefix = resource_filename(package_name,
-                    ensemble_prefix_path)
+                                                ensemble_prefix_path)
             ensemble_size = int(ensemble_size)
             consts = neurochem.Constants(const_file)
 
         species_converter = SpeciesConverter(consts.species)
         aev_computer = AEVComputer(**consts)
         neural_networks = neurochem.load_model_ensemble(consts.species,
-                ensemble_prefix, ensemble_size)
+                                                        ensemble_prefix, ensemble_size)
         energy_shifter, _ = neurochem.load_sae(sae_file, return_dict=True)
         species_to_tensor = consts.species_to_tensor
 
         return cls(species_converter, aev_computer, neural_networks,
-                energy_shifter, species_to_tensor, periodic_table_index)
-
+                   energy_shifter, species_to_tensor, periodic_table_index)
 
     def __getitem__(self, index):
         """Get a single 'AEVComputer -> ANIModel -> EnergyShifter' sequential model
@@ -206,9 +202,8 @@ class BuiltinEnsemble(BuiltinModel):
                 calculations
         """
         ret = BuiltinModel(self.species_converter, self.aev_computer,
-                self.neural_networks[index], self.energy_shifter,
-                self.species_to_tensor_raw, self.periodic_table_index)
-
+                           self.neural_networks[index], self.energy_shifter,
+                           self.species_to_tensor_raw, self.periodic_table_index)
         return ret
 
     def __len__(self):
@@ -218,6 +213,7 @@ class BuiltinEnsemble(BuiltinModel):
             length (:class:`int`): Number of networks in the ensemble
         """
         return len(self.neural_networks)
+
 
 def ANI1x(periodic_table_index=False):
     """The ANI-1x model as in `ani-1x_8x on GitHub`_ and `Active Learning Paper`_.
@@ -251,5 +247,4 @@ def ANI1ccx(periodic_table_index=False):
     .. _Transfer Learning Paper:
         https://doi.org/10.26434/chemrxiv.6744440.v1
     """
-
     return BuiltinEnsemble._from_neurochem_resources('ani-1ccx_8x.info', periodic_table_index)
