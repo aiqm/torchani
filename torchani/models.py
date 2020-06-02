@@ -38,6 +38,7 @@ from .aev import AEVComputer
 
 class BuiltinModel(torch.nn.Module):
     r"""Private template for the builtin ANI models """
+
     def __init__(self, species_converter, aev_computer, neural_networks, energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index):
         super(BuiltinModel, self).__init__()
         self.species_converter = species_converter
@@ -51,11 +52,6 @@ class BuiltinModel(torch.nn.Module):
         # a bit useless maybe
         self.consts = consts
         self.sae_dict = sae_dict
-
-    @torch.jit.export
-    def _recast_long_buffers(self):
-        self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(dtype=torch.long)
-        self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
 
     def forward(self, species_coordinates: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
@@ -79,6 +75,12 @@ class BuiltinModel(torch.nn.Module):
         species_energies = self.neural_networks(species_aevs)
         return self.energy_shifter(species_energies)
 
+    @torch.jit.export
+    def _recast_long_buffers(self):
+        self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(dtype=torch.long)
+        self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
+
+    @torch.jit.export
     def species_to_tensor(self, *args, **kwargs):
         """Convert species from strings to tensor.
 
