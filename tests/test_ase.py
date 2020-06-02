@@ -25,7 +25,7 @@ def get_numeric_force(atoms, eps):
 class TestASE(unittest.TestCase):
 
     def setUp(self):
-        self.model = torchani.models.ANI1x().double()[0]
+        self.model = torchani.models.ANI1x(model_index=0).double()
 
     def testWithNumericalForceWithPBCEnabled(self):
         atoms = Diamond(symbol="C", pbc=True)
