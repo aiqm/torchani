@@ -40,10 +40,7 @@ class BuiltinModel(torch.nn.Module):
     r"""Private template for the builtin ANI models """
     def __init__(self, species_converter, aev_computer, neural_networks, energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index):
         super(BuiltinModel, self).__init__()
-        if periodic_table_index:
-            self.species_converter = species_converter
-        else:
-            self.species_converter = None
+        self.species_converter = species_converter
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
         self.energy_shifter = energy_shifter
