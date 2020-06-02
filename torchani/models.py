@@ -117,24 +117,24 @@ class BuiltinEnsemble(BuiltinModel):
     AEVs, then energies from a torchani.Ensemble and then uses EnergyShifter
     to shift those energies. It is essentially a sequential
 
-    'AEVComputer -> Ensemble -> EnergyShifter' 
+    'AEVComputer -> Ensemble -> EnergyShifter'
 
-    (periodic_table_index=False), or a sequential 
+    (periodic_table_index=False), or a sequential
 
-    'SpeciesConverter -> AEVComputer -> Ensemble -> EnergyShifter' 
+    'SpeciesConverter -> AEVComputer -> Ensemble -> EnergyShifter'
 
     (periodic_table_index=True).
 
     .. note::
         This class is for internal use only, avoid relying on anything from it
         except the public methods, always use ANI1x, ANI1ccx, etc to instance
-        the models. 
+        the models.
         Also, don't confuse this class with torchani.Ensemble, which is only a
         container for many ANIModel instances and shouldn't be used directly
         for calculations.
 
     Attributes:
-        species_converter (:class:`torchani.nn.SpeciesConverter`): Converts periodic table index to 
+        species_converter (:class:`torchani.nn.SpeciesConverter`): Converts periodic table index to
             internal indices. Only present if periodic_table_index is `True`.
         aev_computer (:class:`torchani.AEVComputer`): AEV computer with
             builtin constants
@@ -149,7 +149,7 @@ class BuiltinEnsemble(BuiltinModel):
             energy_shifter, species_to_tensor, periodic_table_index):
         super(BuiltinEnsemble, self).__init__(species_converter,
                                               aev_computer,
-                                              neural_networks, 
+                                              neural_networks,
                                               energy_shifter,
                                               species_to_tensor,
                                               periodic_table_index)
@@ -192,7 +192,7 @@ class BuiltinEnsemble(BuiltinModel):
         """Get a single 'AEVComputer -> ANIModel -> EnergyShifter' sequential model
 
         Get a single 'AEVComputer -> ANIModel -> EnergyShifter' sequential model
-        or 
+        or
         Indexing allows access to a single model inside the ensemble
         that can be used directly for calculations. The model consists
         of a sequence AEVComputer -> ANIModel -> EnergyShifter
