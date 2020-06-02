@@ -49,39 +49,6 @@ class BuiltinModel(torch.nn.Module):
         self._species_to_tensor = species_to_tensor
         self.periodic_table_index = periodic_table_index
 
-    def _from_neurochem_resources(cls, info_file_path, index=0, periodic_table_index=False):
-        # Convenience function for building only one model from the ensemble
-
-        def get_resource(file_path, package_name):
-            return resource_filename(package_name, 'resources/' + file_path)
-
-        package_name = '.'.join(__name__.split('.')[:-1])
-        info_file = get_resource(info_file_path, package_name)
-
-        with open(info_file) as f:
-            # const_file: Path to the file with the builtin constants.
-            # sae_file: Path to the file with the Self Atomic Energies.
-            # ensemble_prefix: Prefix of the neurochem resource directories.
-            lines = [x.strip() for x in f.readlines()][:4]
-            const_file_path, sae_file_path, ensemble_prefix_path, ensemble_size = lines
-            const_file = get_resource(const_file_path, package_name)
-            sae_file = get_resource(sae_file_path, package_name)
-            sae_file = get_resource(sae_file_path, package_name)
-            ensemble_prefix = resource_filename(package_name,
-                                                ensemble_prefix_path)
-            ensemble_size = int(ensemble_size)
-            consts = neurochem.Constants(const_file)
-
-        species_converter = SpeciesConverter(consts.species)
-        aev_computer = AEVComputer(**consts)
-        neural_networks = neurochem.load_model_ensemble(consts.species,
-                                                        ensemble_prefix, ensemble_size)
-        energy_shifter, _ = neurochem.load_sae(sae_file, return_dict=True)
-        species_to_tensor = consts.species_to_tensor
-
-        return cls(species_converter, aev_computer, neural_networks,
-                   energy_shifter, species_to_tensor, periodic_table_index)
-
     @torch.jit.export
     def _recast_long_buffers(self):
         self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(dtype=torch.long)
