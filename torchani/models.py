@@ -38,7 +38,7 @@ from .aev import AEVComputer
 
 class BuiltinModel(torch.nn.Module):
     r"""Private template for the builtin ANI models """
-    def __init__(self, species_converter, aev_computer, neural_networks, energy_shifter, species_to_tensor, periodic_table_index):
+    def __init__(self, species_converter, aev_computer, neural_networks, energy_shifter, species_to_tensor, species, periodic_table_index):
         super(BuiltinModel, self).__init__()
         if periodic_table_index:
             self.species_converter = species_converter
@@ -48,6 +48,7 @@ class BuiltinModel(torch.nn.Module):
         self.neural_networks = neural_networks
         self.energy_shifter = energy_shifter
         self._species_to_tensor = species_to_tensor
+        self.species = species
         self.periodic_table_index = periodic_table_index
 
     @torch.jit.export
@@ -144,12 +145,13 @@ class BuiltinEnsemble(BuiltinModel):
     """
 
     def __init__(self, species_converter, aev_computer, neural_networks,
-                 energy_shifter, species_to_tensor, periodic_table_index):
+                 energy_shifter, species_to_tensor, species, periodic_table_index):
         super(BuiltinEnsemble, self).__init__(species_converter,
                                               aev_computer,
                                               neural_networks,
                                               energy_shifter,
                                               species_to_tensor,
+                                              species,
                                               periodic_table_index)
 
     @classmethod
@@ -182,7 +184,7 @@ class BuiltinEnsemble(BuiltinModel):
         species_to_tensor = consts.species_to_tensor
 
         return cls(species_converter, aev_computer, neural_networks,
-                   energy_shifter, species_to_tensor, periodic_table_index)
+                   energy_shifter, species_to_tensor, consts.species, periodic_table_index)
 
     def __getitem__(self, index):
         """Get a single 'AEVComputer -> ANIModel -> EnergyShifter' sequential model
