@@ -95,9 +95,9 @@ class BuiltinNet(torch.nn.Module):
         self.neural_networks = neurochem.load_model_ensemble(
             self.species, self.ensemble_prefix, self.ensemble_size)
 
-    @torch.jit.export                                                                                  
-    def _recast_long_buffers(self):                                                                           
-        self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(dtype=torch.long)   
+    @torch.jit.export
+    def _recast_long_buffers(self):
+        self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(dtype=torch.long)
         self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
 
     def forward(self, species_coordinates: Tuple[Tensor, Tensor],
