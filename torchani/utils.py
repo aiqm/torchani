@@ -8,12 +8,8 @@ from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2
 from .nn import SpeciesEnergies
 
 
-def empty_list():
-    return []
-
-
 def stack_with_padding(properties, padding):
-    output = defaultdict(empty_list)
+    output = defaultdict(lambda: [])
     for p in properties:
         for k, v in p.items():
             output[k].append(torch.as_tensor(v))
