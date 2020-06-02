@@ -158,12 +158,12 @@ class BuiltinEnsemble(BuiltinModel):
     def _from_neurochem_resources(cls, info_file_path, periodic_table_index=False):
 
         def get_resource(file_path):
-            return resource_filename(package_name, 'resources/' + info_file_path)
+            return resource_filename(package_name, 'resources/' + file_path)
 
         package_name = '.'.join(__name__.split('.')[:-1])
         info_file = get_resource(info_file_path)
 
-        with open(info_file_path) as f:
+        with open(info_file) as f:
             # const_file: Path to the file with the builtin constants.
             # sae_file: Path to the file with the Self Atomic Energies.
             # ensemble_prefix: Prefix of the neurochem resource directories.
