@@ -80,7 +80,6 @@ class BuiltinModel(torch.nn.Module):
         self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(dtype=torch.long)
         self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
 
-    @torch.jit.export
     def species_to_tensor(self, *args, **kwargs):
         """Convert species from strings to tensor.
 
