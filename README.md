@@ -1,3 +1,5 @@
+debug
+
 # <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo1.png width=180/>  Accurate Neural Network Potential on PyTorch
 
 Metrics:
