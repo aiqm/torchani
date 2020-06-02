@@ -32,7 +32,7 @@ from torch import Tensor
 from typing import Tuple, Optional
 from pkg_resources import resource_filename
 from . import neurochem
-from .nn import Sequential, SpeciesConverter, SpeciesEnergies
+from .nn import SpeciesConverter, SpeciesEnergies
 from .aev import AEVComputer
 
 
@@ -202,7 +202,7 @@ class BuiltinEnsemble(BuiltinModel):
             index (:class:`int`): Index of the model
 
         Returns:
-            ret: (:class:`Sequential`): Sequential model ready for
+            ret: (:class:`torchani.models.BuiltinModel`) Model ready for
                 calculations
         """
         ret = BuiltinModel(self.species_converter, self.aev_computer,
