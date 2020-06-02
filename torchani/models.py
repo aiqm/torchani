@@ -174,7 +174,6 @@ class BuiltinEnsemble(BuiltinModel):
             const_file_path, sae_file_path, ensemble_prefix_path, ensemble_size = lines
             const_file = get_resource(const_file_path)
             sae_file = get_resource(sae_file_path)
-            sae_file = get_resource(sae_file_path)
             ensemble_prefix = get_resource(ensemble_prefix_path)
             ensemble_size = int(ensemble_size)
             consts = neurochem.Constants(const_file)
