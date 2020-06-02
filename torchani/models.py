@@ -155,9 +155,9 @@ class BuiltinEnsemble(BuiltinModel):
     def _from_neurochem_resources(cls, info_file_path, periodic_table_index=False):
 
         def get_resource(file_path):
+            package_name = '.'.join(__name__.split('.')[:-1])
             return resource_filename(package_name, 'resources/' + file_path)
 
-        package_name = '.'.join(__name__.split('.')[:-1])
         info_file = get_resource(info_file_path)
 
         with open(info_file) as f:
@@ -169,8 +169,7 @@ class BuiltinEnsemble(BuiltinModel):
             const_file = get_resource(const_file_path)
             sae_file = get_resource(sae_file_path)
             sae_file = get_resource(sae_file_path)
-            ensemble_prefix = resource_filename(package_name,
-                                                ensemble_prefix_path)
+            ensemble_prefix = get_resource(ensemble_prefix_path)
             ensemble_size = int(ensemble_size)
             consts = neurochem.Constants(const_file)
 
