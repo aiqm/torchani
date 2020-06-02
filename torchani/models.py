@@ -210,7 +210,8 @@ class BuiltinEnsemble(BuiltinModel):
         """
         ret = BuiltinModel(self.species_converter, self.aev_computer,
                            self.neural_networks[index], self.energy_shifter,
-                           self._species_to_tensor, self.periodic_table_index)
+                           self._species_to_tensor, self.consts, self.sae_dict,
+                           self.periodic_table_index)
         return ret
 
     def __len__(self):
