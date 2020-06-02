@@ -38,7 +38,7 @@ from .aev import AEVComputer
 
 class BuiltinModel(torch.nn.Module):
     r"""Private template for the builtin ANI models """
-    def __init__(self, species_converter, aev_computer, neural_networks, energy_shifter, species_to_tensor, species, periodic_table_index):
+    def __init__(self, species_converter, aev_computer, neural_networks, energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index):
         super(BuiltinModel, self).__init__()
         if periodic_table_index:
             self.species_converter = species_converter
@@ -48,8 +48,12 @@ class BuiltinModel(torch.nn.Module):
         self.neural_networks = neural_networks
         self.energy_shifter = energy_shifter
         self._species_to_tensor = species_to_tensor
-        self.species = species
+        self.species = consts.species
         self.periodic_table_index = periodic_table_index
+
+        # a bit useless maybe
+        self.consts = consts
+        self.sae_dict = sae_dict
 
     @torch.jit.export
     def _recast_long_buffers(self):
@@ -145,13 +149,14 @@ class BuiltinEnsemble(BuiltinModel):
     """
 
     def __init__(self, species_converter, aev_computer, neural_networks,
-                 energy_shifter, species_to_tensor, species, periodic_table_index):
+                 energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index):
         super(BuiltinEnsemble, self).__init__(species_converter,
                                               aev_computer,
                                               neural_networks,
                                               energy_shifter,
                                               species_to_tensor,
-                                              species,
+                                              consts,
+                                              sae_dict,
                                               periodic_table_index)
 
     @classmethod
@@ -180,11 +185,11 @@ class BuiltinEnsemble(BuiltinModel):
         aev_computer = AEVComputer(**consts)
         neural_networks = neurochem.load_model_ensemble(consts.species,
                                                         ensemble_prefix, ensemble_size)
-        energy_shifter, _ = neurochem.load_sae(sae_file, return_dict=True)
+        energy_shifter, sae_dict = neurochem.load_sae(sae_file, return_dict=True)
         species_to_tensor = consts.species_to_tensor
 
         return cls(species_converter, aev_computer, neural_networks,
-                   energy_shifter, species_to_tensor, consts.species, periodic_table_index)
+                   energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index)
 
     def __getitem__(self, index):
         """Get a single 'AEVComputer -> ANIModel -> EnergyShifter' sequential model
