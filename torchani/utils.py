@@ -9,7 +9,7 @@ from .nn import SpeciesEnergies
 
 
 def stack_with_padding(properties, padding):
-    output = defaultdict(lambda: [])
+    output = defaultdict(list)
     for p in properties:
         for k, v in p.items():
             output[k].append(torch.as_tensor(v))
