@@ -13,10 +13,10 @@ class TestEnergies(unittest.TestCase):
 
     def setUp(self):
         self.tolerance = 5e-5
-        ani1x = torchani.models.ANI1x()
-        self.aev_computer = ani1x.aev_computer
-        self.nnp = ani1x.neural_networks[0]
-        self.energy_shifter = ani1x.energy_shifter
+        model = torchani.models.ANI1x(model_index=0)
+        self.aev_computer = model.aev_computer
+        self.nnp = model.neural_networks
+        self.energy_shifter = model.energy_shifter
         self.nn = torchani.nn.Sequential(self.nnp, self.energy_shifter)
         self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
 

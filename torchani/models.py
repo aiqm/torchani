@@ -26,74 +26,71 @@ directly calculate energies or get an ASE calculator. For example:
 Note that the class BuiltinModels can be accessed but it is deprecated and
 shouldn't be used anymore.
 """
-
+import os
 import torch
 from torch import Tensor
 from typing import Tuple, Optional
 from pkg_resources import resource_filename
 from . import neurochem
-from .nn import Sequential, SpeciesConverter, SpeciesEnergies
+from .nn import SpeciesConverter, SpeciesEnergies
 from .aev import AEVComputer
 
 
-class BuiltinNet(torch.nn.Module):
-    """Private template for the builtin ANI ensemble models.
+class BuiltinModel(torch.nn.Module):
+    r"""Private template for the builtin ANI models """
 
-    All ANI ensemble models form the ANI models zoo should inherit from this class.
-    This class is a torch module that sequentially calculates
-    AEVs, then energies from a torchani.Ensemble and then uses EnergyShifter
-    to shift those energies. It is essentially a sequential
-    'AEVComputer -> Ensemble -> EnergyShifter'.
-
-    .. note::
-        This class is for internal use only, avoid using it, use ANI1x, ANI1ccx,
-        etc instead. Don't confuse this class with torchani.Ensemble, which
-        is only a container for many ANIModel instances and shouldn't be used
-        directly for calculations.
-
-    Attributes:
-        const_file (:class:`str`): Path to the file with the builtin constants.
-        sae_file (:class:`str`): Path to the file with the Self Atomic Energies.
-        ensemble_prefix (:class:`str`): Prefix of directories.
-        ensemble_size (:class:`int`): Number of models in the ensemble.
-        energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter with
-            builtin Self Atomic Energies.
-        aev_computer (:class:`torchani.AEVComputer`): AEV computer with
-            builtin constants
-        neural_networks (:class:`torchani.Ensemble`): Ensemble of ANIModel networks
-        periodic_table_index (bool): Whether to use element number in periodic table
-            to index species. If set to `False`, then indices must be `0, 1, 2, ..., N - 1`
-            where `N` is the number of parametrized species.
-    """
-
-    def __init__(self, info_file, periodic_table_index=False):
-        super(BuiltinNet, self).__init__()
+    def __init__(self, species_converter, aev_computer, neural_networks, energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index):
+        super(BuiltinModel, self).__init__()
+        self.species_converter = species_converter
+        self.aev_computer = aev_computer
+        self.neural_networks = neural_networks
+        self.energy_shifter = energy_shifter
+        self._species_to_tensor = species_to_tensor
+        self.species = consts.species
         self.periodic_table_index = periodic_table_index
 
-        package_name = '.'.join(__name__.split('.')[:-1])
-        info_file = 'resources/' + info_file
-        self.info_file = resource_filename(package_name, info_file)
+        # a bit useless maybe
+        self.consts = consts
+        self.sae_dict = sae_dict
 
-        with open(self.info_file) as f:
+    @classmethod
+    def _from_neurochem_resources(cls, info_file_path, periodic_table_index=False, model_index=0):
+        # this is used to load only 1 model (by default model 0)
+        consts, sae_file, ensemble_prefix, ensemble_size = cls._parse_neurochem_resources(info_file_path)
+        if (model_index >= ensemble_size):
+            raise ValueError("The ensemble size is only {}, model {} can't be loaded".format(ensemble_size, model_index))
+
+        species_converter = SpeciesConverter(consts.species)
+        aev_computer = AEVComputer(**consts)
+        energy_shifter, sae_dict = neurochem.load_sae(sae_file, return_dict=True)
+        species_to_tensor = consts.species_to_tensor
+
+        network_dir = os.path.join('{}{}'.format(ensemble_prefix, model_index), 'networks')
+        neural_networks = neurochem.load_model(consts.species, network_dir)
+
+        return cls(species_converter, aev_computer, neural_networks,
+                   energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index)
+
+    @staticmethod
+    def _parse_neurochem_resources(info_file_path):
+        def get_resource(file_path):
+            package_name = '.'.join(__name__.split('.')[:-1])
+            return resource_filename(package_name, 'resources/' + file_path)
+
+        info_file = get_resource(info_file_path)
+
+        with open(info_file) as f:
+            # const_file: Path to the file with the builtin constants.
+            # sae_file: Path to the file with the Self Atomic Energies.
+            # ensemble_prefix: Prefix of the neurochem resource directories.
             lines = [x.strip() for x in f.readlines()][:4]
             const_file_path, sae_file_path, ensemble_prefix_path, ensemble_size = lines
-            const_file_path = 'resources/' + const_file_path
-            sae_file_path = 'resources/' + sae_file_path
-            ensemble_prefix_path = 'resources/' + ensemble_prefix_path
+            const_file = get_resource(const_file_path)
+            sae_file = get_resource(sae_file_path)
+            ensemble_prefix = get_resource(ensemble_prefix_path)
             ensemble_size = int(ensemble_size)
-
-        self.const_file = resource_filename(package_name, const_file_path)
-        self.sae_file = resource_filename(package_name, sae_file_path)
-        self.ensemble_prefix = resource_filename(package_name, ensemble_prefix_path)
-        self.ensemble_size = ensemble_size
-
-        self.consts = neurochem.Constants(self.const_file)
-        self.species = self.consts.species
-        self.species_converter = SpeciesConverter(self.species)
-        self.aev_computer = AEVComputer(**self.consts)
-        self.energy_shifter, self.sae_dict = neurochem.load_sae(self.sae_file, return_dict=True)
-        self.neural_networks = neurochem.load_model_ensemble(
-            self.species, self.ensemble_prefix, self.ensemble_size)
+            consts = neurochem.Constants(const_file)
+        return consts, sae_file, ensemble_prefix, ensemble_size
 
     def forward(self, species_coordinates: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
@@ -117,64 +114,10 @@ class BuiltinNet(torch.nn.Module):
         species_energies = self.neural_networks(species_aevs)
         return self.energy_shifter(species_energies)
 
-    def __getitem__(self, index):
-        """Get a single 'AEVComputer -> ANIModel -> EnergyShifter' sequential model
-
-        Indexing allows access to a single model inside the ensemble
-        that can be used directly for calculations. The model consists
-        of a sequence AEVComputer -> ANIModel -> EnergyShifter
-        and can return an ase calculator and convert species to tensor.
-
-        Args:
-            index (:class:`int`): Index of the model
-
-        Returns:
-            ret: (:class:`Sequential`): Sequential model ready for
-                calculations
-        """
-        if self.periodic_table_index:
-            ret = Sequential(
-                self.species_converter,
-                self.aev_computer,
-                self.neural_networks[index],
-                self.energy_shifter
-            )
-        else:
-            ret = Sequential(
-                self.aev_computer,
-                self.neural_networks[index],
-                self.energy_shifter
-            )
-
-        def ase(**kwargs):
-            """Attach an ase calculator """
-            from . import ase
-            return ase.Calculator(self.species, ret, **kwargs)
-
-        ret.ase = ase
-        ret.species_to_tensor = self.consts.species_to_tensor
-        ret.periodic_table_index = self.periodic_table_index
-        return ret
-
-    def __len__(self):
-        """Get the number of networks in the ensemble
-
-        Returns:
-            length (:class:`int`): Number of networks in the ensemble
-        """
-        return len(self.neural_networks)
-
-    def ase(self, **kwargs):
-        """Get an ASE Calculator using this ANI model ensemble
-
-        Arguments:
-            kwargs: ase.Calculator kwargs
-
-        Returns:
-            calculator (:class:`int`): A calculator to be used with ASE
-        """
-        from . import ase
-        return ase.Calculator(self.species, self, **kwargs)
+    @torch.jit.export
+    def _recast_long_buffers(self):
+        self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(dtype=torch.long)
+        self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
 
     def species_to_tensor(self, *args, **kwargs):
         """Convert species from strings to tensor.
@@ -187,11 +130,120 @@ class BuiltinNet(torch.nn.Module):
         Returns:
             tensor (:class:`torch.Tensor`): A 1D tensor of integers
         """
-        return self.consts.species_to_tensor(*args, **kwargs) \
+        # The only difference between this and the "raw" private version
+        # _species_to_tensor is that this sends the final tensor to the model
+        # device
+        return self._species_to_tensor(*args, **kwargs) \
             .to(self.aev_computer.ShfR.device)
 
+    def ase(self, **kwargs):
+        """Get an ASE Calculator using this ANI model
 
-class ANI1x(BuiltinNet):
+        Arguments:
+            kwargs: ase.Calculator kwargs
+
+        Returns:
+            calculator (:class:`int`): A calculator to be used with ASE
+        """
+        from . import ase
+        return ase.Calculator(self.species, self, **kwargs)
+
+
+class BuiltinEnsemble(BuiltinModel):
+    """Private template for the builtin ANI ensemble models.
+
+    ANI ensemble models form the ANI models zoo are instances of this class.
+    This class is a torch module that sequentially calculates
+    AEVs, then energies from a torchani.Ensemble and then uses EnergyShifter
+    to shift those energies. It is essentially a sequential
+
+    'AEVComputer -> Ensemble -> EnergyShifter'
+
+    (periodic_table_index=False), or a sequential
+
+    'SpeciesConverter -> AEVComputer -> Ensemble -> EnergyShifter'
+
+    (periodic_table_index=True).
+
+    .. note::
+        This class is for internal use only, avoid relying on anything from it
+        except the public methods, always use ANI1x, ANI1ccx, etc to instance
+        the models.
+        Also, don't confuse this class with torchani.Ensemble, which is only a
+        container for many ANIModel instances and shouldn't be used directly
+        for calculations.
+
+    Attributes:
+        species_converter (:class:`torchani.nn.SpeciesConverter`): Converts periodic table index to
+            internal indices. Only present if periodic_table_index is `True`.
+        aev_computer (:class:`torchani.AEVComputer`): AEV computer with
+            builtin constants
+        energy_shifter (:class:`torchani.EnergyShifter`): Energy shifter with
+            builtin Self Atomic Energies.
+        periodic_table_index (bool): Whether to use element number in periodic table
+            to index species. If set to `False`, then indices must be `0, 1, 2, ..., N - 1`
+            where `N` is the number of parametrized species.
+    """
+
+    def __init__(self, species_converter, aev_computer, neural_networks,
+                 energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index):
+        super(BuiltinEnsemble, self).__init__(species_converter,
+                                              aev_computer,
+                                              neural_networks,
+                                              energy_shifter,
+                                              species_to_tensor,
+                                              consts,
+                                              sae_dict,
+                                              periodic_table_index)
+
+    @classmethod
+    def _from_neurochem_resources(cls, info_file_path, periodic_table_index=False):
+        # this is used to load only 1 model (by default model 0)
+        consts, sae_file, ensemble_prefix, ensemble_size = cls._parse_neurochem_resources(info_file_path)
+
+        species_converter = SpeciesConverter(consts.species)
+        aev_computer = AEVComputer(**consts)
+        energy_shifter, sae_dict = neurochem.load_sae(sae_file, return_dict=True)
+        species_to_tensor = consts.species_to_tensor
+        neural_networks = neurochem.load_model_ensemble(consts.species,
+                                                        ensemble_prefix, ensemble_size)
+
+        return cls(species_converter, aev_computer, neural_networks,
+                   energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index)
+
+    def __getitem__(self, index):
+        """Get a single 'AEVComputer -> ANIModel -> EnergyShifter' sequential model
+
+        Get a single 'AEVComputer -> ANIModel -> EnergyShifter' sequential model
+        or
+        Indexing allows access to a single model inside the ensemble
+        that can be used directly for calculations. The model consists
+        of a sequence AEVComputer -> ANIModel -> EnergyShifter
+        and can return an ase calculator and convert species to tensor.
+
+        Args:
+            index (:class:`int`): Index of the model
+
+        Returns:
+            ret: (:class:`torchani.models.BuiltinModel`) Model ready for
+                calculations
+        """
+        ret = BuiltinModel(self.species_converter, self.aev_computer,
+                           self.neural_networks[index], self.energy_shifter,
+                           self._species_to_tensor, self.consts, self.sae_dict,
+                           self.periodic_table_index)
+        return ret
+
+    def __len__(self):
+        """Get the number of networks in the ensemble
+
+        Returns:
+            length (:class:`int`): Number of networks in the ensemble
+        """
+        return len(self.neural_networks)
+
+
+def ANI1x(periodic_table_index=False, model_index=None):
     """The ANI-1x model as in `ani-1x_8x on GitHub`_ and `Active Learning Paper`_.
 
     The ANI-1x model is an ensemble of 8 networks that was trained using
@@ -205,12 +257,13 @@ class ANI1x(BuiltinNet):
     .. _Active Learning Paper:
         https://aip.scitation.org/doi/abs/10.1063/1.5023802
     """
+    info_file = 'ani-1x_8x.info'
+    if model_index is None:
+        return BuiltinEnsemble._from_neurochem_resources(info_file, periodic_table_index)
+    return BuiltinModel._from_neurochem_resources(info_file, periodic_table_index, model_index)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__('ani-1x_8x.info', *args, **kwargs)
 
-
-class ANI1ccx(BuiltinNet):
+def ANI1ccx(periodic_table_index=False, model_index=None):
     """The ANI-1ccx model as in `ani-1ccx_8x on GitHub`_ and `Transfer Learning Paper`_.
 
     The ANI-1ccx model is an ensemble of 8 networks that was trained
@@ -225,6 +278,7 @@ class ANI1ccx(BuiltinNet):
     .. _Transfer Learning Paper:
         https://doi.org/10.26434/chemrxiv.6744440.v1
     """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__('ani-1ccx_8x.info', *args, **kwargs)
+    info_file = 'ani-1ccx_8x.info'
+    if model_index is None:
+        return BuiltinEnsemble._from_neurochem_resources(info_file, periodic_table_index)
+    return BuiltinModel._from_neurochem_resources(info_file, periodic_table_index, model_index)
