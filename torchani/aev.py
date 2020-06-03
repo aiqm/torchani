@@ -148,10 +148,10 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
     prod = torch.cartesian_prod(all_shifts, all_atoms, all_atoms).t()
     shift_index = prod[0]
     p12 = prod[1:]
-    shifts_outide = shifts.index_select(0, shift_index)
+    shifts_outside = shifts.index_select(0, shift_index)
 
     # Step 4: combine results for all cells
-    shifts_all = torch.cat([shifts_center, shifts_outide])
+    shifts_all = torch.cat([shifts_center, shifts_outside])
     p12_all = torch.cat([p12_center, p12], dim=1)
     shift_values = shifts_all.to(cell.dtype) @ cell
 
