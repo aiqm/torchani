@@ -130,8 +130,8 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
         cutoff (float): the cutoff inside which atoms are considered pairs
         shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts
     """
-    coordinates = coordinates.detach()
-    cell = cell.detach()
+    #coordinates = coordinates.detach()
+    #cell = cell.detach()
     num_atoms = padding_mask.shape[1]
     num_mols = padding_mask.shape[0]
     all_atoms = torch.arange(num_atoms, device=cell.device)
@@ -181,7 +181,7 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: floa
             (molecules * atoms, 3) for atom coordinates.
         cutoff (float): the cutoff inside which atoms are considered pairs
     """
-    coordinates = coordinates.detach()
+    #coordinates = coordinates.detach()
     current_device = coordinates.device
     num_atoms = padding_mask.shape[1]
     num_mols = padding_mask.shape[0]
@@ -269,12 +269,14 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
 
     # PBC calculation is bypassed if there are no shifts
     if cell_shifts is None:
-        atom_index12 = neighbor_pairs_nopbc(species == -1, coordinates_, Rcr)
+        with torch.no_grad():
+            atom_index12 = neighbor_pairs_nopbc(species == -1, coordinates_, Rcr)
         selected_coordinates = coordinates.index_select(0, atom_index12.view(-1)).view(2, -1, 3)
         vec = selected_coordinates[0] - selected_coordinates[1]
     else:
         cell, shifts = cell_shifts
-        atom_index12, shifts = neighbor_pairs(species == -1, coordinates_, cell, shifts, Rcr)
+        with torch.no_grad():
+            atom_index12, shifts = neighbor_pairs(species == -1, coordinates_, cell, shifts, Rcr)
         shift_values = shifts.to(cell.dtype) @ cell
         selected_coordinates = coordinates.index_select(0, atom_index12.view(-1)).view(2, -1, 3)
         vec = selected_coordinates[0] - selected_coordinates[1] + shift_values
@@ -300,7 +302,8 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     vec = vec.index_select(0, even_closer_indices)
 
     # compute angular aev
-    central_atom_index, pair_index12, sign12 = triple_by_molecule(atom_index12)
+    with torch.no_grad():
+        central_atom_index, pair_index12, sign12 = triple_by_molecule(atom_index12)
     species12_small = species12[:, pair_index12]
     vec12 = vec.index_select(0, pair_index12.view(-1)).view(2, -1, 3) * sign12.unsqueeze(-1)
     species12_ = torch.where(sign12 == 1, species12_small[1], species12_small[0])
