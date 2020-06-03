@@ -12,9 +12,9 @@ class TestForce(unittest.TestCase):
 
     def setUp(self):
         self.tolerance = 1e-5
-        ani1x = torchani.models.ANI1x()
-        self.aev_computer = ani1x.aev_computer
-        self.nnp = ani1x.neural_networks[0]
+        model = torchani.models.ANI1x(model_index=0)
+        self.aev_computer = model.aev_computer
+        self.nnp = model.neural_networks
         self.model = torchani.nn.Sequential(self.aev_computer, self.nnp)
 
     def random_skip(self):
