@@ -20,7 +20,8 @@ Model Zoo
     :members:
 .. autoclass:: torchani.models.ANI1ccx
     :members:
-
+.. autoclass:: torchani.models.ANI2x
+    :members:
 
 Datasets
 ========

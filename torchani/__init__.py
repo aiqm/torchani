@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
-"""TorchANI is a PyTorch implementation of `ANI`_, created and maintained by
+"""`TorchANI`_ is a PyTorch implementation of `ANI`_, created and maintained by
 the `Roitberg group`_.  TorchANI contains classes like
 :class:`AEVComputer`, :class:`ANIModel`, and :class:`EnergyShifter` that can
 be pipelined to compute molecular energies from the 3D coordinates of
 molecules.  It also include tools to: deal with ANI datasets(e.g. `ANI-1`_,
-`ANI-1x`_, `ANI-1ccx`_, etc.) at :attr:`torchani.data`, import various file
+`ANI-1x`_, `ANI-1ccx`_, `ANI-2x`_) at :attr:`torchani.data`, import various file
 formats of NeuroChem at :attr:`torchani.neurochem`, and more at :attr:`torchani.utils`.
+
+.. _TorchANI:
+    https://doi.org/10.26434/chemrxiv.12218294.v1
 
 .. _ANI:
     http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
@@ -21,6 +24,9 @@ formats of NeuroChem at :attr:`torchani.neurochem`, and more at :attr:`torchani.
 
 .. _ANI-1ccx:
     https://doi.org/10.26434/chemrxiv.6744440.v1
+
+.. _ANI-2x:
+    https://doi.org/10.26434/chemrxiv.11819268.v1
 """
 
 from .utils import EnergyShifter
