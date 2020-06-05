@@ -282,3 +282,19 @@ def ANI1ccx(periodic_table_index=False, model_index=None):
     if model_index is None:
         return BuiltinEnsemble._from_neurochem_resources(info_file, periodic_table_index)
     return BuiltinModel._from_neurochem_resources(info_file, periodic_table_index, model_index)
+
+
+def ANI2x(periodic_table_index=False, model_index=None):
+    """The ANI-2x model as in `ani-2x_8x on GitHub`_ and `Active Learning Paper`_.
+
+    The ANI-2x model is an ensemble of 8 networks that was trained using
+    active learning on the ANI-2x dataset, the target level of theory is
+    wB97X/6-31G(d). It predicts energies on HCNOSFCl elements exclusively, it
+    shouldn't be used with other atom types.
+
+    """
+    info_file = 'ani-2x_8x.info'
+    if model_index is None:
+        return BuiltinEnsemble._from_neurochem_resources(info_file, periodic_table_index)
+    return BuiltinModel._from_neurochem_resources(info_file, periodic_table_index, model_index)
+
