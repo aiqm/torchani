@@ -128,7 +128,7 @@ And print to see the result:
 
  .. code-block:: none
 
-    Energy: -40.425620576200984
+    Energy: -40.42562058272024
     Force: tensor([[ 0.0312, -0.1272, -0.0511],
             [-0.1200,  0.1628, -0.0761],
             [ 0.0856, -0.0448,  0.0407],
@@ -141,7 +141,7 @@ And print to see the result:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.749 seconds)
+   **Total running time of the script:** ( 0 minutes  1.561 seconds)
 
 
 .. _sphx_glr_download_examples_energy_force.py:

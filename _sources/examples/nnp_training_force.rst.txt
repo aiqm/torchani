@@ -60,7 +60,11 @@ information
 
     batch_size = 2560
 
-    training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices(species_order).shuffle().split(0.8, None)
+    training, validation = torchani.data.load(
+        dspath,
+        additional_properties=('forces',)
+    ).subtract_self_energies(energy_shifter).species_to_indices(species_order).shuffle().split(0.8, None)
+
     training = training.collate(batch_size).cache()
     validation = validation.collate(batch_size).cache()
 
@@ -284,7 +288,7 @@ Descent for biases.
 .. code-block:: default
 
 
-    AdamW = torchani.optim.AdamW([
+    AdamW = torch.optim.AdamW([
         # H networks
         {'params': [H_network[0].weight]},
         {'params': [H_network[2].weight], 'weight_decay': 0.00001},
@@ -506,10 +510,10 @@ In the training loop, we need to compute force, and loss for forces
  .. code-block:: none
 
     training starting from epoch 1
-    RMSE: 82.69277634252397 at epoch 1
-    epoch 1:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 1:  25%|##5       | 1/4 [00:02<00:08,  2.72s/it]    epoch 1:  50%|#####     | 2/4 [00:05<00:05,  2.70s/it]    epoch 1:  75%|#######5  | 3/4 [00:08<00:02,  2.68s/it]    epoch 1: 100%|##########| 4/4 [00:09<00:00,  2.36s/it]    epoch 1: 100%|##########| 4/4 [00:09<00:00,  2.40s/it]
-    RMSE: 35.40795472206371 at epoch 2
-    epoch 2:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 2:  25%|##5       | 1/4 [00:02<00:08,  2.70s/it]    epoch 2:  50%|#####     | 2/4 [00:05<00:05,  2.68s/it]    epoch 2:  75%|#######5  | 3/4 [00:07<00:02,  2.66s/it]    epoch 2: 100%|##########| 4/4 [00:09<00:00,  2.33s/it]    epoch 2: 100%|##########| 4/4 [00:09<00:00,  2.38s/it]
+    RMSE: 88.34617857389657 at epoch 1
+    epoch 1:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 1:  25%|##5       | 1/4 [00:02<00:06,  2.13s/it]    epoch 1:  50%|#####     | 2/4 [00:04<00:04,  2.11s/it]    epoch 1:  75%|#######5  | 3/4 [00:06<00:02,  2.09s/it]    epoch 1: 100%|##########| 4/4 [00:07<00:00,  1.82s/it]    epoch 1: 100%|##########| 4/4 [00:07<00:00,  1.85s/it]
+    RMSE: 181.08665412405765 at epoch 2
+    epoch 2:   0%|          | 0/4 [00:00<?, ?it/s]    epoch 2:  25%|##5       | 1/4 [00:01<00:05,  1.97s/it]    epoch 2:  50%|#####     | 2/4 [00:03<00:03,  1.97s/it]    epoch 2:  75%|#######5  | 3/4 [00:05<00:01,  1.99s/it]    epoch 2: 100%|##########| 4/4 [00:07<00:00,  1.75s/it]    epoch 2: 100%|##########| 4/4 [00:07<00:00,  1.79s/it]
 
 
 
@@ -517,7 +521,7 @@ In the training loop, we need to compute force, and loss for forces
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  20.907 seconds)
+   **Total running time of the script:** ( 0 minutes  16.323 seconds)
 
 
 .. _sphx_glr_download_examples_nnp_training_force.py:

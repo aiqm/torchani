@@ -15,6 +15,19 @@ specified in `inputtrain.ipt`_
 .. note::
     TorchANI provide tools to run NeuroChem training config file `inputtrain.ipt`.
     See: :ref:`neurochem-training`.
+
+.. warning::
+    The training setup used in this file is configured to reproduce the original research
+    at `Less is more: Sampling chemical space with active learning`_ as much as possible.
+    That research was done on a different platform called NeuroChem which has many default
+    options and technical details different from PyTorch. Some decisions made here
+    (such as, using NeuroChem's initialization instead of PyTorch's default initialization)
+    is not because it gives better result, but solely based on reproducing the original
+    research. This file should not be interpreted as a suggestions to the readers on how
+    they should setup their models.
+
+.. _`Less is more: Sampling chemical space with active learning`:
+    https://aip.scitation.org/doi/full/10.1063/1.5023802
 """
 
 ###############################################################################
@@ -178,7 +191,7 @@ model = torchani.nn.Sequential(aev_computer, nn).to(device)
 # .. _Decoupled Weight Decay Regularization:
 #   https://arxiv.org/abs/1711.05101
 
-AdamW = torchani.optim.AdamW([
+AdamW = torch.optim.AdamW([
     # H networks
     {'params': [H_network[0].weight]},
     {'params': [H_network[2].weight], 'weight_decay': 0.00001},

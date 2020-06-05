@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.aev &mdash; TorchANI 2.0 documentation</title>
+  <title>torchani.aev &mdash; TorchANI 2.1 documentation</title>
   
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                2.0
+                2.1
               </div>
             
           
@@ -110,7 +110,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.neurochem">NeuroChem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.ase">ASE Interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.optim">TorchANI Optimizater</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.units">Units</a></li>
 </ul>
 
@@ -325,10 +324,10 @@
     <span class="n">prod</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">all_shifts</span><span class="p">,</span> <span class="n">all_atoms</span><span class="p">,</span> <span class="n">all_atoms</span><span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
     <span class="n">shift_index</span> <span class="o">=</span> <span class="n">prod</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">p12</span> <span class="o">=</span> <span class="n">prod</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-    <span class="n">shifts_outide</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shift_index</span><span class="p">)</span>
+    <span class="n">shifts_outside</span> <span class="o">=</span> <span class="n">shifts</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shift_index</span><span class="p">)</span>
 
     <span class="c1"># Step 4: combine results for all cells</span>
-    <span class="n">shifts_all</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">shifts_center</span><span class="p">,</span> <span class="n">shifts_outide</span><span class="p">])</span>
+    <span class="n">shifts_all</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">shifts_center</span><span class="p">,</span> <span class="n">shifts_outside</span><span class="p">])</span>
     <span class="n">p12_all</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">p12_center</span><span class="p">,</span> <span class="n">p12</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">shift_values</span> <span class="o">=</span> <span class="n">shifts_all</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">@</span> <span class="n">cell</span>
 

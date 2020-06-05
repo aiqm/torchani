@@ -49,7 +49,11 @@ dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
 
 batch_size = 2560
 
-training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices(species_order).shuffle().split(0.8, None)
+training, validation = torchani.data.load(
+    dspath,
+    additional_properties=('forces',)
+).subtract_self_energies(energy_shifter).species_to_indices(species_order).shuffle().split(0.8, None)
+
 training = training.collate(batch_size).cache()
 validation = validation.collate(batch_size).cache()
 
@@ -131,7 +135,7 @@ model = torchani.nn.Sequential(aev_computer, nn).to(device)
 # Here we will use Adam with weight decay for the weights and Stochastic Gradient
 # Descent for biases.
 
-AdamW = torchani.optim.AdamW([
+AdamW = torch.optim.AdamW([
     # H networks
     {'params': [H_network[0].weight]},
     {'params': [H_network[2].weight], 'weight_decay': 0.00001},

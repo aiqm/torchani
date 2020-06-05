@@ -12,31 +12,12 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example is modified from the official home page and `Constant temperature MD`_ to use the ...">
-
-.. only:: html
-
- .. figure:: /examples/images/thumb/sphx_glr_ase_interface_thumb.png
-
-     :ref:`sphx_glr_examples_ase_interface.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/ase_interface
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="TorchANI has a model zoo trained by NeuroChem. These models are shipped with TorchANI and can b...">
 
 .. only:: html
 
  .. figure:: /examples/images/thumb/sphx_glr_energy_force_thumb.png
+     :alt: Computing Energy and Force Using Models Inside Model Zoo
 
      :ref:`sphx_glr_examples_energy_force.py`
 
@@ -52,11 +33,33 @@ Examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example is modified from the official home page and `Constant temperature MD`_ to use the ...">
+
+.. only:: html
+
+ .. figure:: /examples/images/thumb/sphx_glr_ase_interface_thumb.png
+     :alt: Structure minimization and constant temperature MD using ASE interface
+
+     :ref:`sphx_glr_examples_ase_interface.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /examples/ase_interface
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI&#x27;s NeuroChem trainer to read and run NeuroChem&#x27;s training...">
 
 .. only:: html
 
  .. figure:: /examples/images/thumb/sphx_glr_neurochem_trainer_thumb.png
+     :alt: Train Neural Network Potential From NeuroChem Input File
 
      :ref:`sphx_glr_examples_neurochem_trainer.py`
 
@@ -77,6 +80,7 @@ Examples
 .. only:: html
 
  .. figure:: /examples/images/thumb/sphx_glr_vibration_analysis_thumb.png
+     :alt: Computing Vibrational Frequencies Using Analytical Hessian
 
      :ref:`sphx_glr_examples_vibration_analysis.py`
 
@@ -97,6 +101,7 @@ Examples
 .. only:: html
 
  .. figure:: /examples/images/thumb/sphx_glr_load_from_neurochem_thumb.png
+     :alt: Construct Model From NeuroChem Files
 
      :ref:`sphx_glr_examples_load_from_neurochem.py`
 
@@ -117,6 +122,7 @@ Examples
 .. only:: html
 
  .. figure:: /examples/images/thumb/sphx_glr_jit_thumb.png
+     :alt: Using TorchScript to serialize and deploy model
 
      :ref:`sphx_glr_examples_jit.py`
 
@@ -137,6 +143,7 @@ Examples
 .. only:: html
 
  .. figure:: /examples/images/thumb/sphx_glr_nnp_training_thumb.png
+     :alt: Train Your Own Neural Network Potential
 
      :ref:`sphx_glr_examples_nnp_training.py`
 
@@ -157,6 +164,7 @@ Examples
 .. only:: html
 
  .. figure:: /examples/images/thumb/sphx_glr_nnp_training_force_thumb.png
+     :alt: Train Neural Network Potential To Both Energies and Forces
 
      :ref:`sphx_glr_examples_nnp_training_force.py`
 

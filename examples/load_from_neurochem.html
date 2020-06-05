@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Construct Model From NeuroChem Files &mdash; TorchANI 2.0 documentation</title>
+  <title>Construct Model From NeuroChem Files &mdash; TorchANI 2.1 documentation</title>
   
 
   
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                2.0
+                2.1
               </div>
             
           
@@ -112,7 +112,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.utils">Utilities</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.neurochem">NeuroChem</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.ase">ASE Interface</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.optim">TorchANI Optimizater</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.units">Units</a></li>
 </ul>
 
@@ -199,7 +198,7 @@
     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">path</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.html#os.getcwd" title="os.getcwd" class="sphx-glr-backref-module-os sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span></a><span class="p">()</span>
 <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">const_file</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.path.html#os.path.join" title="os.path.join" class="sphx-glr-backref-module-os-path sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">path</span></a><span class="p">,</span> <span class="s1">&#39;../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
 <span class="n">consts</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="collections.abc.Mapping" class="sphx-glr-backref-module-collections-abc sphx-glr-backref-type-py-class"><span class="n">torchani</span><span class="o">.</span><span class="n">neurochem</span><span class="o">.</span><span class="n">Constants</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">const_file</span></a><span class="p">)</span>
-<span class="n">aev_computer</span> <span class="o">=</span> <a href="https://pytorch.org/docs/master/nn.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">torchani</span><span class="o">.</span><span class="n">AEVComputer</span></a><span class="p">(</span><span class="o">**</span><span class="n">consts</span><span class="p">)</span>
+<span class="n">aev_computer</span> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">torchani</span><span class="o">.</span><span class="n">AEVComputer</span></a><span class="p">(</span><span class="o">**</span><span class="n">consts</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now let’s read self energies and construct energy shifter.</p>
@@ -221,8 +220,8 @@
 (Coordinates) -[AEVComputer]-&gt; (AEV) -[Neural Network]-&gt;
 (Raw energies) -[EnergyShifter]-&gt; (Final energies)
 From using either the ensemble or a single model:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nnp1</span> <span class="o">=</span> <a href="https://pytorch.org/docs/master/nn.html#torch.nn.ModuleList" title="torch.nn.ModuleList" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">torchani</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span></a><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">ensemble</span><span class="p">,</span> <span class="n">energy_shifter</span><span class="p">)</span>
-<span class="n">nnp2</span> <span class="o">=</span> <a href="https://pytorch.org/docs/master/nn.html#torch.nn.ModuleList" title="torch.nn.ModuleList" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">torchani</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span></a><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">energy_shifter</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nnp1</span> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.nn.ModuleList.html#torch.nn.ModuleList" title="torch.nn.ModuleList" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">torchani</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span></a><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">ensemble</span><span class="p">,</span> <span class="n">energy_shifter</span><span class="p">)</span>
+<span class="n">nnp2</span> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.nn.ModuleList.html#torch.nn.ModuleList" title="torch.nn.ModuleList" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">torchani</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span></a><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">energy_shifter</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">nnp1</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">nnp2</span><span class="p">)</span>
 </pre></div>
@@ -590,19 +589,19 @@ Sequential(
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.ase.Calculator object at 0x7ff3d55fdee0&gt;
-&lt;torchani.ase.Calculator object at 0x7ff3d55fdee0&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.ase.Calculator object at 0x7f2139a0aa90&gt;
+&lt;torchani.ase.Calculator object at 0x7f2139a0aa90&gt;
 </pre></div>
 </div>
 <p>Now let’s define a methane molecule</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/torch.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([[[</span><span class="mf">0.03192167</span><span class="p">,</span> <span class="mf">0.00638559</span><span class="p">,</span> <span class="mf">0.01301679</span><span class="p">],</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([[[</span><span class="mf">0.03192167</span><span class="p">,</span> <span class="mf">0.00638559</span><span class="p">,</span> <span class="mf">0.01301679</span><span class="p">],</span>
                              <span class="p">[</span><span class="o">-</span><span class="mf">0.83140486</span><span class="p">,</span> <span class="mf">0.39370209</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.26395324</span><span class="p">],</span>
                              <span class="p">[</span><span class="o">-</span><span class="mf">0.66518241</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.84461308</span><span class="p">,</span> <span class="mf">0.20759389</span><span class="p">],</span>
                              <span class="p">[</span><span class="mf">0.45554739</span><span class="p">,</span> <span class="mf">0.54289633</span><span class="p">,</span> <span class="mf">0.81170881</span><span class="p">],</span>
                              <span class="p">[</span><span class="mf">0.66091919</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.16799635</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.91037834</span><span class="p">]]],</span>
                            <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">=</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">(</span><span class="s1">&#39;CHHHH&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<a href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#ase.Atoms" title="ase.Atoms" class="sphx-glr-backref-module-ase sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">methane</span></a> <span class="o">=</span> <a href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#ase.Atoms" title="ase.Atoms" class="sphx-glr-backref-module-ase sphx-glr-backref-type-py-class"><span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span></a><span class="p">(</span><span class="s1">&#39;CHHHH&#39;</span><span class="p">,</span> <span class="n">positions</span><span class="o">=</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">=</span> <span class="n">consts</span><span class="o">.</span><span class="n">species_to_tensor</span><span class="p">([</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<a href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#ase.Atoms" title="ase.Atoms" class="sphx-glr-backref-module-ase sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">methane</span></a> <span class="o">=</span> <a href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#ase.Atoms" title="ase.Atoms" class="sphx-glr-backref-module-ase sphx-glr-backref-type-py-class"><span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span></a><span class="p">([</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;H&#39;</span><span class="p">],</span> <span class="n">positions</span><span class="o">=</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 </pre></div>
 </div>
 <p>Now let’s compute energies using the ensemble directly:</p>
@@ -614,7 +613,7 @@ Sequential(
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.459022101999686
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.459022105724976
 Force: tensor([[ 0.031, -0.132, -0.053],
         [-0.129,  0.164, -0.077],
         [ 0.086, -0.043,  0.041],
@@ -629,12 +628,12 @@ Force: tensor([[ 0.031, -0.132, -0.053],
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.459022101999686
-Force: [[ 0.03062527 -0.13160461 -0.05265211]
- [-0.12927504  0.16388634 -0.07736802]
- [ 0.08563144 -0.04288924  0.04082094]
- [ 0.02681219  0.00601404  0.03809873]
- [-0.01379385  0.00459347  0.05110046]]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.45902210572497
+Force: [[ 0.03062525 -0.1316046  -0.05265211]
+ [-0.12927504  0.16388635 -0.07736802]
+ [ 0.08563146 -0.04288924  0.04082094]
+ [ 0.02681219  0.00601403  0.03809872]
+ [-0.01379386  0.00459347  0.05110046]]
 </pre></div>
 </div>
 <p>We can do the same thing with the single model:</p>
@@ -650,21 +649,21 @@ Force: [[ 0.03062527 -0.13160461 -0.05265211]
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.46280037151413
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.462800356612966
 Force: tensor([[ 0.056, -0.127, -0.054],
         [-0.140,  0.155, -0.075],
         [ 0.075, -0.037,  0.039],
         [ 0.024,  0.002,  0.033],
         [-0.016,  0.007,  0.057]])
-Energy: -40.46280037151413
-Force: [[ 0.05614965 -0.1269716  -0.05413404]
- [-0.14007527  0.15523373 -0.07533834]
- [ 0.0753209  -0.03744108  0.03949668]
- [ 0.02423099  0.00235087  0.03344228]
- [-0.01562626  0.00682809  0.05653343]]
+Energy: -40.462800356612966
+Force: [[ 0.05614969 -0.12697157 -0.05413403]
+ [-0.14007527  0.15523374 -0.07533836]
+ [ 0.07532089 -0.03744112  0.0394967 ]
+ [ 0.02423096  0.00235086  0.03344225]
+ [-0.01562628  0.0068281   0.05653343]]
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.984 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.762 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-load-from-neurochem-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <a class="reference download internal" download="" href="../_downloads/6e47da231026b2cca4300c62c515ca96/load_from_neurochem.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">load_from_neurochem.py</span></code></a></div>
