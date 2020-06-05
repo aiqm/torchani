@@ -1,6 +1,12 @@
 name: tools
 
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   build:
@@ -9,7 +15,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.6, 3.7]
+        python-version: [3.6, 3.8]
 
     steps:
     - uses: actions/checkout@v1
@@ -31,9 +37,7 @@ jobs:
       run: pip install h5py
     - name: COMP6 Benchmark
       run: python tools/comp6.py dataset/COMP6/COMP6v1/s66x8
-    - name: Install more dependencies
-      run: pip install pytorch-ignite
     - name: Training Benchmark
       run: python tools/training-benchmark.py dataset/ani1-up_to_gdb4/ani_gdb_s01.h5
-    - name: NeuroChem Test
-      run: python tools/neurochem-test.py dataset/ani1-up_to_gdb4/ani_gdb_s01.h5
+    - name: Training Benchmark Nsight System
+      run: python tools/training-benchmark-nsys-profile.py --dry-run dataset/ani1-up_to_gdb4/ani_gdb_s01.h5

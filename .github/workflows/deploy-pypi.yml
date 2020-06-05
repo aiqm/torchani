@@ -11,7 +11,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.7]
+        python-version: [3.8]
 
     steps:
     - uses: actions/checkout@v1
@@ -28,6 +28,5 @@ jobs:
     - name: Deploy
       run: |
         rm -rf dist/*
-        git tag $(date +'v%Y.%m.%d.%H.%M.%S')
         python setup.py bdist bdist_wheel
         twine upload -u zasdfgbnm-bot -p ${{secrets.zasdfgbnm_bot_pypi_password}} dist/*

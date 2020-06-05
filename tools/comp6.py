@@ -2,12 +2,11 @@ import os
 import torch
 import torchani
 from torchani.data._pyanitools import anidataloader
+from torchani.units import hartree2kcalmol
 import argparse
 import math
 import tqdm
 
-
-HARTREE2KCAL = 627.509
 
 # parse command line arguments
 parser = argparse.ArgumentParser()
@@ -42,7 +41,7 @@ def by_batch(species, coordinates, model):
     energies = []
     forces = []
     for s, c in zip(species, coordinates):
-        _, e = model((s, c))
+        e = model((s, c)).energies
         f, = torch.autograd.grad(e.sum(), c)
         energies.append(e)
         forces.append(f)
@@ -97,13 +96,12 @@ def do_benchmark(model):
         rmse_averager_energy.update(ediff ** 2)
         rmse_averager_relative_energy.update(relative_ediff ** 2)
         rmse_averager_force.update(fdiff ** 2)
-    mae_energy = mae_averager_energy.compute() * HARTREE2KCAL
-    rmse_energy = math.sqrt(rmse_averager_energy.compute()) * HARTREE2KCAL
-    mae_relative_energy = mae_averager_relative_energy.compute() * HARTREE2KCAL
-    rmse_relative_energy = math.sqrt(rmse_averager_relative_energy.compute()) \
-        * HARTREE2KCAL
-    mae_force = mae_averager_force.compute() * HARTREE2KCAL
-    rmse_force = math.sqrt(rmse_averager_force.compute()) * HARTREE2KCAL
+    mae_energy = hartree2kcalmol(mae_averager_energy.compute())
+    rmse_energy = hartree2kcalmol(math.sqrt(rmse_averager_energy.compute()))
+    mae_relative_energy = hartree2kcalmol(mae_averager_relative_energy.compute())
+    rmse_relative_energy = hartree2kcalmol(math.sqrt(rmse_averager_relative_energy.compute()))
+    mae_force = hartree2kcalmol(mae_averager_force.compute())
+    rmse_force = hartree2kcalmol(math.sqrt(rmse_averager_force.compute()))
     print("Energy:", mae_energy, rmse_energy)
     print("Relative Energy:", mae_relative_energy, rmse_relative_energy)
     print("Forces:", mae_force, rmse_force)

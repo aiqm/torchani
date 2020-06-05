@@ -1,7 +1,6 @@
-name: flake8
+name: stable-torch
 
 on:
-  pull_request:
   push:
     branches:
       - master
@@ -13,9 +12,9 @@ jobs:
 
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 4
+      fail-fast: false
       matrix:
-        python-version: [3.6, 3.8]
+        python-version: [3.7]
 
     steps:
     - uses: actions/checkout@v1
@@ -23,11 +22,15 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Fetch submodules
+      run: git submodule update --init
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        pip install --upgrade pip
+        pip install torch pytest
+        pip install -r test_requirements.txt
         pip install .
-    - name: Lint with flake8
-      run: |
-        pip install flake8
-        flake8 .
+    - name: Download data files
+      run: ./download.sh
+    - name: Run tests
+      run: pytest

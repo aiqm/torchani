@@ -18,7 +18,6 @@ extensions = [
 ]
 
 templates_path = ['_templates']
-html_static_path = ['_static']
 
 source_suffix = '.rst'
 master_doc = 'index'

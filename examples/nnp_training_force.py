@@ -22,6 +22,9 @@ import math
 import torch.utils.tensorboard
 import tqdm
 
+# helper function to convert energy unit from Hartree to kcal/mol
+from torchani.units import hartree2kcalmol
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 Rcr = 5.2000e+00
@@ -32,10 +35,10 @@ Zeta = torch.tensor([3.2000000e+01], device=device)
 ShfZ = torch.tensor([1.9634954e-01, 5.8904862e-01, 9.8174770e-01, 1.3744468e+00, 1.7671459e+00, 2.1598449e+00, 2.5525440e+00, 2.9452431e+00], device=device)
 EtaA = torch.tensor([8.0000000e+00], device=device)
 ShfA = torch.tensor([9.0000000e-01, 1.5500000e+00, 2.2000000e+00, 2.8500000e+00], device=device)
-num_species = 4
+species_order = ['H', 'C', 'N', 'O']
+num_species = len(species_order)
 aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
 energy_shifter = torchani.utils.EnergyShifter(None)
-species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
 
 
 try:
@@ -46,39 +49,22 @@ dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
 
 batch_size = 2560
 
-###############################################################################
-# The code to create the dataset is a bit different: we need to manually
-# specify that ``atomic_properties=['forces']`` so that forces will be read
-# from hdf5 files.
+training, validation = torchani.data.load(
+    dspath,
+    additional_properties=('forces',)
+).subtract_self_energies(energy_shifter).species_to_indices(species_order).shuffle().split(0.8, None)
 
-training, validation = torchani.data.load_ani_dataset(
-    dspath, species_to_tensor, batch_size, rm_outlier=True,
-    device=device, atomic_properties=['forces'],
-    transform=[energy_shifter.subtract_from_dataset], split=[0.8, None])
+training = training.collate(batch_size).cache()
+validation = validation.collate(batch_size).cache()
 
 print('Self atomic energies: ', energy_shifter.self_energies)
 
 ###############################################################################
-# When iterating the dataset, we will get pairs of input and output
-# ``(species_coordinates, properties)``, in this case, ``properties`` would
-# contain a key ``'atomic'`` where ``properties['atomic']`` is a list of dict
-# containing forces:
-
-data = training[0]
-properties = data[1]
-atomic_properties = properties['atomic']
-print(type(atomic_properties))
-print(list(atomic_properties[0].keys()))
-
-###############################################################################
-# Due to padding, part of the forces might be 0
-print(atomic_properties[0]['forces'][0])
-
-###############################################################################
 # The code to define networks, optimizers, are mostly the same
+aev_dim = aev_computer.aev_length
 
 H_network = torch.nn.Sequential(
-    torch.nn.Linear(384, 160),
+    torch.nn.Linear(aev_dim, 160),
     torch.nn.CELU(0.1),
     torch.nn.Linear(160, 128),
     torch.nn.CELU(0.1),
@@ -88,7 +74,7 @@ H_network = torch.nn.Sequential(
 )
 
 C_network = torch.nn.Sequential(
-    torch.nn.Linear(384, 144),
+    torch.nn.Linear(aev_dim, 144),
     torch.nn.CELU(0.1),
     torch.nn.Linear(144, 112),
     torch.nn.CELU(0.1),
@@ -98,7 +84,7 @@ C_network = torch.nn.Sequential(
 )
 
 N_network = torch.nn.Sequential(
-    torch.nn.Linear(384, 128),
+    torch.nn.Linear(aev_dim, 128),
     torch.nn.CELU(0.1),
     torch.nn.Linear(128, 112),
     torch.nn.CELU(0.1),
@@ -108,7 +94,7 @@ N_network = torch.nn.Sequential(
 )
 
 O_network = torch.nn.Sequential(
-    torch.nn.Linear(384, 128),
+    torch.nn.Linear(aev_dim, 128),
     torch.nn.CELU(0.1),
     torch.nn.Linear(128, 112),
     torch.nn.CELU(0.1),
@@ -149,7 +135,7 @@ model = torchani.nn.Sequential(aev_computer, nn).to(device)
 # Here we will use Adam with weight decay for the weights and Stochastic Gradient
 # Descent for biases.
 
-AdamW = torchani.optim.AdamW([
+AdamW = torch.optim.AdamW([
     # H networks
     {'params': [H_network[0].weight]},
     {'params': [H_network[2].weight], 'weight_decay': 0.00001},
@@ -217,26 +203,19 @@ if os.path.isfile(latest_checkpoint):
 # is better than the best, then save the new best model to a checkpoint
 
 
-# helper function to convert energy unit from Hartree to kcal/mol
-def hartree2kcal(x):
-    return 627.509 * x
-
-
 def validate():
     # run validation
     mse_sum = torch.nn.MSELoss(reduction='sum')
     total_mse = 0.0
     count = 0
-    for batch_x, batch_y in validation:
-        true_energies = batch_y['energies']
-        predicted_energies = []
-        for chunk_species, chunk_coordinates in batch_x:
-            _, chunk_energies = model((chunk_species, chunk_coordinates))
-            predicted_energies.append(chunk_energies)
-        predicted_energies = torch.cat(predicted_energies)
+    for properties in validation:
+        species = properties['species'].to(device)
+        coordinates = properties['coordinates'].to(device).float()
+        true_energies = properties['energies'].to(device).float()
+        _, predicted_energies = model((species, coordinates))
         total_mse += mse_sum(predicted_energies, true_energies).item()
         count += predicted_energies.shape[0]
-    return hartree2kcal(math.sqrt(total_mse / count))
+    return hartree2kcalmol(math.sqrt(total_mse / count))
 
 
 ###############################################################################
@@ -277,49 +256,28 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
 
     # Besides being stored in x, species and coordinates are also stored in y.
     # So here, for simplicity, we just ignore the x and use y for everything.
-    for i, (_, batch_y) in tqdm.tqdm(
+    for i, properties in tqdm.tqdm(
         enumerate(training),
         total=len(training),
         desc="epoch {}".format(AdamW_scheduler.last_epoch)
     ):
+        species = properties['species'].to(device)
+        coordinates = properties['coordinates'].to(device).float().requires_grad_(True)
+        true_energies = properties['energies'].to(device).float()
+        true_forces = properties['forces'].to(device).float()
+        num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+        _, predicted_energies = model((species, coordinates))
 
-        true_energies = batch_y['energies']
-        predicted_energies = []
-        num_atoms = []
-        force_loss = []
-
-        for chunk in batch_y['atomic']:
-            chunk_species = chunk['species']
-            chunk_coordinates = chunk['coordinates']
-            chunk_true_forces = chunk['forces']
-            chunk_num_atoms = (chunk_species >= 0).to(true_energies.dtype).sum(dim=1)
-            num_atoms.append(chunk_num_atoms)
-
-            # We must set `chunk_coordinates` to make it requires grad, so
-            # that we could compute force from it
-            chunk_coordinates.requires_grad_(True)
-
-            _, chunk_energies = model((chunk_species, chunk_coordinates))
-
-            # We can use torch.autograd.grad to compute force. Remember to
-            # create graph so that the loss of the force can contribute to
-            # the gradient of parameters, and also to retain graph so that
-            # we can backward through it a second time when computing gradient
-            # w.r.t. parameters.
-            chunk_forces = -torch.autograd.grad(chunk_energies.sum(), chunk_coordinates, create_graph=True, retain_graph=True)[0]
-
-            # Now let's compute loss for force of this chunk
-            chunk_force_loss = mse(chunk_true_forces, chunk_forces).sum(dim=(1, 2)) / chunk_num_atoms
-
-            predicted_energies.append(chunk_energies)
-            force_loss.append(chunk_force_loss)
-
-        num_atoms = torch.cat(num_atoms)
-        predicted_energies = torch.cat(predicted_energies)
+        # We can use torch.autograd.grad to compute force. Remember to
+        # create graph so that the loss of the force can contribute to
+        # the gradient of parameters, and also to retain graph so that
+        # we can backward through it a second time when computing gradient
+        # w.r.t. parameters.
+        forces = -torch.autograd.grad(predicted_energies.sum(), coordinates, create_graph=True, retain_graph=True)[0]
 
         # Now the total loss has two parts, energy loss and force loss
         energy_loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
-        force_loss = torch.cat(force_loss).mean()
+        force_loss = (mse(true_forces, forces).sum(dim=(1, 2)) / num_atoms).mean()
         loss = energy_loss + force_coefficient * force_loss
 
         AdamW.zero_grad()

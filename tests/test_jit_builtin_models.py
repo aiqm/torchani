@@ -6,28 +6,19 @@ import os
 
 path = os.path.dirname(os.path.realpath(__file__))
 dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
-batch_size = 256
-chunk_threshold = 5
-other_properties = {'properties': ['energies'],
-                    'padding_values': [None],
-                    'padded_shapes': [(batch_size, )],
-                    'dtypes': [torch.float64],
-                    }
 
 
 class TestBuiltinModelsJIT(unittest.TestCase):
 
     def setUp(self):
-        self.ds = torchani.data.CachedDataset(dspath, batch_size=batch_size, device='cpu',
-                                              chunk_threshold=chunk_threshold,
-                                              other_properties=other_properties,
-                                              subtract_self_energies=True)
         self.ani1ccx = torchani.models.ANI1ccx()
+        self.ds = torchani.data.load(dspath).subtract_self_energies(self.ani1ccx.sae_dict).species_to_indices().shuffle().collate(256).cache()
 
     def _test_model(self, model):
-        chunk = self.ds[0][0][0]
-        _, e = model(chunk)
-        _, e2 = torch.jit.script(model)(chunk)
+        properties = next(iter(self.ds))
+        input_ = (properties['species'], properties['coordinates'].float())
+        _, e = model(input_)
+        _, e2 = torch.jit.script(model)(input_)
         self.assertTrue(torch.allclose(e, e2))
 
     def _test_ensemble(self, ensemble):

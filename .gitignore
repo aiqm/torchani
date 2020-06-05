@@ -30,3 +30,9 @@ dist
 *.swo
 /download
 /download.tar.xz
+*.qdrep
+*.qdstrm
+*.zip
+Untitled.ipynb
+/nnp_training.py
+/test*.py

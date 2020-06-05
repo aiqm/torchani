@@ -5,6 +5,8 @@ TorchANI
     :members:
 .. autoclass:: torchani.ANIModel
 .. autoclass:: torchani.Ensemble
+.. autoclass:: torchani.SpeciesConverter
+    :members:
 .. autoclass:: torchani.EnergyShifter
     :members:
 .. autoclass:: torchani.nn.Gaussian
@@ -24,22 +26,13 @@ Datasets
 ========
 
 .. automodule:: torchani.data
-.. autofunction:: torchani.data.find_threshold
-.. autofunction:: torchani.data.ShuffledDataset
-.. autoclass:: torchani.data.CachedDataset
-    :members:
-.. autofunction:: torchani.data.load_ani_dataset
-.. autofunction:: torchani.data.create_aev_cache
-.. autoclass:: torchani.data.BatchedANIDataset
-.. autoclass:: torchani.data.AEVCacheLoader
-.. automodule:: torchani.data.cache_aev
+
 
 
 Utilities
 =========
 
 .. automodule:: torchani.utils
-.. autofunction:: torchani.utils.pad
 .. autofunction:: torchani.utils.pad_atomic_properties
 .. autofunction:: torchani.utils.present_species
 .. autofunction:: torchani.utils.strip_redundant_padding
@@ -48,6 +41,7 @@ Utilities
     :members:
 .. autofunction:: torchani.utils.hessian
 .. autofunction:: torchani.utils.vibrational_analysis
+.. autofunction:: torchani.utils.get_atomic_masses
 
 
 NeuroChem
@@ -71,24 +65,15 @@ ASE Interface
 .. automodule:: torchani.ase
 .. autoclass:: torchani.ase.Calculator
 
+Units
+=====
 
-TorchANI Optimizater
-====================
-
-.. automodule:: torchani.optim
-.. autoclass:: torchani.optim.AdamW
-
-
-Ignite Helpers
-==============
-
-.. automodule:: torchani.ignite
-.. autoclass:: torchani.ignite.Container
-    :members:
-.. autoclass:: torchani.ignite.DictLoss
-.. autoclass:: torchani.ignite.PerAtomDictLoss
-.. autoclass:: torchani.ignite.TransformedLoss
-.. autofunction:: torchani.ignite.MSELoss
-.. autoclass:: torchani.ignite.DictMetric
-.. autofunction:: torchani.ignite.RMSEMetric
-.. autofunction:: torchani.ignite.MaxAEMetric
+.. automodule:: torchani.units
+.. autofunction:: torchani.units.hartree2ev
+.. autofunction:: torchani.units.hartree2kcalmol
+.. autofunction:: torchani.units.hartree2kjoulemol
+.. autofunction:: torchani.units.ev2kcalmol
+.. autofunction:: torchani.units.ev2kjoulemol
+.. autofunction:: torchani.units.mhessian2fconst
+.. autofunction:: torchani.units.sqrt_mhessian2invcm
+.. autofunction:: torchani.units.sqrt_mhessian2milliev

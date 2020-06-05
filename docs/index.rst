@@ -9,6 +9,7 @@ Welcome to TorchANI's documentation!
     :caption: Getting Started
 
     start
+    tips
 
 .. toctree::
     :maxdepth: 2
@@ -21,8 +22,6 @@ Welcome to TorchANI's documentation!
     examples/load_from_neurochem
     examples/nnp_training
     examples/nnp_training_force
-    examples/nnp_training_ignite
-    examples/cache_aev
     examples/neurochem_trainer
 
 .. toctree::

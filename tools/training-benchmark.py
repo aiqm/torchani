@@ -4,19 +4,49 @@ import time
 import timeit
 import argparse
 import pkbar
+from torchani.units import hartree2kcalmol
 
+synchronize = False
 
-def atomic():
-    model = torch.nn.Sequential(
-        torch.nn.Linear(384, 128),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(128, 128),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(128, 64),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(64, 1)
-    )
-    return model
+H_network = torch.nn.Sequential(
+    torch.nn.Linear(384, 160),
+    torch.nn.CELU(0.1),
+    torch.nn.Linear(160, 128),
+    torch.nn.CELU(0.1),
+    torch.nn.Linear(128, 96),
+    torch.nn.CELU(0.1),
+    torch.nn.Linear(96, 1)
+)
+
+C_network = torch.nn.Sequential(
+    torch.nn.Linear(384, 144),
+    torch.nn.CELU(0.1),
+    torch.nn.Linear(144, 112),
+    torch.nn.CELU(0.1),
+    torch.nn.Linear(112, 96),
+    torch.nn.CELU(0.1),
+    torch.nn.Linear(96, 1)
+)
+
+N_network = torch.nn.Sequential(
+    torch.nn.Linear(384, 128),
+    torch.nn.CELU(0.1),
+    torch.nn.Linear(128, 112),
+    torch.nn.CELU(0.1),
+    torch.nn.Linear(112, 96),
+    torch.nn.CELU(0.1),
+    torch.nn.Linear(96, 1)
+)
+
+O_network = torch.nn.Sequential(
+    torch.nn.Linear(384, 128),
+    torch.nn.CELU(0.1),
+    torch.nn.Linear(128, 112),
+    torch.nn.CELU(0.1),
+    torch.nn.Linear(112, 96),
+    torch.nn.CELU(0.1),
+    torch.nn.Linear(96, 1)
+)
 
 
 def time_func(key, func):
@@ -25,15 +55,13 @@ def time_func(key, func):
     def wrapper(*args, **kwargs):
         start = timeit.default_timer()
         ret = func(*args, **kwargs)
+        if synchronize:
+            torch.cuda.synchronize()
         end = timeit.default_timer()
         timers[key] += end - start
         return ret
 
     return wrapper
-
-
-def hartree2kcal(x):
-    return 627.509 * x
 
 
 if __name__ == "__main__":
@@ -48,26 +76,16 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--batch_size',
                         help='Number of conformations of each batch',
                         default=2560, type=int)
-    parser.add_argument('-o', '--original_dataset_api',
-                        help='use original dataset api',
-                        dest='dataset',
-                        action='store_const',
-                        const='original')
-    parser.add_argument('-s', '--shuffle_dataset_api',
-                        help='use shuffle dataset api',
-                        dest='dataset',
-                        action='store_const',
-                        const='shuffle')
-    parser.add_argument('-c', '--cache_dataset_api',
-                        help='use cache dataset api',
-                        dest='dataset',
-                        action='store_const',
-                        const='cache')
-    parser.set_defaults(dataset='shuffle')
+    parser.add_argument('-y', '--synchronize',
+                        action='store_true',
+                        help='whether to insert torch.cuda.synchronize() at the end of each function')
     parser.add_argument('-n', '--num_epochs',
                         help='epochs',
                         default=1, type=int)
     parser = parser.parse_args()
+
+    if parser.synchronize:
+        synchronize = True
 
     Rcr = 5.2000e+00
     Rca = 3.5000e+00
@@ -80,7 +98,7 @@ if __name__ == "__main__":
     num_species = 4
     aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
 
-    nn = torchani.ANIModel([atomic() for _ in range(4)])
+    nn = torchani.ANIModel([H_network, C_network, N_network, O_network])
     model = torch.nn.Sequential(aev_computer, nn).to(parser.device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.000001)
     mse = torch.nn.MSELoss(reduction='none')
@@ -92,56 +110,17 @@ if __name__ == "__main__":
     torchani.aev.angular_terms = time_func('torchani.aev.angular_terms', torchani.aev.angular_terms)
     torchani.aev.compute_shifts = time_func('torchani.aev.compute_shifts', torchani.aev.compute_shifts)
     torchani.aev.neighbor_pairs = time_func('torchani.aev.neighbor_pairs', torchani.aev.neighbor_pairs)
+    torchani.aev.neighbor_pairs_nopbc = time_func('torchani.aev.neighbor_pairs_nopbc', torchani.aev.neighbor_pairs_nopbc)
     torchani.aev.triu_index = time_func('torchani.aev.triu_index', torchani.aev.triu_index)
-    torchani.aev.convert_pair_index = time_func('torchani.aev.convert_pair_index', torchani.aev.convert_pair_index)
     torchani.aev.cumsum_from_zero = time_func('torchani.aev.cumsum_from_zero', torchani.aev.cumsum_from_zero)
     torchani.aev.triple_by_molecule = time_func('torchani.aev.triple_by_molecule', torchani.aev.triple_by_molecule)
     torchani.aev.compute_aev = time_func('torchani.aev.compute_aev', torchani.aev.compute_aev)
     model[0].forward = time_func('total', model[0].forward)
     model[1].forward = time_func('forward', model[1].forward)
 
-    if parser.dataset == 'shuffle':
-        torchani.data.ShuffledDataset = time_func('data_loading', torchani.data.ShuffledDataset)
-        print('using shuffle dataset API')
-        print('=> loading dataset...')
-        dataset = torchani.data.ShuffledDataset(file_path=parser.dataset_path,
-                                                species_order=['H', 'C', 'N', 'O'],
-                                                subtract_self_energies=True,
-                                                batch_size=parser.batch_size,
-                                                num_workers=2)
-        print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
-        chunks, properties = iter(dataset).next()
-    elif parser.dataset == 'original':
-        torchani.data.load_ani_dataset = time_func('data_loading', torchani.data.load_ani_dataset)
-        print('using original dataset API')
-        print('=> loading dataset...')
-        energy_shifter = torchani.utils.EnergyShifter(None)
-        species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
-        dataset = torchani.data.load_ani_dataset(parser.dataset_path, species_to_tensor,
-                                                 parser.batch_size, device=parser.device,
-                                                 transform=[energy_shifter.subtract_from_dataset])
-        print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
-        chunks, properties = dataset[0]
-    elif parser.dataset == 'cache':
-        torchani.data.CachedDataset = time_func('data_loading', torchani.data.CachedDataset)
-        print('using cache dataset API')
-        print('=> loading dataset...')
-        dataset = torchani.data.CachedDataset(file_path=parser.dataset_path,
-                                              species_order=['H', 'C', 'N', 'O'],
-                                              subtract_self_energies=True,
-                                              batch_size=parser.batch_size)
-        print('=> caching all dataset into cpu')
-        pbar = pkbar.Pbar('loading and processing dataset into cpu memory, total '
-                          + 'batches: {}, batch_size: {}'.format(len(dataset), parser.batch_size),
-                          len(dataset))
-        for i, t in enumerate(dataset):
-            pbar.update(i)
-        print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
-        chunks, properties = dataset[0]
-
-    for i, chunk in enumerate(chunks):
-        print('chunk{}'.format(i + 1), list(chunk[0].size()), list(chunk[1].size()))
-    print('energies', list(properties['energies'].size()))
+    print('=> loading dataset...')
+    shifter = torchani.EnergyShifter(None)
+    dataset = list(torchani.data.load(parser.dataset_path).subtract_self_energies(shifter).species_to_indices().shuffle().collate(parser.batch_size))
 
     print('=> start training')
     start = time.time()
@@ -151,27 +130,20 @@ if __name__ == "__main__":
         print('Epoch: %d/%d' % (epoch + 1, parser.num_epochs))
         progbar = pkbar.Kbar(target=len(dataset) - 1, width=8)
 
-        for i, (batch_x, batch_y) in enumerate(dataset):
-
-            true_energies = batch_y['energies'].to(parser.device)
-            predicted_energies = []
-            num_atoms = []
-
-            for chunk_species, chunk_coordinates in batch_x:
-                chunk_species = chunk_species.to(parser.device)
-                chunk_coordinates = chunk_coordinates.to(parser.device)
-                num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
-                _, chunk_energies = model((chunk_species, chunk_coordinates))
-                predicted_energies.append(chunk_energies)
-
-            num_atoms = torch.cat(num_atoms)
-            predicted_energies = torch.cat(predicted_energies).to(true_energies.dtype)
+        for i, properties in enumerate(dataset):
+            species = properties['species'].to(parser.device)
+            coordinates = properties['coordinates'].to(parser.device).float()
+            true_energies = properties['energies'].to(parser.device).float()
+            num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+            _, predicted_energies = model((species, coordinates))
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
-            rmse = hartree2kcal((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
+            rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
             loss.backward()
             optimizer.step()
 
             progbar.update(i, values=[("rmse", rmse)])
+    if synchronize:
+        torch.cuda.synchronize()
     stop = time.time()
 
     print('=> more detail about benchmark')
@@ -179,6 +151,5 @@ if __name__ == "__main__":
         if k.startswith('torchani.'):
             print('{} - {:.1f}s'.format(k, timers[k]))
     print('Total AEV - {:.1f}s'.format(timers['total']))
-    print('Data Loading - {:.1f}s'.format(timers['data_loading']))
     print('NN - {:.1f}s'.format(timers['forward']))
     print('Epoch time - {:.1f}s'.format(stop - start))

@@ -2,6 +2,7 @@ import torch
 import torchani
 import argparse
 import pkbar
+from torchani.units import hartree2kcalmol
 
 
 WARM_UP_BATCHES = 50
@@ -32,18 +33,14 @@ def time_func(key, func):
     return wrapper
 
 
-def hartree2kcal(x):
-    return 627.509 * x
-
-
 def enable_timers(model):
     torchani.aev.cutoff_cosine = time_func('cutoff_cosine', torchani.aev.cutoff_cosine)
     torchani.aev.radial_terms = time_func('radial_terms', torchani.aev.radial_terms)
     torchani.aev.angular_terms = time_func('angular_terms', torchani.aev.angular_terms)
     torchani.aev.compute_shifts = time_func('compute_shifts', torchani.aev.compute_shifts)
     torchani.aev.neighbor_pairs = time_func('neighbor_pairs', torchani.aev.neighbor_pairs)
+    torchani.aev.neighbor_pairs_nopbc = time_func('neighbor_pairs_nopbc', torchani.aev.neighbor_pairs_nopbc)
     torchani.aev.triu_index = time_func('triu_index', torchani.aev.triu_index)
-    torchani.aev.convert_pair_index = time_func('convert_pair_index', torchani.aev.convert_pair_index)
     torchani.aev.cumsum_from_zero = time_func('cumsum_from_zero', torchani.aev.cumsum_from_zero)
     torchani.aev.triple_by_molecule = time_func('triple_by_molecule', torchani.aev.triple_by_molecule)
     torchani.aev.compute_aev = time_func('compute_aev', torchani.aev.compute_aev)
@@ -59,24 +56,11 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--batch_size',
                         help='Number of conformations of each batch',
                         default=2560, type=int)
-    parser.add_argument('-o', '--original_dataset_api',
-                        help='use original dataset api',
-                        dest='dataset',
-                        action='store_const',
-                        const='original')
-    parser.add_argument('-s', '--shuffle_dataset_api',
-                        help='use shuffle dataset api',
-                        dest='dataset',
-                        action='store_const',
-                        const='shuffle')
-    parser.add_argument('-c', '--cache_dataset_api',
-                        help='use cache dataset api',
-                        dest='dataset',
-                        action='store_const',
-                        const='cache')
-    parser.set_defaults(dataset='shuffle')
+    parser.add_argument('-d', '--dry-run',
+                        help='just run it in a CI without GPU',
+                        action='store_true')
     parser = parser.parse_args()
-    parser.device = torch.device('cuda')
+    parser.device = torch.device('cpu' if parser.dry_run else 'cuda')
 
     Rcr = 5.2000e+00
     Rca = 3.5000e+00
@@ -94,45 +78,9 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=0.000001)
     mse = torch.nn.MSELoss(reduction='none')
 
-    if parser.dataset == 'shuffle':
-        print('using shuffle dataset API')
-        print('=> loading dataset...')
-        dataset = torchani.data.ShuffledDataset(file_path=parser.dataset_path,
-                                                species_order=['H', 'C', 'N', 'O'],
-                                                subtract_self_energies=True,
-                                                batch_size=parser.batch_size,
-                                                num_workers=2)
-        print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
-        chunks, properties = iter(dataset).next()
-    elif parser.dataset == 'original':
-        print('using original dataset API')
-        print('=> loading dataset...')
-        energy_shifter = torchani.utils.EnergyShifter(None)
-        species_to_tensor = torchani.utils.ChemicalSymbolsToInts('HCNO')
-        dataset = torchani.data.load_ani_dataset(parser.dataset_path, species_to_tensor,
-                                                 parser.batch_size, device=parser.device,
-                                                 transform=[energy_shifter.subtract_from_dataset])
-        print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
-        chunks, properties = dataset[0]
-    elif parser.dataset == 'cache':
-        print('using cache dataset API')
-        print('=> loading dataset...')
-        dataset = torchani.data.CachedDataset(file_path=parser.dataset_path,
-                                              species_order=['H', 'C', 'N', 'O'],
-                                              subtract_self_energies=True,
-                                              batch_size=parser.batch_size)
-        print('=> caching all dataset into cpu')
-        pbar = pkbar.Pbar('loading and processing dataset into cpu memory, total '
-                          + 'batches: {}, batch_size: {}'.format(len(dataset), parser.batch_size),
-                          len(dataset))
-        for i, t in enumerate(dataset):
-            pbar.update(i)
-        print('=> the first batch is ([chunk1, chunk2, ...], {"energies", "force", ...}) in which chunk1=(species, coordinates)')
-        chunks, properties = dataset[0]
-
-    for i, chunk in enumerate(chunks):
-        print('chunk{}'.format(i + 1), list(chunk[0].size()), list(chunk[1].size()))
-    print('energies', list(properties['energies'].size()))
+    print('=> loading dataset...')
+    shifter = torchani.EnergyShifter(None)
+    dataset = list(torchani.data.load(parser.dataset_path).subtract_self_energies(shifter).species_to_indices().shuffle().collate(parser.batch_size))
 
     print('=> start warming up')
     total_batch_counter = 0
@@ -141,51 +89,44 @@ if __name__ == "__main__":
         print('Epoch: %d/inf' % (epoch + 1,))
         progbar = pkbar.Kbar(target=len(dataset) - 1, width=8)
 
-        for i, (batch_x, batch_y) in enumerate(dataset):
+        for i, properties in enumerate(dataset):
 
-            if total_batch_counter == WARM_UP_BATCHES:
+            if not parser.dry_run and total_batch_counter == WARM_UP_BATCHES:
                 print('=> warm up finished, start profiling')
                 enable_timers(model)
                 torch.cuda.cudart().cudaProfilerStart()
 
-            if total_batch_counter >= WARM_UP_BATCHES:
+            PROFILING_STARTED = not parser.dry_run and (total_batch_counter >= WARM_UP_BATCHES)
+
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_push("batch{}".format(total_batch_counter))
 
-            true_energies = batch_y['energies'].to(parser.device)
-            predicted_energies = []
-            num_atoms = []
-
-            for j, (chunk_species, chunk_coordinates) in enumerate(batch_x):
-                if total_batch_counter >= WARM_UP_BATCHES:
-                    torch.cuda.nvtx.range_push("chunk{}".format(j))
-                chunk_species = chunk_species.to(parser.device)
-                chunk_coordinates = chunk_coordinates.to(parser.device)
-                num_atoms.append((chunk_species >= 0).to(true_energies.dtype).sum(dim=1))
-                _, chunk_energies = model((chunk_species, chunk_coordinates))
-                predicted_energies.append(chunk_energies)
-                if total_batch_counter >= WARM_UP_BATCHES:
-                    torch.cuda.nvtx.range_pop()
-
-            num_atoms = torch.cat(num_atoms)
-            predicted_energies = torch.cat(predicted_energies).to(true_energies.dtype)
+            species = properties['species'].to(parser.device)
+            coordinates = properties['coordinates'].to(parser.device).float()
+            true_energies = properties['energies'].to(parser.device).float()
+            num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+            with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
+                _, predicted_energies = model((species, coordinates))
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
-            rmse = hartree2kcal((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
+            rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
 
-            if total_batch_counter >= WARM_UP_BATCHES:
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_push("backward")
-            loss.backward()
-            if total_batch_counter >= WARM_UP_BATCHES:
+            with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
+                loss.backward()
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_pop()
 
-            if total_batch_counter >= WARM_UP_BATCHES:
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_push("optimizer.step()")
-            optimizer.step()
-            if total_batch_counter >= WARM_UP_BATCHES:
+            with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
+                optimizer.step()
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_pop()
 
             progbar.update(i, values=[("rmse", rmse)])
 
-            if total_batch_counter >= WARM_UP_BATCHES:
+            if PROFILING_STARTED:
                 torch.cuda.nvtx.range_pop()
 
             total_batch_counter += 1

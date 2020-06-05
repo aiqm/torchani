@@ -9,13 +9,14 @@ import struct
 import itertools
 import math
 import timeit
-from . import _six  # noqa:F401
 import collections
 import sys
 from ..nn import ANIModel, Ensemble, Gaussian, Sequential
 from ..utils import EnergyShifter, ChemicalSymbolsToInts
 from ..aev import AEVComputer
-from ..optim import AdamW
+from torch.optim import AdamW
+from collections import OrderedDict
+from torchani.units import hartree2kcalmol
 
 
 class Constants(collections.abc.Mapping):
@@ -69,17 +70,22 @@ class Constants(collections.abc.Mapping):
         return getattr(self, item)
 
 
-def load_sae(filename):
+def load_sae(filename, return_dict=False):
     """Returns an object of :class:`EnergyShifter` with self energies from
     NeuroChem sae file"""
     self_energies = []
+    d = {}
     with open(filename) as f:
         for i in f:
             line = [x.strip() for x in i.split('=')]
+            species = line[0].split(',')[0].strip()
             index = int(line[0].split(',')[1].strip())
             value = float(line[1])
+            d[species] = value
             self_energies.append((index, value))
     self_energies = [i for _, i in sorted(self_energies)]
+    if return_dict:
+        return EnergyShifter(self_energies), d
     return EnergyShifter(self_energies)
 
 
@@ -122,8 +128,11 @@ def load_atomic_network(filename):
 
         start: inputsize atom_net
 
+        nans: "-"?"nan"
+
         value : SIGNED_INT
               | SIGNED_FLOAT
+              | nans
               | "FILE" ":" FILENAME "[" INT "]"
 
         FILENAME : ("_"|"-"|"."|LETTER|DIGIT)+
@@ -151,6 +160,10 @@ def load_atomic_network(filename):
             def value(self, v):
                 if len(v) == 1:
                     v = v[0]
+                    if isinstance(v, lark.tree.Tree):
+                        assert v.data == 'nans'
+                        return math.nan
+                    assert isinstance(v, lark.lexer.Token)
                     if v.type == 'FILENAME':
                         v = v.value
                     elif v.type == 'SIGNED_INT' or v.type == 'INT':
@@ -234,10 +247,10 @@ def load_model(species, dir_):
             chemical symbols of each supported atom type in correct order.
         dir_ (str): String for directory storing network configurations.
     """
-    models = []
+    models = OrderedDict()
     for i in species:
         filename = os.path.join(dir_, 'ANN-{}.nnf'.format(i))
-        models.append(load_atomic_network(filename))
+        models[i] = load_atomic_network(filename)
     return ANIModel(models)
 
 
@@ -259,10 +272,6 @@ def load_model_ensemble(species, prefix, count):
     return Ensemble(models)
 
 
-def hartree2kcal(x):
-    return 627.509 * x
-
-
 if sys.version_info[0] > 2:
 
     class Trainer:
@@ -274,28 +283,23 @@ if sys.version_info[0] > 2:
             tqdm (bool): whether to enable tqdm
             tensorboard (str): Directory to store tensorboard log file, set to
                 ``None`` to disable tensorboard.
-            aev_caching (bool): Whether to use AEV caching.
             checkpoint_name (str): Name of the checkpoint file, checkpoints
                 will be stored in the network directory with this file name.
         """
 
         def __init__(self, filename, device=torch.device('cuda'), tqdm=False,
-                     tensorboard=None, aev_caching=False,
-                     checkpoint_name='model.pt'):
+                     tensorboard=None, checkpoint_name='model.pt'):
 
-            from ..data import load_ani_dataset  # noqa: E402
-            from ..data import AEVCacheLoader  # noqa: E402
+            from ..data import load  # noqa: E402
 
             class dummy:
                 pass
 
             self.imports = dummy()
-            self.imports.load_ani_dataset = load_ani_dataset
-            self.imports.AEVCacheLoader = AEVCacheLoader
+            self.imports.load = load
 
             self.filename = filename
             self.device = device
-            self.aev_caching = aev_caching
             self.checkpoint_name = checkpoint_name
             self.weights = []
             self.biases = []
@@ -468,7 +472,7 @@ if sys.version_info[0] > 2:
             self.aev_computer = AEVComputer(**self.consts)
             del params['sflparamsfile']
             self.sae_file = os.path.join(dir_, params['atomEnergyFile'])
-            self.shift_energy = load_sae(self.sae_file)
+            self.shift_energy, self.sae = load_sae(self.sae_file, return_dict=True)
             del params['atomEnergyFile']
             network_dir = os.path.join(dir_, params['ntwkStoreDir'])
             if not os.path.exists(network_dir):
@@ -495,8 +499,8 @@ if sys.version_info[0] > 2:
             input_size, network_setup = network_setup
             if input_size != self.aev_computer.aev_length:
                 raise ValueError('AEV size and input size does not match')
-            atomic_nets = {}
-            for atom_type in network_setup:
+            atomic_nets = OrderedDict()
+            for atom_type in self.consts.species:
                 layers = network_setup[atom_type]
                 modules = []
                 i = input_size
@@ -536,15 +540,11 @@ if sys.version_info[0] > 2:
                             'unrecognized parameter in layer setup')
                     i = o
                 atomic_nets[atom_type] = torch.nn.Sequential(*modules)
-            self.nn = ANIModel([atomic_nets[s] for s in self.consts.species])
+            self.nn = ANIModel(atomic_nets)
 
             # initialize weights and biases
             self.nn.apply(init_params)
-
-            if self.aev_caching:
-                self.model = self.nn.to(self.device)
-            else:
-                self.model = Sequential(self.aev_computer, self.nn).to(self.device)
+            self.model = Sequential(self.aev_computer, self.nn).to(self.device)
 
             # loss functions
             self.mse_se = torch.nn.MSELoss(reduction='none')
@@ -556,38 +556,22 @@ if sys.version_info[0] > 2:
             self.best_validation_rmse = math.inf
 
         def load_data(self, training_path, validation_path):
-            """Load training and validation dataset from file.
-
-            If AEV caching is enabled, then the arguments are path to the cache
-            directory, otherwise it should be path to the dataset.
-            """
-            if self.aev_caching:
-                self.training_set = self.imports.AEVCacheLoader(training_path)
-                self.validation_set = self.imports.AEVCacheLoader(validation_path)
-            else:
-                self.training_set = self.imports.load_ani_dataset(
-                    training_path, self.consts.species_to_tensor,
-                    self.training_batch_size, rm_outlier=True, device=self.device,
-                    transform=[self.shift_energy.subtract_from_dataset])
-                self.validation_set = self.imports.load_ani_dataset(
-                    validation_path, self.consts.species_to_tensor,
-                    self.validation_batch_size, rm_outlier=True, device=self.device,
-                    transform=[self.shift_energy.subtract_from_dataset])
+            """Load training and validation dataset from file."""
+            self.training_set = self.imports.load(training_path).subtract_self_energies(self.sae).species_to_indices().shuffle().collate(self.training_batch_size).cache()
+            self.validation_set = self.imports.load(validation_path).subtract_self_energies(self.sae).species_to_indices().shuffle().collate(self.validation_batch_size).cache()
 
         def evaluate(self, dataset):
             """Run the evaluation"""
             total_mse = 0.0
             count = 0
-            for batch_x, batch_y in dataset:
-                true_energies = batch_y['energies']
-                predicted_energies = []
-                for chunk_species, chunk_coordinates in batch_x:
-                    _, chunk_energies = self.model((chunk_species, chunk_coordinates))
-                    predicted_energies.append(chunk_energies)
-                predicted_energies = torch.cat(predicted_energies)
+            for properties in dataset:
+                species = properties['species'].to(self.device)
+                coordinates = properties['coordinates'].to(self.device).float()
+                true_energies = properties['energies'].to(self.device).float()
+                _, predicted_energies = self.model((species, coordinates))
                 total_mse += self.mse_sum(predicted_energies, true_energies).item()
                 count += predicted_energies.shape[0]
-            return hartree2kcal(math.sqrt(total_mse / count))
+            return hartree2kcalmol(math.sqrt(total_mse / count))
 
         def run(self):
             """Run the training"""
@@ -633,21 +617,16 @@ if sys.version_info[0] > 2:
                     self.tensorboard.add_scalar('learning_rate', learning_rate, AdamW_scheduler.last_epoch)
                     self.tensorboard.add_scalar('no_improve_count_vs_epoch', no_improve_count, AdamW_scheduler.last_epoch)
 
-                for i, (batch_x, batch_y) in self.tqdm(
+                for i, properties in self.tqdm(
                     enumerate(self.training_set),
                     total=len(self.training_set),
                     desc='epoch {}'.format(AdamW_scheduler.last_epoch)
                 ):
-
-                    true_energies = batch_y['energies']
-                    predicted_energies = []
-                    num_atoms = []
-                    for chunk_species, chunk_coordinates in batch_x:
-                        num_atoms.append((chunk_species >= 0).sum(dim=1))
-                        _, chunk_energies = self.model((chunk_species, chunk_coordinates))
-                        predicted_energies.append(chunk_energies)
-                    num_atoms = torch.cat(num_atoms).to(true_energies.dtype)
-                    predicted_energies = torch.cat(predicted_energies)
+                    species = properties['species'].to(self.device)
+                    coordinates = properties['coordinates'].to(self.device).float()
+                    true_energies = properties['energies'].to(self.device).float()
+                    num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+                    _, predicted_energies = self.model((species, coordinates))
                     loss = (self.mse_se(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
                     AdamW_optim.zero_grad()
                     SGD_optim.zero_grad()

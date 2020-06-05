@@ -24,9 +24,12 @@ def get_numeric_force(atoms, eps):
 
 class TestASE(unittest.TestCase):
 
+    def setUp(self):
+        self.model = torchani.models.ANI1x(model_index=0).double()
+
     def testWithNumericalForceWithPBCEnabled(self):
         atoms = Diamond(symbol="C", pbc=True)
-        calculator = torchani.models.ANI1x().ase()
+        calculator = self.model.ase()
         atoms.set_calculator(calculator)
         dyn = Langevin(atoms, 5 * units.fs, 30000000 * units.kB, 0.002)
         dyn.run(100)
@@ -40,7 +43,7 @@ class TestASE(unittest.TestCase):
     def testWithNumericalStressWithPBCEnabled(self):
         filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.cif')
         benzene = read(filename)
-        calculator = torchani.models.ANI1x().ase()
+        calculator = self.model.ase()
         benzene.set_calculator(calculator)
         dyn = NPTBerendsen(benzene, timestep=0.1 * units.fs,
                            temperature=300 * units.kB,
@@ -54,6 +57,31 @@ class TestASE(unittest.TestCase):
             self.assertLess(diff, tol)
         dyn.attach(test_stress, interval=30)
         dyn.run(120)
+
+
+class TestASEWithPTI(unittest.TestCase):
+
+    def setUp(self):
+        self.model_pti = torchani.models.ANI1x(periodic_table_index=True).double()
+        self.model = torchani.models.ANI1x().double()
+
+    def testEqualEnsemblePTI(self):
+        calculator_pti = self.model_pti.ase()
+        calculator = self.model.ase()
+        atoms = Diamond(symbol="C", pbc=True)
+        atoms_pti = Diamond(symbol="C", pbc=True)
+        atoms.set_calculator(calculator)
+        atoms_pti.set_calculator(calculator_pti)
+        self.assertEqual(atoms.get_potential_energy(), atoms_pti.get_potential_energy())
+
+    def testEqualOneModelPTI(self):
+        calculator_pti = self.model_pti[0].ase()
+        calculator = self.model[0].ase()
+        atoms = Diamond(symbol="C", pbc=True)
+        atoms_pti = Diamond(symbol="C", pbc=True)
+        atoms.set_calculator(calculator)
+        atoms_pti.set_calculator(calculator_pti)
+        self.assertEqual(atoms.get_potential_energy(), atoms_pti.get_potential_energy())
 
 
 if __name__ == '__main__':

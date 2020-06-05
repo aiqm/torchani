@@ -9,7 +9,7 @@ Checks:
 
 [![Actions Status](https://github.com/aiqm/torchani/workflows/docs/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/flake8/badge.svg)](https://github.com/aiqm/torchani/actions)
-[![Actions Status](https://github.com/aiqm/torchani/workflows/python2/badge.svg)](https://github.com/aiqm/torchani/actions)
+[![Actions Status](https://github.com/aiqm/torchani/workflows/mypy/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/runnable%20submodules/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/tools/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/unit%20tests/badge.svg)](https://github.com/aiqm/torchani/actions)
@@ -20,6 +20,11 @@ Deploy:
 
 [![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-docs/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-pypi/badge.svg)](https://github.com/aiqm/torchani/actions)
+
+We only provide compatibility with nightly PyTorch, but you can check if stable PyTorch happens to be supported by looking at the following badge:
+
+[![Actions Status](https://github.com/aiqm/torchani/workflows/stable-torch/badge.svg)](https://github.com/aiqm/torchani/actions)
+
 
 TorchANI is a pytorch implementation of ANI. It is currently under alpha release, which means, the API is not stable yet. If you find a bug of TorchANI, or have some feature request, feel free to open an issue on GitHub, or send us a pull request.
 
@@ -48,8 +53,6 @@ pip install torchani
 
 See also [PyTorch's official site](https://pytorch.org/get-started/locally/) for instructions of installing latest preview version of PyTorch.
 
-Please install nightly PyTorch through `pip install` instead of `conda install`. If your PyTorch is installed through `conda install`, then `pip` would mistakenly recognize the package name as `torch` instead of `torch-nightly`, which would cause dependency issue when installing TorchANI.
-
 To run the tests and examples, you must manually download a data package
 
 ```bash
@@ -57,12 +60,9 @@ To run the tests and examples, you must manually download a data package
 ```
 
 # Paper
+TorchANI [Preprint](https://chemrxiv.org/articles/TorchANI_A_Free_and_Open_Source_PyTorch_Based_Deep_Learning_Implementation_of_the_ANI_Neural_Network_Potentials/12218294)
 
-The original ANI-1 paper is:
-
-* Smith JS, Isayev O, Roitberg AE. ANI-1: an extensible neural network potential with DFT accuracy at force field computational cost. Chemical science. 2017;8(4):3192-203.
-
-We are planning a seperate paper for TorchANI, it will be available when we are ready for beta release of TorchANI.
+* Gao X, Ramezanghorbani F, Isayev O, Smith JS, Roitberg AE. TorchANI: A Free and Open Source PyTorch Based Deep Learning Implementation of the ANI Neural Network Potentials. [![DOI for Citing](https://img.shields.io/badge/DOI-10.26434%2Fchemrxiv.12218294.v1-green.svg)](https://doi.org/10.26434/chemrxiv.12218294.v1)
 
 See also: [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI)
 
