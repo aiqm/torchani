@@ -30,6 +30,7 @@ dist
 *.swo
 /download
 /download.tar.xz
+torchani/resources
 *.qdrep
 *.qdstrm
 *.zip
