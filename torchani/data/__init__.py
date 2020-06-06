@@ -31,9 +31,9 @@ you can also use `split` to split the iterable to pieces. use `split` as:
 
 .. code-block:: python
 
-    it.split(ratio1, ratio2, none)
+    it.split(ratio1, ratio2, None)
 
-where the none in the end indicate that we want to use all of the the rest
+where the None in the end indicate that we want to use all of the the rest
 
 Example:
 
