@@ -21,7 +21,13 @@ Available transformations are listed below:
 - `pin_memory` copy the tensor to pinned memory so that later transfer
     to cuda could be faster.
 
-You can also use `split` to split the iterable to pieces. Use `split` as:
+By default `species_to_indices` and `subtract_self_energies` order atoms by
+atomic number. A special ordering can be used if requested, by calling
+`species_to_indices(species_order)` or `subtract_self_energies(energy_shifter,
+species_order)` however, this is definitely NOT recommended, it is best to
+always order according to atomic number.
+
+you can also use `split` to split the iterable to pieces. use `split` as:
 
 .. code-block:: python
 
@@ -119,7 +125,7 @@ class Transformations:
             return IterableAdapter(reenterable_iterable_factory)
 
     @staticmethod
-    def subtract_self_energies(reenterable_iterable, self_energies=None):
+    def subtract_self_energies(reenterable_iterable, self_energies=None, species_order=None):
         intercept = 0.0
         shape_inference = False
         if isinstance(self_energies, utils.EnergyShifter):
@@ -142,8 +148,11 @@ class Transformations:
                         counts[s].append(0)
                 Y.append(d['energies'])
 
-            # sort based on the order in periodic table
-            species = sorted(list(counts.keys()), key=lambda x: utils.PERIODIC_TABLE.index(x))
+            # sort based on the order in periodic table by default
+            if species_order is None:
+                species_order = utils.PERIODIC_TABLE
+
+            species = sorted(list(counts.keys()), key=lambda x: species_order.index(x))
 
             X = [counts[s] for s in species]
             if shifter.fit_intercept:
