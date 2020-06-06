@@ -39,7 +39,7 @@ Example:
 
 .. code-block:: python
 
-    energy_shifter = torchani.utils.energyshifter(None)
+    energy_shifter = torchani.utils.EnergyShifter(None)
     training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices().shuffle().split(int(0.8 * size), None)
     training = training.collate(batch_size).cache()
     validation = validation.collate(batch_size).cache()
