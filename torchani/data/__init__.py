@@ -110,8 +110,8 @@ class Transformations:
     """Convert one reenterable iterable to another reenterable iterable"""
 
     @staticmethod
-    def species_to_indices(reenterable_iterable, species_order=None):
-        if species_order == 'periodic_table' or species_order is None:
+    def species_to_indices(reenterable_iterable, species_order=('H', 'C', 'N', 'O', 'F', 'S', 'Cl')):
+        if species_order == 'periodic_table':
             species_order = utils.PERIODIC_TABLE
         idx = {k: i for i, k in enumerate(species_order)}
 
