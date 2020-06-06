@@ -21,19 +21,25 @@ Available transformations are listed below:
 - `pin_memory` copy the tensor to pinned memory so that later transfer
     to cuda could be faster.
 
-You can also use `split` to split the iterable to pieces. Use `split` as:
+By default `species_to_indices` and `subtract_self_energies` order atoms by
+atomic number. A special ordering can be used if requested, by calling
+`species_to_indices(species_order)` or `subtract_self_energies(energy_shifter,
+species_order)` however, this is definitely NOT recommended, it is best to
+always order according to atomic number.
+
+you can also use `split` to split the iterable to pieces. use `split` as:
 
 .. code-block:: python
 
-    it.split(ratio1, ratio2, None)
+    it.split(ratio1, ratio2, none)
 
-where the None in the end indicate that we want to use all of the the rest
+where the none in the end indicate that we want to use all of the the rest
 
-Example:
+example:
 
 .. code-block:: python
 
-    energy_shifter = torchani.utils.EnergyShifter(None)
+    energy_shifter = torchani.utils.energyshifter(none)
     training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices().shuffle().split(int(0.8 * size), None)
     training = training.collate(batch_size).cache()
     validation = validation.collate(batch_size).cache()
