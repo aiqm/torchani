@@ -356,7 +356,7 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
 
 
 def get_atomic_masses(species):
-    r"""Convert a tensor of znumbers into a tensor of atomic masses
+    r"""Convert a tensor of atomic numbers ("periodic table indices") into a tensor of atomic masses
 
     Atomic masses supported are the first 119 elements, and are taken from:
 
