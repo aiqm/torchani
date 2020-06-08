@@ -14,12 +14,13 @@ Available transformations are listed below:
     indices (as returned by :class:`torchani.utils.ChemicalSymbolsToInts` or
     the ``species_to_tensor`` method of a :class:`torchani.models.BuiltinModel`
     and :class:`torchani.neurochem.Constants`), if its argument is an iterable
-    of species. However, if its argument is the string "periodic_table", then
-    elements are converted into atomic numbers ("periodic table indices")
-    instead. This last option is meant to be used when training networks that
-    already perform a forward pass of :class:`torchani.nn.SpeciesConverter` on
-    their inputs in order to convert species to internal indices, before
-    processing the coordinates.
+    of species. By default species_to_indices behaves this way, with an
+    argument of ``('H', 'C', 'N', 'O', 'F', 'S', 'Cl')``  However, if its
+    argument is the string "periodic_table", then elements are converted into
+    atomic numbers ("periodic table indices") instead. This last option is
+    meant to be used when training networks that already perform a forward pass
+    of :class:`torchani.nn.SpeciesConverter` on their inputs in order to
+    convert elements to internal indices, before processing the coordinates. 
 
 - `subtract_self_energies` subtracts self energies from all molecules of the
     dataset. It accepts two different kinds of arguments: You can pass a dict
@@ -28,7 +29,7 @@ Available transformations are listed below:
     :class:`torchani.utils.EnergyShifter`, in which case the self energies are
     calculated by linear regression and stored inside the class in the order
     specified by species_order. By default the function orders by atomic
-    number if no extra argument is provided.
+    number if no extra argument is provided, but a specific order may be requested.
 
 - `remove_outliers`
 - `shuffle`
@@ -38,11 +39,15 @@ Available transformations are listed below:
 - `pin_memory` copy the tensor to pinned memory so that later transfer
     to cuda could be faster.
 
-By default `species_to_indices` and `subtract_self_energies` order atoms by
-atomic number. A special ordering can be used if requested, by calling
-`species_to_indices(species_order)` or `subtract_self_energies(energy_shifter,
-species_order)` however, this is definitely NOT recommended, it is best to
-always order according to atomic number.
+Note that orderings used in :class:`torchani.utils.ChemicalSymbolsToInts` and
+:class:`torchani.nn.SpeciesConverter` should be consistent with orderings used
+in `species_to_indices` and `subtract_self_energies`. To prevent confusion it
+is recommended that arguments to intialize converters and arguments to these
+functions all order elements *by their atomic number* (e. g. if you are working
+with hydrogen, nitrogen and bromine always use ['H', 'N', 'Br'] and never ['N',
+'H', 'Br'] or other variations).  It is possible to specify a different custom
+ordering, mainly due to backwards compatibility and to fully custom atom types,
+but doing so is NOT recommended, since it is very error prone.
 
 you can also use `split` to split the iterable to pieces. use `split` as:
 
