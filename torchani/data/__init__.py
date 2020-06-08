@@ -9,7 +9,13 @@ To do transformation, just do `it.transformation_name()`.
 
 Available transformations are listed below:
 
-- `species_to_indices` converts species from strings to numbers.
+- `species_to_indices` converts species from elements (e. g. "H", "C", "Cl", etc)
+    into internal torchani indices (as returned by
+    :class:`torchani.utils.ChemicalSymbolsToInts` or the ``species_to_tensor``
+    method of a :class:`torchani.models.BuiltinModel`), if its argument is an
+    iterable of species. If its argument is the string "periodic_table", then
+    elements are converted into atomic numbers ("periodic table indices")
+    instead.
 - `subtract_self_energies` subtracts self energies, you can pass.
     a dict of self energies, or an `EnergyShifter` to let it infer
     self energy from dataset and store the result to the given shifter.
