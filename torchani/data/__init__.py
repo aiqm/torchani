@@ -9,16 +9,27 @@ To do transformation, just do `it.transformation_name()`.
 
 Available transformations are listed below:
 
-- `species_to_indices` converts species from elements (e. g. "H", "C", "Cl", etc)
-    into internal torchani indices (as returned by
-    :class:`torchani.utils.ChemicalSymbolsToInts` or the ``species_to_tensor``
-    method of a :class:`torchani.models.BuiltinModel`), if its argument is an
-    iterable of species. If its argument is the string "periodic_table", then
+- `species_to_indices` accepts two different kinds of arguments. It converts
+    species from elements (e. g. "H", "C", "Cl", etc) into internal torchani
+    indices (as returned by :class:`torchani.utils.ChemicalSymbolsToInts` or
+    the ``species_to_tensor`` method of a :class:`torchani.models.BuiltinModel`
+    and :class:`torchani.neurochem.Constants`), if its argument is an iterable
+    of species. However, if its argument is the string "periodic_table", then
     elements are converted into atomic numbers ("periodic table indices")
-    instead.
-- `subtract_self_energies` subtracts self energies, you can pass.
-    a dict of self energies, or an `EnergyShifter` to let it infer
-    self energy from dataset and store the result to the given shifter.
+    instead. This last option is meant to be used when training networks that
+    already perform a forward pass of :class:`torchani.nn.SpeciesConverter` on
+    their inputs in order to convert species to internal indices, before
+    processing the coordinates.
+
+- `subtract_self_energies` subtracts self energies from all molecules of the
+    dataset. It accepts two different kinds of arguments: You can pass a dict
+    of self energies, in which case self energies are directly subtracted
+    according to the key-value pairs, or a
+    :class:`torchani.utils.EnergyShifter`, in which case the self energies are
+    calculated by linear regression and stored inside the class in the order
+    specified by species_order. By default the function orders by atomic
+    number if no extra argument is provided.
+
 - `remove_outliers`
 - `shuffle`
 - `cache` cache the result of previous transformations.
