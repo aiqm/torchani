@@ -115,7 +115,7 @@ class SpeciesConverter(torch.nn.Module):
     convert a tensor [1, 1, 6, 7, 1, 8] into a tensor [0, 0, 1, 2, 0, 3]
 
     Arguments:
-        all_species (:class:`collections.abc.Sequence` of :class:`str`):
+        species (:class:`collections.abc.Sequence` of :class:`str`):
         sequence of all supported species, in order (it is recommended to order
         according to atomic number).
     """
