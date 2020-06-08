@@ -117,7 +117,7 @@ class SpeciesConverter(torch.nn.Module):
     Arguments:
         all_species (:class:`collections.abc.Sequence` of :class:`str`):
         sequence of all supported species, in order (it is recommended to order
-        according to atomic number)
+        according to atomic number).
     """
 
     def __init__(self, species):

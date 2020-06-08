@@ -225,7 +225,8 @@ class ChemicalSymbolsToInts:
 
     Arguments:
         all_species (:class:`collections.abc.Sequence` of :class:`str`):
-            sequence of all supported species, in order.
+        sequence of all supported species, in order (it is recommended to order
+        according to atomic number).
     """
 
     def __init__(self, all_species):
