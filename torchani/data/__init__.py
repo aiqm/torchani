@@ -20,7 +20,7 @@ Available transformations are listed below:
     atomic numbers ("periodic table indices") instead. This last option is
     meant to be used when training networks that already perform a forward pass
     of :class:`torchani.nn.SpeciesConverter` on their inputs in order to
-    convert elements to internal indices, before processing the coordinates. 
+    convert elements to internal indices, before processing the coordinates.
 
 - `subtract_self_energies` subtracts self energies from all molecules of the
     dataset. It accepts two different kinds of arguments: You can pass a dict
