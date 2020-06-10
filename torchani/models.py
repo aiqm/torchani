@@ -73,19 +73,26 @@ class BuiltinModel(torch.nn.Module):
 
     @staticmethod
     def _parse_neurochem_resources(info_file_path):
-        def get_resource(file_path):
-            package_name = '.'.join(__name__.split('.')[:-1])
-            return resource_filename(package_name, 'resources/' + file_path)
+        def get_resource(resource_path, file_path):
+            return os.path.join(resource_path, 'resources/' + file_path)
 
-        info_file = get_resource(info_file_path)
+        resource_path = os.path.dirname(__file__)
+        local_dir = os.path.expanduser('~/.local/torchani')
 
-        # download resources if not already exist
-        if not os.path.isfile(info_file):
-            print('Downloading ANI model parameters ...')
-            resources_url = "https://www.dropbox.com/sh/otrzul6yuye8uzs/AABuaihE22vtaB_rdrI0r6TUa?dl=1"
-            resources_data = requests.get(resources_url)
-            resources_zip = zipfile.ZipFile(io.BytesIO(resources_data.content))
-            resources_zip.extractall(os.path.dirname(__file__))
+        if not os.path.isfile(get_resource(resource_path, info_file_path)):
+            if not os.path.isfile(get_resource(local_dir, info_file_path)):
+                print('Downloading ANI model parameters ...')
+                resource_res = requests.get("https://www.dropbox.com/sh/otrzul6yuye8uzs/AABuaihE22vtaB_rdrI0r6TUa?dl=1")
+                resource_zip = zipfile.ZipFile(io.BytesIO(resource_res.content))
+                try:
+                    resource_zip.extractall(resource_path)
+                except PermissionError:
+                    resource_zip.extractall(local_dir)
+                    resource_path = local_dir
+            else:
+                resource_path = local_dir
+
+        info_file = get_resource(resource_path, info_file_path)
 
         with open(info_file) as f:
             # const_file: Path to the file with the builtin constants.
@@ -93,9 +100,9 @@ class BuiltinModel(torch.nn.Module):
             # ensemble_prefix: Prefix of the neurochem resource directories.
             lines = [x.strip() for x in f.readlines()][:4]
             const_file_path, sae_file_path, ensemble_prefix_path, ensemble_size = lines
-            const_file = get_resource(const_file_path)
-            sae_file = get_resource(sae_file_path)
-            ensemble_prefix = get_resource(ensemble_prefix_path)
+            const_file = get_resource(resource_path, const_file_path)
+            sae_file = get_resource(resource_path, sae_file_path)
+            ensemble_prefix = get_resource(resource_path, ensemble_prefix_path)
             ensemble_size = int(ensemble_size)
             consts = neurochem.Constants(const_file)
         return consts, sae_file, ensemble_prefix, ensemble_size
