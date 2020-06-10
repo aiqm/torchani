@@ -27,6 +27,9 @@ Note that the class BuiltinModels can be accessed but it is deprecated and
 shouldn't be used anymore.
 """
 import os
+import io
+import requests
+import zipfile 
 import torch
 from torch import Tensor
 from typing import Tuple, Optional
@@ -78,6 +81,14 @@ class BuiltinModel(torch.nn.Module):
             return resource_filename(package_name, 'resources/' + file_path)
 
         info_file = get_resource(info_file_path)
+
+        # download resources if not already exist
+        if not os.path.isfile(info_file):
+            print('Downloading ANI model parameters ...')
+            resources_url = "https://www.dropbox.com/sh/otrzul6yuye8uzs/AABuaihE22vtaB_rdrI0r6TUa?dl=1"
+            resources_data = requests.get(resources_url)
+            resources_zip = zipfile.ZipFile(io.BytesIO(resources_data.content))
+            resources_zip.extractall(os.path.dirname(__file__))
 
         with open(info_file) as f:
             # const_file: Path to the file with the builtin constants.
