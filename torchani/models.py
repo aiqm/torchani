@@ -30,7 +30,6 @@ import zipfile
 import torch
 from torch import Tensor
 from typing import Tuple, Optional
-from pkg_resources import resource_filename
 from . import neurochem
 from .nn import SpeciesConverter, SpeciesEnergies
 from .aev import AEVComputer
