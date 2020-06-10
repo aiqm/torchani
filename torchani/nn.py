@@ -108,7 +108,17 @@ class Gaussian(torch.nn.Module):
 
 
 class SpeciesConverter(torch.nn.Module):
-    """Convert from element index in the periodic table to 0, 1, 2, 3, ..."""
+    """Converts tensors with species labeled as atomic numbers into tensors
+    labeled with internal torchani indices according to a custom ordering
+    scheme. It takes a custom species ordering as initialization parameter. If
+    the class is initialized with ['H', 'C', 'N', 'O'] for example, it will
+    convert a tensor [1, 1, 6, 7, 1, 8] into a tensor [0, 0, 1, 2, 0, 3]
+
+    Arguments:
+        species (:class:`collections.abc.Sequence` of :class:`str`):
+        sequence of all supported species, in order (it is recommended to order
+        according to atomic number).
+    """
 
     def __init__(self, species):
         super().__init__()
