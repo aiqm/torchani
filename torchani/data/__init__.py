@@ -9,10 +9,28 @@ To do transformation, just do `it.transformation_name()`.
 
 Available transformations are listed below:
 
-- `species_to_indices` converts species from strings to numbers.
-- `subtract_self_energies` subtracts self energies, you can pass.
-    a dict of self energies, or an `EnergyShifter` to let it infer
-    self energy from dataset and store the result to the given shifter.
+- `species_to_indices` accepts two different kinds of arguments. It converts
+    species from elements (e. g. "H", "C", "Cl", etc) into internal torchani
+    indices (as returned by :class:`torchani.utils.ChemicalSymbolsToInts` or
+    the ``species_to_tensor`` method of a :class:`torchani.models.BuiltinModel`
+    and :class:`torchani.neurochem.Constants`), if its argument is an iterable
+    of species. By default species_to_indices behaves this way, with an
+    argument of ``('H', 'C', 'N', 'O', 'F', 'S', 'Cl')``  However, if its
+    argument is the string "periodic_table", then elements are converted into
+    atomic numbers ("periodic table indices") instead. This last option is
+    meant to be used when training networks that already perform a forward pass
+    of :class:`torchani.nn.SpeciesConverter` on their inputs in order to
+    convert elements to internal indices, before processing the coordinates.
+
+- `subtract_self_energies` subtracts self energies from all molecules of the
+    dataset. It accepts two different kinds of arguments: You can pass a dict
+    of self energies, in which case self energies are directly subtracted
+    according to the key-value pairs, or a
+    :class:`torchani.utils.EnergyShifter`, in which case the self energies are
+    calculated by linear regression and stored inside the class in the order
+    specified by species_order. By default the function orders by atomic
+    number if no extra argument is provided, but a specific order may be requested.
+
 - `remove_outliers`
 - `shuffle`
 - `cache` cache the result of previous transformations.
@@ -21,7 +39,17 @@ Available transformations are listed below:
 - `pin_memory` copy the tensor to pinned memory so that later transfer
     to cuda could be faster.
 
-You can also use `split` to split the iterable to pieces. Use `split` as:
+Note that orderings used in :class:`torchani.utils.ChemicalSymbolsToInts` and
+:class:`torchani.nn.SpeciesConverter` should be consistent with orderings used
+in `species_to_indices` and `subtract_self_energies`. To prevent confusion it
+is recommended that arguments to intialize converters and arguments to these
+functions all order elements *by their atomic number* (e. g. if you are working
+with hydrogen, nitrogen and bromine always use ['H', 'N', 'Br'] and never ['N',
+'H', 'Br'] or other variations).  It is possible to specify a different custom
+ordering, mainly due to backwards compatibility and to fully custom atom types,
+but doing so is NOT recommended, since it is very error prone.
+
+you can also use `split` to split the iterable to pieces. use `split` as:
 
 .. code-block:: python
 
@@ -119,7 +147,7 @@ class Transformations:
             return IterableAdapter(reenterable_iterable_factory)
 
     @staticmethod
-    def subtract_self_energies(reenterable_iterable, self_energies=None):
+    def subtract_self_energies(reenterable_iterable, self_energies=None, species_order=None):
         intercept = 0.0
         shape_inference = False
         if isinstance(self_energies, utils.EnergyShifter):
@@ -142,8 +170,11 @@ class Transformations:
                         counts[s].append(0)
                 Y.append(d['energies'])
 
-            # sort based on the order in periodic table
-            species = sorted(list(counts.keys()), key=lambda x: utils.PERIODIC_TABLE.index(x))
+            # sort based on the order in periodic table by default
+            if species_order is None:
+                species_order = utils.PERIODIC_TABLE
+
+            species = sorted(list(counts.keys()), key=lambda x: species_order.index(x))
 
             X = [counts[s] for s in species]
             if shifter.fit_intercept:

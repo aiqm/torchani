@@ -14,17 +14,14 @@ directly calculate energies or get an ASE calculator. For example:
     _, energies = ani1x((species, coordinates))
     ani1x.ase()  # get ASE Calculator using this ensemble
     # convert atom species from string to long tensor
-    ani1x.species_to_tensor('CHHHH')
+    ani1x.species_to_tensor(['C', 'H', 'H', 'H', 'H'])
 
     model0 = ani1x[0]  # get the first model in the ensemble
     # compute energy using the first model in the ANI-1x model ensemble
     _, energies = model0((species, coordinates))
     model0.ase()  # get ASE Calculator using this model
     # convert atom species from string to long tensor
-    model0.species_to_tensor('CHHHH')
-
-Note that the class BuiltinModels can be accessed but it is deprecated and
-shouldn't be used anymore.
+    model0.species_to_tensor(['C', 'H', 'H', 'H', 'H'])
 """
 import os
 import io
