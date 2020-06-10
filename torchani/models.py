@@ -26,7 +26,7 @@ directly calculate energies or get an ASE calculator. For example:
 import os
 import io
 import requests
-import zipfile 
+import zipfile
 import torch
 from torch import Tensor
 from typing import Tuple, Optional
