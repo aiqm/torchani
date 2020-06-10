@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """The ANI model zoo that stores public ANI models.
 
-Currently the model zoo has two models: ANI-1x and ANI-1ccx. The classes
-of these two models are :class:`ANI1x` and :class:`ANI1ccx`,
-these are subclasses of :class:`torch.nn.Module`.
+Currently the model zoo has three models: ANI-1x, ANI-1ccx, and ANI-2x.
+The classes of these models are :class:`ANI1x`, :class:`ANI1ccx`, and
+:class:`ANI2x` these are subclasses of :class:`torch.nn.Module`.
 To use the models just instantiate them and either
 directly calculate energies or get an ASE calculator. For example:
 
@@ -14,17 +14,14 @@ directly calculate energies or get an ASE calculator. For example:
     _, energies = ani1x((species, coordinates))
     ani1x.ase()  # get ASE Calculator using this ensemble
     # convert atom species from string to long tensor
-    ani1x.species_to_tensor('CHHHH')
+    ani1x.species_to_tensor(['C', 'H', 'H', 'H', 'H'])
 
     model0 = ani1x[0]  # get the first model in the ensemble
     # compute energy using the first model in the ANI-1x model ensemble
     _, energies = model0((species, coordinates))
     model0.ase()  # get ASE Calculator using this model
     # convert atom species from string to long tensor
-    model0.species_to_tensor('CHHHH')
-
-Note that the class BuiltinModels can be accessed but it is deprecated and
-shouldn't be used anymore.
+    model0.species_to_tensor(['C', 'H', 'H', 'H', 'H'])
 """
 import os
 import torch
@@ -279,6 +276,26 @@ def ANI1ccx(periodic_table_index=False, model_index=None):
         https://doi.org/10.26434/chemrxiv.6744440.v1
     """
     info_file = 'ani-1ccx_8x.info'
+    if model_index is None:
+        return BuiltinEnsemble._from_neurochem_resources(info_file, periodic_table_index)
+    return BuiltinModel._from_neurochem_resources(info_file, periodic_table_index, model_index)
+
+
+def ANI2x(periodic_table_index=False, model_index=None):
+    """The ANI-2x model as in `ANI2x Paper`_ and `ANI2x Results on GitHub`_.
+
+    The ANI-2x model is an ensemble of 8 networks that was trained on the
+    ANI-2x dataset. The target level of theory is wB97X/6-31G(d). It predicts
+    energies on HCNOFSCl elements exclusively it shouldn't be used with other
+    atom types.
+
+    .. _ANI2x Results on GitHub:
+        https://github.com/cdever01/ani-2x_results
+
+    .. _ANI2x Paper:
+        https://doi.org/10.26434/chemrxiv.11819268.v1
+    """
+    info_file = 'ani-2x_8x.info'
     if model_index is None:
         return BuiltinEnsemble._from_neurochem_resources(info_file, periodic_table_index)
     return BuiltinModel._from_neurochem_resources(info_file, periodic_table_index, model_index)

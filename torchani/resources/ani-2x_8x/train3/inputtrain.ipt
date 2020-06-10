@@ -1,0 +1,229 @@
+sflparamsfile=rHCNOSFCl-5.1R_16-3.5A_a8-4.params
+ntwkStoreDir=networks/
+atomEnergyFile=sae_linfit.dat
+nmax=0
+tolr=40
+emult=5.0000000e-01
+eta=0.001
+tcrit=1.0000000e-05
+tmax=0
+tbtchsz=2048
+vbtchsz=2048
+gpuid=0
+ntwshr=0
+nkde=0
+energy=1
+force=1
+dipole=0
+charge=0
+acachg=0
+fmult=0.001
+pbc=0
+cmult=1.0000000e+00
+runtype=ANNP_CREATE_HDNN_AND_TRAIN
+adptlrn=OFF
+decrate=9.0000000e-01
+moment=ADAM
+mu=9.9000000e-01
+cdweight=0.1
+repuls=0
+seed=4183136960
+network_setup {
+    inputsize=1008;
+    atom_net H $
+        layer [
+            nodes=256;
+            activation=9;
+            type=0;
+            l2norm=1;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=192;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=160;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=1;
+            activation=6;
+            type=0;
+        ]
+    $
+    atom_net C $
+        layer [
+            nodes=224;
+            activation=9;
+            type=0;
+            l2norm=1;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=192;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=160;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=1;
+            activation=6;
+            type=0;
+        ]
+    $
+    atom_net N $
+        layer [
+            nodes=192;
+            activation=9;
+            type=0;
+            l2norm=1;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=160;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=128;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=1;
+            activation=6;
+            type=0;
+        ]
+    $
+    atom_net O $
+        layer [
+            nodes=192;
+            activation=9;
+            type=0;
+            l2norm=1;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=160;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=128;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=1;
+            activation=6;
+            type=0;
+        ]
+    $
+    atom_net S $
+        layer [
+            nodes=160;
+            activation=9;
+            type=0;
+            l2norm=1;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=128;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=96;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=1;
+            activation=6;
+            type=0;
+        ]
+    $
+    atom_net F $
+        layer [
+            nodes=160;
+            activation=9;
+            type=0;
+            l2norm=1;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=128;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=96;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=1;
+            activation=6;
+            type=0;
+        ]
+    $
+    atom_net Cl $
+        layer [
+            nodes=160;
+            activation=9;
+            type=0;
+            l2norm=1;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=128;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=96;
+            activation=9;
+            type=0;
+            l2norm=0;
+            l2valu=1.0000000e-06;
+        ]
+        layer [
+            nodes=1;
+            activation=6;
+            type=0;
+        ]
+    $
+}
