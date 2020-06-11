@@ -24,10 +24,14 @@ directly calculate energies or get an ASE calculator. For example:
     model0.species_to_tensor(['C', 'H', 'H', 'H', 'H'])
 """
 import os
+import io
+import requests
+import glob
+import zipfile
+import shutil
 import torch
 from torch import Tensor
 from typing import Tuple, Optional
-from pkg_resources import resource_filename
 from . import neurochem
 from .nn import SpeciesConverter, SpeciesEnergies
 from .aev import AEVComputer
@@ -70,11 +74,38 @@ class BuiltinModel(torch.nn.Module):
 
     @staticmethod
     def _parse_neurochem_resources(info_file_path):
-        def get_resource(file_path):
-            package_name = '.'.join(__name__.split('.')[:-1])
-            return resource_filename(package_name, 'resources/' + file_path)
+        def get_resource(resource_path, file_path):
+            return os.path.join(resource_path, file_path)
 
-        info_file = get_resource(info_file_path)
+        resource_path = os.path.join(os.path.dirname(__file__), 'resources/')
+        local_dir = os.path.expanduser('~/.local/torchani/')
+        repo_name = "ani-model-zoo"
+        tag_name = "ani-2x"
+        extracted_name = '{}-{}'.format(repo_name, tag_name)
+        url = "https://github.com/aiqm/{}/archive/{}.zip".format(repo_name, tag_name)
+
+        if not os.path.isfile(get_resource(resource_path, info_file_path)):
+            if not os.path.isfile(get_resource(local_dir, info_file_path)):
+                print('Downloading ANI model parameters ...')
+                resource_res = requests.get(url)
+                resource_zip = zipfile.ZipFile(io.BytesIO(resource_res.content))
+                try:
+                    resource_zip.extractall(resource_path)
+                except PermissionError:
+                    resource_zip.extractall(local_dir)
+                    resource_path = local_dir
+            else:
+                resource_path = local_dir
+
+            files = glob.glob(os.path.join(resource_path, extracted_name, "resources", "*"))
+            for f in files:
+                try:
+                    shutil.move(f, resource_path)
+                except shutil.Error:
+                    pass
+            shutil.rmtree(os.path.join(resource_path, extracted_name))
+
+        info_file = get_resource(resource_path, info_file_path)
 
         with open(info_file) as f:
             # const_file: Path to the file with the builtin constants.
@@ -82,9 +113,9 @@ class BuiltinModel(torch.nn.Module):
             # ensemble_prefix: Prefix of the neurochem resource directories.
             lines = [x.strip() for x in f.readlines()][:4]
             const_file_path, sae_file_path, ensemble_prefix_path, ensemble_size = lines
-            const_file = get_resource(const_file_path)
-            sae_file = get_resource(sae_file_path)
-            ensemble_prefix = get_resource(ensemble_prefix_path)
+            const_file = get_resource(resource_path, const_file_path)
+            sae_file = get_resource(resource_path, sae_file_path)
+            ensemble_prefix = get_resource(resource_path, ensemble_prefix_path)
             ensemble_size = int(ensemble_size)
             consts = neurochem.Constants(const_file)
         return consts, sae_file, ensemble_prefix, ensemble_size
