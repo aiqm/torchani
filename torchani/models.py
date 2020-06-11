@@ -81,7 +81,7 @@ class BuiltinModel(torch.nn.Module):
         local_dir = os.path.expanduser('~/.local/torchani/')
         repo_name = "ani-model-zoo"
         tag_name = "ani-2x"
-        rootdir = '{}-{}'.format(repo_name, tag_name)
+        extracted_name = '{}-{}'.format(repo_name, tag_name)
         url = "https://github.com/aiqm/{}/archive/{}.zip".format(repo_name, tag_name)
 
         if not os.path.isfile(get_resource(resource_path, info_file_path)):
@@ -97,13 +97,13 @@ class BuiltinModel(torch.nn.Module):
             else:
                 resource_path = local_dir
 
-            files = glob.glob(os.path.join(resource_path, rootdir, "resources", "*"))
+            files = glob.glob(os.path.join(resource_path, extracted_name, "resources", "*"))
             for f in files:
                 try:
                     shutil.move(f, resource_path)
                 except shutil.Error:
                     pass
-            shutil.rmtree(os.path.join(resource_path, rootdir))
+            shutil.rmtree(os.path.join(resource_path, extracted_name))
 
         info_file = get_resource(resource_path, info_file_path)
 
