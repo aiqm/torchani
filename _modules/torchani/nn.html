@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.nn &mdash; TorchANI 2.1 documentation</title>
+  <title>torchani.nn &mdash; TorchANI 2.1.1 documentation</title>
   
 
   
@@ -25,7 +25,7 @@
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script src="../../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                2.1
+                2.1.1
               </div>
             
           
@@ -284,7 +284,17 @@
 
 
 <div class="viewcode-block" id="SpeciesConverter"><a class="viewcode-back" href="../../api.html#torchani.SpeciesConverter">[docs]</a><span class="k">class</span> <span class="nc">SpeciesConverter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Convert from element index in the periodic table to 0, 1, 2, 3, ...&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Converts tensors with species labeled as atomic numbers into tensors</span>
+<span class="sd">    labeled with internal torchani indices according to a custom ordering</span>
+<span class="sd">    scheme. It takes a custom species ordering as initialization parameter. If</span>
+<span class="sd">    the class is initialized with [&#39;H&#39;, &#39;C&#39;, &#39;N&#39;, &#39;O&#39;] for example, it will</span>
+<span class="sd">    convert a tensor [1, 1, 6, 7, 1, 8] into a tensor [0, 0, 1, 2, 0, 3]</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        species (:class:`collections.abc.Sequence` of :class:`str`):</span>
+<span class="sd">        sequence of all supported species, in order (it is recommended to order</span>
+<span class="sd">        according to atomic number).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>

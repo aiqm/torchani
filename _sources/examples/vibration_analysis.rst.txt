@@ -77,14 +77,14 @@ Let's first construct a water molecule and do structure optimization:
  .. code-block:: none
 
           Step     Time          Energy         fmax
-    BFGS:    0 21:25:54    -2078.633392        0.6576
-    BFGS:    1 21:25:54    -2078.637244        0.1905
-    BFGS:    2 21:25:54    -2078.637801        0.0292
-    BFGS:    3 21:25:54    -2078.637827        0.0183
-    BFGS:    4 21:25:54    -2078.637849        0.0014
-    BFGS:    5 21:25:54    -2078.637849        0.0001
-    BFGS:    6 21:25:54    -2078.637849        0.0000
-    BFGS:    7 21:25:54    -2078.637849        0.0000
+    BFGS:    0 19:52:51    -2078.633392        0.6576
+    BFGS:    1 19:52:51    -2078.637244        0.1905
+    BFGS:    2 19:52:51    -2078.637801        0.0292
+    BFGS:    3 19:52:51    -2078.637827        0.0183
+    BFGS:    4 19:52:51    -2078.637849        0.0014
+    BFGS:    5 19:52:51    -2078.637849        0.0001
+    BFGS:    6 19:52:52    -2078.637849        0.0000
+    BFGS:    7 19:52:52    -2078.637849        0.0000
 
     True
 
@@ -207,13 +207,13 @@ We output the modes as MDU (mass deweighted unnormalized), to compare with ASE.
              [     0.652,      0.184,      0.000],
              [    -0.042,     -0.054,     -0.000]],
 
-            [[     0.689,     -0.054,      0.000],
-             [    -0.225,      0.654,     -0.000],
-             [    -0.029,     -0.038,      0.000]],
+            [[    -0.689,      0.054,     -0.000],
+             [     0.225,     -0.654,     -0.000],
+             [     0.029,      0.038,      0.000]],
 
-            [[     0.678,      0.006,     -0.000],
-             [     0.164,     -0.658,      0.000],
-             [    -0.053,      0.041,      0.000]]], dtype=torch.float64)
+            [[    -0.678,     -0.006,     -0.000],
+             [    -0.164,      0.658,     -0.000],
+             [     0.053,     -0.041,      0.000]]], dtype=torch.float64)
 
 
 
@@ -221,7 +221,7 @@ We output the modes as MDU (mass deweighted unnormalized), to compare with ASE.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  2.198 seconds)
+   **Total running time of the script:** ( 0 minutes  2.566 seconds)
 
 
 .. _sphx_glr_download_examples_vibration_analysis.py:

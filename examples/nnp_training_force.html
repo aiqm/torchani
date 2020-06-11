@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Train Neural Network Potential To Both Energies and Forces &mdash; TorchANI 2.1 documentation</title>
+  <title>Train Neural Network Potential To Both Energies and Forces &mdash; TorchANI 2.1.1 documentation</title>
   
 
   
@@ -25,7 +25,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                2.1
+                2.1.1
               </div>
             
           
@@ -226,7 +226,7 @@ information</p>
 <span class="n">training</span><span class="p">,</span> <span class="n">validation</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
     <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dspath</span></a><span class="p">,</span>
     <span class="n">additional_properties</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;forces&#39;</span><span class="p">,)</span>
-<span class="p">)</span><span class="o">.</span><span class="n">subtract_self_energies</span><span class="p">(</span><span class="n">energy_shifter</span><span class="p">)</span><span class="o">.</span><span class="n">species_to_indices</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species_order</span></a><span class="p">)</span><span class="o">.</span><span class="n">shuffle</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="p">)</span><span class="o">.</span><span class="n">subtract_self_energies</span><span class="p">(</span><span class="n">energy_shifter</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species_order</span></a><span class="p">)</span><span class="o">.</span><span class="n">species_to_indices</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species_order</span></a><span class="p">)</span><span class="o">.</span><span class="n">shuffle</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
 <span class="n">training</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
 <span class="n">validation</span> <span class="o">=</span> <span class="n">validation</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
@@ -568,25 +568,25 @@ is better than the best, then save the new best model to a checkpoint</p>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>training starting from epoch 1
-RMSE: 88.34617857389657 at epoch 1
+RMSE: 65.0118632443163 at epoch 1
 
 epoch 1:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 1:  25%|##5       | 1/4 [00:02&lt;00:06,  2.13s/it]
-epoch 1:  50%|#####     | 2/4 [00:04&lt;00:04,  2.11s/it]
-epoch 1:  75%|#######5  | 3/4 [00:06&lt;00:02,  2.09s/it]
-epoch 1: 100%|##########| 4/4 [00:07&lt;00:00,  1.82s/it]
-epoch 1: 100%|##########| 4/4 [00:07&lt;00:00,  1.85s/it]
-RMSE: 181.08665412405765 at epoch 2
+epoch 1:  25%|##5       | 1/4 [00:02&lt;00:08,  2.85s/it]
+epoch 1:  50%|#####     | 2/4 [00:05&lt;00:05,  2.81s/it]
+epoch 1:  75%|#######5  | 3/4 [00:08&lt;00:02,  2.79s/it]
+epoch 1: 100%|##########| 4/4 [00:09&lt;00:00,  2.44s/it]
+epoch 1: 100%|##########| 4/4 [00:09&lt;00:00,  2.48s/it]
+RMSE: 173.7013164771336 at epoch 2
 
 epoch 2:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 2:  25%|##5       | 1/4 [00:01&lt;00:05,  1.97s/it]
-epoch 2:  50%|#####     | 2/4 [00:03&lt;00:03,  1.97s/it]
-epoch 2:  75%|#######5  | 3/4 [00:05&lt;00:01,  1.99s/it]
-epoch 2: 100%|##########| 4/4 [00:07&lt;00:00,  1.75s/it]
-epoch 2: 100%|##########| 4/4 [00:07&lt;00:00,  1.79s/it]
+epoch 2:  25%|##5       | 1/4 [00:02&lt;00:08,  2.77s/it]
+epoch 2:  50%|#####     | 2/4 [00:05&lt;00:05,  2.76s/it]
+epoch 2:  75%|#######5  | 3/4 [00:08&lt;00:02,  2.76s/it]
+epoch 2: 100%|##########| 4/4 [00:09&lt;00:00,  2.42s/it]
+epoch 2: 100%|##########| 4/4 [00:09&lt;00:00,  2.47s/it]
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  16.323 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  21.591 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-nnp-training-force-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <a class="reference download internal" download="" href="../_downloads/4b6aa9678849c98dd34491f14233c2bd/nnp_training_force.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">nnp_training_force.py</span></code></a></div>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Construct Model From NeuroChem Files &mdash; TorchANI 2.1 documentation</title>
+  <title>Construct Model From NeuroChem Files &mdash; TorchANI 2.1.1 documentation</title>
   
 
   
@@ -25,7 +25,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                2.1
+                2.1.1
               </div>
             
           
@@ -589,8 +589,8 @@ Sequential(
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.ase.Calculator object at 0x7f2139a0aa90&gt;
-&lt;torchani.ase.Calculator object at 0x7f2139a0aa90&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.ase.Calculator object at 0x7f340a68fa90&gt;
+&lt;torchani.ase.Calculator object at 0x7f340a68fa90&gt;
 </pre></div>
 </div>
 <p>Now let’s define a methane molecule</p>
@@ -613,7 +613,7 @@ Sequential(
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.459022105724976
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.459022101999686
 Force: tensor([[ 0.031, -0.132, -0.053],
         [-0.129,  0.164, -0.077],
         [ 0.086, -0.043,  0.041],
@@ -628,12 +628,12 @@ Force: tensor([[ 0.031, -0.132, -0.053],
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.45902210572497
-Force: [[ 0.03062525 -0.1316046  -0.05265211]
- [-0.12927504  0.16388635 -0.07736802]
- [ 0.08563146 -0.04288924  0.04082094]
- [ 0.02681219  0.00601403  0.03809872]
- [-0.01379386  0.00459347  0.05110046]]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.459022101999686
+Force: [[ 0.03062527 -0.13160461 -0.05265211]
+ [-0.12927504  0.16388634 -0.07736802]
+ [ 0.08563144 -0.04288924  0.04082094]
+ [ 0.02681219  0.00601404  0.03809873]
+ [-0.01379385  0.00459347  0.05110046]]
 </pre></div>
 </div>
 <p>We can do the same thing with the single model:</p>
@@ -649,21 +649,21 @@ Force: [[ 0.03062525 -0.1316046  -0.05265211]
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.462800356612966
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.46280037151413
 Force: tensor([[ 0.056, -0.127, -0.054],
         [-0.140,  0.155, -0.075],
         [ 0.075, -0.037,  0.039],
         [ 0.024,  0.002,  0.033],
         [-0.016,  0.007,  0.057]])
-Energy: -40.462800356612966
-Force: [[ 0.05614969 -0.12697157 -0.05413403]
- [-0.14007527  0.15523374 -0.07533836]
- [ 0.07532089 -0.03744112  0.0394967 ]
- [ 0.02423096  0.00235086  0.03344225]
- [-0.01562628  0.0068281   0.05653343]]
+Energy: -40.46280037151413
+Force: [[ 0.05614965 -0.1269716  -0.05413404]
+ [-0.14007527  0.15523373 -0.07533834]
+ [ 0.0753209  -0.03744108  0.03949668]
+ [ 0.02423099  0.00235087  0.03344228]
+ [-0.01562626  0.00682809  0.05653343]]
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.762 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  2.017 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-load-from-neurochem-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <a class="reference download internal" download="" href="../_downloads/6e47da231026b2cca4300c62c515ca96/load_from_neurochem.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">load_from_neurochem.py</span></code></a></div>

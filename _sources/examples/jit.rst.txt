@@ -141,8 +141,8 @@ And here is the result:
 
  .. code-block:: none
 
-    Ensemble energy, eager mode vs loaded jit: -40.42562058272024 -40.42562058272024
-    Single network energy, eager mode vs loaded jit: -40.42878346687367 -40.42878346687367
+    Ensemble energy, eager mode vs loaded jit: -40.425620576200984 -40.425620576200984
+    Single network energy, eager mode vs loaded jit: -40.42878345197251 -40.42878345197251
 
 
 
@@ -212,7 +212,7 @@ you could do the following:
 
  .. code-block:: none
 
-    Energy, eager mode vs loaded jit: -40.45902209665654 -40.45902209665654
+    Energy, eager mode vs loaded jit: -40.459022095942736 -40.459022095942736
 
     Force, eager mode vs loaded jit:
      tensor([[ 0.031, -0.132, -0.053],
@@ -264,7 +264,7 @@ you could do the following:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  5.149 seconds)
+   **Total running time of the script:** ( 0 minutes  5.744 seconds)
 
 
 .. _sphx_glr_download_examples_jit.py:

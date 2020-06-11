@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchani.utils &mdash; TorchANI 2.1 documentation</title>
+  <title>torchani.utils &mdash; TorchANI 2.1.1 documentation</title>
   
 
   
@@ -25,7 +25,7 @@
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script src="../../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                2.1
+                2.1.1
               </div>
             
           
@@ -401,7 +401,8 @@
 
 <span class="sd">    Arguments:</span>
 <span class="sd">        all_species (:class:`collections.abc.Sequence` of :class:`str`):</span>
-<span class="sd">            sequence of all supported species, in order.</span>
+<span class="sd">        sequence of all supported species, in order (it is recommended to order</span>
+<span class="sd">        according to atomic number).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">all_species</span><span class="p">):</span>
@@ -531,7 +532,7 @@
 
 
 <div class="viewcode-block" id="get_atomic_masses"><a class="viewcode-back" href="../../api.html#torchani.get_atomic_masses">[docs]</a><span class="k">def</span> <span class="nf">get_atomic_masses</span><span class="p">(</span><span class="n">species</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Convert a tensor of znumbers into a tensor of atomic masses</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Convert a tensor of atomic numbers (&quot;periodic table indices&quot;) into a tensor of atomic masses</span>
 
 <span class="sd">    Atomic masses supported are the first 119 elements, and are taken from:</span>
 

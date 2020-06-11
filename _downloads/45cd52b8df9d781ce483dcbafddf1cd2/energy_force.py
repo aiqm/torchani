@@ -26,7 +26,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # The ``periodic_table_index`` arguments tells TorchANI to use element index
 # in periodic table to index species. If not specified, you need to use
 # 0, 1, 2, 3, ... to index species
-model = torchani.models.ANI1ccx(periodic_table_index=True).to(device)
+model = torchani.models.ANI2x(periodic_table_index=True).to(device)
 
 ###############################################################################
 # Now let's define the coordinate and species. If you just want to compute the

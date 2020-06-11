@@ -57,11 +57,19 @@ in periodic table to index species. If not specified, you need to use
 
 .. code-block:: default
 
-    model = torchani.models.ANI1ccx(periodic_table_index=True).to(device)
+    model = torchani.models.ANI2x(periodic_table_index=True).to(device)
 
 
 
 
+
+.. rst-class:: sphx-glr-script-out
+
+ Out:
+
+ .. code-block:: none
+
+    Downloading ANI model parameters ...
 
 
 
@@ -128,12 +136,12 @@ And print to see the result:
 
  .. code-block:: none
 
-    Energy: -40.42562058272024
-    Force: tensor([[ 0.0312, -0.1272, -0.0511],
-            [-0.1200,  0.1628, -0.0761],
-            [ 0.0856, -0.0448,  0.0407],
-            [ 0.0219,  0.0044,  0.0343],
-            [-0.0187,  0.0049,  0.0521]])
+    Energy: -40.459790705366636
+    Force: tensor([[ 0.0478, -0.1304, -0.0551],
+            [-0.1353,  0.1581, -0.0776],
+            [ 0.0804, -0.0388,  0.0387],
+            [ 0.0254,  0.0076,  0.0433],
+            [-0.0183,  0.0035,  0.0508]])
 
 
 
@@ -141,7 +149,7 @@ And print to see the result:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.561 seconds)
+   **Total running time of the script:** ( 0 minutes  6.016 seconds)
 
 
 .. _sphx_glr_download_examples_energy_force.py:

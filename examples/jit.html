@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Using TorchScript to serialize and deploy model &mdash; TorchANI 2.1 documentation</title>
+  <title>Using TorchScript to serialize and deploy model &mdash; TorchANI 2.1.1 documentation</title>
   
 
   
@@ -25,7 +25,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                2.1
+                2.1.1
               </div>
             
           
@@ -240,8 +240,8 @@ produces the same output as the original model:</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Ensemble energy, eager mode vs loaded jit: -40.42562058272024 -40.42562058272024
-Single network energy, eager mode vs loaded jit: -40.42878346687367 -40.42878346687367
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Ensemble energy, eager mode vs loaded jit: -40.425620576200984 -40.425620576200984
+Single network energy, eager mode vs loaded jit: -40.42878345197251 -40.42878345197251
 </pre></div>
 </div>
 </div>
@@ -298,7 +298,7 @@ the following customization to the model:</p>
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy, eager mode vs loaded jit: -40.45902209665654 -40.45902209665654
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy, eager mode vs loaded jit: -40.459022095942736 -40.459022095942736
 
 Force, eager mode vs loaded jit:
  tensor([[ 0.031, -0.132, -0.053],
@@ -345,7 +345,7 @@ Hessian, eager mode vs loaded jit:
         [     0.292,     -0.092,     -0.652,     -0.020,      0.015,      0.029,      0.027,     -0.011,     -0.001,      0.048,     -0.030,     -0.065,     -0.346,      0.117,      0.689]])
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  5.149 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  5.744 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-jit-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <a class="reference download internal" download="" href="../_downloads/fc02d4b5c363f001bb660e86661c89f5/jit.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">jit.py</span></code></a></div>

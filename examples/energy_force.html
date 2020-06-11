@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Computing Energy and Force Using Models Inside Model Zoo &mdash; TorchANI 2.1 documentation</title>
+  <title>Computing Energy and Force Using Models Inside Model Zoo &mdash; TorchANI 2.1.1 documentation</title>
   
 
   
@@ -25,7 +25,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script src="../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -64,7 +64,7 @@
             
             
               <div class="version">
-                2.1
+                2.1.1
               </div>
             
           
@@ -202,7 +202,11 @@ issue in your application.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">periodic_table_index</span></code> arguments tells TorchANI to use element index
 in periodic table to index species. If not specified, you need to use
 0, 1, 2, 3, … to index species</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1ccx</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI2x</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading ANI model parameters ...
 </pre></div>
 </div>
 <p>Now let’s define the coordinate and species. If you just want to compute the
@@ -238,15 +242,15 @@ training. If you have <code class="docutils literal notranslate"><span class="pr
 </pre></div>
 </div>
 <p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.42562058272024
-Force: tensor([[ 0.0312, -0.1272, -0.0511],
-        [-0.1200,  0.1628, -0.0761],
-        [ 0.0856, -0.0448,  0.0407],
-        [ 0.0219,  0.0044,  0.0343],
-        [-0.0187,  0.0049,  0.0521]])
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.459790705366636
+Force: tensor([[ 0.0478, -0.1304, -0.0551],
+        [-0.1353,  0.1581, -0.0776],
+        [ 0.0804, -0.0388,  0.0387],
+        [ 0.0254,  0.0076,  0.0433],
+        [-0.0183,  0.0035,  0.0508]])
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.561 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  6.016 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-energy-force-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <a class="reference download internal" download="" href="../_downloads/45cd52b8df9d781ce483dcbafddf1cd2/energy_force.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">energy_force.py</span></code></a></div>
