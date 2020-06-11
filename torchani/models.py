@@ -84,9 +84,9 @@ class BuiltinModel(torch.nn.Module):
                 resource_res = requests.get("https://github.com/aiqm/ani-model-zoo/archive/ani-2x.zip")
                 resource_zip = zipfile.ZipFile(io.BytesIO(resource_res.content))
                 try:
-                    resource_zip.extractall(resource_path)
+                    resource_zip.extractall(path=resource_path, members='ani-model-zoo-ani-2x/resource/')
                 except PermissionError:
-                    resource_zip.extractall(local_dir)
+                    resource_zip.extractall(path=local_dir, members='ani-model-zoo-ani-2x/resource/')
                     resource_path = local_dir
             else:
                 resource_path = local_dir
