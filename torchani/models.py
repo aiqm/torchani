@@ -81,7 +81,7 @@ class BuiltinModel(torch.nn.Module):
         if not os.path.isfile(get_resource(resource_path, info_file_path)):
             if not os.path.isfile(get_resource(local_dir, info_file_path)):
                 print('Downloading ANI model parameters ...')
-                resource_res = requests.get("https://www.dropbox.com/sh/otrzul6yuye8uzs/AABuaihE22vtaB_rdrI0r6TUa?dl=1")
+                resource_res = requests.get("https://github.com/aiqm/ani-model-zoo/archive/ani-2x.zip")
                 resource_zip = zipfile.ZipFile(io.BytesIO(resource_res.content))
                 try:
                     resource_zip.extractall(resource_path)
