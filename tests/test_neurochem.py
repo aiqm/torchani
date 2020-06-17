@@ -13,7 +13,7 @@ class TestNeuroChem(unittest.TestCase):
 
     def testNeuroChemTrainer(self):
         d = torch.device('cpu')
-        trainer = torchani.neurochem.Trainer(iptpath, d, True, 'runs')
+        trainer = torchani.neurochem.Trainer(iptpath, d, True, os.path.join(path, 'runs'))
 
         # test if loader construct correct model
         self.assertEqual(trainer.aev_computer.aev_length, 384)

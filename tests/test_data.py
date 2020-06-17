@@ -7,7 +7,6 @@ path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, '../dataset/ani-1x/sample.h5')
 batch_size = 256
 ani1x = torchani.models.ANI1x()
-consts = ani1x.consts
 sae_dict = ani1x.sae_dict
 aev_computer = ani1x.aev_computer
 
