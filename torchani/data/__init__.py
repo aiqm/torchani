@@ -35,7 +35,7 @@ Available transformations are listed below:
 - `shuffle`
 - `cache` cache the result of previous transformations.
 - `collate` pad the dataset, convert it to tensor, and stack them
-    together to get a batch. Collat uses a default padding dictionary
+    together to get a batch. `collate` uses a default padding dictionary
     ``{'species': -1, 'coordinates': 0.0, 'forces': 0.0, 'energies': 0.0}`` for
     padding, but a custom padding dictionary can be passed as an optional
     parameter, which overrides this default padding.
