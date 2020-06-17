@@ -248,8 +248,8 @@ class Transformations:
         return ret
 
     @staticmethod
-    def collate(reenterable_iterable, batch_size):
-        def reenterable_iterable_factory():
+    def collate(reenterable_iterable, batch_size, padding_dict=None):
+        def reenterable_iterable_factory(padding_dict=None):
             batch = []
             i = 0
             for d in reenterable_iterable:
@@ -257,10 +257,13 @@ class Transformations:
                 i += 1
                 if i == batch_size:
                     i = 0
-                    yield collate_fn(batch)
+                    yield collate_fn(batch, padding_dict=padding_dict)
                     batch = []
             if len(batch) > 0:
-                yield collate_fn(batch)
+                yield collate_fn(batch, padding_dict=padding_dict)
+
+        reenterable_iterable_factory = functools.partial(reenterable_iterable_factory,
+                                                         padding_dict=padding_dict)
         try:
             length = (len(reenterable_iterable) + batch_size - 1) // batch_size
             return IterableAdapterWithLength(reenterable_iterable_factory, length)
