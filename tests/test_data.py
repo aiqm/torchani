@@ -111,6 +111,7 @@ class TestData(unittest.TestCase):
     def testSAE(self):
         tolerance = 1e-5
         shifter = torchani.EnergyShifter(None)
+        torchani.data.load(dataset_path).subtract_self_energies(shifter)
         true_self_energies = torch.tensor([-19.354171758844188,
                                            -19.354171758844046,
                                            -54.712238523648587,
