@@ -15,7 +15,7 @@ benchmark_xyz
 *.pyc
 *checkpoint*
 *.pt
-/runs
+/tests/runs
 /quicktest.py
 /*.ipt
 /*.params
