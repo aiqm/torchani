@@ -19,6 +19,7 @@ setup_attrs = {
     'install_requires': [
         'torch',
         'lark-parser',
+        'requests'
     ],
 }
 
