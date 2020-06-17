@@ -35,7 +35,11 @@ Available transformations are listed below:
 - `shuffle`
 - `cache` cache the result of previous transformations.
 - `collate` pad the dataset, convert it to tensor, and stack them
-    together to get a batch.
+    together to get a batch. Collate function uses a default padding dict
+    ``{'species': -1, 'coordinates': 0.0, 'forces': 0.0, 'energies': 0.0}`` for
+    padding, but a custom padding dict can be passed as an optional parameter,
+    which overrides this default padding.
+
 - `pin_memory` copy the tensor to pinned memory so that later transfer
     to cuda could be faster.
 
@@ -94,8 +98,8 @@ if PKBAR_INSTALLED:
 
 verbose = True
 
-
 PROPERTIES = ('energies',)
+
 PADDING = {
     'species': -1,
     'coordinates': 0.0,
@@ -104,8 +108,11 @@ PADDING = {
 }
 
 
-def collate_fn(samples):
-    return utils.stack_with_padding(samples, PADDING)
+def collate_fn(samples, padding_dict=None):
+    if padding_dict is None:
+        padding_dict = PADDING
+
+    return utils.stack_with_padding(samples, padding_dict)
 
 
 class IterableAdapter:
