@@ -2,10 +2,15 @@
 """The ANI model zoo that stores public ANI models.
 
 Currently the model zoo has three models: ANI-1x, ANI-1ccx, and ANI-2x.
-The classes of these models are :class:`ANI1x`, :class:`ANI1ccx`, and
-:class:`ANI2x` these are subclasses of :class:`torch.nn.Module`.
+The parameters of these models are stored in `ani-model-zoo`_ repository and
+will be automatically downloaded the first time any of these models are
+instantiated. The classes of these models are :class:`ANI1x`, :class:`ANI1ccx`,
+and :class:`ANI2x` these are subclasses of :class:`torch.nn.Module`.
 To use the models just instantiate them and either
 directly calculate energies or get an ASE calculator. For example:
+
+.. _ani-model-zoo:
+    https://github.com/aiqm/ani-model-zoo
 
 .. code-block:: python
 
