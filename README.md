@@ -30,6 +30,7 @@ TorchANI is a pytorch implementation of ANI. It is currently under alpha release
 
 <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo2.png width=500/>
 
+
 # Install
 
 TorchANI requires the latest preview version of PyTorch. You can install PyTorch by the following commands (assuming cuda10):
@@ -59,12 +60,18 @@ To run the tests and examples, you must manually download a data package
 ./download.sh
 ```
 
+
 # Paper
 TorchANI [Preprint](https://chemrxiv.org/articles/TorchANI_A_Free_and_Open_Source_PyTorch_Based_Deep_Learning_Implementation_of_the_ANI_Neural_Network_Potentials/12218294)
 
 * Gao X, Ramezanghorbani F, Isayev O, Smith JS, Roitberg AE. TorchANI: A Free and Open Source PyTorch Based Deep Learning Implementation of the ANI Neural Network Potentials. [![DOI for Citing](https://img.shields.io/badge/DOI-10.26434%2Fchemrxiv.12218294.v1-green.svg)](https://doi.org/10.26434/chemrxiv.12218294.v1)
 
-See also: [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI)
+
+# ANI model parameters
+All the ANI model parameters including (ANI2x, ANI1x, and ANI1ccx) are accessible from the following repositories:
+- [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI)
+- [aiqm/ani-model-zoo](https://github.com/aiqm/ani-model-zoo)
+
 
 # Develop
 
@@ -87,6 +94,7 @@ To manually run unit tests, do `python setup.py nosetests`
 If you opened a pull request, you could see your generated documents at https://aiqm.github.io/torchani-test-docs/ after you `docs` check succeed.
 Keep in mind that this repository is only for the purpose of convenience of development, and only keeps the latest push.
 The CI runing for other pull requests might overwrite this repository. You could rerun the `docs` check to overwrite this repo to your build.
+
 
 # Note to TorchANI developers
 
