@@ -108,6 +108,18 @@ class TestData(unittest.TestCase):
         ds = ds.collate(batch_size)
         len(ds)
 
+    def testSAE(self):
+        tolerance = 1e-5
+        shifter = torchani.EnergyShifter(None)
+        torchani.data.load(dataset_path).subtract_self_energies(shifter)
+        true_self_energies = torch.tensor([-19.354171758844188,
+                                           -19.354171758844046,
+                                           -54.712238523648587,
+                                           -75.162829556770987], dtype=torch.float64)
+        diff = torch.abs(true_self_energies - shifter.self_energies)
+        for e in diff:
+            self.assertLess(e, tolerance)
+
     def testDataloader(self):
         shifter = torchani.EnergyShifter(None)
         dataset = list(torchani.data.load(dataset_path).subtract_self_energies(shifter).species_to_indices().shuffle())
