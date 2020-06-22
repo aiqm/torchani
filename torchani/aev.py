@@ -160,8 +160,8 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
     distances = (selected_coordinates[:, 0, ...] - selected_coordinates[:, 1, ...] + shift_values).norm(2, -1)
     padding_mask = padding_mask.index_select(1, p12_all.view(-1)).view(2, -1).any(0)
     distances.masked_fill_(padding_mask, math.inf)
-    in_cutoff = (distances <= cutoff).nonzero()
-    molecule_index, pair_index = in_cutoff.unbind(1)
+    in_cutoff = torch.nonzero(distances <= cutoff, as_tuple=True)
+    molecule_index, pair_index = in_cutoff
     molecule_index *= num_atoms
     atom_index12 = p12_all[:, pair_index]
     shifts = shifts_all.index_select(0, pair_index)
@@ -192,8 +192,8 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: floa
     distances = (pair_coordinates[:, 0, ...] - pair_coordinates[:, 1, ...]).norm(2, -1)
     padding_mask = padding_mask.index_select(1, p12_all_flattened).view(num_mols, 2, -1).any(dim=1)
     distances.masked_fill_(padding_mask, math.inf)
-    in_cutoff = (distances <= cutoff).nonzero()
-    molecule_index, pair_index = in_cutoff.unbind(1)
+    in_cutoff = torch.nonzero(distances <= cutoff, as_tuple=True)
+    molecule_index, pair_index = in_cutoff
     molecule_index *= num_atoms
     atom_index12 = p12_all[:, pair_index] + molecule_index
     return atom_index12
@@ -292,7 +292,7 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
 
     # Rca is usually much smaller than Rcr, using neighbor list with cutoff=Rcr is a waste of resources
     # Now we will get a smaller neighbor list that only cares about atoms with distances <= Rca
-    even_closer_indices = (distances <= Rca).nonzero().flatten()
+    even_closer_indices = torch.nonzero(distances <= Rca, as_tuple=False).flatten()
     atom_index12 = atom_index12.index_select(1, even_closer_indices)
     species12 = species12.index_select(1, even_closer_indices)
     vec = vec.index_select(0, even_closer_indices)
