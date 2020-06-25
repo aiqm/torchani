@@ -14,9 +14,6 @@ class _TestAEVBase(unittest.TestCase):
         self.radial_length = self.aev_computer.radial_length
         self.debug = False
 
-    def random_skip(self, prob=0):
-        return random.random() < prob
-
     def assertAEVEqual(self, expected_radial, expected_angular, aev, tolerance=tolerance):
         radial = aev[..., :self.radial_length]
         angular = aev[..., self.radial_length:]

@@ -17,9 +17,6 @@ class TestForce(unittest.TestCase):
         self.nnp = model.neural_networks
         self.model = torchani.nn.Sequential(self.aev_computer, self.nnp)
 
-    def random_skip(self):
-        return False
-
     def testIsomers(self):
         for i in range(N):
             datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))

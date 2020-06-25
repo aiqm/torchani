@@ -20,9 +20,6 @@ class TestEnergies(unittest.TestCase):
         self.nn = torchani.nn.Sequential(self.nnp, self.energy_shifter)
         self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
 
-    def random_skip(self):
-        return False
-
     def testIsomers(self):
         for i in range(N):
             datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
