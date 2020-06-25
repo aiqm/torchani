@@ -23,9 +23,6 @@ class TestEnergies(unittest.TestCase):
     def random_skip(self):
         return False
 
-    def transform(self, x):
-        return x
-
     def testIsomers(self):
         for i in range(N):
             datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
@@ -34,10 +31,7 @@ class TestEnergies(unittest.TestCase):
                 coordinates = torch.from_numpy(coordinates).to(torch.float)
                 species = torch.from_numpy(species)
                 energies = torch.from_numpy(energies).to(torch.float)
-                coordinates = self.transform(coordinates)
-                species = self.transform(species)
-                energies = self.transform(energies)
-                _, energies_ = self.model((species, coordinates))
+                energies_ = self.model((species, coordinates)).energies
                 max_diff = (energies - energies_).abs().max().item()
                 self.assertLess(max_diff, self.tolerance)
 
@@ -51,16 +45,13 @@ class TestEnergies(unittest.TestCase):
                 coordinates = torch.from_numpy(coordinates).to(torch.float)
                 species = torch.from_numpy(species)
                 e = torch.from_numpy(e).to(torch.float)
-                coordinates = self.transform(coordinates)
-                species = self.transform(species)
-                e = self.transform(e)
                 species_coordinates.append(
                     torchani.utils.broadcast_first_dim({'species': species, 'coordinates': coordinates}))
                 energies.append(e)
         species_coordinates = torchani.utils.pad_atomic_properties(
             species_coordinates)
         energies = torch.cat(energies)
-        _, energies_ = self.model((species_coordinates['species'], species_coordinates['coordinates']))
+        energies_ = self.model((species_coordinates['species'], species_coordinates['coordinates'])).energies
         max_diff = (energies - energies_).abs().max().item()
         self.assertLess(max_diff, self.tolerance)
 
