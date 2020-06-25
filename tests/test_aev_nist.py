@@ -14,8 +14,6 @@ class TestAEVNIST(_TestAEVBase):
         with open(datafile, 'rb') as f:
             data = pickle.load(f)
             for coordinates, species, radial, angular, _, _ in data:
-                if self.random_skip():
-                    continue
                 coordinates = torch.from_numpy(coordinates).to(torch.float)
                 species = torch.from_numpy(species)
                 radial = torch.from_numpy(radial).to(torch.float)

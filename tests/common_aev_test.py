@@ -1,4 +1,3 @@
-import random
 import unittest
 import torch
 import torchani
@@ -13,12 +12,6 @@ class _TestAEVBase(unittest.TestCase):
         self.aev_computer = ani1x.aev_computer
         self.radial_length = self.aev_computer.radial_length
         self.debug = False
-
-    def transform(self, x):
-        return x
-
-    def random_skip(self, prob=0):
-        return random.random() < prob
 
     def assertAEVEqual(self, expected_radial, expected_angular, aev, tolerance=tolerance):
         radial = aev[..., :self.radial_length]

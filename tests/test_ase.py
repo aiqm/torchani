@@ -10,7 +10,6 @@ import unittest
 import os
 
 path = os.path.dirname(os.path.realpath(__file__))
-N = 97
 tol = 5e-5
 
 
