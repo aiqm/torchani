@@ -20,10 +20,7 @@ class TestIsolated(unittest.TestCase):
     # a distance greater than the cutoff radius from all other atoms
     # this can throw an IndexError for large distances or lone atoms
     def setUp(self):
-        if torch.cuda.is_available():
-            self.device = 'cuda'
-        else:
-            self.device = 'cpu'
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         ani1x = torchani.models.ANI1x().to(self.device)
         self.aev_computer = ani1x.aev_computer
         self.species_to_tensor = ani1x.species_to_tensor
