@@ -54,3 +54,7 @@ class TestGrad(unittest.TestCase):
             torch.autograd.gradgradcheck(lambda x: self.model((species, x)).energies,
                                          coordinates,
                                          nondet_tol=1e-13)
+
+
+if __name__ == '__main__':
+    unittest.main()
