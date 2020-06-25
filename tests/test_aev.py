@@ -25,7 +25,6 @@ class TestIsolated(unittest.TestCase):
         else:
             self.device = 'cpu'
         ani1x = torchani.models.ANI1x().to(self.device)
-        self.model = ani1x
         self.aev_computer = ani1x.aev_computer
         self.species_to_tensor = ani1x.species_to_tensor
         self.rcr = ani1x.aev_computer.Rcr
