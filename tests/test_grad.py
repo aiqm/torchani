@@ -22,8 +22,8 @@ class TestGrad(unittest.TestCase):
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
 
-        self.model = torchani.models.ANI1x(model_index=0).to(
-            device=self.device, dtype=torch.double)
+        self.model = torchani.models.ANI1x(model_index=0).to(device=self.device, 
+                                                             dtype=torch.double)
         datafile = os.path.join(path, 'test_data/NIST/all')
 
         # Some small molecules are selected to make the tests faster
@@ -38,8 +38,7 @@ class TestGrad(unittest.TestCase):
 
             species = torch.from_numpy(species).to(self.device)
 
-            torch.autograd.gradcheck(lambda x: self.model(
-                (species, x)).energies,
+            torch.autograd.gradcheck(lambda x: self.model((species, x)).energies,
                                      coordinates,
                                      nondet_tol=1e-13)
 
@@ -52,7 +51,6 @@ class TestGrad(unittest.TestCase):
 
             species = torch.from_numpy(species).to(self.device)
 
-            torch.autograd.gradgradcheck(lambda x: self.model(
-                (species, x)).energies,
+            torch.autograd.gradgradcheck(lambda x: self.model((species, x)).energies,
                                          coordinates,
                                          nondet_tol=1e-13)
