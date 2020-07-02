@@ -347,7 +347,7 @@ class AEVComputer(torch.nn.Module):
     sizes: Final[Tuple[int, int, int, int, int]]
 
     def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species):
-        super(AEVComputer, self).__init__()
+        super().__init__()
         self.Rcr = Rcr
         self.Rca = Rca
         assert Rca <= Rcr, "Current implementation of AEVComputer assumes Rca <= Rcr"
