@@ -12,7 +12,6 @@ class TestEnsemble(unittest.TestCase):
 
     def setUp(self):
         self.tol = 1e-5
-        self.conformations = 20
         ani1x = torchani.models.ANI1x()
         self.aev_computer = ani1x.aev_computer
         self.model_iterator = ani1x.neural_networks
