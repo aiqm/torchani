@@ -82,27 +82,34 @@ class BuiltinModel(torch.nn.Module):
         def get_resource(resource_path, file_path):
             return os.path.join(resource_path, file_path)
 
+        resource_path = os.path.join(os.path.dirname(__file__), 'resources/')
         local_dir = os.path.expanduser('~/.local/torchani/')
         repo_name = "ani-model-zoo"
         tag_name = "ani-2x"
         extracted_name = '{}-{}'.format(repo_name, tag_name)
         url = "https://github.com/aiqm/{}/archive/{}.zip".format(repo_name, tag_name)
 
-        if not os.path.isfile(get_resource(local_dir, info_file_path)):
-            print(f'Downloading ANI model parameters into:\n{local_dir}')
-            resource_res = requests.get(url)
-            resource_zip = zipfile.ZipFile(io.BytesIO(resource_res.content))
+        if os.stat(get_resource(resource_path, info_file_path)).st_size == 0:
+            if os.stat(get_resource(local_dir, info_file_path)).st_size == 0:
+                print('Downloading ANI model parameters ...')
+                resource_res = requests.get(url)
+                resource_zip = zipfile.ZipFile(io.BytesIO(resource_res.content))
+                try:
+                    resource_zip.extractall(resource_path)
+                except PermissionError:
+                    resource_zip.extractall(local_dir)
+                    resource_path = local_dir
 
-            resource_zip.extractall(local_dir)
-            resource_path = local_dir
+                files = glob.glob(os.path.join(resource_path, extracted_name, "resources", "*"))
+                for f in files:
+                    try:
+                        shutil.move(f, resource_path)
+                    except shutil.Error:
+                        pass
+                shutil.rmtree(os.path.join(resource_path, extracted_name))
 
-        files = glob.glob(os.path.join(resource_path, extracted_name, "resources", "*"))
-        for f in files:
-            try:
-                shutil.move(f, resource_path)
-            except shutil.Error:
-                pass
-        shutil.rmtree(os.path.join(resource_path, extracted_name))
+            else:
+                resource_path = local_dir
 
         info_file = get_resource(resource_path, info_file_path)
 
