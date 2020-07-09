@@ -101,11 +101,11 @@ class BuiltinModel(torch.nn.Module):
                     resource_path = local_dir
 
                 files = glob.glob(os.path.join(resource_path, extracted_name, "resources", "*"))
+
                 for f in files:
-                    try:
-                        shutil.move(f, resource_path)
-                    except shutil.Error:
-                        pass
+                    destination = os.path.join(resource_path, os.path.basename(f))
+                    shutil.move(f, destination)
+
                 shutil.rmtree(os.path.join(resource_path, extracted_name))
 
             else:
