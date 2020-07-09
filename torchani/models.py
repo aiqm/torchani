@@ -31,10 +31,9 @@ directly calculate energies or get an ASE calculator. For example:
 import os
 import io
 import requests
-import glob
 import zipfile
-import shutil
 import torch
+from distutils import dir_util
 from torch import Tensor
 from typing import Tuple, Optional
 from . import neurochem
@@ -100,13 +99,9 @@ class BuiltinModel(torch.nn.Module):
                     resource_zip.extractall(local_dir)
                     resource_path = local_dir
 
-                files = glob.glob(os.path.join(resource_path, extracted_name, "resources", "*"))
-
-                for f in files:
-                    destination = os.path.join(resource_path, os.path.basename(f))
-                    shutil.move(f, destination)
-
-                shutil.rmtree(os.path.join(resource_path, extracted_name))
+                source = os.path.join(resource_path, extracted_name, "resources")
+                dir_util.copy_tree(source, resource_path)
+                dir_util.remove_tree(os.path.join(resource_path, extracted_name))
 
             else:
                 resource_path = local_dir
