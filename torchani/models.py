@@ -90,7 +90,7 @@ class BuiltinModel(torch.nn.Module):
         url = "https://github.com/aiqm/{}/archive/{}.zip".format(repo_name, tag_name)
 
         if os.stat(get_resource(resource_path, info_file_path)).st_size == 0:
-            if os.stat(get_resource(local_dir, info_file_path)).st_size == 0:
+            if not os.path.isfile(get_resource(local_dir, info_file_path)):
                 print('Downloading ANI model parameters ...')
                 resource_res = requests.get(url)
                 resource_zip = zipfile.ZipFile(io.BytesIO(resource_res.content))
