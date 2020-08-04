@@ -29,7 +29,6 @@ jobs:
         pip install twine wheel
     - name: Deploy
       run: |
-        [ ! -z "$GITHUB_HEAD_REF" ] && exit
         rm -rf dist/*
         git tag $(date +'v%Y.%m.%d.%H.%M.%S')
         python setup.py sdist bdist_wheel
