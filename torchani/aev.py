@@ -186,7 +186,7 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: floa
         padding_mask (:class:`torch.Tensor`): boolean tensor of shape
             (molecules, atoms) for padding mask. 1 == is padding.
         coordinates (:class:`torch.Tensor`): tensor of shape
-            (molecules * atoms, 3) for atom coordinates.
+            (molecules, atoms, 3) for atom coordinates.
         cutoff (float): the cutoff inside which atoms are considered pairs
     """
     coordinates = coordinates.detach()
