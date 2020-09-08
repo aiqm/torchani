@@ -55,6 +55,8 @@ class ANIModel(torch.nn.ModuleDict):
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         species, aev = species_aev
+        assert species.shape == aev.shape[:-1]
+
         species_ = species.flatten()
         aev = aev.flatten(0, 1)
 
