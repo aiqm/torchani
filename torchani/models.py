@@ -141,7 +141,7 @@ class BuiltinModel(torch.nn.Module):
             species_coordinates = self.species_converter(species_coordinates)
 
         # check if unknown species are included
-        if species_coordinates[0].ge(self.consts.num_species).any():
+        if species_coordinates[0].ge(self.aev_computer.num_species).any():
             raise ValueError(f'Unknown species found in {species_coordinates[0]}')
 
         species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
