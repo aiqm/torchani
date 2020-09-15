@@ -31,10 +31,9 @@ directly calculate energies or get an ASE calculator. For example:
 import os
 import io
 import requests
-import glob
 import zipfile
-import shutil
 import torch
+from distutils import dir_util
 from torch import Tensor
 from typing import Tuple, Optional
 from . import neurochem
@@ -89,7 +88,7 @@ class BuiltinModel(torch.nn.Module):
         extracted_name = '{}-{}'.format(repo_name, tag_name)
         url = "https://github.com/aiqm/{}/archive/{}.zip".format(repo_name, tag_name)
 
-        if not os.path.isfile(get_resource(resource_path, info_file_path)):
+        if os.stat(get_resource(resource_path, info_file_path)).st_size == 0:
             if not os.path.isfile(get_resource(local_dir, info_file_path)):
                 print('Downloading ANI model parameters ...')
                 resource_res = requests.get(url)
@@ -99,16 +98,13 @@ class BuiltinModel(torch.nn.Module):
                 except PermissionError:
                     resource_zip.extractall(local_dir)
                     resource_path = local_dir
+
+                source = os.path.join(resource_path, extracted_name, "resources")
+                dir_util.copy_tree(source, resource_path)
+                dir_util.remove_tree(os.path.join(resource_path, extracted_name))
+
             else:
                 resource_path = local_dir
-
-            files = glob.glob(os.path.join(resource_path, extracted_name, "resources", "*"))
-            for f in files:
-                try:
-                    shutil.move(f, resource_path)
-                except shutil.Error:
-                    pass
-            shutil.rmtree(os.path.join(resource_path, extracted_name))
 
         info_file = get_resource(resource_path, info_file_path)
 
@@ -143,6 +139,11 @@ class BuiltinModel(torch.nn.Module):
         """
         if self.periodic_table_index:
             species_coordinates = self.species_converter(species_coordinates)
+
+        # check if unknown species are included
+        if species_coordinates[0].ge(self.aev_computer.num_species).any():
+            raise ValueError(f'Unknown species found in {species_coordinates[0]}')
+
         species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
         species_energies = self.neural_networks(species_aevs)
         return self.energy_shifter(species_energies)

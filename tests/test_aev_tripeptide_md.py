@@ -20,10 +20,6 @@ class TestAEVTripeptideMD(_TestAEVBase):
                 species = torch.from_numpy(species).unsqueeze(0)
                 expected_radial = torch.from_numpy(expected_radial).float().unsqueeze(0)
                 expected_angular = torch.from_numpy(expected_angular).float().unsqueeze(0)
-                coordinates = self.transform(coordinates)
-                species = self.transform(species)
-                expected_radial = self.transform(expected_radial)
-                expected_angular = self.transform(expected_angular)
                 _, aev = self.aev_computer((species, coordinates))
                 self.assertAEVEqual(expected_radial, expected_angular, aev, tol)
 

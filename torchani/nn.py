@@ -55,6 +55,8 @@ class ANIModel(torch.nn.ModuleDict):
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         species, aev = species_aev
+        assert species.shape == aev.shape[:-1]
+
         species_ = species.flatten()
         aev = aev.flatten(0, 1)
 
@@ -133,4 +135,10 @@ class SpeciesConverter(torch.nn.Module):
                 pbc: Optional[Tensor] = None):
         """Convert species from periodic table element index to 0, 1, 2, 3, ... indexing"""
         species, coordinates = input_
-        return SpeciesCoordinates(self.conv_tensor[species].to(species.device), coordinates)
+        converted_species = self.conv_tensor[species]
+
+        # check if unknown species are included
+        if converted_species[species.ne(-1)].lt(0).any():
+            raise ValueError(f'Unknown species found in {species}')
+
+        return SpeciesCoordinates(converted_species.to(species.device), coordinates)

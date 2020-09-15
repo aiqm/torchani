@@ -61,11 +61,15 @@ To run the tests and examples, you must manually download a data package
 ```
 
 
-# Paper
-TorchANI [Preprint](https://chemrxiv.org/articles/TorchANI_A_Free_and_Open_Source_PyTorch_Based_Deep_Learning_Implementation_of_the_ANI_Neural_Network_Potentials/12218294)
+# Citation
 
-* Gao X, Ramezanghorbani F, Isayev O, Smith JS, Roitberg AE. TorchANI: A Free and Open Source PyTorch Based Deep Learning Implementation of the ANI Neural Network Potentials. [![DOI for Citing](https://img.shields.io/badge/DOI-10.26434%2Fchemrxiv.12218294.v1-green.svg)](https://doi.org/10.26434/chemrxiv.12218294.v1)
+Please cite the following paper if you use TorchANI 
 
+* Xiang Gao, Farhad Ramezanghorbani, Olexandr Isayev, Justin S. Smith, and Adrian E. Roitberg. *TorchANI: A Free and Open Source PyTorch Based Deep Learning Implementation of the ANI Neural Network Potentials*. Journal of Chemical Information and Modeling 2020 60 (7), 3408-3415, [![DOI for Citing](https://img.shields.io/badge/DOI-10.1021%2Facs.jcim.0c00451-green.svg)](https://doi.org/10.1021/acs.jcim.0c00451)
+
+[![JCIM Cover](https://pubs.acs.org/na101/home/literatum/publisher/achs/journals/content/jcisd8/2020/jcisd8.2020.60.issue-7/jcisd8.2020.60.issue-7/20200727/jcisd8.2020.60.issue-7.largecover.jpg)](https://pubs.acs.org/toc/jcisd8/60/7)
+
+* Please refer to [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI) for ANI model references.
 
 # ANI model parameters
 All the ANI model parameters including (ANI2x, ANI1x, and ANI1ccx) are accessible from the following repositories:

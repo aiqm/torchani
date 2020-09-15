@@ -12,7 +12,7 @@ dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 class TestNeuroChem(unittest.TestCase):
 
     def testNeuroChemTrainer(self):
-        d = torch.device('cpu')
+        d = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         trainer = torchani.neurochem.Trainer(iptpath, d, True, os.path.join(path, 'runs'))
 
         # test if loader construct correct model
