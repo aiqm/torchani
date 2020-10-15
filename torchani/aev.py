@@ -4,6 +4,8 @@ import math
 from typing import Tuple, Optional, NamedTuple
 import sys
 
+import cuaev
+
 if sys.version_info[:2] < (3, 7):
     class FakeFinal:
         def __getitem__(self, x):
@@ -272,6 +274,12 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     num_species_pairs = angular_length // angular_sublength
     coordinates_ = coordinates
     coordinates = coordinates_.flatten(0, 1)
+
+    if cell_shifts is None:
+        species_int = species.type(torch.int32)
+        cu_aev = torch.zeros([num_molecules, num_atoms, radial_length+angular_length], dtype=coordinates.dtype, device=coordinates.device)
+        cuaev.cuComputeAEV(coordinates_, species_int, Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), cu_aev, num_species)
+        return cu_aev
 
     # PBC calculation is bypassed if there are no shifts
     if cell_shifts is None:
