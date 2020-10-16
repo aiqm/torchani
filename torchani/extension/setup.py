@@ -11,8 +11,10 @@ include_dirs = []
 cuda_version = float(torch.version.cuda)
 if cuda_version >= 10:
     nvcc_args.append("-gencode=arch=compute_75,code=sm_75")
-if cuda_version >= 11:
+elif cuda_version >= 11:
     nvcc_args.append("-gencode=arch=compute_80,code=sm_80")
+elif cuda_version >= 11.1:
+    nvcc_args.append("-gencode=arch=compute_86,code=sm_86")
 else:
     # if no cub, download it to include dir from github
     if not os.path.isdir('./include/cub'):

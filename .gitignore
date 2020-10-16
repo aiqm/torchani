@@ -6,7 +6,9 @@ a.out
 /test.py
 /.vscode
 /build*
-/.eggs
+.eggs
+*.egg-info
+*.ninja
 /torchani.egg-info
 /*.h5
 /*.hdf5
