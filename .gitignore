@@ -22,6 +22,9 @@ benchmark_xyz
 /*.ipt
 /*.params
 /*.dat
+*.o
+*.so
+*.ninja_log
 /tmp
 *_cache
 datacache
