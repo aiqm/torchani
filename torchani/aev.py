@@ -374,7 +374,7 @@ class AEVComputer(torch.nn.Module):
         self.num_species = num_species
         if use_cuda_extension:
             assert CUAEV_INSTALLED, "AEV cuda extension is not installed"
-            self.use_cuda_extension = use_cuda_extension
+        self.use_cuda_extension = use_cuda_extension
 
         # convert constant tensors to a ready-to-broadcast shape
         # shape convension (..., EtaR, ShfR)
