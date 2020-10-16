@@ -9,6 +9,7 @@ import pynvml
 import os
 from torchani.units import hartree2kcalmol
 
+
 def build_network():
     H_network = torch.nn.Sequential(
         torch.nn.Linear(384, 160),
@@ -56,15 +57,24 @@ def checkgpu(device=None):
     i = device if device else torch.cuda.current_device()
     t = torch.cuda.get_device_properties(i).total_memory
     c = torch.cuda.memory_reserved(i)
-    a = torch.cuda.memory_allocated(i)
     name = torch.cuda.get_device_properties(i).name
-    print('   GPU Memory Cached (pytorch) : {:7.1f}MB / {:.1f}MB ({})'.format(c/1024/1024, t/1024/1024, name))
+    print('   GPU Memory Cached (pytorch) : {:7.1f}MB / {:.1f}MB ({})'.format(c / 1024 / 1024, t / 1024 / 1024, name))
     real_i = int(os.environ['CUDA_VISIBLE_DEVICES'][0]) if 'CUDA_VISIBLE_DEVICES' in os.environ else i
     pynvml.nvmlInit()
     h = pynvml.nvmlDeviceGetHandleByIndex(real_i)
     info = pynvml.nvmlDeviceGetMemoryInfo(h)
     name = pynvml.nvmlDeviceGetName(h)
-    print('   GPU Memory Used (nvidia-smi): {:7.1f}MB / {:.1f}MB ({})'.format(info.used/1024/1024, info.total/1024/1024, name.decode()))
+    print('   GPU Memory Used (nvidia-smi): {:7.1f}MB / {:.1f}MB ({})'.format(info.used / 1024 / 1024, info.total / 1024 / 1024, name.decode()))
+
+
+def alert(text):
+    print('\033[91m{}\33[0m'.format(text))  # red
+
+
+def sync_cuda(sync):
+    if sync:
+        torch.cuda.synchronize()
+
 
 def benchmark(parser, dataset, use_cuda_extension, force_training=False):
     synchronize = True if parser.synchronize else False
@@ -131,7 +141,7 @@ def benchmark(parser, dataset, use_cuda_extension, force_training=False):
             num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
             _, predicted_energies = model((species, coordinates))
             # TODO add sync after aev is done
-            if synchronize: torch.cuda.synchronize()
+            sync_cuda(synchronize)
             energy_loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
             if force_training:
                 force_coefficient = 0.1
@@ -139,36 +149,36 @@ def benchmark(parser, dataset, use_cuda_extension, force_training=False):
                 try:
                     forces = -torch.autograd.grad(predicted_energies.sum(), coordinates, create_graph=True, retain_graph=True)[0]
                 except Exception as e:
-                    print('Error:', e)
+                    alert('Error: {}'.format(e))
                     return
                 force_loss = (mse(true_forces, forces).sum(dim=(1, 2)) / num_atoms).mean()
                 loss = energy_loss + force_coefficient * force_loss
             else:
                 loss = energy_loss
             rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
-            if synchronize: torch.cuda.synchronize()
+            sync_cuda(synchronize)
             loss_start = time.time()
             loss.backward()
-            if synchronize: torch.cuda.synchronize()
+            sync_cuda(synchronize)
             loss_stop = time.time()
             loss_time += loss_stop - loss_start
             optimizer.step()
-            if synchronize: torch.cuda.synchronize()
+            sync_cuda(synchronize)
             progbar.update(i, values=[("rmse", rmse)])
 
         checkgpu()
-    if synchronize: torch.cuda.synchronize()
+    sync_cuda(synchronize)
     stop = time.time()
 
     print('=> More detail about benchmark PER EPOCH')
     for k in timers:
         if k.startswith('torchani.'):
-            print('   {} - {:.1f}s'.format(k, timers[k]/parser.num_epochs))
-    total_time = (stop - start)/parser.num_epochs
-    loss_time = loss_time/parser.num_epochs
-    opti_time = timers['optimizer.step']/parser.num_epochs
-    forward_time = timers['forward']/parser.num_epochs
-    aev_time = timers['total']/parser.num_epochs
+            print('   {} - {:.1f}s'.format(k, timers[k] / parser.num_epochs))
+    total_time = (stop - start) / parser.num_epochs
+    loss_time = loss_time / parser.num_epochs
+    opti_time = timers['optimizer.step'] / parser.num_epochs
+    forward_time = timers['forward'] / parser.num_epochs
+    aev_time = timers['total'] / parser.num_epochs
     print('Total AEV - {:.1f}s'.format(aev_time))
     print('Forward - {:.1f}s'.format(forward_time))
     print('Backward - {:.1f}s'.format(loss_time))
@@ -231,7 +241,6 @@ if __name__ == "__main__":
     torch.cuda.empty_cache()
     gc.collect()
     benchmark(parser, dataset, use_cuda_extension=False, force_training=False)
-
 
     print("\n\n=> Test 5/8: Shuffled Dataset, USE cuda extension, Force and Energy training")
     torch.cuda.empty_cache()

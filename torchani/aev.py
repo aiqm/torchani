@@ -269,7 +269,7 @@ def triple_by_molecule(atom_index12: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
 
 def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
                 constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
-                sizes: Tuple[int, int, int, int, int], cell_shifts: Optional[Tuple[Tensor, Tensor]], use_cuda_extension=False) -> Tensor:
+                sizes: Tuple[int, int, int, int, int], cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     num_species, radial_sublength, radial_length, angular_sublength, angular_length = sizes
     num_molecules = species.shape[0]
@@ -277,12 +277,6 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     num_species_pairs = angular_length // angular_sublength
     coordinates_ = coordinates
     coordinates = coordinates_.flatten(0, 1)
-
-    if cell_shifts is None and use_cuda_extension:
-        species_int = species.type(torch.int32)
-        cu_aev = torch.zeros([num_molecules, num_atoms, radial_length+angular_length], dtype=coordinates.dtype, device=coordinates.device)
-        cuaev.cuComputeAEV(coordinates_, species_int, Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), cu_aev, num_species)
-        return cu_aev
 
     # PBC calculation is bypassed if there are no shifts
     if cell_shifts is None:
@@ -329,6 +323,24 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     return torch.cat([radial_aev, angular_aev], dim=-1)
 
 
+@torch.jit.unused
+def compute_cuaev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
+                  constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
+                  sizes: Tuple[int, int, int, int, int], cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
+    Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
+    num_species, radial_sublength, radial_length, angular_sublength, angular_length = sizes
+    num_molecules = species.shape[0]
+    num_atoms = species.shape[1]
+    coordinates_ = coordinates
+    coordinates = coordinates_.flatten(0, 1)
+
+    assert cell_shifts is None, "Current implementation of cuaev does not support pbc."
+    species_int = species.to(torch.int32)
+    cu_aev = torch.zeros([num_molecules, num_atoms, radial_length + angular_length], dtype=coordinates.dtype, device=coordinates.device)
+    cuaev.cuComputeAEV(coordinates_, species_int, Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), cu_aev, num_species)
+    return cu_aev
+
+
 class AEVComputer(torch.nn.Module):
     r"""The AEV computer that takes coordinates as input and outputs aevs.
 
@@ -365,6 +377,7 @@ class AEVComputer(torch.nn.Module):
     angular_length: Final[int]
     aev_length: Final[int]
     sizes: Final[Tuple[int, int, int, int, int]]
+    use_cuda_extension: Final[bool]
 
     def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=False):
         super().__init__()
@@ -372,6 +385,8 @@ class AEVComputer(torch.nn.Module):
         self.Rca = Rca
         assert Rca <= Rcr, "Current implementation of AEVComputer assumes Rca <= Rcr"
         self.num_species = num_species
+
+        # cuda aev
         if use_cuda_extension:
             assert CUAEV_INSTALLED, "AEV cuda extension is not installed"
         self.use_cuda_extension = use_cuda_extension
@@ -457,11 +472,14 @@ class AEVComputer(torch.nn.Module):
         assert species.shape == coordinates.shape[:-1]
 
         if cell is None and pbc is None:
-            aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, None, self.use_cuda_extension)
+            if self.use_cuda_extension:
+                aev = compute_cuaev(species, coordinates, self.triu_index, self.constants(), self.sizes, None)
+            else:
+                aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, None)
         else:
             assert (cell is not None and pbc is not None)
             cutoff = max(self.Rcr, self.Rca)
             shifts = compute_shifts(cell, pbc, cutoff)
-            aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, (cell, shifts), self.use_cuda_extension)
+            aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, (cell, shifts))
 
         return SpeciesAEV(species, aev)
