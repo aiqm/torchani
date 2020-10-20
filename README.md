@@ -60,7 +60,7 @@ To run the tests and examples, you must manually download a data package
 ./download.sh
 ```
 
-(Optional) To install AEV CUDA Extension (~6X speedup for AEV computation), please follow the instruction at [torchani/extension](https://github.com/aiqm/torchani/tree/master/torchani/extension).
+(Optional) To install AEV CUDA Extension (speedup for AEV computation), please follow the instruction at [torchani/extension](https://github.com/aiqm/torchani/tree/master/torchani/extension).
 
 # Citation
 

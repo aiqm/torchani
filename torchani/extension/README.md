@@ -1,9 +1,9 @@
 # CUAEV
 CUDA Extension for AEV calculation.
-Performance improvement is expected to be ~6X for AEV computation and ~2X for overall training workflow.
+Performance improvement is expected to be ~3X for AEV computation and ~1.5X for overall training workflow.
 
 ## Install
-In most cases, if gcc and cuda environment are well configured, runing the following command at `torchani/extension` directory will install the cuaev package.
+In most cases, if `gcc` and `cuda` environment are well configured, runing the following command at `torchani/extension` directory will install the cuaev package.
 ```bash
 pip install -e .
 ```
@@ -19,3 +19,13 @@ pip install -e .
 
 ## Limitations
 Current implementation of CUAEV does not support pbc and force calculation.
+
+## Benchmark
+Tested of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/torchani/tree/master/torchani/tools/training-aev-benchmark.py) on RTX 2080 Ti:
+
+|         ANI-1x          |     Without Shuffle     |         Shuffle         |
+|:-----------------------:|:-----------------------:|:-----------------------:|
+| Time per Epoch / Memory |  AEV / Total / GPU Mem  |  AEV / Total/ GPU Mem   |
+|   aev cuda extension    | 7.7s  / 26.3s / 2289 MB | 8.5s / 27.6s / 2425 MB  |
+|     aev python code     | 21.1s / 40.0s / 7361 MB | 28.7s / 47.8s / 3475 MB |
+|      improvements       |   2.74 / 1.52 / 3.22    |   3.38 / 1.73 / 1.43    |
