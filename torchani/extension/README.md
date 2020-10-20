@@ -2,7 +2,7 @@
 CUDA Extension for AEV calculation.
 Performance improvement is expected to be ~6X for AEV computation and ~2X for overall training workflow.
 
-### Install
+## Install
 In most cases, if gcc and cuda environment are well configured, runing the following command at `torchani/extension` directory will install the cuaev package.
 ```bash
 pip install -e .
@@ -17,5 +17,5 @@ module load gcc/7.3.0
 pip install -e .
 ```
 
-### Limitations
+## Limitations
 Current implementation of CUAEV does not support pbc and force calculation.
