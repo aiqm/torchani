@@ -21,7 +21,7 @@ pip install -e .
 Current implementation of CUAEV does not support pbc and force calculation.
 
 ## Benchmark
-Tested of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/torchani/tree/master/torchani/tools/training-aev-benchmark.py) on RTX 2080 Ti:
+Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/torchani/tree/master/torchani/tools/training-aev-benchmark.py) on RTX 2080 Ti:
 
 |         ANI-1x          |     Without Shuffle     |         Shuffle         |
 |:-----------------------:|:-----------------------:|:-----------------------:|
