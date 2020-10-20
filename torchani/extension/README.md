@@ -35,3 +35,10 @@ Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/
 |   aev cuda extension    | 7.7s  / 26.3s / 2289 MB | 8.5s / 27.6s / 2425 MB  |
 |     aev python code     | 21.1s / 40.0s / 7361 MB | 28.7s / 47.8s / 3475 MB |
 |      improvements       |   2.74 / 1.52 / 3.22    |   3.38 / 1.73 / 1.43    |
+
+## Test
+```bash
+cd torchani
+python tools/training-aev-benchmark.py download/dataset/ani-1x/sample.h5 -y
+python tests/testcuda.py
+```
