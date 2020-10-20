@@ -1,6 +1,6 @@
 # CUAEV
 CUDA Extension for AEV calculation.
-
+Performance improvement is expected to be ~6X for AEV computation and ~2X for overall training workflow.
 
 ### Install
 In most cases, if gcc and cuda environment are well configured, runing the following command will install the cuaev package.
@@ -16,7 +16,6 @@ module load cuda/10.0.130
 module load gcc/7.3.0
 pip install -e .
 ```
-
 
 ### Limitations
 Current implementation of CUAEV does not support pbc and force calculation.
