@@ -40,7 +40,7 @@ setup(
             name='cuaev',
             sources=['aev.cu'],
             include_dirs=include_dirs,
-            extra_compile_args={'cxx': ['-std=c++11'],
+            extra_compile_args={'cxx': ['-std=c++14'],
                                 'nvcc': nvcc_args})
     ],
     cmdclass={
