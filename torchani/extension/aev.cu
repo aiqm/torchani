@@ -358,7 +358,7 @@ int cubEncode(const DataT *d_in, DataT *d_unique_out, IndexT *d_counts_out,
                                      num_items, stream);
 
   int num_selected = 0;
-  cudaMemcpy(&num_selected, d_num_runs_out, sizeof(int), cudaMemcpyDefault);
+  cudaMemcpyAsync(&num_selected, d_num_runs_out, sizeof(int), cudaMemcpyDefault, stream);
 
   // CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
   // cudaFree(d_temp_storage);
@@ -389,7 +389,7 @@ int cubDeviceSelect(const DataT *d_in, DataT *d_out, int num_items,
                         d_num_selected_out, num_items, select_op, stream);
 
   int num_selected = 0;
-  cudaMemcpy(&num_selected, d_num_selected_out, sizeof(int), cudaMemcpyDefault);
+  cudaMemcpyAsync(&num_selected, d_num_selected_out, sizeof(int), cudaMemcpyDefault, stream);
 
   // CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
   // cudaFree(d_temp_storage);
@@ -418,14 +418,14 @@ DataT cubMax(const DataT *d_in, int num_items, DataT *d_out) {
                          num_items, stream);
 
   int maxVal = 0;
-  cudaMemcpy(&maxVal, d_out, sizeof(DataT), cudaMemcpyDefault);
+  cudaMemcpyAsync(&maxVal, d_out, sizeof(DataT), cudaMemcpyDefault, stream);
 
   // CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
   // cudaFree(d_temp_storage);
   return maxVal;
 }
 
-void initConsts(AEVScalarParams<float> &aev_params) {
+void initConsts(AEVScalarParams<float> &aev_params, cudaStream_t stream) {
   int num_species = aev_params.num_species;
   assert(num_species <= MAX_NSPECIES);
   // precompute the aev offsets and load to constand memory
@@ -442,8 +442,9 @@ void initConsts(AEVScalarParams<float> &aev_params) {
       offset += num_species - s;
     }
   }
-  cudaMemcpyToSymbol(csubaev_offsets, subaev_offsets,
-                     sizeof(int) * num_species * num_species);
+  cudaMemcpyToSymbolAsync(csubaev_offsets, subaev_offsets,
+			  sizeof(int) * num_species * num_species,
+			  0, cudaMemcpyDefault, stream);
   delete[] subaev_offsets;
 }
 
@@ -484,7 +485,7 @@ void cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
   }
 
   // precompute the aev offsets and load to constand memory
-  initConsts(aev_params);
+  initConsts(aev_params, stream);
 
   // buffer to store all the pairwise distance (Rij)
   PairDist<float> *d_Rij = 0;
