@@ -359,7 +359,7 @@ int cubEncode(const DataT *d_in, DataT *d_unique_out, IndexT *d_counts_out,
 
   int num_selected = 0;
   cudaMemcpyAsync(&num_selected, d_num_runs_out, sizeof(int), cudaMemcpyDefault, stream);
-
+  cudaStreamSynchronize(stream);
   // CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
   // cudaFree(d_temp_storage);
   return num_selected;
@@ -390,6 +390,7 @@ int cubDeviceSelect(const DataT *d_in, DataT *d_out, int num_items,
 
   int num_selected = 0;
   cudaMemcpyAsync(&num_selected, d_num_selected_out, sizeof(int), cudaMemcpyDefault, stream);
+  cudaStreamSynchronize(stream);
 
   // CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
   // cudaFree(d_temp_storage);
@@ -419,6 +420,7 @@ DataT cubMax(const DataT *d_in, int num_items, DataT *d_out) {
 
   int maxVal = 0;
   cudaMemcpyAsync(&maxVal, d_out, sizeof(DataT), cudaMemcpyDefault, stream);
+  cudaStreamSynchronize(stream);
 
   // CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
   // cudaFree(d_temp_storage);
