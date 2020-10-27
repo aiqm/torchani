@@ -27,10 +27,6 @@ template <typename DataT, typename IndexT = int> struct AEVScalarParams {
   IndexT num_species;
 };
 
-// cub::CachingDeviceAllocator
-//     g_allocator(2, 10, cub::CachingDeviceAllocator::INVALID_BIN, 1e9, false,
-//                 false);
-
 #define MAX_NSPECIES 10
 __constant__ int csubaev_offsets[MAX_NSPECIES * MAX_NSPECIES];
 
@@ -307,8 +303,7 @@ __global__ void cuRadialAEVs(
 }
 
 template <typename DataT>
-void cubScan(const DataT *d_in, DataT *d_out, int num_items) {
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+void cubScan(const DataT *d_in, DataT *d_out, int num_items, cudaStream_t stream) {
   auto& allocator = *c10::cuda::CUDACachingAllocator::get();
 
   // Determine temporary device storage requirements
@@ -320,22 +315,15 @@ void cubScan(const DataT *d_in, DataT *d_out, int num_items) {
   // Allocate temporary storage
   auto buffer_ = allocator.allocate(temp_storage_bytes);
   d_temp_storage = buffer_.get();
-  // CubDebugExit(
-  //     g_allocator.DeviceAllocate((void **)&d_temp_storage, temp_storage_bytes));
-  // cudaMalloc(&d_temp_storage, temp_storage_bytes);
 
   // Run exclusive prefix sum
   cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out,
                                 num_items, stream);
-
-  // CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
-  // cudaFree(d_temp_storage);
 }
 
 template <typename DataT, typename IndexT>
 int cubEncode(const DataT *d_in, DataT *d_unique_out, IndexT *d_counts_out,
-              int num_items, int *d_num_runs_out) {
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+              int num_items, int *d_num_runs_out, cudaStream_t stream) {
   auto& allocator = *c10::cuda::CUDACachingAllocator::get();
 
   // Determine temporary device storage requirements
@@ -348,9 +336,6 @@ int cubEncode(const DataT *d_in, DataT *d_unique_out, IndexT *d_counts_out,
   // Allocate temporary storage
   auto buffer_ = allocator.allocate(temp_storage_bytes);
   d_temp_storage = buffer_.get();
-  // cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CubDebugExit(
-  //     g_allocator.DeviceAllocate((void **)&d_temp_storage, temp_storage_bytes));
 
   // Run encoding
   cub::DeviceRunLengthEncode::Encode(d_temp_storage, temp_storage_bytes, d_in,
@@ -360,15 +345,12 @@ int cubEncode(const DataT *d_in, DataT *d_unique_out, IndexT *d_counts_out,
   int num_selected = 0;
   cudaMemcpyAsync(&num_selected, d_num_runs_out, sizeof(int), cudaMemcpyDefault, stream);
   cudaStreamSynchronize(stream);
-  // CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
-  // cudaFree(d_temp_storage);
   return num_selected;
 }
 
 template <typename DataT, typename LambdaOpT>
 int cubDeviceSelect(const DataT *d_in, DataT *d_out, int num_items,
-                    int *d_num_selected_out, LambdaOpT select_op) {
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+                    int *d_num_selected_out, LambdaOpT select_op, cudaStream_t stream) {
   auto& allocator = *c10::cuda::CUDACachingAllocator::get();
 
   // Determine temporary device storage requirements
@@ -380,9 +362,6 @@ int cubDeviceSelect(const DataT *d_in, DataT *d_out, int num_items,
   // Allocate temporary storage
   auto buffer_ = allocator.allocate(temp_storage_bytes);
   d_temp_storage = buffer_.get();
-  // cudaMalloc(&d_temp_storage, temp_storage_bytes);
-  // CubDebugExit(
-  //     g_allocator.DeviceAllocate((void **)&d_temp_storage, temp_storage_bytes));
 
   // Run selection
   cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out,
@@ -392,14 +371,11 @@ int cubDeviceSelect(const DataT *d_in, DataT *d_out, int num_items,
   cudaMemcpyAsync(&num_selected, d_num_selected_out, sizeof(int), cudaMemcpyDefault, stream);
   cudaStreamSynchronize(stream);
 
-  // CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
-  // cudaFree(d_temp_storage);
   return num_selected;
 }
 
 template <typename DataT>
-DataT cubMax(const DataT *d_in, int num_items, DataT *d_out) {
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+DataT cubMax(const DataT *d_in, int num_items, DataT *d_out, cudaStream_t stream) {
   auto& allocator = *c10::cuda::CUDACachingAllocator::get();
   // Determine temporary device storage requirements
   void *d_temp_storage = NULL;
@@ -408,11 +384,8 @@ DataT cubMax(const DataT *d_in, int num_items, DataT *d_out) {
                          num_items, stream);
 
   // Allocate temporary storage
-  // cudaMalloc(&d_temp_storage, temp_storage_bytes);
   auto buffer_ = allocator.allocate(temp_storage_bytes);
   d_temp_storage = buffer_.get();
-  // CubDebugExit(
-  //     g_allocator.DeviceAllocate((void **)&d_temp_storage, temp_storage_bytes));
 
   // Run min-reduction
   cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_out,
@@ -422,8 +395,6 @@ DataT cubMax(const DataT *d_in, int num_items, DataT *d_out) {
   cudaMemcpyAsync(&maxVal, d_out, sizeof(DataT), cudaMemcpyDefault, stream);
   cudaStreamSynchronize(stream);
 
-  // CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
-  // cudaFree(d_temp_storage);
   return maxVal;
 }
 
@@ -496,9 +467,6 @@ void cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
   auto buffer_size = sizeof(PairDist<float>) * total_natom_pairs;
   auto buffer_ = allocator.allocate(buffer_size);
   d_Rij = (PairDist<float> *)buffer_.get();
-  // CubDebugExit(g_allocator.DeviceAllocate(
-  //     (void **)&d_Rij, sizeof(PairDist<float>) * total_natom_pairs));
-  // cudaMalloc((void **)&d_Rij, sizeof(PairDist<float>) * total_natom_pairs);
 
   // init all Rij to inf
   PairDist<float> init;
@@ -510,16 +478,10 @@ void cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
   PairDist<float> *d_radialRij = 0;
   auto buffer2_ = allocator.allocate(buffer_size);
   d_radialRij = (PairDist<float> *)buffer2_.get();
-  // CubDebugExit(g_allocator.DeviceAllocate(
-  //     (void **)&d_radialRij, sizeof(PairDist<float>) * total_natom_pairs));
-  // cudaMalloc((void **)&d_radialRij, sizeof(PairDist<float>) *
-  // total_natom_pairs);
 
   int *d_count_out = 0;
   auto buffer3_ = allocator.allocate(sizeof(int));
   d_count_out = (int *)buffer3_.get();
-  // CubDebugExit(g_allocator.DeviceAllocate((void **)&d_count_out, sizeof(int)));
-  // cudaMalloc((void **)&d_count_out, workspace_size);
 
   const int block_size = 64;
   auto start = std::chrono::steady_clock::now();
@@ -538,7 +500,7 @@ void cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
     // Rcr
     int nRadialRij = cubDeviceSelect(
         d_Rij, d_radialRij, total_natom_pairs, d_count_out,
-        [=] __device__(const PairDist<float> d) { return d.Rij <= Rcr; });
+        [=] __device__(const PairDist<float> d) { return d.Rij <= Rcr; }, stream);
 
     int nblocks = (nRadialRij * 8 + block_size - 1) / block_size;
     cuRadialAEVs<int, float, 8><<<nblocks, block_size, 0, stream>>>(
@@ -556,42 +518,30 @@ void cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
     // <= Rca
     int nAngularRij = cubDeviceSelect(
         d_radialRij, d_angularRij, nRadialRij, d_count_out,
-        [=] __device__(const PairDist<float> d) { return d.Rij <= Rca; });
+        [=] __device__(const PairDist<float> d) { return d.Rij <= Rca; }, stream);
 
     PairDist<float> *d_centralAtom = 0;
     auto buffer_size4 = sizeof(PairDist<float>) * nAngularRij;
     auto buffer4_ = allocator.allocate(buffer_size4);
     d_centralAtom = (PairDist<float> *)buffer4_.get();
-    // CubDebugExit(g_allocator.DeviceAllocate(
-    //     (void **)&d_centralAtom, sizeof(PairDist<float>) * nAngularRij));
-    // cudaMalloc((void **)&d_centralAtom, sizeof(PairDist<float>) *
-    // nAngularRij);
 
     int *d_numPairsPerCenterAtom = 0;
     auto buffer_size5 = sizeof(int) * nAngularRij;
     auto buffer5_ = allocator.allocate(buffer_size5);
     d_numPairsPerCenterAtom = (int *)buffer5_.get();
-    // CubDebugExit(g_allocator.DeviceAllocate((void **)&d_numPairsPerCenterAtom,
-    //                                         sizeof(int) * nAngularRij));
-    // cudaMalloc((void **)&d_numPairsPerCenterAtom, sizeof(int) * nAngularRij);
 
     // group by center atom
     int ncenter_atoms =
         cubEncode(d_angularRij, d_centralAtom, d_numPairsPerCenterAtom,
-                  nAngularRij, d_count_out);
+                  nAngularRij, d_count_out, stream);
 
     int *d_centerAtomStartIdx = 0;
     auto buffer_size6 = sizeof(int) * ncenter_atoms;
     auto buffer6_ = allocator.allocate(buffer_size6);
     d_centerAtomStartIdx = (int *)buffer6_.get();
-    // CubDebugExit(g_allocator.DeviceAllocate((void **)&d_centerAtomStartIdx,
-    //                                         sizeof(int) * ncenter_atoms));
-    // cudaMalloc((void **)&d_centerAtomStartIdx, sizeof(int) * ncenter_atoms);
 
-    cubScan(d_numPairsPerCenterAtom, d_centerAtomStartIdx, ncenter_atoms);
+    cubScan(d_numPairsPerCenterAtom, d_centerAtomStartIdx, ncenter_atoms, stream);
     {
-
-      // ncenter_atoms = 1;
       const int nthreads_per_catom = 32;
       const int nblocks_angAEV =
           (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
@@ -606,7 +556,7 @@ void cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
       };
 
       int maxNbrsPerCenterAtom =
-          cubMax(d_numPairsPerCenterAtom, ncenter_atoms, d_count_out);
+	cubMax(d_numPairsPerCenterAtom, ncenter_atoms, d_count_out, stream);
 
       int maxnbrs_per_atom_aligned = align<4>(maxNbrsPerCenterAtom);
 
@@ -624,18 +574,6 @@ void cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
           d_centerAtomStartIdx, aev_params, maxnbrs_per_atom_aligned,
           align<4>(aev_params.angular_length), ncenter_atoms);
     }
-
-    // CubDebugExit(g_allocator.DeviceFree(d_centerAtomStartIdx));
-    // CubDebugExit(g_allocator.DeviceFree(d_numPairsPerCenterAtom));
-    // CubDebugExit(g_allocator.DeviceFree(d_centralAtom));
-    // CubDebugExit(g_allocator.DeviceFree(d_count_out));
-    // CubDebugExit(g_allocator.DeviceFree(d_radialRij));
-    // CubDebugExit(g_allocator.DeviceFree(d_Rij));
-    // cudaFree(d_numPairsPerCenterAtom);
-    // cudaFree(d_centralAtom);
-    // cudaFree(d_count_out);
-    // cudaFree(d_radialRij);
-    // cudaFree(d_Rij);
   } else {
     std::cerr << "Type Error!\n";
   }
