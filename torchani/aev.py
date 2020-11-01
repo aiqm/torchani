@@ -138,8 +138,7 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
         cutoff (float): the cutoff inside which atoms are considered pairs
         shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts
     """
-    coordinates = coordinates.detach()
-    coordinates.masked_fill_(padding_mask.unsqueeze(-1), math.nan)
+    coordinates = coordinates.detach().masked_fill(padding_mask.unsqueeze(-1), math.nan)
     cell = cell.detach()
     num_atoms = padding_mask.shape[1]
     num_mols = padding_mask.shape[0]
@@ -188,8 +187,7 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: floa
             (molecules, atoms, 3) for atom coordinates.
         cutoff (float): the cutoff inside which atoms are considered pairs
     """
-    coordinates = coordinates.detach()
-    coordinates.masked_fill_(padding_mask.unsqueeze(-1), math.nan)
+    coordinates = coordinates.detach().masked_fill(padding_mask.unsqueeze(-1), math.nan)
     current_device = coordinates.device
     num_atoms = padding_mask.shape[1]
     num_mols = padding_mask.shape[0]
