@@ -7,9 +7,9 @@ __global__ void kernel() {
 }
 
 std::string say_hello() {
-  return "Hello World!!!"
+  return "Hello World!!!";
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-  m.def("say_hello", &say_hello, "Hello World");
+  m.def("cuComputeAEV", &say_hello, "Hello World");
 }
