@@ -1,11 +1,4 @@
-#include "nvToolsExt.h"
-#include <chrono>
 #include <cub/cub.cuh>
-#include <cub/util_allocator.cuh>
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <iostream>
-#include <thrust/device_vector.h>
 #include <thrust/equal.h>
 #include <torch/extension.h>
 
@@ -313,8 +306,8 @@ void cubScan(const DataT *d_in, DataT *d_out, int num_items, cudaStream_t stream
                                 num_items, stream);
 
   // Allocate temporary storage
-  auto buffer_ = allocator.allocate(temp_storage_bytes);
-  d_temp_storage = buffer_.get();
+  auto buffer_tmp = allocator.allocate(temp_storage_bytes);
+  d_temp_storage = buffer_tmp.get();
 
   // Run exclusive prefix sum
   cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out,
@@ -334,8 +327,8 @@ int cubEncode(const DataT *d_in, DataT *d_unique_out, IndexT *d_counts_out,
                                      num_items, stream);
 
   // Allocate temporary storage
-  auto buffer_ = allocator.allocate(temp_storage_bytes);
-  d_temp_storage = buffer_.get();
+  auto buffer_tmp = allocator.allocate(temp_storage_bytes);
+  d_temp_storage = buffer_tmp.get();
 
   // Run encoding
   cub::DeviceRunLengthEncode::Encode(d_temp_storage, temp_storage_bytes, d_in,
@@ -360,8 +353,8 @@ int cubDeviceSelect(const DataT *d_in, DataT *d_out, int num_items,
                         d_num_selected_out, num_items, select_op);
 
   // Allocate temporary storage
-  auto buffer_ = allocator.allocate(temp_storage_bytes);
-  d_temp_storage = buffer_.get();
+  auto buffer_tmp = allocator.allocate(temp_storage_bytes);
+  d_temp_storage = buffer_tmp.get();
 
   // Run selection
   cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out,
@@ -384,8 +377,8 @@ DataT cubMax(const DataT *d_in, int num_items, DataT *d_out, cudaStream_t stream
                          num_items, stream);
 
   // Allocate temporary storage
-  auto buffer_ = allocator.allocate(temp_storage_bytes);
-  d_temp_storage = buffer_.get();
+  auto buffer_tmp = allocator.allocate(temp_storage_bytes);
+  d_temp_storage = buffer_tmp.get();
 
   // Run min-reduction
   cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_out,
@@ -435,8 +428,6 @@ void cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
   
   const int n_molecules = species_t.size(0);
   const int max_natoms_per_mol = species_t.size(1);
-  // std::cout << "Running cuComputeAEV with " << n_molecules << "x" <<
-  // max_natoms_per_mol << "\n";
 
   AEVScalarParams<float> aev_params;
   aev_params.Rca = Rca;
@@ -461,12 +452,10 @@ void cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
   initConsts(aev_params, stream);
 
   // buffer to store all the pairwise distance (Rij)
-  PairDist<float> *d_Rij = 0;
   auto total_natom_pairs =
       n_molecules * max_natoms_per_mol * max_natoms_per_mol;
-  auto buffer_size = sizeof(PairDist<float>) * total_natom_pairs;
-  auto buffer_ = allocator.allocate(buffer_size);
-  d_Rij = (PairDist<float> *)buffer_.get();
+  auto buffer_Rij = allocator.allocate(sizeof(PairDist<float>) * total_natom_pairs);
+  PairDist<float> *d_Rij = (PairDist<float> *)buffer_Rij.get();
 
   // init all Rij to inf
   PairDist<float> init;
@@ -474,14 +463,12 @@ void cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
   thrust::fill(policy, d_Rij, d_Rij + total_natom_pairs, init);
 
   // buffer to store all the pairwise distance that is needed for Radial AEV
-  // computation
-  PairDist<float> *d_radialRij = 0;
-  auto buffer2_ = allocator.allocate(buffer_size);
-  d_radialRij = (PairDist<float> *)buffer2_.get();
+  // computation  
+  auto buffer_radialRij = allocator.allocate(sizeof(PairDist<float>) * total_natom_pairs);
+  PairDist<float> *d_radialRij  = (PairDist<float> *)buffer_radialRij.get();
 
-  int *d_count_out = 0;
-  auto buffer3_ = allocator.allocate(sizeof(int));
-  d_count_out = (int *)buffer3_.get();
+  auto buffer_count = allocator.allocate(sizeof(int));
+  int *d_count_out = (int *)buffer_count.get();
 
   const int block_size = 64;
   auto start = std::chrono::steady_clock::now();
@@ -520,25 +507,19 @@ void cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
         d_radialRij, d_angularRij, nRadialRij, d_count_out,
         [=] __device__(const PairDist<float> d) { return d.Rij <= Rca; }, stream);
 
-    PairDist<float> *d_centralAtom = 0;
-    auto buffer_size4 = sizeof(PairDist<float>) * nAngularRij;
-    auto buffer4_ = allocator.allocate(buffer_size4);
-    d_centralAtom = (PairDist<float> *)buffer4_.get();
+    auto buffer_centralAtom = allocator.allocate(sizeof(PairDist<float>) * nAngularRij);
+    PairDist<float> *d_centralAtom = (PairDist<float> *)buffer_centralAtom.get();
 
-    int *d_numPairsPerCenterAtom = 0;
-    auto buffer_size5 = sizeof(int) * nAngularRij;
-    auto buffer5_ = allocator.allocate(buffer_size5);
-    d_numPairsPerCenterAtom = (int *)buffer5_.get();
+    auto buffer_numPairsPerCenterAtom = allocator.allocate(sizeof(int) * nAngularRij);
+    int *d_numPairsPerCenterAtom = (int *)buffer_numPairsPerCenterAtom.get();
 
     // group by center atom
     int ncenter_atoms =
         cubEncode(d_angularRij, d_centralAtom, d_numPairsPerCenterAtom,
                   nAngularRij, d_count_out, stream);
 
-    int *d_centerAtomStartIdx = 0;
-    auto buffer_size6 = sizeof(int) * ncenter_atoms;
-    auto buffer6_ = allocator.allocate(buffer_size6);
-    d_centerAtomStartIdx = (int *)buffer6_.get();
+    auto buffer_centerAtomStartIdx = allocator.allocate(sizeof(int) * ncenter_atoms);
+    int *d_centerAtomStartIdx = (int *)buffer_centerAtomStartIdx.get();
 
     cubScan(d_numPairsPerCenterAtom, d_centerAtomStartIdx, ncenter_atoms, stream);
     {
