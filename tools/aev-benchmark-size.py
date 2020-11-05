@@ -4,7 +4,6 @@ import torchani
 import pynvml
 import gc
 import os
-import mdtraj
 from ase.io import read
 import argparse
 
@@ -73,10 +72,10 @@ if __name__ == "__main__":
 
     for file in files:
         datafile = os.path.join(path, f'molecules/{file}')
-        mol = mdtraj.load(datafile)
-        mol1 = read(f'molecules/{file}')
-        species = torch.tensor([mol1.get_atomic_numbers()], device=device)
-        positions = torch.tensor([mol1.get_positions()], dtype=torch.float32, requires_grad=False, device=device)
+        print(datafile)
+        mol = read(datafile)
+        species = torch.tensor([mol.get_atomic_numbers()], device=device)
+        positions = torch.tensor([mol.get_positions()], dtype=torch.float32, requires_grad=False, device=device)
         print(f'File: {file}, Molecule size: {species.shape[-1]}\n')
 
         nnp = torchani.models.ANI2x(periodic_table_index=True, model_index=None).to(device)
