@@ -58,7 +58,7 @@ def cuda_extension_kwargs():
                 'build_ext': BuildExtension
             })
         return cuda_extension_kwargs
-    except RuntimeError:
+    except OSError:
         return {}
 
 
