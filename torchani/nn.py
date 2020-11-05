@@ -55,21 +55,28 @@ class ANIModel(torch.nn.ModuleDict):
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         species, aev = species_aev
-        assert species.shape == aev.shape[:-1]
+        atomic_energies = self._atomic_energies((species, aev))
+        # shape of atomic energies is (C, A)
+        return SpeciesEnergies(species, torch.sum(atomic_energies, dim=1))
 
+    @torch.jit.export
+    def _atomic_energies(self, species_aev: Tuple[Tensor, Tensor]) -> Tensor:
+        # Obtain the atomic energies associated with a given tensor of AEV's
+        species, aev = species_aev
+        assert species.shape == aev.shape[:-1]
         species_ = species.flatten()
         aev = aev.flatten(0, 1)
 
         output = aev.new_zeros(species_.shape)
 
-        for i, (_, m) in enumerate(self.items()):
+        for i, m in enumerate(self.values()):
             mask = (species_ == i)
             midx = mask.nonzero().flatten()
             if midx.shape[0] > 0:
                 input_ = aev.index_select(0, midx)
                 output.masked_scatter_(mask, m(input_).flatten())
         output = output.view_as(species)
-        return SpeciesEnergies(species, torch.sum(output, dim=1))
+        return output
 
 
 class Ensemble(torch.nn.ModuleList):
