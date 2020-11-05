@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
 
 def cuda_extension():
     import torch
-    from torch.utils.cpp_extension import BuildExtension, CUDAExtension
+    from torch.utils.cpp_extension import CUDAExtension
 
     nvcc_args = ["-gencode=arch=compute_50,code=sm_50", "-gencode=arch=compute_60,code=sm_60",
                  "-gencode=arch=compute_61,code=sm_61", "-gencode=arch=compute_70,code=sm_70",
@@ -58,7 +58,7 @@ def cuda_extension_kwargs():
                 'build_ext': BuildExtension
             })
         return cuda_extension_kwargs
-    except:
+    except RuntimeError:
         return {}
 
 
