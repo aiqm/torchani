@@ -1,17 +1,13 @@
+#include <cub/cub.cuh>
 #include <string>
 #include <torch/extension.h>
-#include <cub/cub.cuh>
 
-bool is_installed() {
-  return true;
-}
+bool is_installed() { return true; }
 
-__global__ void kernel() {
-  printf("Hello World!");
-}
+__global__ void kernel() { printf("Hello World!"); }
 
 std::string say_hello() {
-  kernel<<<1,1>>>();
+  kernel<<<1, 1>>>();
   return "Hello World!!!";
 }
 
