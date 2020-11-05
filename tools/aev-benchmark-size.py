@@ -71,7 +71,7 @@ if __name__ == "__main__":
     files = ['small.pdb', '1hz5.pdb', '6W8H.pdb']
 
     for file in files:
-        datafile = os.path.join(path, f'molecules/{file}')
+        datafile = os.path.join(path, f'../dataset/pdb/{file}')
         mol = read(datafile)
         species = torch.tensor([mol.get_atomic_numbers()], device=device)
         positions = torch.tensor([mol.get_positions()], dtype=torch.float32, requires_grad=False, device=device)
