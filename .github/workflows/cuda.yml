@@ -1,4 +1,4 @@
-name: tools
+name: cuda
 
 on:
   pull_request:
