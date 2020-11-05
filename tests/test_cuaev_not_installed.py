@@ -8,7 +8,6 @@ class TestCUAEV(unittest.TestCase):
         self.assertFalse(torchani.cuaev.is_installed())
 
     def testCuComputeAEV(self):
-        # TODO: this should be removed when a real cuaev is merged
         self.assertRaisesRegex(RuntimeError, "cuaev is not installed", lambda: torchani.cuaev.cuComputeAEV())
 
 
