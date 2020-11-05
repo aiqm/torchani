@@ -28,9 +28,8 @@ jobs:
     - name: Install cuda
       run: ci/install_cuda.sh
     - name: Install dependencies
-      run: |
-        ci/install_dependencies.sh
-        pip install .
+      run: ci/install_dependencies.sh
+    - name: Install TorchANI
+      run: python setup install
     - name: Run cuaev stub test
-      run: |
-        pytest tests/test_cuaev.py
+      run: pytest tests/test_cuaev.py
