@@ -32,4 +32,4 @@ jobs:
     - name: Install TorchANI
       run: python setup.py install
     - name: Run cuaev test
-      run: pytest tests/test_cuaev.py
+      run: pytest tests/test_cuaev.py -v
