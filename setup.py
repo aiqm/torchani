@@ -11,6 +11,7 @@ except ImportError:
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+
 def cuda_extension():
     nvcc_args = ["-gencode=arch=compute_50,code=sm_50", "-gencode=arch=compute_60,code=sm_60",
                  "-gencode=arch=compute_61,code=sm_61", "-gencode=arch=compute_70,code=sm_70",
@@ -40,12 +41,13 @@ def cuda_extension():
             subprocess.run(commands, shell=True, check=True, universal_newlines=True)
         include_dirs.append(os.path.abspath("./include"))
     return CUDAExtension(
-            name='_real_cuaev',
-            pkg='torchani.cuaev._real_cuaev',
-            sources=['torchani/cuaev/aev.cu'],
-            include_dirs=include_dirs,
-            extra_compile_args={'cxx': ['-std=c++14'],
-                                'nvcc': nvcc_args})
+        name='_real_cuaev',
+        pkg='torchani.cuaev._real_cuaev',
+        sources=['torchani/cuaev/aev.cu'],
+        include_dirs=include_dirs,
+        extra_compile_args={'cxx': ['-std=c++14'],
+                            'nvcc': nvcc_args})
+
 
 setup(
     name='torchani',
