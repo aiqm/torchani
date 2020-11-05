@@ -30,6 +30,6 @@ jobs:
     - name: Install dependencies
       run: ci/install_dependencies.sh
     - name: Install TorchANI
-      run: python setup install
+      run: python setup.py install
     - name: Run cuaev stub test
       run: pytest tests/test_cuaev.py

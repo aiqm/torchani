@@ -40,7 +40,7 @@ def cuda_extension():
             subprocess.run(commands, shell=True, check=True, universal_newlines=True)
         include_dirs.append(os.path.abspath("./include"))
     return CUDAExtension(
-            name='cuaev',
+            name='torchani.cuaev._real_cuaev',
             sources=['torchani/cuaev/aev.cu'],
             include_dirs=include_dirs,
             extra_compile_args={'cxx': ['-std=c++14'],
