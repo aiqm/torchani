@@ -2,17 +2,14 @@ import os
 import subprocess
 from setuptools import setup, find_packages
 
-try:
-    import torch
-    from torch.utils.cpp_extension import BuildExtension, CUDAExtension
-except ImportError:
-    raise RuntimeError("Please install PyTorch before installing TorchANI.")
-
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
 def cuda_extension():
+    import torch
+    from torch.utils.cpp_extension import BuildExtension, CUDAExtension
+
     nvcc_args = ["-gencode=arch=compute_50,code=sm_50", "-gencode=arch=compute_60,code=sm_60",
                  "-gencode=arch=compute_61,code=sm_61", "-gencode=arch=compute_70,code=sm_70",
                  "-Xptxas=-v", '--expt-extended-lambda', '-use_fast_math']
@@ -50,6 +47,21 @@ def cuda_extension():
         optional=True)
 
 
+def cuda_extension_kwargs():
+    try:
+        from torch.utils.cpp_extension import BuildExtension
+        cuda_extension_kwargs = dict(
+            ext_modules=[
+                cuda_extension()
+            ],
+            cmdclass={
+                'build_ext': BuildExtension
+            })
+        return cuda_extension_kwargs
+    except:
+        return {}
+
+
 setup(
     name='torchani',
     description='PyTorch implementation of ANI',
@@ -68,10 +80,5 @@ setup(
         'lark-parser',
         'requests'
     ],
-    ext_modules=[
-        cuda_extension()
-    ],
-    cmdclass={
-        'build_ext': BuildExtension
-    }
+    **cuda_extension_kwargs()
 )
