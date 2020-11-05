@@ -16,7 +16,6 @@ jobs:
       max-parallel: 4
       matrix:
         python-version: [3.8]
-        cuda-version: [11.0]
 
     steps:
     - uses: actions/checkout@v1
@@ -27,8 +26,7 @@ jobs:
     - name: Fetch submodules
       run: git submodule update --init
     - name: Install cuda
-      run: |
-        ci/install_cuda.sh ${{ matrix.cuda-version }}
+      run: ci/install_cuda.sh
     - name: Install dependencies
       run: |
         ci/install_dependencies.sh
