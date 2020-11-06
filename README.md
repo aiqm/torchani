@@ -33,26 +33,25 @@ TorchANI is a pytorch implementation of ANI. It is currently under alpha release
 
 # Install
 
-TorchANI requires the latest preview version of PyTorch. You can install PyTorch by the following commands (assuming cuda10):
+TorchANI requires the latest preview version of PyTorch. Please install PyTorch before installing TorchANI.
 
-```bash
-pip install numpy
-pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
-```
+Please see [PyTorch's official site](https://pytorch.org/get-started/locally/) for instructions of installing latest preview version of PyTorch.
 
-If you updated TorchANI, you may also need to update PyTorch:
+Note that if you updated TorchANI, you may also need to update PyTorch.
 
-```bash
-pip install --upgrade --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
-```
-
-After installing the correct PyTorch, you can install TorchANI by:
+After installing the correct PyTorch, you can install TorchANI by `pip` or `conda`:
 
 ```bash
 pip install torchani
 ```
 
-See also [PyTorch's official site](https://pytorch.org/get-started/locally/) for instructions of installing latest preview version of PyTorch.
+or
+
+```bash
+conda install -c conda-forge torchani
+```
+
+See https://github.com/conda-forge/torchani-feedstock for more information about the conda package.
 
 To run the tests and examples, you must manually download a data package
 
