@@ -38,3 +38,4 @@ Untitled.ipynb
 /test*.py
 .coverage
 htmlcov/
+/include
