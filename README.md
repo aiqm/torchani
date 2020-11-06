@@ -90,10 +90,22 @@ pip install -e .
 After TorchANI has been installed, you can build the documents by running `sphinx-build docs build`. But make sure you
 install dependencies:
 ```bash
-pip install sphinx sphinx-gallery pillow matplotlib sphinx_rtd_theme
+pip install -r docs_requirements.txt
 ```
 
-To manually run unit tests, do `python setup.py nosetests`
+To manually run unit tests, do
+
+```bash
+pytest --ignore tests/test_cuaev.py -v
+```
+
+or
+
+```bash
+pytest --ignore tests/test_cuaev_not_installed.py -v
+```
+
+depending on whether you installed `cuaev`.
 
 If you opened a pull request, you could see your generated documents at https://aiqm.github.io/torchani-test-docs/ after you `docs` check succeed.
 Keep in mind that this repository is only for the purpose of convenience of development, and only keeps the latest push.
