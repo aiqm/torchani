@@ -1,5 +1,7 @@
 #!/bin/bash
 
 pip install --upgrade pip
-pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+pip install twine wheel
+pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu110/torch_nightly.html
 pip install -r test_requirements.txt
+pip install -r docs_requirements.txt

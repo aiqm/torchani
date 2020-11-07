@@ -6,7 +6,19 @@ import pickle
 
 path = os.path.dirname(os.path.realpath(__file__))
 
+skipIfNoGPU = unittest.skipIf(not torch.cuda.is_available(),
+                              'There is no device to run this test')
 
+
+@unittest.skipIf(torchani.cuaev.is_installed, "only valid when cuaev not installed")
+class TestCUAEVNotInstalled(unittest.TestCase):
+
+    def testCuComputeAEV(self):
+        self.assertRaisesRegex(RuntimeError, "cuaev is not installed", lambda: torchani.cuaev.cuComputeAEV())
+
+
+@skipIfNoGPU
+@unittest.skipIf(not torchani.cuaev.is_installed, "only valid when cuaev is installed")
 class TestCUAEV(unittest.TestCase):
 
     def setUp(self):
