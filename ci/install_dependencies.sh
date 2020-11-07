@@ -3,6 +3,10 @@
 pip install --upgrade pip
 pip install twine wheel
 # pip install --pre torch -f https://download.pytorch.org/whl/nightly/cu110/torch_nightly.html
+
+# Upstream have bug on TorchScript CUDA extension support
+# this is pytorch build with that bug fixed. This is only temporarily,
+# and will be replaced by upstream pytorch once the fix is merged
 wget --verbose https://www.dropbox.com/s/f6pf5jzbhut3yu1/torch-1.8.0a0-cp38-cp38-linux_x86_64.whl?dl=0 -o torch.whl
 pip install torch.whl
 
