@@ -2,6 +2,14 @@ import os
 import subprocess
 from setuptools import setup, find_packages
 from distutils import log
+import sys
+
+BUILD_CUAEV = '--cuaev' in sys.argv
+if BUILD_CUAEV:
+    sys.argv.remove('--cuaev')
+
+if not BUILD_CUAEV:
+    log.warn("Will not install cuaev")
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -52,26 +60,28 @@ def cuda_extension():
         pkg='torchani.cuaev._real_cuaev',
         sources=['torchani/cuaev/aev.cu'],
         include_dirs=maybe_download_cub(),
-        extra_compile_args={'cxx': ['-std=c++14'],
-                            'nvcc': nvcc_args},
+        extra_compile_args={'nvcc': nvcc_args},
         optional=True)
 
 
-def cuda_extension_kwargs():
-    try:
-        from torch.utils.cpp_extension import BuildExtension
-        cuda_extension_kwargs = dict(
-            ext_modules=[
-                cuda_extension()
-            ],
-            cmdclass={
-                'build_ext': BuildExtension
-            })
-        return cuda_extension_kwargs
-    except OSError:
-        return {}
-    except ImportError:
-        return {}
+def cuaev_kwargs():
+    if not BUILD_CUAEV:
+        return dict(
+            provides=['torchani']
+        )
+    from torch.utils.cpp_extension import BuildExtension
+    kwargs = dict(
+        provides=[
+            'torchani',
+            'torchani.cuaev',
+        ],
+        ext_modules=[
+            cuda_extension()
+        ],
+        cmdclass={
+            'build_ext': BuildExtension,
+        })
+    return kwargs
 
 
 setup(
@@ -90,7 +100,8 @@ setup(
     install_requires=[
         'torch',
         'lark-parser',
-        'requests'
+        'requests',
+        'importlib_metadata',
     ],
-    **cuda_extension_kwargs()
+    **cuaev_kwargs()
 )

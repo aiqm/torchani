@@ -6,10 +6,15 @@ skipIfNoGPU = unittest.skipIf(not torch.cuda.is_available(),
                               'There is no device to run this test')
 
 
-class TestCUAEV(unittest.TestCase):
+@unittest.skipIf(torchani.cuaev.is_installed, "only valid when cuaev not installed")
+class TestCUAEVNotInstalled(unittest.TestCase):
 
-    def testInstalled(self):
-        self.assertTrue(torchani.cuaev.is_installed())
+    def testCuComputeAEV(self):
+        self.assertRaisesRegex(RuntimeError, "cuaev is not installed", lambda: torchani.cuaev.cuComputeAEV())
+
+
+@unittest.skipIf(not torchani.cuaev.is_installed, "only valid when cuaev is installed")
+class TestCUAEV(unittest.TestCase):
 
     @skipIfNoGPU
     def testHello(self):
