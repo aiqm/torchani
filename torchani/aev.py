@@ -321,19 +321,14 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
 @torch.jit.unused
 def compute_cuaev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
                   constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
-                  sizes: Tuple[int, int, int, int, int], cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
+                  num_species:int, cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
-    num_species, radial_sublength, radial_length, angular_sublength, angular_length = sizes
-    num_molecules = species.shape[0]
-    num_atoms = species.shape[1]
     coordinates_ = coordinates
     coordinates = coordinates_.flatten(0, 1)
 
     assert cell_shifts is None, "Current implementation of cuaev does not support pbc."
     species_int = species.to(torch.int32)
-    cu_aev = torch.zeros([num_molecules, num_atoms, radial_length + angular_length], dtype=coordinates.dtype, device=coordinates.device)
-    cuaev.cuComputeAEV(coordinates_, species_int, Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), cu_aev, num_species)
-    return cu_aev
+    return cuaev.cuComputeAEV(coordinates_, species_int, Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), num_species)
 
 
 class AEVComputer(torch.nn.Module):
@@ -468,7 +463,7 @@ class AEVComputer(torch.nn.Module):
 
         if cell is None and pbc is None:
             if self.use_cuda_extension:
-                aev = compute_cuaev(species, coordinates, self.triu_index, self.constants(), self.sizes, None)
+                aev = compute_cuaev(species, coordinates, self.triu_index, self.num_species, self.sizes, None)
             else:
                 aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, None)
         else:
