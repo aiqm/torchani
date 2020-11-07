@@ -2,11 +2,11 @@
 #include <torch/extension.h>
 
 template <typename ScalarRealT = float>
-void cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
+torch::Tensor cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
                   double Rcr_, double Rca_, torch::Tensor EtaR_t,
                   torch::Tensor ShfR_t, torch::Tensor EtaA_t,
                   torch::Tensor Zeta_t, torch::Tensor ShfA_t,
-                  torch::Tensor ShfZ_t, torch::Tensor aev_t, int64_t num_species_)
+                  torch::Tensor ShfZ_t, int64_t num_species_)
 {
   ScalarRealT Rcr = Rcr_;
   ScalarRealT Rca = Rca_;
