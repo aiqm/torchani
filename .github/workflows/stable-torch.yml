@@ -9,7 +9,7 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  build:
+  stable-torch:
 
     runs-on: ubuntu-latest
     strategy:

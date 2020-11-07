@@ -1,4 +1,4 @@
-name: runnable submodules
+name: runnable-submodules
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  build:
+  runnable-submodules:
 
     runs-on: ubuntu-latest
     strategy:

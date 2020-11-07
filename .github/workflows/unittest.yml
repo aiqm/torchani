@@ -1,4 +1,4 @@
-name: unit tests
+name: unittests
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  build:
+  unittests:
 
     runs-on: ubuntu-latest
     strategy:

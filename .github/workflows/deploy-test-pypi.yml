@@ -9,7 +9,7 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  build:
+  deploy-test-pypi:
 
     runs-on: ubuntu-latest
     strategy:
