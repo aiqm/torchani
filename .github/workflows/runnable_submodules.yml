@@ -1,4 +1,4 @@
-name: runnable submodules
+name: runnable-submodules
 
 on:
   pull_request:
