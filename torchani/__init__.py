@@ -36,8 +36,16 @@ from . import utils
 from . import neurochem
 from . import models
 from . import units
-from . import cuaev
 from pkg_resources import get_distribution, DistributionNotFound
+import warnings
+import importlib_metadata
+
+has_cuaev = 'torchani.cuaev' in importlib_metadata.metadata(__package__).get_all('Provides')
+
+if has_cuaev:
+    import _real_cuaev
+else:
+    warnings.warn("cuaev not installed")
 
 try:
     __version__ = get_distribution(__name__).version
@@ -46,7 +54,7 @@ except DistributionNotFound:
     pass
 
 __all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble', 'SpeciesConverter',
-           'utils', 'neurochem', 'models', 'units', 'cuaev']
+           'utils', 'neurochem', 'models', 'units', 'has_cuaev']
 
 try:
     from . import ase  # noqa: F401
