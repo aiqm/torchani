@@ -5,7 +5,7 @@ on:
     types: [published]
 
 jobs:
-  build:
+  deploy-docs:
 
     runs-on: ubuntu-latest
     strategy:
