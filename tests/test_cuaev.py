@@ -11,7 +11,7 @@ class TestCUAEV(unittest.TestCase):
 
     def testJIT(self):
         def f(coordinates, species, Rcr: float, Rca: float, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species: int):
-            torch.ops.cuaev.cuComputeAEV(coordinates, species, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
+            return torch.ops.cuaev.cuComputeAEV(coordinates, species, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
         s = torch.jit.script(f)
         self.assertIn("cuaev::cuComputeAEV", str(s.graph))
 
