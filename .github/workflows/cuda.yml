@@ -5,6 +5,12 @@ on:
   push:
     branches:
       - master
+    paths:
+      - 'setup.py'
+      - 'torchani/cuaev/**'
+      - 'torchani/aev.py'
+      - 'ci/**'
+      - 'test/test_cuaev.py'
   schedule:
     - cron: '0 0 * * *'
 
