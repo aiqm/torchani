@@ -9,7 +9,7 @@ import struct
 import itertools
 import math
 import timeit
-import collections
+import collections.abc
 import sys
 from ..nn import ANIModel, Ensemble, Gaussian, Sequential
 from ..utils import EnergyShifter, ChemicalSymbolsToInts
