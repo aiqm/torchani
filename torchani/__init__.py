@@ -43,7 +43,7 @@ import importlib_metadata
 has_cuaev = 'torchani.cuaev' in importlib_metadata.metadata(__package__).get_all('Provides')
 
 if has_cuaev:
-    import _real_cuaev
+    import cuaev
 else:
     warnings.warn("cuaev not installed")
 
