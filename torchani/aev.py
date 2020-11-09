@@ -463,7 +463,7 @@ class AEVComputer(torch.nn.Module):
 
         if cell is None and pbc is None:
             if self.use_cuda_extension:
-                aev = compute_cuaev(species, coordinates, self.triu_index, self.num_species, self.sizes, None)
+                aev = compute_cuaev(species, coordinates, self.triu_index, self.constants(), self.num_species, None)
             else:
                 aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, None)
         else:
