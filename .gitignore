@@ -1,7 +1,6 @@
 *.prof
 __pycache__
 /data
-*.cpp
 a.out
 /test.py
 /.vscode
