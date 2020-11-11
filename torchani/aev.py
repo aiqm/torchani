@@ -4,10 +4,7 @@ import math
 import importlib
 from typing import Tuple, Optional, NamedTuple
 import sys
-
-CUAEV_INSTALLED = importlib.util.find_spec('cuaev') is not None  # type: ignore
-if CUAEV_INSTALLED:
-    import cuaev
+from . import cuaev
 
 if sys.version_info[:2] < (3, 7):
     class FakeFinal:
@@ -378,7 +375,7 @@ class AEVComputer(torch.nn.Module):
 
         # cuda aev
         if use_cuda_extension:
-            assert CUAEV_INSTALLED, "AEV cuda extension is not installed"
+            assert cuaev.is_installed, "AEV cuda extension is not installed"
         self.use_cuda_extension = use_cuda_extension
 
         # convert constant tensors to a ready-to-broadcast shape
