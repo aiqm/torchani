@@ -1,4 +1,3 @@
-#include <string>
 #include <torch/extension.h>
 
 template <typename ScalarRealT = float>
