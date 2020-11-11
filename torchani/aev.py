@@ -319,12 +319,10 @@ def compute_cuaev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
                   constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
                   num_species: int, cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
-    coordinates_ = coordinates
-    coordinates = coordinates_.flatten(0, 1)
 
     assert cell_shifts is None, "Current implementation of cuaev does not support pbc."
     species_int = species.to(torch.int32)
-    return cuaev.cuComputeAEV(coordinates_, species_int, Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), num_species)
+    return cuaev.cuComputeAEV(coordinates, species_int, Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), num_species)
 
 
 class AEVComputer(torch.nn.Module):
