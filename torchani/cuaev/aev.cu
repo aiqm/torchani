@@ -585,7 +585,3 @@ torch::Tensor cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
     std::cerr << "Type Error!\n";
   }
 }
-
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-  m.def("cuComputeAEV", &cuComputeAEV<float>, "CUDA method to compute AEVs");
-}
