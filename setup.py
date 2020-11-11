@@ -57,7 +57,7 @@ def cuda_extension():
     if cuda_version >= 11.1:
         nvcc_args.append("-gencode=arch=compute_86,code=sm_86")
     return CUDAExtension(
-        name='cuaev',
+        name='torchani.cuaev',
         pkg='torchani.cuaev',
         sources=glob.glob('torchani/cuaev/*'),
         include_dirs=maybe_download_cub(),
