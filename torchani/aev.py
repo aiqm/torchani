@@ -1,7 +1,6 @@
 import torch
 from torch import Tensor
 import math
-import importlib
 from typing import Tuple, Optional, NamedTuple
 import sys
 from . import cuaev
@@ -318,7 +317,7 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
 @torch.jit.unused
 def compute_cuaev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
                   constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
-                  num_species:int, cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
+                  num_species: int, cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     coordinates_ = coordinates
     coordinates = coordinates_.flatten(0, 1)
