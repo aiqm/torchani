@@ -39,12 +39,14 @@ from . import units
 from pkg_resources import get_distribution, DistributionNotFound
 import warnings
 import importlib_metadata
+import torch
 
 has_cuaev = 'torchani.cuaev' in importlib_metadata.metadata(__package__).get_all('Provides')
 
 if has_cuaev:
     # We need to import torchani.cuaev to tell PyTorch to initialize torch.ops.cuaev
     import cuaev  # noqa: F401
+    cuaev = torch.ops.cuaev  # noqa: F811
 else:
     warnings.warn("cuaev not installed")
 
