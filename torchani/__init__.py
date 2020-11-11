@@ -39,7 +39,6 @@ from . import units
 from pkg_resources import get_distribution, DistributionNotFound
 import warnings
 import importlib_metadata
-import torch
 
 has_cuaev = 'torchani.cuaev' in importlib_metadata.metadata(__package__).get_all('Provides')
 
