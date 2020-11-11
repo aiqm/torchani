@@ -6,20 +6,18 @@ skipIfNoGPU = unittest.skipIf(not torch.cuda.is_available(),
                               'There is no device to run this test')
 
 
-@unittest.skipIf(torchani.cuaev.is_installed, "only valid when cuaev not installed")
-class TestCUAEVNotInstalled(unittest.TestCase):
-
-    def testCuComputeAEV(self):
-        self.assertRaisesRegex(RuntimeError, "cuaev is not installed", lambda: torchani.cuaev.cuComputeAEV())
-
-
-@unittest.skipIf(not torchani.cuaev.is_installed, "only valid when cuaev is installed")
+@unittest.skipIf(not torchani.has_cuaev, "only valid when cuaev is installed")
 class TestCUAEV(unittest.TestCase):
+
+    def testJIT(self):
+        def f(coordinates, species, Rcr: float, Rca: float, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species: int):
+            return torch.ops.cuaev.cuComputeAEV(coordinates, species, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
+        s = torch.jit.script(f)
+        self.assertIn("cuaev::cuComputeAEV", str(s.graph))
 
     @skipIfNoGPU
     def testHello(self):
-        # TODO: this should be removed when a real cuaev is merged
-        self.assertEqual("Hello World!!!", torchani.cuaev.cuComputeAEV())
+        pass
 
 
 if __name__ == '__main__':
