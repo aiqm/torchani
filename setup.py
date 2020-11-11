@@ -60,7 +60,7 @@ def cuda_extension():
         pkg='torchani.cuaev',
         sources=os.listdir('torchani/cuaev/'),
         include_dirs=maybe_download_cub(),
-        extra_compile_args={'nvcc': nvcc_args},
+        extra_compile_args={'cxx': ['-std=c++14'], 'nvcc': nvcc_args},
         optional=True)
 
 
