@@ -102,9 +102,9 @@ def compute_shifts(cell: Tensor, pbc: Tensor, cutoff: float) -> Tensor:
     inv_distances = reciprocal_cell.norm(2, -1)
     num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
     num_repeats = torch.where(pbc, num_repeats, num_repeats.new_zeros(()))
-    r1 = torch.arange(1, num_repeats[0] + 1, device=cell.device)
-    r2 = torch.arange(1, num_repeats[1] + 1, device=cell.device)
-    r3 = torch.arange(1, num_repeats[2] + 1, device=cell.device)
+    r1 = torch.arange(1, num_repeats[0].item() + 1, device=cell.device)
+    r2 = torch.arange(1, num_repeats[1].item() + 1, device=cell.device)
+    r3 = torch.arange(1, num_repeats[2].item() + 1, device=cell.device)
     o = torch.zeros(1, dtype=torch.long, device=cell.device)
     return torch.cat([
         torch.cartesian_prod(r1, r2, r3),
@@ -348,6 +348,7 @@ class AEVComputer(torch.nn.Module):
     angular_length: Final[int]
     aev_length: Final[int]
     sizes: Final[Tuple[int, int, int, int, int]]
+    triu_index: Tensor
 
     def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species):
         super().__init__()
