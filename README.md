@@ -55,15 +55,13 @@ conda install -c conda-forge torchani
 
 See https://github.com/conda-forge/torchani-feedstock for more information about the conda package.
 
-To install TorchANI with `cuaev` support, see [cuaev.md](cuaev.md)
+By default TorchANI does not support `cuaev`. To install TorchANI with `cuaev` support, see [cuaev.md](cuaev.md)
 
 To run the tests and examples, you must manually download a data package
 
 ```bash
 ./download.sh
 ```
-
-(Optional) To install AEV CUDA Extension (speedup for AEV computation), please follow the instruction at [torchani/extension](https://github.com/aiqm/torchani/tree/master/torchani/extension).
 
 # Citation
 
