@@ -58,7 +58,7 @@ def cuda_extension():
     return CUDAExtension(
         name='cuaev',
         pkg='torchani.cuaev',
-        sources=['torchani/cuaev/aev.cu'],
+        sources=os.listdir('torchani/cuaev/'),
         include_dirs=maybe_download_cub(),
         extra_compile_args={'nvcc': nvcc_args},
         optional=True)
