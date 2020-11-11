@@ -489,101 +489,99 @@ torch::Tensor cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
 
   const int block_size = 64;
   auto start = std::chrono::steady_clock::now();
-  if ((species_t.dtype() == torch::kInt32) &&
-      (coordinates_t.dtype() == torch::kFloat32)) {
 
-    dim3 block(8, 8, 1);
-    // Compute pairwise distance (Rij) for all atom pairs in a molecule
-    pairwiseDistance<<<n_molecules, block,
-                       sizeof(float) * max_natoms_per_mol * 3, stream>>>(
+  TORCH_CHECK(species_t.dtype() == torch::kInt32);
+  TORCH_CHECK(coordinates_t.dtype() == torch::kFloat32);
+
+  dim3 block(8, 8, 1);
+  // Compute pairwise distance (Rij) for all atom pairs in a molecule
+  pairwiseDistance<<<n_molecules, block,
+                      sizeof(float) * max_natoms_per_mol * 3, stream>>>(
+      species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
+      coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      d_Rij, max_natoms_per_mol);
+
+  // Extract Rijs that is needed for RadialAEV comptuation i.e. all the Rij <=
+  // Rcr
+  int nRadialRij = cubDeviceSelect(
+      d_Rij, d_radialRij, total_natom_pairs, d_count_out,
+      [=] __device__(const PairDist<float> d) { return d.Rij <= Rcr; },
+      stream);
+
+  int nblocks = (nRadialRij * 8 + block_size - 1) / block_size;
+  cuRadialAEVs<int, float, 8><<<nblocks, block_size, 0, stream>>>(
+      species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
+      ShfR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      EtaR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      aev_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      d_radialRij, aev_params, nRadialRij);
+
+  // reuse buffer allocated for all Rij
+  // d_angularRij will store all the Rij required in Angular AEV computation
+  PairDist<float> *d_angularRij = d_Rij;
+
+  // Extract Rijs that is needed for AngularAEV comptuation i.e. all the Rij
+  // <= Rca
+  int nAngularRij = cubDeviceSelect(
+      d_radialRij, d_angularRij, nRadialRij, d_count_out,
+      [=] __device__(const PairDist<float> d) { return d.Rij <= Rca; },
+      stream);
+
+  auto buffer_centralAtom =
+      allocator.allocate(sizeof(PairDist<float>) * nAngularRij);
+  PairDist<float> *d_centralAtom =
+      (PairDist<float> *)buffer_centralAtom.get();
+
+  auto buffer_numPairsPerCenterAtom =
+      allocator.allocate(sizeof(int) * nAngularRij);
+  int *d_numPairsPerCenterAtom = (int *)buffer_numPairsPerCenterAtom.get();
+
+  // group by center atom
+  int ncenter_atoms =
+      cubEncode(d_angularRij, d_centralAtom, d_numPairsPerCenterAtom,
+                nAngularRij, d_count_out, stream);
+
+  auto buffer_centerAtomStartIdx =
+      allocator.allocate(sizeof(int) * ncenter_atoms);
+  int *d_centerAtomStartIdx = (int *)buffer_centerAtomStartIdx.get();
+
+  cubScan(d_numPairsPerCenterAtom, d_centerAtomStartIdx, ncenter_atoms,
+          stream);
+  {
+    const int nthreads_per_catom = 32;
+    const int nblocks_angAEV =
+        (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
+    auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
+      int sm_aev = sizeof(float) * align<4>(aev_params.angular_length);
+      int sxyz = sizeof(float) * max_nbrs * 3;
+      int sRij = sizeof(float) * max_nbrs;
+      int sfc = sizeof(float) * max_nbrs;
+      int sj = sizeof(int) * max_nbrs;
+
+      return (sm_aev + sxyz + sRij + sfc + sj) * ncatom_per_tpb;
+    };
+
+    int maxNbrsPerCenterAtom =
+        cubMax(d_numPairsPerCenterAtom, ncenter_atoms, d_count_out, stream);
+
+    int maxnbrs_per_atom_aligned = align<4>(maxNbrsPerCenterAtom);
+
+    cuAngularAEVs<<<nblocks_angAEV, block_size,
+                    smem_size(maxnbrs_per_atom_aligned,
+                              block_size / nthreads_per_catom),
+                    stream>>>(
         species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
         coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        d_Rij, max_natoms_per_mol);
-
-    // Extract Rijs that is needed for RadialAEV comptuation i.e. all the Rij <=
-    // Rcr
-    int nRadialRij = cubDeviceSelect(
-        d_Rij, d_radialRij, total_natom_pairs, d_count_out,
-        [=] __device__(const PairDist<float> d) { return d.Rij <= Rcr; },
-        stream);
-
-    int nblocks = (nRadialRij * 8 + block_size - 1) / block_size;
-    cuRadialAEVs<int, float, 8><<<nblocks, block_size, 0, stream>>>(
-        species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
-        ShfR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
-        EtaR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+        ShfA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+        ShfZ_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+        EtaA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+        Zeta_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
         aev_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-        d_radialRij, aev_params, nRadialRij);
-
-    // reuse buffer allocated for all Rij
-    // d_angularRij will store all the Rij required in Angular AEV computation
-    PairDist<float> *d_angularRij = d_Rij;
-
-    // Extract Rijs that is needed for AngularAEV comptuation i.e. all the Rij
-    // <= Rca
-    int nAngularRij = cubDeviceSelect(
-        d_radialRij, d_angularRij, nRadialRij, d_count_out,
-        [=] __device__(const PairDist<float> d) { return d.Rij <= Rca; },
-        stream);
-
-    auto buffer_centralAtom =
-        allocator.allocate(sizeof(PairDist<float>) * nAngularRij);
-    PairDist<float> *d_centralAtom =
-        (PairDist<float> *)buffer_centralAtom.get();
-
-    auto buffer_numPairsPerCenterAtom =
-        allocator.allocate(sizeof(int) * nAngularRij);
-    int *d_numPairsPerCenterAtom = (int *)buffer_numPairsPerCenterAtom.get();
-
-    // group by center atom
-    int ncenter_atoms =
-        cubEncode(d_angularRij, d_centralAtom, d_numPairsPerCenterAtom,
-                  nAngularRij, d_count_out, stream);
-
-    auto buffer_centerAtomStartIdx =
-        allocator.allocate(sizeof(int) * ncenter_atoms);
-    int *d_centerAtomStartIdx = (int *)buffer_centerAtomStartIdx.get();
-
-    cubScan(d_numPairsPerCenterAtom, d_centerAtomStartIdx, ncenter_atoms,
-            stream);
-    {
-      const int nthreads_per_catom = 32;
-      const int nblocks_angAEV =
-          (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
-      auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
-        int sm_aev = sizeof(float) * align<4>(aev_params.angular_length);
-        int sxyz = sizeof(float) * max_nbrs * 3;
-        int sRij = sizeof(float) * max_nbrs;
-        int sfc = sizeof(float) * max_nbrs;
-        int sj = sizeof(int) * max_nbrs;
-
-        return (sm_aev + sxyz + sRij + sfc + sj) * ncatom_per_tpb;
-      };
-
-      int maxNbrsPerCenterAtom =
-          cubMax(d_numPairsPerCenterAtom, ncenter_atoms, d_count_out, stream);
-
-      int maxnbrs_per_atom_aligned = align<4>(maxNbrsPerCenterAtom);
-
-      cuAngularAEVs<<<nblocks_angAEV, block_size,
-                      smem_size(maxnbrs_per_atom_aligned,
-                                block_size / nthreads_per_catom),
-                      stream>>>(
-          species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
-          coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-          ShfA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
-          ShfZ_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
-          EtaA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
-          Zeta_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
-          aev_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-          d_angularRij, d_centralAtom, d_numPairsPerCenterAtom,
-          d_centerAtomStartIdx, aev_params, maxnbrs_per_atom_aligned,
-          align<4>(aev_params.angular_length), ncenter_atoms);
-    }
-    return aev_t;
-  } else {
-    std::cerr << "Type Error!\n";
+        d_angularRij, d_centralAtom, d_numPairsPerCenterAtom,
+        d_centerAtomStartIdx, aev_params, maxnbrs_per_atom_aligned,
+        align<4>(aev_params.angular_length), ncenter_atoms);
   }
+  return aev_t;
 }
 
 template torch::Tensor cuComputeAEV<float>(torch::Tensor coordinates_t, torch::Tensor species_t,

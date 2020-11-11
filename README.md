@@ -55,6 +55,8 @@ conda install -c conda-forge torchani
 
 See https://github.com/conda-forge/torchani-feedstock for more information about the conda package.
 
+To install TorchANI with `cuaev` support, see [cuaev.md](cuaev.md)
+
 To run the tests and examples, you must manually download a data package
 
 ```bash

@@ -28,9 +28,12 @@ class TestCUAEV(unittest.TestCase):
         num_species = 4
         self.aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
         self.cuaev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=True)
-        self.cuaev_computer_jit = torch.jit.script(self.cuaev_computer)
 
-    def testSimple(self):
+    def _testSimple(self, jit):
+        cuaev_computer = self.cuaev_computer
+        if jit:
+            cuaev_computer = torch.jit.script(cuaev_computer)
+
         coordinates = torch.tensor([
             [[0.03192167, 0.00638559, 0.01301679],
              [-0.83140486, 0.39370209, -0.26395324],
@@ -46,14 +49,20 @@ class TestCUAEV(unittest.TestCase):
         species = torch.tensor([[1, 0, 0, 0, 0], [2, 0, 0, 0, -1]], device=self.device)
 
         _, aev = self.aev_computer((species, coordinates))
-        _, cu_aev = self.cuaev_computer((species, coordinates))
-        _, cu_aev_jit = self.cuaev_computer_jit((species, coordinates))
+        _, cu_aev = cuaev_computer((species, coordinates))
         max_diff = (cu_aev - aev).abs().max().item()
-        max_diff2 = (cu_aev_jit - aev).abs().max().item()
         self.assertLess(max_diff, self.tolerance)
-        self.assertLess(max_diff2, self.tolerance)
 
-    def testTripeptideMD(self):
+    def testSimple(self):
+        self._testSimple(False)
+
+    def testSimpleJIT(self):
+        self._testSimple(True)
+
+    def _testTripeptideMD(self, jit):
+        cuaev_computer = self.cuaev_computer
+        if jit:
+            cuaev_computer = torch.jit.script(cuaev_computer)
         for i in range(100):
             datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
@@ -61,14 +70,21 @@ class TestCUAEV(unittest.TestCase):
                 coordinates = torch.from_numpy(coordinates).float().unsqueeze(0).to(self.device)
                 species = torch.from_numpy(species).unsqueeze(0).to(self.device)
                 _, aev = self.aev_computer((species, coordinates))
-                _, cu_aev = self.cuaev_computer((species, coordinates))
-                _, cu_aev_jit = self.cuaev_computer_jit((species, coordinates))
+                _, cu_aev = cuaev_computer((species, coordinates))
                 max_diff = (cu_aev - aev).abs().max().item()
-                max_diff2 = (cu_aev_jit - aev).abs().max().item()
                 self.assertLess(max_diff, self.tolerance)
-                self.assertLess(max_diff2, self.tolerance)
 
-    def testNIST(self):
+    def testTripeptideMD(self):
+        self._testTripeptideMD(False)
+
+    def testTripeptideMDJIT(self):
+        self._testTripeptideMD(True)
+
+    def _testNIST(self, jit):
+        cuaev_computer = self.cuaev_computer
+        if jit:
+            cuaev_computer = torch.jit.script(cuaev_computer)
+
         datafile = os.path.join(path, 'test_data/NIST/all')
         with open(datafile, 'rb') as f:
             data = pickle.load(f)
@@ -76,12 +92,15 @@ class TestCUAEV(unittest.TestCase):
                 coordinates = torch.from_numpy(coordinates).to(torch.float).to(self.device)
                 species = torch.from_numpy(species).to(self.device)
                 _, aev = self.aev_computer((species, coordinates))
-                _, cu_aev = self.cuaev_computer((species, coordinates))
-                _, cu_aev_jit = self.cuaev_computer_jit((species, coordinates))
+                _, cu_aev = cuaev_computer((species, coordinates))
                 max_diff = (cu_aev - aev).abs().max().item()
-                max_diff2 = (cu_aev_jit - aev).abs().max().item()
                 self.assertLess(max_diff, self.tolerance)
-                self.assertLess(max_diff2, self.tolerance)
+
+    def testNIST(self):
+        self._testNIST(False)
+
+    def testNISTJIT(self):
+        self._testNIST(True)
 
 
 @unittest.skipIf(not torchani.aev.has_cuaev, "only valid when cuaev is installed")

@@ -48,7 +48,7 @@ def cuda_extension():
 
     nvcc_args = ["-gencode=arch=compute_50,code=sm_50", "-gencode=arch=compute_60,code=sm_60",
                  "-gencode=arch=compute_61,code=sm_61", "-gencode=arch=compute_70,code=sm_70",
-                 "-Xptxas=-v", '--expt-extended-lambda', '-use_fast_math']
+                 "-Xptxas=-v", '--expt-extended-lambda', '-use_fast_math', '-std=c++14']
     cuda_version = float(torch.version.cuda)
     if cuda_version >= 10:
         nvcc_args.append("-gencode=arch=compute_75,code=sm_75")
@@ -61,8 +61,7 @@ def cuda_extension():
         pkg='torchani.cuaev',
         sources=glob.glob('torchani/cuaev/*'),
         include_dirs=maybe_download_cub(),
-        extra_compile_args={'cxx': ['-std=c++14'], 'nvcc': nvcc_args},
-        optional=True)
+        extra_compile_args={'cxx': ['-std=c++14'], 'nvcc': nvcc_args})
 
 
 def cuaev_kwargs():

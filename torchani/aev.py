@@ -6,7 +6,7 @@ import sys
 import warnings
 import importlib_metadata
 
-has_cuaev = 'torchani.cuaev' in importlib_metadata.metadata(__package__).get_all('Provides')
+has_cuaev = 'torchani.cuaev' in importlib_metadata.metadata('torchani').get_all('Provides')
 
 if has_cuaev:
     # We need to import torchani.cuaev to tell PyTorch to initialize torch.ops.cuaev
