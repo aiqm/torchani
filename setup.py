@@ -10,7 +10,7 @@ if BUILD_CUAEV:
     sys.argv.remove('--cuaev')
 
 if not BUILD_CUAEV:
-    log.warn("Will not install cuaev")
+    log.warn("Will not install cuaev")  # type: ignore
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
