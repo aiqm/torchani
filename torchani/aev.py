@@ -3,7 +3,16 @@ from torch import Tensor
 import math
 from typing import Tuple, Optional, NamedTuple
 import sys
-from . import cuaev
+import warnings
+import importlib_metadata
+
+has_cuaev = 'torchani.cuaev' in importlib_metadata.metadata(__package__).get_all('Provides')
+
+if has_cuaev:
+    # We need to import torchani.cuaev to tell PyTorch to initialize torch.ops.cuaev
+    from . import cuaev  # type: ignore # noqa: F401
+else:
+    warnings.warn("cuaev not installed")
 
 if sys.version_info[:2] < (3, 7):
     class FakeFinal:
@@ -314,7 +323,6 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     return torch.cat([radial_aev, angular_aev], dim=-1)
 
 
-@torch.jit.unused
 def compute_cuaev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
                   constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
                   num_species: int, cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
@@ -322,7 +330,11 @@ def compute_cuaev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
 
     assert cell_shifts is None, "Current implementation of cuaev does not support pbc."
     species_int = species.to(torch.int32)
-    return cuaev.cuComputeAEV(coordinates, species_int, Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), num_species)
+    return torch.ops.cuaev.cuComputeAEV(coordinates, species_int, Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), num_species)
+
+
+if not has_cuaev:
+    compute_cuaev = torch.jit.unused(compute_cuaev)
 
 
 class AEVComputer(torch.nn.Module):
@@ -372,7 +384,7 @@ class AEVComputer(torch.nn.Module):
 
         # cuda aev
         if use_cuda_extension:
-            assert cuaev.is_installed, "AEV cuda extension is not installed"
+            assert has_cuaev, "AEV cuda extension is not installed"
         self.use_cuda_extension = use_cuda_extension
 
         # convert constant tensors to a ready-to-broadcast shape

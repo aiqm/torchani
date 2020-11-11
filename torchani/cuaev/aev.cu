@@ -585,3 +585,9 @@ torch::Tensor cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
     std::cerr << "Type Error!\n";
   }
 }
+
+template torch::Tensor cuComputeAEV<float>(torch::Tensor coordinates_t, torch::Tensor species_t,
+  double Rcr_, double Rca_, torch::Tensor EtaR_t,
+  torch::Tensor ShfR_t, torch::Tensor EtaA_t,
+  torch::Tensor Zeta_t, torch::Tensor ShfA_t,
+  torch::Tensor ShfZ_t, int64_t num_species_);

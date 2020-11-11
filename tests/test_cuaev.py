@@ -11,7 +11,7 @@ skipIfNoGPU = unittest.skipIf(not torch.cuda.is_available(),
 
 
 @skipIfNoGPU
-@unittest.skipIf(not torchani.has_cuaev, "only valid when cuaev is installed")
+@unittest.skipIf(not torchani.aev.has_cuaev, "only valid when cuaev is installed")
 class TestCUAEV(unittest.TestCase):
 
     def setUp(self):
@@ -84,8 +84,7 @@ class TestCUAEV(unittest.TestCase):
                 self.assertLess(max_diff2, self.tolerance)
 
 
-
-@unittest.skipIf(not torchani.has_cuaev, "only valid when cuaev is installed")
+@unittest.skipIf(not torchani.aev.has_cuaev, "only valid when cuaev is installed")
 class TestCUAEVJITNoGPU(unittest.TestCase):
 
     def testJIT(self):
