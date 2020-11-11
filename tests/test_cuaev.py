@@ -10,15 +10,8 @@ skipIfNoGPU = unittest.skipIf(not torch.cuda.is_available(),
                               'There is no device to run this test')
 
 
-@unittest.skipIf(torchani.cuaev.is_installed, "only valid when cuaev not installed")
-class TestCUAEVNotInstalled(unittest.TestCase):
-
-    def testCuComputeAEV(self):
-        self.assertRaisesRegex(RuntimeError, "cuaev is not installed", lambda: torchani.cuaev.cuComputeAEV())
-
-
 @skipIfNoGPU
-@unittest.skipIf(not torchani.cuaev.is_installed, "only valid when cuaev is installed")
+@unittest.skipIf(not torchani.has_cuaev, "only valid when cuaev is installed")
 class TestCUAEV(unittest.TestCase):
 
     def setUp(self):
@@ -35,6 +28,7 @@ class TestCUAEV(unittest.TestCase):
         num_species = 4
         self.aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
         self.cuaev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=True)
+        self.cuaev_computer_jit = torch.jit.script(self.cuaev_computer)
 
     def testSimple(self):
         coordinates = torch.tensor([
@@ -53,8 +47,11 @@ class TestCUAEV(unittest.TestCase):
 
         _, aev = self.aev_computer((species, coordinates))
         _, cu_aev = self.cuaev_computer((species, coordinates))
+        _, cu_aev_jit = self.cuaev_computer_jit((species, coordinates))
         max_diff = (cu_aev - aev).abs().max().item()
+        max_diff2 = (cu_aev_jit - aev).abs().max().item()
         self.assertLess(max_diff, self.tolerance)
+        self.assertLess(max_diff2, self.tolerance)
 
     def testTripeptideMD(self):
         for i in range(100):
@@ -65,8 +62,11 @@ class TestCUAEV(unittest.TestCase):
                 species = torch.from_numpy(species).unsqueeze(0).to(self.device)
                 _, aev = self.aev_computer((species, coordinates))
                 _, cu_aev = self.cuaev_computer((species, coordinates))
+                _, cu_aev_jit = self.cuaev_computer_jit((species, coordinates))
                 max_diff = (cu_aev - aev).abs().max().item()
+                max_diff2 = (cu_aev_jit - aev).abs().max().item()
                 self.assertLess(max_diff, self.tolerance)
+                self.assertLess(max_diff2, self.tolerance)
 
     def testNIST(self):
         datafile = os.path.join(path, 'test_data/NIST/all')
@@ -77,8 +77,22 @@ class TestCUAEV(unittest.TestCase):
                 species = torch.from_numpy(species).to(self.device)
                 _, aev = self.aev_computer((species, coordinates))
                 _, cu_aev = self.cuaev_computer((species, coordinates))
+                _, cu_aev_jit = self.cuaev_computer_jit((species, coordinates))
                 max_diff = (cu_aev - aev).abs().max().item()
+                max_diff2 = (cu_aev_jit - aev).abs().max().item()
                 self.assertLess(max_diff, self.tolerance)
+                self.assertLess(max_diff2, self.tolerance)
+
+
+
+@unittest.skipIf(not torchani.has_cuaev, "only valid when cuaev is installed")
+class TestCUAEVJITNoGPU(unittest.TestCase):
+
+    def testJIT(self):
+        def f(coordinates, species, Rcr: float, Rca: float, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species: int):
+            return torch.ops.cuaev.cuComputeAEV(coordinates, species, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
+        s = torch.jit.script(f)
+        self.assertIn("cuaev::cuComputeAEV", str(s.graph))
 
 
 if __name__ == '__main__':
