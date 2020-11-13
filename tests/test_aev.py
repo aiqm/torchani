@@ -16,7 +16,7 @@ const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3
 N = 97
 
 
-class TestAEVConstructor(unittest.TestCase):
+class TestAEVConstructor(torchani.testing.TestCase):
     # Test that checks that the friendly constructor
     # reproduces the values from ANI1x with the correct parameters
     def testCoverLinearly(self):
@@ -35,13 +35,10 @@ class TestAEVConstructor(unittest.TestCase):
         constants = aev_computer.constants()
         constants_alt = aev_computer_alt.constants()
         for c, ca in zip(constants, constants_alt):
-            if isinstance(c, torch.Tensor):
-                self.assertTrue(torch.isclose(c, ca).all())
-            else:
-                self.assertEqual(c, ca)
+            self.assertEqual(c, ca)
 
 
-class TestIsolated(unittest.TestCase):
+class TestIsolated(torchani.testing.TestCase):
     # Tests that there is no error when atoms are separated
     # a distance greater than the cutoff radius from all other atoms
     # this can throw an IndexError for large distances or lone atoms
@@ -153,7 +150,7 @@ class TestAEVJIT(TestAEV):
         self.aev_computer = torch.jit.script(self.aev_computer)
 
 
-class TestPBCSeeEachOther(unittest.TestCase):
+class TestPBCSeeEachOther(torchani.testing.TestCase):
     def setUp(self):
         consts = torchani.neurochem.Constants(const_file)
         self.aev_computer = torchani.AEVComputer(**consts).to(torch.double)
@@ -175,7 +172,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
         for _ in range(100):
             translation = torch.randn(3, dtype=torch.double)
             _, aev2 = self.aev_computer((species, coordinates + translation), cell=cell, pbc=pbc)
-            self.assertTrue(torch.allclose(aev, aev2))
+            self.assertEqual(aev, aev2)
 
     def testPBCConnersSeeEachOther(self):
         species = torch.tensor([[0, 0]])
@@ -257,7 +254,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
         self.assertEqual(atom_index2.tolist(), [1])
 
 
-class TestAEVOnBoundary(unittest.TestCase):
+class TestAEVOnBoundary(torchani.testing.TestCase):
 
     def setUp(self):
         self.eps = 1e-9
@@ -280,13 +277,13 @@ class TestAEVOnBoundary(unittest.TestCase):
 
     def assertInCell(self, coordinates):
         coordinates_cell = coordinates @ self.inv_cell
-        self.assertTrue(torch.allclose(coordinates, coordinates_cell @ self.cell))
+        self.assertEqual(coordinates, coordinates_cell @ self.cell)
         in_cell = (coordinates_cell >= -self.eps) & (coordinates_cell <= 1 + self.eps)
         self.assertTrue(in_cell.all())
 
     def assertNotInCell(self, coordinates):
         coordinates_cell = coordinates @ self.inv_cell
-        self.assertTrue(torch.allclose(coordinates, coordinates_cell @ self.cell))
+        self.assertEqual(coordinates, coordinates_cell @ self.cell)
         in_cell = (coordinates_cell >= -self.eps) & (coordinates_cell <= 1 + self.eps)
         self.assertFalse(in_cell.all())
 
@@ -300,10 +297,10 @@ class TestAEVOnBoundary(unittest.TestCase):
             self.assertInCell(coordinates)
             _, aev = self.aev_computer((self.species, coordinates), cell=self.cell, pbc=self.pbc)
             self.assertGreater(aev.abs().max().item(), 0)
-            self.assertTrue(torch.allclose(aev, self.aev))
+            self.assertEqual(aev, self.aev)
 
 
-class TestAEVOnBenzenePBC(unittest.TestCase):
+class TestAEVOnBenzenePBC(torchani.testing.TestCase):
 
     def setUp(self):
         consts = torchani.neurochem.Constants(const_file)
@@ -319,7 +316,6 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
         self.natoms = self.aev.shape[1]
 
     def testRepeat(self):
-        tolerance = 5e-6
         c1, c2, c3 = self.cell
         species2 = self.species.repeat(1, 4)
         coordinates2 = torch.cat([
@@ -332,7 +328,7 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
         _, aev2 = self.aev_computer((species2, coordinates2), cell=cell2, pbc=self.pbc)
         for i in range(3):
             aev3 = aev2[:, i * self.natoms: (i + 1) * self.natoms, :]
-            self.assertTrue(torch.allclose(self.aev, aev3, atol=tolerance))
+            self.assertEqual(self.aev, aev3)
 
     def testManualMirror(self):
         c1, c2, c3 = self.cell
@@ -343,7 +339,7 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
         ], dim=1)
         _, aev2 = self.aev_computer((species2, coordinates2))
         aev2 = aev2[:, :self.natoms, :]
-        self.assertTrue(torch.allclose(self.aev, aev2))
+        self.assertEqual(self.aev, aev2)
 
 
 if __name__ == '__main__':

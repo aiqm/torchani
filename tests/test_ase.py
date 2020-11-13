@@ -21,7 +21,7 @@ def get_numeric_force(atoms, eps):
     return fn
 
 
-class TestASE(unittest.TestCase):
+class TestASE(torchani.testing.TestCase):
 
     def setUp(self):
         self.model = torchani.models.ANI1x(model_index=0).double()
@@ -30,24 +30,19 @@ class TestASE(unittest.TestCase):
         # Run a Langevin thermostat dynamic for 100 steps and after the dynamic
         # check once that the numerical and analytical force agree to a given
         # relative tolerance
-        relative_tolerance = 0.1
         atoms = Diamond(symbol="C", pbc=True)
         calculator = self.model.ase()
         atoms.set_calculator(calculator)
         dyn = Langevin(atoms, 5 * units.fs, 30000000 * units.kB, 0.002)
         dyn.run(100)
-        f = torch.from_numpy(atoms.get_forces())
+        f = atoms.get_forces()
         fn = get_numeric_force(atoms, 0.001)
-        df = (f - fn).abs().max()
-        avgf = f.abs().mean()
-        if avgf > 0:
-            self.assertLess(df / avgf, relative_tolerance)
+        self.assertEqual(f, fn, rtol=0.1, atol=0)
 
     def testWithNumericalStressWithPBCEnabled(self):
         # Run NPT dynamics for some steps and periodically check that the
         # numerical and analytical stresses agree up to a given
         # absolute difference
-        tolerance = 1e-5
         filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.json')
         benzene = read(filename)
         # set velocities to a very small value to avoid division by zero
@@ -66,10 +61,9 @@ class TestASE(unittest.TestCase):
         def test_stress():
             stress = benzene.get_stress()
             numerical_stress = calculator.calculate_numerical_stress(benzene)
-            diff = torch.from_numpy(stress - numerical_stress).abs().max().item()
-            self.assertLess(diff, tolerance)
-        dyn.attach(test_stress, interval=5)
-        dyn.run(20)
+            self.assertEqual(stress, numerical_stress)
+        dyn.attach(test_stress, interval=30)
+        dyn.run(120)
 
 
 class TestASEWithPTI(unittest.TestCase):

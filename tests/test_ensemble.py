@@ -8,10 +8,10 @@ path = os.path.dirname(os.path.realpath(__file__))
 N = 10
 
 
-class TestEnsemble(unittest.TestCase):
+class TestEnsemble(torchani.testing.TestCase):
 
     def setUp(self):
-        self.tol = 1e-5
+        self.conformations = 20
         ani1x = torchani.models.ANI1x()
         self.aev_computer = ani1x.aev_computer
         self.model_iterator = ani1x.neural_networks
@@ -25,10 +25,8 @@ class TestEnsemble(unittest.TestCase):
         energy2 = [m((species, coordinates))[1] for m in model_list]
         energy2 = sum(energy2) / len(model_list)
         force2 = torch.autograd.grad(energy2.sum(), coordinates)[0]
-        energy_diff = (energy1 - energy2).abs().max().item()
-        force_diff = (force1 - force2).abs().max().item()
-        self.assertLess(energy_diff, self.tol)
-        self.assertLess(force_diff, self.tol)
+        self.assertEqual(energy1, energy2)
+        self.assertEqual(force1, force2)
 
     def testGDB(self):
         for i in range(N):

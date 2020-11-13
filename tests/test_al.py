@@ -4,7 +4,7 @@ import math
 import unittest
 
 
-class TestALAtomic(unittest.TestCase):
+class TestALAtomic(torchani.testing.TestCase):
     def setUp(self):
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
@@ -26,7 +26,7 @@ class TestALAtomic(unittest.TestCase):
     def testAverageAtomicEnergies(self):
         _, energies = self.model.atomic_energies(
             (self.species, self.coordinates))
-        self.assertTrue(energies.shape == self.coordinates.shape[:-1])
+        self.assertEqual(energies.shape, self.coordinates.shape[:-1])
         # energies of all hydrogens should be equal
         self.assertTrue((torch.isclose(
             energies[:, :-1],
@@ -57,11 +57,11 @@ class TestALQBC(TestALAtomic):
 
         # correctness of shape
         torch.set_printoptions(precision=15)
-        self.assertTrue(energies.shape[-1] == self.coordinates.shape[0])
-        self.assertTrue(energies.shape[0] == len(self.model.neural_networks))
-        self.assertTrue(
-            energies[0] == self.first_model((self.species,
-                                             self.coordinates)).energies)
+        self.assertEqual(energies.shape[-1], self.coordinates.shape[0])
+        self.assertEqual(energies.shape[0], len(self.model.neural_networks))
+        self.assertEqual(
+            energies[0], self.first_model((self.species,
+                                           self.coordinates)).energies)
         self.assertTrue(
             torch.isclose(
                 energies[0],
@@ -96,7 +96,7 @@ class TestALQBC(TestALAtomic):
         _, _, qbc = self.model.energies_qbcs((species, coordinates))
         std[0] = std[0] / math.sqrt(5)
         std[1] = std[1] / math.sqrt(4)
-        self.assertTrue(torch.isclose(std, qbc).all())
+        self.assertEqual(std, qbc)
 
 
 if __name__ == '__main__':

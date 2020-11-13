@@ -7,7 +7,7 @@ skipIfNoGPU = unittest.skipIf(not torch.cuda.is_available(),
 
 
 @unittest.skipIf(not torchani.has_cuaev, "only valid when cuaev is installed")
-class TestCUAEV(unittest.TestCase):
+class TestCUAEV(torchani.testing.TestCase):
 
     def testJIT(self):
         def f(coordinates, species, Rcr: float, Rca: float, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species: int):
