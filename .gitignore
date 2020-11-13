@@ -38,3 +38,4 @@ Untitled.ipynb
 .coverage
 htmlcov/
 /include
+training_outputs/
