@@ -6,6 +6,7 @@ import pickle
 
 
 path = os.path.dirname(os.path.realpath(__file__))
+N = 97
 
 
 class TestEnergies(torchani.testing.TestCase):
