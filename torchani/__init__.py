@@ -39,6 +39,7 @@ from . import units
 from pkg_resources import get_distribution, DistributionNotFound
 import warnings
 import importlib_metadata
+from . import testing
 
 has_cuaev = 'torchani.cuaev' in importlib_metadata.metadata(__package__).get_all('Provides')
 
@@ -55,7 +56,7 @@ except DistributionNotFound:
     pass
 
 __all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble', 'SpeciesConverter',
-           'utils', 'neurochem', 'models', 'units', 'has_cuaev']
+           'utils', 'neurochem', 'models', 'units', 'has_cuaev', 'testing']
 
 try:
     from . import ase  # noqa: F401

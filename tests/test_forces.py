@@ -8,10 +8,9 @@ path = os.path.dirname(os.path.realpath(__file__))
 N = 97
 
 
-class TestForce(unittest.TestCase):
+class TestForce(torchani.testing.TestCase):
 
     def setUp(self):
-        self.tolerance = 1e-5
         model = torchani.models.ANI1x(model_index=0)
         self.aev_computer = model.aev_computer
         self.nnp = model.neural_networks
@@ -29,8 +28,7 @@ class TestForce(unittest.TestCase):
                 _, energies = self.model((species, coordinates))
                 derivative = torch.autograd.grad(energies.sum(),
                                                  coordinates)[0]
-                max_diff = (forces + derivative).abs().max().item()
-                self.assertLess(max_diff, self.tolerance)
+                self.assertEqual(forces, -derivative)
 
     def testPadding(self):
         species_coordinates = []
@@ -52,8 +50,7 @@ class TestForce(unittest.TestCase):
         for coordinates, forces in coordinates_forces:
             derivative = torch.autograd.grad(energies, coordinates,
                                              retain_graph=True)[0]
-            max_diff = (forces + derivative).abs().max().item()
-            self.assertLess(max_diff, self.tolerance)
+            self.assertEqual(forces, -derivative)
 
 
 class TestForceJIT(TestForce):

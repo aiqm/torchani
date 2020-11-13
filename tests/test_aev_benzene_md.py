@@ -24,7 +24,7 @@ class TestAEVBenzeneMD(_TestAEVBase):
                 pbc = torch.from_numpy(pbc)
                 coordinates = torchani.utils.map2central(cell, coordinates, pbc)
                 _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
-                self.assertAEVEqual(expected_radial, expected_angular, aev, 5e-5)
+                self.assertAEVEqual(expected_radial, expected_angular, aev)
 
 
 if __name__ == '__main__':

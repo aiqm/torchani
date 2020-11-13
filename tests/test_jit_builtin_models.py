@@ -8,7 +8,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
 
 
-class TestBuiltinModelsJIT(unittest.TestCase):
+class TestBuiltinModelsJIT(torchani.testing.TestCase):
     # Tests if JIT compiled models have the same output energies
     # as eager (non JIT) models
 
@@ -22,7 +22,7 @@ class TestBuiltinModelsJIT(unittest.TestCase):
         input_ = (properties['species'], properties['coordinates'].float())
         _, e = model(input_)
         _, e2 = torch.jit.script(model)(input_)
-        self.assertTrue(torch.allclose(e, e2))
+        self.assertEqual(e, e2)
 
     def _test_ensemble(self, ensemble):
         self._test_model(ensemble)
