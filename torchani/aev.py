@@ -470,7 +470,9 @@ class AEVComputer(torch.nn.Module):
             unchanged, and AEVs is a tensor of shape ``(N, A, self.aev_length())``
         """
         species, coordinates = input_
+        assert species.dim() == 2
         assert species.shape == coordinates.shape[:-1]
+        assert coordinates.shape[-1] == 3
 
         if cell is None and pbc is None:
             aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, None)

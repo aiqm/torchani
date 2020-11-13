@@ -9,6 +9,29 @@ path = os.path.dirname(os.path.realpath(__file__))
 N = 97
 
 
+class TestCorrectInput(torchani.testing.TestCase):
+
+    def setUp(self):
+        self.model = torchani.models.ANI1x(model_index=0, periodic_table_index=False)
+        self.converter = torchani.nn.SpeciesConverter(['H', 'C', 'N', 'O'])
+        self.aev_computer = self.model.aev_computer
+        self.ani_model = self.model.neural_networks
+
+    def testUnknownSpecies(self):
+        # unsupported atomic number raises a value error
+        self.assertRaises(ValueError, self.converter, (torch.tensor([[1, 1, 7, 10]]), torch.zeros((1, 4, 3))))
+        # larger index than supported by the model raises a value error
+        self.assertRaises(ValueError, self.model, (torch.tensor([[0, 1, 2, 4]]), torch.zeros((1, 4, 3))))
+
+    def testIncorrectShape(self):
+        # non matching shapes between species and coordinates
+        self.assertRaises(AssertionError, self.model, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 3))))
+        self.assertRaises(AssertionError, self.aev_computer, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 3))))
+        self.assertRaises(AssertionError, self.ani_model, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 384))))
+        self.assertRaises(AssertionError, self.model, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 4, 4))))
+        self.assertRaises(AssertionError, self.model, (torch.tensor([0, 1, 2, 3]), torch.zeros((4, 3))))
+
+
 class TestEnergies(torchani.testing.TestCase):
     # tests the predicions for a torchani.nn.Sequential(AEVComputer(),
     # ANIModel(), EnergyShifter()) against precomputed values
