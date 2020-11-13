@@ -10,6 +10,8 @@ N = 97
 
 
 class TestEnergies(unittest.TestCase):
+    # tests the predicions for a torchani.nn.Sequential(AEVComputer(),
+    # ANIModel(), EnergyShifter()) against precomputed values
 
     def setUp(self):
         self.tolerance = 5e-5
@@ -17,7 +19,6 @@ class TestEnergies(unittest.TestCase):
         self.aev_computer = model.aev_computer
         self.nnp = model.neural_networks
         self.energy_shifter = model.energy_shifter
-        self.nn = torchani.nn.Sequential(self.nnp, self.energy_shifter)
         self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
 
     def testIsomers(self):
@@ -54,24 +55,25 @@ class TestEnergies(unittest.TestCase):
 
 
 class TestEnergiesEnergyShifterJIT(TestEnergies):
+    # only JIT compile the energy shifter and repeat all tests
 
     def setUp(self):
         super().setUp()
         self.energy_shifter = torch.jit.script(self.energy_shifter)
-        self.nn = torchani.nn.Sequential(self.nnp, self.energy_shifter)
         self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
 
 
 class TestEnergiesANIModelJIT(TestEnergies):
+    # only JIT compile the ANI nnp ANIModel and repeat all tests
 
     def setUp(self):
         super().setUp()
         self.nnp = torch.jit.script(self.nnp)
-        self.nn = torchani.nn.Sequential(self.nnp, self.energy_shifter)
         self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
 
 
 class TestEnergiesJIT(TestEnergies):
+    # JIT compile the whole model and repeat all tests
 
     def setUp(self):
         super().setUp()

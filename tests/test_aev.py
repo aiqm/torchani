@@ -12,6 +12,7 @@ from common_aev_test import _TestAEVBase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
+const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
 N = 97
 
 
@@ -21,10 +22,10 @@ class TestIsolated(unittest.TestCase):
     # this can throw an IndexError for large distances or lone atoms
     def setUp(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        ani1x = torchani.models.ANI1x().to(self.device)
-        self.aev_computer = ani1x.aev_computer
-        self.species_to_tensor = ani1x.species_to_tensor
-        self.rcr = ani1x.aev_computer.Rcr
+        consts = torchani.neurochem.Constants(const_file)
+        self.aev_computer = torchani.AEVComputer(**consts).to(self.device)
+        self.species_to_tensor = consts.species_to_tensor
+        self.rcr = self.aev_computer.Rcr
         self.rca = self.aev_computer.Rca
 
     def testCO2(self):
@@ -129,8 +130,8 @@ class TestAEVJIT(TestAEV):
 
 class TestPBCSeeEachOther(unittest.TestCase):
     def setUp(self):
-        self.ani1x = torchani.models.ANI1x()
-        self.aev_computer = self.ani1x.aev_computer.to(torch.double)
+        consts = torchani.neurochem.Constants(const_file)
+        self.aev_computer = torchani.AEVComputer(**consts).to(torch.double)
 
     def testTranslationalInvariancePBC(self):
         coordinates = torch.tensor(
@@ -247,8 +248,9 @@ class TestAEVOnBoundary(unittest.TestCase):
         self.pbc = torch.ones(3, dtype=torch.bool)
         self.v1, self.v2, self.v3 = self.cell
         self.center_coordinates = self.coordinates + 0.5 * (self.v1 + self.v2 + self.v3)
-        ani1x = torchani.models.ANI1x()
-        self.aev_computer = ani1x.aev_computer.to(torch.double)
+        consts = torchani.neurochem.Constants(const_file)
+        self.aev_computer = torchani.AEVComputer(**consts).to(torch.double)
+
         _, self.aev = self.aev_computer((self.species, self.center_coordinates), cell=self.cell, pbc=self.pbc)
 
     def assertInCell(self, coordinates):
@@ -279,9 +281,9 @@ class TestAEVOnBoundary(unittest.TestCase):
 class TestAEVOnBenzenePBC(unittest.TestCase):
 
     def setUp(self):
-        ani1x = torchani.models.ANI1x()
-        self.aev_computer = ani1x.aev_computer
-        filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.cif')
+        consts = torchani.neurochem.Constants(const_file)
+        self.aev_computer = torchani.AEVComputer(**consts)
+        filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.json')
         benzene = ase.io.read(filename)
         self.cell = torch.tensor(benzene.get_cell(complete=True)).float()
         self.pbc = torch.tensor(benzene.get_pbc(), dtype=torch.bool)

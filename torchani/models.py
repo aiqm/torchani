@@ -41,7 +41,7 @@ class BuiltinModel(torch.nn.Module):
     r"""Private template for the builtin ANI models """
 
     def __init__(self, species_converter, aev_computer, neural_networks, energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index):
-        super(BuiltinModel, self).__init__()
+        super().__init__()
         self.species_converter = species_converter
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
@@ -175,14 +175,9 @@ class BuiltinEnsemble(BuiltinModel):
 
     def __init__(self, species_converter, aev_computer, neural_networks,
                  energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index):
-        super(BuiltinEnsemble, self).__init__(species_converter,
-                                              aev_computer,
-                                              neural_networks,
-                                              energy_shifter,
-                                              species_to_tensor,
-                                              consts,
-                                              sae_dict,
-                                              periodic_table_index)
+        super().__init__(species_converter, aev_computer, neural_networks,
+                         energy_shifter, species_to_tensor, consts, sae_dict,
+                         periodic_table_index)
 
     @classmethod
     def _from_neurochem_resources(cls, info_file_path, periodic_table_index=False):

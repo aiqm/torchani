@@ -1,6 +1,7 @@
 import unittest
 import torch
 import torchani
+import os
 
 tolerance = 1e-5
 
@@ -8,8 +9,10 @@ tolerance = 1e-5
 class _TestAEVBase(unittest.TestCase):
 
     def setUp(self):
-        ani1x = torchani.models.ANI1x()
-        self.aev_computer = ani1x.aev_computer
+        path = os.path.dirname(os.path.realpath(__file__))
+        const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
+        consts = torchani.neurochem.Constants(const_file)
+        self.aev_computer = torchani.AEVComputer(**consts)
         self.radial_length = self.aev_computer.radial_length
         self.debug = False
 
