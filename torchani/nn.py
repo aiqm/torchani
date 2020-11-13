@@ -125,7 +125,7 @@ class SpeciesConverter(torch.nn.Module):
 
     def __init__(self, species):
         super().__init__()
-        rev_idx = {s: k for k, s in enumerate(utils.PERIODIC_TABLE, 1)}
+        rev_idx = {s: k for k, s in enumerate(utils.PERIODIC_TABLE)}
         maxidx = max(rev_idx.values())
         self.register_buffer('conv_tensor', torch.full((maxidx + 2,), -1, dtype=torch.long))
         for i, s in enumerate(species):

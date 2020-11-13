@@ -376,7 +376,10 @@ def get_atomic_masses(species):
     return masses
 
 
-PERIODIC_TABLE = """
+# This constant, when indexed with the corresponding atomic number, gives the
+# element associated with it. Note that there is no element with atomic number
+# 0, so 'Dummy' returned in this case.
+PERIODIC_TABLE = ['Dummy'] + """
     H                                                                                                                           He
     Li  Be                                                                                                  B   C   N   O   F   Ne
     Na  Mg                                                                                                  Al  Si  P   S   Cl  Ar
