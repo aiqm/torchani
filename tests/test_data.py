@@ -2,6 +2,7 @@ import os
 import torch
 import torchani
 import unittest
+from torch.testing._internal.common_utils import TestCase
 
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, '../dataset/ani-1x/sample.h5')
@@ -11,7 +12,7 @@ sae_dict = ani1x.sae_dict
 aev_computer = ani1x.aev_computer
 
 
-class TestData(unittest.TestCase):
+class TestData(TestCase):
 
     def testTensorShape(self):
         ds = torchani.data.load(dataset_path).subtract_self_energies(sae_dict).species_to_indices().shuffle().collate(batch_size).cache()
@@ -37,7 +38,7 @@ class TestData(unittest.TestCase):
     def testReEnter(self):
         # make sure that a dataset can be iterated multiple times
         ds = torchani.data.load(dataset_path)
-        for d in ds:
+        for _ in ds:
             pass
         entered = False
         for d in ds:
@@ -109,22 +110,19 @@ class TestData(unittest.TestCase):
         len(ds)
 
     def testSAE(self):
-        tolerance = 1e-5
         shifter = torchani.EnergyShifter(None)
         torchani.data.load(dataset_path).subtract_self_energies(shifter)
         true_self_energies = torch.tensor([-19.354171758844188,
                                            -19.354171758844046,
                                            -54.712238523648587,
                                            -75.162829556770987], dtype=torch.float64)
-        diff = torch.abs(true_self_energies - shifter.self_energies)
-        for e in diff:
-            self.assertLess(e, tolerance)
+        self.assertEqual(true_self_energies, shifter.self_energies)
 
     def testDataloader(self):
         shifter = torchani.EnergyShifter(None)
         dataset = list(torchani.data.load(dataset_path).subtract_self_energies(shifter).species_to_indices().shuffle())
         loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, collate_fn=torchani.data.collate_fn, num_workers=64)
-        for i in loader:
+        for _ in loader:
             pass
 
 
