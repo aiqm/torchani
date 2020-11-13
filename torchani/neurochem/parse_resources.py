@@ -3,7 +3,7 @@ import io
 import requests
 import glob
 import zipfile
-import shutil
+from distutils import dir_util
 from pathlib import Path
 
 
@@ -16,9 +16,12 @@ SUPPORTED_INFO_FILES = ['ani-1ccx_8x.info', 'ani-1x_8x.info', 'ani-2x_8x.info']
 def parse_neurochem_resources(info_file_path):
     torchani_dir = Path(__file__).resolve().parent.parent.as_posix()
     resource_path = os.path.join(torchani_dir, 'resources/')
+    print(resource_path)
     local_dir = os.path.expanduser('~/.local/torchani/')
 
-    if os.path.isfile(os.path.join(resource_path, info_file_path)):
+    resource_info = os.path.join(resource_path, info_file_path)
+
+    if os.path.isfile(resource_info) and os.stat(resource_info).st_size > 0:
         # No action needed if the info file can be located in the default path
         pass
 
@@ -44,13 +47,9 @@ def parse_neurochem_resources(info_file_path):
             except PermissionError:
                 resource_zip.extractall(local_dir)
                 resource_path = local_dir
-            files = glob.glob(os.path.join(resource_path, extracted_name, "resources", "*"))
-            for f in files:
-                try:
-                    shutil.move(f, resource_path)
-                except shutil.Error:
-                    pass
-            shutil.rmtree(os.path.join(resource_path, extracted_name))
+            source = os.path.join(resource_path, extracted_name, "resources")
+            dir_util.copy_tree(source, resource_path)
+            dir_util.remove_tree(os.path.join(resource_path, extracted_name))
 
         else:
             raise ValueError('File {0} could not be found either in {1} or {2}\n'
