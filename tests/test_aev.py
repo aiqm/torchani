@@ -9,6 +9,7 @@ import ase.io
 import math
 import traceback
 from common_aev_test import _TestAEVBase
+from torch.testing._internal.common_utils import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -127,7 +128,7 @@ class TestAEVJIT(TestAEV):
         self.aev_computer = torch.jit.script(self.aev_computer)
 
 
-class TestPBCSeeEachOther(unittest.TestCase):
+class TestPBCSeeEachOther(TestCase):
     def setUp(self):
         self.ani1x = torchani.models.ANI1x()
         self.aev_computer = self.ani1x.aev_computer.to(torch.double)
@@ -149,7 +150,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
         for _ in range(100):
             translation = torch.randn(3, dtype=torch.double)
             _, aev2 = self.aev_computer((species, coordinates + translation), cell=cell, pbc=pbc)
-            self.assertTrue(torch.allclose(aev, aev2))
+            self.assertEqual(aev, aev2)
 
     def testPBCConnersSeeEachOther(self):
         species = torch.tensor([[0, 0]])
@@ -231,7 +232,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
         self.assertEqual(atom_index2.tolist(), [1])
 
 
-class TestAEVOnBoundary(unittest.TestCase):
+class TestAEVOnBoundary(TestCase):
 
     def setUp(self):
         self.eps = 1e-9
@@ -253,13 +254,13 @@ class TestAEVOnBoundary(unittest.TestCase):
 
     def assertInCell(self, coordinates):
         coordinates_cell = coordinates @ self.inv_cell
-        self.assertTrue(torch.allclose(coordinates, coordinates_cell @ self.cell))
+        self.assertEqual(coordinates, coordinates_cell @ self.cell)
         in_cell = (coordinates_cell >= -self.eps) & (coordinates_cell <= 1 + self.eps)
         self.assertTrue(in_cell.all())
 
     def assertNotInCell(self, coordinates):
         coordinates_cell = coordinates @ self.inv_cell
-        self.assertTrue(torch.allclose(coordinates, coordinates_cell @ self.cell))
+        self.assertEqual(coordinates, coordinates_cell @ self.cell)
         in_cell = (coordinates_cell >= -self.eps) & (coordinates_cell <= 1 + self.eps)
         self.assertFalse(in_cell.all())
 
@@ -273,10 +274,10 @@ class TestAEVOnBoundary(unittest.TestCase):
             self.assertInCell(coordinates)
             _, aev = self.aev_computer((self.species, coordinates), cell=self.cell, pbc=self.pbc)
             self.assertGreater(aev.abs().max().item(), 0)
-            self.assertTrue(torch.allclose(aev, self.aev))
+            self.assertEqual(aev, self.aev)
 
 
-class TestAEVOnBenzenePBC(unittest.TestCase):
+class TestAEVOnBenzenePBC(TestCase):
 
     def setUp(self):
         ani1x = torchani.models.ANI1x()
@@ -305,7 +306,7 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
         _, aev2 = self.aev_computer((species2, coordinates2), cell=cell2, pbc=self.pbc)
         for i in range(3):
             aev3 = aev2[:, i * self.natoms: (i + 1) * self.natoms, :]
-            self.assertTrue(torch.allclose(self.aev, aev3, atol=tolerance))
+            self.assertEqual(self.aev, aev3)
 
     def testManualMirror(self):
         c1, c2, c3 = self.cell
@@ -316,7 +317,7 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
         ], dim=1)
         _, aev2 = self.aev_computer((species2, coordinates2))
         aev2 = aev2[:, :self.natoms, :]
-        self.assertTrue(torch.allclose(self.aev, aev2))
+        self.assertEqual(self.aev, aev2)
 
 
 if __name__ == '__main__':
