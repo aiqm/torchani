@@ -388,6 +388,5 @@ PERIODIC_TABLE = """
     """.strip().split()
 
 
-__all__ = ['pad_atomic_properties', 'present_species', 'hessian',
-           'vibrational_analysis', 'strip_redundant_padding',
-           'ChemicalSymbolsToInts', 'get_atomic_masses']
+__all__ = ['pad_atomic_properties', 'present_species', 'vibrational_analysis',
+           'strip_redundant_padding', 'ChemicalSymbolsToInts', 'get_atomic_masses']
