@@ -16,6 +16,31 @@ const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3
 N = 97
 
 
+class TestAEVConstructor(unittest.TestCase):
+    # Test that checks that the friendly constructor
+    # reproduces the values from ANI1x with the correct parameters
+    def testCoverLinearly(self):
+        consts = torchani.neurochem.Constants(const_file)
+        aev_computer = torchani.AEVComputer(**consts)
+        ani1x_values = {'radial_cutoff': 5.2,
+                        'angular_cutoff': 3.5,
+                        'radial_eta': 16.0,
+                        'angular_eta': 8.0,
+                        'radial_dist_divisions': 16,
+                        'angular_dist_divisions': 4,
+                        'zeta': 32.0,
+                        'angle_sections': 8,
+                        'num_species': 4}
+        aev_computer_alt = torchani.AEVComputer.cover_linearly(**ani1x_values)
+        constants = aev_computer.constants()
+        constants_alt = aev_computer_alt.constants()
+        for c, ca in zip(constants, constants_alt):
+            if isinstance(c, torch.Tensor):
+                self.assertTrue(torch.isclose(c, ca).all())
+            else:
+                self.assertEqual(c, ca)
+
+
 class TestIsolated(unittest.TestCase):
     # Tests that there is no error when atoms are separated
     # a distance greater than the cutoff radius from all other atoms
