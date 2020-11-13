@@ -49,7 +49,7 @@ class ANIModel(torch.nn.ModuleDict):
         return od
 
     def __init__(self, modules):
-        super(ANIModel, self).__init__(self.ensureOrderedDict(modules))
+        super().__init__(self.ensureOrderedDict(modules))
 
     def forward(self, species_aev: Tuple[Tensor, Tensor],  # type: ignore
                 cell: Optional[Tensor] = None,
@@ -93,7 +93,7 @@ class Sequential(torch.nn.ModuleList):
     """Modified Sequential module that accept Tuple type as input"""
 
     def __init__(self, *modules):
-        super(Sequential, self).__init__(modules)
+        super().__init__(modules)
 
     def forward(self, input_: Tuple[Tensor, Tensor],  # type: ignore
                 cell: Optional[Tensor] = None,
@@ -125,7 +125,7 @@ class SpeciesConverter(torch.nn.Module):
 
     def __init__(self, species):
         super().__init__()
-        rev_idx = {s: k for k, s in enumerate(utils.PERIODIC_TABLE, 1)}
+        rev_idx = {s: k for k, s in enumerate(utils.PERIODIC_TABLE)}
         maxidx = max(rev_idx.values())
         self.register_buffer('conv_tensor', torch.full((maxidx + 2,), -1, dtype=torch.long))
         for i, s in enumerate(species):

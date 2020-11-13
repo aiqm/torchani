@@ -147,7 +147,7 @@ def load_atomic_network(filename):
         %import common.CNAME
         %import common.WS
         %ignore WS
-        ''')
+        ''', parser='lalr')
         tree = parser.parse(nnf_file)
 
         # execute parse tree
@@ -362,7 +362,7 @@ if sys.version_info[0] > 2:
             %import common.WS
             %ignore WS
             %ignore /!.*/
-            ''')  # noqa: E501
+            ''', parser='lalr')  # noqa: E501
             tree = parser.parse(txt)
 
             class TreeExec(lark.Transformer):
