@@ -1,9 +1,10 @@
 import unittest
 import torch
 import torchani
+from torch.testing._internal.common_utils import TestCase
 
 
-class TestSpeciesConverter(unittest.TestCase):
+class TestSpeciesConverter(TestCase):
 
     def setUp(self):
         self.c = torchani.SpeciesConverter(['H', 'C', 'N', 'O'])
@@ -19,7 +20,7 @@ class TestSpeciesConverter(unittest.TestCase):
         ], dtype=torch.long)
         dummy_coordinates = torch.empty(2, 5, 3)
         output = self.c((input_, dummy_coordinates)).species
-        self.assertTrue(torch.allclose(output, expect))
+        self.assertEqual(output, expect)
 
 
 class TestSpeciesConverterJIT(TestSpeciesConverter):
@@ -29,7 +30,7 @@ class TestSpeciesConverterJIT(TestSpeciesConverter):
         self.c = torch.jit.script(self.c)
 
 
-class TestBuiltinEnsemblePeriodicTableIndex(unittest.TestCase):
+class TestBuiltinEnsemblePeriodicTableIndex(TestCase):
 
     def setUp(self):
         self.model1 = torchani.models.ANI1x()
@@ -48,16 +49,16 @@ class TestBuiltinEnsemblePeriodicTableIndex(unittest.TestCase):
         energy2 = self.model2((self.species2, self.coordinates)).energies
         derivative1 = torch.autograd.grad(energy1.sum(), self.coordinates)[0]
         derivative2 = torch.autograd.grad(energy2.sum(), self.coordinates)[0]
-        self.assertTrue(torch.allclose(energy1, energy2))
-        self.assertTrue(torch.allclose(derivative1, derivative2))
+        self.assertEqual(energy1, energy2)
+        self.assertEqual(derivative1, derivative2)
 
     def testCH4Single(self):
         energy1 = self.model1[0]((self.species1, self.coordinates)).energies
         energy2 = self.model2[0]((self.species2, self.coordinates)).energies
         derivative1 = torch.autograd.grad(energy1.sum(), self.coordinates)[0]
         derivative2 = torch.autograd.grad(energy2.sum(), self.coordinates)[0]
-        self.assertTrue(torch.allclose(energy1, energy2))
-        self.assertTrue(torch.allclose(derivative1, derivative2))
+        self.assertEqual(energy1, energy2)
+        self.assertEqual(derivative1, derivative2)
 
 
 if __name__ == '__main__':
