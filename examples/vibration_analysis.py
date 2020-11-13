@@ -47,18 +47,12 @@ coordinates = torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_g
 masses = torchani.utils.get_atomic_masses(species)
 
 ###############################################################################
-# To do vibration analysis, we first need to generate a graph that computes
-# energies from species and coordinates. The code to generate a graph of energy
-# is the same as the code to compute energy:
-energies = model((species, coordinates)).energies
+# We can use :func:`torch.autograd.functional.hessian` to compute hessian:
+hessian = torch.autograd.functional.hessian(lambda x: model((species, x)).energies, coordinates)
 
 ###############################################################################
-# We can now use the energy graph to compute analytical Hessian matrix:
-hessian = torchani.utils.hessian(coordinates, energies=energies)
-
-###############################################################################
-# The Hessian matrix should have shape `(1, 9, 9)`, where 1 means there is only
-# one molecule to compute, 9 means `3 atoms * 3D space = 9 degree of freedom`.
+# The Hessian matrix should have shape `(1, 3, 3, 1, 3, 3)`, where 1 means there
+# is only one molecule to compute, 3 means 3 atoms and 3D space.
 print(hessian.shape)
 
 ###############################################################################
