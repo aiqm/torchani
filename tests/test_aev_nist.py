@@ -13,7 +13,9 @@ class TestAEVNIST(_TestAEVBase):
         datafile = os.path.join(path, 'test_data/NIST/all')
         with open(datafile, 'rb') as f:
             data = pickle.load(f)
-            for coordinates, species, radial, angular, _, _ in data:
+            # only use first 100 data points to make test take an
+            # acceptable time
+            for coordinates, species, radial, angular, _, _ in data[:100]:
                 coordinates = torch.from_numpy(coordinates).to(torch.float)
                 species = torch.from_numpy(species)
                 radial = torch.from_numpy(radial).to(torch.float)

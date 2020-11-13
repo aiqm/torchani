@@ -4,13 +4,13 @@ from ase.md.nptberendsen import NPTBerendsen
 from ase import units
 from ase.io import read
 from ase.calculators.test import numeric_force
+import numpy as np
 import torch
 import torchani
 import unittest
 import os
 
 path = os.path.dirname(os.path.realpath(__file__))
-tol = 5e-5
 
 
 def get_numeric_force(atoms, eps):
@@ -27,6 +27,10 @@ class TestASE(unittest.TestCase):
         self.model = torchani.models.ANI1x(model_index=0).double()
 
     def testWithNumericalForceWithPBCEnabled(self):
+        # Run a Langevin thermostat dynamic for 100 steps and after the dynamic
+        # check once that the numerical and analytical force agree to a given
+        # relative tolerance
+        relative_tolerance = 0.1
         atoms = Diamond(symbol="C", pbc=True)
         calculator = self.model.ase()
         atoms.set_calculator(calculator)
@@ -37,11 +41,21 @@ class TestASE(unittest.TestCase):
         df = (f - fn).abs().max()
         avgf = f.abs().mean()
         if avgf > 0:
-            self.assertLess(df / avgf, 0.1)
+            self.assertLess(df / avgf, relative_tolerance)
 
     def testWithNumericalStressWithPBCEnabled(self):
-        filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.cif')
+        # Run NPT dynamics for some steps and periodically check that the
+        # numerical and analytical stresses agree up to a given
+        # absolute difference
+        tolerance = 1e-5
+        filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.json')
         benzene = read(filename)
+        # set velocities to a very small value to avoid division by zero
+        # warning due to initial zero temperature.
+        #
+        # Note that there are 4 benzene molecules, thus, 48 atoms in
+        # Benzene.json
+        benzene.set_velocities(np.full((48, 3), 1e-15))
         calculator = self.model.ase()
         benzene.set_calculator(calculator)
         dyn = NPTBerendsen(benzene, timestep=0.1 * units.fs,
@@ -53,12 +67,15 @@ class TestASE(unittest.TestCase):
             stress = benzene.get_stress()
             numerical_stress = calculator.calculate_numerical_stress(benzene)
             diff = torch.from_numpy(stress - numerical_stress).abs().max().item()
-            self.assertLess(diff, tol)
-        dyn.attach(test_stress, interval=30)
-        dyn.run(120)
+            self.assertLess(diff, tolerance)
+        dyn.attach(test_stress, interval=5)
+        dyn.run(20)
 
 
 class TestASEWithPTI(unittest.TestCase):
+    # Tests that the values obtained by wrapping a BuiltinModel or
+    # BuiltinEnsemble with a calculator are the same with and without
+    # periodic_table_index
 
     def setUp(self):
         self.model_pti = torchani.models.ANI1x(periodic_table_index=True).double()
