@@ -85,7 +85,7 @@ class TestALQBC(TestALAtomic):
             [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0], [0.5, 0.5, 0.5]],
             dtype=torch.double,
             device=self.device).unsqueeze(0)
-        coord2 = torch.ones(1, 5, 3, dtype=torch.double, device=self.device)
+        coord2 = torch.randn(1, 5, 3, dtype=torch.double, device=self.device)
 
         coordinates = torch.cat((coord1, coord2), dim=0)
         species = torch.tensor([[1, 1, 1, 1, 6], [-1, 1, 1, 1, 1]],
