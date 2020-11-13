@@ -30,9 +30,7 @@ directly calculate energies or get an ASE calculator. For example:
 """
 import os
 import torch
-from distutils import dir_util
 from torch import Tensor
-from . import neurochem
 from typing import Tuple, Optional, NamedTuple
 from .nn import SpeciesConverter, SpeciesEnergies
 from .aev import AEVComputer

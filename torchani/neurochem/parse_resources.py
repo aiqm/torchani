@@ -1,7 +1,6 @@
 import os
 import io
 import requests
-import glob
 import zipfile
 from distutils import dir_util
 from pathlib import Path
