@@ -151,7 +151,7 @@ class EnergyShifter(torch.nn.Module):
     """
 
     def __init__(self, self_energies, fit_intercept=False):
-        super(EnergyShifter, self).__init__()
+        super().__init__()
 
         self.fit_intercept = fit_intercept
         if self_energies is not None:
