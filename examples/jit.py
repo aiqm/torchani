@@ -69,7 +69,7 @@ print('Single network energy, eager mode vs loaded jit:', energies_single.item()
 #
 # - uses double as dtype instead of float
 # - don't care about periodic boundary condition
-# - in addition to energies, allow returnsing optionally forces, and hessians
+# - in addition to energies, allow returning optionally forces
 # - when indexing atom species, use its index in the periodic table instead of 0, 1, 2, 3, ...
 #
 # you could do the following:
@@ -81,34 +81,28 @@ class CustomModule(torch.nn.Module):
         # self.model = torchani.models.ANI1x(periodic_table_index=True)[0].double()
         # self.model = torchani.models.ANI1ccx(periodic_table_index=True).double()
 
-    def forward(self, species: Tensor, coordinates: Tensor, return_forces: bool = False,
-                return_hessians: bool = False) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
-        if return_forces or return_hessians:
+    def forward(self, species: Tensor, coordinates: Tensor, return_forces: bool = False) -> Tuple[Tensor, Optional[Tensor]]:
+        if return_forces:
             coordinates.requires_grad_(True)
 
         energies = self.model((species, coordinates)).energies
 
         forces: Optional[Tensor] = None  # noqa: E701
-        hessians: Optional[Tensor] = None
-        if return_forces or return_hessians:
-            grad = torch.autograd.grad([energies.sum()], [coordinates], create_graph=return_hessians)[0]
+        if return_forces:
+            grad = torch.autograd.grad([energies.sum()], [coordinates])[0]
             assert grad is not None
             forces = -grad
-            if return_hessians:
-                hessians = torchani.utils.hessian(coordinates, forces=forces)
-        return energies, forces, hessians
+        return energies, forces
 
 
 custom_model = CustomModule()
 compiled_custom_model = torch.jit.script(custom_model)
 torch.jit.save(compiled_custom_model, 'compiled_custom_model.pt')
 loaded_compiled_custom_model = torch.jit.load('compiled_custom_model.pt')
-energies, forces, hessians = custom_model(species, coordinates, True, True)
-energies_jit, forces_jit, hessians_jit = loaded_compiled_custom_model(species, coordinates, True, True)
+energies, forces = custom_model(species, coordinates, True)
+energies_jit, forces_jit = loaded_compiled_custom_model(species, coordinates, True)
 
 print('Energy, eager mode vs loaded jit:', energies.item(), energies_jit.item())
 print()
 print('Force, eager mode vs loaded jit:\n', forces.squeeze(0), '\n', forces_jit.squeeze(0))
 print()
-torch.set_printoptions(sci_mode=False, linewidth=1000)
-print('Hessian, eager mode vs loaded jit:\n', hessians.squeeze(0), '\n', hessians_jit.squeeze(0))
