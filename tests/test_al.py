@@ -61,7 +61,7 @@ class TestALQBC(TestALAtomic):
         self.assertEqual(energies.shape[0], len(self.model.neural_networks))
         self.assertEqual(
             energies[0], self.first_model((self.species,
-                                             self.coordinates)).energies)
+                                           self.coordinates)).energies)
         self.assertTrue(
             torch.isclose(
                 energies[0],
