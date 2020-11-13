@@ -55,6 +55,8 @@ class ANIModel(torch.nn.ModuleDict):
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         species, aev = species_aev
+        assert species.shape == aev.shape[:-1]
+
         atomic_energies = self._atomic_energies((species, aev))
         # shape of atomic energies is (C, A)
         return SpeciesEnergies(species, torch.sum(atomic_energies, dim=1))
