@@ -9,10 +9,13 @@ dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
 
 
 class TestBuiltinModelsJIT(unittest.TestCase):
+    # Tests if JIT compiled models have the same output energies
+    # as eager (non JIT) models
 
     def setUp(self):
-        self.ani1ccx = torchani.models.ANI1ccx()
-        self.ds = torchani.data.load(dspath).subtract_self_energies(self.ani1ccx.sae_dict).species_to_indices().shuffle().collate(256).cache()
+        # in general self energies should be subtracted, and shuffle should be
+        # performed, but for these tests this is not important
+        self.ds = torchani.data.load(dspath).species_to_indices().collate(256).cache()
 
     def _test_model(self, model):
         properties = next(iter(self.ds))
