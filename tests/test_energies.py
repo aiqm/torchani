@@ -3,14 +3,13 @@ import torchani
 import unittest
 import os
 import pickle
-from torch.testing._internal.common_utils import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
 
 
-class TestEnergies(TestCase):
+class TestEnergies(torchani.testing.TestCase):
 
     def setUp(self):
         model = torchani.models.ANI1x(model_index=0)

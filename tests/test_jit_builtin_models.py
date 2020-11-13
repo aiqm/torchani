@@ -2,14 +2,13 @@ import torch
 import torchani
 import unittest
 import os
-from torch.testing._internal.common_utils import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
 dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
 
 
-class TestBuiltinModelsJIT(TestCase):
+class TestBuiltinModelsJIT(torchani.testing.TestCase):
 
     def setUp(self):
         self.ani1ccx = torchani.models.ANI1ccx()

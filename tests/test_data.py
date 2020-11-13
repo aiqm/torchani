@@ -2,7 +2,6 @@ import os
 import torch
 import torchani
 import unittest
-from torch.testing._internal.common_utils import TestCase
 
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, '../dataset/ani-1x/sample.h5')
@@ -12,7 +11,7 @@ sae_dict = ani1x.sae_dict
 aev_computer = ani1x.aev_computer
 
 
-class TestData(TestCase):
+class TestData(torchani.testing.TestCase):
 
     def testTensorShape(self):
         ds = torchani.data.load(dataset_path).subtract_self_energies(sae_dict).species_to_indices().shuffle().collate(batch_size).cache()

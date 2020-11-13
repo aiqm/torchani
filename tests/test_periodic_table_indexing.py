@@ -1,10 +1,9 @@
 import unittest
 import torch
 import torchani
-from torch.testing._internal.common_utils import TestCase
 
 
-class TestSpeciesConverter(TestCase):
+class TestSpeciesConverter(torchani.testing.TestCase):
 
     def setUp(self):
         self.c = torchani.SpeciesConverter(['H', 'C', 'N', 'O'])
@@ -30,7 +29,7 @@ class TestSpeciesConverterJIT(TestSpeciesConverter):
         self.c = torch.jit.script(self.c)
 
 
-class TestBuiltinEnsemblePeriodicTableIndex(TestCase):
+class TestBuiltinEnsemblePeriodicTableIndex(torchani.testing.TestCase):
 
     def setUp(self):
         self.model1 = torchani.models.ANI1x()

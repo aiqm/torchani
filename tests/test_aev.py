@@ -9,14 +9,13 @@ import ase.io
 import math
 import traceback
 from common_aev_test import _TestAEVBase
-from torch.testing._internal.common_utils import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
 
 
-class TestIsolated(unittest.TestCase):
+class TestIsolated(torchani.testing.TestCase):
     # Tests that there is no error when atoms are separated
     # a distance greater than the cutoff radius from all other atoms
     # this can throw an IndexError for large distances or lone atoms
@@ -128,7 +127,7 @@ class TestAEVJIT(TestAEV):
         self.aev_computer = torch.jit.script(self.aev_computer)
 
 
-class TestPBCSeeEachOther(TestCase):
+class TestPBCSeeEachOther(torchani.testing.TestCase):
     def setUp(self):
         self.ani1x = torchani.models.ANI1x()
         self.aev_computer = self.ani1x.aev_computer.to(torch.double)
@@ -232,7 +231,7 @@ class TestPBCSeeEachOther(TestCase):
         self.assertEqual(atom_index2.tolist(), [1])
 
 
-class TestAEVOnBoundary(TestCase):
+class TestAEVOnBoundary(torchani.testing.TestCase):
 
     def setUp(self):
         self.eps = 1e-9
@@ -277,7 +276,7 @@ class TestAEVOnBoundary(TestCase):
             self.assertEqual(aev, self.aev)
 
 
-class TestAEVOnBenzenePBC(TestCase):
+class TestAEVOnBenzenePBC(torchani.testing.TestCase):
 
     def setUp(self):
         ani1x = torchani.models.ANI1x()

@@ -1,10 +1,9 @@
 import unittest
 import torch
 import torchani
-from torch.testing._internal.common_utils import TestCase
 
 
-class _TestAEVBase(TestCase):
+class _TestAEVBase(torchani.testing.TestCase):
 
     def setUp(self):
         ani1x = torchani.models.ANI1x()

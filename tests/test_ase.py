@@ -8,7 +8,6 @@ import torch
 import torchani
 import unittest
 import os
-from torch.testing._internal.common_utils import TestCase
 
 path = os.path.dirname(os.path.realpath(__file__))
 tol = 5e-5
@@ -22,7 +21,7 @@ def get_numeric_force(atoms, eps):
     return fn
 
 
-class TestASE(TestCase):
+class TestASE(torchani.testing.TestCase):
 
     def setUp(self):
         self.model = torchani.models.ANI1x(model_index=0).double()
@@ -55,7 +54,7 @@ class TestASE(TestCase):
         dyn.run(120)
 
 
-class TestASEWithPTI(unittest.TestCase):
+class TestASEWithPTI(torchani.testing.TestCase):
 
     def setUp(self):
         self.model_pti = torchani.models.ANI1x(periodic_table_index=True).double()
