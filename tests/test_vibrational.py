@@ -39,7 +39,8 @@ class TestVibrational(unittest.TestCase):
         # compute vibrational by torchani
         species = model.species_to_tensor(molecule.get_chemical_symbols()).unsqueeze(0)
         coordinates = torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_grad_(True)
-        hessian = torch.autograd.functional.hessian(lambda x: model((species, x)).energies, coordinates)
+        _, energies = model((species, coordinates))
+        hessian = torchani.utils.hessian(coordinates, energies=energies)
         freq2, modes2, _, _ = torchani.utils.vibrational_analysis(masses[species], hessian)
         freq2 = freq2[6:].float()
         modes2 = modes2[6:]
