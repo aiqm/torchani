@@ -43,7 +43,7 @@ class TestVibrational(torchani.testing.TestCase):
         freq2, modes2, _, _ = torchani.utils.vibrational_analysis(masses[species], hessian)
         freq2 = freq2[6:].float()
         modes2 = modes2[6:]
-        self.assertEqual(freq, freq2, atol=0, rtol=0.02)
+        self.assertEqual(freq, freq2, atol=0, rtol=0.02, exact_dtype=False)
 
         diff1 = (modes - modes2).abs().max(dim=-1).values.max(dim=-1).values
         diff2 = (modes + modes2).abs().max(dim=-1).values.max(dim=-1).values

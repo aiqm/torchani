@@ -292,7 +292,6 @@ class TestAEVOnBenzenePBC(torchani.testing.TestCase):
         self.natoms = self.aev.shape[1]
 
     def testRepeat(self):
-        tolerance = 5e-6
         c1, c2, c3 = self.cell
         species2 = self.species.repeat(1, 4)
         coordinates2 = torch.cat([
