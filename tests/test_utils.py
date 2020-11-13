@@ -10,9 +10,6 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(len(str2i), 6)
         self.assertListEqual(str2i('BACCC').tolist(), [1, 0, 2, 2, 2])
 
-    def testHessianJIT(self):
-        torch.jit.script(torchani.utils.hessian)
-
 
 if __name__ == '__main__':
     unittest.main()
