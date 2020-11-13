@@ -28,10 +28,8 @@ class TestCorrectInput(unittest.TestCase):
         self.assertRaises(AssertionError, self.model, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 3))))
         self.assertRaises(AssertionError, self.aev_computer, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 3))))
         self.assertRaises(AssertionError, self.ani_model, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 384))))
-        # non 3D coordiantes raise a runtime error
-        self.assertRaises(RuntimeError, self.model, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 4, 4))))
-        # no batch dimension raises an index error
-        self.assertRaises(IndexError, self.model, (torch.tensor([0, 1, 2, 3]), torch.zeros((4, 3))))
+        self.assertRaises(AssertionError, self.model, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 4, 4))))
+        self.assertRaises(AssertionError, self.model, (torch.tensor([0, 1, 2, 3]), torch.zeros((4, 3))))
 
 
 class TestEnergies(unittest.TestCase):
