@@ -71,7 +71,6 @@ def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, sp
     return output
 
 
-# @torch.jit.script
 def present_species(species):
     """Given a vector of species of atoms, compute the unique species present.
 
