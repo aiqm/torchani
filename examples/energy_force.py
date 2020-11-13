@@ -57,3 +57,19 @@ force = -derivative
 # And print to see the result:
 print('Energy:', energy.item())
 print('Force:', force.squeeze())
+
+###############################################################################
+# you can also get the atomic energies (WARNING: these have no physical
+# meaning) by calling:
+_, atomic_energies = model.atomic_energies((species, coordinates))
+
+###############################################################################
+# this gives you the average (shifted) energies over all models of the ensemble by default,
+# with the same shape as the coordinates. Dummy atoms, if present, will have an
+# energy of zero
+print('Average Atomic energies, for species 6 1 1 1 1', atomic_energies)
+
+###############################################################################
+# you can also access model specific atomic energies
+_, atomic_energies = model.atomic_energies((species, coordinates), average=False)
+print('Atomic energies of first model, for species 6 1 1 1 1', atomic_energies[0, :, :])
