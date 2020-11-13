@@ -30,7 +30,6 @@ class TestASE(torchani.testing.TestCase):
         # Run a Langevin thermostat dynamic for 100 steps and after the dynamic
         # check once that the numerical and analytical force agree to a given
         # relative tolerance
-        relative_tolerance = 0.1
         atoms = Diamond(symbol="C", pbc=True)
         calculator = self.model.ase()
         atoms.set_calculator(calculator)
@@ -44,7 +43,6 @@ class TestASE(torchani.testing.TestCase):
         # Run NPT dynamics for some steps and periodically check that the
         # numerical and analytical stresses agree up to a given
         # absolute difference
-        tolerance = 1e-5
         filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.json')
         benzene = read(filename)
         # set velocities to a very small value to avoid division by zero
