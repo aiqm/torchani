@@ -3,9 +3,7 @@
 #include <ATen/Context.h>
 #include <c10/cuda/CUDACachingAllocator.h>
 
-__global__ void run() {
-  printf("Hello World");
-}
+__global__ void run() { printf("Hello World"); }
 
 template <typename ScalarRealT = float>
 torch::Tensor cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
@@ -21,7 +19,7 @@ torch::Tensor cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
   }
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
-  run<<<1,1,0,stream>>>();
+  run<<<1, 1, 0, stream>>>();
   return coordinates_t;
 }
 
