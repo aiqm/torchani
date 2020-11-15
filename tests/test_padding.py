@@ -6,7 +6,7 @@ import torchani
 b = torchani.utils.broadcast_first_dim
 
 
-class TestPaddings(unittest.TestCase):
+class TestPaddings(torchani.testing.TestCase):
 
     def testVectorSpecies(self):
         species1 = torch.tensor([[0, 2, 3, 1]])
@@ -28,7 +28,7 @@ class TestPaddings(unittest.TestCase):
             [3, 2, 0, 1, 0],
             [3, 2, 0, 1, 0],
         ])
-        self.assertEqual((atomic_properties['species'] - expected_species).abs().max().item(), 0)
+        self.assertEqual(atomic_properties['species'], expected_species)
         self.assertEqual(atomic_properties['coordinates'].abs().max().item(), 0)
 
     def testTensorShape1NSpecies(self):
@@ -51,7 +51,7 @@ class TestPaddings(unittest.TestCase):
             [3, 2, 0, 1, 0],
             [3, 2, 0, 1, 0],
         ])
-        self.assertEqual((atomic_properties['species'] - expected_species).abs().max().item(), 0)
+        self.assertEqual(atomic_properties['species'], expected_species)
         self.assertEqual(atomic_properties['coordinates'].abs().max().item(), 0)
 
     def testTensorSpecies(self):
@@ -80,20 +80,17 @@ class TestPaddings(unittest.TestCase):
             [3, 2, 0, 1, 0],
             [3, 2, 0, 1, 0],
         ])
-        self.assertEqual((atomic_properties['species'] - expected_species).abs().max().item(), 0)
+        self.assertEqual(atomic_properties['species'], expected_species)
         self.assertEqual(atomic_properties['coordinates'].abs().max().item(), 0)
 
     def testPresentSpecies(self):
         species = torch.tensor([0, 1, 1, 0, 3, 7, -1, -1])
         present_species = torchani.utils.present_species(species)
         expected = torch.tensor([0, 1, 3, 7])
-        self.assertEqual((expected - present_species).abs().max().item(), 0)
+        self.assertEqual(expected, present_species)
 
 
-class TestStripRedundantPadding(unittest.TestCase):
-
-    def _assertTensorEqual(self, t1, t2):
-        self.assertEqual((t1 - t2).abs().max().item(), 0)
+class TestStripRedundantPadding(torchani.testing.TestCase):
 
     def testStripRestore(self):
         species1 = torch.randint(4, (5, 4), dtype=torch.long)
@@ -119,14 +116,14 @@ class TestStripRedundantPadding(unittest.TestCase):
             b({'species': species123[:5, ...], 'coordinates': coordinates123[:5, ...]}))
         species1_ = species_coordinates1_['species']
         coordinates1_ = species_coordinates1_['coordinates']
-        self._assertTensorEqual(species1_, species1)
-        self._assertTensorEqual(coordinates1_, coordinates1)
+        self.assertEqual(species1_, species1)
+        self.assertEqual(coordinates1_, coordinates1)
         species_coordinates12_ = torchani.utils.strip_redundant_padding(
             b({'species': species123[:7, ...], 'coordinates': coordinates123[:7, ...]}))
         species12_ = species_coordinates12_['species']
         coordinates12_ = species_coordinates12_['coordinates']
-        self._assertTensorEqual(species12_, species12)
-        self._assertTensorEqual(coordinates12_, coordinates12)
+        self.assertEqual(species12_, species12)
+        self.assertEqual(coordinates12_, coordinates12)
 
 
 if __name__ == '__main__':

@@ -431,12 +431,6 @@ torch::Tensor cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
   ScalarRealT Rca = Rca_;
   int num_species = num_species_;
 
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
-  auto thrust_allocator =
-      THCThrustAllocator(at::globalContext().lazyInitCUDA());
-  auto policy = thrust::cuda::par(thrust_allocator).on(stream);
-  auto &allocator = *c10::cuda::CUDACachingAllocator::get();
-
   const int n_molecules = species_t.size(0);
   const int max_natoms_per_mol = species_t.size(1);
 
@@ -457,11 +451,18 @@ torch::Tensor cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
 
   auto aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length}, coordinates_t.options());
 
-  if (EtaR_t.size(0) != 1 || EtaA_t.size(0) != 1 || Zeta_t.size(0) != 1) {
-    std::cerr << "cuda extension is currently not supported for the specified "
-                 "configuration\n";
-    exit(1);
+  TORCH_CHECK(EtaR_t.size(0) != 1 || EtaA_t.size(0) != 1 || Zeta_t.size(0) != 1,
+    "cuda extension is currently not supported for the specified configuration");
+
+  if (species_t.numel() == 0) {
+    return aev_t;
   }
+
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+  auto thrust_allocator =
+      THCThrustAllocator(at::globalContext().lazyInitCUDA());
+  auto policy = thrust::cuda::par(thrust_allocator).on(stream);
+  auto &allocator = *c10::cuda::CUDACachingAllocator::get();
 
   // precompute the aev offsets and load to constand memory
   initConsts(aev_params, stream);
@@ -586,6 +587,6 @@ torch::Tensor cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
   }
 }
 
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-  m.def("cuComputeAEV", &cuComputeAEV<float>, "CUDA method to compute AEVs");
-}
+TORCH_LIBRARY(cuaev, m) { m.def("cuComputeAEV", &cuComputeAEV<float>); }
+
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {}

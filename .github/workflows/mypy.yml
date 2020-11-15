@@ -28,4 +28,4 @@ jobs:
         pip install --upgrade pip
         pip install mypy
     - name: Type checking with mypy
-      run: mypy --no-site-packages --ignore-missing-imports torchani/{aev,nn,utils,models,ase}.py
+      run: mypy --ignore-missing-imports .

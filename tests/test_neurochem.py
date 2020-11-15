@@ -9,7 +9,7 @@ iptpath = os.path.join(path, 'test_data/inputtrain.ipt')
 dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 
 
-class TestNeuroChem(unittest.TestCase):
+class TestNeuroChem(torchani.testing.TestCase):
 
     def testNeuroChemTrainer(self):
         d = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
