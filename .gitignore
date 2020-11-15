@@ -1,7 +1,6 @@
 *.prof
 __pycache__
 /data
-*.cpp
 a.out
 /test.py
 /.vscode
@@ -38,3 +37,5 @@ Untitled.ipynb
 /test*.py
 .coverage
 htmlcov/
+/include
+training_outputs/

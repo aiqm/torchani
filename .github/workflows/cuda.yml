@@ -1,21 +1,27 @@
-name: stable-torch
+name: cuda
 
 on:
   pull_request:
   push:
     branches:
       - master
+    paths:
+      - 'setup.py'
+      - 'torchani/cuaev/**'
+      - 'torchani/aev.py'
+      - 'ci/**'
+      - 'test/test_cuaev.py'
   schedule:
     - cron: '0 0 * * *'
 
 jobs:
-  stable-torch:
+  cuda:
 
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      max-parallel: 4
       matrix:
-        python-version: [3.7]
+        python-version: [3.8]
 
     steps:
     - uses: actions/checkout@v1
@@ -25,11 +31,11 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Fetch submodules
       run: git submodule update --init
+    - name: Install cuda
+      run: ci/install_cuda.sh
     - name: Install dependencies
       run: ci/install_dependencies.sh
     - name: Install TorchANI
-      run: python setup.py install
-    - name: Download data files
-      run: ./download.sh
-    - name: Run tests
-      run: pytest
+      run: python setup.py install --cuaev
+    - name: Run cuaev test
+      run: pytest tests/test_cuaev.py -v

@@ -9,7 +9,7 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  build:
+  tools:
 
     runs-on: ubuntu-latest
     strategy:
@@ -26,15 +26,13 @@ jobs:
     - name: Fetch submodules
       run: git submodule update --init
     - name: Install dependencies
-      run: |
-        ci/install_dependencies.sh
-        pip install .
+      run: ci/install_dependencies.sh
+    - name: Install TorchANI
+      run: python setup.py install
     - name: Download data files
       run: ./download.sh
     - name: Inference benchmark
       run: python tools/inference-benchmark.py --tqdm dataset/xyz_files/CH4-5.xyz
-    - name: Install more dependencies
-      run: pip install h5py
     - name: COMP6 Benchmark
       run: python tools/comp6.py dataset/COMP6/COMP6v1/s66x8
     - name: Training Benchmark

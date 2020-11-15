@@ -1,0 +1,7 @@
+h5py
+tb-nightly
+sphinx
+sphinx_rtd_theme
+matplotlib
+pillow
+sphinx-gallery
