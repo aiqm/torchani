@@ -422,11 +422,10 @@ void initConsts(AEVScalarParams<float> &aev_params, cudaStream_t stream) {
 // NOTE: assumes size of EtaA_t = Zeta_t = EtaR_t = 1
 template <typename ScalarRealT = float>
 torch::Tensor cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
-                  double Rcr_, double Rca_, torch::Tensor EtaR_t,
-                  torch::Tensor ShfR_t, torch::Tensor EtaA_t,
-                  torch::Tensor Zeta_t, torch::Tensor ShfA_t,
-                  torch::Tensor ShfZ_t, int64_t num_species_)
-{
+                           double Rcr_, double Rca_, torch::Tensor EtaR_t,
+                           torch::Tensor ShfR_t, torch::Tensor EtaA_t,
+                           torch::Tensor Zeta_t, torch::Tensor ShfA_t,
+                           torch::Tensor ShfZ_t, int64_t num_species_) {
   ScalarRealT Rcr = Rcr_;
   ScalarRealT Rca = Rca_;
   int num_species = num_species_;
@@ -449,10 +448,12 @@ torch::Tensor cuComputeAEV(torch::Tensor coordinates_t, torch::Tensor species_t,
 
   int aev_length = aev_params.radial_length + aev_params.angular_length;
 
-  auto aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length}, coordinates_t.options());
+  auto aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length},
+                            coordinates_t.options());
 
   TORCH_CHECK(EtaR_t.size(0) != 1 || EtaA_t.size(0) != 1 || Zeta_t.size(0) != 1,
-    "cuda extension is currently not supported for the specified configuration");
+              "cuda extension is currently not supported for the specified "
+              "configuration");
 
   if (species_t.numel() == 0) {
     return aev_t;
