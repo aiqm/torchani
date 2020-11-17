@@ -5,7 +5,9 @@ a.out
 /test.py
 /.vscode
 /build*
-/.eggs
+.eggs
+*.egg-info
+*.ninja
 /torchani.egg-info
 /*.h5
 /*.hdf5
@@ -19,6 +21,9 @@ benchmark_xyz
 /*.ipt
 /*.params
 /*.dat
+*.o
+*.so
+*.ninja_log
 /tmp
 *_cache
 datacache
