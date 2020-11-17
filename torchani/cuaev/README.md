@@ -3,9 +3,14 @@ CUDA Extension for AEV calculation.
 Performance improvement is expected to be ~3X for AEV computation and ~1.5X for overall training workflow.
 
 ## Install
-In most cases, if `gcc` and `cuda` environment are well configured, runing the following command at `torchani/extension` directory will install the cuaev package.
+In most cases, if `gcc` and `cuda` environment are well configured, runing the following command at `torchani` directory will install torchani and cuaev together.
 ```bash
-pip install -e .
+git clone git@github.com:aiqm/torchani.git
+cd torchani
+# install by
+python setup.py install --cuaev
+# or for development
+pip install -e . --global-option="--cuaev"
 ```
 
 Notes for install on Hipergator
@@ -14,7 +19,7 @@ srun -p gpu --gpus=geforce:1 --time=01:00:00 --mem=10gb --pty -u bash -i   # com
 conda install pytorch torchvision cudatoolkit=10.0 -c pytorch              # make sure it's cudatoolkit=10.0
 module load cuda/10.0.130
 module load gcc/7.3.0
-pip install -e .
+python setup.py install --cuaev
 ```
 
 ## Usage
