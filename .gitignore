@@ -44,3 +44,4 @@ Untitled.ipynb
 htmlcov/
 /include
 training_outputs/
+examples/dataset.pkl
