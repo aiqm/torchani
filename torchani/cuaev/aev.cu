@@ -34,9 +34,7 @@ struct PairDist {
 
 // used to group Rijs by atom id
 template <typename DataT>
-__host__ __device__ bool operator==(
-    const PairDist<DataT>& lhs,
-    const PairDist<DataT>& rhs) {
+__host__ __device__ bool operator==(const PairDist<DataT>& lhs, const PairDist<DataT>& rhs) {
   return lhs.midx == rhs.midx && lhs.i == rhs.i;
 }
 
@@ -46,16 +44,13 @@ __host__ __device__ bool operator==(
 /// \return Value aligned to boundary
 template <int32_t boundary>
 __host__ __device__ __forceinline__ int align(const int& value) {
-  static_assert(
-      (boundary & (boundary - 1)) == 0,
-      "Boundary for align must be power of 2");
+  static_assert((boundary & (boundary - 1)) == 0, "Boundary for align must be power of 2");
   return (value + boundary) & ~(boundary - 1);
 }
 
 template <typename SpeciesT, typename DataT, typename IndexT = int>
 __global__ void pairwiseDistance(
-    torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits>
-        species_t,
+    torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
     PairDist<DataT>* d_Rij,
     IndexT max_natoms_per_mol) {
@@ -110,15 +105,9 @@ __global__ void pairwiseDistance(
   }
 }
 
-template <
-    typename SpeciesT,
-    typename DataT,
-    typename IndexT = int,
-    int TILEX = 8,
-    int TILEY = 4>
+template <typename SpeciesT, typename DataT, typename IndexT = int, int TILEX = 8, int TILEY = 4>
 __global__ void cuAngularAEVs(
-    torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits>
-        species_t,
+    torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfA_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfZ_t,
@@ -182,8 +171,7 @@ __global__ void cuAngularAEVs(
   int i = d.i;
   int mol_idx = d.midx;
 
-  for (int iaev = laneIdx; iaev < aev_params.angular_length;
-       iaev += threads_per_catom) {
+  for (int iaev = laneIdx; iaev < aev_params.angular_length; iaev += threads_per_catom) {
     saev[iaev] = 0;
   }
 
@@ -213,15 +201,13 @@ __global__ void cuAngularAEVs(
 
     DataT fc_ij = sfc[jj];
 
-    for (int kk_start = jj + 1; kk_start < jnum;
-         kk_start += threads_per_catom) {
+    for (int kk_start = jj + 1; kk_start < jnum; kk_start += threads_per_catom) {
       int kk = kk_start + laneIdx;
       DataT theta = 0;
       if (kk < jnum) {
         const DataT Rik = sdist[kk];
-        theta = acos(
-            0.95 * (sdx[jj] * sdx[kk] + sdy[jj] * sdy[kk] + sdz[jj] * sdz[kk]) /
-            (Rij * Rik));
+        theta =
+            acos(0.95 * (sdx[jj] * sdx[kk] + sdy[jj] * sdy[kk] + sdz[jj] * sdz[kk]) / (Rij * Rik));
       }
 
       for (int srcLane = 0; kk_start + srcLane < min(32, jnum); ++srcLane) {
@@ -257,16 +243,14 @@ __global__ void cuAngularAEVs(
     }
   }
 
-  for (int iaev = laneIdx; iaev < aev_params.angular_length;
-       iaev += threads_per_catom) {
+  for (int iaev = laneIdx; iaev < aev_params.angular_length; iaev += threads_per_catom) {
     aev_t[mol_idx][i][aev_params.radial_length + iaev] = saev[iaev];
   }
 }
 
 template <typename SpeciesT, typename DataT, int THREADS_PER_RIJ>
 __global__ void cuRadialAEVs(
-    torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits>
-        species_t,
+    torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfR_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> EtaR_t,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> aev_t,
@@ -300,32 +284,25 @@ __global__ void cuRadialAEVs(
 
     DataT GmR = 0.25 * exp(-EtaR * (Rij - ShfR) * (Rij - ShfR)) * fc;
 
-    atomicAdd(
-        &aev_t[mol_idx][i][type_j * aev_params.radial_sublength + ishfr], GmR);
+    atomicAdd(&aev_t[mol_idx][i][type_j * aev_params.radial_sublength + ishfr], GmR);
   }
 }
 
 template <typename DataT>
-void cubScan(
-    const DataT* d_in,
-    DataT* d_out,
-    int num_items,
-    cudaStream_t stream) {
+void cubScan(const DataT* d_in, DataT* d_out, int num_items, cudaStream_t stream) {
   auto& allocator = *c10::cuda::CUDACachingAllocator::get();
 
   // Determine temporary device storage requirements
   void* d_temp_storage = NULL;
   size_t temp_storage_bytes = 0;
-  cub::DeviceScan::ExclusiveSum(
-      d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
+  cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
 
   // Allocate temporary storage
   auto buffer_tmp = allocator.allocate(temp_storage_bytes);
   d_temp_storage = buffer_tmp.get();
 
   // Run exclusive prefix sum
-  cub::DeviceScan::ExclusiveSum(
-      d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
+  cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
 }
 
 template <typename DataT, typename IndexT>
@@ -367,8 +344,7 @@ int cubEncode(
       stream);
 
   int num_selected = 0;
-  cudaMemcpyAsync(
-      &num_selected, d_num_runs_out, sizeof(int), cudaMemcpyDefault, stream);
+  cudaMemcpyAsync(&num_selected, d_num_runs_out, sizeof(int), cudaMemcpyDefault, stream);
   cudaStreamSynchronize(stream);
   return num_selected;
 }
@@ -387,13 +363,7 @@ int cubDeviceSelect(
   void* d_temp_storage = NULL;
   size_t temp_storage_bytes = 0;
   cub::DeviceSelect::If(
-      d_temp_storage,
-      temp_storage_bytes,
-      d_in,
-      d_out,
-      d_num_selected_out,
-      num_items,
-      select_op);
+      d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);
 
   // Allocate temporary storage
   auto buffer_tmp = allocator.allocate(temp_storage_bytes);
@@ -411,37 +381,26 @@ int cubDeviceSelect(
       stream);
 
   int num_selected = 0;
-  cudaMemcpyAsync(
-      &num_selected,
-      d_num_selected_out,
-      sizeof(int),
-      cudaMemcpyDefault,
-      stream);
+  cudaMemcpyAsync(&num_selected, d_num_selected_out, sizeof(int), cudaMemcpyDefault, stream);
   cudaStreamSynchronize(stream);
 
   return num_selected;
 }
 
 template <typename DataT>
-DataT cubMax(
-    const DataT* d_in,
-    int num_items,
-    DataT* d_out,
-    cudaStream_t stream) {
+DataT cubMax(const DataT* d_in, int num_items, DataT* d_out, cudaStream_t stream) {
   auto& allocator = *c10::cuda::CUDACachingAllocator::get();
   // Determine temporary device storage requirements
   void* d_temp_storage = NULL;
   size_t temp_storage_bytes = 0;
-  cub::DeviceReduce::Max(
-      d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
+  cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
 
   // Allocate temporary storage
   auto buffer_tmp = allocator.allocate(temp_storage_bytes);
   d_temp_storage = buffer_tmp.get();
 
   // Run min-reduction
-  cub::DeviceReduce::Max(
-      d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
+  cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
 
   int maxVal = 0;
   cudaMemcpyAsync(&maxVal, d_out, sizeof(DataT), cudaMemcpyDefault, stream);
@@ -459,10 +418,8 @@ void initConsts(AEVScalarParams<float>& aev_params, cudaStream_t stream) {
     int offset = 0;
     for (int s = 0; s < num_species; s++) {
       if (t < num_species - s) {
-        subaev_offsets[s * num_species + s + t] =
-            aev_params.angular_sublength * (offset + t);
-        subaev_offsets[(s + t) * num_species + s] =
-            aev_params.angular_sublength * (offset + t);
+        subaev_offsets[s * num_species + s + t] = aev_params.angular_sublength * (offset + t);
+        subaev_offsets[(s + t) * num_species + s] = aev_params.angular_sublength * (offset + t);
       }
       offset += num_species - s;
     }
@@ -492,8 +449,7 @@ torch::Tensor cuComputeAEV(
     torch::Tensor ShfZ_t,
     int64_t num_species_) {
   TORCH_CHECK(
-      (species_t.dtype() == torch::kInt32) &&
-          (coordinates_t.dtype() == torch::kFloat32),
+      (species_t.dtype() == torch::kInt32) && (coordinates_t.dtype() == torch::kFloat32),
       "Unsupported input type");
   TORCH_CHECK(
       EtaR_t.size(0) == 1 || EtaA_t.size(0) == 1 || Zeta_t.size(0) == 1,
@@ -515,23 +471,19 @@ torch::Tensor cuComputeAEV(
   aev_params.radial_sublength = EtaR_t.size(0) * ShfR_t.size(0);
   aev_params.radial_length = aev_params.radial_sublength * num_species;
 
-  aev_params.angular_sublength =
-      EtaA_t.size(0) * Zeta_t.size(0) * ShfA_t.size(0) * ShfZ_t.size(0);
-  aev_params.angular_length =
-      aev_params.angular_sublength * (num_species * (num_species + 1) / 2);
+  aev_params.angular_sublength = EtaA_t.size(0) * Zeta_t.size(0) * ShfA_t.size(0) * ShfZ_t.size(0);
+  aev_params.angular_length = aev_params.angular_sublength * (num_species * (num_species + 1) / 2);
 
   int aev_length = aev_params.radial_length + aev_params.angular_length;
 
-  auto aev_t = torch::zeros(
-      {n_molecules, max_natoms_per_mol, aev_length}, coordinates_t.options());
+  auto aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length}, coordinates_t.options());
 
   if (species_t.numel() == 0) {
     return aev_t;
   }
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
-  auto thrust_allocator =
-      THCThrustAllocator(at::globalContext().lazyInitCUDA());
+  auto thrust_allocator = THCThrustAllocator(at::globalContext().lazyInitCUDA());
   auto policy = thrust::cuda::par(thrust_allocator).on(stream);
   auto& allocator = *c10::cuda::CUDACachingAllocator::get();
 
@@ -539,10 +491,8 @@ torch::Tensor cuComputeAEV(
   initConsts(aev_params, stream);
 
   // buffer to store all the pairwise distance (Rij)
-  auto total_natom_pairs =
-      n_molecules * max_natoms_per_mol * max_natoms_per_mol;
-  auto buffer_Rij =
-      allocator.allocate(sizeof(PairDist<float>) * total_natom_pairs);
+  auto total_natom_pairs = n_molecules * max_natoms_per_mol * max_natoms_per_mol;
+  auto buffer_Rij = allocator.allocate(sizeof(PairDist<float>) * total_natom_pairs);
   PairDist<float>* d_Rij = (PairDist<float>*)buffer_Rij.get();
 
   // init all Rij to inf
@@ -552,8 +502,7 @@ torch::Tensor cuComputeAEV(
 
   // buffer to store all the pairwise distance that is needed for Radial AEV
   // computation
-  auto buffer_radialRij =
-      allocator.allocate(sizeof(PairDist<float>) * total_natom_pairs);
+  auto buffer_radialRij = allocator.allocate(sizeof(PairDist<float>) * total_natom_pairs);
   PairDist<float>* d_radialRij = (PairDist<float>*)buffer_radialRij.get();
 
   auto buffer_count = allocator.allocate(sizeof(int));
@@ -563,11 +512,7 @@ torch::Tensor cuComputeAEV(
 
   dim3 block(8, 8, 1);
   // Compute pairwise distance (Rij) for all atom pairs in a molecule
-  pairwiseDistance<<<
-      n_molecules,
-      block,
-      sizeof(float) * max_natoms_per_mol * 3,
-      stream>>>(
+  pairwiseDistance<<<n_molecules, block, sizeof(float) * max_natoms_per_mol * 3, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       d_Rij,
@@ -607,32 +552,23 @@ torch::Tensor cuComputeAEV(
       [=] __device__(const PairDist<float> d) { return d.Rij <= Rca; },
       stream);
 
-  auto buffer_centralAtom =
-      allocator.allocate(sizeof(PairDist<float>) * nAngularRij);
+  auto buffer_centralAtom = allocator.allocate(sizeof(PairDist<float>) * nAngularRij);
   PairDist<float>* d_centralAtom = (PairDist<float>*)buffer_centralAtom.get();
 
-  auto buffer_numPairsPerCenterAtom =
-      allocator.allocate(sizeof(int) * nAngularRij);
+  auto buffer_numPairsPerCenterAtom = allocator.allocate(sizeof(int) * nAngularRij);
   int* d_numPairsPerCenterAtom = (int*)buffer_numPairsPerCenterAtom.get();
 
   // group by center atom
   int ncenter_atoms = cubEncode(
-      d_angularRij,
-      d_centralAtom,
-      d_numPairsPerCenterAtom,
-      nAngularRij,
-      d_count_out,
-      stream);
+      d_angularRij, d_centralAtom, d_numPairsPerCenterAtom, nAngularRij, d_count_out, stream);
 
-  auto buffer_centerAtomStartIdx =
-      allocator.allocate(sizeof(int) * ncenter_atoms);
+  auto buffer_centerAtomStartIdx = allocator.allocate(sizeof(int) * ncenter_atoms);
   int* d_centerAtomStartIdx = (int*)buffer_centerAtomStartIdx.get();
 
   cubScan(d_numPairsPerCenterAtom, d_centerAtomStartIdx, ncenter_atoms, stream);
   {
     const int nthreads_per_catom = 32;
-    const int nblocks_angAEV =
-        (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
+    const int nblocks_angAEV = (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
     auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
       int sm_aev = sizeof(float) * align<4>(aev_params.angular_length);
       int sxyz = sizeof(float) * max_nbrs * 3;
@@ -643,8 +579,7 @@ torch::Tensor cuComputeAEV(
       return (sm_aev + sxyz + sRij + sfc + sj) * ncatom_per_tpb;
     };
 
-    int maxNbrsPerCenterAtom =
-        cubMax(d_numPairsPerCenterAtom, ncenter_atoms, d_count_out, stream);
+    int maxNbrsPerCenterAtom = cubMax(d_numPairsPerCenterAtom, ncenter_atoms, d_count_out, stream);
 
     int maxnbrs_per_atom_aligned = align<4>(maxNbrsPerCenterAtom);
 
