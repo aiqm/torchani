@@ -188,6 +188,9 @@ class Transformations:
                 X.append([1] * n)
             X = numpy.array(X).transpose()
             Y = numpy.array(Y)
+            if Y.shape[0] == 0:
+                raise RuntimeError("subtract_self_energies could not find any energies in the provided dataset.\n"
+                                   "Please make sure the path provided to data.load() points to a dataset has energies and is not empty or corrupted.")
             sae, _, _, _ = numpy.linalg.lstsq(X, Y, rcond=None)
             sae_ = sae
             if shifter.fit_intercept:
