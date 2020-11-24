@@ -1,6 +1,8 @@
+#include <stdio.h>
 #include <thrust/equal.h>
 #include <torch/extension.h>
 #include <cub/cub.cuh>
+#include <vector>
 
 #include <ATen/Context.h>
 #include <THC/THC.h>
@@ -8,6 +10,8 @@
 #include <THC/THCThrustAllocator.cuh>
 
 #define PI 3.141592653589793
+typedef torch::Tensor Tensor;
+typedef torch::autograd::tensor_list tensor_list;
 
 template <typename DataT, typename IndexT = int>
 struct AEVScalarParams {
@@ -222,7 +226,7 @@ __global__ void cuAngularAEVs(
         DataT fc_ijk = fc_ij * fc_ik;
 
         IndexT subaev_offset = csubaev_offsets[type_j * num_species + type_k];
-        IndexT aev_offset = aev_params.radial_length + subaev_offset;
+        // IndexT aev_offset = aev_params.radial_length + subaev_offset;
 
         for (int itheta = tile.x; itheta < nShfZ; itheta += TILEX) {
           DataT ShfZ = ShfZ_t[itheta];
@@ -406,19 +410,23 @@ void initConsts(AEVScalarParams<float>& aev_params, cudaStream_t stream) {
   delete[] subaev_offsets;
 }
 
+typedef struct Result {
+  Tensor aev_t;
+} Result;
+
 // NOTE: assumes size of EtaA_t = Zeta_t = EtaR_t = 1
 template <typename ScalarRealT = float>
-torch::Tensor cuComputeAEV(
-    torch::Tensor coordinates_t,
-    torch::Tensor species_t,
+Result cuaev_forward(
+    Tensor& coordinates_t,
+    Tensor& species_t,
     double Rcr_,
     double Rca_,
-    torch::Tensor EtaR_t,
-    torch::Tensor ShfR_t,
-    torch::Tensor EtaA_t,
-    torch::Tensor Zeta_t,
-    torch::Tensor ShfA_t,
-    torch::Tensor ShfZ_t,
+    Tensor& EtaR_t,
+    Tensor& ShfR_t,
+    Tensor& EtaA_t,
+    Tensor& Zeta_t,
+    Tensor& ShfA_t,
+    Tensor& ShfZ_t,
     int64_t num_species_) {
   TORCH_CHECK(
       (species_t.dtype() == torch::kInt32) && (coordinates_t.dtype() == torch::kFloat32), "Unsupported input type");
@@ -450,7 +458,7 @@ torch::Tensor cuComputeAEV(
   auto aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length}, coordinates_t.options());
 
   if (species_t.numel() == 0) {
-    return aev_t;
+    return {aev_t};
   }
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
@@ -483,6 +491,7 @@ torch::Tensor cuComputeAEV(
 
   dim3 block(8, 8, 1);
   // Compute pairwise distance (Rij) for all atom pairs in a molecule
+  // maximum 4096 atoms, which needs 49152 byte (48 kb) of shared memory
   pairwiseDistance<<<n_molecules, block, sizeof(float) * max_natoms_per_mol * 3, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
@@ -540,7 +549,7 @@ torch::Tensor cuComputeAEV(
     const int nthreads_per_catom = 32;
     const int nblocks_angAEV = (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
     auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
-      int sm_aev = sizeof(float) * align<4>(aev_params.angular_length);
+      int sm_aev = sizeof(float) * align<4>(aev_params.angular_length); // (angular_length / 4 + 1) * 4
       int sxyz = sizeof(float) * max_nbrs * 3;
       int sRij = sizeof(float) * max_nbrs;
       int sfc = sizeof(float) * max_nbrs;
@@ -574,11 +583,68 @@ torch::Tensor cuComputeAEV(
         align<4>(aev_params.angular_length),
         ncenter_atoms);
   }
-  return aev_t;
+  return {
+      aev_t,
+  };
+}
+
+Tensor cuaev_backward(Tensor& grad_outputs, Tensor& coordinates) {
+  return coordinates;
+}
+
+#define AEV_INPUT                                                                                                     \
+  Tensor &coordinates_t, Tensor &species_t, double Rcr_, double Rca_, Tensor &EtaR_t, Tensor &ShfR_t, Tensor &EtaA_t, \
+      Tensor &Zeta_t, Tensor &ShfA_t, Tensor &ShfZ_t, int64_t num_species_
+
+Tensor cuaev_cuda(AEV_INPUT) {
+  printf("calling cuda \n");
+  Result res = cuaev_forward<float>(
+      coordinates_t, species_t, Rcr_, Rca_, EtaR_t, ShfR_t, EtaA_t, Zeta_t, ShfA_t, ShfZ_t, num_species_);
+  return res.aev_t;
+}
+
+class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
+ public:
+  static Tensor forward(torch::autograd::AutogradContext* ctx, AEV_INPUT) {
+    at::AutoNonVariableTypeMode g;
+    printf("calling autograd::forward \n");
+    Result res = cuaev_forward<float>(
+        coordinates_t, species_t, Rcr_, Rca_, EtaR_t, ShfR_t, EtaA_t, Zeta_t, ShfA_t, ShfZ_t, num_species_);
+    if (coordinates_t.requires_grad()) {
+      printf("saving context \n");
+      ctx->save_for_backward({coordinates_t, species_t});
+    }
+    return res.aev_t;
+  }
+
+  static tensor_list backward(torch::autograd::AutogradContext* ctx, tensor_list grad_outputs) {
+    printf("calling autograd::backward \n");
+    auto saved = ctx->get_saved_variables();
+    auto coordinates_t = saved[0];
+    auto species_t = saved[1];
+    Tensor grad_coord = cuaev_backward(grad_outputs[0], coordinates_t);
+
+    return {
+        grad_coord, Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor()};
+  }
+};
+
+Tensor cuaev_autograd(AEV_INPUT) {
+  printf("calling autograd \n");
+  return CuaevAutograd::apply(
+      coordinates_t, species_t, Rcr_, Rca_, EtaR_t, ShfR_t, EtaA_t, Zeta_t, ShfA_t, ShfZ_t, num_species_);
 }
 
 TORCH_LIBRARY(cuaev, m) {
-  m.def("cuComputeAEV", &cuComputeAEV<float>);
+  m.def("cuComputeAEV", cuaev_cuda);
+}
+
+TORCH_LIBRARY_IMPL(cuaev, CUDA, m) {
+  m.impl("cuComputeAEV", cuaev_cuda);
+}
+
+TORCH_LIBRARY_IMPL(cuaev, Autograd, m) {
+  m.impl("cuComputeAEV", cuaev_autograd);
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {}
