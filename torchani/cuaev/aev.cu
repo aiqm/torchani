@@ -206,8 +206,7 @@ __global__ void cuAngularAEVs(
       DataT theta = 0;
       if (kk < jnum) {
         const DataT Rik = sdist[kk];
-        theta =
-            acos(0.95 * (sdx[jj] * sdx[kk] + sdy[jj] * sdy[kk] + sdz[jj] * sdz[kk]) / (Rij * Rik));
+        theta = acos(0.95 * (sdx[jj] * sdx[kk] + sdy[jj] * sdy[kk] + sdz[jj] * sdz[kk]) / (Rij * Rik));
       }
 
       for (int srcLane = 0; kk_start + srcLane < min(32, jnum); ++srcLane) {
@@ -319,14 +318,7 @@ int cubEncode(
   void* d_temp_storage = NULL;
   size_t temp_storage_bytes = 0;
   cub::DeviceRunLengthEncode::Encode(
-      d_temp_storage,
-      temp_storage_bytes,
-      d_in,
-      d_unique_out,
-      d_counts_out,
-      d_num_runs_out,
-      num_items,
-      stream);
+      d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_counts_out, d_num_runs_out, num_items, stream);
 
   // Allocate temporary storage
   auto buffer_tmp = allocator.allocate(temp_storage_bytes);
@@ -334,14 +326,7 @@ int cubEncode(
 
   // Run encoding
   cub::DeviceRunLengthEncode::Encode(
-      d_temp_storage,
-      temp_storage_bytes,
-      d_in,
-      d_unique_out,
-      d_counts_out,
-      d_num_runs_out,
-      num_items,
-      stream);
+      d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_counts_out, d_num_runs_out, num_items, stream);
 
   int num_selected = 0;
   cudaMemcpyAsync(&num_selected, d_num_runs_out, sizeof(int), cudaMemcpyDefault, stream);
@@ -362,8 +347,7 @@ int cubDeviceSelect(
   // Determine temporary device storage requirements
   void* d_temp_storage = NULL;
   size_t temp_storage_bytes = 0;
-  cub::DeviceSelect::If(
-      d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);
+  cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);
 
   // Allocate temporary storage
   auto buffer_tmp = allocator.allocate(temp_storage_bytes);
@@ -371,14 +355,7 @@ int cubDeviceSelect(
 
   // Run selection
   cub::DeviceSelect::If(
-      d_temp_storage,
-      temp_storage_bytes,
-      d_in,
-      d_out,
-      d_num_selected_out,
-      num_items,
-      select_op,
-      stream);
+      d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op, stream);
 
   int num_selected = 0;
   cudaMemcpyAsync(&num_selected, d_num_selected_out, sizeof(int), cudaMemcpyDefault, stream);
@@ -425,12 +402,7 @@ void initConsts(AEVScalarParams<float>& aev_params, cudaStream_t stream) {
     }
   }
   cudaMemcpyToSymbolAsync(
-      csubaev_offsets,
-      subaev_offsets,
-      sizeof(int) * num_species * num_species,
-      0,
-      cudaMemcpyDefault,
-      stream);
+      csubaev_offsets, subaev_offsets, sizeof(int) * num_species * num_species, 0, cudaMemcpyDefault, stream);
   delete[] subaev_offsets;
 }
 
@@ -449,8 +421,7 @@ torch::Tensor cuComputeAEV(
     torch::Tensor ShfZ_t,
     int64_t num_species_) {
   TORCH_CHECK(
-      (species_t.dtype() == torch::kInt32) && (coordinates_t.dtype() == torch::kFloat32),
-      "Unsupported input type");
+      (species_t.dtype() == torch::kInt32) && (coordinates_t.dtype() == torch::kFloat32), "Unsupported input type");
   TORCH_CHECK(
       EtaR_t.size(0) == 1 || EtaA_t.size(0) == 1 || Zeta_t.size(0) == 1,
       "cuda extension is currently not supported for the specified "
@@ -559,8 +530,7 @@ torch::Tensor cuComputeAEV(
   int* d_numPairsPerCenterAtom = (int*)buffer_numPairsPerCenterAtom.get();
 
   // group by center atom
-  int ncenter_atoms = cubEncode(
-      d_angularRij, d_centralAtom, d_numPairsPerCenterAtom, nAngularRij, d_count_out, stream);
+  int ncenter_atoms = cubEncode(d_angularRij, d_centralAtom, d_numPairsPerCenterAtom, nAngularRij, d_count_out, stream);
 
   auto buffer_centerAtomStartIdx = allocator.allocate(sizeof(int) * ncenter_atoms);
   int* d_centerAtomStartIdx = (int*)buffer_centerAtomStartIdx.get();
