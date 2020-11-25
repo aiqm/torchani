@@ -316,7 +316,7 @@ __global__ void cuRadialAEVs(
   int i = d.i;
   int j = d.j;
 
-  SpeciesT type_i = species_t[mol_idx][i];
+  // SpeciesT type_i = species_t[mol_idx][i];
   SpeciesT type_j = species_t[mol_idx][j];
 
   DataT fc = 0.5 * cos(PI * Rij / aev_params.Rcr) + 0.5;
@@ -358,7 +358,7 @@ __global__ void cuRadialAEVs_backward(
   int i = d.i;
   int j = d.j;
 
-  SpeciesT type_i = species_t[mol_idx][i];
+  // SpeciesT type_i = species_t[mol_idx][i];
   SpeciesT type_j = species_t[mol_idx][j];
 
   DataT fc = 0.5 * cos(PI * Rij / aev_params.Rcr) + 0.5;
@@ -368,7 +368,7 @@ __global__ void cuRadialAEVs_backward(
     DataT ShfR = ShfR_t[ishfr];
 
     DataT GmR = 0.25 * exp(-EtaR * (Rij - ShfR) * (Rij - ShfR));
-    DataT GmR_grad = -EtaR * 0.25 * (-2 * ShfR + 2 * Rij) * exp(-EtaR * (Rij - ShfR) * (Rij - ShfR));
+    DataT GmR_grad = -EtaR * (-2 * ShfR + 2 * Rij) * GmR;
 
     DataT grad_output_item = grad_output[mol_idx][i][type_j * aev_params.radial_sublength + ishfr];
     DataT grad_radial_dist_item = grad_output_item * (GmR_grad * fc + GmR * fc_grad);
