@@ -17,12 +17,16 @@ template <typename DataT, typename IndexT = int>
 struct AEVScalarParams {
   DataT Rcr;
   DataT Rca;
-
   IndexT radial_sublength;
   IndexT radial_length;
   IndexT angular_sublength;
   IndexT angular_length;
   IndexT num_species;
+
+  torch::IValue toTuple() {
+    return torch::IValue(std::make_tuple(
+        (double)Rcr, (double)Rca, radial_sublength, radial_length, angular_sublength, angular_length, num_species));
+  }
 };
 
 #define MAX_NSPECIES 10
@@ -412,6 +416,13 @@ void initConsts(AEVScalarParams<float>& aev_params, cudaStream_t stream) {
 
 typedef struct Result {
   Tensor aev_t;
+  AEVScalarParams<float> aev_params;
+  Tensor tensor_Rij;
+  Tensor tensor_radialRij;
+  Tensor tensor_angularRij;
+  int total_natom_pairs;
+  int nRadialRij;
+  int nAngularRij;
 } Result;
 
 // NOTE: assumes size of EtaA_t = Zeta_t = EtaR_t = 1
@@ -458,7 +469,7 @@ Result cuaev_forward(
   auto aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length}, coordinates_t.options());
 
   if (species_t.numel() == 0) {
-    return {aev_t};
+    return {aev_t, aev_params, Tensor(), Tensor(), Tensor(), 0, 0, 0};
   }
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
@@ -471,8 +482,9 @@ Result cuaev_forward(
 
   // buffer to store all the pairwise distance (Rij)
   auto total_natom_pairs = n_molecules * max_natoms_per_mol * max_natoms_per_mol;
-  auto buffer_Rij = allocator.allocate(sizeof(PairDist<float>) * total_natom_pairs);
-  PairDist<float>* d_Rij = (PairDist<float>*)buffer_Rij.get();
+  auto d_options = torch::dtype(torch::kUInt8).device(torch::kCUDA, coordinates_t.device().index());
+  Tensor tensor_Rij = torch::empty(sizeof(PairDist<float>) * total_natom_pairs, d_options);
+  PairDist<float>* d_Rij = (PairDist<float>*)tensor_Rij.data_ptr();
 
   // init all Rij to inf
   PairDist<float> init;
@@ -481,8 +493,8 @@ Result cuaev_forward(
 
   // buffer to store all the pairwise distance that is needed for Radial AEV
   // computation
-  auto buffer_radialRij = allocator.allocate(sizeof(PairDist<float>) * total_natom_pairs);
-  PairDist<float>* d_radialRij = (PairDist<float>*)buffer_radialRij.get();
+  Tensor tensor_radialRij = torch::empty(sizeof(PairDist<float>) * total_natom_pairs, d_options);
+  PairDist<float>* d_radialRij = (PairDist<float>*)tensor_radialRij.data_ptr();
 
   auto buffer_count = allocator.allocate(sizeof(int));
   int* d_count_out = (int*)buffer_count.get();
@@ -520,7 +532,8 @@ Result cuaev_forward(
 
   // reuse buffer allocated for all Rij
   // d_angularRij will store all the Rij required in Angular AEV computation
-  PairDist<float>* d_angularRij = d_Rij;
+  Tensor tensor_angularRij = torch::empty(sizeof(PairDist<float>) * nRadialRij, d_options);
+  PairDist<float>* d_angularRij = (PairDist<float>*)tensor_angularRij.data_ptr();
 
   // Extract Rijs that is needed for AngularAEV comptuation i.e. all the Rij
   // <= Rca
@@ -584,12 +597,44 @@ Result cuaev_forward(
         ncenter_atoms);
   }
   return {
-      aev_t,
-  };
+      aev_t, aev_params, tensor_Rij, tensor_radialRij, tensor_angularRij, total_natom_pairs, nRadialRij, nAngularRij};
 }
 
-Tensor cuaev_backward(Tensor& grad_outputs, Tensor& coordinates) {
-  return coordinates;
+Tensor cuaev_backward(
+    Tensor& grad_output,
+    Tensor& coordinates_t,
+    Tensor& species_t,
+    AEVScalarParams<float>& aev_params,
+    Tensor& EtaR_t,
+    Tensor& ShfR_t,
+    Tensor& EtaA_t,
+    Tensor& Zeta_t,
+    Tensor& ShfA_t,
+    Tensor& ShfZ_t,
+    Tensor& tensor_Rij,
+    int total_natom_pairs,
+    Tensor& tensor_radialRij,
+    int nRadialRij,
+    Tensor& tensor_angularRij,
+    int nAngularRij) {
+  using namespace torch::indexing;
+  const int n_molecules = coordinates_t.size(0);
+  const int max_natoms_per_mol = coordinates_t.size(1);
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
+  auto grad_coord = torch::zeros(coordinates_t.sizes(), coordinates_t.options().requires_grad(false)); // [2, 5, 3]
+  auto grad_output_radial = grad_output.index({Ellipsis, Slice(None, aev_params.radial_length)}); // [2, 5, 64]
+  auto grad_output_angular = grad_output.index({Ellipsis, Slice(aev_params.radial_length, None)}); // [2, 5, 320]
+
+  PairDist<float>* d_radialRij = (PairDist<float>*)tensor_radialRij.data_ptr();
+
+  Tensor grad_radial_dist = torch::zeros(nRadialRij, coordinates_t.options().requires_grad(false));
+  // float* grad_radial_dist_ptr = (float*)grad_radial_dist.data_ptr();
+
+  const int block_size = 64;
+  int nblocks = (nRadialRij * 8 + block_size - 1) / block_size;
+
+  return grad_coord;
 }
 
 #define AEV_INPUT                                                                                                     \
@@ -612,7 +657,20 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
         coordinates_t, species_t, Rcr_, Rca_, EtaR_t, ShfR_t, EtaA_t, Zeta_t, ShfA_t, ShfZ_t, num_species_);
     if (coordinates_t.requires_grad()) {
       printf("saving context \n");
-      ctx->save_for_backward({coordinates_t, species_t});
+      ctx->save_for_backward({coordinates_t,
+                              species_t,
+                              res.tensor_Rij,
+                              res.tensor_radialRij,
+                              res.tensor_angularRij,
+                              EtaR_t,
+                              ShfR_t,
+                              EtaA_t,
+                              Zeta_t,
+                              ShfA_t,
+                              ShfZ_t});
+      ctx->saved_data["aev_params"] = res.aev_params.toTuple();
+      c10::List<int64_t> int_list({res.total_natom_pairs, res.nRadialRij, res.nAngularRij});
+      ctx->saved_data["int_list"] = torch::IValue(int_list);
     }
     return res.aev_t;
   }
@@ -622,7 +680,43 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
     auto saved = ctx->get_saved_variables();
     auto coordinates_t = saved[0];
     auto species_t = saved[1];
-    Tensor grad_coord = cuaev_backward(grad_outputs[0], coordinates_t);
+    auto tensor_Rij = saved[2];
+    auto tensor_radialRij = saved[3];
+    auto tensor_angularRij = saved[4];
+    auto EtaR_t = saved[5], ShfR_t = saved[6], EtaA_t = saved[7], Zeta_t = saved[8], ShfA_t = saved[9],
+         ShfZ_t = saved[10];
+
+    c10::intrusive_ptr<c10::ivalue::Tuple> aev_params_tp_ptr = ctx->saved_data["aev_params"].toTuple();
+    auto aev_params_tp = aev_params_tp_ptr->elements();
+    AEVScalarParams<float> aev_params = {(float)aev_params_tp[0].toDouble(),
+                                         (float)aev_params_tp[1].toDouble(),
+                                         (int)aev_params_tp[2].toInt(),
+                                         (int)aev_params_tp[3].toInt(),
+                                         (int)aev_params_tp[4].toInt(),
+                                         (int)aev_params_tp[5].toInt(),
+                                         (int)aev_params_tp[6].toInt()};
+    c10::List<int64_t> int_list = ctx->saved_data["int_list"].toIntList();
+    int total_natom_pairs = (int)int_list[0];
+    int nRadialRij = (int)int_list[1];
+    int nAngularRij = (int)int_list[2];
+
+    Tensor grad_coord = cuaev_backward(
+        grad_outputs[0],
+        coordinates_t,
+        species_t,
+        aev_params,
+        EtaR_t,
+        ShfR_t,
+        EtaA_t,
+        Zeta_t,
+        ShfA_t,
+        ShfZ_t,
+        tensor_Rij,
+        total_natom_pairs,
+        tensor_radialRij,
+        nRadialRij,
+        tensor_angularRij,
+        nAngularRij);
 
     return {
         grad_coord, Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor()};
