@@ -113,6 +113,41 @@ __global__ void pairwiseDistance(
   }
 }
 
+template <typename DataT, typename IndexT = int>
+__global__ void pairwiseDistance_backward(
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> grad_radial_dist,
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_coord,
+    PairDist<DataT>* d_radialRij,
+    IndexT nRadialRij) {
+  int gidx = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (gidx >= nRadialRij)
+    return;
+
+  PairDist<DataT> d = d_radialRij[gidx];
+  DataT Rij = d.Rij;
+  int mol_idx = d.midx;
+  int i = d.i;
+  int j = d.j;
+
+  const DataT delx = pos_t[mol_idx][j][0] - pos_t[mol_idx][i][0];
+  const DataT dely = pos_t[mol_idx][j][1] - pos_t[mol_idx][i][1];
+  const DataT delz = pos_t[mol_idx][j][2] - pos_t[mol_idx][i][2];
+
+  DataT grad_dist_coord_x = delx / Rij;
+  DataT grad_dist_coord_y = dely / Rij;
+  DataT grad_dist_coord_z = delz / Rij;
+  DataT grad_radial_dist_item = grad_radial_dist[gidx];
+
+  atomicAdd(&grad_coord[mol_idx][j][0], grad_radial_dist_item * grad_dist_coord_x);
+  atomicAdd(&grad_coord[mol_idx][j][1], grad_radial_dist_item * grad_dist_coord_y);
+  atomicAdd(&grad_coord[mol_idx][j][2], grad_radial_dist_item * grad_dist_coord_z);
+  atomicAdd(&grad_coord[mol_idx][i][0], -grad_radial_dist_item * grad_dist_coord_x);
+  atomicAdd(&grad_coord[mol_idx][i][1], -grad_radial_dist_item * grad_dist_coord_y);
+  atomicAdd(&grad_coord[mol_idx][i][2], -grad_radial_dist_item * grad_dist_coord_z);
+}
+
 template <typename SpeciesT, typename DataT, typename IndexT = int, int TILEX = 8, int TILEY = 4>
 __global__ void cuAngularAEVs(
     torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
@@ -292,6 +327,53 @@ __global__ void cuRadialAEVs(
     DataT GmR = 0.25 * exp(-EtaR * (Rij - ShfR) * (Rij - ShfR)) * fc;
 
     atomicAdd(&aev_t[mol_idx][i][type_j * aev_params.radial_sublength + ishfr], GmR);
+  }
+}
+
+// every <THREADS_PER_RIJ> threads take care of 1 RIJ, and iterate <nShfR / THREADS_PER_RIJ> times
+template <typename SpeciesT, typename DataT, int THREADS_PER_RIJ>
+__global__ void cuRadialAEVs_backward(
+    torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfR_t,
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> EtaR_t,
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_output,
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> grad_radial_dist,
+    PairDist<DataT>* d_Rij,
+    AEVScalarParams<DataT, int> aev_params,
+    int nRadialRij) {
+  int gidx = blockIdx.x * blockDim.x + threadIdx.x;
+  int idx = gidx / THREADS_PER_RIJ;
+
+  int nShfR = ShfR_t.size(0);
+  DataT EtaR = EtaR_t[0];
+
+  if (idx >= nRadialRij)
+    return;
+
+  int laneIdx = threadIdx.x % THREADS_PER_RIJ;
+
+  PairDist<DataT> d = d_Rij[idx];
+  DataT Rij = d.Rij;
+  int mol_idx = d.midx;
+  int i = d.i;
+  int j = d.j;
+
+  SpeciesT type_i = species_t[mol_idx][i];
+  SpeciesT type_j = species_t[mol_idx][j];
+
+  DataT fc = 0.5 * cos(PI * Rij / aev_params.Rcr) + 0.5;
+  DataT fc_grad = -0.5 * (PI / aev_params.Rcr) * sin(PI * Rij / aev_params.Rcr);
+
+  for (int ishfr = laneIdx; ishfr < nShfR; ishfr += THREADS_PER_RIJ) {
+    DataT ShfR = ShfR_t[ishfr];
+
+    DataT GmR = 0.25 * exp(-EtaR * (Rij - ShfR) * (Rij - ShfR));
+    DataT GmR_grad = -EtaR * 0.25 * (-2 * ShfR + 2 * Rij) * exp(-EtaR * (Rij - ShfR) * (Rij - ShfR));
+
+    DataT grad_output_item = grad_output[mol_idx][i][type_j * aev_params.radial_sublength + ishfr];
+    DataT grad_radial_dist_item = grad_output_item * (GmR_grad * fc + GmR * fc_grad);
+
+    atomicAdd(&grad_radial_dist[idx], grad_radial_dist_item);
   }
 }
 
@@ -631,8 +713,27 @@ Tensor cuaev_backward(
   Tensor grad_radial_dist = torch::zeros(nRadialRij, coordinates_t.options().requires_grad(false));
   // float* grad_radial_dist_ptr = (float*)grad_radial_dist.data_ptr();
 
-  const int block_size = 64;
+  int block_size = 64;
   int nblocks = (nRadialRij * 8 + block_size - 1) / block_size;
+  cuRadialAEVs_backward<int, float, 8><<<nblocks, block_size, 0, stream>>>(
+      species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
+      ShfR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      EtaR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      grad_output.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      grad_radial_dist.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      d_radialRij,
+      aev_params,
+      nRadialRij);
+
+  // For best result, block size should match average molecule size (no padding) to avoid atomicAdd
+  block_size = 128;
+  nblocks = (nRadialRij + block_size - 1) / block_size;
+  pairwiseDistance_backward<<<nblocks, block_size, 0, stream>>>(
+      coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      grad_radial_dist.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      grad_coord.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      d_radialRij,
+      nRadialRij);
 
   return grad_coord;
 }
