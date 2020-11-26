@@ -113,6 +113,7 @@ __global__ void pairwiseDistance(
   }
 }
 
+// every block compute blocksize RIJ's gradient by column major, to avoid atomicAdd waiting
 template <typename DataT, typename IndexT = int>
 __global__ void pairwiseDistance_backward(
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
@@ -120,7 +121,7 @@ __global__ void pairwiseDistance_backward(
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_coord,
     PairDist<DataT>* d_radialRij,
     IndexT nRadialRij) {
-  int gidx = blockIdx.x * blockDim.x + threadIdx.x;
+  int gidx = threadIdx.x * gridDim.x + blockIdx.x;
 
   if (gidx >= nRadialRij)
     return;
@@ -725,8 +726,7 @@ Tensor cuaev_backward(
       aev_params,
       nRadialRij);
 
-  // For best result, block size should match average molecule size (no padding) to avoid atomicAdd
-  block_size = 128;
+  // For best result, block_size should match average molecule size (no padding) to avoid atomicAdd
   nblocks = (nRadialRij + block_size - 1) / block_size;
   pairwiseDistance_backward<<<nblocks, block_size, 0, stream>>>(
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
