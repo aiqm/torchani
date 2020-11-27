@@ -39,3 +39,5 @@ jobs:
       run: python setup.py install --cuaev
     - name: Run cuaev test
       run: pytest tests/test_cuaev.py -v
+    - name: clang-tidy
+      run: clang-tidy torchani/cuaev/*.cu -- -std=c++14 --cuda-path=/usr/local/cuda/ -nocudalib $(python ci/extension-include-dirs.py)
