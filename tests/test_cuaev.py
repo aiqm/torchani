@@ -94,6 +94,18 @@ class TestCUAEV(TestCase):
                 _, cu_aev = self.cuaev_computer((species, coordinates))
                 self.assertEqual(cu_aev, aev)
 
+    def testVeryDenseMolecule(self):
+        for i in range(100):
+            datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, _, _, _, _, _, _ = pickle.load(f)
+                # change angstrom coordinates to 10 times smaller
+                coordinates = 0.1 * torch.from_numpy(coordinates).float().unsqueeze(0).to(self.device)
+                species = torch.from_numpy(species).unsqueeze(0).to(self.device)
+                _, aev = self.aev_computer((species, coordinates))
+                _, cu_aev = self.cuaev_computer((species, coordinates))
+                self.assertEqual(cu_aev, aev, atol=5e-5, rtol=5e-5)
+
 
 if __name__ == '__main__':
     unittest.main()
