@@ -40,4 +40,4 @@ jobs:
     - name: Run cuaev test
       run: pytest tests/test_cuaev.py -v
     - name: clang-tidy
-      run: clang-tidy torchani/cuaev/*.cu -- -std=c++14 --cuda-path=/usr/local/cuda/ -nocudalib $(python ci/extension-include-dirs.py)
+      run: clang-tidy torchani/cuaev/*.cu -- -std=c++14 $(python ci/extension-include-dirs.py) --cuda-path=/usr/local/cuda/ --cuda-gpu-arch=sm_80 --no-cuda-version-check
