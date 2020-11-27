@@ -209,7 +209,7 @@ __global__ void cuAngularAEVs(
         theta = acos(0.95 * (sdx[jj] * sdx[kk] + sdy[jj] * sdy[kk] + sdz[jj] * sdz[kk]) / (Rij * Rik));
       }
 
-      for (int srcLane = 0; kk_start + srcLane < min(32, jnum); ++srcLane) {
+      for (int srcLane = 0; srcLane < 32 && (kk_start + srcLane) < jnum; ++srcLane) {
         int kk = kk_start + srcLane;
         DataT theta_ijk = __shfl_sync(0xFFFFFFFF, theta, srcLane);
 
