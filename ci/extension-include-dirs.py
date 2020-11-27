@@ -1,4 +1,3 @@
-import torch
 from torch.utils import cpp_extension
 from sysconfig import get_paths
 
