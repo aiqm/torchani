@@ -29,13 +29,13 @@ struct AEVScalarParams {
     c10::intrusive_ptr<c10::ivalue::Tuple> aev_params_tuple_ptr = aev_params_ivalue.toTuple();
     auto aev_params_tuple = aev_params_tuple_ptr->elements();
 
-    Rcr = (float)aev_params_tuple[0].toDouble();
-    Rca = (float)aev_params_tuple[1].toDouble();
-    radial_sublength = (int)aev_params_tuple[2].toInt();
-    radial_length = (int)aev_params_tuple[3].toInt();
-    angular_sublength = (int)aev_params_tuple[4].toInt();
-    angular_length = (int)aev_params_tuple[5].toInt();
-    num_species = (int)aev_params_tuple[6].toInt();
+    Rcr = static_cast<DataT>(aev_params_tuple[0].toDouble());
+    Rca = static_cast<DataT>(aev_params_tuple[1].toDouble());
+    radial_sublength = static_cast<IndexT>(aev_params_tuple[2].toInt());
+    radial_length = static_cast<IndexT>(aev_params_tuple[3].toInt());
+    angular_sublength = static_cast<IndexT>(aev_params_tuple[4].toInt());
+    angular_length = static_cast<IndexT>(aev_params_tuple[5].toInt());
+    num_species = static_cast<IndexT>(aev_params_tuple[6].toInt());
   }
 
   operator torch::IValue() {
