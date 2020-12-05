@@ -10,8 +10,8 @@
 #include <THC/THCThrustAllocator.cuh>
 
 #define PI 3.141592653589793
-typedef torch::Tensor Tensor;
-typedef torch::autograd::tensor_list tensor_list;
+using torch::Tensor;
+using torch::autograd::tensor_list;
 
 template <typename DataT, typename IndexT = int>
 struct AEVScalarParams {
@@ -23,7 +23,22 @@ struct AEVScalarParams {
   IndexT angular_length;
   IndexT num_species;
 
-  torch::IValue toTuple() {
+  AEVScalarParams() = default;
+
+  AEVScalarParams(const torch::IValue& aev_params_ivalue){
+    c10::intrusive_ptr<c10::ivalue::Tuple> aev_params_tuple_ptr = aev_params_ivalue.toTuple();
+    auto aev_params_tuple = aev_params_tuple_ptr->elements();
+
+    Rcr = (float)aev_params_tuple[0].toDouble();
+    Rca = (float)aev_params_tuple[1].toDouble();
+    radial_sublength = (int)aev_params_tuple[2].toInt();
+    radial_length = (int)aev_params_tuple[3].toInt();
+    angular_sublength = (int)aev_params_tuple[4].toInt();
+    angular_length = (int)aev_params_tuple[5].toInt();
+    num_species = (int)aev_params_tuple[6].toInt();
+  }
+
+  operator torch::IValue() {
     return torch::IValue(std::make_tuple(
         (double)Rcr, (double)Rca, radial_sublength, radial_length, angular_sublength, angular_length, num_species));
   }
@@ -511,16 +526,16 @@ typedef struct Result {
 // NOTE: assumes size of EtaA_t = Zeta_t = EtaR_t = 1
 template <typename ScalarRealT = float>
 Result cuaev_forward(
-    Tensor& coordinates_t,
-    Tensor& species_t,
+    const Tensor& coordinates_t,
+    const Tensor& species_t,
     double Rcr_,
     double Rca_,
-    Tensor& EtaR_t,
-    Tensor& ShfR_t,
-    Tensor& EtaA_t,
-    Tensor& Zeta_t,
-    Tensor& ShfA_t,
-    Tensor& ShfZ_t,
+    const Tensor& EtaR_t,
+    const Tensor& ShfR_t,
+    const Tensor& EtaA_t,
+    const Tensor& Zeta_t,
+    const Tensor& ShfA_t,
+    const Tensor& ShfZ_t,
     int64_t num_species_) {
   TORCH_CHECK(
       (species_t.dtype() == torch::kInt32) && (coordinates_t.dtype() == torch::kFloat32), "Unsupported input type");
@@ -684,21 +699,21 @@ Result cuaev_forward(
 }
 
 Tensor cuaev_backward(
-    Tensor& grad_output,
-    Tensor& coordinates_t,
-    Tensor& species_t,
-    AEVScalarParams<float>& aev_params,
-    Tensor& EtaR_t,
-    Tensor& ShfR_t,
-    Tensor& EtaA_t,
-    Tensor& Zeta_t,
-    Tensor& ShfA_t,
-    Tensor& ShfZ_t,
-    Tensor& tensor_Rij,
+    const Tensor& grad_output,
+    const Tensor& coordinates_t,
+    const Tensor& species_t,
+    const AEVScalarParams<float>& aev_params,
+    const Tensor& EtaR_t,
+    const Tensor& ShfR_t,
+    const Tensor& EtaA_t,
+    const Tensor& Zeta_t,
+    const Tensor& ShfA_t,
+    const Tensor& ShfZ_t,
+    const Tensor& tensor_Rij,
     int total_natom_pairs,
-    Tensor& tensor_radialRij,
+    const Tensor& tensor_radialRij,
     int nRadialRij,
-    Tensor& tensor_angularRij,
+    const Tensor& tensor_angularRij,
     int nAngularRij) {
   using namespace torch::indexing;
   const int n_molecules = coordinates_t.size(0);
@@ -739,8 +754,8 @@ Tensor cuaev_backward(
 }
 
 #define AEV_INPUT                                                                                                     \
-  Tensor &coordinates_t, Tensor &species_t, double Rcr_, double Rca_, Tensor &EtaR_t, Tensor &ShfR_t, Tensor &EtaA_t, \
-      Tensor &Zeta_t, Tensor &ShfA_t, Tensor &ShfZ_t, int64_t num_species_
+  const Tensor& coordinates_t, const Tensor& species_t, double Rcr_, double Rca_, const Tensor& EtaR_t, const Tensor& ShfR_t, const Tensor& EtaA_t, \
+      const Tensor& Zeta_t, const Tensor& ShfA_t, const Tensor& ShfZ_t, int64_t num_species_
 
 Tensor cuaev_cuda(AEV_INPUT) {
   printf("calling cuda \n");
@@ -769,9 +784,8 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
                               Zeta_t,
                               ShfA_t,
                               ShfZ_t});
-      ctx->saved_data["aev_params"] = res.aev_params.toTuple();
-      c10::List<int64_t> int_list({res.total_natom_pairs, res.nRadialRij, res.nAngularRij});
-      ctx->saved_data["int_list"] = torch::IValue(int_list);
+      ctx->saved_data["aev_params"] = static_cast<torch::IValue>(res.aev_params);
+      ctx->saved_data["int_list"] = c10::List<int64_t> {res.total_natom_pairs, res.nRadialRij, res.nAngularRij};
     }
     return res.aev_t;
   }
@@ -779,23 +793,11 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
   static tensor_list backward(torch::autograd::AutogradContext* ctx, tensor_list grad_outputs) {
     printf("calling autograd::backward \n");
     auto saved = ctx->get_saved_variables();
-    auto coordinates_t = saved[0];
-    auto species_t = saved[1];
-    auto tensor_Rij = saved[2];
-    auto tensor_radialRij = saved[3];
-    auto tensor_angularRij = saved[4];
+    auto coordinates_t = saved[0], species_t = saved[1];
+    auto tensor_Rij = saved[2], tensor_radialRij = saved[3], tensor_angularRij = saved[4];
     auto EtaR_t = saved[5], ShfR_t = saved[6], EtaA_t = saved[7], Zeta_t = saved[8], ShfA_t = saved[9],
          ShfZ_t = saved[10];
-
-    c10::intrusive_ptr<c10::ivalue::Tuple> aev_params_tp_ptr = ctx->saved_data["aev_params"].toTuple();
-    auto aev_params_tp = aev_params_tp_ptr->elements();
-    AEVScalarParams<float> aev_params = {(float)aev_params_tp[0].toDouble(),
-                                         (float)aev_params_tp[1].toDouble(),
-                                         (int)aev_params_tp[2].toInt(),
-                                         (int)aev_params_tp[3].toInt(),
-                                         (int)aev_params_tp[4].toInt(),
-                                         (int)aev_params_tp[5].toInt(),
-                                         (int)aev_params_tp[6].toInt()};
+    AEVScalarParams<float> aev_params (ctx->saved_data["aev_params"]);
     c10::List<int64_t> int_list = ctx->saved_data["int_list"].toIntList();
     int total_natom_pairs = (int)int_list[0];
     int nRadialRij = (int)int_list[1];
