@@ -25,7 +25,7 @@ struct AEVScalarParams {
 
   AEVScalarParams() = default;
 
-  AEVScalarParams(const torch::IValue& aev_params_ivalue){
+  AEVScalarParams(const torch::IValue& aev_params_ivalue) {
     c10::intrusive_ptr<c10::ivalue::Tuple> aev_params_tuple_ptr = aev_params_ivalue.toTuple();
     auto aev_params_tuple = aev_params_tuple_ptr->elements();
 
@@ -753,9 +753,10 @@ Tensor cuaev_backward(
   return grad_coord;
 }
 
-#define AEV_INPUT                                                                                                     \
-  const Tensor& coordinates_t, const Tensor& species_t, double Rcr_, double Rca_, const Tensor& EtaR_t, const Tensor& ShfR_t, const Tensor& EtaA_t, \
-      const Tensor& Zeta_t, const Tensor& ShfA_t, const Tensor& ShfZ_t, int64_t num_species_
+#define AEV_INPUT                                                                                                   \
+  const Tensor &coordinates_t, const Tensor &species_t, double Rcr_, double Rca_, const Tensor &EtaR_t,             \
+      const Tensor &ShfR_t, const Tensor &EtaA_t, const Tensor &Zeta_t, const Tensor &ShfA_t, const Tensor &ShfZ_t, \
+      int64_t num_species_
 
 Tensor cuaev_cuda(AEV_INPUT) {
   printf("calling cuda \n");
@@ -785,7 +786,7 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
                               ShfA_t,
                               ShfZ_t});
       ctx->saved_data["aev_params"] = res.aev_params;
-      ctx->saved_data["int_list"] = c10::List<int64_t> {res.total_natom_pairs, res.nRadialRij, res.nAngularRij};
+      ctx->saved_data["int_list"] = c10::List<int64_t>{res.total_natom_pairs, res.nRadialRij, res.nAngularRij};
     }
     return res.aev_t;
   }
@@ -797,7 +798,7 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
     auto tensor_Rij = saved[2], tensor_radialRij = saved[3], tensor_angularRij = saved[4];
     auto EtaR_t = saved[5], ShfR_t = saved[6], EtaA_t = saved[7], Zeta_t = saved[8], ShfA_t = saved[9],
          ShfZ_t = saved[10];
-    AEVScalarParams<float> aev_params (ctx->saved_data["aev_params"]);
+    AEVScalarParams<float> aev_params(ctx->saved_data["aev_params"]);
     c10::List<int64_t> int_list = ctx->saved_data["int_list"].toIntList();
     int total_natom_pairs = (int)int_list[0];
     int nRadialRij = (int)int_list[1];
