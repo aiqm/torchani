@@ -784,7 +784,7 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
                               Zeta_t,
                               ShfA_t,
                               ShfZ_t});
-      ctx->saved_data["aev_params"] = static_cast<torch::IValue>(res.aev_params);
+      ctx->saved_data["aev_params"] = res.aev_params;
       ctx->saved_data["int_list"] = c10::List<int64_t> {res.total_natom_pairs, res.nRadialRij, res.nAngularRij};
     }
     return res.aev_t;
