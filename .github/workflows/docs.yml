@@ -9,13 +9,14 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  build:
+  docs:
 
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.6, 3.8]
+        python-version: [3.8]
+        tag: ["build", "push"]
 
     steps:
     - uses: actions/checkout@v1
@@ -24,10 +25,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      run: |
-        ci/install_dependencies.sh
-        pip install h5py tb-nightly sphinx sphinx_rtd_theme matplotlib pillow sphinx-gallery
-        pip install .
+      run: ci/install_dependencies.sh
+    - name: Install TorchANI
+      run: python setup.py install
     - name: Download data files
       run: ./download.sh
     # build docs
@@ -45,7 +45,7 @@ jobs:
         git config --global user.name "zasdfgbnm-bot"
     - name: Deploy
       run: |
-        [ ! -z "$GITHUB_HEAD_REF" ] && exit
+        [ ${{ matrix.tag }} == "push" ] || exit 0  # exit when build
         git clone git@github.com:aiqm/torchani-test-docs.git deploy_dir -b gh-pages
         rm -rf deploy_dir/*
         touch deploy_dir/.nojekyll
@@ -53,5 +53,4 @@ jobs:
         cd deploy_dir
         git add .
         git commit -m "update"
-        sh -c 'git push --force || true'
-
+        git push --force

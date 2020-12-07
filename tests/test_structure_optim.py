@@ -11,7 +11,7 @@ from ase import Atoms
 path = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestStructureOptimization(unittest.TestCase):
+class TestStructureOptimization(torchani.testing.TestCase):
 
     def setUp(self):
         self.tolerance = 1e-6
@@ -31,10 +31,7 @@ class TestStructureOptimization(unittest.TestCase):
                 opt = BFGS(atoms)
                 opt.run()
                 coordinates = atoms.get_positions()
-                coordinates = torch.from_numpy(coordinates)
-                distances = (old_coordinates - coordinates).norm(dim=1)
-                rmse = distances.mean()
-                self.assertLess(rmse, self.tolerance)
+                self.assertEqual(old_coordinates, coordinates)
 
 
 if __name__ == '__main__':

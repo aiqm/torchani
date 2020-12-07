@@ -1,12 +1,13 @@
 *.prof
 __pycache__
 /data
-*.cpp
 a.out
 /test.py
 /.vscode
 /build*
-/.eggs
+.eggs
+*.egg-info
+*.ninja
 /torchani.egg-info
 /*.h5
 /*.hdf5
@@ -20,6 +21,9 @@ benchmark_xyz
 /*.ipt
 /*.params
 /*.dat
+*.o
+*.so
+*.ninja_log
 /tmp
 *_cache
 datacache
@@ -30,9 +34,6 @@ dist
 *.swo
 /download
 /download.tar.xz
-/torchani/resources/*.info
-/torchani/resources/ani-1ccx_8x
-/torchani/resources/ani-2x_8x
 *.qdrep
 *.qdstrm
 *.zip
@@ -41,3 +42,6 @@ Untitled.ipynb
 /test*.py
 .coverage
 htmlcov/
+/include
+training_outputs/
+examples/dataset.pkl

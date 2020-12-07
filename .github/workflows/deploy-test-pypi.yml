@@ -9,7 +9,7 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  build:
+  deploy-test-pypi:
 
     runs-on: ubuntu-latest
     strategy:
@@ -24,13 +24,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install twine wheel
+      run: ci/install_dependencies.sh
     - name: Deploy
       run: |
-        [ ! -z "$GITHUB_HEAD_REF" ] && exit
         rm -rf dist/*
         git tag $(date +'v%Y.%m.%d.%H.%M.%S')
-        python setup.py bdist bdist_wheel
+        python setup.py sdist bdist_wheel
         twine upload --repository-url https://test.pypi.org/legacy/ -u zasdfgbnm-bot -p ${{secrets.zasdfgbnm_bot_test_pypi_password}} dist/*

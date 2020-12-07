@@ -37,6 +37,8 @@ from . import neurochem
 from . import models
 from . import units
 from pkg_resources import get_distribution, DistributionNotFound
+import warnings
+from . import testing
 
 try:
     __version__ = get_distribution(__name__).version
@@ -45,16 +47,16 @@ except DistributionNotFound:
     pass
 
 __all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble', 'SpeciesConverter',
-           'utils', 'neurochem', 'models', 'units']
+           'utils', 'neurochem', 'models', 'units', 'testing']
 
 try:
     from . import ase  # noqa: F401
     __all__.append('ase')
 except ImportError:
-    pass
+    warnings.warn("Dependency not satisfied, torchani.ase will not be available")
 
 try:
     from . import data  # noqa: F401
     __all__.append('data')
 except ImportError:
-    pass
+    warnings.warn("Dependency not satisfied, torchani.data will not be available")

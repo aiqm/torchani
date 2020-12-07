@@ -29,24 +29,24 @@ directly calculate energies or get an ASE calculator. For example:
     model0.species_to_tensor(['C', 'H', 'H', 'H', 'H'])
 """
 import os
-import io
-import requests
-import glob
-import zipfile
-import shutil
 import torch
 from torch import Tensor
-from typing import Tuple, Optional
-from . import neurochem
+from typing import Tuple, Optional, NamedTuple
 from .nn import SpeciesConverter, SpeciesEnergies
 from .aev import AEVComputer
+
+
+class SpeciesEnergiesQBC(NamedTuple):
+    species: Tensor
+    energies: Tensor
+    qbcs: Tensor
 
 
 class BuiltinModel(torch.nn.Module):
     r"""Private template for the builtin ANI models """
 
     def __init__(self, species_converter, aev_computer, neural_networks, energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index):
-        super(BuiltinModel, self).__init__()
+        super().__init__()
         self.species_converter = species_converter
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
@@ -61,11 +61,14 @@ class BuiltinModel(torch.nn.Module):
 
     @classmethod
     def _from_neurochem_resources(cls, info_file_path, periodic_table_index=False, model_index=0):
+        from . import neurochem  # noqa
+
         # this is used to load only 1 model (by default model 0)
-        consts, sae_file, ensemble_prefix, ensemble_size = cls._parse_neurochem_resources(info_file_path)
+        const_file, sae_file, ensemble_prefix, ensemble_size = neurochem.parse_neurochem_resources(info_file_path)
         if (model_index >= ensemble_size):
             raise ValueError("The ensemble size is only {}, model {} can't be loaded".format(ensemble_size, model_index))
 
+        consts = neurochem.Constants(const_file)
         species_converter = SpeciesConverter(consts.species)
         aev_computer = AEVComputer(**consts)
         energy_shifter, sae_dict = neurochem.load_sae(sae_file, return_dict=True)
@@ -76,54 +79,6 @@ class BuiltinModel(torch.nn.Module):
 
         return cls(species_converter, aev_computer, neural_networks,
                    energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index)
-
-    @staticmethod
-    def _parse_neurochem_resources(info_file_path):
-        def get_resource(resource_path, file_path):
-            return os.path.join(resource_path, file_path)
-
-        resource_path = os.path.join(os.path.dirname(__file__), 'resources/')
-        local_dir = os.path.expanduser('~/.local/torchani/')
-        repo_name = "ani-model-zoo"
-        tag_name = "ani-2x"
-        extracted_name = '{}-{}'.format(repo_name, tag_name)
-        url = "https://github.com/aiqm/{}/archive/{}.zip".format(repo_name, tag_name)
-
-        if not os.path.isfile(get_resource(resource_path, info_file_path)):
-            if not os.path.isfile(get_resource(local_dir, info_file_path)):
-                print('Downloading ANI model parameters ...')
-                resource_res = requests.get(url)
-                resource_zip = zipfile.ZipFile(io.BytesIO(resource_res.content))
-                try:
-                    resource_zip.extractall(resource_path)
-                except PermissionError:
-                    resource_zip.extractall(local_dir)
-                    resource_path = local_dir
-            else:
-                resource_path = local_dir
-
-            files = glob.glob(os.path.join(resource_path, extracted_name, "resources", "*"))
-            for f in files:
-                try:
-                    shutil.move(f, resource_path)
-                except shutil.Error:
-                    pass
-            shutil.rmtree(os.path.join(resource_path, extracted_name))
-
-        info_file = get_resource(resource_path, info_file_path)
-
-        with open(info_file) as f:
-            # const_file: Path to the file with the builtin constants.
-            # sae_file: Path to the file with the Self Atomic Energies.
-            # ensemble_prefix: Prefix of the neurochem resource directories.
-            lines = [x.strip() for x in f.readlines()][:4]
-            const_file_path, sae_file_path, ensemble_prefix_path, ensemble_size = lines
-            const_file = get_resource(resource_path, const_file_path)
-            sae_file = get_resource(resource_path, sae_file_path)
-            ensemble_prefix = get_resource(resource_path, ensemble_prefix_path)
-            ensemble_size = int(ensemble_size)
-            consts = neurochem.Constants(const_file)
-        return consts, sae_file, ensemble_prefix, ensemble_size
 
     def forward(self, species_coordinates: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
@@ -143,9 +98,52 @@ class BuiltinModel(torch.nn.Module):
         """
         if self.periodic_table_index:
             species_coordinates = self.species_converter(species_coordinates)
+
+        # check if unknown species are included
+        if species_coordinates[0].ge(self.aev_computer.num_species).any():
+            raise ValueError(f'Unknown species found in {species_coordinates[0]}')
+
         species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
         species_energies = self.neural_networks(species_aevs)
         return self.energy_shifter(species_energies)
+
+    @torch.jit.export
+    def atomic_energies(self, species_coordinates: Tuple[Tensor, Tensor],
+                        cell: Optional[Tensor] = None,
+                        pbc: Optional[Tensor] = None) -> SpeciesEnergies:
+        """Calculates predicted atomic energies of all atoms in a molecule
+
+        ..warning::
+            Since this function does not call ``__call__`` directly,
+            hooks are not registered and profiling is not done correctly by
+            pytorch on it. It is meant as a convenience function for analysis
+             and active learning.
+
+        .. note:: The coordinates, and cell are in Angstrom, and the energies
+            will be in Hartree.
+
+        Args:
+            species_coordinates: minibatch of configurations
+            cell: the cell used in PBC computation, set to None if PBC is not enabled
+            pbc: the bool tensor indicating which direction PBC is enabled, set to None if PBC is not enabled
+
+        Returns:
+            species_atomic_energies: species and energies for the given configurations
+                note that the shape of species is (C, A), where C is
+                the number of configurations and A the number of atoms, and
+                the shape of energies is (C, A) for a BuiltinModel.
+        """
+        if self.periodic_table_index:
+            species_coordinates = self.species_converter(species_coordinates)
+        species, aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
+        atomic_energies = self.neural_networks._atomic_energies((species, aevs))
+        self_energies = self.energy_shifter.self_energies.clone().to(species.device)
+        self_energies = self_energies[species]
+        self_energies[species == torch.tensor(-1, device=species.device)] = torch.tensor(0, device=species.device, dtype=torch.double)
+        # shift all atomic energies individually
+        assert self_energies.shape == atomic_energies.shape
+        atomic_energies += self_energies
+        return SpeciesEnergies(species, atomic_energies)
 
     @torch.jit.export
     def _recast_long_buffers(self):
@@ -220,20 +218,47 @@ class BuiltinEnsemble(BuiltinModel):
 
     def __init__(self, species_converter, aev_computer, neural_networks,
                  energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index):
-        super(BuiltinEnsemble, self).__init__(species_converter,
-                                              aev_computer,
-                                              neural_networks,
-                                              energy_shifter,
-                                              species_to_tensor,
-                                              consts,
-                                              sae_dict,
-                                              periodic_table_index)
+        super().__init__(species_converter, aev_computer, neural_networks,
+                         energy_shifter, species_to_tensor, consts, sae_dict,
+                         periodic_table_index)
+
+    @torch.jit.export
+    def atomic_energies(self, species_coordinates: Tuple[Tensor, Tensor],
+                        cell: Optional[Tensor] = None,
+                        pbc: Optional[Tensor] = None, average: bool = True) -> SpeciesEnergies:
+        """Calculates predicted atomic energies of all atoms in a molecule
+
+        see `:method:torchani.BuiltinModel.atomic_energies`
+
+        If average is True (the default) it returns the average over all models
+        (shape (C, A)), otherwise it returns one atomic energy per model (shape
+        (M, C, A))
+        """
+        if self.periodic_table_index:
+            species_coordinates = self.species_converter(species_coordinates)
+        species, aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
+        members_list = []
+        for nnp in self.neural_networks:
+            members_list.append(nnp._atomic_energies((species, aevs)).unsqueeze(0))
+        member_atomic_energies = torch.cat(members_list, dim=0)
+
+        self_energies = self.energy_shifter.self_energies.clone().to(species.device)
+        self_energies = self_energies[species]
+        self_energies[species == torch.tensor(-1, device=species.device)] = torch.tensor(0, device=species.device, dtype=torch.double)
+        # shift all atomic energies individually
+        assert self_energies.shape == member_atomic_energies.shape[1:]
+        member_atomic_energies += self_energies
+        if average:
+            return SpeciesEnergies(species, member_atomic_energies.mean(dim=0))
+        return SpeciesEnergies(species, member_atomic_energies)
 
     @classmethod
     def _from_neurochem_resources(cls, info_file_path, periodic_table_index=False):
+        from . import neurochem  # noqa
         # this is used to load only 1 model (by default model 0)
-        consts, sae_file, ensemble_prefix, ensemble_size = cls._parse_neurochem_resources(info_file_path)
+        const_file, sae_file, ensemble_prefix, ensemble_size = neurochem.parse_neurochem_resources(info_file_path)
 
+        consts = neurochem.Constants(const_file)
         species_converter = SpeciesConverter(consts.species)
         aev_computer = AEVComputer(**consts)
         energy_shifter, sae_dict = neurochem.load_sae(sae_file, return_dict=True)
@@ -266,6 +291,95 @@ class BuiltinEnsemble(BuiltinModel):
                            self._species_to_tensor, self.consts, self.sae_dict,
                            self.periodic_table_index)
         return ret
+
+    @torch.jit.export
+    def members_energies(self, species_coordinates: Tuple[Tensor, Tensor],
+                         cell: Optional[Tensor] = None,
+                         pbc: Optional[Tensor] = None) -> SpeciesEnergies:
+        """Calculates predicted energies of all member modules
+
+        ..warning::
+            Since this function does not call ``__call__`` directly,
+            hooks are not registered and profiling is not done correctly by
+            pytorch on it. It is meant as a convenience function for analysis
+             and active learning.
+
+        .. note:: The coordinates, and cell are in Angstrom, and the energies
+            will be in Hartree.
+
+        Args:
+            species_coordinates: minibatch of configurations
+            cell: the cell used in PBC computation, set to None if PBC is not enabled
+            pbc: the bool tensor indicating which direction PBC is enabled, set to None if PBC is not enabled
+
+        Returns:
+            species_energies: species and energies for the given configurations
+                note that the shape of species is (C, A), where C is
+                the number of configurations and A the number of atoms, and
+                the shape of energies is (M, C), where M is the number
+                of modules in the ensemble
+
+        """
+        if self.periodic_table_index:
+            species_coordinates = self.species_converter(species_coordinates)
+        species, aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
+        member_outputs = []
+        for nnp in self.neural_networks:
+            unshifted_energies = nnp((species, aevs)).energies
+            shifted_energies = self.energy_shifter((species, unshifted_energies)).energies
+            member_outputs.append(shifted_energies.unsqueeze(0))
+        return SpeciesEnergies(species, torch.cat(member_outputs, dim=0))
+
+    @torch.jit.export
+    def energies_qbcs(self, species_coordinates: Tuple[Tensor, Tensor],
+                      cell: Optional[Tensor] = None,
+                      pbc: Optional[Tensor] = None, unbiased: bool = True) -> SpeciesEnergiesQBC:
+        """Calculates predicted predicted energies and qbc factors
+
+        QBC factors are used for query-by-committee (QBC) based active learning
+        (as described in the ANI-1x paper `less-is-more`_ ).
+
+        .. _less-is-more:
+            https://aip.scitation.org/doi/10.1063/1.5023802
+
+        ..warning::
+            Since this function does not call ``__call__`` directly,
+            hooks are not registered and profiling is not done correctly by
+            pytorch on it. It is meant as a convenience function for analysis
+             and active learning.
+
+        .. note:: The coordinates, and cell are in Angstrom, and the energies
+            and qbc factors will be in Hartree.
+
+        Args:
+            species_coordinates: minibatch of configurations
+            cell: the cell used in PBC computation, set to None if PBC is not
+                enabled
+            pbc: the bool tensor indicating which direction PBC is enabled, set
+                to None if PBC is not enabled
+            unbiased: if `True` then Bessel's correction is applied to the
+                standard deviation over the ensemble member's. If `False` Bessel's
+                correction is not applied, True by default.
+
+        Returns:
+            species_energies_qbcs: species, energies and qbc factors for the
+                given configurations note that the shape of species is (C, A),
+                where C is the number of configurations and A the number of
+                atoms, the shape of energies is (C,) and the shape of qbc
+                factors is also (C,).
+        """
+        species, energies = self.members_energies(species_coordinates, cell, pbc)
+
+        # standard deviation is taken across ensemble members
+        qbc_factors = energies.std(0, unbiased=unbiased)
+
+        # rho's (qbc factors) are weighted by dividing by the square root of
+        # the number of atoms in each molecule
+        num_atoms = (species >= 0).sum(dim=1, dtype=energies.dtype)
+        qbc_factors = qbc_factors / num_atoms.sqrt()
+        energies = energies.mean(dim=0)
+        assert qbc_factors.shape == energies.shape
+        return SpeciesEnergiesQBC(species, energies, qbc_factors)
 
     def __len__(self):
         """Get the number of networks in the ensemble

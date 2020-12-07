@@ -49,25 +49,36 @@ class ANIModel(torch.nn.ModuleDict):
         return od
 
     def __init__(self, modules):
-        super(ANIModel, self).__init__(self.ensureOrderedDict(modules))
+        super().__init__(self.ensureOrderedDict(modules))
 
-    def forward(self, species_aev: Tuple[Tensor, Tensor],
+    def forward(self, species_aev: Tuple[Tensor, Tensor],  # type: ignore
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         species, aev = species_aev
+        assert species.shape == aev.shape[:-1]
+
+        atomic_energies = self._atomic_energies((species, aev))
+        # shape of atomic energies is (C, A)
+        return SpeciesEnergies(species, torch.sum(atomic_energies, dim=1))
+
+    @torch.jit.export
+    def _atomic_energies(self, species_aev: Tuple[Tensor, Tensor]) -> Tensor:
+        # Obtain the atomic energies associated with a given tensor of AEV's
+        species, aev = species_aev
+        assert species.shape == aev.shape[:-1]
         species_ = species.flatten()
         aev = aev.flatten(0, 1)
 
         output = aev.new_zeros(species_.shape)
 
-        for i, (_, m) in enumerate(self.items()):
+        for i, m in enumerate(self.values()):
             mask = (species_ == i)
             midx = mask.nonzero().flatten()
             if midx.shape[0] > 0:
                 input_ = aev.index_select(0, midx)
                 output.masked_scatter_(mask, m(input_).flatten())
         output = output.view_as(species)
-        return SpeciesEnergies(species, torch.sum(output, dim=1))
+        return output
 
 
 class Ensemble(torch.nn.ModuleList):
@@ -77,7 +88,7 @@ class Ensemble(torch.nn.ModuleList):
         super().__init__(modules)
         self.size = len(modules)
 
-    def forward(self, species_input: Tuple[Tensor, Tensor],
+    def forward(self, species_input: Tuple[Tensor, Tensor],  # type: ignore
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         sum_ = 0
@@ -91,9 +102,9 @@ class Sequential(torch.nn.ModuleList):
     """Modified Sequential module that accept Tuple type as input"""
 
     def __init__(self, *modules):
-        super(Sequential, self).__init__(modules)
+        super().__init__(modules)
 
-    def forward(self, input_: Tuple[Tensor, Tensor],
+    def forward(self, input_: Tuple[Tensor, Tensor],  # type: ignore
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None):
         for module in self:
@@ -119,10 +130,11 @@ class SpeciesConverter(torch.nn.Module):
         sequence of all supported species, in order (it is recommended to order
         according to atomic number).
     """
+    conv_tensor: Tensor
 
     def __init__(self, species):
         super().__init__()
-        rev_idx = {s: k for k, s in enumerate(utils.PERIODIC_TABLE, 1)}
+        rev_idx = {s: k for k, s in enumerate(utils.PERIODIC_TABLE)}
         maxidx = max(rev_idx.values())
         self.register_buffer('conv_tensor', torch.full((maxidx + 2,), -1, dtype=torch.long))
         for i, s in enumerate(species):
@@ -133,4 +145,10 @@ class SpeciesConverter(torch.nn.Module):
                 pbc: Optional[Tensor] = None):
         """Convert species from periodic table element index to 0, 1, 2, 3, ... indexing"""
         species, coordinates = input_
-        return SpeciesCoordinates(self.conv_tensor[species].to(species.device), coordinates)
+        converted_species = self.conv_tensor[species]
+
+        # check if unknown species are included
+        if converted_species[species.ne(-1)].lt(0).any():
+            raise ValueError(f'Unknown species found in {species}')
+
+        return SpeciesCoordinates(converted_species.to(species.device), coordinates)

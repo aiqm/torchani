@@ -5,3 +5,4 @@ h5py
 pillow
 pkbar
 pyyaml
+pytest
