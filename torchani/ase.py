@@ -30,6 +30,9 @@ class Calculator(ase.calculators.calculator.Calculator):
         super().__init__()
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
         self.model = model
+        # Since ANI is used in inference mode, no gradients on model parameters are required here
+        for p in self.model.parameters():
+            p.requires_grad_(False)
         self.overwrite = overwrite
 
         a_parameter = next(self.model.parameters())
