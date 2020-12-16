@@ -359,6 +359,7 @@ class AEVComputer(torch.nn.Module):
         ShfZ (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
             equation (4) in the `ANI paper`_.
         num_species (int): Number of supported atom types.
+        use_cuda_extension (bool): Whether to use cuda extension for faster calculation (needs cuaev installed).
 
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
