@@ -521,6 +521,13 @@ typedef struct Result {
   int total_natom_pairs;
   int nRadialRij;
   int nAngularRij;
+  Tensor tensor_centralAtom;
+  Tensor tensor_numPairsPerCenterAtom;
+  Tensor tensor_centerAtomStartIdx;
+  int maxnbrs_per_atom_aligned;
+  int angular_length_aligned;
+  int smem_size_aligned;
+  int ncenter_atoms;
 } Result;
 
 // NOTE: assumes size of EtaA_t = Zeta_t = EtaR_t = 1
@@ -643,17 +650,17 @@ Result cuaev_forward(
       [=] __device__(const PairDist<float> d) { return d.Rij <= Rca; },
       stream);
 
-  auto buffer_centralAtom = allocator.allocate(sizeof(PairDist<float>) * nAngularRij);
-  PairDist<float>* d_centralAtom = (PairDist<float>*)buffer_centralAtom.get();
+  Tensor tensor_centralAtom = torch::empty(sizeof(PairDist<float>) * nAngularRij, d_options);
+  PairDist<float>* d_centralAtom = (PairDist<float>*)tensor_centralAtom.data_ptr();
 
-  auto buffer_numPairsPerCenterAtom = allocator.allocate(sizeof(int) * nAngularRij);
-  int* d_numPairsPerCenterAtom = (int*)buffer_numPairsPerCenterAtom.get();
+  Tensor tensor_numPairsPerCenterAtom = torch::empty(sizeof(int) * nAngularRij, d_options);
+  int* d_numPairsPerCenterAtom = (int*)tensor_numPairsPerCenterAtom.data_ptr();
 
   // group by center atom
   int ncenter_atoms = cubEncode(d_angularRij, d_centralAtom, d_numPairsPerCenterAtom, nAngularRij, d_count_out, stream);
 
-  auto buffer_centerAtomStartIdx = allocator.allocate(sizeof(int) * ncenter_atoms);
-  int* d_centerAtomStartIdx = (int*)buffer_centerAtomStartIdx.get();
+  Tensor tensor_centerAtomStartIdx = torch::empty(sizeof(int) * ncenter_atoms, d_options);
+  int* d_centerAtomStartIdx = (int*)tensor_centerAtomStartIdx.data_ptr();
 
   cubScan(d_numPairsPerCenterAtom, d_centerAtomStartIdx, ncenter_atoms, stream);
   {
@@ -670,14 +677,11 @@ Result cuaev_forward(
     };
 
     int maxNbrsPerCenterAtom = cubMax(d_numPairsPerCenterAtom, ncenter_atoms, d_count_out, stream);
-
     int maxnbrs_per_atom_aligned = align<4>(maxNbrsPerCenterAtom);
+    int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
+    int angular_length_aligned = align<4>(aev_params.angular_length);
 
-    cuAngularAEVs<<<
-        nblocks_angAEV,
-        block_size,
-        smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom),
-        stream>>>(
+    cuAngularAEVs<<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
         species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
         coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
         ShfA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
@@ -691,11 +695,25 @@ Result cuaev_forward(
         d_centerAtomStartIdx,
         aev_params,
         maxnbrs_per_atom_aligned,
-        align<4>(aev_params.angular_length),
+        angular_length_aligned,
         ncenter_atoms);
+
+    return {aev_t,
+            aev_params,
+            tensor_Rij,
+            tensor_radialRij,
+            tensor_angularRij,
+            total_natom_pairs,
+            nRadialRij,
+            nAngularRij,
+            tensor_centralAtom,
+            tensor_numPairsPerCenterAtom,
+            tensor_centerAtomStartIdx,
+            maxnbrs_per_atom_aligned,
+            angular_length_aligned,
+            smem_size_aligned,
+            ncenter_atoms};
   }
-  return {
-      aev_t, aev_params, tensor_Rij, tensor_radialRij, tensor_angularRij, total_natom_pairs, nRadialRij, nAngularRij};
 }
 
 Tensor cuaev_backward(
@@ -714,7 +732,14 @@ Tensor cuaev_backward(
     const Tensor& tensor_radialRij,
     int nRadialRij,
     const Tensor& tensor_angularRij,
-    int nAngularRij) {
+    int nAngularRij,
+    const Tensor& tensor_centralAtom,
+    const Tensor& tensor_numPairsPerCenterAtom,
+    const Tensor& tensor_centerAtomStartIdx,
+    int maxnbrs_per_atom_aligned,
+    int angular_length_aligned,
+    int smem_size_aligned,
+    int ncenter_atoms) {
   using namespace torch::indexing;
   const int n_molecules = coordinates_t.size(0);
   const int max_natoms_per_mol = coordinates_t.size(1);
@@ -725,8 +750,11 @@ Tensor cuaev_backward(
   auto grad_output_angular = grad_output.index({Ellipsis, Slice(aev_params.radial_length, None)}); // [2, 5, 320]
 
   PairDist<float>* d_radialRij = (PairDist<float>*)tensor_radialRij.data_ptr();
+  PairDist<float>* d_angularRij = (PairDist<float>*)tensor_angularRij.data_ptr();
+  PairDist<float>* d_Rij = (PairDist<float>*)tensor_Rij.data_ptr();
 
   Tensor grad_radial_dist = torch::zeros(nRadialRij, coordinates_t.options().requires_grad(false));
+  Tensor grad_angular_dist = torch::zeros(nAngularRij, coordinates_t.options().requires_grad(false));
   // float* grad_radial_dist_ptr = (float*)grad_radial_dist.data_ptr();
 
   int block_size = 64;
@@ -784,9 +812,18 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
                               EtaA_t,
                               Zeta_t,
                               ShfA_t,
-                              ShfZ_t});
+                              ShfZ_t,
+                              res.tensor_centralAtom,
+                              res.tensor_numPairsPerCenterAtom,
+                              res.tensor_centerAtomStartIdx});
       ctx->saved_data["aev_params"] = res.aev_params;
-      ctx->saved_data["int_list"] = c10::List<int64_t>{res.total_natom_pairs, res.nRadialRij, res.nAngularRij};
+      ctx->saved_data["int_list"] = c10::List<int64_t>{res.total_natom_pairs,
+                                                       res.nRadialRij,
+                                                       res.nAngularRij,
+                                                       res.maxnbrs_per_atom_aligned,
+                                                       res.angular_length_aligned,
+                                                       res.smem_size_aligned,
+                                                       res.ncenter_atoms};
     }
     return res.aev_t;
   }
@@ -798,11 +835,13 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
     auto tensor_Rij = saved[2], tensor_radialRij = saved[3], tensor_angularRij = saved[4];
     auto EtaR_t = saved[5], ShfR_t = saved[6], EtaA_t = saved[7], Zeta_t = saved[8], ShfA_t = saved[9],
          ShfZ_t = saved[10];
+    auto tensor_centralAtom = saved[11], tensor_numPairsPerCenterAtom = saved[12],
+         tensor_centerAtomStartIdx = saved[13];
     AEVScalarParams<float> aev_params(ctx->saved_data["aev_params"]);
     c10::List<int64_t> int_list = ctx->saved_data["int_list"].toIntList();
-    int total_natom_pairs = (int)int_list[0];
-    int nRadialRij = (int)int_list[1];
-    int nAngularRij = (int)int_list[2];
+    int total_natom_pairs = int_list[0], nRadialRij = int_list[1], nAngularRij = int_list[2];
+    int maxnbrs_per_atom_aligned = int_list[3], angular_length_aligned = int_list[4], smem_size_aligned = int_list[5];
+    int ncenter_atoms = int_list[6];
 
     Tensor grad_coord = cuaev_backward(
         grad_outputs[0],
@@ -820,7 +859,14 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
         tensor_radialRij,
         nRadialRij,
         tensor_angularRij,
-        nAngularRij);
+        nAngularRij,
+        tensor_centralAtom,
+        tensor_numPairsPerCenterAtom,
+        tensor_centerAtomStartIdx,
+        maxnbrs_per_atom_aligned,
+        angular_length_aligned,
+        smem_size_aligned,
+        ncenter_atoms);
 
     return {
         grad_coord, Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor()};
