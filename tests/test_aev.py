@@ -118,6 +118,13 @@ class TestAEV(_TestAEVBase):
                 _, aev = self.aev_computer((species, coordinates))
                 self.assertAEVEqual(expected_radial, expected_angular, aev)
 
+    def testNoNan(self):
+        # AEV should not output NaN even when coordinates are superimposed
+        coordinates = torch.ones(1, 3, 3, dtype=torch.float)
+        species = torch.zeros(1, 3, dtype=torch.long)
+        _, aev = self.aev_computer((species, coordinates))
+        self.assertFalse(torch.isnan(aev).any())
+
     def testPadding(self):
         species_coordinates = []
         radial_angular = []
