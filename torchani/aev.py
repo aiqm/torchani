@@ -76,8 +76,7 @@ def angular_terms(Rca: float, ShfZ: Tensor, EtaA: Tensor, Zeta: Tensor,
     """
     vectors12 = vectors12.view(2, -1, 3, 1, 1, 1, 1)
     distances12 = vectors12.norm(2, dim=-5)
-
-    cos_angles = vectors12.prod(0).sum(1) / distances12.prod(0)
+    cos_angles = vectors12.prod(0).sum(1) / torch.clamp(distances12.prod(0), min=1e-10)
     # 0.95 is multiplied to the cos values to prevent acos from returning NaN.
     angles = torch.acos(0.95 * cos_angles)
 
