@@ -10,6 +10,7 @@
 #include <THC/THCThrustAllocator.cuh>
 
 #define PI 3.141592653589793
+#define WRAPSIZE 32
 using torch::Tensor;
 using torch::autograd::tensor_list;
 
@@ -337,45 +338,42 @@ __global__ void cuAngularAEVs_backward(
   int laneIdx = threadIdx.x % threads_per_catom;
   int ncatom_per_tpb = blockDim.x / threads_per_catom;  // e.g. 2 catom per block
 
-  DataT* saev_grad = &smem[groupIdx * angular_length_aligned];
+  DataT* sdx = &smem[groupIdx * maxnbrs_per_atom_aligned];
+  int offset = ncatom_per_tpb * maxnbrs_per_atom_aligned;
 
-  int offset = ncatom_per_tpb * angular_length_aligned;
-  DataT* sdx = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
-
-  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
   DataT* sdy = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
-
   offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
   DataT* sdz = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
-
   offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
-  DataT* sdix_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];  // TODO per center atom, i is the same
 
-  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
-  DataT* sdiy_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  DataT* sdix_grad = &smem[offset + groupIdx * WRAPSIZE];  // TODO a better variable name
+  offset += ncatom_per_tpb * WRAPSIZE;
 
-  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
-  DataT* sdiz_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  DataT* sdiy_grad = &smem[offset + groupIdx * WRAPSIZE];
+  offset += ncatom_per_tpb * WRAPSIZE;
 
-  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
-  DataT* sdjx_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  DataT* sdiz_grad = &smem[offset + groupIdx * WRAPSIZE];
+  offset += ncatom_per_tpb * WRAPSIZE;
 
-  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
-  DataT* sdjy_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  DataT* sdjx_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned * WRAPSIZE];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned * WRAPSIZE;
 
-  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
-  DataT* sdjz_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  DataT* sdjy_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned * WRAPSIZE];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned * WRAPSIZE;
 
-  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+  DataT* sdjz_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned * WRAPSIZE];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned * WRAPSIZE;
+
   DataT* sdist = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
-
   offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
   DataT* sfc = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
-
   offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
   DataT* sfc_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
-
   offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
   int* stype = (int*)&smem[offset + groupIdx * maxnbrs_per_atom_aligned];
 
   DataT EtaA = EtaA_t[0];
@@ -396,11 +394,6 @@ __global__ void cuAngularAEVs_backward(
 
   // printf("laneIdx: %d\n", laneIdx);
 
-  for (int iaev = laneIdx; iaev < aev_params.angular_length; iaev += threads_per_catom) {
-    // printf("init aev_grad: mol: %d, center atom %d, iaev: %d laneIdx: %d\n", mol_idx, i, iaev, laneIdx);
-    saev_grad[iaev] = grad_output[mol_idx][i][aev_params.radial_length + iaev];
-  }
-
   DataT xi = pos_t[mol_idx][i][0];
   DataT yi = pos_t[mol_idx][i][1];
   DataT zi = pos_t[mol_idx][i][2];
@@ -420,13 +413,17 @@ __global__ void cuAngularAEVs_backward(
     DataT fc_ij_grad = -0.5 * (PI / Rca) * sin(PI * Rij / Rca);
     sfc[jj] = fc_ij;
     sfc_grad[jj] = fc_ij_grad;
-    // grad init
-    sdix_grad[jj] = 0;
-    sdiy_grad[jj] = 0;
-    sdiz_grad[jj] = 0;
-    sdjx_grad[jj] = 0;
-    sdjy_grad[jj] = 0;
-    sdjz_grad[jj] = 0;
+  }
+
+  // grad init
+  sdix_grad[laneIdx] = 0;
+  sdiy_grad[laneIdx] = 0;
+  sdiz_grad[laneIdx] = 0;
+
+  for (int jjm = laneIdx; jjm < jnum * WRAPSIZE; jjm += threads_per_catom) {
+    sdjx_grad[jjm] = 0;
+    sdjy_grad[jjm] = 0;
+    sdjz_grad[jjm] = 0;
   }
 
   short2 tile = make_short2(laneIdx % TILEX, laneIdx / TILEX);
@@ -499,8 +496,7 @@ __global__ void cuAngularAEVs_backward(
             DataT factor2 = exp(-EtaA * (Rijk - ShfA) * (Rijk - ShfA));
             DataT grad_factor2_dist = -EtaA * (Rijk - ShfA) * factor2;
 
-            DataT grad_output_item = saev_grad[subaev_offset + ishfr * nShfZ + itheta];
-            // DataT grad_output_item = grad_output[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta];
+            DataT grad_output_item = grad_output[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta];
             DataT grad_vij_x = 2 * grad_output_item *
                 (grad_factor1_theta * grad_theta_vij_x_ * factor2 * fc_ijk + factor1 * grad_factor2_dist * sdx[jj] / Rij * fc_ijk +
                  factor1 * factor2 * fc_ik * grad_fc_ij * sdx[jj] / Rij);
@@ -520,43 +516,39 @@ __global__ void cuAngularAEVs_backward(
                 (grad_factor1_theta * grad_theta_vik_z_ * factor2 * fc_ijk + factor1 * grad_factor2_dist * sdz[kk] / Rik * fc_ijk +
                  factor1 * factor2 * fc_ij * grad_fc_ik * sdz[kk] / Rik);
 
-            atomicAdd(&sdix_grad[jj], - grad_vij_x - grad_vik_x);
-            // sdix_grad[jj] += - grad_vij_x - grad_vik_x;
-            atomicAdd(&sdiy_grad[jj], - grad_vij_y - grad_vik_y);
-            // sdiy_grad[jj] += - grad_vij_y - grad_vik_y;
-            atomicAdd(&sdiz_grad[jj], - grad_vij_z - grad_vik_z);
-            // sdiz_grad[jj] += - grad_vij_z - grad_vik_z;
+            int m = (ishfr * nShfZ + itheta) % WRAPSIZE;
+            int jjm = jj * WRAPSIZE + m;
+            int kkm = kk * WRAPSIZE + m;
+            sdix_grad[m] += (- grad_vij_x - grad_vik_x);
+            sdiy_grad[m] += (- grad_vij_y - grad_vik_y);
+            sdiz_grad[m] += (- grad_vij_z - grad_vik_z);
 
-            atomicAdd(&sdjx_grad[jj], grad_vij_x);
-            // sdjx_grad[jj] += grad_vij_x;
-            atomicAdd(&sdjy_grad[jj], grad_vij_y);
-            // sdjy_grad[jj] += grad_vij_y;
-            atomicAdd(&sdjz_grad[jj], grad_vij_z);
-            // sdjz_grad[jj] += grad_vij_z;
+            sdjx_grad[jjm] += grad_vij_x;
+            sdjy_grad[jjm] += grad_vij_y;
+            sdjz_grad[jjm] += grad_vij_z;
 
-            atomicAdd(&sdjx_grad[kk], grad_vik_x);
-            // sdjx_grad[kk] += grad_vik_x;
-            atomicAdd(&sdjy_grad[kk], grad_vik_y);
-            // sdjy_grad[kk] += grad_vik_y;
-            atomicAdd(&sdjz_grad[kk], grad_vik_z);
-            // sdjz_grad[kk] += grad_vik_z;
+            sdjx_grad[kkm] += grad_vik_x;
+            sdjy_grad[kkm] += grad_vik_y;
+            sdjz_grad[kkm] += grad_vik_z;
           }
         }
       }
     }
   }
 
-  for (int jj = laneIdx; jj < jnum; jj += threads_per_catom) {
-    int atomi_idx = i;
+  int atomi_idx = i;
+  atomicAdd(&grad_coord[mol_idx][atomi_idx][0], sdix_grad[laneIdx]);
+  atomicAdd(&grad_coord[mol_idx][atomi_idx][1], sdiy_grad[laneIdx]);
+  atomicAdd(&grad_coord[mol_idx][atomi_idx][2], sdiz_grad[laneIdx]);
+
+  for (int jjm = laneIdx; jjm < jnum * WRAPSIZE; jjm += threads_per_catom) {
+    int jj = jjm / WRAPSIZE;
     int atomj_idx = d_Rij[start_idx + jj].j;
     // printf("thread %d mol %d i %d j %d m %d sdix_grad: %f %f %f\n", gIdx, mol_idx, atomi_idx, atomj_idx, jj, sdix_grad[jj], sdiy_grad[jj], sdiz_grad[jj]);
-    atomicAdd(&grad_coord[mol_idx][atomi_idx][0], sdix_grad[jj]);
-    atomicAdd(&grad_coord[mol_idx][atomi_idx][1], sdiy_grad[jj]);
-    atomicAdd(&grad_coord[mol_idx][atomi_idx][2], sdiz_grad[jj]);
 
-    atomicAdd(&grad_coord[mol_idx][atomj_idx][0], sdjx_grad[jj]);
-    atomicAdd(&grad_coord[mol_idx][atomj_idx][1], sdjy_grad[jj]);
-    atomicAdd(&grad_coord[mol_idx][atomj_idx][2], sdjz_grad[jj]);
+    atomicAdd(&grad_coord[mol_idx][atomj_idx][0], sdjx_grad[jjm]);
+    atomicAdd(&grad_coord[mol_idx][atomj_idx][1], sdjy_grad[jjm]);
+    atomicAdd(&grad_coord[mol_idx][atomj_idx][2], sdjz_grad[jjm]);
   }
   // printf("--------------------\n");
 }
@@ -1033,23 +1025,26 @@ Tensor cuaev_backward(
       nRadialRij);
 
   auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
-    int sm_aev = sizeof(float) * align<4>(aev_params.angular_length); // (angular_length / 4 + 1) * 4
+    // int sm_aev = sizeof(float) * align<4>(aev_params.angular_length); // (angular_length / 4 + 1) * 4
     int sxyz = sizeof(float) * max_nbrs * 3;
-    int sxyz_grad = sizeof(float) * max_nbrs * 6;
+    int si_xyz_grad = sizeof(float) * 3 * WRAPSIZE;
+    int sj_xyz_grad = sizeof(float) * max_nbrs * 3 * WRAPSIZE;
     int sRij = sizeof(float) * max_nbrs;
     int sfc = sizeof(float) * max_nbrs;
     int sfc_grad = sizeof(float) * max_nbrs;
     int sj = sizeof(int) * max_nbrs;
 
-    return (sm_aev + sxyz + sxyz_grad + sRij + sfc + sfc_grad + sj) * ncatom_per_tpb;
+    return (sxyz + si_xyz_grad + sj_xyz_grad + sRij + sfc + sfc_grad + sj) * ncatom_per_tpb;
   };
 
   // TODO remove smem_size_aligned from argument
+  // block_size = 64;  // shared_memory is not enough to hold 2 center_atom if neighbors are more than 50; 32*6*50*4*2 = 76800
   const int nthreads_per_catom = 32;
   const int nblocks_angAEV = (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
   int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
+  printf("share_mem needed: %d\n", smem_size_aligned);
 
-  // Tensor grad_angular_coord = torch::zeros({nAngularRij, 3}, coordinates_t.options().requires_grad(false));
+  Tensor grad_angular_coord = torch::zeros({nAngularRij, 3}, coordinates_t.options().requires_grad(false));
   cuAngularAEVs_backward<<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
