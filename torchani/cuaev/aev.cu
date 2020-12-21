@@ -336,7 +336,7 @@ __global__ void cuAngularAEVs_backward(
 
   int groupIdx = threadIdx.x / threads_per_catom;
   int laneIdx = threadIdx.x % threads_per_catom;
-  int ncatom_per_tpb = blockDim.x / threads_per_catom;  // e.g. 2 catom per block
+  int ncatom_per_tpb = blockDim.x / threads_per_catom; // e.g. 2 catom per block
 
   DataT* sdx = &smem[groupIdx * maxnbrs_per_atom_aligned];
   int offset = ncatom_per_tpb * maxnbrs_per_atom_aligned;
@@ -347,7 +347,7 @@ __global__ void cuAngularAEVs_backward(
   DataT* sdz = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
   offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
 
-  DataT* sdix_grad = &smem[offset + groupIdx * WRAPSIZE];  // TODO a better variable name
+  DataT* sdix_grad = &smem[offset + groupIdx * WRAPSIZE]; // TODO a better variable name
   offset += ncatom_per_tpb * WRAPSIZE;
 
   DataT* sdiy_grad = &smem[offset + groupIdx * WRAPSIZE];
@@ -488,40 +488,49 @@ __global__ void cuAngularAEVs_backward(
           DataT ShfZ = ShfZ_t[itheta];
 
           DataT factor1 = pow((1 + cos(theta_ijk - ShfZ)) / 2, Zeta);
-          // DataT grad_factor1_theta = 1 / 2 * Zeta * pow((1 + cos(ShfZ - theta_ijk)) / 2, Zeta - 1) * sin(ShfZ - theta_ijk);  // TODO Wrong
-          DataT grad_factor1_theta = pow(2, -Zeta) * Zeta * pow(1 + cos(ShfZ - theta_ijk), Zeta - 1) * sin(ShfZ - theta_ijk);  // TODO Right, why?
+          // DataT grad_factor1_theta = 1 / 2 * Zeta * pow((1 + cos(ShfZ - theta_ijk)) / 2, Zeta - 1) * sin(ShfZ -
+          // theta_ijk);  // TODO Wrong
+          DataT grad_factor1_theta = pow(2, -Zeta) * Zeta * pow(1 + cos(ShfZ - theta_ijk), Zeta - 1) *
+              sin(ShfZ - theta_ijk); // TODO Right, why?
 
           for (int ishfr = tile.y; ishfr < nShfA; ishfr += TILEY) {
             DataT ShfA = ShfA_t[ishfr];
             DataT factor2 = exp(-EtaA * (Rijk - ShfA) * (Rijk - ShfA));
             DataT grad_factor2_dist = -EtaA * (Rijk - ShfA) * factor2;
 
-            DataT grad_output_item = grad_output[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta];
+            DataT grad_output_item =
+                grad_output[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta];
             DataT grad_vij_x = 2 * grad_output_item *
-                (grad_factor1_theta * grad_theta_vij_x_ * factor2 * fc_ijk + factor1 * grad_factor2_dist * sdx[jj] / Rij * fc_ijk +
+                (grad_factor1_theta * grad_theta_vij_x_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdx[jj] / Rij * fc_ijk +
                  factor1 * factor2 * fc_ik * grad_fc_ij * sdx[jj] / Rij);
             DataT grad_vij_y = 2 * grad_output_item *
-                (grad_factor1_theta * grad_theta_vij_y_ * factor2 * fc_ijk + factor1 * grad_factor2_dist * sdy[jj] / Rij * fc_ijk +
+                (grad_factor1_theta * grad_theta_vij_y_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdy[jj] / Rij * fc_ijk +
                  factor1 * factor2 * fc_ik * grad_fc_ij * sdy[jj] / Rij);
             DataT grad_vij_z = 2 * grad_output_item *
-                (grad_factor1_theta * grad_theta_vij_z_ * factor2 * fc_ijk + factor1 * grad_factor2_dist * sdz[jj] / Rij * fc_ijk +
+                (grad_factor1_theta * grad_theta_vij_z_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdz[jj] / Rij * fc_ijk +
                  factor1 * factor2 * fc_ik * grad_fc_ij * sdz[jj] / Rij);
             DataT grad_vik_x = 2 * grad_output_item *
-                (grad_factor1_theta * grad_theta_vik_x_ * factor2 * fc_ijk + factor1 * grad_factor2_dist * sdx[kk] / Rik * fc_ijk +
+                (grad_factor1_theta * grad_theta_vik_x_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdx[kk] / Rik * fc_ijk +
                  factor1 * factor2 * fc_ij * grad_fc_ik * sdx[kk] / Rik);
             DataT grad_vik_y = 2 * grad_output_item *
-                (grad_factor1_theta * grad_theta_vik_y_ * factor2 * fc_ijk + factor1 * grad_factor2_dist * sdy[kk] / Rik * fc_ijk +
+                (grad_factor1_theta * grad_theta_vik_y_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdy[kk] / Rik * fc_ijk +
                  factor1 * factor2 * fc_ij * grad_fc_ik * sdy[kk] / Rik);
             DataT grad_vik_z = 2 * grad_output_item *
-                (grad_factor1_theta * grad_theta_vik_z_ * factor2 * fc_ijk + factor1 * grad_factor2_dist * sdz[kk] / Rik * fc_ijk +
+                (grad_factor1_theta * grad_theta_vik_z_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdz[kk] / Rik * fc_ijk +
                  factor1 * factor2 * fc_ij * grad_fc_ik * sdz[kk] / Rik);
 
             int m = (ishfr * nShfZ + itheta) % WRAPSIZE;
             int jjm = jj * WRAPSIZE + m;
             int kkm = kk * WRAPSIZE + m;
-            sdix_grad[m] += (- grad_vij_x - grad_vik_x);
-            sdiy_grad[m] += (- grad_vij_y - grad_vik_y);
-            sdiz_grad[m] += (- grad_vij_z - grad_vik_z);
+            sdix_grad[m] += (-grad_vij_x - grad_vik_x);
+            sdiy_grad[m] += (-grad_vij_y - grad_vik_y);
+            sdiz_grad[m] += (-grad_vij_z - grad_vik_z);
 
             sdjx_grad[jjm] += grad_vij_x;
             sdjy_grad[jjm] += grad_vij_y;
@@ -544,7 +553,8 @@ __global__ void cuAngularAEVs_backward(
   for (int jjm = laneIdx; jjm < jnum * WRAPSIZE; jjm += threads_per_catom) {
     int jj = jjm / WRAPSIZE;
     int atomj_idx = d_Rij[start_idx + jj].j;
-    // printf("thread %d mol %d i %d j %d m %d sdix_grad: %f %f %f\n", gIdx, mol_idx, atomi_idx, atomj_idx, jj, sdix_grad[jj], sdiy_grad[jj], sdiz_grad[jj]);
+    // printf("thread %d mol %d i %d j %d m %d sdix_grad: %f %f %f\n", gIdx, mol_idx, atomi_idx, atomj_idx, jj,
+    // sdix_grad[jj], sdiy_grad[jj], sdiz_grad[jj]);
 
     atomicAdd(&grad_coord[mol_idx][atomj_idx][0], sdjx_grad[jjm]);
     atomicAdd(&grad_coord[mol_idx][atomj_idx][1], sdjy_grad[jjm]);
@@ -1038,7 +1048,8 @@ Tensor cuaev_backward(
   };
 
   // TODO remove smem_size_aligned from argument
-  // block_size = 64;  // shared_memory is not enough to hold 2 center_atom if neighbors are more than 50; 32*6*50*4*2 = 76800
+  // block_size = 64;  // shared_memory is not enough to hold 2 center_atom if neighbors are more than 50; 32*6*50*4*2 =
+  // 76800
   const int nthreads_per_catom = 32;
   const int nblocks_angAEV = (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
   int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
