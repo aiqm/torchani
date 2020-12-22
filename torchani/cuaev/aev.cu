@@ -10,7 +10,7 @@
 #include <THC/THCThrustAllocator.cuh>
 
 #define PI 3.141592653589793
-#define WRAPSIZE 32
+#define WARPSIZE 32
 using torch::Tensor;
 using torch::autograd::tensor_list;
 
@@ -347,23 +347,23 @@ __global__ void cuAngularAEVs_backward(
   DataT* sdz = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
   offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
 
-  DataT* sdix_grad = &smem[offset + groupIdx * WRAPSIZE]; // TODO a better variable name
-  offset += ncatom_per_tpb * WRAPSIZE;
+  DataT* sdix_grad = &smem[offset + groupIdx * WARPSIZE]; // TODO a better variable name
+  offset += ncatom_per_tpb * WARPSIZE;
 
-  DataT* sdiy_grad = &smem[offset + groupIdx * WRAPSIZE];
-  offset += ncatom_per_tpb * WRAPSIZE;
+  DataT* sdiy_grad = &smem[offset + groupIdx * WARPSIZE];
+  offset += ncatom_per_tpb * WARPSIZE;
 
-  DataT* sdiz_grad = &smem[offset + groupIdx * WRAPSIZE];
-  offset += ncatom_per_tpb * WRAPSIZE;
+  DataT* sdiz_grad = &smem[offset + groupIdx * WARPSIZE];
+  offset += ncatom_per_tpb * WARPSIZE;
 
-  DataT* sdjx_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned * WRAPSIZE];
-  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned * WRAPSIZE;
+  DataT* sdjx_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned * WARPSIZE];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned * WARPSIZE;
 
-  DataT* sdjy_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned * WRAPSIZE];
-  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned * WRAPSIZE;
+  DataT* sdjy_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned * WARPSIZE];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned * WARPSIZE;
 
-  DataT* sdjz_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned * WRAPSIZE];
-  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned * WRAPSIZE;
+  DataT* sdjz_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned * WARPSIZE];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned * WARPSIZE;
 
   DataT* sdist = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
   offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
@@ -420,7 +420,7 @@ __global__ void cuAngularAEVs_backward(
   sdiy_grad[laneIdx] = 0;
   sdiz_grad[laneIdx] = 0;
 
-  for (int jjm = laneIdx; jjm < jnum * WRAPSIZE; jjm += threads_per_catom) {
+  for (int jjm = laneIdx; jjm < jnum * WARPSIZE; jjm += threads_per_catom) {
     sdjx_grad[jjm] = 0;
     sdjy_grad[jjm] = 0;
     sdjz_grad[jjm] = 0;
@@ -452,8 +452,11 @@ __global__ void cuAngularAEVs_backward(
         DataT vij_vik_dot = sdx[jj] * sdx[kk] + sdy[jj] * sdy[kk] + sdz[jj] * sdz[kk];
         theta = acos(tc * vij_vik_dot / (Rij * Rik));
         // grad
-        DataT vij_factor = tc / (pow(Rij, 3) * sqrt(-pow(tc * vij_vik_dot / Rij, 2) + Rik * Rik));
-        DataT vik_factor = tc / (pow(Rik, 3) * sqrt(-pow(tc * vij_vik_dot / Rik, 2) + Rij * Rij));
+        DataT vij_factor =
+            tc / (Rij * Rij * Rij * sqrt(-tc * tc * vij_vik_dot * vij_vik_dot / (Rij * Rij) + Rik * Rik));
+        DataT vik_factor = tc /
+            (Rik * Rik * Rik *
+             sqrt(-tc * tc * vij_vik_dot * vij_vik_dot / (Rik * Rik) + Rij * Rij)); // tricky 80ms improved
         grad_theta_vij_x = vij_factor * (sdx[jj] * vij_vik_dot - sdx[kk] * Rij * Rij);
         grad_theta_vij_y = vij_factor * (sdy[jj] * vij_vik_dot - sdy[kk] * Rij * Rij);
         grad_theta_vij_z = vij_factor * (sdz[jj] * vij_vik_dot - sdz[kk] * Rij * Rij);
@@ -481,6 +484,8 @@ __global__ void cuAngularAEVs_backward(
 
         DataT Rijk = (Rij + Rik) / 2;
         DataT fc_ijk = fc_ij * fc_ik;
+        // float3 grad_dist_vij = make_float3(sdx[jj] / Rij, sdy[jj] / Rij, sdz[jj] / Rij);
+        // float3 grad_dist_vik = make_float3(sdx[kk] / Rik, sdy[kk] / Rik, sdz[kk] / Rik);
 
         IndexT subaev_offset = csubaev_offsets[type_j * num_species + type_k];
 
@@ -488,10 +493,8 @@ __global__ void cuAngularAEVs_backward(
           DataT ShfZ = ShfZ_t[itheta];
 
           DataT factor1 = pow((1 + cos(theta_ijk - ShfZ)) / 2, Zeta);
-          // DataT grad_factor1_theta = 1 / 2 * Zeta * pow((1 + cos(ShfZ - theta_ijk)) / 2, Zeta - 1) * sin(ShfZ -
-          // theta_ijk);  // TODO Wrong
-          DataT grad_factor1_theta = pow(2, -Zeta) * Zeta * pow(1 + cos(ShfZ - theta_ijk), Zeta - 1) *
-              sin(ShfZ - theta_ijk); // TODO Right, why?
+          DataT grad_factor1_theta = 1.0 / 2.0 * Zeta * pow((1 + cos(ShfZ - theta_ijk)) / 2, Zeta - 1) *
+              sin(ShfZ - theta_ijk); // tricky 100ms improved
 
           for (int ishfr = tile.y; ishfr < nShfA; ishfr += TILEY) {
             DataT ShfA = ShfA_t[ishfr];
@@ -525,9 +528,9 @@ __global__ void cuAngularAEVs_backward(
                  factor1 * grad_factor2_dist * sdz[kk] / Rik * fc_ijk +
                  factor1 * factor2 * fc_ij * grad_fc_ik * sdz[kk] / Rik);
 
-            int m = (ishfr * nShfZ + itheta) % WRAPSIZE;
-            int jjm = jj * WRAPSIZE + m;
-            int kkm = kk * WRAPSIZE + m;
+            int m = (ishfr * nShfZ + itheta) % WARPSIZE;
+            int jjm = jj * WARPSIZE + m;
+            int kkm = kk * WARPSIZE + m;
             sdix_grad[m] += (-grad_vij_x - grad_vik_x);
             sdiy_grad[m] += (-grad_vij_y - grad_vik_y);
             sdiz_grad[m] += (-grad_vij_z - grad_vik_z);
@@ -550,8 +553,8 @@ __global__ void cuAngularAEVs_backward(
   atomicAdd(&grad_coord[mol_idx][atomi_idx][1], sdiy_grad[laneIdx]);
   atomicAdd(&grad_coord[mol_idx][atomi_idx][2], sdiz_grad[laneIdx]);
 
-  for (int jjm = laneIdx; jjm < jnum * WRAPSIZE; jjm += threads_per_catom) {
-    int jj = jjm / WRAPSIZE;
+  for (int jjm = laneIdx; jjm < jnum * WARPSIZE; jjm += threads_per_catom) {
+    int jj = jjm / WARPSIZE;
     int atomj_idx = d_Rij[start_idx + jj].j;
     // printf("thread %d mol %d i %d j %d m %d sdix_grad: %f %f %f\n", gIdx, mol_idx, atomi_idx, atomj_idx, jj,
     // sdix_grad[jj], sdiy_grad[jj], sdiz_grad[jj]);
@@ -936,6 +939,7 @@ Result cuaev_forward(
     int maxnbrs_per_atom_aligned = align<4>(maxNbrsPerCenterAtom);
     int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
     int angular_length_aligned = align<4>(aev_params.angular_length);
+    // printf("angular forward share_mem needed: %d\n", smem_size_aligned);
 
     cuAngularAEVs<<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
         species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
@@ -1037,8 +1041,8 @@ Tensor cuaev_backward(
   auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
     // int sm_aev = sizeof(float) * align<4>(aev_params.angular_length); // (angular_length / 4 + 1) * 4
     int sxyz = sizeof(float) * max_nbrs * 3;
-    int si_xyz_grad = sizeof(float) * 3 * WRAPSIZE;
-    int sj_xyz_grad = sizeof(float) * max_nbrs * 3 * WRAPSIZE;
+    int si_xyz_grad = sizeof(float) * 3 * WARPSIZE;
+    int sj_xyz_grad = sizeof(float) * max_nbrs * 3 * WARPSIZE;
     int sRij = sizeof(float) * max_nbrs;
     int sfc = sizeof(float) * max_nbrs;
     int sfc_grad = sizeof(float) * max_nbrs;
@@ -1053,7 +1057,7 @@ Tensor cuaev_backward(
   const int nthreads_per_catom = 32;
   const int nblocks_angAEV = (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
   int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
-  printf("share_mem needed: %d\n", smem_size_aligned);
+  printf("angular backward share_mem needed: %d\n", smem_size_aligned);
 
   Tensor grad_angular_coord = torch::zeros({nAngularRij, 3}, coordinates_t.options().requires_grad(false));
   cuAngularAEVs_backward<<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
