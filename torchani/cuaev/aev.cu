@@ -522,7 +522,7 @@ cuAngularAEVs_backward(
             sdiy_grad += (-grad_vij_y - grad_vik_y);
             sdiz_grad += (-grad_vij_z - grad_vik_z);
 
-            for (int offset = 16; offset > 0; offset /= 2){
+            for (int offset = 16; offset > 0; offset /= 2) {
               grad_vij_x += __shfl_down_sync(0xFFFFFFFF, grad_vij_x, offset);
               grad_vij_y += __shfl_down_sync(0xFFFFFFFF, grad_vij_y, offset);
               grad_vij_z += __shfl_down_sync(0xFFFFFFFF, grad_vij_z, offset);
@@ -530,7 +530,7 @@ cuAngularAEVs_backward(
               grad_vik_y += __shfl_down_sync(0xFFFFFFFF, grad_vik_y, offset);
               grad_vik_z += __shfl_down_sync(0xFFFFFFFF, grad_vik_z, offset);
             }
-            if (laneIdx == 0){
+            if (laneIdx == 0) {
               sdjx_grad[jj] += grad_vij_x;
               sdjy_grad[jj] += grad_vij_y;
               sdjz_grad[jj] += grad_vij_z;
