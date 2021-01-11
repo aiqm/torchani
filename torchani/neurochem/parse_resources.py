@@ -43,7 +43,7 @@ def parse_neurochem_resources(info_file_path):
             resource_zip = zipfile.ZipFile(io.BytesIO(resource_res.content))
             try:
                 resource_zip.extractall(resource_path)
-            except PermissionError:
+            except (PermissionError, OSError):
                 resource_zip.extractall(local_dir)
                 resource_path = local_dir
             source = os.path.join(resource_path, extracted_name, "resources")
