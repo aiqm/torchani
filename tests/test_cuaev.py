@@ -65,23 +65,69 @@ class TestCUAEV(TestCase):
              [-4.4978600, 0.8211300, 0.5604100],
              [-4.4978700, -0.8000100, 0.4155600],
              [0.00000000, -0.00000000, -0.00000000]]
-        ], requires_grad=True, device=self.device)
+        ], device=self.device)
         species = torch.tensor([[1, 0, 0, 0, 0], [2, 0, 0, 0, -1]], device=self.device)
 
         _, aev = self.aev_computer((species, coordinates))
         _, cu_aev = self.cuaev_computer((species, coordinates))
         self.assertEqual(cu_aev, aev)
 
+    def testSimpleBackward(self):
+        coordinates = torch.tensor([
+            [[0.03192167, 0.00638559, 0.01301679],
+             [-0.83140486, 0.39370209, -0.26395324],
+             [-0.66518241, -0.84461308, 0.20759389],
+             [0.45554739, 0.54289633, 0.81170881],
+             [0.66091919, -0.16799635, -0.91037834]],
+            [[-4.1862600, 0.0575700, -0.0381200],
+             [-3.1689400, 0.0523700, 0.0200000],
+             [-4.4978600, 0.8211300, 0.5604100],
+             [-4.4978700, -0.8000100, 0.4155600],
+             [0.00000000, -0.00000000, -0.00000000]]
+        ], requires_grad=True, device=self.device)
+        species = torch.tensor([[1, 0, 0, 0, 0], [2, 0, 0, 0, -1]], device=self.device)
+
+        _, aev = self.aev_computer((species, coordinates))
+        aev.backward(torch.ones_like(aev))
+        aev_grad = coordinates.grad
+
+        coordinates = coordinates.clone().detach()
+        coordinates.requires_grad_()
+        _, cu_aev = self.cuaev_computer((species, coordinates))
+        cu_aev.backward(torch.ones_like(cu_aev))
+        cuaev_grad = coordinates.grad
+        self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
+        self.assertEqual(cuaev_grad, aev_grad, f'\ncuaev_grad: {cuaev_grad}\n aev_grad: {aev_grad}')
+
     def testTripeptideMD(self):
         for i in range(100):
             datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
-                coordinates, species, _, _, _, _, _, _ = pickle.load(f)
+                coordinates, species, *_ = pickle.load(f)
                 coordinates = torch.from_numpy(coordinates).float().unsqueeze(0).to(self.device)
                 species = torch.from_numpy(species).unsqueeze(0).to(self.device)
                 _, aev = self.aev_computer((species, coordinates))
                 _, cu_aev = self.cuaev_computer((species, coordinates))
                 self.assertEqual(cu_aev, aev)
+
+    def testTripeptideMDBackward(self):
+        for i in range(100):
+            datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, *_ = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0).to(self.device).requires_grad_(True)
+                species = torch.from_numpy(species).unsqueeze(0).to(self.device)
+                _, aev = self.aev_computer((species, coordinates))
+                aev.backward(torch.ones_like(aev))
+                aev_grad = coordinates.grad
+
+                coordinates = coordinates.clone().detach()
+                coordinates.requires_grad_()
+                _, cu_aev = self.cuaev_computer((species, coordinates))
+                cu_aev.backward(torch.ones_like(cu_aev))
+                cuaev_grad = coordinates.grad
+                self.assertEqual(cu_aev, aev)
+                self.assertEqual(cuaev_grad, aev_grad, atol=5e-5, rtol=5e-5)
 
     def testNIST(self):
         datafile = os.path.join(path, 'test_data/NIST/all')
@@ -94,17 +140,61 @@ class TestCUAEV(TestCase):
                 _, cu_aev = self.cuaev_computer((species, coordinates))
                 self.assertEqual(cu_aev, aev)
 
+    def testNISTBackward(self):
+        datafile = os.path.join(path, 'test_data/NIST/all')
+        with open(datafile, 'rb') as f:
+            data = pickle.load(f)
+            for coordinates, species, _, _, _, _ in data:
+                coordinates = torch.from_numpy(coordinates).to(torch.float).to(self.device).requires_grad_(True)
+                species = torch.from_numpy(species).to(self.device)
+                _, aev = self.aev_computer((species, coordinates))
+                aev.backward(torch.ones_like(aev))
+                aev_grad = coordinates.grad
+
+                coordinates = coordinates.clone().detach()
+                coordinates.requires_grad_()
+                _, cu_aev = self.cuaev_computer((species, coordinates))
+                cu_aev.backward(torch.ones_like(cu_aev))
+                cuaev_grad = coordinates.grad
+                self.assertEqual(cu_aev, aev)
+                self.assertEqual(cuaev_grad, aev_grad, atol=5e-5, rtol=5e-5)
+
     def testVeryDenseMolecule(self):
+        """
+        Test very dense molecule for aev correctness, especially for angular part
+        """
         for i in range(100):
             datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
-                coordinates, species, _, _, _, _, _, _ = pickle.load(f)
+                coordinates, species, *_ = pickle.load(f)
                 # change angstrom coordinates to 10 times smaller
                 coordinates = 0.1 * torch.from_numpy(coordinates).float().unsqueeze(0).to(self.device)
                 species = torch.from_numpy(species).unsqueeze(0).to(self.device)
                 _, aev = self.aev_computer((species, coordinates))
                 _, cu_aev = self.cuaev_computer((species, coordinates))
                 self.assertEqual(cu_aev, aev, atol=5e-5, rtol=5e-5)
+
+    def testVeryDenseMoleculeBackward(self):
+        for i in range(100):
+            datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, *_ = pickle.load(f)
+                # change angstrom coordinates to 10 times smaller
+                coordinates = 0.1 * torch.from_numpy(coordinates).float().unsqueeze(0).to(self.device)
+                coordinates.requires_grad_(True)
+                species = torch.from_numpy(species).unsqueeze(0).to(self.device)
+
+                _, aev = self.aev_computer((species, coordinates))
+                aev.backward(torch.ones_like(aev))
+                aev_grad = coordinates.grad
+
+                coordinates = coordinates.clone().detach()
+                coordinates.requires_grad_()
+                _, cu_aev = self.cuaev_computer((species, coordinates))
+                cu_aev.backward(torch.ones_like(cu_aev))
+                cuaev_grad = coordinates.grad
+                self.assertEqual(cu_aev, aev, atol=5e-5, rtol=5e-5)
+                self.assertEqual(cuaev_grad, aev_grad, atol=5e-4, rtol=5e-4)
 
 
 if __name__ == '__main__':
