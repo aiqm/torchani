@@ -606,7 +606,7 @@ __global__ void cuRadialAEVs_backward(
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> EtaR_t,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_output,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> grad_radial_dist,
-    PairDist<DataT>* d_Rij,
+    const PairDist<DataT>* d_Rij,
     AEVScalarParams<DataT, int> aev_params,
     int nRadialRij) {
   int gidx = blockIdx.x * blockDim.x + threadIdx.x;
