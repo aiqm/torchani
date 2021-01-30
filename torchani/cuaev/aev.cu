@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <thrust/equal.h>
 #include <torch/extension.h>
 #include <cub/cub.cuh>
@@ -10,7 +9,6 @@
 #include <THC/THCThrustAllocator.cuh>
 
 #define PI 3.141592653589793
-#define WARPSIZE 32
 using torch::Tensor;
 using torch::autograd::tensor_list;
 
@@ -135,7 +133,7 @@ __global__ void pairwiseDistance_backward(
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> grad_radial_dist,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_coord,
-    PairDist<DataT>* d_radialRij,
+    const PairDist<DataT>* d_radialRij,
     IndexT nRadialRij) {
   int gidx = threadIdx.x * gridDim.x + blockIdx.x;
 
@@ -184,7 +182,8 @@ __global__ void cuAngularAEVs(
     int ncentral_atoms) {
   extern __shared__ DataT smem[];
 
-  int threads_per_catom = TILEX * TILEY;
+  constexpr int threads_per_catom = TILEX * TILEY;
+  static_assert(threads_per_catom == C10_WARP_SIZE);
   int gIdx = blockIdx.x * blockDim.x + threadIdx.x;
   int cIdx = gIdx / threads_per_catom; // central atom id
 
@@ -254,6 +253,8 @@ __global__ void cuAngularAEVs(
   }
 
   short2 tile = make_short2(laneIdx % TILEX, laneIdx / TILEX);
+  // must sync if threads_per_catom != 32 (wrap size) to make sure shared data is ready
+  // __syncthreads
 
   for (int jj = 0; jj < jnum; jj++) {
     const DataT Rij = sdist[jj];
@@ -269,7 +270,7 @@ __global__ void cuAngularAEVs(
         theta = acos(0.95 * (sdx[jj] * sdx[kk] + sdy[jj] * sdy[kk] + sdz[jj] * sdz[kk]) / (Rij * Rik));
       }
 
-      for (int srcLane = 0; srcLane < 32 && (kk_start + srcLane) < jnum; ++srcLane) {
+      for (int srcLane = 0; srcLane < C10_WARP_SIZE && (kk_start + srcLane) < jnum; ++srcLane) {
         int kk = kk_start + srcLane;
         DataT theta_ijk = __shfl_sync(0xFFFFFFFF, theta, srcLane);
 
@@ -282,7 +283,6 @@ __global__ void cuAngularAEVs(
         DataT fc_ijk = fc_ij * fc_ik;
 
         IndexT subaev_offset = csubaev_offsets[type_j * num_species + type_k];
-        // IndexT aev_offset = aev_params.radial_length + subaev_offset;
 
         for (int itheta = tile.x; itheta < nShfZ; itheta += TILEX) {
           DataT ShfZ = ShfZ_t[itheta];
@@ -319,8 +319,8 @@ cuAngularAEVs_backward(
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> Zeta_t,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_output,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_coord,
-    PairDist<DataT>* d_Rij,
-    PairDist<DataT>* d_centralAtom,
+    const PairDist<DataT>* d_Rij,
+    const PairDist<DataT>* d_centralAtom,
     int* d_nPairsPerCenterAtom,
     int* d_centerAtomStartIdx,
     AEVScalarParams<DataT, IndexT> aev_params,
@@ -329,7 +329,8 @@ cuAngularAEVs_backward(
     int ncentral_atoms) {
   extern __shared__ DataT smem[];
 
-  int threads_per_catom = TILEX * TILEY;
+  constexpr int threads_per_catom = TILEX * TILEY;
+  static_assert(threads_per_catom == C10_WARP_SIZE);
   int gIdx = blockIdx.x * blockDim.x + threadIdx.x;
   int cIdx = gIdx / threads_per_catom; // central atom id
 
@@ -385,8 +386,6 @@ cuAngularAEVs_backward(
   int i = d.i;
   int mol_idx = d.midx;
 
-  // printf("laneIdx: %d\n", laneIdx);
-
   DataT xi = pos_t[mol_idx][i][0];
   DataT yi = pos_t[mol_idx][i][1];
   DataT zi = pos_t[mol_idx][i][2];
@@ -421,7 +420,7 @@ cuAngularAEVs_backward(
 
   short2 tile = make_short2(laneIdx % TILEX, laneIdx / TILEX);
   const DataT tc = 0.95; // theta constant factor
-  // must sync if threads_per_catom != 32 (wrap size)
+  // must sync if threads_per_catom != 32 (wrap size) to make sure shared data is ready
   // __syncthreads
 
   for (int jj = 0; jj < jnum; jj++) {
@@ -458,7 +457,7 @@ cuAngularAEVs_backward(
         grad_theta_vik_z = vik_factor * (sdz[kk] * vij_vik_dot - sdz[jj] * Rik * Rik);
       }
 
-      for (int srcLane = 0; srcLane < 32 && (kk_start + srcLane) < jnum; ++srcLane) {
+      for (int srcLane = 0; srcLane < C10_WARP_SIZE && (kk_start + srcLane) < jnum; ++srcLane) {
         int kk = kk_start + srcLane;
         DataT theta_ijk = __shfl_sync(0xFFFFFFFF, theta, srcLane);
         // TODO necessary?
@@ -586,7 +585,6 @@ __global__ void cuRadialAEVs(
   int i = d.i;
   int j = d.j;
 
-  // SpeciesT type_i = species_t[mol_idx][i];
   SpeciesT type_j = species_t[mol_idx][j];
 
   DataT fc = 0.5 * cos(PI * Rij / aev_params.Rcr) + 0.5;
@@ -628,7 +626,6 @@ __global__ void cuRadialAEVs_backward(
   int i = d.i;
   int j = d.j;
 
-  // SpeciesT type_i = species_t[mol_idx][i];
   SpeciesT type_j = species_t[mol_idx][j];
 
   DataT fc = 0.5 * cos(PI * Rij / aev_params.Rcr) + 0.5;
@@ -766,7 +763,7 @@ void initConsts(AEVScalarParams<float>& aev_params, cudaStream_t stream) {
   delete[] subaev_offsets;
 }
 
-typedef struct Result {
+struct Result {
   Tensor aev_t;
   AEVScalarParams<float> aev_params;
   Tensor tensor_Rij;
@@ -781,7 +778,7 @@ typedef struct Result {
   int maxnbrs_per_atom_aligned;
   int angular_length_aligned;
   int ncenter_atoms;
-} Result;
+};
 
 // NOTE: assumes size of EtaA_t = Zeta_t = EtaR_t = 1
 template <typename ScalarRealT = float>
@@ -868,8 +865,7 @@ Result cuaev_forward(
       d_Rij,
       max_natoms_per_mol);
 
-  // Extract Rijs that is needed for RadialAEV comptuation i.e. all the Rij <=
-  // Rcr
+  // Extract Rijs that is needed for RadialAEV comptuation i.e. all the Rij <= Rcr
   int nRadialRij = cubDeviceSelect(
       d_Rij,
       d_radialRij,
@@ -933,7 +929,6 @@ Result cuaev_forward(
     int maxnbrs_per_atom_aligned = align<4>(maxNbrsPerCenterAtom);
     int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
     int angular_length_aligned = align<4>(aev_params.angular_length);
-    // printf("angular forward share_mem needed: %d\n", smem_size_aligned);
 
     cuAngularAEVs<<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
         species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
@@ -1009,7 +1004,6 @@ Tensor cuaev_backward(
   int* d_centerAtomStartIdx = (int*)tensor_centerAtomStartIdx.data_ptr();
 
   Tensor grad_radial_dist = torch::zeros(nRadialRij, coordinates_t.options().requires_grad(false));
-  // float* grad_radial_dist_ptr = (float*)grad_radial_dist.data_ptr();
 
   int block_size = 64;
   int nblocks = (nRadialRij * 8 + block_size - 1) / block_size;
@@ -1033,7 +1027,6 @@ Tensor cuaev_backward(
       nRadialRij);
 
   auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
-    // int sm_aev = sizeof(float) * align<4>(aev_params.angular_length); // (angular_length / 4 + 1) * 4
     int sxyz = sizeof(float) * max_nbrs * 3;
     int sj_xyz_grad = sizeof(float) * max_nbrs * 3;
     int sRij = sizeof(float) * max_nbrs;
@@ -1048,7 +1041,6 @@ Tensor cuaev_backward(
   const int nthreads_per_catom = 32;
   const int nblocks_angAEV = (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
   int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
-  // printf("angular backward share_mem needed: %d\n", smem_size_aligned);
 
   Tensor grad_angular_coord = torch::zeros({nAngularRij, 3}, coordinates_t.options().requires_grad(false));
   cuAngularAEVs_backward<<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
@@ -1078,7 +1070,6 @@ Tensor cuaev_backward(
       int64_t num_species_
 
 Tensor cuaev_cuda(AEV_INPUT) {
-  // printf("calling cuda \n");
   Result res = cuaev_forward<float>(
       coordinates_t, species_t, Rcr_, Rca_, EtaR_t, ShfR_t, EtaA_t, Zeta_t, ShfA_t, ShfZ_t, num_species_);
   return res.aev_t;
@@ -1088,11 +1079,9 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
  public:
   static Tensor forward(torch::autograd::AutogradContext* ctx, AEV_INPUT) {
     at::AutoNonVariableTypeMode g;
-    // printf("calling autograd::forward \n");
     Result res = cuaev_forward<float>(
         coordinates_t, species_t, Rcr_, Rca_, EtaR_t, ShfR_t, EtaA_t, Zeta_t, ShfA_t, ShfZ_t, num_species_);
     if (coordinates_t.requires_grad()) {
-      // printf("saving context \n");
       ctx->save_for_backward({coordinates_t,
                               species_t,
                               res.tensor_Rij,
@@ -1119,7 +1108,6 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
   }
 
   static tensor_list backward(torch::autograd::AutogradContext* ctx, tensor_list grad_outputs) {
-    // printf("calling autograd::backward \n");
     auto saved = ctx->get_saved_variables();
     auto coordinates_t = saved[0], species_t = saved[1];
     auto tensor_Rij = saved[2], tensor_radialRij = saved[3], tensor_angularRij = saved[4];
@@ -1163,7 +1151,6 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
 };
 
 Tensor cuaev_autograd(AEV_INPUT) {
-  // printf("calling autograd \n");
   return CuaevAutograd::apply(
       coordinates_t, species_t, Rcr_, Rca_, EtaR_t, ShfR_t, EtaA_t, Zeta_t, ShfA_t, ShfZ_t, num_species_);
 }
