@@ -10,10 +10,11 @@ cd torchani
 # install by
 python setup.py install --cuaev
 # or for development
-pip install -e . --global-option="--cuaev"
+# `pip install -e . && ` is only needed for the very first install (because issue of https://github.com/pypa/pip/issues/1883)
+pip install -e . && pip install -e . --global-option="--cuaev"
 ```
 
-Notes for install on Hipergator
+<del>Notes for install on Hipergator</del> (Currently not working because Pytorch dropped the official build for cuda/10.0)
 ```bash
 srun -p gpu --gpus=geforce:1 --time=01:00:00 --mem=10gb --pty -u bash -i   # compile may fail because of low on memery (when memery is less than 5gb)
 conda install pytorch torchvision cudatoolkit=10.0 -c pytorch              # make sure it's cudatoolkit=10.0
