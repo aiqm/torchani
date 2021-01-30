@@ -837,7 +837,7 @@ Result cuaev_forward(
 
   // buffer to store all the pairwise distance (Rij)
   auto total_natom_pairs = n_molecules * max_natoms_per_mol * max_natoms_per_mol;
-  auto d_options = torch::dtype(torch::kUInt8).device(torch::kCUDA, coordinates_t.device().index());
+  auto d_options = torch::dtype(torch::kUInt8).device(coordinates_t.device());
   Tensor tensor_Rij = torch::empty(sizeof(PairDist<float>) * total_natom_pairs, d_options);
   PairDist<float>* d_Rij = (PairDist<float>*)tensor_Rij.data_ptr();
 
