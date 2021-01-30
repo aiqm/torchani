@@ -30,7 +30,10 @@ cuaev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, Sh
 ```
 
 ## Limitations
-Current implementation of CUAEV does not support pbc and force calculation.
+- [x] CUAEV Forward
+- [x] CUAEV Backwad (Force)
+- [ ] PBC
+- [ ] Force training (Need cuaev's second derivative)
 
 ## Benchmark
 Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/torchani/tree/master/torchani/tools/training-aev-benchmark.py) on RTX 2080 Ti:
