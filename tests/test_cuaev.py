@@ -161,7 +161,8 @@ class TestCUAEV(TestCase):
 
     def testVeryDenseMolecule(self):
         """
-        Test very dense molecule for aev correctness, especially for angular part
+        Test very dense molecule for aev correctness, especially for angular kernel when center atom pairs are more than 32.
+        issue: https://github.com/aiqm/torchani/pull/555
         """
         for i in range(100):
             datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
