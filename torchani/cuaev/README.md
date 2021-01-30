@@ -47,6 +47,11 @@ Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/
 ## Test
 ```bash
 cd torchani
-python tools/training-aev-benchmark.py download/dataset/ani-1x/sample.h5 -y
 python tests/test_cuaev.py
+```
+
+benchmark
+```
+python tools/training-aev-benchmark.py download/dataset/ani-1x/sample.h5
+python tools/aev-benchmark-size.py
 ```
