@@ -32,6 +32,7 @@ def benchmark(speciesPositions, aev_comp, N, check_gpu_mem):
     torch.cuda.synchronize()
     start = time.time()
 
+    aev = None
     for i in range(N):
         aev = aev_comp(speciesPositions).aevs
         if i == 2 and check_gpu_mem:
@@ -58,10 +59,13 @@ def check_speedup_error(aev, aev_ref, speed, speed_ref):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--check_gpu_mem',
+    parser.add_argument('-m', '--check_gpu_mem',
                         dest='check_gpu_mem',
                         action='store_const',
                         const=1)
+    parser.add_argument('--nsight',
+                        action='store_true',
+                        help='use nsight profile')
     parser.set_defaults(check_gpu_mem=0)
     parser = parser.parse_args()
     path = os.path.dirname(os.path.realpath(__file__))
@@ -69,6 +73,11 @@ if __name__ == "__main__":
     check_gpu_mem = parser.check_gpu_mem
     device = torch.device('cuda')
     files = ['small.pdb', '1hz5.pdb', '6W8H.pdb']
+
+    N = 500
+    if parser.nsight:
+        N = 3
+        torch.cuda.profiler.start()
 
     for file in files:
         datafile = os.path.join(path, f'../dataset/pdb/{file}')
@@ -81,8 +90,8 @@ if __name__ == "__main__":
         speciesPositions = nnp.species_converter((species, positions))
         aev_computer = nnp.aev_computer
 
-        N = 500
-
+        if parser.nsight:
+            torch.cuda.nvtx.range_push(file)
         print('Original TorchANI:')
         aev_ref, delta_ref = benchmark(speciesPositions, aev_computer, N, check_gpu_mem)
         print()
@@ -91,6 +100,11 @@ if __name__ == "__main__":
         nnp.aev_computer.use_cuda_extension = True
         cuaev_computer = nnp.aev_computer
         aev, delta = benchmark(speciesPositions, cuaev_computer, N, check_gpu_mem)
-        check_speedup_error(aev, aev_ref, delta, delta_ref)
+        if parser.nsight:
+            torch.cuda.nvtx.range_pop()
 
+        check_speedup_error(aev, aev_ref, delta, delta_ref)
         print('-' * 70 + '\n')
+
+    if parser.nsight:
+        torch.cuda.profiler.stop()

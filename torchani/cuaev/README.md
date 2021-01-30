@@ -29,22 +29,29 @@ Pass `use_cuda_extension=True` when construct aev_computer, for example:
 cuaev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=True)
 ```
 
-## Limitations
-Current implementation of CUAEV does not support pbc and force calculation.
+## TODOs
+- [x] CUAEV Forward
+- [x] CUAEV Backwad (Force)
+- [ ] PBC
+- [ ] Force training (Need cuaev's second derivative)
 
 ## Benchmark
-Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/torchani/tree/master/torchani/tools/training-aev-benchmark.py) on RTX 2080 Ti:
+Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/torchani/tree/master/torchani/tools/training-aev-benchmark.py) on TITAN V:
 
-|         ANI-1x          |     Without Shuffle     |         Shuffle         |
-|:-----------------------:|:-----------------------:|:-----------------------:|
-| Time per Epoch / Memory |  AEV / Total / GPU Mem  |  AEV / Total/ GPU Mem   |
-|   aev cuda extension    | 7.7s  / 26.3s / 2289 MB | 8.5s / 27.6s / 2425 MB  |
-|     aev python code     | 21.1s / 40.0s / 7361 MB | 28.7s / 47.8s / 3475 MB |
-|      improvements       |   2.74 / 1.52 / 3.22    |   3.38 / 1.73 / 1.43    |
+| ANI-1x dataset (Batchsize 2560) | Energy Training         | Energy and Force Inference        |
+|---------------------------------|-------------------------|-----------------------------------|
+| Time per Epoch / Memory         | AEV / Total / GPU Mem   |  AEV  / Force / Total / GPU Mem   |
+| aev cuda extension              | 3.90s / 31.5s / 2088 MB | 3.90s / 22.6s / 43.0s / 4234 MB   |
+| aev python code                 | 23.7s / 50.2s / 3540 MB | 25.3s / 48.0s / 88.2s / 11316 MB  |
 
 ## Test
 ```bash
 cd torchani
-python tools/training-aev-benchmark.py download/dataset/ani-1x/sample.h5 -y
 python tests/test_cuaev.py
+```
+
+benchmark
+```
+python tools/training-aev-benchmark.py download/dataset/ani-1x/sample.h5
+python tools/aev-benchmark-size.py
 ```

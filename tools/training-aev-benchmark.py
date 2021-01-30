@@ -7,6 +7,7 @@ import pkbar
 import gc
 import pynvml
 import os
+import pickle
 from torchani.units import hartree2kcalmol
 
 
@@ -76,8 +77,16 @@ def sync_cuda(sync):
         torch.cuda.synchronize()
 
 
-def benchmark(parser, dataset, use_cuda_extension, force_training=False):
-    synchronize = True if parser.synchronize else False
+def print_timer(label, t):
+    if t < 1:
+        t = f'{t * 1000:.1f} ms'
+    else:
+        t = f'{t:.3f} sec'
+    print(f'{label} - {t}')
+
+
+def benchmark(parser, dataset, use_cuda_extension, force_inference=False):
+    synchronize = True
     timers = {}
 
     def time_func(key, func):
@@ -86,8 +95,7 @@ def benchmark(parser, dataset, use_cuda_extension, force_training=False):
         def wrapper(*args, **kwargs):
             start = timeit.default_timer()
             ret = func(*args, **kwargs)
-            if synchronize:
-                torch.cuda.synchronize()
+            sync_cuda(synchronize)
             end = timeit.default_timer()
             timers[key] += end - start
             return ret
@@ -128,6 +136,7 @@ def benchmark(parser, dataset, use_cuda_extension, force_training=False):
     print('=> start training')
     start = time.time()
     loss_time = 0
+    force_time = 0
 
     for epoch in range(0, parser.num_epochs):
 
@@ -136,55 +145,62 @@ def benchmark(parser, dataset, use_cuda_extension, force_training=False):
 
         for i, properties in enumerate(dataset):
             species = properties['species'].to(parser.device)
-            coordinates = properties['coordinates'].to(parser.device).float().requires_grad_(force_training)
+            coordinates = properties['coordinates'].to(parser.device).float().requires_grad_(force_inference)
             true_energies = properties['energies'].to(parser.device).float()
             num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
             _, predicted_energies = model((species, coordinates))
             # TODO add sync after aev is done
             sync_cuda(synchronize)
             energy_loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
-            if force_training:
+            if force_inference:
+                sync_cuda(synchronize)
                 force_coefficient = 0.1
                 true_forces = properties['forces'].to(parser.device).float()
+                force_start = time.time()
                 try:
+                    sync_cuda(synchronize)
                     forces = -torch.autograd.grad(predicted_energies.sum(), coordinates, create_graph=True, retain_graph=True)[0]
+                    sync_cuda(synchronize)
                 except Exception as e:
                     alert('Error: {}'.format(e))
                     return
+                force_time += time.time() - force_start
                 force_loss = (mse(true_forces, forces).sum(dim=(1, 2)) / num_atoms).mean()
                 loss = energy_loss + force_coefficient * force_loss
+                sync_cuda(synchronize)
             else:
                 loss = energy_loss
             rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
-            sync_cuda(synchronize)
-            loss_start = time.time()
-            loss.backward()
-            sync_cuda(synchronize)
-            loss_stop = time.time()
-            loss_time += loss_stop - loss_start
-            optimizer.step()
-            sync_cuda(synchronize)
             progbar.update(i, values=[("rmse", rmse)])
+            if not force_inference:
+                sync_cuda(synchronize)
+                loss_start = time.time()
+                loss.backward()
+                # print('2', coordinates.grad)
+                sync_cuda(synchronize)
+                loss_stop = time.time()
+                loss_time += loss_stop - loss_start
+                optimizer.step()
+                sync_cuda(synchronize)
 
         checkgpu()
     sync_cuda(synchronize)
     stop = time.time()
 
     print('=> More detail about benchmark PER EPOCH')
-    for k in timers:
-        if k.startswith('torchani.'):
-            print('   {} - {:.1f}s'.format(k, timers[k] / parser.num_epochs))
     total_time = (stop - start) / parser.num_epochs
     loss_time = loss_time / parser.num_epochs
+    force_time = force_time / parser.num_epochs
     opti_time = timers['optimizer.step'] / parser.num_epochs
     forward_time = timers['forward'] / parser.num_epochs
     aev_time = timers['total'] / parser.num_epochs
-    print('Total AEV - {:.1f}s'.format(aev_time))
-    print('Forward - {:.1f}s'.format(forward_time))
-    print('Backward - {:.1f}s'.format(loss_time))
-    print('Optimizer - {:.1f}s'.format(opti_time))
-    print('Others - {:.1f}s'.format(total_time - loss_time - aev_time - forward_time - opti_time))
-    print('Epoch time - {:.1f}s'.format(total_time))
+    print_timer('   Total AEV', aev_time)
+    print_timer('   Forward', forward_time)
+    print_timer('   Backward', loss_time)
+    print_timer('   Force', force_time)
+    print_timer('   Optimizer', opti_time)
+    print_timer('   Others', total_time - loss_time - aev_time - forward_time - opti_time - force_time)
+    print_timer('   Epoch time', total_time)
 
 
 if __name__ == "__main__":
@@ -199,22 +215,30 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--batch_size',
                         help='Number of conformations of each batch',
                         default=2560, type=int)
-    parser.add_argument('-y', '--synchronize',
+    parser.add_argument('-p', '--pickle',
                         action='store_true',
-                        help='whether to insert torch.cuda.synchronize() at the end of each function')
+                        help='Dataset is pickled or not')
+    parser.add_argument('--nsight',
+                        action='store_true',
+                        help='use nsight profile')
     parser.add_argument('-n', '--num_epochs',
                         help='epochs',
                         default=1, type=int)
     parser = parser.parse_args()
 
     print('=> loading dataset...')
-    shifter = torchani.EnergyShifter(None)
-    # parser.batch_size = 1280
-    dataset = torchani.data.load(parser.dataset_path, additional_properties=('forces',)).subtract_self_energies(shifter).species_to_indices()
-    print('=> Caching shuffled dataset...')
-    dataset_shuffled = list(dataset.shuffle().collate(parser.batch_size))
-    print('=> Caching non-shuffled dataset...')
-    dataset = list(dataset.collate(parser.batch_size))
+    if parser.pickle:
+        f = open(parser.dataset_path, 'rb')
+        dataset_shuffled = pickle.load(f)
+        f.close()
+    else:
+        shifter = torchani.EnergyShifter(None)
+        dataset = torchani.data.load(parser.dataset_path, additional_properties=('forces',)).subtract_self_energies(shifter).species_to_indices()
+        print('=> Caching shuffled dataset...')
+        dataset_shuffled = list(dataset.shuffle().collate(parser.batch_size))
+        f = open(f'{parser.dataset_path}.pickle', 'wb')
+        pickle.dump(dataset_shuffled, f)
+        f.close()
 
     print("=> CUDA info:")
     devices = torch.cuda.device_count()
@@ -225,36 +249,20 @@ if __name__ == "__main__":
         print('   {}'.format(torch.cuda.get_device_properties(i)))
         checkgpu(i)
 
-    print("\n\n=> Test 1/8: Shuffled Dataset, USE cuda extension, Energy training")
+    print("\n\n=> Test 1: USE cuda extension, Energy training")
     torch.cuda.empty_cache()
     gc.collect()
-    benchmark(parser, dataset_shuffled, use_cuda_extension=True, force_training=False)
-    print("\n\n=> Test 2/8: Shuffled Dataset, NO cuda extension, Energy training")
+    benchmark(parser, dataset_shuffled, use_cuda_extension=True, force_inference=False)
+    print("\n\n=> Test 2: NO cuda extension, Energy training")
     torch.cuda.empty_cache()
     gc.collect()
-    benchmark(parser, dataset_shuffled, use_cuda_extension=False, force_training=False)
-    print("\n\n=> Test 3/8: Non-Shuffled Dataset, USE cuda extension, Energy training")
-    torch.cuda.empty_cache()
-    gc.collect()
-    benchmark(parser, dataset, use_cuda_extension=True, force_training=False)
-    print("\n\n=> Test 4/8: Non-Shuffled Dataset, NO cuda extension, Energy training")
-    torch.cuda.empty_cache()
-    gc.collect()
-    benchmark(parser, dataset, use_cuda_extension=False, force_training=False)
+    benchmark(parser, dataset_shuffled, use_cuda_extension=False, force_inference=False)
 
-    print("\n\n=> Test 5/8: Shuffled Dataset, USE cuda extension, Force and Energy training")
+    print("\n\n=> Test 3: USE cuda extension, Force and Energy inference")
     torch.cuda.empty_cache()
     gc.collect()
-    benchmark(parser, dataset_shuffled, use_cuda_extension=True, force_training=True)
-    print("\n\n=> Test 6/8: Shuffled Dataset, NO cuda extension, Force and Energy training")
+    benchmark(parser, dataset_shuffled, use_cuda_extension=True, force_inference=True)
+    print("\n\n=> Test 4: NO cuda extension, Force and Energy inference")
     torch.cuda.empty_cache()
     gc.collect()
-    benchmark(parser, dataset_shuffled, use_cuda_extension=False, force_training=True)
-    print("\n\n=> Test 7/8: Non-Shuffled Dataset, USE cuda extension, Force and Energy training")
-    torch.cuda.empty_cache()
-    gc.collect()
-    benchmark(parser, dataset, use_cuda_extension=True, force_training=True)
-    print("\n\n=> Test 8/8: Non-Shuffled Dataset, NO cuda extension, Force and Energy training")
-    torch.cuda.empty_cache()
-    gc.collect()
-    benchmark(parser, dataset, use_cuda_extension=False, force_training=True)
+    benchmark(parser, dataset_shuffled, use_cuda_extension=False, force_inference=True)
