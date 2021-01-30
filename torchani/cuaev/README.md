@@ -29,7 +29,7 @@ Pass `use_cuda_extension=True` when construct aev_computer, for example:
 cuaev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=True)
 ```
 
-## Limitations
+## TODOs
 - [x] CUAEV Forward
 - [x] CUAEV Backwad (Force)
 - [ ] PBC
