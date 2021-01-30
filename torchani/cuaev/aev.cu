@@ -461,6 +461,7 @@ cuAngularAEVs_backward(
       for (int srcLane = 0; srcLane < 32 && (kk_start + srcLane) < jnum; ++srcLane) {
         int kk = kk_start + srcLane;
         DataT theta_ijk = __shfl_sync(0xFFFFFFFF, theta, srcLane);
+        // TODO necessary?
         DataT grad_theta_vij_x_ = __shfl_sync(0xFFFFFFFF, grad_theta_vij_x, srcLane);
         DataT grad_theta_vij_y_ = __shfl_sync(0xFFFFFFFF, grad_theta_vij_y, srcLane);
         DataT grad_theta_vij_z_ = __shfl_sync(0xFFFFFFFF, grad_theta_vij_z, srcLane);
