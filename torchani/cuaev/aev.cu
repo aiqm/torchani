@@ -133,7 +133,7 @@ __global__ void pairwiseDistanceSingleMolecule(
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
     PairDist<DataT>* d_Rij,
     IndexT max_natoms_per_mol) {
-  int mol_idx = 0;
+  constexpr int mol_idx = 0;
   int natom_pairs = max_natoms_per_mol * max_natoms_per_mol;
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
