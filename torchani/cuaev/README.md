@@ -8,10 +8,14 @@ In most cases, if `gcc` and `cuda` environment are well configured, runing the f
 git clone git@github.com:aiqm/torchani.git
 cd torchani
 # install by
-python setup.py install --cuaev
+# use --cuaev-all-sms if you are building in SLURM environment and there are multiple different gpus in a node
+# use --cuaev will only build for detected gpus
+python setup.py install --cuaev-all-sms  # build for all sms
+python setup.py install --cuaev          # only build for detected gpus
 # or for development
 # `pip install -e . && ` is only needed for the very first install (because issue of https://github.com/pypa/pip/issues/1883)
-pip install -e . && pip install -e . --global-option="--cuaev"
+pip install -e . && pip install -e . --global-option="--cuaev-all-sms"  # build for all sms
+pip install -e . && pip install -e . --global-option="--cuaev"          # only build for detected gpus
 ```
 
 <del>Notes for install on Hipergator</del> (Currently not working because Pytorch dropped the official build for cuda/10.0)
@@ -20,7 +24,7 @@ srun -p gpu --gpus=geforce:1 --time=01:00:00 --mem=10gb --pty -u bash -i   # com
 conda install pytorch torchvision cudatoolkit=10.0 -c pytorch              # make sure it's cudatoolkit=10.0
 module load cuda/10.0.130
 module load gcc/7.3.0
-python setup.py install --cuaev
+python setup.py install --cuaev-all-sms
 ```
 
 ## Usage
