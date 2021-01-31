@@ -7,7 +7,7 @@ In most cases, if `gcc` and `cuda` environment are well configured, runing the f
 ```bash
 git clone git@github.com:aiqm/torchani.git
 cd torchani
-# install by
+# choose one option below
 # use --cuaev-all-sms if you are building in SLURM environment and there are multiple different gpus in a node
 # use --cuaev will only build for detected gpus
 python setup.py install --cuaev-all-sms  # build for all sms
