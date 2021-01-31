@@ -2,6 +2,13 @@
 CUDA Extension for AEV calculation.
 Performance improvement is expected to be ~3X for AEV computation and ~1.5X for overall training workflow.
 
+## Requirement
+CUAEV needs the nightly version [pytorch](https://pytorch.org/) to be able to work.
+If you you use conda, you could install it by
+```
+conda install pytorch torchvision torchaudio cudatoolkit={YOUR_CUDA_VERSION} -c pytorch-nightly
+```
+
 ## Install
 In most cases, if `gcc` and `cuda` environment are well configured, runing the following command at `torchani` directory will install torchani and cuaev together.
 ```bash
