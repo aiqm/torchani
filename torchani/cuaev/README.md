@@ -14,8 +14,8 @@ python setup.py install --cuaev-all-sms  # build for all sms
 python setup.py install --cuaev          # only build for detected gpus
 # or for development
 # `pip install -e . && ` is only needed for the very first install (because issue of https://github.com/pypa/pip/issues/1883)
-pip install -e . && pip install -e . --global-option="--cuaev-all-sms"  # build for all sms
-pip install -e . && pip install -e . --global-option="--cuaev"          # only build for detected gpus
+pip install -e . && pip install -v -e . --global-option="--cuaev-all-sms"  # build for all sms
+pip install -e . && pip install -v -e . --global-option="--cuaev"          # only build for detected gpus
 ```
 
 <del>Notes for install on Hipergator</del> (Currently not working because Pytorch dropped the official build for cuda/10.0)
