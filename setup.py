@@ -9,7 +9,11 @@ BUILD_CUAEV = '--cuaev' in sys.argv
 if BUILD_CUAEV:
     sys.argv.remove('--cuaev')
 
-if not BUILD_CUAEV:
+FAST_BUILD_CUAEV = '--fastbuildcuaev' in sys.argv
+if FAST_BUILD_CUAEV:
+    sys.argv.remove('--fastbuildcuaev')
+
+if not BUILD_CUAEV and not FAST_BUILD_CUAEV:
     log.warn("Will not install cuaev")  # type: ignore
 
 with open("README.md", "r") as fh:
@@ -42,20 +46,40 @@ def maybe_download_cub():
     return [os.path.abspath("./include")]
 
 
-def cuda_extension():
+def cuda_extension(fast_build=False):
     import torch
     from torch.utils.cpp_extension import CUDAExtension
+    SMs = None
+    if fast_build:
+        SMs = []
+        devices = torch.cuda.device_count()
+        print('FAST_BUILD_CUAEV: ON')
+        print('This build will only support the following devices or the devices with same cuda capability: {}'.format(devices))
+        for i in range(devices):
+            d = 'cuda:{}'.format(i)
+            print('{}: {}'.format(i, torch.cuda.get_device_name(d)))
+            print('   {}'.format(torch.cuda.get_device_properties(i)))
+            sm = torch.cuda.get_device_capability(i)
+            sm = int(f'{sm[0]}{sm[1]}')
+            if sm not in SMs and sm >= 50:
+                SMs.append(sm)
 
-    nvcc_args = ["-gencode=arch=compute_50,code=sm_50", "-gencode=arch=compute_60,code=sm_60",
-                 "-gencode=arch=compute_61,code=sm_61", "-gencode=arch=compute_70,code=sm_70",
-                 "-Xptxas=-v", '--expt-extended-lambda', '-use_fast_math']
-    cuda_version = float(torch.version.cuda)
-    if cuda_version >= 10:
-        nvcc_args.append("-gencode=arch=compute_75,code=sm_75")
-    if cuda_version >= 11:
-        nvcc_args.append("-gencode=arch=compute_80,code=sm_80")
-    if cuda_version >= 11.1:
-        nvcc_args.append("-gencode=arch=compute_86,code=sm_86")
+    nvcc_args = ["-Xptxas=-v", '--expt-extended-lambda', '-use_fast_math']
+    if SMs and len(SMs):
+        for sm in SMs:
+            nvcc_args.append(f"-gencode=arch=compute_{sm},code=sm_{sm}")
+    else:
+        nvcc_args.append("-gencode=arch=compute_60,code=sm_60")
+        nvcc_args.append("-gencode=arch=compute_61,code=sm_61")
+        nvcc_args.append("-gencode=arch=compute_70,code=sm_70")
+        cuda_version = float(torch.version.cuda)
+        if cuda_version >= 10:
+            nvcc_args.append("-gencode=arch=compute_75,code=sm_75")
+        if cuda_version >= 11:
+            nvcc_args.append("-gencode=arch=compute_80,code=sm_80")
+        if cuda_version >= 11.1:
+            nvcc_args.append("-gencode=arch=compute_86,code=sm_86")
+    print("nvcc_args: ", nvcc_args)
     return CUDAExtension(
         name='torchani.cuaev',
         pkg='torchani.cuaev',
@@ -65,7 +89,7 @@ def cuda_extension():
 
 
 def cuaev_kwargs():
-    if not BUILD_CUAEV:
+    if not BUILD_CUAEV and not FAST_BUILD_CUAEV:
         return dict(
             provides=['torchani']
         )
@@ -76,7 +100,7 @@ def cuaev_kwargs():
             'torchani.cuaev',
         ],
         ext_modules=[
-            cuda_extension()
+            cuda_extension(FAST_BUILD_CUAEV)
         ],
         cmdclass={
             'build_ext': BuildExtension,
