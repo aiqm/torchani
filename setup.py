@@ -66,7 +66,7 @@ def cuda_extension(build_all=False):
                 SMs.append(sm)
 
     nvcc_args = ["-Xptxas=-v", '--expt-extended-lambda', '-use_fast_math']
-    if SMs and len(SMs):
+    if SMs:
         for sm in SMs:
             nvcc_args.append(f"-gencode=arch=compute_{sm},code=sm_{sm}")
     else:
