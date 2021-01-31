@@ -5,15 +5,15 @@ from setuptools import setup, find_packages
 from distutils import log
 import sys
 
-BUILD_CUAEV = '--cuaev' in sys.argv
-if BUILD_CUAEV:
+BUILD_CUAEV_ALL_SM = '--cuaev-all-sms' in sys.argv
+if BUILD_CUAEV_ALL_SM:
+    sys.argv.remove('--cuaev-all-sms')
+
+FAST_BUILD_CUAEV = '--cuaev' in sys.argv
+if FAST_BUILD_CUAEV:
     sys.argv.remove('--cuaev')
 
-FAST_BUILD_CUAEV = '--fastbuildcuaev' in sys.argv
-if FAST_BUILD_CUAEV:
-    sys.argv.remove('--fastbuildcuaev')
-
-if not BUILD_CUAEV and not FAST_BUILD_CUAEV:
+if not BUILD_CUAEV_ALL_SM and not FAST_BUILD_CUAEV:
     log.warn("Will not install cuaev")  # type: ignore
 
 with open("README.md", "r") as fh:
@@ -46,11 +46,11 @@ def maybe_download_cub():
     return [os.path.abspath("./include")]
 
 
-def cuda_extension(fast_build=False):
+def cuda_extension(build_all=False):
     import torch
     from torch.utils.cpp_extension import CUDAExtension
     SMs = None
-    if fast_build:
+    if not build_all:
         SMs = []
         devices = torch.cuda.device_count()
         print('FAST_BUILD_CUAEV: ON')
@@ -90,7 +90,7 @@ def cuda_extension(fast_build=False):
 
 
 def cuaev_kwargs():
-    if not BUILD_CUAEV and not FAST_BUILD_CUAEV:
+    if not BUILD_CUAEV_ALL_SM and not FAST_BUILD_CUAEV:
         return dict(
             provides=['torchani']
         )
@@ -101,7 +101,7 @@ def cuaev_kwargs():
             'torchani.cuaev',
         ],
         ext_modules=[
-            cuda_extension(FAST_BUILD_CUAEV)
+            cuda_extension(BUILD_CUAEV_ALL_SM)
         ],
         cmdclass={
             'build_ext': BuildExtension,
