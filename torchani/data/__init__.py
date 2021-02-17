@@ -5,7 +5,7 @@ The `torchani.data.load(path)` creates an iterable of raw data,
 where species are strings, and coordinates are numpy ndarrays.
 
 You can transform this iterable by using transformations.
-To do a transformation, call `it.transformation_name()`. This 
+To do a transformation, call `it.transformation_name()`. This
 will return an iterable that may be cached depending on the specific
 transformation.
 
@@ -35,10 +35,10 @@ Available transformations are listed below:
 
 - `remove_outliers` removes some outlier energies from the dataset if present.
 
-- `shuffle` shuffles the provided dataset. Note that if the dataset is 
+- `shuffle` shuffles the provided dataset. Note that if the dataset is
     not cached (i.e. it lives in the disk and not in memory) then this method
     will cache it before shuffling. This may take time and memory depending on
-    the dataset size. This method may be used before splitting into validation/training 
+    the dataset size. This method may be used before splitting into validation/training
     shuffle all molecules in the dataset, and ensure a uniform sampling from
     the initial dataset, and it can also be used during training on a cached
     dataset of batches to shuffle the batches.
@@ -103,7 +103,6 @@ import importlib
 import functools
 import math
 import random
-import warnings
 from collections import Counter
 import numpy
 import gc
