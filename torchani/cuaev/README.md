@@ -8,6 +8,7 @@ If you you use conda, you could install it by
 ```
 conda install pytorch torchvision torchaudio cudatoolkit={YOUR_CUDA_VERSION} -c pytorch-nightly
 ```
+Note that [CUDA 11](https://github.com/aiqm/torchani/issues/549) is still not supported yet.
 
 ## Install
 In most cases, if `gcc` and `cuda` environment are well configured, runing the following command at `torchani` directory will install torchani and cuaev together.
@@ -47,7 +48,7 @@ cuaev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, Sh
 - [ ] Force training (Need cuaev's second derivative)
 
 ## Benchmark
-Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/torchani/tree/master/torchani/tools/training-aev-benchmark.py) on TITAN V:
+Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/torchani/blob/master/tools/training-aev-benchmark.py) on TITAN V:
 
 | ANI-1x dataset (Batchsize 2560) | Energy Training         | Energy and Force Inference        |
 |---------------------------------|-------------------------|-----------------------------------|
