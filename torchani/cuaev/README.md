@@ -2,24 +2,37 @@
 CUDA Extension for AEV calculation.
 Performance improvement is expected to be ~3X for AEV computation and ~1.5X for overall training workflow.
 
+## Requirement
+CUAEV needs the nightly version [pytorch](https://pytorch.org/) to be able to work.
+If you you use conda, you could install it by
+```
+conda install pytorch torchvision torchaudio cudatoolkit={YOUR_CUDA_VERSION} -c pytorch-nightly
+```
+Note that [CUDA 11](https://github.com/aiqm/torchani/issues/549) is still not supported yet.
+
 ## Install
 In most cases, if `gcc` and `cuda` environment are well configured, runing the following command at `torchani` directory will install torchani and cuaev together.
 ```bash
 git clone git@github.com:aiqm/torchani.git
 cd torchani
-# install by
-python setup.py install --cuaev
+# choose one option below
+# use --cuaev-all-sms if you are building in SLURM environment and there are multiple different gpus in a node
+# use --cuaev will only build for detected gpus
+python setup.py install --cuaev-all-sms  # build for all sms
+python setup.py install --cuaev          # only build for detected gpus
 # or for development
-pip install -e . --global-option="--cuaev"
+# `pip install -e . && ` is only needed for the very first install (because issue of https://github.com/pypa/pip/issues/1883)
+pip install -e . && pip install -v -e . --global-option="--cuaev-all-sms"  # build for all sms
+pip install -e . && pip install -v -e . --global-option="--cuaev"          # only build for detected gpus
 ```
 
-Notes for install on Hipergator
+<del>Notes for install on Hipergator</del> (Currently not working because Pytorch dropped the official build for cuda/10.0)
 ```bash
 srun -p gpu --gpus=geforce:1 --time=01:00:00 --mem=10gb --pty -u bash -i   # compile may fail because of low on memery (when memery is less than 5gb)
 conda install pytorch torchvision cudatoolkit=10.0 -c pytorch              # make sure it's cudatoolkit=10.0
 module load cuda/10.0.130
 module load gcc/7.3.0
-python setup.py install --cuaev
+python setup.py install --cuaev-all-sms
 ```
 
 ## Usage
@@ -28,22 +41,30 @@ Pass `use_cuda_extension=True` when construct aev_computer, for example:
 cuaev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=True)
 ```
 
-## Limitations
-Current implementation of CUAEV does not support pbc and force calculation.
+## TODOs
+- [x] CUAEV Forward
+- [x] CUAEV Backwad (Force)
+- [ ] PBC
+- [ ] Force training (Need cuaev's second derivative)
 
 ## Benchmark
-Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/torchani/tree/master/torchani/tools/training-aev-benchmark.py) on RTX 2080 Ti:
+Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/torchani/blob/master/tools/training-aev-benchmark.py) on TITAN V:
 
-|         ANI-1x          |     Without Shuffle     |         Shuffle         |
-|:-----------------------:|:-----------------------:|:-----------------------:|
-| Time per Epoch / Memory |  AEV / Total / GPU Mem  |  AEV / Total/ GPU Mem   |
-|   aev cuda extension    | 7.7s  / 26.3s / 2289 MB | 8.5s / 27.6s / 2425 MB  |
-|     aev python code     | 21.1s / 40.0s / 7361 MB | 28.7s / 47.8s / 3475 MB |
-|      improvements       |   2.74 / 1.52 / 3.22    |   3.38 / 1.73 / 1.43    |
+| ANI-1x dataset (Batchsize 2560) | Energy Training         | Energy and Force Inference        |
+|---------------------------------|-------------------------|-----------------------------------|
+| Time per Epoch / Memory         | AEV / Total / GPU Mem   |  AEV  / Force / Total / GPU Mem   |
+| aev cuda extension              | 3.90s / 31.5s / 2088 MB | 3.90s / 22.6s / 43.0s / 4234 MB   |
+| aev python code                 | 23.7s / 50.2s / 3540 MB | 25.3s / 48.0s / 88.2s / 11316 MB  |
 
 ## Test
 ```bash
 cd torchani
-python tools/training-aev-benchmark.py download/dataset/ani-1x/sample.h5 -y
+./download.sh
 python tests/test_cuaev.py
+```
+
+benchmark
+```
+python tools/training-aev-benchmark.py download/dataset/ani-1x/sample.h5
+python tools/aev-benchmark-size.py
 ```
