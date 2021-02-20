@@ -1,10 +1,13 @@
 import os
 import torch
-from torch._C import device
 import torchani
 import unittest
 import pickle
+import copy
 from torchani.testing import TestCase, make_tensor
+import torchsnooper
+import snoop
+torchsnooper.register_snoop(verbose=True)
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -100,6 +103,7 @@ class TestCUAEV(TestCase):
         self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
         self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n aev_grad: {force_ref}')
 
+    @snoop()
     def testSimpleDoubleBackward(self):
         coordinates = torch.tensor([
             [[0.03192167, 0.00638559, 0.01301679],
@@ -115,41 +119,31 @@ class TestCUAEV(TestCase):
         ], requires_grad=True, device=self.device)
         species = torch.tensor([[1, 0, 0, 0, 0], [2, 0, 0, 0, -1]], device=self.device)
 
-        _, aev = self.aev_computer((species, coordinates))
-        aev.retain_grad()
-        atomicE = self.nn(aev)
-        E = atomicE.sum()
-        force_ref = -torch.autograd.grad(E, coordinates, create_graph=True, retain_graph=True)[0]
-
-        loss = (torch.ones_like(force_ref) - force_ref).sum()
-        loss += (torch.zeros_like(E) - E).sum()
         self.nn.zero_grad()
+        _, aev = self.aev_computer((species, coordinates))
+        E = self.nn(aev).sum()
+        force_ref = -torch.autograd.grad(E, coordinates, create_graph=True, retain_graph=True)[0]
+        force_true = torch.randn_like(force_ref)
+        loss = torch.abs(force_true - force_ref).sum(dim=(1, 2)).mean()
         loss.backward()
-        grads = []
-        for param in self.nn.parameters():
-            print(param.grad)
-            grads.append(param.grad.view(-1))
-        grads = torch.cat(grads)
+        param = next(self.nn.parameters())
+        param_grad_ref = copy.deepcopy(param.grad)
 
+        self.nn.zero_grad()
         coordinates = coordinates.clone().detach()
         coordinates.requires_grad_()
         _, cu_aev = self.cuaev_computer((species, coordinates))
-        cu_aev.retain_grad()
-        atomicE = self.nn(cu_aev)
-        E = atomicE.sum()
+        E = self.nn(cu_aev).sum()
         force_cuaev = -torch.autograd.grad(E, coordinates, create_graph=True, retain_graph=True)[0]
-        self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
-        self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n aev_grad: {force_ref}')
 
-        loss_cuaev = (torch.ones_like(force_cuaev) - force_cuaev).sum()
-        loss_cuaev += (torch.zeros_like(E) - E).sum()
-        self.nn.zero_grad()
+        loss_cuaev = torch.abs(force_true - force_cuaev).sum(dim=(1, 2)).mean()
         loss_cuaev.backward()
-        grads = []
-        for param in self.nn.parameters():
-            print(param.grad)
-            grads.append(param.grad.view(-1))
-        grads = torch.cat(grads)
+        param = next(self.nn.parameters())
+        param_grad_cuaev = param.grad
+
+        self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
+        self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}')
+        self.assertEqual(param_grad_cuaev, param_grad_ref, f'\param_grad_cuaev: {param_grad_cuaev}\n param_grad_ref: {param_grad_ref}')
 
     def testTripeptideMD(self):
         for i in range(100):
