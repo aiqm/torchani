@@ -56,6 +56,7 @@ class TestCUAEV(TestCase):
         self.aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
         self.cuaev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=True)
         self.nn = torch.nn.Sequential(torch.nn.Linear(384, 1, False)).to(self.device)
+        self.radial_length = self.aev_computer.radial_length
 
     def testSimple(self):
         coordinates = torch.tensor([
@@ -103,8 +104,10 @@ class TestCUAEV(TestCase):
         self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
         self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n aev_grad: {force_ref}')
 
-    @snoop()
-    def testSimpleDoubleBackward(self):
+    def testSimpleDoubleBackward_1(self):
+        """
+        Test Double Backward (Force training) by parameters' gradient
+        """
         coordinates = torch.tensor([
             [[0.03192167, 0.00638559, 0.01301679],
              [-0.83140486, 0.39370209, -0.26395324],
@@ -143,7 +146,64 @@ class TestCUAEV(TestCase):
 
         self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
         self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}')
-        self.assertEqual(param_grad_cuaev, param_grad_ref, f'\param_grad_cuaev: {param_grad_cuaev}\n param_grad_ref: {param_grad_ref}')
+        # self.assertEqual(param_grad_cuaev, param_grad_ref, f'\param_grad_cuaev: {param_grad_cuaev}\n param_grad_ref: {param_grad_ref}')
+
+    @snoop()
+    def testSimpleDoubleBackward_2(self):
+        """
+        Test Double Backward (Force training) directly.
+        Double backward:
+        Forward: input is dE/dAEV, output is force
+        Backward: input is dLoss/dForce, output is dLoss/(dE/dAEV)
+        """
+        coordinates = torch.tensor([
+            [[0.03192167, 0.00638559, 0.01301679],
+             [-0.83140486, 0.39370209, -0.26395324],
+             [-0.66518241, -0.84461308, 0.20759389],
+             [0.45554739, 0.54289633, 0.81170881],
+             [0.66091919, -0.16799635, -0.91037834]],
+            [[-4.1862600, 0.0575700, -0.0381200],
+             [-3.1689400, 0.0523700, 0.0200000],
+             [-4.4978600, 0.8211300, 0.5604100],
+             [-4.4978700, -0.8000100, 0.4155600],
+             [0.00000000, -0.00000000, -0.00000000]]
+        ], requires_grad=True, device=self.device)
+        species = torch.tensor([[1, 0, 0, 0, 0], [2, 0, 0, 0, -1]], device=self.device)
+
+        # graph1 input -> aev
+        _, aev = self.aev_computer((species, coordinates))
+        # graph2 aev -> E
+        aev_ = aev.clone().detach().requires_grad_()
+        E = self.nn(aev_).sum()
+        # graph2 backward
+        aev_grad = torch.autograd.grad(E, aev_, create_graph=True, retain_graph=True)[0]
+        # graph1 backward
+        aev_grad_ = aev_grad.clone().detach().requires_grad_()
+        force_ref = torch.autograd.grad(aev, coordinates, aev_grad_, create_graph=True, retain_graph=True)[0]
+        # force loss backward
+        force_true = torch.randn_like(force_ref)
+        loss = torch.abs(force_true - force_ref).sum(dim=(1, 2)).mean()
+        aev_grad_grad = torch.autograd.grad(loss, aev_grad_, create_graph=True, retain_graph=True)[0]
+
+        # graph1 input -> aev
+        coordinates = coordinates.clone().detach().requires_grad_()
+        _, cu_aev = self.cuaev_computer((species, coordinates))
+        # graph2 aev -> E
+        cu_aev_ = cu_aev.clone().detach().requires_grad_()
+        E = self.nn(cu_aev_).sum()
+        # graph2 backward
+        cuaev_grad = torch.autograd.grad(E, cu_aev_, create_graph=True, retain_graph=True)[0]
+        # graph1 backward
+        cuaev_grad_ = cuaev_grad.clone().detach().requires_grad_()
+        force_cuaev = torch.autograd.grad(cu_aev, coordinates, cuaev_grad_, create_graph=True, retain_graph=True)[0]
+        # force loss backward
+        # force_true = torch.randn_like(force_cuaev)
+        loss = torch.abs(force_true - force_cuaev).sum(dim=(1, 2)).mean()
+        cuaev_grad_grad = torch.autograd.grad(loss, cuaev_grad_, create_graph=True, retain_graph=True)[0]
+
+        self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
+        self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}')
+        self.assertEqual(cuaev_grad_grad, aev_grad_grad, f'\ncuaev_grad_grad: {cuaev_grad_grad}\n aev_grad_grad: {aev_grad_grad}')
 
     def testTripeptideMD(self):
         for i in range(100):
