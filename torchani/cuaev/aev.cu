@@ -797,36 +797,30 @@ __global__ void cuAngularAEVs_double_backward(
             int atomj_idx = d_Rij[start_idx + jj].j;
             int atomk_idx = d_Rij[start_idx + kk].j;
 
-            DataT grad_vij_x = 2 *
-                (grad_force[mol_idx][atomj_idx][0] - grad_force[mol_idx][i][0]) * (
-                                   grad_factor1_theta * grad_theta_vij_x_ * factor2 * fc_ijk +
-                                   factor1 * grad_factor2_dist * sdx[jj] / Rij * fc_ijk +
-                                   factor1 * factor2 * fc_ik * grad_fc_ij * sdx[jj] / Rij);
-            DataT grad_vij_y = 2 *
-                (grad_force[mol_idx][atomj_idx][1] - grad_force[mol_idx][i][1]) * (
-                                   grad_factor1_theta * grad_theta_vij_y_ * factor2 * fc_ijk +
-                                   factor1 * grad_factor2_dist * sdy[jj] / Rij * fc_ijk +
-                                   factor1 * factor2 * fc_ik * grad_fc_ij * sdy[jj] / Rij);
-            DataT grad_vij_z = 2 *
-                (grad_force[mol_idx][atomj_idx][2] - grad_force[mol_idx][i][2]) * (
-                                   grad_factor1_theta * grad_theta_vij_z_ * factor2 * fc_ijk +
-                                   factor1 * grad_factor2_dist * sdz[jj] / Rij * fc_ijk +
-                                   factor1 * factor2 * fc_ik * grad_fc_ij * sdz[jj] / Rij);
-            DataT grad_vik_x = 2 *
-                (grad_force[mol_idx][atomk_idx][0] - grad_force[mol_idx][i][0]) * (
-                                   grad_factor1_theta * grad_theta_vik_x_ * factor2 * fc_ijk +
-                                   factor1 * grad_factor2_dist * sdx[kk] / Rik * fc_ijk +
-                                   factor1 * factor2 * fc_ij * grad_fc_ik * sdx[kk] / Rik);
-            DataT grad_vik_y = 2 *
-                (grad_force[mol_idx][atomk_idx][1] - grad_force[mol_idx][i][1]) * (
-                                   grad_factor1_theta * grad_theta_vik_y_ * factor2 * fc_ijk +
-                                   factor1 * grad_factor2_dist * sdy[kk] / Rik * fc_ijk +
-                                   factor1 * factor2 * fc_ij * grad_fc_ik * sdy[kk] / Rik);
-            DataT grad_vik_z = 2 *
-                (grad_force[mol_idx][atomk_idx][2] - grad_force[mol_idx][i][2]) * (
-                                   grad_factor1_theta * grad_theta_vik_z_ * factor2 * fc_ijk +
-                                   factor1 * grad_factor2_dist * sdz[kk] / Rik * fc_ijk +
-                                   factor1 * factor2 * fc_ij * grad_fc_ik * sdz[kk] / Rik);
+            DataT grad_vij_x = 2 * (grad_force[mol_idx][atomj_idx][0] - grad_force[mol_idx][i][0]) *
+                (grad_factor1_theta * grad_theta_vij_x_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdx[jj] / Rij * fc_ijk +
+                 factor1 * factor2 * fc_ik * grad_fc_ij * sdx[jj] / Rij);
+            DataT grad_vij_y = 2 * (grad_force[mol_idx][atomj_idx][1] - grad_force[mol_idx][i][1]) *
+                (grad_factor1_theta * grad_theta_vij_y_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdy[jj] / Rij * fc_ijk +
+                 factor1 * factor2 * fc_ik * grad_fc_ij * sdy[jj] / Rij);
+            DataT grad_vij_z = 2 * (grad_force[mol_idx][atomj_idx][2] - grad_force[mol_idx][i][2]) *
+                (grad_factor1_theta * grad_theta_vij_z_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdz[jj] / Rij * fc_ijk +
+                 factor1 * factor2 * fc_ik * grad_fc_ij * sdz[jj] / Rij);
+            DataT grad_vik_x = 2 * (grad_force[mol_idx][atomk_idx][0] - grad_force[mol_idx][i][0]) *
+                (grad_factor1_theta * grad_theta_vik_x_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdx[kk] / Rik * fc_ijk +
+                 factor1 * factor2 * fc_ij * grad_fc_ik * sdx[kk] / Rik);
+            DataT grad_vik_y = 2 * (grad_force[mol_idx][atomk_idx][1] - grad_force[mol_idx][i][1]) *
+                (grad_factor1_theta * grad_theta_vik_y_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdy[kk] / Rik * fc_ijk +
+                 factor1 * factor2 * fc_ij * grad_fc_ik * sdy[kk] / Rik);
+            DataT grad_vik_z = 2 * (grad_force[mol_idx][atomk_idx][2] - grad_force[mol_idx][i][2]) *
+                (grad_factor1_theta * grad_theta_vik_z_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdz[kk] / Rik * fc_ijk +
+                 factor1 * factor2 * fc_ij * grad_fc_ik * sdz[kk] / Rik);
 
             atomicAdd(
                 &grad_grad_aev[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta],
@@ -1526,10 +1520,8 @@ class CuaevDoubleAutograd : public torch::autograd::Function<CuaevDoubleAutograd
     int total_natom_pairs = int_list[0], nRadialRij = int_list[1], nAngularRij = int_list[2];
     int maxnbrs_per_atom_aligned = int_list[3], angular_length_aligned = int_list[4];
     int ncenter_atoms = int_list[5];
-    std::cout << "DoubleAutograd Forward 1" << '\n';
 
     if (grad_e_aev.requires_grad()) {
-      std::cout << "-----DoubleAutograd Forward 2" << '\n';
       ctx->save_for_backward({coordinates_t,
                               species_t,
                               tensor_Rij,
@@ -1572,12 +1564,11 @@ class CuaevDoubleAutograd : public torch::autograd::Function<CuaevDoubleAutograd
         maxnbrs_per_atom_aligned,
         angular_length_aligned,
         ncenter_atoms);
-    std::cout << "DoubleAutograd Forward 3" << '\n';
+
     return grad_coord;
   }
 
   static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs) {
-    std::cout << "DoubleAutograd Backward 1" << '\n';
     Tensor grad_force = grad_outputs[0];
     auto saved = ctx->get_saved_variables();
     auto coordinates_t = saved[0], species_t = saved[1];
@@ -1591,8 +1582,6 @@ class CuaevDoubleAutograd : public torch::autograd::Function<CuaevDoubleAutograd
     int total_natom_pairs = int_list[0], nRadialRij = int_list[1], nAngularRij = int_list[2];
     int maxnbrs_per_atom_aligned = int_list[3], angular_length_aligned = int_list[4];
     int ncenter_atoms = int_list[5];
-    std::cout << "DoubleAutograd Backward 2" << '\n';
-    std::cout << grad_force.size(0) << ' ' << grad_force.size(1) << ' ' << grad_force.size(2) << '\n';
 
     Tensor grad_grad_aev = cuaev_double_backward(
         grad_force,
