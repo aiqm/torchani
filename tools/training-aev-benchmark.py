@@ -1,5 +1,4 @@
 import torch
-from torch.utils import data
 import torchani
 import time
 import timeit
@@ -55,7 +54,17 @@ def build_network():
         torch.nn.CELU(0.1),
         torch.nn.Linear(96, 1)
     )
-    return [H_network, C_network, N_network, O_network]
+    nets = [H_network, C_network, N_network, O_network]
+
+    for net in nets:
+        net.apply(init_normal)
+
+    return nets
+
+
+def init_normal(m):
+    if type(m) == torch.nn.Linear:
+        torch.nn.init.kaiming_uniform_(m.weight)
 
 
 def checkgpu(device=None):
