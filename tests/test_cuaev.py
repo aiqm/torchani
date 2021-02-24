@@ -146,7 +146,7 @@ class TestCUAEV(TestCase):
 
         self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
         self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}')
-        # self.assertEqual(param_grad_cuaev, param_grad_ref, f'\param_grad_cuaev: {param_grad_cuaev}\n param_grad_ref: {param_grad_ref}')
+        self.assertEqual(param_grad_cuaev, param_grad_ref, f'\param_grad_cuaev: {param_grad_cuaev}\n param_grad_ref: {param_grad_ref}', atol=5e-5, rtol=5e-5)
 
     def testSimpleDoubleBackward_2(self):
         """
@@ -240,6 +240,47 @@ class TestCUAEV(TestCase):
                 self.assertEqual(cu_aev, aev)
                 self.assertEqual(cuaev_grad, aev_grad, atol=5e-5, rtol=5e-5)
 
+    def testTripeptideMDDoubleBackward_2(self):
+        for i in range(100):
+            datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
+            with open(datafile, 'rb') as f:
+                coordinates, species, *_ = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0).to(self.device).requires_grad_(True)
+                species = torch.from_numpy(species).unsqueeze(0).to(self.device)
+                _, aev = self.aev_computer((species, coordinates))
+                # graph2 aev -> E
+                aev_ = aev.clone().detach().requires_grad_()
+                E = self.nn(aev_).sum()
+                # graph2 backward
+                aev_grad = torch.autograd.grad(E, aev_, create_graph=True, retain_graph=True)[0]
+                # graph1 backward
+                aev_grad_ = aev_grad.clone().detach().requires_grad_()
+                force_ref = torch.autograd.grad(aev, coordinates, aev_grad_, create_graph=True, retain_graph=True)[0]
+                # force loss backward
+                force_true = torch.randn_like(force_ref)
+                loss = torch.abs(force_true - force_ref).sum(dim=(1, 2)).mean()
+                aev_grad_grad = torch.autograd.grad(loss, aev_grad_, create_graph=True, retain_graph=True)[0]
+
+                # graph1 input -> aev
+                coordinates = coordinates.clone().detach().requires_grad_()
+                _, cu_aev = self.cuaev_computer((species, coordinates))
+                # graph2 aev -> E
+                cu_aev_ = cu_aev.clone().detach().requires_grad_()
+                E = self.nn(cu_aev_).sum()
+                # graph2 backward
+                cuaev_grad = torch.autograd.grad(E, cu_aev_, create_graph=True, retain_graph=True)[0]
+                # graph1 backward
+                cuaev_grad_ = cuaev_grad.clone().detach().requires_grad_()
+                force_cuaev = torch.autograd.grad(cu_aev, coordinates, cuaev_grad_, create_graph=True, retain_graph=True)[0]
+                # force loss backward
+                # force_true = torch.randn_like(force_cuaev)
+                loss = torch.abs(force_true - force_cuaev).sum(dim=(1, 2)).mean()
+                cuaev_grad_grad = torch.autograd.grad(loss, cuaev_grad_, create_graph=True, retain_graph=True)[0]
+
+                self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
+                self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}')
+                self.assertEqual(cuaev_grad_grad, aev_grad_grad, f'\ncuaev_grad_grad: {cuaev_grad_grad}\n aev_grad_grad: {aev_grad_grad}', atol=5e-5, rtol=5e-5)
+
     def testNIST(self):
         datafile = os.path.join(path, 'test_data/NIST/all')
         with open(datafile, 'rb') as f:
@@ -255,7 +296,7 @@ class TestCUAEV(TestCase):
         datafile = os.path.join(path, 'test_data/NIST/all')
         with open(datafile, 'rb') as f:
             data = pickle.load(f)
-            for coordinates, species, _, _, _, _ in data:
+            for coordinates, species, _, _, _, _ in data[:10]:
                 coordinates = torch.from_numpy(coordinates).to(torch.float).to(self.device).requires_grad_(True)
                 species = torch.from_numpy(species).to(self.device)
                 _, aev = self.aev_computer((species, coordinates))
@@ -270,12 +311,53 @@ class TestCUAEV(TestCase):
                 self.assertEqual(cu_aev, aev)
                 self.assertEqual(cuaev_grad, aev_grad, atol=5e-5, rtol=5e-5)
 
+    def testNISTDoubleBackward_2(self):
+        datafile = os.path.join(path, 'test_data/NIST/all')
+        with open(datafile, 'rb') as f:
+            data = pickle.load(f)
+            for coordinates, species, _, _, _, _ in data[:3]:
+                coordinates = torch.from_numpy(coordinates).to(torch.float).to(self.device).requires_grad_(True)
+                species = torch.from_numpy(species).to(self.device)
+                _, aev = self.aev_computer((species, coordinates))
+                # graph2 aev -> E
+                aev_ = aev.clone().detach().requires_grad_()
+                E = self.nn(aev_).sum()
+                # graph2 backward
+                aev_grad = torch.autograd.grad(E, aev_, create_graph=True, retain_graph=True)[0]
+                # graph1 backward
+                aev_grad_ = aev_grad.clone().detach().requires_grad_()
+                force_ref = torch.autograd.grad(aev, coordinates, aev_grad_, create_graph=True, retain_graph=True)[0]
+                # force loss backward
+                force_true = torch.randn_like(force_ref)
+                loss = torch.abs(force_true - force_ref).sum(dim=(1, 2)).mean()
+                aev_grad_grad = torch.autograd.grad(loss, aev_grad_, create_graph=True, retain_graph=True)[0]
+
+                # graph1 input -> aev
+                coordinates = coordinates.clone().detach().requires_grad_()
+                _, cu_aev = self.cuaev_computer((species, coordinates))
+                # graph2 aev -> E
+                cu_aev_ = cu_aev.clone().detach().requires_grad_()
+                E = self.nn(cu_aev_).sum()
+                # graph2 backward
+                cuaev_grad = torch.autograd.grad(E, cu_aev_, create_graph=True, retain_graph=True)[0]
+                # graph1 backward
+                cuaev_grad_ = cuaev_grad.clone().detach().requires_grad_()
+                force_cuaev = torch.autograd.grad(cu_aev, coordinates, cuaev_grad_, create_graph=True, retain_graph=True)[0]
+                # force loss backward
+                # force_true = torch.randn_like(force_cuaev)
+                loss = torch.abs(force_true - force_cuaev).sum(dim=(1, 2)).mean()
+                cuaev_grad_grad = torch.autograd.grad(loss, cuaev_grad_, create_graph=True, retain_graph=True)[0]
+
+                self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
+                self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}')
+                self.assertEqual(cuaev_grad_grad, aev_grad_grad, f'\ncuaev_grad_grad: {cuaev_grad_grad}\n aev_grad_grad: {aev_grad_grad}', atol=5e-5, rtol=5e-5)
+
     def testVeryDenseMolecule(self):
         """
         Test very dense molecule for aev correctness, especially for angular kernel when center atom pairs are more than 32.
         issue: https://github.com/aiqm/torchani/pull/555
         """
-        for i in range(100):
+        for i in range(5):
             datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, *_ = pickle.load(f)
@@ -287,7 +369,7 @@ class TestCUAEV(TestCase):
                 self.assertEqual(cu_aev, aev, atol=5e-5, rtol=5e-5)
 
     def testVeryDenseMoleculeBackward(self):
-        for i in range(100):
+        for i in range(5):
             datafile = os.path.join(path, 'test_data/tripeptide-md/{}.dat'.format(i))
             with open(datafile, 'rb') as f:
                 coordinates, species, *_ = pickle.load(f)
