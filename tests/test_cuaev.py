@@ -5,9 +5,6 @@ import unittest
 import pickle
 import copy
 from torchani.testing import TestCase, make_tensor
-import torchsnooper
-import snoop
-torchsnooper.register_snoop(verbose=True)
 
 path = os.path.dirname(os.path.realpath(__file__))
 
