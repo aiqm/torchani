@@ -961,10 +961,10 @@ __global__ void cuRadialAEVs_double_backward(
   DataT dely = pos_t[mol_idx][j][1] - pos_t[mol_idx][i][1];
   DataT delz = pos_t[mol_idx][j][2] - pos_t[mol_idx][i][2];
 
-  // DataT grad_dist_coord_j = grad_force[mol_idx][j][0] * delx / Rij + grad_force[mol_idx][j][1] * dely / Rij +
-  //     grad_force[mol_idx][j][2] * delz / Rij;
-  // DataT grad_dist_coord_i = grad_force[mol_idx][i][0] * delx / Rij + grad_force[mol_idx][i][1] * dely / Rij +
-  //     grad_force[mol_idx][i][2] * delz / Rij;
+  DataT grad_dist_coord_j = grad_force[mol_idx][j][0] * delx / Rij + grad_force[mol_idx][j][1] * dely / Rij +
+      grad_force[mol_idx][j][2] * delz / Rij;
+  DataT grad_dist_coord_i = grad_force[mol_idx][i][0] * delx / Rij + grad_force[mol_idx][i][1] * dely / Rij +
+      grad_force[mol_idx][i][2] * delz / Rij;
 
   for (int ishfr = laneIdx; ishfr < nShfR; ishfr += THREADS_PER_RIJ) {
     DataT ShfR = ShfR_t[ishfr];
@@ -972,13 +972,7 @@ __global__ void cuRadialAEVs_double_backward(
     DataT GmR = 0.25 * exp(-EtaR * (Rij - ShfR) * (Rij - ShfR));
     DataT GmR_grad = -EtaR * (-2 * ShfR + 2 * Rij) * GmR;
 
-    // DataT grad_grad_aev_item = (grad_dist_coord_j - grad_dist_coord_i) * (GmR_grad * fc + GmR * fc_grad);
-    DataT grad_grad_aev_item_x = (GmR_grad * fc + GmR * fc_grad) * delx / Rij;
-    DataT grad_grad_aev_item_y = (GmR_grad * fc + GmR * fc_grad) * dely / Rij;
-    DataT grad_grad_aev_item_z = (GmR_grad * fc + GmR * fc_grad) * delz / Rij;
-    DataT grad_grad_aev_item = grad_grad_aev_item_x * (grad_force[mol_idx][j][0] - grad_force[mol_idx][i][0]) +
-        grad_grad_aev_item_y * (grad_force[mol_idx][j][1] - grad_force[mol_idx][i][1]) +
-        grad_grad_aev_item_z * (grad_force[mol_idx][j][2] - grad_force[mol_idx][i][2]);
+    DataT grad_grad_aev_item = (grad_dist_coord_j - grad_dist_coord_i) * (GmR_grad * fc + GmR * fc_grad);
 
     atomicAdd(&grad_grad_aev[mol_idx][i][type_j * aev_params.radial_sublength + ishfr], grad_grad_aev_item);
   }
