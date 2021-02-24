@@ -613,6 +613,229 @@ cuAngularAEVs_backward(
   }
 }
 
+template <typename SpeciesT, typename DataT, typename IndexT = int, int TILEX = 8, int TILEY = 4>
+__global__ void
+cuAngularAEVs_double_backward(
+    torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfA_t,
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfZ_t,
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> EtaA_t,
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> Zeta_t,
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_force,
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_grad_aev,
+    const PairDist<DataT>* d_Rij,
+    const PairDist<DataT>* d_centralAtom,
+    int* d_nPairsPerCenterAtom,
+    int* d_centerAtomStartIdx,
+    AEVScalarParams<DataT, IndexT> aev_params,
+    int maxnbrs_per_atom_aligned,
+    int angular_length_aligned,
+    int ncentral_atoms) {
+  extern __shared__ DataT smem[];
+
+  constexpr int threads_per_catom = TILEX * TILEY;
+  static_assert(threads_per_catom == C10_WARP_SIZE);
+  int gIdx = blockIdx.x * blockDim.x + threadIdx.x;
+  int cIdx = gIdx / threads_per_catom; // central atom id
+
+  if (cIdx >= ncentral_atoms)
+    return;
+
+  int groupIdx = threadIdx.x / threads_per_catom;
+  int laneIdx = threadIdx.x % threads_per_catom;
+  int ncatom_per_tpb = blockDim.x / threads_per_catom; // e.g. 2 catom per block
+
+  DataT* sdx = &smem[groupIdx * maxnbrs_per_atom_aligned];
+  int offset = ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
+  DataT* sdy = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
+  DataT* sdz = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
+  DataT* sdjx_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
+  DataT* sdjy_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
+  DataT* sdjz_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
+  DataT* sdist = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
+  DataT* sfc = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
+  DataT* sfc_grad = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
+
+  int* stype = (int*)&smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+
+  DataT EtaA = EtaA_t[0];
+  DataT Zeta = Zeta_t[0];
+
+  IndexT nShfA = ShfA_t.size(0);
+  IndexT nShfZ = ShfZ_t.size(0);
+  DataT Rca = aev_params.Rca;
+  IndexT num_species = aev_params.num_species;
+
+  PairDist<DataT> d = d_centralAtom[cIdx];
+  int start_idx = d_centerAtomStartIdx[cIdx];
+  int jnum = d_nPairsPerCenterAtom[cIdx];
+
+  // center atom
+  int i = d.i;
+  int mol_idx = d.midx;
+
+  DataT xi = pos_t[mol_idx][i][0];
+  DataT yi = pos_t[mol_idx][i][1];
+  DataT zi = pos_t[mol_idx][i][2];
+
+  for (int jj = laneIdx; jj < jnum; jj += threads_per_catom) {
+    PairDist<DataT> dij = d_Rij[start_idx + jj];
+    int j = dij.j;
+    DataT Rij = dij.Rij;
+    SpeciesT type_j = species_t[mol_idx][j];
+    sdx[jj] = pos_t[mol_idx][j][0] - xi;
+    sdy[jj] = pos_t[mol_idx][j][1] - yi;
+    sdz[jj] = pos_t[mol_idx][j][2] - zi;
+    stype[jj] = type_j;
+    sdist[jj] = Rij;
+    // cutoff
+    DataT fc_ij = 0.5 * cos(PI * Rij / Rca) + 0.5;
+    DataT fc_ij_grad = -0.5 * (PI / Rca) * sin(PI * Rij / Rca);
+    sfc[jj] = fc_ij;
+    sfc_grad[jj] = fc_ij_grad;
+  }
+
+  // grad init
+  DataT sdix_grad = 0;
+  DataT sdiy_grad = 0;
+  DataT sdiz_grad = 0;
+
+  for (int jj = laneIdx; jj < jnum; jj += threads_per_catom) {
+    sdjx_grad[jj] = 0;
+    sdjy_grad[jj] = 0;
+    sdjz_grad[jj] = 0;
+  }
+
+  short2 tile = make_short2(laneIdx % TILEX, laneIdx / TILEX);
+  const DataT tc = 0.95; // theta constant factor
+  // must sync if threads_per_catom != 32 (wrap size) to make sure shared data is ready
+  // __syncthreads
+
+  for (int jj = 0; jj < jnum; jj++) {
+    const DataT Rij = sdist[jj];
+    SpeciesT type_j = stype[jj];
+
+    DataT fc_ij = sfc[jj];
+    DataT grad_fc_ij = sfc_grad[jj];
+
+    for (int kk_start = jj + 1; kk_start < jnum; kk_start += threads_per_catom) {
+      int kk = kk_start + laneIdx;
+      DataT theta = 0;
+      DataT grad_theta_vij_x = 0;
+      DataT grad_theta_vij_y = 0;
+      DataT grad_theta_vij_z = 0;
+      DataT grad_theta_vik_x = 0;
+      DataT grad_theta_vik_y = 0;
+      DataT grad_theta_vik_z = 0;
+      if (kk < jnum) {
+        const DataT Rik = sdist[kk];
+        DataT vij_vik_dot = sdx[jj] * sdx[kk] + sdy[jj] * sdy[kk] + sdz[jj] * sdz[kk];
+        theta = acos(tc * vij_vik_dot / (Rij * Rik));
+        // grad
+        DataT vij_factor =
+            tc / (Rij * Rij * Rij * sqrt(-tc * tc * vij_vik_dot * vij_vik_dot / (Rij * Rij) + Rik * Rik));
+        DataT vik_factor = tc /
+            (Rik * Rik * Rik *
+             sqrt(-tc * tc * vij_vik_dot * vij_vik_dot / (Rik * Rik) + Rij * Rij)); // tricky 80ms improved
+        grad_theta_vij_x = vij_factor * (sdx[jj] * vij_vik_dot - sdx[kk] * Rij * Rij);
+        grad_theta_vij_y = vij_factor * (sdy[jj] * vij_vik_dot - sdy[kk] * Rij * Rij);
+        grad_theta_vij_z = vij_factor * (sdz[jj] * vij_vik_dot - sdz[kk] * Rij * Rij);
+        grad_theta_vik_x = vik_factor * (sdx[kk] * vij_vik_dot - sdx[jj] * Rik * Rik);
+        grad_theta_vik_y = vik_factor * (sdy[kk] * vij_vik_dot - sdy[jj] * Rik * Rik);
+        grad_theta_vik_z = vik_factor * (sdz[kk] * vij_vik_dot - sdz[jj] * Rik * Rik);
+      }
+
+      for (int srcLane = 0; srcLane < C10_WARP_SIZE && (kk_start + srcLane) < jnum; ++srcLane) {
+        int kk = kk_start + srcLane;
+        DataT theta_ijk = __shfl_sync(0xFFFFFFFF, theta, srcLane);
+        // TODO necessary?
+        DataT grad_theta_vij_x_ = __shfl_sync(0xFFFFFFFF, grad_theta_vij_x, srcLane);
+        DataT grad_theta_vij_y_ = __shfl_sync(0xFFFFFFFF, grad_theta_vij_y, srcLane);
+        DataT grad_theta_vij_z_ = __shfl_sync(0xFFFFFFFF, grad_theta_vij_z, srcLane);
+        DataT grad_theta_vik_x_ = __shfl_sync(0xFFFFFFFF, grad_theta_vik_x, srcLane);
+        DataT grad_theta_vik_y_ = __shfl_sync(0xFFFFFFFF, grad_theta_vik_y, srcLane);
+        DataT grad_theta_vik_z_ = __shfl_sync(0xFFFFFFFF, grad_theta_vik_z, srcLane);
+
+        const DataT Rik = sdist[kk];
+        SpeciesT type_k = stype[kk];
+
+        DataT fc_ik = sfc[kk];
+        DataT grad_fc_ik = sfc_grad[kk];
+
+        DataT Rijk = (Rij + Rik) / 2;
+        DataT fc_ijk = fc_ij * fc_ik;
+
+        IndexT subaev_offset = csubaev_offsets[type_j * num_species + type_k];
+
+        for (int itheta = tile.x; itheta < nShfZ; itheta += TILEX) {
+          DataT ShfZ = ShfZ_t[itheta];
+
+          DataT factor1 = pow((1 + cos(theta_ijk - ShfZ)) / 2, Zeta);
+          DataT grad_factor1_theta = 1.0 / 2.0 * Zeta * pow((1 + cos(ShfZ - theta_ijk)) / 2, Zeta - 1) *
+              sin(ShfZ - theta_ijk); // tricky 100ms improved
+
+          for (int ishfr = tile.y; ishfr < nShfA; ishfr += TILEY) {
+            DataT ShfA = ShfA_t[ishfr];
+            DataT factor2 = exp(-EtaA * (Rijk - ShfA) * (Rijk - ShfA));
+            DataT grad_factor2_dist = -EtaA * (Rijk - ShfA) * factor2;
+
+            DataT grad_vij_x = 2 *
+                (grad_factor1_theta * grad_theta_vij_x_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdx[jj] / Rij * fc_ijk +
+                 factor1 * factor2 * fc_ik * grad_fc_ij * sdx[jj] / Rij);
+            DataT grad_vij_y = 2 *
+                (grad_factor1_theta * grad_theta_vij_y_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdy[jj] / Rij * fc_ijk +
+                 factor1 * factor2 * fc_ik * grad_fc_ij * sdy[jj] / Rij);
+            DataT grad_vij_z = 2 *
+                (grad_factor1_theta * grad_theta_vij_z_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdz[jj] / Rij * fc_ijk +
+                 factor1 * factor2 * fc_ik * grad_fc_ij * sdz[jj] / Rij);
+            DataT grad_vik_x = 2 *
+                (grad_factor1_theta * grad_theta_vik_x_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdx[kk] / Rik * fc_ijk +
+                 factor1 * factor2 * fc_ij * grad_fc_ik * sdx[kk] / Rik);
+            DataT grad_vik_y = 2 *
+                (grad_factor1_theta * grad_theta_vik_y_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdy[kk] / Rik * fc_ijk +
+                 factor1 * factor2 * fc_ij * grad_fc_ik * sdy[kk] / Rik);
+            DataT grad_vik_z = 2 *
+                (grad_factor1_theta * grad_theta_vik_z_ * factor2 * fc_ijk +
+                 factor1 * grad_factor2_dist * sdz[kk] / Rik * fc_ijk +
+                 factor1 * factor2 * fc_ij * grad_fc_ik * sdz[kk] / Rik);
+
+            DataT a = (grad_force[mol_idx][jj][0] - grad_force[mol_idx][i][0]) * grad_vij_x;
+            DataT b = (grad_force[mol_idx][jj][1] - grad_force[mol_idx][i][1]) * grad_vij_y;
+            DataT c = (grad_force[mol_idx][jj][2] - grad_force[mol_idx][i][2]) * grad_vij_z;
+            DataT d = (grad_force[mol_idx][kk][0] - grad_force[mol_idx][i][0]) * grad_vik_x;
+            DataT e = (grad_force[mol_idx][kk][1] - grad_force[mol_idx][i][1]) * grad_vik_y;
+            DataT f = (grad_force[mol_idx][kk][2] - grad_force[mol_idx][i][2]) * grad_vik_z;
+
+            atomicAdd(&grad_grad_aev[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta], a + b + c + d + e + f);
+          }
+        }
+      }
+    }
+  }
+}
+
 template <typename SpeciesT, typename DataT, int THREADS_PER_RIJ>
 __global__ void cuRadialAEVs(
     torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
@@ -1248,6 +1471,40 @@ Tensor cuaev_double_backward(
       d_radialRij,
       aev_params,
       nRadialRij);
+
+  auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
+    int sxyz = sizeof(float) * max_nbrs * 3;
+    int sj_xyz_grad = sizeof(float) * max_nbrs * 3;
+    int sRij = sizeof(float) * max_nbrs;
+    int sfc = sizeof(float) * max_nbrs;
+    int sfc_grad = sizeof(float) * max_nbrs;
+    int sj = sizeof(int) * max_nbrs;
+
+    return (sxyz + sj_xyz_grad + sRij + sfc + sfc_grad + sj) * ncatom_per_tpb;
+  };
+
+  block_size = 32;
+  const int nthreads_per_catom = 32;
+  const int nblocks_angAEV = (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
+  int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
+
+  cuAngularAEVs_double_backward<<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
+      species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
+      coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      ShfA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      ShfZ_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      EtaA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      Zeta_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      grad_force.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      grad_grad_aev.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      d_angularRij,
+      d_centralAtom,
+      d_numPairsPerCenterAtom,
+      d_centerAtomStartIdx,
+      aev_params,
+      maxnbrs_per_atom_aligned,
+      angular_length_aligned,
+      ncenter_atoms);
 
   return grad_grad_aev;
 }
