@@ -5,8 +5,6 @@ on:
   push:
     branches:
       - master
-  schedule:
-    - cron: '0 0 * * *'
 
 jobs:
   unittests:
@@ -15,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6, 3.8]
+        python-version: [3.8]
         test-filenames: [
           test_aev.py, test_aev_benzene_md.py, test_aev_nist.py, test_aev_tripeptide_md.py,
           test_utils.py, test_ase.py, test_energies.py, test_periodic_table_indexing.py,
