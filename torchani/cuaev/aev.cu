@@ -614,8 +614,7 @@ cuAngularAEVs_backward(
 }
 
 template <typename SpeciesT, typename DataT, typename IndexT = int, int TILEX = 8, int TILEY = 4>
-__global__ void
-cuAngularAEVs_double_backward(
+__global__ void cuAngularAEVs_double_backward(
     torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfA_t,
@@ -795,40 +794,43 @@ cuAngularAEVs_double_backward(
             DataT ShfA = ShfA_t[ishfr];
             DataT factor2 = exp(-EtaA * (Rijk - ShfA) * (Rijk - ShfA));
             DataT grad_factor2_dist = -EtaA * (Rijk - ShfA) * factor2;
+            int atomj_idx = d_Rij[start_idx + jj].j;
+            int atomk_idx = d_Rij[start_idx + kk].j;
 
             DataT grad_vij_x = 2 *
-                (grad_factor1_theta * grad_theta_vij_x_ * factor2 * fc_ijk +
-                 factor1 * grad_factor2_dist * sdx[jj] / Rij * fc_ijk +
-                 factor1 * factor2 * fc_ik * grad_fc_ij * sdx[jj] / Rij);
+                (grad_force[mol_idx][atomj_idx][0] - grad_force[mol_idx][i][0]) * (
+                                   grad_factor1_theta * grad_theta_vij_x_ * factor2 * fc_ijk +
+                                   factor1 * grad_factor2_dist * sdx[jj] / Rij * fc_ijk +
+                                   factor1 * factor2 * fc_ik * grad_fc_ij * sdx[jj] / Rij);
             DataT grad_vij_y = 2 *
-                (grad_factor1_theta * grad_theta_vij_y_ * factor2 * fc_ijk +
-                 factor1 * grad_factor2_dist * sdy[jj] / Rij * fc_ijk +
-                 factor1 * factor2 * fc_ik * grad_fc_ij * sdy[jj] / Rij);
+                (grad_force[mol_idx][atomj_idx][1] - grad_force[mol_idx][i][1]) * (
+                                   grad_factor1_theta * grad_theta_vij_y_ * factor2 * fc_ijk +
+                                   factor1 * grad_factor2_dist * sdy[jj] / Rij * fc_ijk +
+                                   factor1 * factor2 * fc_ik * grad_fc_ij * sdy[jj] / Rij);
             DataT grad_vij_z = 2 *
-                (grad_factor1_theta * grad_theta_vij_z_ * factor2 * fc_ijk +
-                 factor1 * grad_factor2_dist * sdz[jj] / Rij * fc_ijk +
-                 factor1 * factor2 * fc_ik * grad_fc_ij * sdz[jj] / Rij);
+                (grad_force[mol_idx][atomj_idx][2] - grad_force[mol_idx][i][2]) * (
+                                   grad_factor1_theta * grad_theta_vij_z_ * factor2 * fc_ijk +
+                                   factor1 * grad_factor2_dist * sdz[jj] / Rij * fc_ijk +
+                                   factor1 * factor2 * fc_ik * grad_fc_ij * sdz[jj] / Rij);
             DataT grad_vik_x = 2 *
-                (grad_factor1_theta * grad_theta_vik_x_ * factor2 * fc_ijk +
-                 factor1 * grad_factor2_dist * sdx[kk] / Rik * fc_ijk +
-                 factor1 * factor2 * fc_ij * grad_fc_ik * sdx[kk] / Rik);
+                (grad_force[mol_idx][atomk_idx][0] - grad_force[mol_idx][i][0]) * (
+                                   grad_factor1_theta * grad_theta_vik_x_ * factor2 * fc_ijk +
+                                   factor1 * grad_factor2_dist * sdx[kk] / Rik * fc_ijk +
+                                   factor1 * factor2 * fc_ij * grad_fc_ik * sdx[kk] / Rik);
             DataT grad_vik_y = 2 *
-                (grad_factor1_theta * grad_theta_vik_y_ * factor2 * fc_ijk +
-                 factor1 * grad_factor2_dist * sdy[kk] / Rik * fc_ijk +
-                 factor1 * factor2 * fc_ij * grad_fc_ik * sdy[kk] / Rik);
+                (grad_force[mol_idx][atomk_idx][1] - grad_force[mol_idx][i][1]) * (
+                                   grad_factor1_theta * grad_theta_vik_y_ * factor2 * fc_ijk +
+                                   factor1 * grad_factor2_dist * sdy[kk] / Rik * fc_ijk +
+                                   factor1 * factor2 * fc_ij * grad_fc_ik * sdy[kk] / Rik);
             DataT grad_vik_z = 2 *
-                (grad_factor1_theta * grad_theta_vik_z_ * factor2 * fc_ijk +
-                 factor1 * grad_factor2_dist * sdz[kk] / Rik * fc_ijk +
-                 factor1 * factor2 * fc_ij * grad_fc_ik * sdz[kk] / Rik);
+                (grad_force[mol_idx][atomk_idx][2] - grad_force[mol_idx][i][2]) * (
+                                   grad_factor1_theta * grad_theta_vik_z_ * factor2 * fc_ijk +
+                                   factor1 * grad_factor2_dist * sdz[kk] / Rik * fc_ijk +
+                                   factor1 * factor2 * fc_ij * grad_fc_ik * sdz[kk] / Rik);
 
-            DataT a = (grad_force[mol_idx][jj][0] - grad_force[mol_idx][i][0]) * grad_vij_x;
-            DataT b = (grad_force[mol_idx][jj][1] - grad_force[mol_idx][i][1]) * grad_vij_y;
-            DataT c = (grad_force[mol_idx][jj][2] - grad_force[mol_idx][i][2]) * grad_vij_z;
-            DataT d = (grad_force[mol_idx][kk][0] - grad_force[mol_idx][i][0]) * grad_vik_x;
-            DataT e = (grad_force[mol_idx][kk][1] - grad_force[mol_idx][i][1]) * grad_vik_y;
-            DataT f = (grad_force[mol_idx][kk][2] - grad_force[mol_idx][i][2]) * grad_vik_z;
-
-            atomicAdd(&grad_grad_aev[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta], a + b + c + d + e + f);
+            atomicAdd(
+                &grad_grad_aev[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta],
+                grad_vij_x + grad_vij_y + grad_vij_z + grad_vik_x + grad_vik_y + grad_vik_z);
           }
         }
       }
@@ -959,10 +961,10 @@ __global__ void cuRadialAEVs_double_backward(
   DataT dely = pos_t[mol_idx][j][1] - pos_t[mol_idx][i][1];
   DataT delz = pos_t[mol_idx][j][2] - pos_t[mol_idx][i][2];
 
-  DataT grad_dist_coord_j = grad_force[mol_idx][j][0] * delx / Rij + grad_force[mol_idx][j][1] * dely / Rij +
-      grad_force[mol_idx][j][2] * delz / Rij;
-  DataT grad_dist_coord_i = grad_force[mol_idx][i][0] * delx / Rij + grad_force[mol_idx][i][1] * dely / Rij +
-      grad_force[mol_idx][i][2] * delz / Rij;
+  // DataT grad_dist_coord_j = grad_force[mol_idx][j][0] * delx / Rij + grad_force[mol_idx][j][1] * dely / Rij +
+  //     grad_force[mol_idx][j][2] * delz / Rij;
+  // DataT grad_dist_coord_i = grad_force[mol_idx][i][0] * delx / Rij + grad_force[mol_idx][i][1] * dely / Rij +
+  //     grad_force[mol_idx][i][2] * delz / Rij;
 
   for (int ishfr = laneIdx; ishfr < nShfR; ishfr += THREADS_PER_RIJ) {
     DataT ShfR = ShfR_t[ishfr];
@@ -970,7 +972,13 @@ __global__ void cuRadialAEVs_double_backward(
     DataT GmR = 0.25 * exp(-EtaR * (Rij - ShfR) * (Rij - ShfR));
     DataT GmR_grad = -EtaR * (-2 * ShfR + 2 * Rij) * GmR;
 
-    DataT grad_grad_aev_item = (grad_dist_coord_j - grad_dist_coord_i) * (GmR_grad * fc + GmR * fc_grad);
+    // DataT grad_grad_aev_item = (grad_dist_coord_j - grad_dist_coord_i) * (GmR_grad * fc + GmR * fc_grad);
+    DataT grad_grad_aev_item_x = (GmR_grad * fc + GmR * fc_grad) * delx / Rij;
+    DataT grad_grad_aev_item_y = (GmR_grad * fc + GmR * fc_grad) * dely / Rij;
+    DataT grad_grad_aev_item_z = (GmR_grad * fc + GmR * fc_grad) * delz / Rij;
+    DataT grad_grad_aev_item = grad_grad_aev_item_x * (grad_force[mol_idx][j][0] - grad_force[mol_idx][i][0]) +
+        grad_grad_aev_item_y * (grad_force[mol_idx][j][1] - grad_force[mol_idx][i][1]) +
+        grad_grad_aev_item_z * (grad_force[mol_idx][j][2] - grad_force[mol_idx][i][2]);
 
     atomicAdd(&grad_grad_aev[mol_idx][i][type_j * aev_params.radial_sublength + ishfr], grad_grad_aev_item);
   }
