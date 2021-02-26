@@ -13,7 +13,7 @@ using torch::Tensor;
 using torch::autograd::AutogradContext;
 using torch::autograd::tensor_list;
 
-// [Note: naming convention for backward and double backward]
+// [Computation graph for forward, backward, and double backward]
 //
 //
 // [Forward]
@@ -42,23 +42,26 @@ using torch::autograd::tensor_list;
 //
 //
 // [Backward]
-//            dout           v
-//             |             v
-//            ...            v
-//             |             v
-//          denergy          v
-//          /      \         v
-//        daev    dparams    v
-//       /   \               v
-// dradial  dangular         v
-//    /     /  |             v
-// ddist---/  /              v
-//    \     /                v
-//     dcoord                v
-//       |                   v
-//      ...                  v
-//       |                   v
-//      out2                 v
+//                   dout                     v
+//                    |                       v
+//                   ...                      v
+//                    |                       v
+//       aev params denergy  aev params       v
+//         \   |   /      \   |   /           v
+//          d a e v        dparams            v
+//          /      \____                      v
+// dist dradial         \                     v
+//   \    /              \                    v
+//   ddist dist coord   dangular dist coord   v
+//      \   /    /           \    |    /      v
+//       \_/____/             \___|___/       v
+//        |    __________________/            v
+//        |   /                               v
+//      dcoord                                v
+//        |                                   v
+//       ...                                  v
+//        |                                   v
+//       out2                                 v
 //
 // Functional relationship:
 // dout <-- input
