@@ -18,22 +18,97 @@ cd torchani
 # choose one option below
 # use --cuaev-all-sms if you are building in SLURM environment and there are multiple different gpus in a node
 # use --cuaev will only build for detected gpus
-python setup.py install --cuaev-all-sms  # build for all sms
 python setup.py install --cuaev          # only build for detected gpus
+python setup.py install --cuaev-all-sms  # build for all gpus
 # or for development
 # `pip install -e . && ` is only needed for the very first install (because issue of https://github.com/pypa/pip/issues/1883)
-pip install -e . && pip install -v -e . --global-option="--cuaev-all-sms"  # build for all sms
 pip install -e . && pip install -v -e . --global-option="--cuaev"          # only build for detected gpus
+pip install -e . && pip install -v -e . --global-option="--cuaev-all-sms"  # build for all gpus
 ```
 
-<del>Notes for install on Hipergator</del> (Currently not working because Pytorch dropped the official build for cuda/10.0)
+
+Notes for build CUAEV on multiple HPC
+<details>
+<summary>Bridges2</summary>
+
 ```bash
-srun -p gpu --gpus=geforce:1 --time=01:00:00 --mem=10gb --pty -u bash -i   # compile may fail because of low on memery (when memery is less than 5gb)
-conda install pytorch torchvision cudatoolkit=10.0 -c pytorch              # make sure it's cudatoolkit=10.0
-module load cuda/10.0.130
-module load gcc/7.3.0
-python setup.py install --cuaev-all-sms
+# prepare
+srun -p GPU-small --ntasks=1 --cpus-per-task=5 --gpus=1 --time=02:00:00 --mem=20gb  --pty -u bash -i
+module load cuda/10.2.0
+conda create -n cuaev python=3.8
+conda activate cuaev
+conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-nightly
+# install torchani
+git clone https://github.com/aiqm/torchani.git
+cd torchani
+pip install -e . && pip install -v -e . --global-option="--cuaev"
 ```
+
+</details>
+
+<details>
+<summary>Hipergator</summary>
+
+```bash
+srun -p gpu --ntasks=1 --cpus-per-task=2 --gpus=geforce:1 --time=02:00:00 --mem=10gb  --pty -u bash -i
+module load cuda/10.0.130 gcc/7.3.0
+conda remove --name cuaev --all -y && conda create -n cuaev python=3.8 -y
+conda activate cuaev
+# install compiled torch-cu100 because pytorch droped official build for cuda 10.0
+bash /home/jinzexue/pytorch/loadmodule
+bash /home/jinzexue/pytorch/install_deps
+pip install $(realpath /home/jinzexue/pytorch/dist/torch-nightly-cu100.whl)
+# check if pytorch is working, should print available's gpu infomations
+python /home/jinzexue/pytorch/testcuda/testcuda.py
+# install torchani
+git clone https://github.com/aiqm/torchani.git
+cd torchani
+pip install -e . && pip install -v -e . --global-option="--cuaev"
+```
+
+</details>
+
+<details>
+<summary>Expanse</summary>
+
+```bash
+srun -p gpu-shared --ntasks=1 --account=cwr109 --cpus-per-task=1 --gpus=1 --time=01:00:00 --mem=10gb  --pty -u bash -i
+# create env if necessary
+conda create -n cuaev python=3.8
+conda activate cuaev
+# modules
+module load cuda10.2/toolkit/10.2.89 gcc/7.5.0
+# pytorch
+conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-nightly
+# install
+git clone https://github.com/aiqm/torchani.git
+cd torchani
+pip install -e . && pip install -v -e . --global-option="--cuaev"
+```
+
+</details>
+
+
+<details>
+<summary>Moria</summary>
+
+```bash
+srun --ntasks=1 --cpus-per-task=2 --gpus=1 --time=02:00:00 --mem=10gb  --pty -u bash -i
+# create env if necessary
+conda create -n cuaev python=3.8
+conda activate cuaev
+# cuda path (could be added to ~/.bashrc)
+export PATH=/usr/local/cuda/bin:$PATH  # nvcc for cuda 9.2
+# pytorch
+conda install pytorch torchvision cudatoolkit=9.2 -c pytorch-nightly
+# install
+git clone https://github.com/aiqm/torchani.git
+cd torchani
+pip install -e . && pip install -v -e . --global-option="--cuaev"
+```
+
+</details>
+
 
 ## Usage
 Pass `use_cuda_extension=True` when construct aev_computer, for example:
