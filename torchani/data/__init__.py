@@ -4,8 +4,10 @@
 The `torchani.data.load(path)` creates an iterable of raw data,
 where species are strings, and coordinates are numpy ndarrays.
 
-You can transform these iterable by using transformations.
-To do transformation, just do `it.transformation_name()`.
+You can transform this iterable by using transformations.
+To do a transformation, call `it.transformation_name()`. This
+will return an iterable that may be cached depending on the specific
+transformation.
 
 Available transformations are listed below:
 
@@ -31,27 +33,29 @@ Available transformations are listed below:
     specified by species_order. By default the function orders by atomic
     number if no extra argument is provided, but a specific order may be requested.
 
-- `remove_outliers`
-- `shuffle`
+- `remove_outliers` removes some outlier energies from the dataset if present.
+
+- `shuffle` shuffles the provided dataset. Note that if the dataset is
+    not cached (i.e. it lives in the disk and not in memory) then this method
+    will cache it before shuffling. This may take time and memory depending on
+    the dataset size. This method may be used before splitting into validation/training
+    shuffle all molecules in the dataset, and ensure a uniform sampling from
+    the initial dataset, and it can also be used during training on a cached
+    dataset of batches to shuffle the batches.
+
 - `cache` cache the result of previous transformations.
-- `collate` pad the dataset, convert it to tensor, and stack them
-    together to get a batch. `collate` uses a default padding dictionary
+    If the input is already cached this does nothing.
+
+- `collate` creates batches and pads the atoms of all molecules in each batch
+    with dummy atoms, then converts each batch to tensor. `collate` uses a
+    default padding dictionary:
     ``{'species': -1, 'coordinates': 0.0, 'forces': 0.0, 'energies': 0.0}`` for
     padding, but a custom padding dictionary can be passed as an optional
-    parameter, which overrides this default padding.
+    parameter, which overrides this default padding. Note that this function
+    returns a generator, it doesn't cache the result in memory.
 
-- `pin_memory` copy the tensor to pinned memory so that later transfer
-    to cuda could be faster.
-
-Note that orderings used in :class:`torchani.utils.ChemicalSymbolsToInts` and
-:class:`torchani.nn.SpeciesConverter` should be consistent with orderings used
-in `species_to_indices` and `subtract_self_energies`. To prevent confusion it
-is recommended that arguments to intialize converters and arguments to these
-functions all order elements *by their atomic number* (e. g. if you are working
-with hydrogen, nitrogen and bromine always use ['H', 'N', 'Br'] and never ['N',
-'H', 'Br'] or other variations).  It is possible to specify a different custom
-ordering, mainly due to backwards compatibility and to fully custom atom types,
-but doing so is NOT recommended, since it is very error prone.
+- `pin_memory` copies the tensor to pinned (page-locked) memory so that later transfer
+    to cuda devices can be done faster.
 
 you can also use `split` to split the iterable to pieces. use `split` as:
 
@@ -59,7 +63,18 @@ you can also use `split` to split the iterable to pieces. use `split` as:
 
     it.split(ratio1, ratio2, None)
 
-where the None in the end indicate that we want to use all of the the rest
+where None in the end indicate that we want to use all of the rest.
+
+Note that orderings used in :class:`torchani.utils.ChemicalSymbolsToInts` and
+:class:`torchani.nn.SpeciesConverter` should be consistent with orderings used
+in `species_to_indices` and `subtract_self_energies`. To prevent confusion it
+is recommended that arguments to intialize converters and arguments to these
+functions all order elements *by their atomic number* (e. g. if you are working
+with hydrogen, nitrogen and bromine always use ['H', 'N', 'Br'] and never ['N',
+'H', 'Br'] or other variations). It is possible to specify a different custom
+ordering, mainly due to backwards compatibility and to fully custom atom types,
+but doing so is NOT recommended, since it is very error prone.
+
 
 Example:
 
@@ -237,14 +252,19 @@ class Transformations:
 
     @staticmethod
     def shuffle(reenterable_iterable):
-        list_ = list(reenterable_iterable)
-        del reenterable_iterable
-        gc.collect()
+        if isinstance(reenterable_iterable, list):
+            list_ = reenterable_iterable
+        else:
+            list_ = list(reenterable_iterable)
+            del reenterable_iterable
+            gc.collect()
         random.shuffle(list_)
         return list_
 
     @staticmethod
     def cache(reenterable_iterable):
+        if isinstance(reenterable_iterable, list):
+            return reenterable_iterable
         ret = list(reenterable_iterable)
         del reenterable_iterable
         gc.collect()
