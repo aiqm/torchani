@@ -128,7 +128,6 @@ setup(
         'torch',
         'lark-parser',
         'requests',
-        'h5py',
         'importlib_metadata',
     ],
     **cuaev_kwargs()
