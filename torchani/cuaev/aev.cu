@@ -174,8 +174,10 @@ __global__ void pairwiseDistanceSingleMolecule(
 template <bool is_double_backward, typename DataT, typename IndexT = int>
 __global__ void pairwiseDistance_dcoord_or_dddist(
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
-    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> grad_dist,  // ddist for backward, dddist for double backward
-    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_coord_or_force,  // dcoord for backward, dforce(i.e. ddcoord) for double backward
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits>
+        grad_dist, // ddist for backward, dddist for double backward
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits>
+        grad_coord_or_force, // dcoord for backward, dforce(i.e. ddcoord) for double backward
     const PairDist<DataT>* d_radialRij,
     IndexT nRadialRij) {
   int gidx = threadIdx.x * gridDim.x + blockIdx.x;
@@ -193,15 +195,15 @@ __global__ void pairwiseDistance_dcoord_or_dddist(
   const DataT dely = pos_t[mol_idx][j][1] - pos_t[mol_idx][i][1];
   const DataT delz = pos_t[mol_idx][j][2] - pos_t[mol_idx][i][2];
 
-  if constexpr(is_double_backward) {
-    auto &grad_force = grad_coord_or_force;
+  if constexpr (is_double_backward) {
+    auto& grad_force = grad_coord_or_force;
     DataT grad_force_coord_Rij_item = (grad_force[mol_idx][j][0] - grad_force[mol_idx][i][0]) * delx / Rij +
         (grad_force[mol_idx][j][1] - grad_force[mol_idx][i][1]) * dely / Rij +
         (grad_force[mol_idx][j][2] - grad_force[mol_idx][i][2]) * delz / Rij;
 
     grad_dist[gidx] = grad_force_coord_Rij_item;
   } else {
-    auto &grad_coord = grad_coord_or_force;
+    auto& grad_coord = grad_coord_or_force;
 
     DataT grad_dist_coord_x = delx / Rij;
     DataT grad_dist_coord_y = dely / Rij;
@@ -690,8 +692,10 @@ __global__ void cuRadialAEVs_ddist_or_ddaev(
     torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfR_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> EtaR_t,
-    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_aev,  // daev for backward, ddaev for double backward
-    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> grad_dist,  // ddist for backward, dddist for double backward
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits>
+        grad_aev, // daev for backward, ddaev for double backward
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits>
+        grad_dist, // ddist for backward, dddist for double backward
     const PairDist<DataT>* d_Rij,
     AEVScalarParams<DataT, int> aev_params,
     int nRadialRij) {
@@ -718,7 +722,7 @@ __global__ void cuRadialAEVs_ddist_or_ddaev(
   DataT fc_grad = -0.5 * (PI / aev_params.Rcr) * sin(PI * Rij / aev_params.Rcr);
 
   DataT upstream_grad;
-  if constexpr(is_double_backward) {
+  if constexpr (is_double_backward) {
     upstream_grad = grad_dist[idx];
   }
 
@@ -729,7 +733,7 @@ __global__ void cuRadialAEVs_ddist_or_ddaev(
     DataT GmR_grad = -EtaR * (-2 * ShfR + 2 * Rij) * GmR;
     DataT jacobian = GmR_grad * fc + GmR * fc_grad;
 
-    if constexpr(is_double_backward) {
+    if constexpr (is_double_backward) {
       atomicAdd(&grad_aev[mol_idx][i][type_j * aev_params.radial_sublength + ishfr], upstream_grad * jacobian);
     } else {
       upstream_grad = grad_aev[mol_idx][i][type_j * aev_params.radial_sublength + ishfr];
