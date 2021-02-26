@@ -77,25 +77,25 @@ using torch::autograd::tensor_list;
 // out2(dcoord, ...)  <-- output
 //
 //
-// [Double backward]
-//        ddout            ^
-//          |              ^
-//         ...             ^
-//          |              ^
-//       ddenergy          ^
-//       /      \          ^
-//     ddaev   ddparams    ^
-//    /     |              ^
-// dddist   |              ^
-//    \     |              ^
-//    ddcoord              ^
-//       |                 ^
-//      ...                ^
-//       |                 ^
-//     dout2               ^
+// [Double backward w.r.t params (i.e. force training)]
+//      aev [params] denergy                   ^
+//         \  |     /                          ^
+//          [ddaev]                            ^
+//          /      \_____                      ^
+// dist [ddradial]        \                    ^
+//   \    /                \                   ^
+//  [dddist] dist coord [ddangular] dist coord ^
+//       \   /    /           \      |    /    ^
+//        \_/____/             \_____|___/     ^
+//         |    _____________________/         ^
+//         |   /                               ^
+//      [ddcoord]                              ^
+//         |                                   ^
+//        ...                                  ^
+//         |                                   ^
+//       [dout2]                               ^
 //
 // Functional relationship:
-// TODO
 //
 
 template <typename DataT, typename IndexT = int>
