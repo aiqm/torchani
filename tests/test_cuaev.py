@@ -56,6 +56,11 @@ class TestCUAEV(TestCase):
         self.radial_length = self.aev_computer.radial_length
 
     def _double_backward(self, aev_computer, species, coordinates):
+        """
+        # We want to get the gradient of `grad_aev`, which requires `grad_aev` to be a leaf node
+        # due to `torch.autograd`'s limitation. So we split the coord->aev->energy graph into two separate
+        # graphs: coord->aev and aev->energy, so that aev and grad_aev are now leaves.
+        """
         torch.manual_seed(12345)
         # graph1 input -> aev
         coordinates = coordinates.clone().detach().requires_grad_()
