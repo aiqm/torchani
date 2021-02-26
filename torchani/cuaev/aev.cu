@@ -10,7 +10,108 @@
 
 #define PI 3.141592653589793
 using torch::Tensor;
+using torch::autograd::AutogradContext;
 using torch::autograd::tensor_list;
+
+// [Computation graph for forward, backward, and double backward]
+//
+// backward
+// force = (dE / daev) * (daev / dcoord) = g * (daev / dcoord)
+//
+// double backward (to do force training, the term needed is)
+// dloss / dg = (dloss / dforce) * (dforce / dg) = (dloss / dforce) * (daev / dcoord)
+//
+//
+// [Forward]
+//            out               ^
+//             |                ^
+//            ...               ^
+//             |                ^
+//        e n e r g y           ^
+//           |     \            ^
+//          aev     \           ^
+//        /   |      \          ^
+//  radial  angular  params     ^
+//    /    /  |                 ^
+// dist---^  /                  ^
+//    \     /                   ^
+//     coord                    ^
+//
+// Functional relationship:
+// coord <-- input
+// dist(coord)
+// radial(dist)
+// angular(dist, coord)
+// aev = concatenate(radial, angular)
+// energy(aev, params)
+// out(energy, ....) <-- output
+//
+//
+// [Backward]
+//                   dout                     v
+//                    |                       v
+//                   ...                      v
+//                    |                       v
+//       aev params denergy  aev params       v
+//         \   |   /      \   |   /           v
+//          d a e v        dparams            v
+//          /      \____                      v
+// dist dradial         \                     v
+//   \    /              \                    v
+//   ddist dist coord   dangular dist coord   v
+//      \   /    /           \    |    /      v
+//       \_/____/             \___|___/       v
+//        |    __________________/            v
+//        |   /                               v
+//      dcoord                                v
+//        |                                   v
+//       ...                                  v
+//        |                                   v
+//       out2                                 v
+//
+// Functional relationship:
+// dout <-- input
+// denergy(dout)
+// dparams(denergy, aev, params)  <-- output
+// daev(denergy, aev, params)
+// dradial = slice(daev)
+// dangular = slice(daev)
+// ddist = radial_backward(dradial, dist) + angular_backward_dist(dangular, ...)
+//       = radial_backward(dradial, dist) + 0 (all contributions route to dcoord)
+//       = radial_backward(dradial, dist)
+// dcoord = dist_backward(ddist, coord, dist) + angular_backward_coord(dangular, coord, dist)
+// out2(dcoord, ...)  <-- output
+//
+//
+// [Double backward w.r.t params (i.e. force training)]
+// Note: only a very limited subset of double backward is implemented
+// currently it can only do force training, there is no hessian support
+// not implemented terms are marked by $s
+//      $$$ [dparams] $$$$                     ^
+//         \_  |    __/                        ^
+//           [ddaev]                           ^
+//          /      \_____                      ^
+// $$$$ [ddradial]        \                    ^
+//   \    /                \                   ^
+//  [dddist] $$$$ $$$$ [ddangular] $$$$  $$$$  ^
+//       \   /    /           \      |    /    ^
+//        \_/____/             \_____|___/     ^
+//         |    _____________________/         ^
+//         |   /                               ^
+//      [ddcoord]                              ^
+//         |                                   ^
+//        ...                                  ^
+//         |                                   ^
+//       [dout2]                               ^
+//
+// Functional relationship:
+// dout2 <-- input
+// ddcoord(dout2, ...)
+// dddist = dist_doublebackward(ddcoord, coord, dist)
+// ddradial = radial_doublebackward(dddist, dist)
+// ddangular = angular_doublebackward(ddcord, coord, dist)
+// ddaev = concatenate(ddradial, ddangular)
+// dparams(ddaev, ...) <-- output
 
 template <typename DataT, typename IndexT = int>
 struct AEVScalarParams {
@@ -170,11 +271,13 @@ __global__ void pairwiseDistanceSingleMolecule(
 }
 
 // every block compute blocksize RIJ's gradient by column major, to avoid atomicAdd waiting
-template <typename DataT, typename IndexT = int>
-__global__ void pairwiseDistance_backward(
+template <bool is_double_backward, typename DataT, typename IndexT = int>
+__global__ void pairwiseDistance_backward_or_doublebackward(
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
-    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> grad_radial_dist,
-    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_coord,
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits>
+        grad_dist, // ddist for backward, dddist for double backward
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits>
+        grad_coord_or_force, // dcoord for backward, dforce(i.e. ddcoord) for double backward
     const PairDist<DataT>* d_radialRij,
     IndexT nRadialRij) {
   int gidx = threadIdx.x * gridDim.x + blockIdx.x;
@@ -192,17 +295,28 @@ __global__ void pairwiseDistance_backward(
   const DataT dely = pos_t[mol_idx][j][1] - pos_t[mol_idx][i][1];
   const DataT delz = pos_t[mol_idx][j][2] - pos_t[mol_idx][i][2];
 
-  DataT grad_dist_coord_x = delx / Rij;
-  DataT grad_dist_coord_y = dely / Rij;
-  DataT grad_dist_coord_z = delz / Rij;
-  DataT grad_radial_dist_item = grad_radial_dist[gidx];
+  if constexpr (is_double_backward) {
+    auto& grad_force = grad_coord_or_force;
+    DataT grad_force_coord_Rij_item = (grad_force[mol_idx][j][0] - grad_force[mol_idx][i][0]) * delx / Rij +
+        (grad_force[mol_idx][j][1] - grad_force[mol_idx][i][1]) * dely / Rij +
+        (grad_force[mol_idx][j][2] - grad_force[mol_idx][i][2]) * delz / Rij;
 
-  atomicAdd(&grad_coord[mol_idx][j][0], grad_radial_dist_item * grad_dist_coord_x);
-  atomicAdd(&grad_coord[mol_idx][j][1], grad_radial_dist_item * grad_dist_coord_y);
-  atomicAdd(&grad_coord[mol_idx][j][2], grad_radial_dist_item * grad_dist_coord_z);
-  atomicAdd(&grad_coord[mol_idx][i][0], -grad_radial_dist_item * grad_dist_coord_x);
-  atomicAdd(&grad_coord[mol_idx][i][1], -grad_radial_dist_item * grad_dist_coord_y);
-  atomicAdd(&grad_coord[mol_idx][i][2], -grad_radial_dist_item * grad_dist_coord_z);
+    grad_dist[gidx] = grad_force_coord_Rij_item;
+  } else {
+    auto& grad_coord = grad_coord_or_force;
+
+    DataT grad_dist_coord_x = delx / Rij;
+    DataT grad_dist_coord_y = dely / Rij;
+    DataT grad_dist_coord_z = delz / Rij;
+    DataT grad_radial_dist_item = grad_dist[gidx];
+
+    atomicAdd(&grad_coord[mol_idx][j][0], grad_radial_dist_item * grad_dist_coord_x);
+    atomicAdd(&grad_coord[mol_idx][j][1], grad_radial_dist_item * grad_dist_coord_y);
+    atomicAdd(&grad_coord[mol_idx][j][2], grad_radial_dist_item * grad_dist_coord_z);
+    atomicAdd(&grad_coord[mol_idx][i][0], -grad_radial_dist_item * grad_dist_coord_x);
+    atomicAdd(&grad_coord[mol_idx][i][1], -grad_radial_dist_item * grad_dist_coord_y);
+    atomicAdd(&grad_coord[mol_idx][i][2], -grad_radial_dist_item * grad_dist_coord_z);
+  }
 }
 
 template <typename SpeciesT, typename DataT, typename IndexT = int, int TILEX = 8, int TILEY = 4>
@@ -349,18 +463,24 @@ __global__ void cuAngularAEVs(
   }
 }
 
-template <typename SpeciesT, typename DataT, typename IndexT = int, int TILEX = 8, int TILEY = 4>
-__global__ void
-// __launch_bounds__(32)
-cuAngularAEVs_backward(
+template <
+    bool is_double_backward,
+    typename SpeciesT,
+    typename DataT,
+    typename IndexT = int,
+    int TILEX = 8,
+    int TILEY = 4>
+__global__ void cuAngularAEVs_backward_or_doublebackward(
     torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfA_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfZ_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> EtaA_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> Zeta_t,
-    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_output,
-    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_coord,
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits>
+        grad_output, // for backward, this is daev, for double backward, this is dforce (i.e. ddcoord)
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits>
+        grad_input, // for backward, this is dcoord, for double backward, this is ddaev
     const PairDist<DataT>* d_Rij,
     const PairDist<DataT>* d_centralAtom,
     int* d_nPairsPerCenterAtom,
@@ -533,53 +653,76 @@ cuAngularAEVs_backward(
             DataT factor2 = exp(-EtaA * (Rijk - ShfA) * (Rijk - ShfA));
             DataT grad_factor2_dist = -EtaA * (Rijk - ShfA) * factor2;
 
-            DataT grad_output_item =
-                grad_output[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta];
-            DataT grad_vij_x = 2 * grad_output_item *
+            DataT grad_vij_x = 2 *
                 (grad_factor1_theta * grad_theta_vij_x_ * factor2 * fc_ijk +
                  factor1 * grad_factor2_dist * sdx[jj] / Rij * fc_ijk +
                  factor1 * factor2 * fc_ik * grad_fc_ij * sdx[jj] / Rij);
-            DataT grad_vij_y = 2 * grad_output_item *
+            DataT grad_vij_y = 2 *
                 (grad_factor1_theta * grad_theta_vij_y_ * factor2 * fc_ijk +
                  factor1 * grad_factor2_dist * sdy[jj] / Rij * fc_ijk +
                  factor1 * factor2 * fc_ik * grad_fc_ij * sdy[jj] / Rij);
-            DataT grad_vij_z = 2 * grad_output_item *
+            DataT grad_vij_z = 2 *
                 (grad_factor1_theta * grad_theta_vij_z_ * factor2 * fc_ijk +
                  factor1 * grad_factor2_dist * sdz[jj] / Rij * fc_ijk +
                  factor1 * factor2 * fc_ik * grad_fc_ij * sdz[jj] / Rij);
-            DataT grad_vik_x = 2 * grad_output_item *
+            DataT grad_vik_x = 2 *
                 (grad_factor1_theta * grad_theta_vik_x_ * factor2 * fc_ijk +
                  factor1 * grad_factor2_dist * sdx[kk] / Rik * fc_ijk +
                  factor1 * factor2 * fc_ij * grad_fc_ik * sdx[kk] / Rik);
-            DataT grad_vik_y = 2 * grad_output_item *
+            DataT grad_vik_y = 2 *
                 (grad_factor1_theta * grad_theta_vik_y_ * factor2 * fc_ijk +
                  factor1 * grad_factor2_dist * sdy[kk] / Rik * fc_ijk +
                  factor1 * factor2 * fc_ij * grad_fc_ik * sdy[kk] / Rik);
-            DataT grad_vik_z = 2 * grad_output_item *
+            DataT grad_vik_z = 2 *
                 (grad_factor1_theta * grad_theta_vik_z_ * factor2 * fc_ijk +
                  factor1 * grad_factor2_dist * sdz[kk] / Rik * fc_ijk +
                  factor1 * factor2 * fc_ij * grad_fc_ik * sdz[kk] / Rik);
 
-            sdix_grad += (-grad_vij_x - grad_vik_x);
-            sdiy_grad += (-grad_vij_y - grad_vik_y);
-            sdiz_grad += (-grad_vij_z - grad_vik_z);
+            if constexpr (is_double_backward) {
+              int atomj_idx = d_Rij[start_idx + jj].j;
+              int atomk_idx = d_Rij[start_idx + kk].j;
+              auto& grad_force = grad_output;
+              auto& grad_grad_aev = grad_input;
+              grad_vij_x *= (grad_force[mol_idx][atomj_idx][0] - grad_force[mol_idx][i][0]);
+              grad_vij_y *= (grad_force[mol_idx][atomj_idx][1] - grad_force[mol_idx][i][1]);
+              grad_vij_z *= (grad_force[mol_idx][atomj_idx][2] - grad_force[mol_idx][i][2]);
+              grad_vik_x *= (grad_force[mol_idx][atomk_idx][0] - grad_force[mol_idx][i][0]);
+              grad_vik_y *= (grad_force[mol_idx][atomk_idx][1] - grad_force[mol_idx][i][1]);
+              grad_vik_z *= (grad_force[mol_idx][atomk_idx][2] - grad_force[mol_idx][i][2]);
+              atomicAdd(
+                  &grad_grad_aev[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta],
+                  grad_vij_x + grad_vij_y + grad_vij_z + grad_vik_x + grad_vik_y + grad_vik_z);
+            } else {
+              DataT grad_output_item =
+                  grad_output[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta];
+              grad_vij_x *= grad_output_item;
+              grad_vij_y *= grad_output_item;
+              grad_vij_z *= grad_output_item;
+              grad_vik_x *= grad_output_item;
+              grad_vik_y *= grad_output_item;
+              grad_vik_z *= grad_output_item;
 
-            for (int offset = 16; offset > 0; offset /= 2) {
-              grad_vij_x += __shfl_down_sync(0xFFFFFFFF, grad_vij_x, offset);
-              grad_vij_y += __shfl_down_sync(0xFFFFFFFF, grad_vij_y, offset);
-              grad_vij_z += __shfl_down_sync(0xFFFFFFFF, grad_vij_z, offset);
-              grad_vik_x += __shfl_down_sync(0xFFFFFFFF, grad_vik_x, offset);
-              grad_vik_y += __shfl_down_sync(0xFFFFFFFF, grad_vik_y, offset);
-              grad_vik_z += __shfl_down_sync(0xFFFFFFFF, grad_vik_z, offset);
-            }
-            if (laneIdx == 0) {
-              sdjx_grad[jj] += grad_vij_x;
-              sdjy_grad[jj] += grad_vij_y;
-              sdjz_grad[jj] += grad_vij_z;
+              sdix_grad += (-grad_vij_x - grad_vik_x);
+              sdiy_grad += (-grad_vij_y - grad_vik_y);
+              sdiz_grad += (-grad_vij_z - grad_vik_z);
 
-              sdjx_grad[kk] += grad_vik_x;
-              sdjy_grad[kk] += grad_vik_y;
-              sdjz_grad[kk] += grad_vik_z;
+              for (int offset = 16; offset > 0; offset /= 2) {
+                grad_vij_x += __shfl_down_sync(0xFFFFFFFF, grad_vij_x, offset);
+                grad_vij_y += __shfl_down_sync(0xFFFFFFFF, grad_vij_y, offset);
+                grad_vij_z += __shfl_down_sync(0xFFFFFFFF, grad_vij_z, offset);
+                grad_vik_x += __shfl_down_sync(0xFFFFFFFF, grad_vik_x, offset);
+                grad_vik_y += __shfl_down_sync(0xFFFFFFFF, grad_vik_y, offset);
+                grad_vik_z += __shfl_down_sync(0xFFFFFFFF, grad_vik_z, offset);
+              }
+              if (laneIdx == 0) {
+                sdjx_grad[jj] += grad_vij_x;
+                sdjy_grad[jj] += grad_vij_y;
+                sdjz_grad[jj] += grad_vij_z;
+
+                sdjx_grad[kk] += grad_vik_x;
+                sdjy_grad[kk] += grad_vik_y;
+                sdjz_grad[kk] += grad_vik_z;
+              }
             }
           }
         }
@@ -587,17 +730,20 @@ cuAngularAEVs_backward(
     }
   }
 
-  int atomi_idx = i;
-  atomicAdd(&grad_coord[mol_idx][atomi_idx][0], sdix_grad);
-  atomicAdd(&grad_coord[mol_idx][atomi_idx][1], sdiy_grad);
-  atomicAdd(&grad_coord[mol_idx][atomi_idx][2], sdiz_grad);
+  if constexpr (!is_double_backward) {
+    auto& grad_coord = grad_input;
+    int atomi_idx = i;
+    atomicAdd(&grad_coord[mol_idx][atomi_idx][0], sdix_grad);
+    atomicAdd(&grad_coord[mol_idx][atomi_idx][1], sdiy_grad);
+    atomicAdd(&grad_coord[mol_idx][atomi_idx][2], sdiz_grad);
 
-  for (int jj = laneIdx; jj < jnum; jj += threads_per_catom) {
-    int atomj_idx = d_Rij[start_idx + jj].j;
+    for (int jj = laneIdx; jj < jnum; jj += threads_per_catom) {
+      int atomj_idx = d_Rij[start_idx + jj].j;
 
-    atomicAdd(&grad_coord[mol_idx][atomj_idx][0], sdjx_grad[jj]);
-    atomicAdd(&grad_coord[mol_idx][atomj_idx][1], sdjy_grad[jj]);
-    atomicAdd(&grad_coord[mol_idx][atomj_idx][2], sdjz_grad[jj]);
+      atomicAdd(&grad_coord[mol_idx][atomj_idx][0], sdjx_grad[jj]);
+      atomicAdd(&grad_coord[mol_idx][atomj_idx][1], sdjy_grad[jj]);
+      atomicAdd(&grad_coord[mol_idx][atomj_idx][2], sdjz_grad[jj]);
+    }
   }
 }
 
@@ -641,13 +787,15 @@ __global__ void cuRadialAEVs(
 }
 
 // every <THREADS_PER_RIJ> threads take care of 1 RIJ, and iterate <nShfR / THREADS_PER_RIJ> times
-template <typename SpeciesT, typename DataT, int THREADS_PER_RIJ>
-__global__ void cuRadialAEVs_backward(
+template <bool is_double_backward, typename SpeciesT, typename DataT, int THREADS_PER_RIJ>
+__global__ void cuRadialAEVs_backward_or_doublebackward(
     torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfR_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> EtaR_t,
-    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_output,
-    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> grad_radial_dist,
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits>
+        grad_aev, // daev for backward, ddaev for double backward
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits>
+        grad_dist, // ddist for backward, dddist for double backward
     const PairDist<DataT>* d_Rij,
     AEVScalarParams<DataT, int> aev_params,
     int nRadialRij) {
@@ -673,16 +821,24 @@ __global__ void cuRadialAEVs_backward(
   DataT fc = 0.5 * cos(PI * Rij / aev_params.Rcr) + 0.5;
   DataT fc_grad = -0.5 * (PI / aev_params.Rcr) * sin(PI * Rij / aev_params.Rcr);
 
+  DataT upstream_grad;
+  if constexpr (is_double_backward) {
+    upstream_grad = grad_dist[idx];
+  }
+
   for (int ishfr = laneIdx; ishfr < nShfR; ishfr += THREADS_PER_RIJ) {
     DataT ShfR = ShfR_t[ishfr];
 
     DataT GmR = 0.25 * exp(-EtaR * (Rij - ShfR) * (Rij - ShfR));
     DataT GmR_grad = -EtaR * (-2 * ShfR + 2 * Rij) * GmR;
+    DataT jacobian = GmR_grad * fc + GmR * fc_grad;
 
-    DataT grad_output_item = grad_output[mol_idx][i][type_j * aev_params.radial_sublength + ishfr];
-    DataT grad_radial_dist_item = grad_output_item * (GmR_grad * fc + GmR * fc_grad);
-
-    atomicAdd(&grad_radial_dist[idx], grad_radial_dist_item);
+    if constexpr (is_double_backward) {
+      atomicAdd(&grad_aev[mol_idx][i][type_j * aev_params.radial_sublength + ishfr], upstream_grad * jacobian);
+    } else {
+      upstream_grad = grad_aev[mol_idx][i][type_j * aev_params.radial_sublength + ishfr];
+      atomicAdd(&grad_dist[idx], upstream_grad * jacobian);
+    }
   }
 }
 
@@ -898,7 +1054,6 @@ Result cuaev_forward(
 
   const int block_size = 64;
 
-  dim3 block(8, 8, 1);
   if (n_molecules == 1) {
     int tileWidth = 32;
     int tilesPerRow = (max_natoms_per_mol + tileWidth - 1) / tileWidth;
@@ -1063,7 +1218,7 @@ Tensor cuaev_backward(
 
   int block_size = 64;
   int nblocks = (nRadialRij * 8 + block_size - 1) / block_size;
-  cuRadialAEVs_backward<int, float, 8><<<nblocks, block_size, 0, stream>>>(
+  cuRadialAEVs_backward_or_doublebackward<false, int, float, 8><<<nblocks, block_size, 0, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
       ShfR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       EtaR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
@@ -1075,7 +1230,7 @@ Tensor cuaev_backward(
 
   // For best result, block_size should match average molecule size (no padding) to avoid atomicAdd
   nblocks = (nRadialRij + block_size - 1) / block_size;
-  pairwiseDistance_backward<<<nblocks, block_size, 0, stream>>>(
+  pairwiseDistance_backward_or_doublebackward<false><<<nblocks, block_size, 0, stream>>>(
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       grad_radial_dist.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       grad_coord.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
@@ -1099,7 +1254,7 @@ Tensor cuaev_backward(
   int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
 
   Tensor grad_angular_coord = torch::zeros({nAngularRij, 3}, coordinates_t.options().requires_grad(false));
-  cuAngularAEVs_backward<<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
+  cuAngularAEVs_backward_or_doublebackward<false><<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       ShfA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
@@ -1120,6 +1275,212 @@ Tensor cuaev_backward(
   return grad_coord;
 }
 
+Tensor cuaev_double_backward(
+    const Tensor& grad_force,
+    const Tensor& coordinates_t,
+    const Tensor& species_t,
+    const AEVScalarParams<float>& aev_params,
+    const Tensor& EtaR_t,
+    const Tensor& ShfR_t,
+    const Tensor& EtaA_t,
+    const Tensor& Zeta_t,
+    const Tensor& ShfA_t,
+    const Tensor& ShfZ_t,
+    const Tensor& tensor_Rij,
+    int total_natom_pairs,
+    const Tensor& tensor_radialRij,
+    int nRadialRij,
+    const Tensor& tensor_angularRij,
+    int nAngularRij,
+    const Tensor& tensor_centralAtom,
+    const Tensor& tensor_numPairsPerCenterAtom,
+    const Tensor& tensor_centerAtomStartIdx,
+    int maxnbrs_per_atom_aligned,
+    int angular_length_aligned,
+    int ncenter_atoms) {
+  using namespace torch::indexing;
+  const int n_molecules = coordinates_t.size(0);
+  const int max_natoms_per_mol = coordinates_t.size(1);
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
+  int aev_length = aev_params.radial_length + aev_params.angular_length;
+
+  auto grad_grad_aev = torch::zeros(
+      {coordinates_t.size(0), coordinates_t.size(1), aev_length},
+      coordinates_t.options().requires_grad(false)); // [2, 5, 384]
+
+  PairDist<float>* d_Rij = (PairDist<float>*)tensor_Rij.data_ptr();
+  PairDist<float>* d_radialRij = (PairDist<float>*)tensor_radialRij.data_ptr();
+  PairDist<float>* d_angularRij = (PairDist<float>*)tensor_angularRij.data_ptr();
+  PairDist<float>* d_centralAtom = (PairDist<float>*)tensor_centralAtom.data_ptr();
+  int* d_numPairsPerCenterAtom = (int*)tensor_numPairsPerCenterAtom.data_ptr();
+  int* d_centerAtomStartIdx = (int*)tensor_centerAtomStartIdx.data_ptr();
+
+  auto grad_force_coord_Rij = torch::zeros({nRadialRij}, coordinates_t.options().requires_grad(false));
+
+  int block_size = 64;
+  int nblocks = (nRadialRij + block_size - 1) / block_size;
+  pairwiseDistance_backward_or_doublebackward<true><<<nblocks, block_size, 0, stream>>>(
+      coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      grad_force_coord_Rij.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      grad_force.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      d_radialRij,
+      nRadialRij);
+
+  nblocks = (nRadialRij * 8 + block_size - 1) / block_size;
+  cuRadialAEVs_backward_or_doublebackward<true, int, float, 8><<<nblocks, block_size, 0, stream>>>(
+      species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
+      ShfR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      EtaR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      grad_grad_aev.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      grad_force_coord_Rij.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      d_radialRij,
+      aev_params,
+      nRadialRij);
+
+  auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
+    int sxyz = sizeof(float) * max_nbrs * 3;
+    int sj_xyz_grad = sizeof(float) * max_nbrs * 3;
+    int sRij = sizeof(float) * max_nbrs;
+    int sfc = sizeof(float) * max_nbrs;
+    int sfc_grad = sizeof(float) * max_nbrs;
+    int sj = sizeof(int) * max_nbrs;
+
+    return (sxyz + sj_xyz_grad + sRij + sfc + sfc_grad + sj) * ncatom_per_tpb;
+  };
+
+  block_size = 32;
+  const int nthreads_per_catom = 32;
+  const int nblocks_angAEV = (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
+  int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
+
+  cuAngularAEVs_backward_or_doublebackward<true><<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
+      species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
+      coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      ShfA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      ShfZ_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      EtaA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      Zeta_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
+      grad_force.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      grad_grad_aev.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+      d_angularRij,
+      d_centralAtom,
+      d_numPairsPerCenterAtom,
+      d_centerAtomStartIdx,
+      aev_params,
+      maxnbrs_per_atom_aligned,
+      angular_length_aligned,
+      ncenter_atoms);
+
+  return grad_grad_aev;
+}
+
+class CuaevDoubleAutograd : public torch::autograd::Function<CuaevDoubleAutograd> {
+ public:
+  static Tensor forward(AutogradContext* ctx, Tensor grad_e_aev, AutogradContext* prectx) {
+    auto saved = prectx->get_saved_variables();
+    auto coordinates_t = saved[0], species_t = saved[1];
+    auto tensor_Rij = saved[2], tensor_radialRij = saved[3], tensor_angularRij = saved[4];
+    auto EtaR_t = saved[5], ShfR_t = saved[6], EtaA_t = saved[7], Zeta_t = saved[8], ShfA_t = saved[9],
+         ShfZ_t = saved[10];
+    auto tensor_centralAtom = saved[11], tensor_numPairsPerCenterAtom = saved[12],
+         tensor_centerAtomStartIdx = saved[13];
+    AEVScalarParams<float> aev_params(prectx->saved_data["aev_params"]);
+    c10::List<int64_t> int_list = prectx->saved_data["int_list"].toIntList();
+    int total_natom_pairs = int_list[0], nRadialRij = int_list[1], nAngularRij = int_list[2];
+    int maxnbrs_per_atom_aligned = int_list[3], angular_length_aligned = int_list[4];
+    int ncenter_atoms = int_list[5];
+
+    if (grad_e_aev.requires_grad()) {
+      ctx->save_for_backward({coordinates_t,
+                              species_t,
+                              tensor_Rij,
+                              tensor_radialRij,
+                              tensor_angularRij,
+                              EtaR_t,
+                              ShfR_t,
+                              EtaA_t,
+                              Zeta_t,
+                              ShfA_t,
+                              ShfZ_t,
+                              tensor_centralAtom,
+                              tensor_numPairsPerCenterAtom,
+                              tensor_centerAtomStartIdx});
+      ctx->saved_data["aev_params"] = aev_params;
+      ctx->saved_data["int_list"] = c10::List<int64_t>{
+          total_natom_pairs, nRadialRij, nAngularRij, maxnbrs_per_atom_aligned, angular_length_aligned, ncenter_atoms};
+    }
+
+    Tensor grad_coord = cuaev_backward(
+        grad_e_aev,
+        coordinates_t,
+        species_t,
+        aev_params,
+        EtaR_t,
+        ShfR_t,
+        EtaA_t,
+        Zeta_t,
+        ShfA_t,
+        ShfZ_t,
+        tensor_Rij,
+        total_natom_pairs,
+        tensor_radialRij,
+        nRadialRij,
+        tensor_angularRij,
+        nAngularRij,
+        tensor_centralAtom,
+        tensor_numPairsPerCenterAtom,
+        tensor_centerAtomStartIdx,
+        maxnbrs_per_atom_aligned,
+        angular_length_aligned,
+        ncenter_atoms);
+
+    return grad_coord;
+  }
+
+  static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs) {
+    Tensor grad_force = grad_outputs[0];
+    auto saved = ctx->get_saved_variables();
+    auto coordinates_t = saved[0], species_t = saved[1];
+    auto tensor_Rij = saved[2], tensor_radialRij = saved[3], tensor_angularRij = saved[4];
+    auto EtaR_t = saved[5], ShfR_t = saved[6], EtaA_t = saved[7], Zeta_t = saved[8], ShfA_t = saved[9],
+         ShfZ_t = saved[10];
+    auto tensor_centralAtom = saved[11], tensor_numPairsPerCenterAtom = saved[12],
+         tensor_centerAtomStartIdx = saved[13];
+    AEVScalarParams<float> aev_params(ctx->saved_data["aev_params"]);
+    c10::List<int64_t> int_list = ctx->saved_data["int_list"].toIntList();
+    int total_natom_pairs = int_list[0], nRadialRij = int_list[1], nAngularRij = int_list[2];
+    int maxnbrs_per_atom_aligned = int_list[3], angular_length_aligned = int_list[4];
+    int ncenter_atoms = int_list[5];
+
+    Tensor grad_grad_aev = cuaev_double_backward(
+        grad_force,
+        coordinates_t,
+        species_t,
+        aev_params,
+        EtaR_t,
+        ShfR_t,
+        EtaA_t,
+        Zeta_t,
+        ShfA_t,
+        ShfZ_t,
+        tensor_Rij,
+        total_natom_pairs,
+        tensor_radialRij,
+        nRadialRij,
+        tensor_angularRij,
+        nAngularRij,
+        tensor_centralAtom,
+        tensor_numPairsPerCenterAtom,
+        tensor_centerAtomStartIdx,
+        maxnbrs_per_atom_aligned,
+        angular_length_aligned,
+        ncenter_atoms);
+
+    return {grad_grad_aev, torch::Tensor()};
+  }
+};
+
 #define AEV_INPUT                                                                                                   \
   const Tensor &coordinates_t, const Tensor &species_t, double Rcr_, double Rca_, const Tensor &EtaR_t,             \
       const Tensor &ShfR_t, const Tensor &EtaA_t, const Tensor &Zeta_t, const Tensor &ShfA_t, const Tensor &ShfZ_t, \
@@ -1133,7 +1494,7 @@ Tensor cuaev_cuda(AEV_INPUT) {
 
 class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
  public:
-  static Tensor forward(torch::autograd::AutogradContext* ctx, AEV_INPUT) {
+  static Tensor forward(AutogradContext* ctx, AEV_INPUT) {
     at::AutoNonVariableTypeMode g;
     Result res = cuaev_forward<float>(
         coordinates_t, species_t, Rcr_, Rca_, EtaR_t, ShfR_t, EtaA_t, Zeta_t, ShfA_t, ShfZ_t, num_species_);
@@ -1163,43 +1524,8 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
     return res.aev_t;
   }
 
-  static tensor_list backward(torch::autograd::AutogradContext* ctx, tensor_list grad_outputs) {
-    auto saved = ctx->get_saved_variables();
-    auto coordinates_t = saved[0], species_t = saved[1];
-    auto tensor_Rij = saved[2], tensor_radialRij = saved[3], tensor_angularRij = saved[4];
-    auto EtaR_t = saved[5], ShfR_t = saved[6], EtaA_t = saved[7], Zeta_t = saved[8], ShfA_t = saved[9],
-         ShfZ_t = saved[10];
-    auto tensor_centralAtom = saved[11], tensor_numPairsPerCenterAtom = saved[12],
-         tensor_centerAtomStartIdx = saved[13];
-    AEVScalarParams<float> aev_params(ctx->saved_data["aev_params"]);
-    c10::List<int64_t> int_list = ctx->saved_data["int_list"].toIntList();
-    int total_natom_pairs = int_list[0], nRadialRij = int_list[1], nAngularRij = int_list[2];
-    int maxnbrs_per_atom_aligned = int_list[3], angular_length_aligned = int_list[4];
-    int ncenter_atoms = int_list[5];
-
-    Tensor grad_coord = cuaev_backward(
-        grad_outputs[0],
-        coordinates_t,
-        species_t,
-        aev_params,
-        EtaR_t,
-        ShfR_t,
-        EtaA_t,
-        Zeta_t,
-        ShfA_t,
-        ShfZ_t,
-        tensor_Rij,
-        total_natom_pairs,
-        tensor_radialRij,
-        nRadialRij,
-        tensor_angularRij,
-        nAngularRij,
-        tensor_centralAtom,
-        tensor_numPairsPerCenterAtom,
-        tensor_centerAtomStartIdx,
-        maxnbrs_per_atom_aligned,
-        angular_length_aligned,
-        ncenter_atoms);
+  static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs) {
+    Tensor grad_coord = CuaevDoubleAutograd::apply(grad_outputs[0], ctx);
 
     return {
         grad_coord, Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor(), Tensor()};

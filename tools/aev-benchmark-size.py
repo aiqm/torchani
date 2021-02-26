@@ -26,7 +26,7 @@ def info(text):
     print('\033[32m{}\33[0m'.format(text))  # green
 
 
-def benchmark(speciesPositions, aev_comp, N, check_gpu_mem):
+def benchmark(speciesPositions, aev_comp, N, check_gpu_mem, nn=None, verbose=True):
     torch.cuda.empty_cache()
     gc.collect()
     torch.cuda.synchronize()
@@ -34,14 +34,25 @@ def benchmark(speciesPositions, aev_comp, N, check_gpu_mem):
 
     aev = None
     for i in range(N):
-        aev = aev_comp(speciesPositions).aevs
+        species, coordinates = speciesPositions
+        if nn is not None:  # double backward
+            coordinates = coordinates.requires_grad_()
+            _, aev = aev_computer((species, coordinates))
+            E = nn(aev).sum()
+            force = -torch.autograd.grad(E, coordinates, create_graph=True, retain_graph=True)[0]
+            force_true = torch.randn_like(force)
+            loss = torch.abs(force_true - force).sum(dim=(1, 2)).mean()
+            loss.backward()
+        else:
+            _, aev = aev_comp((species, coordinates))
         if i == 2 and check_gpu_mem:
             checkgpu()
 
     torch.cuda.synchronize()
     delta = time.time() - start
-    print(f'  Duration: {delta:.2f} s')
-    print(f'  Speed: {delta/N*1000:.2f} ms/it')
+    if verbose:
+        print(f'  Duration: {delta:.2f} s')
+        print(f'  Speed: {delta/N*1000:.2f} ms/it')
     return aev, delta
 
 
@@ -63,10 +74,14 @@ if __name__ == "__main__":
                         dest='check_gpu_mem',
                         action='store_const',
                         const=1)
-    parser.add_argument('--nsight',
+    parser.add_argument('-s', '--nsight',
                         action='store_true',
                         help='use nsight profile')
+    parser.add_argument('-b', '--backward',
+                        action='store_true',
+                        help='benchmark double backward')
     parser.set_defaults(check_gpu_mem=0)
+    parser.set_defaults(backward=0)
     parser = parser.parse_args()
     path = os.path.dirname(os.path.realpath(__file__))
 
@@ -74,7 +89,7 @@ if __name__ == "__main__":
     device = torch.device('cuda')
     files = ['small.pdb', '1hz5.pdb', '6W8H.pdb']
 
-    N = 500
+    N = 200
     if parser.nsight:
         N = 3
         torch.cuda.profiler.start()
@@ -89,17 +104,24 @@ if __name__ == "__main__":
         nnp = torchani.models.ANI2x(periodic_table_index=True, model_index=None).to(device)
         speciesPositions = nnp.species_converter((species, positions))
         aev_computer = nnp.aev_computer
+        if parser.backward:
+            nn = torch.nn.Sequential(torch.nn.Linear(nnp.aev_computer.aev_length, 1, False)).to(device)
+        else:
+            nn = None
 
         if parser.nsight:
             torch.cuda.nvtx.range_push(file)
         print('Original TorchANI:')
-        aev_ref, delta_ref = benchmark(speciesPositions, aev_computer, N, check_gpu_mem)
+        aev_ref, delta_ref = benchmark(speciesPositions, aev_computer, N, check_gpu_mem, nn)
         print()
 
         print('CUaev:')
         nnp.aev_computer.use_cuda_extension = True
         cuaev_computer = nnp.aev_computer
-        aev, delta = benchmark(speciesPositions, cuaev_computer, N, check_gpu_mem)
+        # warm up
+        _, _ = benchmark(speciesPositions, cuaev_computer, 1, check_gpu_mem, nn, verbose=False)
+        # run
+        aev, delta = benchmark(speciesPositions, cuaev_computer, N, check_gpu_mem, nn)
         if parser.nsight:
             torch.cuda.nvtx.range_pop()
 
