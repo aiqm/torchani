@@ -36,21 +36,13 @@ def benchmark(speciesPositions, aev_comp, N, check_gpu_mem, nn=None, verbose=Tru
     for i in range(N):
         species, coordinates = speciesPositions
         if nn is not None:  # double backward
-            # graph1 input -> aev
             coordinates = coordinates.requires_grad_()
-            _, aev = aev_comp((species, coordinates))
-            # graph2 aev -> E
-            aev_ = aev.clone().detach().requires_grad_()
-            E = nn(aev_).sum()
-            # graph2 backward
-            aev_grad = torch.autograd.grad(E, aev_, create_graph=True, retain_graph=True)[0]
-            # graph1 backward
-            aev_grad_ = aev_grad.clone().detach().requires_grad_()
-            force_ref = torch.autograd.grad(aev, coordinates, aev_grad_, create_graph=True, retain_graph=True)[0]
-            # force loss backward
-            force_true = torch.randn_like(force_ref)
-            loss = torch.abs(force_true - force_ref).sum(dim=(1, 2)).mean()
-            _ = torch.autograd.grad(loss, aev_grad_, create_graph=True, retain_graph=True)[0]
+            _, aev = aev_computer((species, coordinates))
+            E = nn(aev).sum()
+            force = -torch.autograd.grad(E, coordinates, create_graph=True, retain_graph=True)[0]
+            force_true = torch.randn_like(force)
+            loss = torch.abs(force_true - force).sum(dim=(1, 2)).mean()
+            loss.backward()
         else:
             _, aev = aev_comp((species, coordinates))
         if i == 2 and check_gpu_mem:
