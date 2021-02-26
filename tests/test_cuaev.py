@@ -57,7 +57,7 @@ class TestCUAEV(TestCase):
 
     def _double_backward_1_test(self, species, coordinates):
 
-        def double_backward_1(aev_computer, species, coordinates):
+        def double_backward(aev_computer, species, coordinates):
             torch.manual_seed(12345)
             self.nn.zero_grad()
             _, aev = aev_computer((species, coordinates))
@@ -70,8 +70,8 @@ class TestCUAEV(TestCase):
             param_grad = copy.deepcopy(param.grad)
             return aev, force, param_grad
 
-        aev, force_ref, param_grad_ref = double_backward_1(self.aev_computer, species, coordinates)
-        cu_aev, force_cuaev, param_grad = double_backward_1(self.cuaev_computer, species, coordinates)
+        aev, force_ref, param_grad_ref = double_backward(self.aev_computer, species, coordinates)
+        cu_aev, force_cuaev, param_grad = double_backward(self.cuaev_computer, species, coordinates)
 
         self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
         self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}')
@@ -79,7 +79,7 @@ class TestCUAEV(TestCase):
 
     def _double_backward_2_test(self, species, coordinates):
 
-        def double_backward_2(aev_computer, species, coordinates):
+        def double_backward(aev_computer, species, coordinates):
             """
             # We want to get the gradient of `grad_aev`, which requires `grad_aev` to be a leaf node
             # due to `torch.autograd`'s limitation. So we split the coord->aev->energy graph into two separate
@@ -104,8 +104,8 @@ class TestCUAEV(TestCase):
 
             return aev, force, aev_grad_grad
 
-        aev, force_ref, aev_grad_grad = double_backward_2(self.aev_computer, species, coordinates)
-        cu_aev, force_cuaev, cuaev_grad_grad = double_backward_2(self.cuaev_computer, species, coordinates)
+        aev, force_ref, aev_grad_grad = double_backward(self.aev_computer, species, coordinates)
+        cu_aev, force_cuaev, cuaev_grad_grad = double_backward(self.cuaev_computer, species, coordinates)
 
         self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}', atol=5e-5, rtol=5e-5)
         self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}', atol=5e-5, rtol=5e-5)
