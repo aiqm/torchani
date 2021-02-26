@@ -109,6 +109,12 @@ pip install -e . && pip install -v -e . --global-option="--cuaev"
 
 </details>
 
+## Test
+```bash
+cd torchani
+./download.sh
+python tests/test_cuaev.py
+```
 
 ## Usage
 Pass `use_cuda_extension=True` when construct aev_computer, for example:
@@ -141,13 +147,6 @@ RUN                Total AEV    Forward      Backward     Force        Optimizer
 1 py Energy        51.545 sec   10.228 sec   13.154 sec   0.0 ms       11.384 sec   2.874 sec    89.185 sec   2403.5MB
 2 cu Energy+Force  14.275 sec   10.024 sec   85.423 sec   51.380 sec   7.396 sec    5.494 sec    173.992 sec  3577.5MB
 3 py Energy+Force  51.305 sec   9.951 sec    271.078 sec  107.252 sec  7.835 sec    4.941 sec    452.362 sec  7307.5MB
-```
-
-## Test
-```bash
-cd torchani
-./download.sh
-python tests/test_cuaev.py
 ```
 
 benchmark
