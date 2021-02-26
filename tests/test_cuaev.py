@@ -203,9 +203,9 @@ class TestCUAEV(TestCase):
 
         self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
         self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}')
-        self.assertEqual(cuaev_grad_grad, aev_grad_grad, f'\ncuaev_grad_grad: {cuaev_grad_grad}\n aev_grad_grad: {aev_grad_grad}')
         self.assertEqual(cuaev_grad_grad_radial, aev_grad_grad_radial, f'\ncuaev_grad_grad_radial: {cuaev_grad_grad_radial}\n aev_grad_grad_radial: {aev_grad_grad_radial}')
         self.assertEqual(cuaev_grad_grad_angular, aev_grad_grad_angular, f'\ncuaev_grad_grad_angular: {cuaev_grad_grad_angular}\n aev_grad_grad_angular: {aev_grad_grad_angular}')
+        self.assertEqual(cuaev_grad_grad, aev_grad_grad, f'\ncuaev_grad_grad: {cuaev_grad_grad}\n aev_grad_grad: {aev_grad_grad}')
 
     def testTripeptideMD(self):
         for i in range(100):

@@ -108,6 +108,11 @@ def format_time(t):
 
 
 def benchmark(parser, dataset, use_cuda_extension, force_train=False):
+    global summary
+    global runcounter
+
+    if parser.nsight and runcounter >= 0:
+        torch.cuda.nvtx.range_push(parser.runname)
     synchronize = True
     timers = {}
 
@@ -207,6 +212,8 @@ def benchmark(parser, dataset, use_cuda_extension, force_train=False):
     sync_cuda(synchronize)
     stop = time.time()
 
+    if parser.nsight and runcounter >= 0:
+        torch.cuda.nvtx.range_pop()
     print('=> More detail about benchmark PER EPOCH')
     total_time = (stop - start) / parser.num_epochs
     loss_time = loss_time / parser.num_epochs
@@ -222,8 +229,7 @@ def benchmark(parser, dataset, use_cuda_extension, force_train=False):
     others_time = total_time - loss_time - aev_time - forward_time - opti_time - force_time
     print_timer('   Others', others_time)
     print_timer('   Epoch time', total_time)
-    global summary
-    global runcounter
+
     if runcounter == 0:
         summary += '\n' + 'RUN'.ljust(27) + 'Total AEV'.ljust(13) + 'Forward'.ljust(13) + 'Backward'.ljust(13) + 'Force'.ljust(13) + 'Optimizer'.ljust(13) + 'Others'.ljust(13) + 'Epoch time'.ljust(13) + 'GPU'.ljust(13) + '\n'
     if runcounter >= 0:
@@ -286,6 +292,9 @@ if __name__ == "__main__":
         gc.collect()
         benchmark(parser, dataset_shuffled, use_cuda_extension=True, force_train=False)
 
+    if parser.nsight:
+        torch.cuda.profiler.start()
+
     parser.runname = 'cu Energy train'
     print(f"\n\n=> Test 1: {parser.runname}")
     torch.cuda.empty_cache()
@@ -311,3 +320,6 @@ if __name__ == "__main__":
     benchmark(parser, dataset_shuffled, use_cuda_extension=False, force_train=True)
 
     print(summary)
+
+    if parser.nsight:
+        torch.cuda.profiler.stop()

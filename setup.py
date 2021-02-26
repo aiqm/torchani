@@ -50,6 +50,7 @@ def cuda_extension(build_all=False):
     import torch
     from torch.utils.cpp_extension import CUDAExtension
     SMs = None
+    print('-' * 75)
     if not build_all:
         SMs = []
         devices = torch.cuda.device_count()
@@ -81,6 +82,7 @@ def cuda_extension(build_all=False):
         if cuda_version >= 11.1:
             nvcc_args.append("-gencode=arch=compute_86,code=sm_86")
     print("nvcc_args: ", nvcc_args)
+    print('-' * 75)
     return CUDAExtension(
         name='torchani.cuaev',
         pkg='torchani.cuaev',
