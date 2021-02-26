@@ -46,6 +46,17 @@ struct AEVScalarParams {
 #define MAX_NSPECIES 10
 __constant__ int csubaev_offsets[MAX_NSPECIES * MAX_NSPECIES];
 
+// fetch from the following matrix
+// [[ 0,  1,  2,  3,  4],
+//  [ 1,  5,  6,  7,  8],
+//  [ 2,  6,  9, 10, 11],
+//  [ 3,  7, 10, 12, 13],
+//  [ 4,  8, 11, 13, 14]]
+int csubaev_offsets(int i, int j, int n) {
+  int larger = std::max(i, j);
+  int smaller = std::min(i, j);
+}
+
 template <typename DataT>
 struct PairDist {
   DataT Rij;
