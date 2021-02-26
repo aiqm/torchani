@@ -15,6 +15,12 @@ using torch::autograd::tensor_list;
 
 // [Computation graph for forward, backward, and double backward]
 //
+// backward
+// force = (dE / daev) * (daev / dcoord) = g * (daev / dcoord)
+//
+// double backward (to do force training, the term needed is)
+// dloss / dg = (dloss / dforce) * (dforce / dg) = (dloss / dforce) * (daev / dcoord)
+//
 //
 // [Forward]
 //            out               ^
