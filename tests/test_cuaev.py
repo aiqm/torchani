@@ -72,13 +72,13 @@ class TestCUAEV(TestCase):
         aev_grad = torch.autograd.grad(E, aev_, create_graph=True, retain_graph=True)[0]
         # graph1 backward
         aev_grad_ = aev_grad.clone().detach().requires_grad_()
-        force_ref = torch.autograd.grad(aev, coordinates, aev_grad_, create_graph=True, retain_graph=True)[0]
+        force = torch.autograd.grad(aev, coordinates, aev_grad_, create_graph=True, retain_graph=True)[0]
         # force loss backward
-        force_true = torch.randn_like(force_ref)
-        loss = torch.abs(force_true - force_ref).sum(dim=(1, 2)).mean()
+        force_true = torch.randn_like(force)
+        loss = torch.abs(force_true - force).sum(dim=(1, 2)).mean()
         aev_grad_grad = torch.autograd.grad(loss, aev_grad_, create_graph=True, retain_graph=True)[0]
 
-        return aev, force_ref, aev_grad_grad
+        return aev, force, aev_grad_grad
 
     def _double_backward_test(self, species, coordinates):
         aev, force_ref, aev_grad_grad = self._double_backward(self.aev_computer, species, coordinates)
