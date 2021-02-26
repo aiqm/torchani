@@ -207,16 +207,6 @@ __global__ void pairwiseDistance_backward(
   atomicAdd(&grad_coord[mol_idx][i][2], -grad_radial_dist_item * grad_dist_coord_z);
 }
 
-// template <typename DataT, typename IndexT = int>
-// __global__ void pairwiseForceDistance(
-//     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_force,
-//     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
-//     PairDist<DataT>* d_Rij,
-//     PairDist<DataT>* d_radialFRij,
-//     IndexT nRadialRij) {
-
-// }
-
 template <typename SpeciesT, typename DataT, typename IndexT = int, int TILEX = 8, int TILEY = 4>
 __global__ void cuAngularAEVs(
     torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
@@ -1445,15 +1435,6 @@ Tensor cuaev_double_backward(
   PairDist<float>* d_centralAtom = (PairDist<float>*)tensor_centralAtom.data_ptr();
   int* d_numPairsPerCenterAtom = (int*)tensor_numPairsPerCenterAtom.data_ptr();
   int* d_centerAtomStartIdx = (int*)tensor_centerAtomStartIdx.data_ptr();
-
-  // Tensor tensor_radialFRij = torch::empty(sizeof(PairDist<float>) * nRadialRij, d_options);
-  // PairDist<float>* d_radialFRij = (PairDist<float>*)tensor_radialFRij.data_ptr();
-
-  // dim3 block(8, 8, 1);
-  // pairwiseDistance<<<n_molecules, block, sizeof(float) * max_natoms_per_mol * 3, stream>>>(
-  //     grad_force.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
-  //     d_Rij, // d_radialFRij,
-  //     nRadialRij);
 
   int block_size = 64;
   int nblocks = (nRadialRij * 8 + block_size - 1) / block_size;

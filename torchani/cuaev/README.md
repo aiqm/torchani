@@ -1,6 +1,6 @@
 # CUAEV
 CUDA Extension for AEV calculation.
-Performance improvement is expected to be ~3X for AEV computation and ~1.5X for overall training workflow.
+Performance improvement is expected to be ~3X for AEV computation and ~1.5X for energy training, 2.6X for energy+force training.
 
 ## Requirement
 CUAEV needs the nightly version [pytorch](https://pytorch.org/) to be able to work.
@@ -44,17 +44,29 @@ cuaev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, Sh
 ## TODOs
 - [x] CUAEV Forward
 - [x] CUAEV Backwad (Force)
+- [x] CUAEV Double Backwad (Force training need aev's second derivative)
 - [ ] PBC
-- [ ] Force training (Need cuaev's second derivative)
 
 ## Benchmark
-Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/torchani/blob/master/tools/training-aev-benchmark.py) on TITAN V:
+Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/aiqm/torchani/blob/master/tools/training-aev-benchmark.py):
 
-| ANI-1x dataset (Batchsize 2560) | Energy Training         | Energy and Force Inference        |
-|---------------------------------|-------------------------|-----------------------------------|
-| Time per Epoch / Memory         | AEV / Total / GPU Mem   |  AEV  / Force / Total / GPU Mem   |
-| aev cuda extension              | 3.90s / 31.5s / 2088 MB | 3.90s / 22.6s / 43.0s / 4234 MB   |
-| aev python code                 | 23.7s / 50.2s / 3540 MB | 25.3s / 48.0s / 88.2s / 11316 MB  |
+Train ANI-1x dataset (Batchsize 2560) on Tesla V100 for 1 epoch:
+```
+RUN                Total AEV    Forward      Backward     Force        Optimizer    Others       Epoch time   GPU
+0 cu Energy        3.355 sec    4.470 sec    4.685 sec    0.0 ms       3.508 sec    2.223 sec    18.241 sec   2780.8MB
+1 py Energy        19.682 sec   4.149 sec    4.663 sec    0.0 ms       3.495 sec    2.220 sec    34.209 sec   4038.8MB
+2 cu Energy+Force  3.351 sec    4.200 sec    27.402 sec   16.514 sec   3.467 sec    4.556 sec    59.490 sec   7492.8MB
+3 py Energy+Force  19.964 sec   4.176 sec    91.866 sec   36.554 sec   3.473 sec    5.403 sec    161.435 sec  8034.8MB
+```
+
+Train ANI-1x dataset (Batchsize 1500) on GTX 1080 for 1 epoch:
+```
+RUN                Total AEV    Forward      Backward     Force        Optimizer    Others       Epoch time   GPU
+0 cu Energy        14.373 sec   10.870 sec   13.100 sec   0.0 ms       11.043 sec   2.913 sec    52.299 sec   1527.5MB
+1 py Energy        51.545 sec   10.228 sec   13.154 sec   0.0 ms       11.384 sec   2.874 sec    89.185 sec   2403.5MB
+2 cu Energy+Force  14.275 sec   10.024 sec   85.423 sec   51.380 sec   7.396 sec    5.494 sec    173.992 sec  3577.5MB
+3 py Energy+Force  51.305 sec   9.951 sec    271.078 sec  107.252 sec  7.835 sec    4.941 sec    452.362 sec  7307.5MB
+```
 
 ## Test
 ```bash
@@ -65,6 +77,7 @@ python tests/test_cuaev.py
 
 benchmark
 ```
+pip install pynvml pkbar
 python tools/training-aev-benchmark.py download/dataset/ani-1x/sample.h5
 python tools/aev-benchmark-size.py
 ```
