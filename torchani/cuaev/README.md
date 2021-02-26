@@ -4,7 +4,7 @@ Performance improvement is expected to be ~3X for AEV computation and ~1.5X for 
 
 ## Requirement
 CUAEV needs the nightly version [pytorch](https://pytorch.org/) to be able to work.
-If you you use conda, you could install it by
+If you use conda, you could install it by
 ```
 conda install pytorch torchvision torchaudio cudatoolkit={YOUR_CUDA_VERSION} -c pytorch-nightly
 ```
@@ -51,12 +51,12 @@ pip install -e . && pip install -v -e . --global-option="--cuaev"
 
 ```bash
 srun -p gpu --ntasks=1 --cpus-per-task=2 --gpus=geforce:1 --time=02:00:00 --mem=10gb  --pty -u bash -i
-module load cuda/10.0.130 gcc/7.3.0
+module load cuda/10.0.130 gcc/7.3.0 git
 conda remove --name cuaev --all -y && conda create -n cuaev python=3.8 -y
 conda activate cuaev
 # install compiled torch-cu100 because pytorch droped official build for cuda 10.0
-bash /home/jinzexue/pytorch/loadmodule
-bash /home/jinzexue/pytorch/install_deps
+. /home/jinzexue/pytorch/loadmodule  # note that there is a space after .
+. /home/jinzexue/pytorch/install_deps
 pip install $(realpath /home/jinzexue/pytorch/dist/torch-nightly-cu100.whl)
 # check if pytorch is working, should print available's gpu infomations
 python /home/jinzexue/pytorch/testcuda/testcuda.py
