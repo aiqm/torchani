@@ -171,11 +171,11 @@ __global__ void pairwiseDistanceSingleMolecule(
 }
 
 // every block compute blocksize RIJ's gradient by column major, to avoid atomicAdd waiting
-template <typename DataT, typename IndexT = int>
-__global__ void pairwiseDistance_backward(
+template <bool is_double_backward, typename DataT, typename IndexT = int>
+__global__ void pairwiseDistance_dcoord_or_dddist(
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
-    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> grad_radial_dist,
-    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_coord,
+    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> grad_dist,  // ddist for backward, dddist for double backward
+    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_coord_or_force,  // dcoord for backward, dforce(i.e. ddcoord) for double backward
     const PairDist<DataT>* d_radialRij,
     IndexT nRadialRij) {
   int gidx = threadIdx.x * gridDim.x + blockIdx.x;
@@ -193,46 +193,28 @@ __global__ void pairwiseDistance_backward(
   const DataT dely = pos_t[mol_idx][j][1] - pos_t[mol_idx][i][1];
   const DataT delz = pos_t[mol_idx][j][2] - pos_t[mol_idx][i][2];
 
-  DataT grad_dist_coord_x = delx / Rij;
-  DataT grad_dist_coord_y = dely / Rij;
-  DataT grad_dist_coord_z = delz / Rij;
-  DataT grad_radial_dist_item = grad_radial_dist[gidx];
+  if constexpr(is_double_backward) {
+    auto &grad_force = grad_coord_or_force;
+    DataT grad_force_coord_Rij_item = (grad_force[mol_idx][j][0] - grad_force[mol_idx][i][0]) * delx / Rij +
+        (grad_force[mol_idx][j][1] - grad_force[mol_idx][i][1]) * dely / Rij +
+        (grad_force[mol_idx][j][2] - grad_force[mol_idx][i][2]) * delz / Rij;
 
-  atomicAdd(&grad_coord[mol_idx][j][0], grad_radial_dist_item * grad_dist_coord_x);
-  atomicAdd(&grad_coord[mol_idx][j][1], grad_radial_dist_item * grad_dist_coord_y);
-  atomicAdd(&grad_coord[mol_idx][j][2], grad_radial_dist_item * grad_dist_coord_z);
-  atomicAdd(&grad_coord[mol_idx][i][0], -grad_radial_dist_item * grad_dist_coord_x);
-  atomicAdd(&grad_coord[mol_idx][i][1], -grad_radial_dist_item * grad_dist_coord_y);
-  atomicAdd(&grad_coord[mol_idx][i][2], -grad_radial_dist_item * grad_dist_coord_z);
-}
+    grad_dist[gidx] = grad_force_coord_Rij_item;
+  } else {
+    auto &grad_coord = grad_coord_or_force;
 
-template <typename DataT, typename IndexT = int>
-__global__ void pairwiseDistance_doublebackward(
-    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
-    torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> grad_force_coord_Rij,
-    torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> grad_force,
-    const PairDist<DataT>* d_radialRij,
-    IndexT nRadialRij) {
-  int gidx = threadIdx.x * gridDim.x + blockIdx.x;
+    DataT grad_dist_coord_x = delx / Rij;
+    DataT grad_dist_coord_y = dely / Rij;
+    DataT grad_dist_coord_z = delz / Rij;
+    DataT grad_radial_dist_item = grad_dist[gidx];
 
-  if (gidx >= nRadialRij)
-    return;
-
-  PairDist<DataT> d = d_radialRij[gidx];
-  DataT Rij = d.Rij;
-  int mol_idx = d.midx;
-  int i = d.i;
-  int j = d.j;
-
-  const DataT delx = pos_t[mol_idx][j][0] - pos_t[mol_idx][i][0];
-  const DataT dely = pos_t[mol_idx][j][1] - pos_t[mol_idx][i][1];
-  const DataT delz = pos_t[mol_idx][j][2] - pos_t[mol_idx][i][2];
-
-  DataT grad_force_coord_Rij_item = (grad_force[mol_idx][j][0] - grad_force[mol_idx][i][0]) * delx / Rij +
-      (grad_force[mol_idx][j][1] - grad_force[mol_idx][i][1]) * dely / Rij +
-      (grad_force[mol_idx][j][2] - grad_force[mol_idx][i][2]) * delz / Rij;
-
-  grad_force_coord_Rij[gidx] = grad_force_coord_Rij_item;
+    atomicAdd(&grad_coord[mol_idx][j][0], grad_radial_dist_item * grad_dist_coord_x);
+    atomicAdd(&grad_coord[mol_idx][j][1], grad_radial_dist_item * grad_dist_coord_y);
+    atomicAdd(&grad_coord[mol_idx][j][2], grad_radial_dist_item * grad_dist_coord_z);
+    atomicAdd(&grad_coord[mol_idx][i][0], -grad_radial_dist_item * grad_dist_coord_x);
+    atomicAdd(&grad_coord[mol_idx][i][1], -grad_radial_dist_item * grad_dist_coord_y);
+    atomicAdd(&grad_coord[mol_idx][i][2], -grad_radial_dist_item * grad_dist_coord_z);
+  }
 }
 
 template <typename SpeciesT, typename DataT, typename IndexT = int, int TILEX = 8, int TILEY = 4>
@@ -1144,7 +1126,7 @@ Tensor cuaev_backward(
 
   // For best result, block_size should match average molecule size (no padding) to avoid atomicAdd
   nblocks = (nRadialRij + block_size - 1) / block_size;
-  pairwiseDistance_backward<<<nblocks, block_size, 0, stream>>>(
+  pairwiseDistance_dcoord_or_dddist<false><<<nblocks, block_size, 0, stream>>>(
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       grad_radial_dist.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       grad_coord.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
@@ -1234,7 +1216,7 @@ Tensor cuaev_double_backward(
 
   int block_size = 64;
   int nblocks = (nRadialRij + block_size - 1) / block_size;
-  pairwiseDistance_doublebackward<<<nblocks, block_size, 0, stream>>>(
+  pairwiseDistance_dcoord_or_dddist<true><<<nblocks, block_size, 0, stream>>>(
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       grad_force_coord_Rij.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       grad_force.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
