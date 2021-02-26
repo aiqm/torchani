@@ -55,47 +55,57 @@ class TestCUAEV(TestCase):
         self.nn = torch.nn.Sequential(torch.nn.Linear(384, 1, False)).to(self.device)
         self.radial_length = self.aev_computer.radial_length
 
-    def _double_backward_1(self, aev_computer, species, coordinates):
-        torch.manual_seed(12345)
-        self.nn.zero_grad()
-        _, aev = aev_computer((species, coordinates))
-        E = self.nn(aev).sum()
-        force = -torch.autograd.grad(E, coordinates, create_graph=True, retain_graph=True)[0]
-        force_true = torch.randn_like(force)
-        loss = torch.abs(force_true - force).sum(dim=(1, 2)).mean()
-        loss.backward()
-        param = next(self.nn.parameters())
-        param_grad = copy.deepcopy(param.grad)
-        return aev, force, param_grad
+    def _double_backward_1_test(self, species, coordinates):
 
-    def _double_backward_2(self, aev_computer, species, coordinates):
-        """
-        # We want to get the gradient of `grad_aev`, which requires `grad_aev` to be a leaf node
-        # due to `torch.autograd`'s limitation. So we split the coord->aev->energy graph into two separate
-        # graphs: coord->aev and aev->energy, so that aev and grad_aev are now leaves.
-        """
-        torch.manual_seed(12345)
-        # graph1 input -> aev
-        coordinates = coordinates.clone().detach().requires_grad_()
-        _, aev = aev_computer((species, coordinates))
-        # graph2 aev -> E
-        aev_ = aev.clone().detach().requires_grad_()
-        E = self.nn(aev_).sum()
-        # graph2 backward
-        aev_grad = torch.autograd.grad(E, aev_, create_graph=True, retain_graph=True)[0]
-        # graph1 backward
-        aev_grad_ = aev_grad.clone().detach().requires_grad_()
-        force = torch.autograd.grad(aev, coordinates, aev_grad_, create_graph=True, retain_graph=True)[0]
-        # force loss backward
-        force_true = torch.randn_like(force)
-        loss = torch.abs(force_true - force).sum(dim=(1, 2)).mean()
-        aev_grad_grad = torch.autograd.grad(loss, aev_grad_, create_graph=True, retain_graph=True)[0]
+        def double_backward_1(aev_computer, species, coordinates):
+            torch.manual_seed(12345)
+            self.nn.zero_grad()
+            _, aev = aev_computer((species, coordinates))
+            E = self.nn(aev).sum()
+            force = -torch.autograd.grad(E, coordinates, create_graph=True, retain_graph=True)[0]
+            force_true = torch.randn_like(force)
+            loss = torch.abs(force_true - force).sum(dim=(1, 2)).mean()
+            loss.backward()
+            param = next(self.nn.parameters())
+            param_grad = copy.deepcopy(param.grad)
+            return aev, force, param_grad
 
-        return aev, force, aev_grad_grad
+        aev, force_ref, param_grad_ref = double_backward_1(self.aev_computer, species, coordinates)
+        cu_aev, force_cuaev, param_grad = double_backward_1(self.cuaev_computer, species, coordinates)
+
+        self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
+        self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}')
+        self.assertEqual(param_grad, param_grad_ref, f'\param_grad: {param_grad}\n param_grad_ref: {param_grad_ref}', atol=5e-5, rtol=5e-5)
 
     def _double_backward_2_test(self, species, coordinates):
-        aev, force_ref, aev_grad_grad = self._double_backward_2(self.aev_computer, species, coordinates)
-        cu_aev, force_cuaev, cuaev_grad_grad = self._double_backward_2(self.cuaev_computer, species, coordinates)
+
+        def double_backward_2(aev_computer, species, coordinates):
+            """
+            # We want to get the gradient of `grad_aev`, which requires `grad_aev` to be a leaf node
+            # due to `torch.autograd`'s limitation. So we split the coord->aev->energy graph into two separate
+            # graphs: coord->aev and aev->energy, so that aev and grad_aev are now leaves.
+            """
+            torch.manual_seed(12345)
+            # graph1 input -> aev
+            coordinates = coordinates.clone().detach().requires_grad_()
+            _, aev = aev_computer((species, coordinates))
+            # graph2 aev -> E
+            aev_ = aev.clone().detach().requires_grad_()
+            E = self.nn(aev_).sum()
+            # graph2 backward
+            aev_grad = torch.autograd.grad(E, aev_, create_graph=True, retain_graph=True)[0]
+            # graph1 backward
+            aev_grad_ = aev_grad.clone().detach().requires_grad_()
+            force = torch.autograd.grad(aev, coordinates, aev_grad_, create_graph=True, retain_graph=True)[0]
+            # force loss backward
+            force_true = torch.randn_like(force)
+            loss = torch.abs(force_true - force).sum(dim=(1, 2)).mean()
+            aev_grad_grad = torch.autograd.grad(loss, aev_grad_, create_graph=True, retain_graph=True)[0]
+
+            return aev, force, aev_grad_grad
+
+        aev, force_ref, aev_grad_grad = double_backward_2(self.aev_computer, species, coordinates)
+        cu_aev, force_cuaev, cuaev_grad_grad = double_backward_2(self.cuaev_computer, species, coordinates)
 
         self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}', atol=5e-5, rtol=5e-5)
         self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}', atol=5e-5, rtol=5e-5)
@@ -165,12 +175,7 @@ class TestCUAEV(TestCase):
         ], requires_grad=True, device=self.device)
         species = torch.tensor([[1, 0, 0, 0, 0], [2, 0, 0, 0, -1]], device=self.device)
 
-        aev, force_ref, param_grad_ref = self._double_backward_1(self.aev_computer, species, coordinates)
-        cu_aev, force_cuaev, param_grad = self._double_backward_1(self.cuaev_computer, species, coordinates)
-
-        self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
-        self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}')
-        self.assertEqual(param_grad, param_grad_ref, f'\param_grad: {param_grad}\n param_grad_ref: {param_grad_ref}', atol=5e-5, rtol=5e-5)
+        self._double_backward_1_test(species, coordinates)
 
     def testSimpleDoubleBackward_2(self):
         """
