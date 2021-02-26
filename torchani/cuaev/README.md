@@ -44,7 +44,7 @@ cuaev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, Sh
 ## TODOs
 - [x] CUAEV Forward
 - [x] CUAEV Backwad (Force)
-- [x] CUAEV Double Backwad (Force training need aev's second derivative)
+- [x] CUAEV Double Backwad (Force training need aev's double backward w.r.t. grad_aev)
 - [ ] PBC
 
 ## Benchmark
