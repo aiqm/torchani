@@ -13,6 +13,91 @@ using torch::Tensor;
 using torch::autograd::AutogradContext;
 using torch::autograd::tensor_list;
 
+// [Computation graph for forward, backward, and double backward]
+//
+//
+// [Forward]
+//            out               ^
+//             |                ^
+//            ...               ^
+//             |                ^
+//        e n e r g y           ^
+//           |     \            ^
+//          aev     \           ^
+//        /   |      \          ^
+//  radial  angular  params     ^
+//    /    /  |                 ^
+// dist---^  /                  ^
+//    \     /                   ^
+//     coord                    ^
+//
+// Functional relationship:
+// coord <-- input
+// dist(coord)
+// radial(dist)
+// angular(dist, coord)
+// aev = concatenate(radial, angular)
+// energy(aev, params)
+// out(energy, ....) <-- output
+//
+//
+// [Backward]
+//                   dout                     v
+//                    |                       v
+//                   ...                      v
+//                    |                       v
+//       aev params denergy  aev params       v
+//         \   |   /      \   |   /           v
+//          d a e v        dparams            v
+//          /      \____                      v
+// dist dradial         \                     v
+//   \    /              \                    v
+//   ddist dist coord   dangular dist coord   v
+//      \   /    /           \    |    /      v
+//       \_/____/             \___|___/       v
+//        |    __________________/            v
+//        |   /                               v
+//      dcoord                                v
+//        |                                   v
+//       ...                                  v
+//        |                                   v
+//       out2                                 v
+//
+// Functional relationship:
+// dout <-- input
+// denergy(dout)
+// dparams(denergy, aev, params)  <-- output
+// daev(denergy, aev, params)
+// dradial = slice(daev)
+// dangular = slice(daev)
+// ddist = radial_backward(dradial, dist) + angular_backward_dist(dangular, ...)
+//       = radial_backward(dradial, dist) + 0 (all contributions route to dcoord)
+//       = radial_backward(dradial, dist)
+// dcoord = dist_backward(ddist, coord, dist) + angular_backward_coord(dangular, coord, dist)
+// out2(dcoord, ...)  <-- output
+//
+//
+// [Double backward w.r.t params (i.e. force training)]
+//      aev [params] denergy                   ^
+//         \  |     /                          ^
+//          [ddaev]                            ^
+//          /      \_____                      ^
+// dist [ddradial]        \                    ^
+//   \    /                \                   ^
+//  [dddist] dist coord [ddangular] dist coord ^
+//       \   /    /           \      |    /    ^
+//        \_/____/             \_____|___/     ^
+//         |    _____________________/         ^
+//         |   /                               ^
+//      [ddcoord]                              ^
+//         |                                   ^
+//        ...                                  ^
+//         |                                   ^
+//       [dout2]                               ^
+//
+// Functional relationship:
+//
+
 template <typename DataT, typename IndexT = int>
 struct AEVScalarParams {
   DataT Rcr;
