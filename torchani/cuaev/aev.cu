@@ -13,6 +13,88 @@ using torch::Tensor;
 using torch::autograd::AutogradContext;
 using torch::autograd::tensor_list;
 
+// [Note: naming convention for backward and double backward]
+//
+//
+// [Forward]
+//            out               ^
+//             |                ^
+//            ...               ^
+//             |                ^
+//        e n e r g y           ^
+//           |     \            ^
+//          aev     \           ^
+//        /   |      \          ^
+//  radial  angular  params     ^
+//    /    /  |                 ^
+// dist---^  /                  ^
+//    \     /                   ^
+//     coord                    ^
+//
+// Functional relationship:
+// coord <-- input
+// dist(coord)
+// radial(dist)
+// angular(dist, coord)
+// aev = concatenate(radial, angular)
+// energy(aev, params)
+// out(energy, ....) <-- output
+//
+//
+// [Backward]
+//            dout           v
+//             |             v
+//            ...            v
+//             |             v
+//          denergy          v
+//          /      \         v
+//        daev    dparams    v
+//       /   \               v
+// dradial  dangular         v
+//    /     /  |             v
+// ddist---/  /              v
+//    \     /                v
+//     dcoord                v
+//       |                   v
+//      ...                  v
+//       |                   v
+//      out2                 v
+//
+// Functional relationship:
+// dout <-- input
+// denergy(dout)
+// dparams(denergy, aev, params)  <-- output
+// daev(denergy, aev, params)
+// dradial = slice(daev)
+// dangular = slice(daev)
+// ddist = radial_backward(dradial, dist) + angular_backward_dist(dangular, ...)
+//       = radial_backward(dradial, dist) + 0 (all contributions route to dcoord)
+//       = radial_backward(dradial, dist)
+// dcoord = dist_backward(ddist, coord, dist) + angular_backward_coord(dangular, coord, dist)
+// out2(dcoord, ...)  <-- output
+//
+//
+// [Double backward]
+//        ddout            ^
+//          |              ^
+//         ...             ^
+//          |              ^
+//       ddenergy          ^
+//       /      \          ^
+//     ddaev   ddparams    ^
+//    /     |              ^
+// dddist   |              ^
+//    \     |              ^
+//    ddcoord              ^
+//       |                 ^
+//      ...                ^
+//       |                 ^
+//     dout2               ^
+//
+// Functional relationship:
+// TODO
+//
+
 template <typename DataT, typename IndexT = int>
 struct AEVScalarParams {
   DataT Rcr;
