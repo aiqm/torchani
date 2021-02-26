@@ -650,7 +650,7 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
         DataT Rijk = (Rij + Rik) / 2;
         DataT fc_ijk = fc_ij * fc_ik;
 
-        IndexT subaev_offset = aev_params.angular_sublength + csubaev_offsets(type_j, type_k, num_species);
+        IndexT subaev_offset = aev_params.angular_sublength * csubaev_offsets(type_j, type_k, num_species);
 
         for (int itheta = tile.x; itheta < nShfZ; itheta += TILEX) {
           DataT ShfZ = ShfZ_t[itheta];
