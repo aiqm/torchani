@@ -4,7 +4,7 @@ Performance improvement is expected to be ~3X for AEV computation and ~1.5X for 
 
 ## Requirement
 CUAEV needs the nightly version [pytorch](https://pytorch.org/) to be able to work.
-If you you use conda, you could install it by
+If you use conda, you could install it by
 ```
 conda install pytorch torchvision torchaudio cudatoolkit={YOUR_CUDA_VERSION} -c pytorch-nightly
 ```
