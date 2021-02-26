@@ -75,7 +75,7 @@ class TestCUAEV(TestCase):
 
         self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
         self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n force_ref: {force_ref}')
-        self.assertEqual(param_grad, param_grad_ref, f'\param_grad: {param_grad}\n param_grad_ref: {param_grad_ref}', atol=5e-5, rtol=5e-5)
+        self.assertEqual(param_grad, param_grad_ref, f'\nparam_grad: {param_grad}\n param_grad_ref: {param_grad_ref}', atol=5e-5, rtol=5e-5)
 
     def _double_backward_2_test(self, species, coordinates):
 
