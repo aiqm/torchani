@@ -78,13 +78,16 @@ using torch::autograd::tensor_list;
 //
 //
 // [Double backward w.r.t params (i.e. force training)]
-//      aev [params] denergy                   ^
-//         \  |     /                          ^
-//          [ddaev]                            ^
+// Note: only a very limited subset of double backward is implemented
+// currently it can only do force training, there is no hessian support
+// not implemented terms are marked by $s
+//      $$$ [dparams] $$$$                     ^
+//         \_  |    __/                        ^
+//           [ddaev]                           ^
 //          /      \_____                      ^
-// dist [ddradial]        \                    ^
+// $$$$ [ddradial]        \                    ^
 //   \    /                \                   ^
-//  [dddist] dist coord [ddangular] dist coord ^
+//  [dddist] $$$$ $$$$ [ddangular] $$$$  $$$$  ^
 //       \   /    /           \      |    /    ^
 //        \_/____/             \_____|___/     ^
 //         |    _____________________/         ^
@@ -96,7 +99,13 @@ using torch::autograd::tensor_list;
 //       [dout2]                               ^
 //
 // Functional relationship:
-//
+// dout2 <-- input
+// ddcoord(dout2, ...)
+// dddist = dist_doublebackward(ddcoord, coord, dist)
+// ddradial = radial_doublebackward(dddist, dist)
+// ddangular = angular_doublebackward(ddcord, coord, dist)
+// ddaev = concatenate(ddradial, ddangular)
+// dparams(ddaev, ...) <-- output
 
 template <typename DataT, typename IndexT = int>
 struct AEVScalarParams {
@@ -257,7 +266,7 @@ __global__ void pairwiseDistanceSingleMolecule(
 
 // every block compute blocksize RIJ's gradient by column major, to avoid atomicAdd waiting
 template <bool is_double_backward, typename DataT, typename IndexT = int>
-__global__ void pairwiseDistance_dcoord_or_dddist(
+__global__ void pairwiseDistance_backward_or_doublebackward(
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits>
         grad_dist, // ddist for backward, dddist for double backward
@@ -455,7 +464,7 @@ template <
     typename IndexT = int,
     int TILEX = 8,
     int TILEY = 4>
-__global__ void cuAngularAEVs_dcoord_or_ddaev(
+__global__ void cuAngularAEVs_backward_or_doublebackward(
     torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfA_t,
@@ -463,7 +472,7 @@ __global__ void cuAngularAEVs_dcoord_or_ddaev(
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> EtaA_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> Zeta_t,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits>
-        grad_output, // for backward, this is daev, for double backward, this is dforce
+        grad_output, // for backward, this is daev, for double backward, this is dforce (i.e. ddcoord)
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits>
         grad_input, // for backward, this is dcoord, for double backward, this is ddaev
     const PairDist<DataT>* d_Rij,
@@ -773,7 +782,7 @@ __global__ void cuRadialAEVs(
 
 // every <THREADS_PER_RIJ> threads take care of 1 RIJ, and iterate <nShfR / THREADS_PER_RIJ> times
 template <bool is_double_backward, typename SpeciesT, typename DataT, int THREADS_PER_RIJ>
-__global__ void cuRadialAEVs_ddist_or_ddaev(
+__global__ void cuRadialAEVs_backward_or_doublebackward(
     torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> ShfR_t,
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> EtaR_t,
@@ -1203,7 +1212,7 @@ Tensor cuaev_backward(
 
   int block_size = 64;
   int nblocks = (nRadialRij * 8 + block_size - 1) / block_size;
-  cuRadialAEVs_ddist_or_ddaev<false, int, float, 8><<<nblocks, block_size, 0, stream>>>(
+  cuRadialAEVs_backward_or_doublebackward<false, int, float, 8><<<nblocks, block_size, 0, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
       ShfR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       EtaR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
@@ -1215,7 +1224,7 @@ Tensor cuaev_backward(
 
   // For best result, block_size should match average molecule size (no padding) to avoid atomicAdd
   nblocks = (nRadialRij + block_size - 1) / block_size;
-  pairwiseDistance_dcoord_or_dddist<false><<<nblocks, block_size, 0, stream>>>(
+  pairwiseDistance_backward_or_doublebackward<false><<<nblocks, block_size, 0, stream>>>(
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       grad_radial_dist.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       grad_coord.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
@@ -1239,7 +1248,7 @@ Tensor cuaev_backward(
   int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
 
   Tensor grad_angular_coord = torch::zeros({nAngularRij, 3}, coordinates_t.options().requires_grad(false));
-  cuAngularAEVs_dcoord_or_ddaev<false><<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
+  cuAngularAEVs_backward_or_doublebackward<false><<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       ShfA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
@@ -1305,7 +1314,7 @@ Tensor cuaev_double_backward(
 
   int block_size = 64;
   int nblocks = (nRadialRij + block_size - 1) / block_size;
-  pairwiseDistance_dcoord_or_dddist<true><<<nblocks, block_size, 0, stream>>>(
+  pairwiseDistance_backward_or_doublebackward<true><<<nblocks, block_size, 0, stream>>>(
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       grad_force_coord_Rij.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       grad_force.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
@@ -1313,7 +1322,7 @@ Tensor cuaev_double_backward(
       nRadialRij);
 
   nblocks = (nRadialRij * 8 + block_size - 1) / block_size;
-  cuRadialAEVs_ddist_or_ddaev<true, int, float, 8><<<nblocks, block_size, 0, stream>>>(
+  cuRadialAEVs_backward_or_doublebackward<true, int, float, 8><<<nblocks, block_size, 0, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
       ShfR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       EtaR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
@@ -1339,7 +1348,7 @@ Tensor cuaev_double_backward(
   const int nblocks_angAEV = (ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
   int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
 
-  cuAngularAEVs_dcoord_or_ddaev<true><<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
+  cuAngularAEVs_backward_or_doublebackward<true><<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       ShfA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
