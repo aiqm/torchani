@@ -32,10 +32,10 @@ jobs:
     - name: Fetch submodules
       run: git submodule update --init
     - name: Install cuda
-      run: ci/install_cuda.sh
+      run: source ci/install_cuda.sh
     - name: Install dependencies
       run: ci/install_dependencies.sh
     - name: Install TorchANI
-      run: python setup.py install --cuaev
+      run: python setup.py install --cuaev --only-sm80
     - name: Run cuaev test
       run: pytest tests/test_cuaev.py -v
