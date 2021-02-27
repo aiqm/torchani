@@ -13,6 +13,7 @@ FAST_BUILD_CUAEV = '--cuaev' in sys.argv
 if FAST_BUILD_CUAEV:
     sys.argv.remove('--cuaev')
 
+# Use along with --cuaev for CI (Non-GPUs system) test
 ONLY_BUILD_SM80 = '--only-sm80' in sys.argv
 if ONLY_BUILD_SM80:
     sys.argv.remove('--only-sm80')
