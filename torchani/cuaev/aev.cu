@@ -153,7 +153,7 @@ struct AEVScalarParams {
 constexpr int csubaev_offsets(int i, int j, int n) {
   int larger = std::max(i, j);
   int smaller = std::min(i, j);
-  int starting = smaller * (2 * n - smaller + 1) / 2;   // n + (n - 1) + ... + (n - smaller + 1)
+  int starting = smaller * (2 * n - smaller + 1) / 2; // n + (n - 1) + ... + (n - smaller + 1)
   int offset = larger - smaller;
   return starting + offset;
 }
