@@ -306,7 +306,7 @@ __global__ void pairwiseDistance_backward_or_doublebackward(
   const DataT dely = pos_t[mol_idx][j][1] - pos_t[mol_idx][i][1];
   const DataT delz = pos_t[mol_idx][j][2] - pos_t[mol_idx][i][2];
 
-  if constexpr (is_double_backward) {
+  if (is_double_backward) {
     auto& grad_force = grad_coord_or_force;
     DataT grad_force_coord_Rij_item = (grad_force[mol_idx][j][0] - grad_force[mol_idx][i][0]) * delx / Rij +
         (grad_force[mol_idx][j][1] - grad_force[mol_idx][i][1]) * dely / Rij +
@@ -689,7 +689,7 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
                  factor1 * grad_factor2_dist * sdz[kk] / Rik * fc_ijk +
                  factor1 * factor2 * fc_ij * grad_fc_ik * sdz[kk] / Rik);
 
-            if constexpr (is_double_backward) {
+            if (is_double_backward) {
               int atomj_idx = d_Rij[start_idx + jj].j;
               int atomk_idx = d_Rij[start_idx + kk].j;
               auto& grad_force = grad_output;
@@ -741,7 +741,7 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
     }
   }
 
-  if constexpr (!is_double_backward) {
+  if (!is_double_backward) {
     auto& grad_coord = grad_input;
     int atomi_idx = i;
     atomicAdd(&grad_coord[mol_idx][atomi_idx][0], sdix_grad);
@@ -833,7 +833,7 @@ __global__ void cuRadialAEVs_backward_or_doublebackward(
   DataT fc_grad = -0.5 * (PI / aev_params.Rcr) * sin(PI * Rij / aev_params.Rcr);
 
   DataT upstream_grad;
-  if constexpr (is_double_backward) {
+  if (is_double_backward) {
     upstream_grad = grad_dist[idx];
   }
 
@@ -844,7 +844,7 @@ __global__ void cuRadialAEVs_backward_or_doublebackward(
     DataT GmR_grad = -EtaR * (-2 * ShfR + 2 * Rij) * GmR;
     DataT jacobian = GmR_grad * fc + GmR * fc_grad;
 
-    if constexpr (is_double_backward) {
+    if (is_double_backward) {
       atomicAdd(&grad_aev[mol_idx][i][type_j * aev_params.radial_sublength + ishfr], upstream_grad * jacobian);
     } else {
       upstream_grad = grad_aev[mol_idx][i][type_j * aev_params.radial_sublength + ishfr];
