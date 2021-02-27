@@ -34,7 +34,7 @@ jobs:
     - name: Install cuda
       run: source ci/install_cuda.sh; echo $CUDA_HOME
     - name: Install dependencies
-      run: ci/install_dependencies.sh
+      run: echo $CUDA_HOME; ci/install_dependencies.sh
     - name: Install TorchANI
       run: python setup.py install --cuaev --only-sm80
     - name: Run cuaev test
