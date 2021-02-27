@@ -10,4 +10,5 @@ sudo apt-get update
 sudo apt-get -y install cuda-command-line-tools-11-0 cuda-libraries-dev-11-0
 
 export CUDA_HOME=/usr/local/cuda-11.0
+export PATH="$CUDA_HOME/bin:$PATH"
 nvcc -V
