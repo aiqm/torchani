@@ -32,7 +32,7 @@ jobs:
     - name: Fetch submodules
       run: git submodule update --init
     - name: Install cuda
-      run: source ci/install_cuda.sh
+      run: source ci/install_cuda.sh; echo $CUDA_HOME
     - name: Install dependencies
       run: ci/install_dependencies.sh
     - name: Install TorchANI
