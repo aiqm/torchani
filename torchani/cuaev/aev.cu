@@ -831,7 +831,11 @@ DataT cubMax(const DataT* d_in, int num_items, DataT* d_out, cudaStream_t stream
 }
 
 // NOTE: assumes size of EtaA_t = Zeta_t = EtaR_t = 1
-Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const AEVScalarParams& aev_params) {
+void cuaev_forward(
+    const Tensor& coordinates_t,
+    const Tensor& species_t,
+    const AEVScalarParams& aev_params,
+    Result& result) {
   TORCH_CHECK(
       (species_t.dtype() == torch::kInt32) && (coordinates_t.dtype() == torch::kFloat32), "Unsupported input type");
   TORCH_CHECK(
@@ -848,8 +852,9 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
   auto aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length}, coordinates_t.options());
 
   if (species_t.numel() == 0) {
-    return {
-        aev_t, Tensor(), Tensor(), Tensor(), 0, 0, 0, Tensor(), Tensor(), Tensor(), 0, 0, 0, coordinates_t, species_t};
+    result.aev_t = aev_t;
+    result.coordinates_t = coordinates_t;
+    result.species_t = species_t;
   }
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
@@ -989,28 +994,25 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
         angular_length_aligned,
         ncenter_atoms);
 
-    return {aev_t,
-            tensor_Rij,
-            tensor_radialRij,
-            tensor_angularRij,
-            total_natom_pairs,
-            nRadialRij,
-            nAngularRij,
-            tensor_centralAtom,
-            tensor_numPairsPerCenterAtom,
-            tensor_centerAtomStartIdx,
-            maxnbrs_per_atom_aligned,
-            angular_length_aligned,
-            ncenter_atoms,
-            coordinates_t,
-            species_t};
+    result.aev_t = aev_t;
+    result.tensor_Rij = tensor_Rij;
+    result.tensor_radialRij = tensor_radialRij;
+    result.tensor_angularRij = tensor_angularRij;
+    result.total_natom_pairs = total_natom_pairs;
+    result.nRadialRij = nRadialRij;
+    result.nAngularRij = nAngularRij;
+    result.tensor_centralAtom = tensor_centralAtom;
+    result.tensor_numPairsPerCenterAtom = tensor_numPairsPerCenterAtom;
+    result.tensor_centerAtomStartIdx = tensor_centerAtomStartIdx;
+    result.maxnbrs_per_atom_aligned = maxnbrs_per_atom_aligned;
+    result.angular_length_aligned = angular_length_aligned;
+    result.ncenter_atoms = ncenter_atoms;
+    result.coordinates_t = coordinates_t;
+    result.species_t = species_t;
   }
 }
 
-Tensor cuaev_backward(
-    const Tensor& grad_output,
-    const AEVScalarParams& aev_params,
-    const torch::intrusive_ptr<Result>& res_pt) {
+Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_params, Result* res_pt) {
   using namespace torch::indexing;
   Tensor coordinates_t = res_pt->coordinates_t;
   Tensor species_t = res_pt->species_t;
@@ -1095,10 +1097,7 @@ Tensor cuaev_backward(
   return grad_coord;
 }
 
-Tensor cuaev_double_backward(
-    const Tensor& grad_force,
-    const AEVScalarParams& aev_params,
-    const torch::intrusive_ptr<Result>& res_pt) {
+Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, Result* res_pt) {
   using namespace torch::indexing;
   Tensor coordinates_t = res_pt->coordinates_t;
   Tensor species_t = res_pt->species_t;

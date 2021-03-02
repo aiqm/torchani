@@ -122,7 +122,7 @@ struct AEVScalarParams {
   Tensor ShfZ_t;
 };
 
-struct Result : torch::CustomClassHolder {
+struct Result {
   Tensor aev_t;
   Tensor tensor_Rij;
   Tensor tensor_radialRij;
@@ -139,6 +139,23 @@ struct Result : torch::CustomClassHolder {
   Tensor coordinates_t;
   Tensor species_t;
 
+  Result() {
+    aev_t = Tensor();
+    tensor_Rij = Tensor();
+    tensor_radialRij = Tensor();
+    tensor_angularRij = Tensor();
+    total_natom_pairs = 0;
+    nRadialRij = 0;
+    nAngularRij = 0;
+    tensor_centralAtom = Tensor();
+    tensor_numPairsPerCenterAtom = Tensor();
+    tensor_centerAtomStartIdx = Tensor();
+    maxnbrs_per_atom_aligned = 0;
+    angular_length_aligned = 0;
+    ncenter_atoms = 0;
+    coordinates_t = Tensor();
+    species_t = Tensor();
+  }
   Result(
       Tensor aev_t_,
       Tensor tensor_Rij_,
@@ -189,20 +206,19 @@ struct Result : torch::CustomClassHolder {
   }
 };
 
-Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const AEVScalarParams& aev_params);
-
-Tensor cuaev_backward(
-    const Tensor& grad_output,
+void cuaev_forward(
+    const Tensor& coordinates_t,
+    const Tensor& species_t,
     const AEVScalarParams& aev_params,
-    const torch::intrusive_ptr<Result>& res_pt);
+    Result& result);
 
-Tensor cuaev_double_backward(
-    const Tensor& grad_force,
-    const AEVScalarParams& aev_params,
-    const torch::intrusive_ptr<Result>& res_pt);
+Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_params, Result* res_pt);
+
+Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, Result* res_pt);
 
 struct CuaevComputer : torch::CustomClassHolder {
   AEVScalarParams aev_params;
+  Result result;
 
   CuaevComputer(
       double Rcr,
@@ -214,7 +230,6 @@ struct CuaevComputer : torch::CustomClassHolder {
       const Tensor& ShfA_t,
       const Tensor& ShfZ_t,
       int64_t num_species) {
-    // aev parameters
     aev_params.Rca = Rca;
     aev_params.Rcr = Rcr;
     aev_params.num_species = num_species;
@@ -232,18 +247,18 @@ struct CuaevComputer : torch::CustomClassHolder {
               << "\n";
   };
 
-  Result forward(const Tensor& coordinates_t, const Tensor& species_t) {
-    Result res = cuaev_forward(coordinates_t, species_t, aev_params);
-    return res;
+  Tensor forward(const Tensor& coordinates_t, const Tensor& species_t) {
+    cuaev_forward(coordinates_t, species_t, aev_params, result);
+    return result.aev_t;
   };
 
-  Tensor backward(const Tensor& grad_e_aev, const torch::intrusive_ptr<Result>& res_pt) {
-    Tensor force = cuaev_backward(grad_e_aev, aev_params, res_pt);
+  Tensor backward(const Tensor& grad_e_aev) {
+    Tensor force = cuaev_backward(grad_e_aev, aev_params, &result);
     return force;
   };
 
-  Tensor double_backward(const Tensor& grad_force, const torch::intrusive_ptr<Result>& res_pt) {
-    Tensor grad_grad_aev = cuaev_double_backward(grad_force, aev_params, res_pt);
+  Tensor double_backward(const Tensor& grad_force) {
+    Tensor grad_grad_aev = cuaev_double_backward(grad_force, aev_params, &result);
     return grad_grad_aev;
   };
 };
