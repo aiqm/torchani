@@ -130,7 +130,7 @@ TORCH_LIBRARY(cuaev, m) {
 }
 
 TORCH_LIBRARY_IMPL(cuaev, Autograd, m) {
-  m.impl("cuComputeAEV", cuaev_autograd);
+  m.impl("run", cuaev_autograd);
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {}
