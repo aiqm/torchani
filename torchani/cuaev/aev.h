@@ -3,6 +3,7 @@
 
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <torch/extension.h>
+#include <iostream>
 using torch::Tensor;
 
 // [Computation graph for forward, backward, and double backward]
@@ -182,6 +183,7 @@ struct Result : torch::CustomClassHolder {
     coordinates_t = Tensor();
     species_t = Tensor();
   }
+
   ~Result() {
     this->release();
   }
@@ -226,6 +228,8 @@ struct CuaevComputer : torch::CustomClassHolder {
     aev_params.Zeta_t = Zeta_t;
     aev_params.ShfA_t = ShfA_t;
     aev_params.ShfZ_t = ShfZ_t;
+    std::cout << "hello"
+              << "\n";
   };
 
   Result forward(const Tensor& coordinates_t, const Tensor& species_t) {

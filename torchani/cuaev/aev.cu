@@ -214,7 +214,11 @@ __global__ void cuAngularAEVs(
     PairDist<DataT>* d_centralAtom,
     int* d_nPairsPerCenterAtom,
     int* d_centerAtomStartIdx,
-    AEVScalarParams aev_params,
+    float Rca,
+    int angular_length,
+    int angular_sublength,
+    int radial_length,
+    int num_species,
     int maxnbrs_per_atom_aligned,
     int angular_length_aligned,
     int ncentral_atoms) {
@@ -257,8 +261,6 @@ __global__ void cuAngularAEVs(
 
   IndexT nShfA = ShfA_t.size(0);
   IndexT nShfZ = ShfZ_t.size(0);
-  DataT Rca = aev_params.Rca;
-  IndexT num_species = aev_params.num_species;
 
   PairDist<DataT> d = d_centralAtom[cIdx];
   int start_idx = d_centerAtomStartIdx[cIdx];
@@ -268,7 +270,7 @@ __global__ void cuAngularAEVs(
   int i = d.i;
   int mol_idx = d.midx;
 
-  for (int iaev = laneIdx; iaev < aev_params.angular_length; iaev += threads_per_catom) {
+  for (int iaev = laneIdx; iaev < angular_length; iaev += threads_per_catom) {
     saev[iaev] = 0;
   }
 
@@ -320,7 +322,7 @@ __global__ void cuAngularAEVs(
         DataT Rijk = (Rij + Rik) / 2;
         DataT fc_ijk = fc_ij * fc_ik;
 
-        IndexT subaev_offset = aev_params.angular_sublength * csubaev_offsets(type_j, type_k, num_species);
+        IndexT subaev_offset = angular_sublength * csubaev_offsets(type_j, type_k, num_species);
 
         for (int itheta = tile.x; itheta < nShfZ; itheta += TILEX) {
           DataT ShfZ = ShfZ_t[itheta];
@@ -340,8 +342,8 @@ __global__ void cuAngularAEVs(
     }
   }
 
-  for (int iaev = laneIdx; iaev < aev_params.angular_length; iaev += threads_per_catom) {
-    aev_t[mol_idx][i][aev_params.radial_length + iaev] = saev[iaev];
+  for (int iaev = laneIdx; iaev < angular_length; iaev += threads_per_catom) {
+    aev_t[mol_idx][i][radial_length + iaev] = saev[iaev];
   }
 }
 
@@ -367,7 +369,11 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
     const PairDist<DataT>* d_centralAtom,
     int* d_nPairsPerCenterAtom,
     int* d_centerAtomStartIdx,
-    AEVScalarParams aev_params,
+    float Rca,
+    int angular_length,
+    int angular_sublength,
+    int radial_length,
+    int num_species,
     int maxnbrs_per_atom_aligned,
     int angular_length_aligned,
     int ncentral_atoms) {
@@ -419,8 +425,6 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
 
   IndexT nShfA = ShfA_t.size(0);
   IndexT nShfZ = ShfZ_t.size(0);
-  DataT Rca = aev_params.Rca;
-  IndexT num_species = aev_params.num_species;
 
   PairDist<DataT> d = d_centralAtom[cIdx];
   int start_idx = d_centerAtomStartIdx[cIdx];
@@ -521,7 +525,7 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
         DataT Rijk = (Rij + Rik) / 2;
         DataT fc_ijk = fc_ij * fc_ik;
 
-        IndexT subaev_offset = aev_params.angular_sublength * csubaev_offsets(type_j, type_k, num_species);
+        IndexT subaev_offset = angular_sublength * csubaev_offsets(type_j, type_k, num_species);
 
         for (int itheta = tile.x; itheta < nShfZ; itheta += TILEX) {
           DataT ShfZ = ShfZ_t[itheta];
@@ -572,11 +576,10 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
               grad_vik_y *= (grad_force[mol_idx][atomk_idx][1] - grad_force[mol_idx][i][1]);
               grad_vik_z *= (grad_force[mol_idx][atomk_idx][2] - grad_force[mol_idx][i][2]);
               atomicAdd(
-                  &grad_grad_aev[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta],
+                  &grad_grad_aev[mol_idx][i][radial_length + subaev_offset + ishfr * nShfZ + itheta],
                   grad_vij_x + grad_vij_y + grad_vij_z + grad_vik_x + grad_vik_y + grad_vik_z);
             } else {
-              DataT grad_output_item =
-                  grad_output[mol_idx][i][aev_params.radial_length + subaev_offset + ishfr * nShfZ + itheta];
+              DataT grad_output_item = grad_output[mol_idx][i][radial_length + subaev_offset + ishfr * nShfZ + itheta];
               grad_vij_x *= grad_output_item;
               grad_vij_y *= grad_output_item;
               grad_vij_z *= grad_output_item;
@@ -636,7 +639,9 @@ __global__ void cuRadialAEVs(
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> EtaR_t,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> aev_t,
     PairDist<DataT>* d_Rij,
-    AEVScalarParams aev_params,
+    float Rcr,
+    int radial_length,
+    int radial_sublength,
     int nRadialRij) {
   int gidx = blockIdx.x * blockDim.x + threadIdx.x;
   int idx = gidx / THREADS_PER_RIJ;
@@ -657,14 +662,14 @@ __global__ void cuRadialAEVs(
 
   SpeciesT type_j = species_t[mol_idx][j];
 
-  DataT fc = 0.5 * cos(PI * Rij / aev_params.Rcr) + 0.5;
+  DataT fc = 0.5 * cos(PI * Rij / Rcr) + 0.5;
 
   for (int ishfr = laneIdx; ishfr < nShfR; ishfr += THREADS_PER_RIJ) {
     DataT ShfR = ShfR_t[ishfr];
 
     DataT GmR = 0.25 * exp(-EtaR * (Rij - ShfR) * (Rij - ShfR)) * fc;
 
-    atomicAdd(&aev_t[mol_idx][i][type_j * aev_params.radial_sublength + ishfr], GmR);
+    atomicAdd(&aev_t[mol_idx][i][type_j * radial_sublength + ishfr], GmR);
   }
 }
 
@@ -679,7 +684,9 @@ __global__ void cuRadialAEVs_backward_or_doublebackward(
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits>
         grad_dist, // ddist for backward, dddist for double backward
     const PairDist<DataT>* d_Rij,
-    AEVScalarParams aev_params,
+    float Rcr,
+    int radial_length,
+    int radial_sublength,
     int nRadialRij) {
   int gidx = blockIdx.x * blockDim.x + threadIdx.x;
   int idx = gidx / THREADS_PER_RIJ;
@@ -700,8 +707,8 @@ __global__ void cuRadialAEVs_backward_or_doublebackward(
 
   SpeciesT type_j = species_t[mol_idx][j];
 
-  DataT fc = 0.5 * cos(PI * Rij / aev_params.Rcr) + 0.5;
-  DataT fc_grad = -0.5 * (PI / aev_params.Rcr) * sin(PI * Rij / aev_params.Rcr);
+  DataT fc = 0.5 * cos(PI * Rij / Rcr) + 0.5;
+  DataT fc_grad = -0.5 * (PI / Rcr) * sin(PI * Rij / Rcr);
 
   DataT upstream_grad;
   if (is_double_backward) {
@@ -716,9 +723,9 @@ __global__ void cuRadialAEVs_backward_or_doublebackward(
     DataT jacobian = GmR_grad * fc + GmR * fc_grad;
 
     if (is_double_backward) {
-      atomicAdd(&grad_aev[mol_idx][i][type_j * aev_params.radial_sublength + ishfr], upstream_grad * jacobian);
+      atomicAdd(&grad_aev[mol_idx][i][type_j * radial_sublength + ishfr], upstream_grad * jacobian);
     } else {
-      upstream_grad = grad_aev[mol_idx][i][type_j * aev_params.radial_sublength + ishfr];
+      upstream_grad = grad_aev[mol_idx][i][type_j * radial_sublength + ishfr];
       atomicAdd(&grad_dist[idx], upstream_grad * jacobian);
     }
   }
@@ -909,7 +916,9 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
       aev_params.EtaR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       aev_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       d_radialRij,
-      aev_params,
+      aev_params.Rcr,
+      aev_params.radial_length,
+      aev_params.radial_sublength,
       nRadialRij);
 
   // reuse buffer allocated for all Rij
@@ -971,12 +980,15 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
         d_centralAtom,
         d_numPairsPerCenterAtom,
         d_centerAtomStartIdx,
-        aev_params,
+        aev_params.Rca,
+        aev_params.angular_length,
+        aev_params.angular_sublength,
+        aev_params.radial_length,
+        aev_params.num_species,
         maxnbrs_per_atom_aligned,
         angular_length_aligned,
         ncenter_atoms);
 
-    // std::cout<< aev_params.ShfA_t[0] << aev_params.ShfA_t.device << "\n";
     return {aev_t,
             tensor_Rij,
             tensor_radialRij,
@@ -1027,7 +1039,9 @@ Tensor cuaev_backward(
       grad_output.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       grad_radial_dist.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       d_radialRij,
-      aev_params,
+      aev_params.Rcr,
+      aev_params.radial_length,
+      aev_params.radial_sublength,
       res_pt->nRadialRij);
 
   // For best result, block_size should match average molecule size (no padding) to avoid atomicAdd
@@ -1069,7 +1083,11 @@ Tensor cuaev_backward(
       d_centralAtom,
       d_numPairsPerCenterAtom,
       d_centerAtomStartIdx,
-      aev_params,
+      aev_params.Rca,
+      aev_params.angular_length,
+      aev_params.angular_sublength,
+      aev_params.radial_length,
+      aev_params.num_species,
       res_pt->maxnbrs_per_atom_aligned,
       res_pt->angular_length_aligned,
       res_pt->ncenter_atoms);
@@ -1121,7 +1139,9 @@ Tensor cuaev_double_backward(
       grad_grad_aev.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       grad_force_coord_Rij.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       d_radialRij,
-      aev_params,
+      aev_params.Rcr,
+      aev_params.radial_length,
+      aev_params.radial_sublength,
       res_pt->nRadialRij);
 
   auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
@@ -1153,7 +1173,11 @@ Tensor cuaev_double_backward(
       d_centralAtom,
       d_numPairsPerCenterAtom,
       d_centerAtomStartIdx,
-      aev_params,
+      aev_params.Rca,
+      aev_params.angular_length,
+      aev_params.angular_sublength,
+      aev_params.radial_length,
+      aev_params.num_species,
       res_pt->maxnbrs_per_atom_aligned,
       res_pt->angular_length_aligned,
       res_pt->ncenter_atoms);
