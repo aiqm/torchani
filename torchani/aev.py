@@ -12,8 +12,10 @@ has_cuaev = 'torchani.cuaev' in importlib_metadata.metadata(__package__).get_all
 if has_cuaev:
     # We need to import torchani.cuaev to tell PyTorch to initialize torch.ops.cuaev
     from . import cuaev  # type: ignore # noqa: F401
+    CuaevComputerType = torch.classes.cuaev.CuaevComputer
 else:
     warnings.warn("cuaev not installed")
+    CuaevComputerType = torch.classes
 
 if sys.version_info[:2] < (3, 7):
     class FakeFinal:
@@ -323,14 +325,19 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     return torch.cat([radial_aev, angular_aev], dim=-1)
 
 
-def compute_cuaev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
-                  constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
-                  num_species: int, cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
-    Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
+# def compute_cuaev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
+#                   constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
+#                   num_species: int, cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
+#     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
 
-    assert cell_shifts is None, "Current implementation of cuaev does not support pbc."
+#     assert cell_shifts is None, "Current implementation of cuaev does not support pbc."
+#     species_int = species.to(torch.int32)
+#     return torch.ops.cuaev.cuComputeAEV(coordinates, species_int, Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), num_species)
+
+def compute_cuaev(species: Tensor, coordinates: Tensor, cuaev_computer: CuaevComputerType):
     species_int = species.to(torch.int32)
-    return torch.ops.cuaev.cuComputeAEV(coordinates, species_int, Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), num_species)
+    aev = torch.ops.cuaev.run(coordinates, species_int, cuaev_computer)
+    return aev
 
 
 if not has_cuaev:
@@ -425,6 +432,7 @@ class AEVComputer(torch.nn.Module):
         if self.use_cuda_extension:
             self.init_cuaev_computer()
 
+    @torch.jit.unused
     def init_cuaev_computer(self):
         self.cuaev_computer = torch.classes.cuaev.CuaevComputer(self.Rcr, self.Rca, self.EtaR.flatten(), self.ShfR.flatten(), self.EtaA.flatten(), self.Zeta.flatten(), self.ShfA.flatten(), self.ShfZ.flatten(), self.num_species)
 
@@ -512,12 +520,10 @@ class AEVComputer(torch.nn.Module):
         assert coordinates.shape[-1] == 3
 
         if self.use_cuda_extension:
-            assert (cell is None and pbc is None), "cuaev does not support PBC"
-            # aev = compute_cuaev(species, coordinates, self.triu_index, self.constants(), self.num_species, None)
+            assert (cell is None and pbc is None), "cuaev currently does not support PBC"
             if self.cuaev_computer is None:
                 self.init_cuaev_computer()
-            species_int = species.to(torch.int32)
-            aev = torch.ops.cuaev.run(coordinates, species_int, self.cuaev_computer)
+            aev = compute_cuaev(species, coordinates, self.cuaev_computer)
             return SpeciesAEV(species, aev)
 
         if cell is None and pbc is None:
