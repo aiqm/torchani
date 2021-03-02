@@ -1,6 +1,5 @@
 #include <aev.h>
 #include <torch/extension.h>
-#include <iostream>
 using torch::Tensor;
 using torch::autograd::AutogradContext;
 using torch::autograd::tensor_list;
@@ -61,13 +60,6 @@ CuaevComputer::CuaevComputer(
 }
 
 Tensor CuaevComputer::forward(const Tensor& coordinates_t, const Tensor& species_t) {
-  if (species_t.numel() == 0) {
-    Tensor aev_t = torch::zeros(
-        {species_t.size(0), species_t.size(1), aev_params.radial_length + aev_params.angular_length},
-        coordinates_t.options());
-    std::cout << "hello" << '\n';
-    return aev_t;
-  }
   cuaev_forward(coordinates_t, species_t, aev_params, result);
   return result.aev_t;
 }
@@ -128,7 +120,6 @@ Tensor cuaev_only_forward(
     const Tensor& coordinates_t,
     const Tensor& species_t,
     const torch::intrusive_ptr<CuaevComputer>& cuaev_computer) {
-  std::cout << "1111" << '\n';
   Tensor aev_t = cuaev_computer->forward(coordinates_t, species_t);
   return aev_t;
 }
