@@ -1,8 +1,8 @@
+#include <aev.h>
 #include <thrust/equal.h>
 #include <torch/extension.h>
 #include <cub/cub.cuh>
 #include <vector>
-#include <aev.h>
 
 #include <ATen/Context.h>
 #include <THC/THC.h>
@@ -13,7 +13,6 @@
 using torch::Tensor;
 using torch::autograd::AutogradContext;
 using torch::autograd::tensor_list;
-
 
 // fetch from the following matrix
 // [[ 0,  1,  2,  3,  4],
@@ -866,7 +865,8 @@ Result cuaev_forward(
   auto aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length}, coordinates_t.options());
 
   if (species_t.numel() == 0) {
-    return {aev_t, aev_params, Tensor(), Tensor(), Tensor(), 0, 0, 0, Tensor(), Tensor(), Tensor(), 0, 0, 0};
+    return {
+        aev_t, Tensor(), Tensor(), Tensor(), 0, 0, 0, Tensor(), Tensor(), Tensor(), 0, 0, 0, coordinates_t, species_t};
   }
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
@@ -1000,7 +1000,6 @@ Result cuaev_forward(
         ncenter_atoms);
 
     return {aev_t,
-            aev_params,
             tensor_Rij,
             tensor_radialRij,
             tensor_angularRij,
@@ -1012,7 +1011,9 @@ Result cuaev_forward(
             tensor_centerAtomStartIdx,
             maxnbrs_per_atom_aligned,
             angular_length_aligned,
-            ncenter_atoms};
+            ncenter_atoms,
+            coordinates_t,
+            species_t};
   }
 }
 
