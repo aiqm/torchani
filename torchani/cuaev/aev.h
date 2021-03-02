@@ -212,9 +212,9 @@ void cuaev_forward(
     const AEVScalarParams& aev_params,
     Result& result);
 
-Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_params, Result* res_pt);
+Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_params, const Result& result);
 
-Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, Result* res_pt);
+Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, const Result& result);
 
 struct CuaevComputer : torch::CustomClassHolder {
   AEVScalarParams aev_params;
@@ -243,8 +243,6 @@ struct CuaevComputer : torch::CustomClassHolder {
     aev_params.Zeta_t = Zeta_t;
     aev_params.ShfA_t = ShfA_t;
     aev_params.ShfZ_t = ShfZ_t;
-    std::cout << "hello"
-              << "\n";
   };
 
   Tensor forward(const Tensor& coordinates_t, const Tensor& species_t) {
@@ -253,12 +251,12 @@ struct CuaevComputer : torch::CustomClassHolder {
   };
 
   Tensor backward(const Tensor& grad_e_aev) {
-    Tensor force = cuaev_backward(grad_e_aev, aev_params, &result);
+    Tensor force = cuaev_backward(grad_e_aev, aev_params, result);
     return force;
   };
 
   Tensor double_backward(const Tensor& grad_force) {
-    Tensor grad_grad_aev = cuaev_double_backward(grad_force, aev_params, &result);
+    Tensor grad_grad_aev = cuaev_double_backward(grad_force, aev_params, result);
     return grad_grad_aev;
   };
 };

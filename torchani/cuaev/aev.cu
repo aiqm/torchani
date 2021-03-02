@@ -1012,10 +1012,10 @@ void cuaev_forward(
   }
 }
 
-Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_params, Result* res_pt) {
+Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_params, const Result& result) {
   using namespace torch::indexing;
-  Tensor coordinates_t = res_pt->coordinates_t;
-  Tensor species_t = res_pt->species_t;
+  Tensor coordinates_t = result.coordinates_t;
+  Tensor species_t = result.species_t;
 
   const int n_molecules = coordinates_t.size(0);
   const int max_natoms_per_mol = coordinates_t.size(1);
@@ -1023,17 +1023,17 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
 
   auto grad_coord = torch::zeros(coordinates_t.sizes(), coordinates_t.options().requires_grad(false)); // [2, 5, 3]
 
-  PairDist<float>* d_Rij = (PairDist<float>*)res_pt->tensor_Rij.data_ptr();
-  PairDist<float>* d_radialRij = (PairDist<float>*)res_pt->tensor_radialRij.data_ptr();
-  PairDist<float>* d_angularRij = (PairDist<float>*)res_pt->tensor_angularRij.data_ptr();
-  PairDist<float>* d_centralAtom = (PairDist<float>*)res_pt->tensor_centralAtom.data_ptr();
-  int* d_numPairsPerCenterAtom = (int*)res_pt->tensor_numPairsPerCenterAtom.data_ptr();
-  int* d_centerAtomStartIdx = (int*)res_pt->tensor_centerAtomStartIdx.data_ptr();
+  PairDist<float>* d_Rij = (PairDist<float>*)result.tensor_Rij.data_ptr();
+  PairDist<float>* d_radialRij = (PairDist<float>*)result.tensor_radialRij.data_ptr();
+  PairDist<float>* d_angularRij = (PairDist<float>*)result.tensor_angularRij.data_ptr();
+  PairDist<float>* d_centralAtom = (PairDist<float>*)result.tensor_centralAtom.data_ptr();
+  int* d_numPairsPerCenterAtom = (int*)result.tensor_numPairsPerCenterAtom.data_ptr();
+  int* d_centerAtomStartIdx = (int*)result.tensor_centerAtomStartIdx.data_ptr();
 
-  Tensor grad_radial_dist = torch::zeros(res_pt->nRadialRij, coordinates_t.options().requires_grad(false));
+  Tensor grad_radial_dist = torch::zeros(result.nRadialRij, coordinates_t.options().requires_grad(false));
 
   int block_size = 64;
-  int nblocks = (res_pt->nRadialRij * 8 + block_size - 1) / block_size;
+  int nblocks = (result.nRadialRij * 8 + block_size - 1) / block_size;
   cuRadialAEVs_backward_or_doublebackward<false, int, float, 8><<<nblocks, block_size, 0, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
       aev_params.ShfR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
@@ -1044,16 +1044,16 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
       aev_params.Rcr,
       aev_params.radial_length,
       aev_params.radial_sublength,
-      res_pt->nRadialRij);
+      result.nRadialRij);
 
   // For best result, block_size should match average molecule size (no padding) to avoid atomicAdd
-  nblocks = (res_pt->nRadialRij + block_size - 1) / block_size;
+  nblocks = (result.nRadialRij + block_size - 1) / block_size;
   pairwiseDistance_backward_or_doublebackward<false><<<nblocks, block_size, 0, stream>>>(
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       grad_radial_dist.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       grad_coord.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       d_radialRij,
-      res_pt->nRadialRij);
+      result.nRadialRij);
 
   auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
     int sxyz = sizeof(float) * max_nbrs * 3;
@@ -1068,10 +1068,10 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
 
   block_size = 32;
   const int nthreads_per_catom = 32;
-  const int nblocks_angAEV = (res_pt->ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
-  int smem_size_aligned = smem_size(res_pt->maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
+  const int nblocks_angAEV = (result.ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
+  int smem_size_aligned = smem_size(result.maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
 
-  Tensor grad_angular_coord = torch::zeros({res_pt->nAngularRij, 3}, coordinates_t.options().requires_grad(false));
+  Tensor grad_angular_coord = torch::zeros({result.nAngularRij, 3}, coordinates_t.options().requires_grad(false));
   cuAngularAEVs_backward_or_doublebackward<false><<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
@@ -1090,17 +1090,17 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
       aev_params.angular_sublength,
       aev_params.radial_length,
       aev_params.num_species,
-      res_pt->maxnbrs_per_atom_aligned,
-      res_pt->angular_length_aligned,
-      res_pt->ncenter_atoms);
+      result.maxnbrs_per_atom_aligned,
+      result.angular_length_aligned,
+      result.ncenter_atoms);
 
   return grad_coord;
 }
 
-Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, Result* res_pt) {
+Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, const Result& result) {
   using namespace torch::indexing;
-  Tensor coordinates_t = res_pt->coordinates_t;
-  Tensor species_t = res_pt->species_t;
+  Tensor coordinates_t = result.coordinates_t;
+  Tensor species_t = result.species_t;
 
   const int n_molecules = coordinates_t.size(0);
   const int max_natoms_per_mol = coordinates_t.size(1);
@@ -1112,25 +1112,25 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
       {coordinates_t.size(0), coordinates_t.size(1), aev_length},
       coordinates_t.options().requires_grad(false)); // [2, 5, 384]
 
-  PairDist<float>* d_Rij = (PairDist<float>*)res_pt->tensor_Rij.data_ptr();
-  PairDist<float>* d_radialRij = (PairDist<float>*)res_pt->tensor_radialRij.data_ptr();
-  PairDist<float>* d_angularRij = (PairDist<float>*)res_pt->tensor_angularRij.data_ptr();
-  PairDist<float>* d_centralAtom = (PairDist<float>*)res_pt->tensor_centralAtom.data_ptr();
-  int* d_numPairsPerCenterAtom = (int*)res_pt->tensor_numPairsPerCenterAtom.data_ptr();
-  int* d_centerAtomStartIdx = (int*)res_pt->tensor_centerAtomStartIdx.data_ptr();
+  PairDist<float>* d_Rij = (PairDist<float>*)result.tensor_Rij.data_ptr();
+  PairDist<float>* d_radialRij = (PairDist<float>*)result.tensor_radialRij.data_ptr();
+  PairDist<float>* d_angularRij = (PairDist<float>*)result.tensor_angularRij.data_ptr();
+  PairDist<float>* d_centralAtom = (PairDist<float>*)result.tensor_centralAtom.data_ptr();
+  int* d_numPairsPerCenterAtom = (int*)result.tensor_numPairsPerCenterAtom.data_ptr();
+  int* d_centerAtomStartIdx = (int*)result.tensor_centerAtomStartIdx.data_ptr();
 
-  auto grad_force_coord_Rij = torch::zeros({res_pt->nRadialRij}, coordinates_t.options().requires_grad(false));
+  auto grad_force_coord_Rij = torch::zeros({result.nRadialRij}, coordinates_t.options().requires_grad(false));
 
   int block_size = 64;
-  int nblocks = (res_pt->nRadialRij + block_size - 1) / block_size;
+  int nblocks = (result.nRadialRij + block_size - 1) / block_size;
   pairwiseDistance_backward_or_doublebackward<true><<<nblocks, block_size, 0, stream>>>(
       coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       grad_force_coord_Rij.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       grad_force.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       d_radialRij,
-      res_pt->nRadialRij);
+      result.nRadialRij);
 
-  nblocks = (res_pt->nRadialRij * 8 + block_size - 1) / block_size;
+  nblocks = (result.nRadialRij * 8 + block_size - 1) / block_size;
   cuRadialAEVs_backward_or_doublebackward<true, int, float, 8><<<nblocks, block_size, 0, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
       aev_params.ShfR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
@@ -1141,7 +1141,7 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
       aev_params.Rcr,
       aev_params.radial_length,
       aev_params.radial_sublength,
-      res_pt->nRadialRij);
+      result.nRadialRij);
 
   auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
     int sxyz = sizeof(float) * max_nbrs * 3;
@@ -1156,8 +1156,8 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
 
   block_size = 32;
   const int nthreads_per_catom = 32;
-  const int nblocks_angAEV = (res_pt->ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
-  int smem_size_aligned = smem_size(res_pt->maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
+  const int nblocks_angAEV = (result.ncenter_atoms * nthreads_per_catom + block_size - 1) / block_size;
+  int smem_size_aligned = smem_size(result.maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
 
   cuAngularAEVs_backward_or_doublebackward<true><<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
       species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
@@ -1177,9 +1177,9 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
       aev_params.angular_sublength,
       aev_params.radial_length,
       aev_params.num_species,
-      res_pt->maxnbrs_per_atom_aligned,
-      res_pt->angular_length_aligned,
-      res_pt->ncenter_atoms);
+      result.maxnbrs_per_atom_aligned,
+      result.angular_length_aligned,
+      result.ncenter_atoms);
 
   return grad_grad_aev;
 }
