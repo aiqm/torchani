@@ -119,15 +119,6 @@ struct AEVScalarParams {
   Tensor Zeta_t;
   Tensor ShfA_t;
   Tensor ShfZ_t;
-
-  // AEVScalarParams() = default;
-
-  // AEVScalarParams(const torch::IValue& aev_params_ivalue);
-
-  // operator torch::IValue() {
-  //   return torch::IValue(std::make_tuple(
-  //       (double)Rcr, (double)Rca, radial_sublength, radial_length, angular_sublength, angular_length, num_species));
-  // }
 };
 
 struct Result : torch::CustomClassHolder {
@@ -196,66 +187,17 @@ struct Result : torch::CustomClassHolder {
   }
 };
 
-Result cuaev_forward(
-    const Tensor& coordinates_t,
-    const Tensor& species_t,
-    double Rcr_,
-    double Rca_,
-    const Tensor& EtaR_t,
-    const Tensor& ShfR_t,
-    const Tensor& EtaA_t,
-    const Tensor& Zeta_t,
-    const Tensor& ShfA_t,
-    const Tensor& ShfZ_t,
-    int64_t num_species_);
+Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const AEVScalarParams& aev_params);
 
 Tensor cuaev_backward(
     const Tensor& grad_output,
-    const Tensor& coordinates_t,
-    const Tensor& species_t,
     const AEVScalarParams& aev_params,
-    const Tensor& EtaR_t,
-    const Tensor& ShfR_t,
-    const Tensor& EtaA_t,
-    const Tensor& Zeta_t,
-    const Tensor& ShfA_t,
-    const Tensor& ShfZ_t,
-    const Tensor& tensor_Rij,
-    int total_natom_pairs,
-    const Tensor& tensor_radialRij,
-    int nRadialRij,
-    const Tensor& tensor_angularRij,
-    int nAngularRij,
-    const Tensor& tensor_centralAtom,
-    const Tensor& tensor_numPairsPerCenterAtom,
-    const Tensor& tensor_centerAtomStartIdx,
-    int maxnbrs_per_atom_aligned,
-    int angular_length_aligned,
-    int ncenter_atoms);
+    const torch::intrusive_ptr<Result>& res_pt);
 
 Tensor cuaev_double_backward(
     const Tensor& grad_force,
-    const Tensor& coordinates_t,
-    const Tensor& species_t,
     const AEVScalarParams& aev_params,
-    const Tensor& EtaR_t,
-    const Tensor& ShfR_t,
-    const Tensor& EtaA_t,
-    const Tensor& Zeta_t,
-    const Tensor& ShfA_t,
-    const Tensor& ShfZ_t,
-    const Tensor& tensor_Rij,
-    int total_natom_pairs,
-    const Tensor& tensor_radialRij,
-    int nRadialRij,
-    const Tensor& tensor_angularRij,
-    int nAngularRij,
-    const Tensor& tensor_centralAtom,
-    const Tensor& tensor_numPairsPerCenterAtom,
-    const Tensor& tensor_centerAtomStartIdx,
-    int maxnbrs_per_atom_aligned,
-    int angular_length_aligned,
-    int ncenter_atoms);
+    const torch::intrusive_ptr<Result>& res_pt);
 
 struct CuaevComputer : torch::CustomClassHolder {
   AEVScalarParams aev_params;
@@ -287,72 +229,17 @@ struct CuaevComputer : torch::CustomClassHolder {
   };
 
   Result forward(const Tensor& coordinates_t, const Tensor& species_t) {
-    Result res = cuaev_forward(
-        coordinates_t,
-        species_t,
-        aev_params.Rcr,
-        aev_params.Rca,
-        aev_params.EtaR_t,
-        aev_params.ShfR_t,
-        aev_params.EtaA_t,
-        aev_params.Zeta_t,
-        aev_params.ShfA_t,
-        aev_params.ShfZ_t,
-        aev_params.num_species);
+    Result res = cuaev_forward(coordinates_t, species_t, aev_params);
     return res;
   };
 
-  Tensor backward(const Tensor& grad_e_aev, const torch::intrusive_ptr<Result>& res) {
-    Tensor force = cuaev_backward(
-        grad_e_aev,
-        res->coordinates_t,
-        res->species_t,
-        aev_params,
-        aev_params.EtaR_t,
-        aev_params.ShfR_t,
-        aev_params.EtaA_t,
-        aev_params.Zeta_t,
-        aev_params.ShfA_t,
-        aev_params.ShfZ_t,
-        res->tensor_Rij,
-        res->total_natom_pairs,
-        res->tensor_radialRij,
-        res->nRadialRij,
-        res->tensor_angularRij,
-        res->nAngularRij,
-        res->tensor_centralAtom,
-        res->tensor_numPairsPerCenterAtom,
-        res->tensor_centerAtomStartIdx,
-        res->maxnbrs_per_atom_aligned,
-        res->angular_length_aligned,
-        res->ncenter_atoms);
+  Tensor backward(const Tensor& grad_e_aev, const torch::intrusive_ptr<Result>& res_pt) {
+    Tensor force = cuaev_backward(grad_e_aev, aev_params, res_pt);
     return force;
   };
 
-  Tensor double_backward(const Tensor& grad_force, const torch::intrusive_ptr<Result>& res) {
-    Tensor grad_grad_aev = cuaev_double_backward(
-        grad_force,
-        res->coordinates_t,
-        res->species_t,
-        aev_params,
-        aev_params.EtaR_t,
-        aev_params.ShfR_t,
-        aev_params.EtaA_t,
-        aev_params.Zeta_t,
-        aev_params.ShfA_t,
-        aev_params.ShfZ_t,
-        res->tensor_Rij,
-        res->total_natom_pairs,
-        res->tensor_radialRij,
-        res->nRadialRij,
-        res->tensor_angularRij,
-        res->nAngularRij,
-        res->tensor_centralAtom,
-        res->tensor_numPairsPerCenterAtom,
-        res->tensor_centerAtomStartIdx,
-        res->maxnbrs_per_atom_aligned,
-        res->angular_length_aligned,
-        res->ncenter_atoms);
+  Tensor double_backward(const Tensor& grad_force, const torch::intrusive_ptr<Result>& res_pt) {
+    Tensor grad_grad_aev = cuaev_double_backward(grad_force, aev_params, res_pt);
     return grad_grad_aev;
   };
 };
