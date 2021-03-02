@@ -1,5 +1,6 @@
 #include <aev.h>
 #include <torch/extension.h>
+#include <iostream>
 using torch::Tensor;
 using torch::autograd::AutogradContext;
 using torch::autograd::tensor_list;
@@ -60,6 +61,13 @@ CuaevComputer::CuaevComputer(
 }
 
 Tensor CuaevComputer::forward(const Tensor& coordinates_t, const Tensor& species_t) {
+  if (species_t.numel() == 0) {
+    Tensor aev_t = torch::zeros(
+        {species_t.size(0), species_t.size(1), aev_params.radial_length + aev_params.angular_length},
+        coordinates_t.options());
+    std::cout << "hello" << '\n';
+    return aev_t;
+  }
   cuaev_forward(coordinates_t, species_t, aev_params, result);
   return result.aev_t;
 }
@@ -116,6 +124,15 @@ tensor_list CuaevAutograd::backward(AutogradContext* ctx, tensor_list grad_outpu
   return {grad_coord, Tensor(), Tensor()};
 }
 
+Tensor cuaev_only_forward(
+    const Tensor& coordinates_t,
+    const Tensor& species_t,
+    const torch::intrusive_ptr<CuaevComputer>& cuaev_computer) {
+  std::cout << "1111" << '\n';
+  Tensor aev_t = cuaev_computer->forward(coordinates_t, species_t);
+  return aev_t;
+}
+
 Tensor cuaev_autograd(
     const Tensor& coordinates_t,
     const Tensor& species_t,
@@ -126,7 +143,11 @@ Tensor cuaev_autograd(
 TORCH_LIBRARY(cuaev, m) {
   m.class_<CuaevComputer>("CuaevComputer")
       .def(torch::init<double, double, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, int64_t>());
-  m.def("run", cuaev_autograd);
+  m.def("run", cuaev_only_forward);
+}
+
+TORCH_LIBRARY_IMPL(cuaev, CUDA, m) {
+  m.impl("run", cuaev_only_forward);
 }
 
 TORCH_LIBRARY_IMPL(cuaev, Autograd, m) {
