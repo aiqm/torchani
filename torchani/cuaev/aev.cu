@@ -2,7 +2,6 @@
 #include <thrust/equal.h>
 #include <torch/extension.h>
 #include <cub/cub.cuh>
-#include <iostream>
 #include <vector>
 
 #include <ATen/Context.h>

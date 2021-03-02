@@ -3,8 +3,9 @@
 
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <torch/extension.h>
-#include <iostream>
 using torch::Tensor;
+using torch::autograd::AutogradContext;
+using torch::autograd::tensor_list;
 
 // [Computation graph for forward, backward, and double backward]
 //
@@ -139,83 +140,24 @@ struct Result {
   Tensor coordinates_t;
   Tensor species_t;
 
-  Result() {
-    aev_t = Tensor();
-    tensor_Rij = Tensor();
-    tensor_radialRij = Tensor();
-    tensor_angularRij = Tensor();
-    total_natom_pairs = 0;
-    nRadialRij = 0;
-    nAngularRij = 0;
-    tensor_centralAtom = Tensor();
-    tensor_numPairsPerCenterAtom = Tensor();
-    tensor_centerAtomStartIdx = Tensor();
-    maxnbrs_per_atom_aligned = 0;
-    angular_length_aligned = 0;
-    ncenter_atoms = 0;
-    coordinates_t = Tensor();
-    species_t = Tensor();
-  }
-  Result(
-      Tensor aev_t_,
-      Tensor tensor_Rij_,
-      Tensor tensor_radialRij_,
-      Tensor tensor_angularRij_,
-      int64_t total_natom_pairs_,
-      int64_t nRadialRij_,
-      int64_t nAngularRij_,
-      Tensor tensor_centralAtom_,
-      Tensor tensor_numPairsPerCenterAtom_,
-      Tensor tensor_centerAtomStartIdx_,
-      int64_t maxnbrs_per_atom_aligned_,
-      int64_t angular_length_aligned_,
-      int64_t ncenter_atoms_,
-      Tensor coordinates_t_,
-      Tensor species_t_) {
-    aev_t = aev_t_;
-    tensor_Rij = tensor_Rij_;
-    tensor_radialRij = tensor_radialRij_;
-    tensor_angularRij = tensor_angularRij_;
-    total_natom_pairs = total_natom_pairs_;
-    nRadialRij = nRadialRij_;
-    nAngularRij = nAngularRij_;
-    tensor_centralAtom = tensor_centralAtom_;
-    tensor_numPairsPerCenterAtom = tensor_numPairsPerCenterAtom_;
-    tensor_centerAtomStartIdx = tensor_centerAtomStartIdx_;
-    maxnbrs_per_atom_aligned = maxnbrs_per_atom_aligned_;
-    angular_length_aligned = angular_length_aligned_;
-    ncenter_atoms = ncenter_atoms_;
-    coordinates_t = coordinates_t_;
-    species_t = species_t_;
-  }
-
-  void release() {
-    aev_t = Tensor();
-    tensor_Rij = Tensor();
-    tensor_radialRij = Tensor();
-    tensor_angularRij = Tensor();
-    tensor_centralAtom = Tensor();
-    tensor_numPairsPerCenterAtom = Tensor();
-    tensor_centerAtomStartIdx = Tensor();
-    coordinates_t = Tensor();
-    species_t = Tensor();
-  }
-
+  Result();
+  void release();
   ~Result() {
     this->release();
   }
 };
 
+// cuda kernels
 void cuaev_forward(
     const Tensor& coordinates_t,
     const Tensor& species_t,
     const AEVScalarParams& aev_params,
     Result& result);
-
 Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_params, const Result& result);
-
 Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, const Result& result);
 
+// CuaevComputer
+// Only keep one copy of aev parameters and one copy of result for backward
 struct CuaevComputer : torch::CustomClassHolder {
   AEVScalarParams aev_params;
   Result result;
@@ -229,36 +171,28 @@ struct CuaevComputer : torch::CustomClassHolder {
       const Tensor& Zeta_t,
       const Tensor& ShfA_t,
       const Tensor& ShfZ_t,
-      int64_t num_species) {
-    aev_params.Rca = Rca;
-    aev_params.Rcr = Rcr;
-    aev_params.num_species = num_species;
-    aev_params.radial_sublength = EtaR_t.size(0) * ShfR_t.size(0);
-    aev_params.radial_length = aev_params.radial_sublength * num_species;
-    aev_params.angular_sublength = EtaA_t.size(0) * Zeta_t.size(0) * ShfA_t.size(0) * ShfZ_t.size(0);
-    aev_params.angular_length = aev_params.angular_sublength * (num_species * (num_species + 1) / 2);
-    aev_params.EtaR_t = EtaR_t;
-    aev_params.ShfR_t = ShfR_t;
-    aev_params.EtaA_t = EtaA_t;
-    aev_params.Zeta_t = Zeta_t;
-    aev_params.ShfA_t = ShfA_t;
-    aev_params.ShfZ_t = ShfZ_t;
-  };
+      int64_t num_species);
 
-  Tensor forward(const Tensor& coordinates_t, const Tensor& species_t) {
-    cuaev_forward(coordinates_t, species_t, aev_params, result);
-    return result.aev_t;
-  };
+  Tensor forward(const Tensor& coordinates_t, const Tensor& species_t);
+  Tensor backward(const Tensor& grad_e_aev);
+  Tensor double_backward(const Tensor& grad_force);
+};
 
-  Tensor backward(const Tensor& grad_e_aev) {
-    Tensor force = cuaev_backward(grad_e_aev, aev_params, result);
-    return force;
-  };
+// Autograd functions
+class CuaevDoubleAutograd : public torch::autograd::Function<CuaevDoubleAutograd> {
+ public:
+  static Tensor forward(AutogradContext* ctx, Tensor grad_e_aev, AutogradContext* prectx);
+  static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs);
+};
 
-  Tensor double_backward(const Tensor& grad_force) {
-    Tensor grad_grad_aev = cuaev_double_backward(grad_force, aev_params, result);
-    return grad_grad_aev;
-  };
+class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
+ public:
+  static Tensor forward(
+      AutogradContext* ctx,
+      const Tensor& coordinates_t,
+      const Tensor& species_t,
+      const torch::intrusive_ptr<CuaevComputer>& cuaev_computer);
+  static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs);
 };
 
 #endif
