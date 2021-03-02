@@ -421,8 +421,12 @@ class AEVComputer(torch.nn.Module):
         self.register_buffer('default_cell', default_cell)
         self.register_buffer('default_shifts', default_shifts)
 
+        self.cuaev_computer = None
         if self.use_cuda_extension:
-            self.cuaev_computer = torch.classes.cuaev.CuaevComputer(Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), num_species)
+            self.init_cuaev_computer()
+
+    def init_cuaev_computer(self):
+        self.cuaev_computer = torch.classes.cuaev.CuaevComputer(self.Rcr, self.Rca, self.EtaR.flatten(), self.ShfR.flatten(), self.EtaA.flatten(), self.Zeta.flatten(), self.ShfA.flatten(), self.ShfZ.flatten(), self.num_species)
 
     @classmethod
     def cover_linearly(cls, radial_cutoff: float, angular_cutoff: float,
@@ -510,6 +514,8 @@ class AEVComputer(torch.nn.Module):
         if self.use_cuda_extension:
             assert (cell is None and pbc is None), "cuaev does not support PBC"
             # aev = compute_cuaev(species, coordinates, self.triu_index, self.constants(), self.num_species, None)
+            if self.cuaev_computer is None:
+                self.init_cuaev_computer()
             species_int = species.to(torch.int32)
             aev = torch.ops.cuaev.run(coordinates, species_int, self.cuaev_computer)
             return SpeciesAEV(species, aev)
