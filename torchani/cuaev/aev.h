@@ -123,7 +123,7 @@ struct AEVScalarParams {
   Tensor ShfZ_t;
 };
 
-struct Result {
+struct Result : torch::CustomClassHolder {
   Tensor aev_t;
   Tensor tensor_Rij;
   Tensor tensor_radialRij;
@@ -141,6 +141,22 @@ struct Result {
   Tensor species_t;
 
   Result();
+  Result(
+      Tensor aev_t_,
+      Tensor tensor_Rij_,
+      Tensor tensor_radialRij_,
+      Tensor tensor_angularRij_,
+      int64_t total_natom_pairs_,
+      int64_t nRadialRij_,
+      int64_t nAngularRij_,
+      Tensor tensor_centralAtom_,
+      Tensor tensor_numPairsPerCenterAtom_,
+      Tensor tensor_centerAtomStartIdx_,
+      int64_t maxnbrs_per_atom_aligned_,
+      int64_t angular_length_aligned_,
+      int64_t ncenter_atoms_,
+      Tensor coordinates_t_,
+      Tensor species_t_);
   void release();
   ~Result() {
     this->release();
@@ -148,13 +164,15 @@ struct Result {
 };
 
 // cuda kernels
-void cuaev_forward(
-    const Tensor& coordinates_t,
-    const Tensor& species_t,
+Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const AEVScalarParams& aev_params);
+Tensor cuaev_backward(
+    const Tensor& grad_output,
     const AEVScalarParams& aev_params,
-    Result& result);
-Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_params, const Result& result);
-Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, const Result& result);
+    const torch::intrusive_ptr<Result>& res_pt);
+Tensor cuaev_double_backward(
+    const Tensor& grad_force,
+    const AEVScalarParams& aev_params,
+    const torch::intrusive_ptr<Result>& res_pt);
 
 // CuaevComputer
 // Only keep one copy of aev parameters and one copy of result for backward
@@ -173,15 +191,19 @@ struct CuaevComputer : torch::CustomClassHolder {
       const Tensor& ShfZ_t,
       int64_t num_species);
 
-  Tensor forward(const Tensor& coordinates_t, const Tensor& species_t);
-  Tensor backward(const Tensor& grad_e_aev);
-  Tensor double_backward(const Tensor& grad_force);
+  Result forward(const Tensor& coordinates_t, const Tensor& species_t);
+  Tensor backward(const Tensor& grad_e_aev, const torch::intrusive_ptr<Result>& res_pt);
+  Tensor double_backward(const Tensor& grad_force, const torch::intrusive_ptr<Result>& res_pt);
 };
 
 // Autograd functions
 class CuaevDoubleAutograd : public torch::autograd::Function<CuaevDoubleAutograd> {
  public:
-  static Tensor forward(AutogradContext* ctx, Tensor grad_e_aev, AutogradContext* prectx);
+  static Tensor forward(
+      AutogradContext* ctx,
+      Tensor grad_e_aev,
+      AutogradContext* prectx,
+      const torch::intrusive_ptr<Result>& res_pt);
   static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs);
 };
 
