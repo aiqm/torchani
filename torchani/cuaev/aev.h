@@ -3,6 +3,7 @@
 
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <torch/extension.h>
+#include <iostream>
 using torch::Tensor;
 using torch::autograd::AutogradContext;
 using torch::autograd::tensor_list;
@@ -158,9 +159,19 @@ struct Result : torch::CustomClassHolder {
       Tensor coordinates_t_,
       Tensor species_t_);
   void release();
+  void printcounter(){
+    // std::cout << "ref counter" << this->refcount_ << "\n";
+    ;
+  };
   ~Result() {
     this->release();
   }
+
+//  private:
+  void release_resources(){
+    std::cout<<"==============release==============\n";
+    this->release();
+  };
 };
 
 // cuda kernels
@@ -178,7 +189,6 @@ Tensor cuaev_double_backward(
 // Only keep one copy of aev parameters and one copy of result for backward
 struct CuaevComputer : torch::CustomClassHolder {
   AEVScalarParams aev_params;
-  Result result;
 
   CuaevComputer(
       double Rcr,
@@ -202,7 +212,7 @@ class CuaevDoubleAutograd : public torch::autograd::Function<CuaevDoubleAutograd
   static Tensor forward(
       AutogradContext* ctx,
       Tensor grad_e_aev,
-      AutogradContext* prectx,
+      const torch::intrusive_ptr<CuaevComputer>& cuaev_computer,
       const torch::intrusive_ptr<Result>& res_pt);
   static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs);
 };

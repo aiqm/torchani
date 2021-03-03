@@ -1,5 +1,6 @@
 #include <aev.h>
 #include <torch/extension.h>
+#include <iostream>
 using torch::Tensor;
 using torch::autograd::AutogradContext;
 using torch::autograd::tensor_list;
@@ -67,6 +68,18 @@ void Result::release() {
   species_t = Tensor();
 }
 
+// void Result::release_resources() {
+//   aev_t = Tensor();
+//   tensor_Rij = Tensor();
+//   tensor_radialRij = Tensor();
+//   tensor_angularRij = Tensor();
+//   tensor_centralAtom = Tensor();
+//   tensor_numPairsPerCenterAtom = Tensor();
+//   tensor_centerAtomStartIdx = Tensor();
+//   coordinates_t = Tensor();
+//   species_t = Tensor();
+// };
+
 CuaevComputer::CuaevComputer(
     double Rcr,
     double Rca,
@@ -110,12 +123,10 @@ Tensor CuaevComputer::double_backward(const Tensor& grad_force, const torch::int
 Tensor CuaevDoubleAutograd::forward(
     AutogradContext* ctx,
     Tensor grad_e_aev,
-    AutogradContext* prectx,
+    const torch::intrusive_ptr<CuaevComputer>& cuaev_computer,
     const torch::intrusive_ptr<Result>& res_pt) {
-  torch::intrusive_ptr<CuaevComputer> cuaev_computer =
-      prectx->saved_data["cuaev_computer"].toCustomClass<CuaevComputer>();
-  // torch::intrusive_ptr<Result> res_pt = prectx->saved_data["res_pt"].toCustomClass<Result>();;
-
+  std::cout << "==========doublebackward forward ctx==========" << ctx << "\n";
+  std::cout << "==========doublebackward forward result==========" << res_pt.get() << "----" << res_pt.use_count() << "\n";
   Tensor grad_coord = cuaev_computer->backward(grad_e_aev, res_pt);
 
   if (grad_e_aev.requires_grad()) {
@@ -133,6 +144,9 @@ tensor_list CuaevDoubleAutograd::backward(AutogradContext* ctx, tensor_list grad
   torch::intrusive_ptr<CuaevComputer> cuaev_computer = ctx->saved_data["cuaev_computer"].toCustomClass<CuaevComputer>();
   torch::intrusive_ptr<Result> res_pt = ctx->saved_data["res_pt"].toCustomClass<Result>();
 
+  std::cout << "==========doublebackward backward ctx==========" << ctx << "\n";
+  std::cout << "==========doublebackward backward result==========" << res_pt.get() << "----" << res_pt.use_count() << "\n";
+
   Tensor grad_grad_aev = cuaev_computer->double_backward(grad_force, res_pt);
   ctx->saved_data.erase("res_pt");
   return {grad_grad_aev, torch::Tensor(), torch::Tensor()};
@@ -145,16 +159,22 @@ Tensor CuaevAutograd::forward(
     const torch::intrusive_ptr<CuaevComputer>& cuaev_computer) {
   at::AutoNonVariableTypeMode g;
   Result result = cuaev_computer->forward(coordinates_t, species_t);
+  std::cout << "==========forward ctx==========" << ctx << "\n";
+  torch::intrusive_ptr<Result> res_pt = c10::make_intrusive<Result>(result);
+  std::cout << "==========forward result==========" << res_pt.get() << "----" << res_pt.use_count() << "\n";
   if (coordinates_t.requires_grad()) {
     ctx->saved_data["cuaev_computer"] = cuaev_computer;
-    ctx->saved_data["res_pt"] = c10::make_intrusive<Result>(result);
+    ctx->saved_data["res_pt"] = res_pt;
   }
   return result.aev_t;
 }
 
 tensor_list CuaevAutograd::backward(AutogradContext* ctx, tensor_list grad_outputs) {
   torch::intrusive_ptr<Result> res_pt = ctx->saved_data["res_pt"].toCustomClass<Result>();
-  Tensor grad_coord = CuaevDoubleAutograd::apply(grad_outputs[0], ctx, res_pt);
+  torch::intrusive_ptr<CuaevComputer> cuaev_computer = ctx->saved_data["cuaev_computer"].toCustomClass<CuaevComputer>();
+  std::cout << "==========backward ctx==========" << ctx << "\n";
+  std::cout << "==========backward result==========" << res_pt.get() << "----" << res_pt.use_count() << "\n";
+  Tensor grad_coord = CuaevDoubleAutograd::apply(grad_outputs[0], cuaev_computer, res_pt);
   return {grad_coord, Tensor(), Tensor()};
 }
 
