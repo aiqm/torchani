@@ -132,7 +132,7 @@ struct AEVScalarParams {
       int num_species_);
 };
 
-struct Result : torch::CustomClassHolder {
+struct Result {
   Tensor aev_t;
   Tensor tensor_Rij;
   Tensor tensor_radialRij;
