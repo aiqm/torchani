@@ -1,5 +1,4 @@
 import os
-import glob
 import subprocess
 from setuptools import setup, find_packages
 from distutils import log
@@ -91,11 +90,12 @@ def cuda_extension(build_all=False):
             nvcc_args.append("-gencode=arch=compute_86,code=sm_86")
     print("nvcc_args: ", nvcc_args)
     print('-' * 75)
+    include_dirs = [*maybe_download_cub(), os.path.abspath("torchani/cuaev/")]
     return CUDAExtension(
         name='torchani.cuaev',
         pkg='torchani.cuaev',
-        sources=glob.glob('torchani/cuaev/*.cu'),
-        include_dirs=maybe_download_cub(),
+        sources=["torchani/cuaev/cuaev.cpp", "torchani/cuaev/aev.cu"],
+        include_dirs=include_dirs,
         extra_compile_args={'cxx': ['-std=c++14'], 'nvcc': nvcc_args})
 
 

@@ -18,9 +18,10 @@ class TestCUAEVNoGPU(TestCase):
 
     def testSimple(self):
         def f(coordinates, species, Rcr: float, Rca: float, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species: int):
-            return torch.ops.cuaev.cuComputeAEV(coordinates, species, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
+            cuaev_computer = torch.classes.cuaev.CuaevComputer(Rcr, Rca, EtaR.flatten(), ShfR.flatten(), EtaA.flatten(), Zeta.flatten(), ShfA.flatten(), ShfZ.flatten(), num_species)
+            return torch.ops.cuaev.run(coordinates, species, cuaev_computer)
         s = torch.jit.script(f)
-        self.assertIn("cuaev::cuComputeAEV", str(s.graph))
+        self.assertIn("cuaev::run", str(s.graph))
 
     def testAEVComputer(self):
         path = os.path.dirname(os.path.realpath(__file__))
@@ -31,7 +32,7 @@ class TestCUAEVNoGPU(TestCase):
         # Computation of AEV using cuaev when there is no atoms does not require CUDA, and can be run without GPU
         species = make_tensor((8, 0), 'cpu', torch.int64, low=-1, high=4)
         coordinates = make_tensor((8, 0, 3), 'cpu', torch.float32, low=-5, high=5)
-        self.assertIn("cuaev::cuComputeAEV", str(s.graph_for((species, coordinates))))
+        self.assertIn("cuaev::run", str(s.graph_for((species, coordinates))))
 
 
 @skipIfNoGPU
