@@ -3,7 +3,6 @@
 
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <torch/extension.h>
-#include <iostream>
 using torch::Tensor;
 using torch::autograd::AutogradContext;
 using torch::autograd::tensor_list;
@@ -122,6 +121,16 @@ struct AEVScalarParams {
   Tensor Zeta_t;
   Tensor ShfA_t;
   Tensor ShfZ_t;
+  AEVScalarParams(
+      float Rcr_,
+      float Rca_,
+      Tensor EtaR_t_,
+      Tensor ShfR_t_,
+      Tensor EtaA_t_,
+      Tensor Zeta_t_,
+      Tensor ShfA_t_,
+      Tensor ShfZ_t_,
+      int num_species_);
 };
 
 struct Result : torch::CustomClassHolder {
@@ -141,7 +150,6 @@ struct Result : torch::CustomClassHolder {
   Tensor coordinates_t;
   Tensor species_t;
 
-  Result();
   Result(
       Tensor aev_t_,
       Tensor tensor_Rij_,
@@ -158,32 +166,18 @@ struct Result : torch::CustomClassHolder {
       int64_t ncenter_atoms_,
       Tensor coordinates_t_,
       Tensor species_t_);
+  Result(tensor_list tensors);
+  tensor_list to_list();
   void release();
-  void printcounter(){
-    // std::cout << "ref counter" << this->refcount_ << "\n";
-    ;
-  };
   ~Result() {
     this->release();
   }
-
-//  private:
-  void release_resources(){
-    std::cout<<"==============release==============\n";
-    this->release();
-  };
 };
 
 // cuda kernels
 Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const AEVScalarParams& aev_params);
-Tensor cuaev_backward(
-    const Tensor& grad_output,
-    const AEVScalarParams& aev_params,
-    const torch::intrusive_ptr<Result>& res_pt);
-Tensor cuaev_double_backward(
-    const Tensor& grad_force,
-    const AEVScalarParams& aev_params,
-    const torch::intrusive_ptr<Result>& res_pt);
+Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_params, const Result& result);
+Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, const Result& result);
 
 // CuaevComputer
 // Only keep one copy of aev parameters and one copy of result for backward
@@ -201,9 +195,20 @@ struct CuaevComputer : torch::CustomClassHolder {
       const Tensor& ShfZ_t,
       int64_t num_species);
 
-  Result forward(const Tensor& coordinates_t, const Tensor& species_t);
-  Tensor backward(const Tensor& grad_e_aev, const torch::intrusive_ptr<Result>& res_pt);
-  Tensor double_backward(const Tensor& grad_force, const torch::intrusive_ptr<Result>& res_pt);
+  Result forward(const Tensor& coordinates_t, const Tensor& species_t) {
+    Result result = cuaev_forward(coordinates_t, species_t, aev_params);
+    return result;
+  }
+
+  Tensor backward(const Tensor& grad_e_aev, const Result& result) {
+    Tensor force = cuaev_backward(grad_e_aev, aev_params, result);
+    return force;
+  }
+
+  Tensor double_backward(const Tensor& grad_force, const Result& result) {
+    Tensor grad_grad_aev = cuaev_double_backward(grad_force, aev_params, result);
+    return grad_grad_aev;
+  }
 };
 
 // Autograd functions
@@ -213,7 +218,7 @@ class CuaevDoubleAutograd : public torch::autograd::Function<CuaevDoubleAutograd
       AutogradContext* ctx,
       Tensor grad_e_aev,
       const torch::intrusive_ptr<CuaevComputer>& cuaev_computer,
-      const torch::intrusive_ptr<Result>& res_pt);
+      tensor_list result_tensors);
   static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs);
 };
 
