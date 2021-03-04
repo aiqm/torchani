@@ -96,18 +96,6 @@ tensor_list Result::to_list() {
           species_t};
 }
 
-void Result::release() {
-  aev_t = Tensor();
-  tensor_Rij = Tensor();
-  tensor_radialRij = Tensor();
-  tensor_angularRij = Tensor();
-  tensor_centralAtom = Tensor();
-  tensor_numPairsPerCenterAtom = Tensor();
-  tensor_centerAtomStartIdx = Tensor();
-  coordinates_t = Tensor();
-  species_t = Tensor();
-}
-
 CuaevComputer::CuaevComputer(
     double Rcr,
     double Rca,

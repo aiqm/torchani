@@ -167,10 +167,6 @@ struct Result {
       Tensor species_t_);
   Result(tensor_list tensors);
   tensor_list to_list();
-  void release();
-  ~Result() {
-    this->release();
-  }
 };
 
 // cuda kernels
