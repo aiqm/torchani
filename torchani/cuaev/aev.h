@@ -200,8 +200,7 @@ struct CuaevComputer : torch::CustomClassHolder {
   }
 
   Tensor backward(const Tensor& grad_e_aev, const Result& result) {
-    Tensor force = cuaev_backward(grad_e_aev, aev_params, result);
-    return force;
+    return cuaev_backward(grad_e_aev, aev_params, result);
   }
 
   Tensor double_backward(const Tensor& grad_force, const Result& result) {
