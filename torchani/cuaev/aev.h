@@ -227,5 +227,3 @@ class CuaevAutograd : public torch::autograd::Function<CuaevAutograd> {
       const torch::intrusive_ptr<CuaevComputer>& cuaev_computer);
   static tensor_list backward(AutogradContext* ctx, tensor_list grad_outputs);
 };
-
-#endif
