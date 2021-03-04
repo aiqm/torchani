@@ -62,7 +62,7 @@ Result::Result(
       species_t(species_t_) {}
 
 Result::Result(tensor_list tensors)
-    : aev_t(tensors[0]),
+    : aev_t(tensors[0]), // aev_t will be a undefined tensor
       tensor_Rij(tensors[1]),
       tensor_radialRij(tensors[2]),
       tensor_angularRij(tensors[3]),
@@ -79,7 +79,7 @@ Result::Result(tensor_list tensors)
       species_t(tensors[14]) {}
 
 tensor_list Result::to_list() {
-  return {aev_t,
+  return {Tensor(), // aev_t got removed
           tensor_Rij,
           tensor_radialRij,
           tensor_angularRij,
