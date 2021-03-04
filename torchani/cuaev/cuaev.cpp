@@ -78,24 +78,6 @@ Result::Result(tensor_list tensors)
       coordinates_t(tensors[13]),
       species_t(tensors[14]) {}
 
-tensor_list Result::to_list() {
-  return {Tensor(), // aev_t got removed
-          tensor_Rij,
-          tensor_radialRij,
-          tensor_angularRij,
-          torch::tensor(total_natom_pairs),
-          torch::tensor(nRadialRij),
-          torch::tensor(nAngularRij),
-          tensor_centralAtom,
-          tensor_numPairsPerCenterAtom,
-          tensor_centerAtomStartIdx,
-          torch::tensor(maxnbrs_per_atom_aligned),
-          torch::tensor(angular_length_aligned),
-          torch::tensor(ncenter_atoms),
-          coordinates_t,
-          species_t};
-}
-
 CuaevComputer::CuaevComputer(
     double Rcr,
     double Rca,
@@ -139,7 +121,7 @@ Tensor CuaevAutograd::forward(
   Result result = cuaev_computer->forward(coordinates_t, species_t);
   if (coordinates_t.requires_grad()) {
     ctx->saved_data["cuaev_computer"] = cuaev_computer;
-    ctx->save_for_backward(result.to_list());
+    ctx->save_for_backward(result);
   }
   return result.aev_t;
 }
