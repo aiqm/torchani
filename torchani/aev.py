@@ -415,11 +415,13 @@ class AEVComputer(torch.nn.Module):
         self.register_buffer('default_cell', default_cell)
         self.register_buffer('default_shifts', default_shifts)
 
-        self.cuaev_computer = None
         # Should create only when use_cuda_extension is True.
         # However jit needs to know cuaev_computer's Type even when use_cuda_extension is False, because it is enabled when cuaev is available
         if has_cuaev:
             self.init_cuaev_computer()
+        # When has_cuaev is true, and use_cuda_extension is false, and user enable use_cuda_extension afterwards,
+        # then another init_cuaev_computer will be needed
+        self.cuaev_enabled = True if self.use_cuda_extension else False
 
     @jit_unused_if_no_cuaev()
     def init_cuaev_computer(self):
@@ -517,7 +519,7 @@ class AEVComputer(torch.nn.Module):
         if self.use_cuda_extension:
             assert (cell is None and pbc is None), "cuaev currently does not support PBC"
             # if use_cuda_extension is enabled after initialization
-            if self.cuaev_computer is None:
+            if not self.cuaev_enabled:
                 self.init_cuaev_computer()
             aev = self.compute_cuaev(species, coordinates)
             return SpeciesAEV(species, aev)
