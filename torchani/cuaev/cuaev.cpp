@@ -125,8 +125,7 @@ Tensor CuaevDoubleAutograd::forward(
     Tensor grad_e_aev,
     const torch::intrusive_ptr<CuaevComputer>& cuaev_computer,
     tensor_list result_tensors) {
-  Result result(result_tensors);
-  Tensor grad_coord = cuaev_computer->backward(grad_e_aev, result);
+  Tensor grad_coord = cuaev_computer->backward(grad_e_aev, result_tensors);
 
   if (grad_e_aev.requires_grad()) {
     ctx->saved_data["cuaev_computer"] = cuaev_computer;
