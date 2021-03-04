@@ -196,8 +196,7 @@ struct CuaevComputer : torch::CustomClassHolder {
       int64_t num_species);
 
   Result forward(const Tensor& coordinates_t, const Tensor& species_t) {
-    Result result = cuaev_forward(coordinates_t, species_t, aev_params);
-    return result;
+    return cuaev_forward(coordinates_t, species_t, aev_params);
   }
 
   Tensor backward(const Tensor& grad_e_aev, const Result& result) {
