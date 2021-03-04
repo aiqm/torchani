@@ -1,5 +1,4 @@
-#ifndef CUAEV_COMPUTER
-#define CUAEV_COMPUTER
+#pragma once
 
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <torch/extension.h>
