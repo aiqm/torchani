@@ -133,7 +133,7 @@ tensor_list CuaevAutograd::backward(AutogradContext* ctx, tensor_list grad_outpu
   return {grad_coord, Tensor(), Tensor()};
 }
 
-Tensor cuaev_only_forward(
+Tensor run_only_forward(
     const Tensor& coordinates_t,
     const Tensor& species_t,
     const torch::intrusive_ptr<CuaevComputer>& cuaev_computer) {
@@ -141,7 +141,7 @@ Tensor cuaev_only_forward(
   return result.aev_t;
 }
 
-Tensor cuaev_autograd(
+Tensor run_autograd(
     const Tensor& coordinates_t,
     const Tensor& species_t,
     const torch::intrusive_ptr<CuaevComputer>& cuaev_computer) {
@@ -151,15 +151,15 @@ Tensor cuaev_autograd(
 TORCH_LIBRARY(cuaev, m) {
   m.class_<CuaevComputer>("CuaevComputer")
       .def(torch::init<double, double, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, int64_t>());
-  m.def("run", cuaev_only_forward);
+  m.def("run", run_only_forward);
 }
 
 TORCH_LIBRARY_IMPL(cuaev, CUDA, m) {
-  m.impl("run", cuaev_only_forward);
+  m.impl("run", run_only_forward);
 }
 
 TORCH_LIBRARY_IMPL(cuaev, Autograd, m) {
-  m.impl("run", cuaev_autograd);
+  m.impl("run", run_autograd);
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {}

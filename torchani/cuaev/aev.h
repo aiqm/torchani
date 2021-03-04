@@ -191,7 +191,7 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
 Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, const Result& result);
 
 // CuaevComputer
-// Only keep one copy of aev parameters and one copy of result for backward
+// Only keep one copy of aev parameters
 struct CuaevComputer : torch::CustomClassHolder {
   AEVScalarParams aev_params;
 
