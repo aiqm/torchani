@@ -26,6 +26,52 @@ constexpr int csubaev_offsets(int i, int j, int n) {
   return starting + offset;
 }
 
+#define MAX_NSPECIES 10
+#define RCR_X 0
+#define RCA_X 1
+#define RADIAL_SUBLENGTH_X 2
+#define RADIAL_LENGTH_X 3
+#define ANGULAR_SUBLENGTH_X 4
+#define ANGULAR_LENGTH_X 5
+#define NUM_SPECIES_X 6
+#define ETAR_X 7
+#define ETAA_X 8
+#define ZETA_X 9
+#define SUBAEV_OFFSET_X 10
+
+__constant__ float AEV_CONSTANTS[SUBAEV_OFFSET_X + MAX_NSPECIES * MAX_NSPECIES];
+
+void initAEVConsts(AEVScalarParams& aev_params, cudaStream_t stream) {
+  int num_species = aev_params.num_species;
+  assert(num_species <= MAX_NSPECIES);
+  int aev_constants_size = SUBAEV_OFFSET_X + num_species * num_species;
+  float* aev_constants = new float[aev_constants_size];
+  aev_constants[RCR_X] = aev_params.Rcr;
+  aev_constants[RCA_X] = aev_params.Rca;
+  aev_constants[RADIAL_SUBLENGTH_X] = aev_params.radial_sublength;
+  aev_constants[RADIAL_LENGTH_X] = aev_params.radial_length;
+  aev_constants[ANGULAR_SUBLENGTH_X] = aev_params.angular_sublength;
+  aev_constants[ANGULAR_LENGTH_X] = aev_params.angular_length;
+  aev_constants[NUM_SPECIES_X] = aev_params.num_species;
+  aev_constants[ETAR_X] = aev_params.EtaR_t[0].item<float>();
+  aev_constants[ETAA_X] = aev_params.EtaA_t[0].item<float>();
+  aev_constants[ZETA_X] = aev_params.Zeta_t[0].item<float>();
+  // precompute the aev offsets and load to constand memory
+  for (int t = 0; t < num_species; ++t) {
+    int offset = 0;
+    for (int s = 0; s < num_species; s++) {
+      if (t < num_species - s) {
+        aev_constants[SUBAEV_OFFSET_X + s * num_species + s + t] = aev_params.angular_sublength * (offset + t);
+        aev_constants[SUBAEV_OFFSET_X + (s + t) * num_species + s] = aev_params.angular_sublength * (offset + t);
+      }
+      offset += num_species - s;
+    }
+  }
+  cudaMemcpyToSymbolAsync(
+      AEV_CONSTANTS, aev_constants, sizeof(float) * aev_constants_size, 0, cudaMemcpyDefault, stream);
+  delete[] aev_constants;
+}
+
 template <typename DataT>
 struct PairDist {
   DataT Rij;
@@ -211,11 +257,6 @@ __global__ void cuAngularAEVs(
     PairDist<DataT>* d_centralAtom,
     int* d_nPairsPerCenterAtom,
     int* d_centerAtomStartIdx,
-    float Rca,
-    int angular_length,
-    int angular_sublength,
-    int radial_length,
-    int num_species,
     int maxnbrs_per_atom_aligned,
     int angular_length_aligned,
     int ncentral_atoms) {
@@ -228,6 +269,11 @@ __global__ void cuAngularAEVs(
 
   if (cIdx >= ncentral_atoms)
     return;
+
+  int angular_length = (int)AEV_CONSTANTS[ANGULAR_LENGTH_X];
+  int radial_length = (int)AEV_CONSTANTS[RADIAL_LENGTH_X];
+  int num_species = (int)AEV_CONSTANTS[NUM_SPECIES_X];
+  float Rca = AEV_CONSTANTS[RCA_X];
 
   int groupIdx = threadIdx.x / threads_per_catom;
   int laneIdx = threadIdx.x % threads_per_catom;
@@ -253,8 +299,8 @@ __global__ void cuAngularAEVs(
   offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
   int* stype = (int*)&smem[offset + groupIdx * maxnbrs_per_atom_aligned];
 
-  DataT EtaA = EtaA_t[0];
-  DataT Zeta = Zeta_t[0];
+  DataT EtaA = AEV_CONSTANTS[ETAA_X];
+  DataT Zeta = AEV_CONSTANTS[ZETA_X];
 
   IndexT nShfA = ShfA_t.size(0);
   IndexT nShfZ = ShfZ_t.size(0);
@@ -319,7 +365,7 @@ __global__ void cuAngularAEVs(
         DataT Rijk = (Rij + Rik) / 2;
         DataT fc_ijk = fc_ij * fc_ik;
 
-        IndexT subaev_offset = angular_sublength * csubaev_offsets(type_j, type_k, num_species);
+        IndexT subaev_offset = (int)AEV_CONSTANTS[SUBAEV_OFFSET_X + type_j * num_species + type_k];
 
         for (int itheta = tile.x; itheta < nShfZ; itheta += TILEX) {
           DataT ShfZ = ShfZ_t[itheta];
@@ -366,11 +412,6 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
     const PairDist<DataT>* d_centralAtom,
     int* d_nPairsPerCenterAtom,
     int* d_centerAtomStartIdx,
-    float Rca,
-    int angular_length,
-    int angular_sublength,
-    int radial_length,
-    int num_species,
     int maxnbrs_per_atom_aligned,
     int angular_length_aligned,
     int ncentral_atoms) {
@@ -383,6 +424,11 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
 
   if (cIdx >= ncentral_atoms)
     return;
+
+  int angular_length = (int)AEV_CONSTANTS[ANGULAR_LENGTH_X];
+  int radial_length = (int)AEV_CONSTANTS[RADIAL_LENGTH_X];
+  int num_species = (int)AEV_CONSTANTS[NUM_SPECIES_X];
+  float Rca = AEV_CONSTANTS[RCA_X];
 
   int groupIdx = threadIdx.x / threads_per_catom;
   int laneIdx = threadIdx.x % threads_per_catom;
@@ -417,8 +463,8 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
 
   int* stype = (int*)&smem[offset + groupIdx * maxnbrs_per_atom_aligned];
 
-  DataT EtaA = EtaA_t[0];
-  DataT Zeta = Zeta_t[0];
+  DataT EtaA = AEV_CONSTANTS[ETAA_X];
+  DataT Zeta = AEV_CONSTANTS[ZETA_X];
 
   IndexT nShfA = ShfA_t.size(0);
   IndexT nShfZ = ShfZ_t.size(0);
@@ -522,7 +568,8 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
         DataT Rijk = (Rij + Rik) / 2;
         DataT fc_ijk = fc_ij * fc_ik;
 
-        IndexT subaev_offset = angular_sublength * csubaev_offsets(type_j, type_k, num_species);
+        IndexT subaev_offset =
+            (int)AEV_CONSTANTS[SUBAEV_OFFSET_X + type_j * (int)AEV_CONSTANTS[NUM_SPECIES_X] + type_k];
 
         for (int itheta = tile.x; itheta < nShfZ; itheta += TILEX) {
           DataT ShfZ = ShfZ_t[itheta];
@@ -636,20 +683,20 @@ __global__ void cuRadialAEVs(
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits> EtaR_t,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> aev_t,
     PairDist<DataT>* d_Rij,
-    float Rcr,
-    int radial_length,
-    int radial_sublength,
     int nRadialRij) {
   int gidx = blockIdx.x * blockDim.x + threadIdx.x;
   int idx = gidx / THREADS_PER_RIJ;
 
   int nShfR = ShfR_t.size(0);
-  DataT EtaR = EtaR_t[0];
+  DataT EtaR = AEV_CONSTANTS[ETAR_X];
 
   if (idx >= nRadialRij)
     return;
 
   int laneIdx = threadIdx.x % THREADS_PER_RIJ;
+
+  int radial_sublength = (int)AEV_CONSTANTS[RADIAL_SUBLENGTH_X];
+  float Rcr = AEV_CONSTANTS[RCR_X];
 
   PairDist<DataT> d = d_Rij[idx];
   DataT Rij = d.Rij;
@@ -681,20 +728,20 @@ __global__ void cuRadialAEVs_backward_or_doublebackward(
     torch::PackedTensorAccessor32<DataT, 1, torch::RestrictPtrTraits>
         grad_dist, // ddist for backward, dddist for double backward
     const PairDist<DataT>* d_Rij,
-    float Rcr,
-    int radial_length,
-    int radial_sublength,
     int nRadialRij) {
   int gidx = blockIdx.x * blockDim.x + threadIdx.x;
   int idx = gidx / THREADS_PER_RIJ;
 
   int nShfR = ShfR_t.size(0);
-  DataT EtaR = EtaR_t[0];
+  DataT EtaR = AEV_CONSTANTS[ETAR_X];
 
   if (idx >= nRadialRij)
     return;
 
   int laneIdx = threadIdx.x % THREADS_PER_RIJ;
+
+  int radial_sublength = (int)AEV_CONSTANTS[RADIAL_SUBLENGTH_X];
+  float Rcr = AEV_CONSTANTS[RCR_X];
 
   PairDist<DataT> d = d_Rij[idx];
   DataT Rij = d.Rij;
@@ -913,9 +960,6 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
       aev_params.EtaR_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       aev_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       d_radialRij,
-      aev_params.Rcr,
-      aev_params.radial_length,
-      aev_params.radial_sublength,
       nRadialRij);
 
   // reuse buffer allocated for all Rij
@@ -977,11 +1021,6 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
         d_centralAtom,
         d_numPairsPerCenterAtom,
         d_centerAtomStartIdx,
-        aev_params.Rca,
-        aev_params.angular_length,
-        aev_params.angular_sublength,
-        aev_params.radial_length,
-        aev_params.num_species,
         maxnbrs_per_atom_aligned,
         angular_length_aligned,
         ncenter_atoms);
@@ -1033,9 +1072,6 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
       grad_output.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       grad_radial_dist.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       d_radialRij,
-      aev_params.Rcr,
-      aev_params.radial_length,
-      aev_params.radial_sublength,
       result.nRadialRij);
 
   // For best result, block_size should match average molecule size (no padding) to avoid atomicAdd
@@ -1077,11 +1113,6 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
       d_centralAtom,
       d_numPairsPerCenterAtom,
       d_centerAtomStartIdx,
-      aev_params.Rca,
-      aev_params.angular_length,
-      aev_params.angular_sublength,
-      aev_params.radial_length,
-      aev_params.num_species,
       result.maxnbrs_per_atom_aligned,
       result.angular_length_aligned,
       result.ncenter_atoms);
@@ -1130,9 +1161,6 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
       grad_grad_aev.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       grad_force_coord_Rij.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
       d_radialRij,
-      aev_params.Rcr,
-      aev_params.radial_length,
-      aev_params.radial_sublength,
       result.nRadialRij);
 
   auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
@@ -1164,11 +1192,6 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
       d_centralAtom,
       d_numPairsPerCenterAtom,
       d_centerAtomStartIdx,
-      aev_params.Rca,
-      aev_params.angular_length,
-      aev_params.angular_sublength,
-      aev_params.radial_length,
-      aev_params.num_species,
       result.maxnbrs_per_atom_aligned,
       result.angular_length_aligned,
       result.ncenter_atoms);

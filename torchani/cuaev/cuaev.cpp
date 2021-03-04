@@ -88,7 +88,8 @@ CuaevComputer::CuaevComputer(
     const Tensor& ShfA_t,
     const Tensor& ShfZ_t,
     int64_t num_species)
-    : aev_params(Rcr, Rca, EtaR_t, ShfR_t, EtaA_t, Zeta_t, ShfA_t, ShfZ_t, num_species) {}
+    : aev_params(Rcr, Rca, EtaR_t, ShfR_t, EtaA_t, Zeta_t, ShfA_t, ShfZ_t, num_species),
+      aev_consts_initialized(false) {}
 
 Tensor CuaevDoubleAutograd::forward(
     AutogradContext* ctx,
