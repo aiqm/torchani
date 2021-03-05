@@ -521,6 +521,7 @@ class AEVComputer(torch.nn.Module):
             # if use_cuda_extension is enabled after initialization
             if not self.cuaev_enabled:
                 self.init_cuaev_computer()
+                self.cuaev_enabled = True
             aev = self.compute_cuaev(species, coordinates)
             return SpeciesAEV(species, aev)
 
