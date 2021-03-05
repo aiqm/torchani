@@ -279,9 +279,18 @@ __global__ void cuAngularAEVs(
   int laneIdx = threadIdx.x % threads_per_catom;
   int ncatom_per_tpb = blockDim.x / threads_per_catom;
 
-  DataT* saev = &smem[groupIdx * angular_length_aligned];
+  IndexT nShfA = ShfA_t.size(0);
+  IndexT nShfZ = ShfZ_t.size(0);
 
-  int offset = ncatom_per_tpb * angular_length_aligned;
+  float* sshfa = &smem[0];
+  int offset = nShfA;
+
+  float* sshfz = &smem[offset];
+  offset += nShfZ;
+
+  DataT* saev = &smem[offset + groupIdx * angular_length_aligned];
+
+  offset += ncatom_per_tpb * angular_length_aligned;
   DataT* sdx = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
 
   offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
@@ -302,9 +311,6 @@ __global__ void cuAngularAEVs(
   DataT EtaA = AEV_CONSTANTS[ETAA_X];
   DataT Zeta = AEV_CONSTANTS[ZETA_X];
 
-  IndexT nShfA = ShfA_t.size(0);
-  IndexT nShfZ = ShfZ_t.size(0);
-
   PairDist<DataT> d = d_centralAtom[cIdx];
   int start_idx = d_centerAtomStartIdx[cIdx];
   int jnum = d_nPairsPerCenterAtom[cIdx];
@@ -315,6 +321,13 @@ __global__ void cuAngularAEVs(
 
   for (int iaev = laneIdx; iaev < angular_length; iaev += threads_per_catom) {
     saev[iaev] = 0;
+  }
+
+  for (int j = threadIdx.x; j < max(nShfA, nShfZ); j += blockDim.x) {
+    if (j < nShfA)
+      sshfa[j] = ShfA_t[j];
+    if (j < nShfZ)
+      sshfz[j] = ShfZ_t[j];
   }
 
   DataT xi = pos_t[mol_idx][i][0];
@@ -368,12 +381,12 @@ __global__ void cuAngularAEVs(
         IndexT subaev_offset = (int)AEV_CONSTANTS[SUBAEV_OFFSET_X + type_j * num_species + type_k];
 
         for (int itheta = tile.x; itheta < nShfZ; itheta += TILEX) {
-          DataT ShfZ = ShfZ_t[itheta];
+          DataT ShfZ = sshfz[itheta];
 
           DataT factor1 = pow((1 + cos(theta_ijk - ShfZ)) / 2, Zeta);
 
           for (int ishfr = tile.y; ishfr < nShfA; ishfr += TILEY) {
-            DataT ShfA = ShfA_t[ishfr];
+            DataT ShfA = sshfa[ishfr];
             DataT factor2 = exp(-EtaA * (Rijk - ShfA) * (Rijk - ShfA));
 
             DataT res = 2 * factor1 * factor2 * fc_ijk;
@@ -434,8 +447,17 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
   int laneIdx = threadIdx.x % threads_per_catom;
   int ncatom_per_tpb = blockDim.x / threads_per_catom; // e.g. 2 catom per block
 
-  DataT* sdx = &smem[groupIdx * maxnbrs_per_atom_aligned];
-  int offset = ncatom_per_tpb * maxnbrs_per_atom_aligned;
+  IndexT nShfA = ShfA_t.size(0);
+  IndexT nShfZ = ShfZ_t.size(0);
+
+  float* sshfa = &smem[0];
+  int offset = nShfA;
+
+  float* sshfz = &smem[offset];
+  offset += nShfZ;
+
+  DataT* sdx = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
+  offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
 
   DataT* sdy = &smem[offset + groupIdx * maxnbrs_per_atom_aligned];
   offset += ncatom_per_tpb * maxnbrs_per_atom_aligned;
@@ -466,9 +488,6 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
   DataT EtaA = AEV_CONSTANTS[ETAA_X];
   DataT Zeta = AEV_CONSTANTS[ZETA_X];
 
-  IndexT nShfA = ShfA_t.size(0);
-  IndexT nShfZ = ShfZ_t.size(0);
-
   PairDist<DataT> d = d_centralAtom[cIdx];
   int start_idx = d_centerAtomStartIdx[cIdx];
   int jnum = d_nPairsPerCenterAtom[cIdx];
@@ -476,6 +495,13 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
   // center atom
   int i = d.i;
   int mol_idx = d.midx;
+
+  for (int j = threadIdx.x; j < max(nShfA, nShfZ); j += blockDim.x) {
+    if (j < nShfA)
+      sshfa[j] = ShfA_t[j];
+    if (j < nShfZ)
+      sshfz[j] = ShfZ_t[j];
+  }
 
   DataT xi = pos_t[mol_idx][i][0];
   DataT yi = pos_t[mol_idx][i][1];
@@ -568,18 +594,17 @@ __global__ void cuAngularAEVs_backward_or_doublebackward(
         DataT Rijk = (Rij + Rik) / 2;
         DataT fc_ijk = fc_ij * fc_ik;
 
-        IndexT subaev_offset =
-            (int)AEV_CONSTANTS[SUBAEV_OFFSET_X + type_j * (int)AEV_CONSTANTS[NUM_SPECIES_X] + type_k];
+        IndexT subaev_offset = (int)AEV_CONSTANTS[SUBAEV_OFFSET_X + type_j * num_species + type_k];
 
         for (int itheta = tile.x; itheta < nShfZ; itheta += TILEX) {
-          DataT ShfZ = ShfZ_t[itheta];
+          DataT ShfZ = sshfz[itheta];
 
           DataT factor1 = pow((1 + cos(theta_ijk - ShfZ)) / 2, Zeta);
           DataT grad_factor1_theta = 1.0 / 2.0 * Zeta * pow((1 + cos(ShfZ - theta_ijk)) / 2, Zeta - 1) *
               sin(ShfZ - theta_ijk); // tricky 100ms improved
 
           for (int ishfr = tile.y; ishfr < nShfA; ishfr += TILEY) {
-            DataT ShfA = ShfA_t[ishfr];
+            DataT ShfA = sshfa[ishfr];
             DataT factor2 = exp(-EtaA * (Rijk - ShfA) * (Rijk - ShfA));
             DataT grad_factor2_dist = -EtaA * (Rijk - ShfA) * factor2;
 
@@ -1000,8 +1025,10 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
       int sRij = sizeof(float) * max_nbrs;
       int sfc = sizeof(float) * max_nbrs;
       int sj = sizeof(int) * max_nbrs;
+      int sshfa = sizeof(float) * aev_params.ShfA_t.size(0);
+      int sshfz = sizeof(float) * aev_params.ShfZ_t.size(0);
 
-      return (sm_aev + sxyz + sRij + sfc + sj) * ncatom_per_tpb;
+      return (sm_aev + sxyz + sRij + sfc + sj) * ncatom_per_tpb + sshfa + sshfz;
     };
 
     int maxNbrsPerCenterAtom = cubMax(d_numPairsPerCenterAtom, ncenter_atoms, d_count_out, stream);
@@ -1090,8 +1117,10 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
     int sfc = sizeof(float) * max_nbrs;
     int sfc_grad = sizeof(float) * max_nbrs;
     int sj = sizeof(int) * max_nbrs;
+    int sshfa = sizeof(float) * aev_params.ShfA_t.size(0);
+    int sshfz = sizeof(float) * aev_params.ShfZ_t.size(0);
 
-    return (sxyz + sj_xyz_grad + sRij + sfc + sfc_grad + sj) * ncatom_per_tpb;
+    return (sxyz + sj_xyz_grad + sRij + sfc + sfc_grad + sj) * ncatom_per_tpb + sshfa + sshfz;
   };
 
   block_size = 32;
@@ -1170,8 +1199,10 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
     int sfc = sizeof(float) * max_nbrs;
     int sfc_grad = sizeof(float) * max_nbrs;
     int sj = sizeof(int) * max_nbrs;
+    int sshfa = sizeof(float) * aev_params.ShfA_t.size(0);
+    int sshfz = sizeof(float) * aev_params.ShfZ_t.size(0);
 
-    return (sxyz + sj_xyz_grad + sRij + sfc + sfc_grad + sj) * ncatom_per_tpb;
+    return (sxyz + sj_xyz_grad + sRij + sfc + sfc_grad + sj) * ncatom_per_tpb + sshfa + sshfz;
   };
 
   block_size = 32;
