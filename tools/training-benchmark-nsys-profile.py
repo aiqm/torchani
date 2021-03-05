@@ -59,28 +59,28 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--dry-run',
                         help='just run it in a CI without GPU',
                         action='store_true')
-    parser = parser.parse_args()
-    parser.device = torch.device('cpu' if parser.dry_run else 'cuda')
+    args = parser.parse_args()
+    args.device = torch.device('cpu' if args.dry_run else 'cuda')
 
     Rcr = 5.2000e+00
     Rca = 3.5000e+00
-    EtaR = torch.tensor([1.6000000e+01], device=parser.device)
-    ShfR = torch.tensor([9.0000000e-01, 1.1687500e+00, 1.4375000e+00, 1.7062500e+00, 1.9750000e+00, 2.2437500e+00, 2.5125000e+00, 2.7812500e+00, 3.0500000e+00, 3.3187500e+00, 3.5875000e+00, 3.8562500e+00, 4.1250000e+00, 4.3937500e+00, 4.6625000e+00, 4.9312500e+00], device=parser.device)
-    Zeta = torch.tensor([3.2000000e+01], device=parser.device)
-    ShfZ = torch.tensor([1.9634954e-01, 5.8904862e-01, 9.8174770e-01, 1.3744468e+00, 1.7671459e+00, 2.1598449e+00, 2.5525440e+00, 2.9452431e+00], device=parser.device)
-    EtaA = torch.tensor([8.0000000e+00], device=parser.device)
-    ShfA = torch.tensor([9.0000000e-01, 1.5500000e+00, 2.2000000e+00, 2.8500000e+00], device=parser.device)
+    EtaR = torch.tensor([1.6000000e+01], device=args.device)
+    ShfR = torch.tensor([9.0000000e-01, 1.1687500e+00, 1.4375000e+00, 1.7062500e+00, 1.9750000e+00, 2.2437500e+00, 2.5125000e+00, 2.7812500e+00, 3.0500000e+00, 3.3187500e+00, 3.5875000e+00, 3.8562500e+00, 4.1250000e+00, 4.3937500e+00, 4.6625000e+00, 4.9312500e+00], device=args.device)
+    Zeta = torch.tensor([3.2000000e+01], device=args.device)
+    ShfZ = torch.tensor([1.9634954e-01, 5.8904862e-01, 9.8174770e-01, 1.3744468e+00, 1.7671459e+00, 2.1598449e+00, 2.5525440e+00, 2.9452431e+00], device=args.device)
+    EtaA = torch.tensor([8.0000000e+00], device=args.device)
+    ShfA = torch.tensor([9.0000000e-01, 1.5500000e+00, 2.2000000e+00, 2.8500000e+00], device=args.device)
     num_species = 4
     aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
 
     nn = torchani.ANIModel([atomic() for _ in range(4)])
-    model = torch.nn.Sequential(aev_computer, nn).to(parser.device)
+    model = torch.nn.Sequential(aev_computer, nn).to(args.device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.000001)
     mse = torch.nn.MSELoss(reduction='none')
 
     print('=> loading dataset...')
     shifter = torchani.EnergyShifter(None)
-    dataset = list(torchani.data.load(parser.dataset_path).subtract_self_energies(shifter).species_to_indices().shuffle().collate(parser.batch_size))
+    dataset = list(torchani.data.load(args.dataset_path).subtract_self_energies(shifter).species_to_indices().shuffle().collate(args.batch_size))
 
     print('=> start warming up')
     total_batch_counter = 0
@@ -91,19 +91,19 @@ if __name__ == "__main__":
 
         for i, properties in enumerate(dataset):
 
-            if not parser.dry_run and total_batch_counter == WARM_UP_BATCHES:
+            if not args.dry_run and total_batch_counter == WARM_UP_BATCHES:
                 print('=> warm up finished, start profiling')
                 enable_timers(model)
                 torch.cuda.cudart().cudaProfilerStart()
 
-            PROFILING_STARTED = not parser.dry_run and (total_batch_counter >= WARM_UP_BATCHES)
+            PROFILING_STARTED = not args.dry_run and (total_batch_counter >= WARM_UP_BATCHES)
 
             if PROFILING_STARTED:
                 torch.cuda.nvtx.range_push("batch{}".format(total_batch_counter))
 
-            species = properties['species'].to(parser.device)
-            coordinates = properties['coordinates'].to(parser.device).float()
-            true_energies = properties['energies'].to(parser.device).float()
+            species = properties['species'].to(args.device)
+            coordinates = properties['coordinates'].to(args.device).float()
+            true_energies = properties['energies'].to(args.device).float()
             num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
             with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
                 _, predicted_energies = model((species, coordinates))

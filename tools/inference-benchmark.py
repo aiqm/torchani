@@ -14,10 +14,10 @@ parser.add_argument('-d', '--device',
                     default=('cuda' if torch.cuda.is_available() else 'cpu'))
 parser.add_argument('--tqdm', dest='tqdm', action='store_true',
                     help='Whether to use tqdm to display progress')
-parser = parser.parse_args()
+args = parser.parse_args()
 
 # set up benchmark
-device = torch.device(parser.device)
+device = torch.device(args.device)
 ani1x = torchani.models.ANI1x()
 nnp = torch.nn.Sequential(
     ani1x.aev_computer,
@@ -67,8 +67,11 @@ class XYZ:
     def __getitem__(self, i):
         return self.mols[i]
 
+    def __iter__(self):
+        return iter(self.mols)
 
-xyz = XYZ(parser.filename)
+
+xyz = XYZ(args.filename)
 
 print(len(xyz), 'conformations')
 print()
@@ -88,7 +91,7 @@ print()
 # test single mode
 print('[Single mode]')
 start = timeit.default_timer()
-if parser.tqdm:
+if args.tqdm:
     xyz = tqdm.tqdm(xyz)
 for species, coordinates in xyz:
     species = species.unsqueeze(0)

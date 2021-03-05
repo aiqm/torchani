@@ -16,10 +16,10 @@ parser.add_argument('-b', '--batchatoms', type=int, default=4096,
 parser.add_argument('-d', '--device',
                     help='Device of modules and tensors',
                     default=('cuda' if torch.cuda.is_available() else 'cpu'))
-parser = parser.parse_args()
+args = parser.parse_args()
 
 # run benchmark
-ani1x = torchani.models.ANI1x().to(parser.device)
+ani1x = torchani.models.ANI1x().to(args.device)
 
 
 def recursive_h5_files(base):
@@ -34,7 +34,7 @@ def recursive_h5_files(base):
 
 def by_batch(species, coordinates, model):
     shape = species.shape
-    batchsize = max(1, parser.batchatoms // shape[1])
+    batchsize = max(1, args.batchatoms // shape[1])
     coordinates = coordinates.clone().detach().requires_grad_(True)
     species = torch.split(species, batchsize)
     coordinates = torch.split(coordinates, batchsize)
@@ -69,7 +69,7 @@ def relative_energies(energies):
 
 
 def do_benchmark(model):
-    dataset = recursive_h5_files(parser.dir)
+    dataset = recursive_h5_files(args.dir)
     mae_averager_energy = Averager()
     mae_averager_relative_energy = Averager()
     mae_averager_force = Averager()
@@ -78,11 +78,11 @@ def do_benchmark(model):
     rmse_averager_force = Averager()
     for i in tqdm.tqdm(dataset, position=0, desc="dataset"):
         # read
-        coordinates = torch.tensor(i['coordinates'], device=parser.device)
+        coordinates = torch.tensor(i['coordinates'], device=args.device)
         species = model.species_to_tensor(i['species']) \
                        .unsqueeze(0).expand(coordinates.shape[0], -1)
-        energies = torch.tensor(i['energies'], device=parser.device)
-        forces = torch.tensor(i['forces'], device=parser.device)
+        energies = torch.tensor(i['energies'], device=args.device)
+        forces = torch.tensor(i['forces'], device=args.device)
         # compute
         energies2, forces2 = by_batch(species, coordinates, model)
         ediff = energies - energies2

@@ -46,7 +46,7 @@ class NeuroChem:
         aevs = numpy.stack(aevs)
         return aevs, energy, force
 
-    def __call__(self, args):
+    def __call__(self, *args):
         if len(args) == 2:
             return self.from_coordinates_and_species(*args)
         return self.from_atoms_obj(args)

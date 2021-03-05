@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('smiles')
 parser.add_argument('--conformations', type=int, default=2048)
 parser.add_argument('--temperature', type=int, default=30)
-parser = parser.parse_args()
+args = parser.parse_args()
 
 
 def save(smiles, species, coordinates):
@@ -23,7 +23,7 @@ def save(smiles, species, coordinates):
         print(s, *c)
 
 
-smiles = parser.smiles
+smiles = args.smiles
 m = Chem.MolFromSmiles(smiles)
 m = Chem.AddHs(m)
 AllChem.EmbedMolecule(m, useRandomCoords=True)
@@ -35,10 +35,10 @@ species = [m.GetAtomWithIdx(j).GetSymbol() for j in range(natoms)]
 atoms = Atoms(species, positions=pos)
 
 atoms.calc = EMT()
-md = Langevin(atoms, 1 * units.fs, temperature=parser.temperature * units.kB,
+md = Langevin(atoms, 1 * units.fs, temperature=args.temperature * units.kB,
               friction=0.01)
 
-for _ in range(parser.conformations):
+for _ in range(args.conformations):
     md.run(1)
     positions = atoms.get_positions()
     save(smiles, species, positions)

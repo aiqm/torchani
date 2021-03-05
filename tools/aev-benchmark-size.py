@@ -67,15 +67,15 @@ if __name__ == "__main__":
                         action='store_true',
                         help='use nsight profile')
     parser.set_defaults(check_gpu_mem=0)
-    parser = parser.parse_args()
+    args = parser.parse_args()
     path = os.path.dirname(os.path.realpath(__file__))
 
-    check_gpu_mem = parser.check_gpu_mem
+    check_gpu_mem = args.check_gpu_mem
     device = torch.device('cuda')
     files = ['small.pdb', '1hz5.pdb', '6W8H.pdb']
 
     N = 500
-    if parser.nsight:
+    if args.nsight:
         N = 3
         torch.cuda.profiler.start()
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         speciesPositions = nnp.species_converter((species, positions))
         aev_computer = nnp.aev_computer
 
-        if parser.nsight:
+        if args.nsight:
             torch.cuda.nvtx.range_push(file)
         print('Original TorchANI:')
         aev_ref, delta_ref = benchmark(speciesPositions, aev_computer, N, check_gpu_mem)
@@ -100,11 +100,11 @@ if __name__ == "__main__":
         nnp.aev_computer.use_cuda_extension = True
         cuaev_computer = nnp.aev_computer
         aev, delta = benchmark(speciesPositions, cuaev_computer, N, check_gpu_mem)
-        if parser.nsight:
+        if args.nsight:
             torch.cuda.nvtx.range_pop()
 
         check_speedup_error(aev, aev_ref, delta, delta_ref)
         print('-' * 70 + '\n')
 
-    if parser.nsight:
+    if args.nsight:
         torch.cuda.profiler.stop()
