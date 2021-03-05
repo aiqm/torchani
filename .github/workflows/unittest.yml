@@ -14,12 +14,6 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.8]
-        test-filenames: [
-          test_aev.py, test_aev_benzene_md.py, test_aev_nist.py, test_aev_tripeptide_md.py,
-          test_utils.py, test_ase.py, test_energies.py, test_periodic_table_indexing.py,
-          test_neurochem.py, test_vibrational.py, test_ensemble.py, test_padding.py,
-          test_data.py, test_forces.py, test_structure_optim.py, test_jit_builtin_models.py, 
-          test_grad.py, test_cuaev.py, test_al.py]
 
     steps:
     - uses: actions/checkout@v1
@@ -35,5 +29,7 @@ jobs:
       run: python setup.py install
     - name: Download data files
       run: ./download.sh
-    - name: Run single test
-      run: python tests/${{ matrix.test-filenames }} -v
+    - name: install pytest
+      run: pip install pytest
+    - name: Run all tests
+      run: python -m pytest -v tests/*
