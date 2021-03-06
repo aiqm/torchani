@@ -77,7 +77,7 @@ struct PairDist {
   DataT Rij;
   int midx;
   short i;
-  short j;
+  short j; // range: -32768 to 32767, TODO: may fail for big mol
 };
 
 // used to group Rijs by atom id
