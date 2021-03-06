@@ -27,11 +27,11 @@ constexpr int csubaev_offsets(int i, int j, int n) {
 }
 
 template <typename DataT>
-struct PairDist {
-  DataT Rij;
+struct alignas(4 * sizeof(int)) PairDist {
+  float Rij;
   int midx;
-  short i;
-  short j;
+  int i;
+  int j;
 };
 
 // used to group Rijs by atom id
