@@ -60,9 +60,9 @@ __global__ void pairwiseDistance(
   DataT* sz = &spos[2 * max_natoms_per_mol];
 
   int mol_idx = blockIdx.x;
-  int tidx = threadIdx.y * blockDim.x + threadIdx.x;
+  int tidx = threadIdx.x;
 
-  for (int i = tidx; i < max_natoms_per_mol; i += blockDim.x * blockDim.y) {
+  for (int i = tidx; i < max_natoms_per_mol; i += blockDim.x) {
     SpeciesT type_i = species_t[mol_idx][i];
     if (type_i != -1) {
       sx[i] = pos_t[mol_idx][i][0];
@@ -73,18 +73,18 @@ __global__ void pairwiseDistance(
 
   __syncthreads();
 
-  int natom_pairs = max_natoms_per_mol * max_natoms_per_mol;
+  int pairs_per_mol = max_natoms_per_mol * (max_natoms_per_mol - 1) / 2;
 
-  for (int i = threadIdx.y; i < max_natoms_per_mol; i += blockDim.y) {
+  for (int i = 0; i < max_natoms_per_mol - 1; i++) {
     SpeciesT type_i = species_t[mol_idx][i];
 
     DataT xi = sx[i];
     DataT yi = sy[i];
     DataT zi = sz[i];
 
-    for (int j = threadIdx.x; j < max_natoms_per_mol; j += blockDim.x) {
+    for (int j = tidx + i + 1; j < max_natoms_per_mol; j += blockDim.x) {
       SpeciesT type_j = species_t[mol_idx][j];
-      if (type_i != -1 && type_j != -1 && i != j) {
+      if (type_i != -1 && type_j != -1) {
         const DataT xj = sx[j];
         const DataT yj = sy[j];
         const DataT zj = sz[j];
@@ -100,7 +100,9 @@ __global__ void pairwiseDistance(
         d.i = i;
         d.j = j;
 
-        d_Rij[mol_idx * natom_pairs + i * max_natoms_per_mol + j] = d;
+        int starting = i * (2 * max_natoms_per_mol - i - 1) / 2; // (n - 1) + ... + (n - i)
+        int offset = j - i - 1;
+        d_Rij[mol_idx * pairs_per_mol + starting + offset] = d;
       }
     }
   }
@@ -273,6 +275,7 @@ __global__ void cuAngularAEVs(
   DataT xi = pos_t[mol_idx][i][0];
   DataT yi = pos_t[mol_idx][i][1];
   DataT zi = pos_t[mol_idx][i][2];
+  SpeciesT type_i = species_t[mol_idx][i];
 
   for (int jj = laneIdx; jj < jnum; jj += threads_per_catom) {
     PairDist dij = d_Rij[start_idx + jj];
@@ -295,43 +298,77 @@ __global__ void cuAngularAEVs(
   for (int jj = 0; jj < jnum; jj++) {
     const DataT Rij = sdist[jj];
     SpeciesT type_j = stype[jj];
+    int atomj_idx = d_Rij[start_idx + jj].j;
 
     DataT fc_ij = sfc[jj];
 
     for (int kk_start = jj + 1; kk_start < jnum; kk_start += threads_per_catom) {
       int kk = kk_start + laneIdx;
-      DataT theta = 0;
+      DataT theta_ij_ik = 0;
+      DataT theta_ji_jk = 0;
+      DataT theta_ki_kj = 0;
+      DataT Rjk = 0;
+      DataT fc_jk = 0;
       if (kk < jnum) {
         const DataT Rik = sdist[kk];
-        theta = acos(0.95 * (sdx[jj] * sdx[kk] + sdy[jj] * sdy[kk] + sdz[jj] * sdz[kk]) / (Rij * Rik));
+        DataT cosij_ik = (sdx[jj] * sdx[kk] + sdy[jj] * sdy[kk] + sdz[jj] * sdz[kk]) / (Rij * Rik);
+        theta_ij_ik = acos(0.95 * cosij_ik);
+        Rjk = sqrt(Rij * Rij + Rik * Rik - 2 * Rij * Rik * cosij_ik);
+        DataT cosji_jk = (Rij * Rij + Rjk * Rjk - Rik * Rik) / (2 * Rij * Rjk);
+        DataT coski_kj = (Rik * Rik + Rjk * Rjk - Rij * Rij) / (2 * Rik * Rjk);
+        theta_ji_jk = acos(0.95 * cosji_jk);
+        theta_ki_kj = acos(0.95 * coski_kj);
+        fc_jk = 0.5 * cos(PI * Rjk / Rca) + 0.5;
       }
 
       for (int srcLane = 0; srcLane < C10_WARP_SIZE && (kk_start + srcLane) < jnum; ++srcLane) {
         int kk = kk_start + srcLane;
-        DataT theta_ijk = __shfl_sync(0xFFFFFFFF, theta, srcLane);
+        DataT theta_ij_ik_ = __shfl_sync(0xFFFFFFFF, theta_ij_ik, srcLane);
+        DataT theta_ji_jk_ = __shfl_sync(0xFFFFFFFF, theta_ji_jk, srcLane);
+        DataT theta_ki_kj_ = __shfl_sync(0xFFFFFFFF, theta_ki_kj, srcLane);
+        DataT Rjk_ = __shfl_sync(0xFFFFFFFF, Rjk, srcLane);
+        DataT fc_jk_ = __shfl_sync(0xFFFFFFFF, fc_jk, srcLane);
+        int atomk_idx = d_Rij[start_idx + kk].j;
 
         const DataT Rik = sdist[kk];
         SpeciesT type_k = stype[kk];
 
         DataT fc_ik = sfc[kk];
 
-        DataT Rijk = (Rij + Rik) / 2;
-        DataT fc_ijk = fc_ij * fc_ik;
+        DataT Rij_ik = (Rij + Rik) / 2;
+        DataT fc_i = fc_ij * fc_ik;
 
-        IndexT subaev_offset = angular_sublength * csubaev_offsets(type_j, type_k, num_species);
+        DataT Rji_jk = (Rij + Rjk_) / 2;
+        DataT fc_j = fc_ij * fc_jk_;
+
+        DataT Rki_kj = (Rik + Rjk_) / 2;
+        DataT fc_k = fc_ik * fc_jk_;
+
+        IndexT subaev_offset_i = angular_sublength * csubaev_offsets(type_j, type_k, num_species);
+        IndexT subaev_offset_j = angular_sublength * csubaev_offsets(type_i, type_k, num_species);
+        IndexT subaev_offset_k = angular_sublength * csubaev_offsets(type_i, type_j, num_species);
 
         for (int itheta = tile.x; itheta < nShfZ; itheta += TILEX) {
           DataT ShfZ = ShfZ_t[itheta];
 
-          DataT factor1 = pow((1 + cos(theta_ijk - ShfZ)) / 2, Zeta);
+          DataT factor1_i = pow((1 + cos(theta_ij_ik_ - ShfZ)) / 2, Zeta);
+          DataT factor1_j = pow((1 + cos(theta_ji_jk_ - ShfZ)) / 2, Zeta);
+          DataT factor1_k = pow((1 + cos(theta_ki_kj_ - ShfZ)) / 2, Zeta);
 
           for (int ishfr = tile.y; ishfr < nShfA; ishfr += TILEY) {
             DataT ShfA = ShfA_t[ishfr];
-            DataT factor2 = exp(-EtaA * (Rijk - ShfA) * (Rijk - ShfA));
+            DataT factor2_i = exp(-EtaA * (Rij_ik - ShfA) * (Rij_ik - ShfA));
+            DataT factor2_j = exp(-EtaA * (Rji_jk - ShfA) * (Rji_jk - ShfA));
+            DataT factor2_k = exp(-EtaA * (Rki_kj - ShfA) * (Rki_kj - ShfA));
 
-            DataT res = 2 * factor1 * factor2 * fc_ijk;
+            DataT res_i = 2 * factor1_i * factor2_i * fc_i;
+            DataT res_j = 2 * factor1_j * factor2_j * fc_j;
+            DataT res_k = 2 * factor1_k * factor2_k * fc_k;
 
-            saev[subaev_offset + ishfr * nShfZ + itheta] += res;
+            saev[subaev_offset_i + ishfr * nShfZ + itheta] += res_i;
+            atomicAdd(&aev_t[mol_idx][atomj_idx][radial_length + subaev_offset_j + ishfr * nShfZ + itheta], res_j);
+            atomicAdd(&aev_t[mol_idx][atomk_idx][radial_length + subaev_offset_k + ishfr * nShfZ + itheta], res_k);
+            // printf("%d %d %d %f -- %d %d %d %f -- %d %d %d %f\n", mol_idx, i, radial_length + subaev_offset_i + ishfr * nShfZ + itheta, res_i, mol_idx, atomj_idx, radial_length + subaev_offset_j + ishfr * nShfZ + itheta, res_j, mol_idx, atomk_idx, radial_length + subaev_offset_k + ishfr * nShfZ + itheta, res_k);
           }
         }
       }
@@ -339,7 +376,7 @@ __global__ void cuAngularAEVs(
   }
 
   for (int iaev = laneIdx; iaev < angular_length; iaev += threads_per_catom) {
-    aev_t[mol_idx][i][radial_length + iaev] = saev[iaev];
+    aev_t[mol_idx][i][radial_length + iaev] += saev[iaev];
   }
 }
 
@@ -657,6 +694,7 @@ __global__ void cuRadialAEVs(
   int j = d.j;
 
   SpeciesT type_j = species_t[mol_idx][j];
+  SpeciesT type_i = species_t[mol_idx][i];
 
   DataT fc = 0.5 * cos(PI * Rij / Rcr) + 0.5;
 
@@ -666,6 +704,7 @@ __global__ void cuRadialAEVs(
     DataT GmR = 0.25 * exp(-EtaR * (Rij - ShfR) * (Rij - ShfR)) * fc;
 
     atomicAdd(&aev_t[mol_idx][i][type_j * radial_sublength + ishfr], GmR);
+    atomicAdd(&aev_t[mol_idx][j][type_i * radial_sublength + ishfr], GmR);
   }
 }
 
@@ -854,7 +893,8 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
   auto& allocator = *c10::cuda::CUDACachingAllocator::get();
 
   // buffer to store all the pairwise distance (Rij)
-  auto total_natom_pairs = n_molecules * max_natoms_per_mol * max_natoms_per_mol;
+  int pairs_per_mol = max_natoms_per_mol * (max_natoms_per_mol - 1) / 2;
+  auto total_natom_pairs = n_molecules * pairs_per_mol;
   auto d_options = torch::dtype(torch::kUInt8).device(coordinates_t.device());
   Tensor tensor_Rij = torch::empty(sizeof(PairDist) * total_natom_pairs, d_options);
   PairDist* d_Rij = (PairDist*)tensor_Rij.data_ptr();
@@ -874,7 +914,7 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
 
   const int block_size = 64;
 
-  if (n_molecules == 1) {
+  if (false) {
     int tileWidth = 32;
     int tilesPerRow = (max_natoms_per_mol + tileWidth - 1) / tileWidth;
     dim3 block(tileWidth, tileWidth, 1);
@@ -885,7 +925,7 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
         d_Rij,
         max_natoms_per_mol);
   } else {
-    dim3 block(8, 8, 1);
+    dim3 block(16, 1, 1);
     // Compute pairwise distance (Rij) for all atom pairs in a molecule
     // maximum 4096 atoms, which needs 49152 byte (48 kb) of shared memory
     // TODO: the kernel is not optimized for batched huge molecule (max_natoms_per_mol > 1000)
@@ -963,7 +1003,7 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
     int maxnbrs_per_atom_aligned = align<4>(maxNbrsPerCenterAtom);
     int smem_size_aligned = smem_size(maxnbrs_per_atom_aligned, block_size / nthreads_per_catom);
     int angular_length_aligned = align<4>(aev_params.angular_length);
-
+    printf("maxnbrs_per_atom_aligned %d -- angular smem_size %d\n", maxnbrs_per_atom_aligned, smem_size_aligned);
     cuAngularAEVs<<<nblocks_angAEV, block_size, smem_size_aligned, stream>>>(
         species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
         coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
