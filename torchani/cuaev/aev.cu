@@ -63,9 +63,12 @@ __global__ void pairwiseDistance(
   int tidx = threadIdx.y * blockDim.x + threadIdx.x;
 
   for (int i = tidx; i < max_natoms_per_mol; i += blockDim.x * blockDim.y) {
-    sx[i] = pos_t[mol_idx][i][0];
-    sy[i] = pos_t[mol_idx][i][1];
-    sz[i] = pos_t[mol_idx][i][2];
+    SpeciesT type_i = species_t[mol_idx][i];
+    if (type_i != -1) {
+      sx[i] = pos_t[mol_idx][i][0];
+      sy[i] = pos_t[mol_idx][i][1];
+      sz[i] = pos_t[mol_idx][i][2];
+    }
   }
 
   __syncthreads();
@@ -81,18 +84,16 @@ __global__ void pairwiseDistance(
 
     for (int j = threadIdx.x; j < max_natoms_per_mol; j += blockDim.x) {
       SpeciesT type_j = species_t[mol_idx][j];
-
-      const DataT xj = sx[j];
-      const DataT yj = sy[j];
-      const DataT zj = sz[j];
-      const DataT delx = xj - xi;
-      const DataT dely = yj - yi;
-      const DataT delz = zj - zi;
-
-      const DataT Rsq = delx * delx + dely * dely + delz * delz;
       if (type_i != -1 && type_j != -1 && i != j) {
-        DataT Rij = sqrt(Rsq);
+        const DataT xj = sx[j];
+        const DataT yj = sy[j];
+        const DataT zj = sz[j];
+        const DataT delx = xj - xi;
+        const DataT dely = yj - yi;
+        const DataT delz = zj - zi;
 
+        const DataT Rsq = delx * delx + dely * dely + delz * delz;
+        DataT Rij = sqrt(Rsq);
         PairDist d;
         d.Rij = Rij;
         d.midx = mol_idx;
