@@ -1,0 +1,1 @@
+git update-index --assume-unchanged $(git ls-files | tr '\n' ' ')
