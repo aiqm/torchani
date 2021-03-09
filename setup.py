@@ -1,5 +1,4 @@
 import os
-import glob
 import subprocess
 from setuptools import setup, find_packages
 from distutils import log
@@ -12,6 +11,11 @@ if BUILD_CUAEV_ALL_SM:
 FAST_BUILD_CUAEV = '--cuaev' in sys.argv
 if FAST_BUILD_CUAEV:
     sys.argv.remove('--cuaev')
+
+# Use along with --cuaev for CI test to reduce compilation time on Non-GPUs system
+ONLY_BUILD_SM80 = '--only-sm80' in sys.argv
+if ONLY_BUILD_SM80:
+    sys.argv.remove('--only-sm80')
 
 if not BUILD_CUAEV_ALL_SM and not FAST_BUILD_CUAEV:
     log.warn("Will not install cuaev")  # type: ignore
@@ -50,6 +54,7 @@ def cuda_extension(build_all=False):
     import torch
     from torch.utils.cpp_extension import CUDAExtension
     SMs = None
+    print('-' * 75)
     if not build_all:
         SMs = []
         devices = torch.cuda.device_count()
@@ -69,7 +74,10 @@ def cuda_extension(build_all=False):
     if SMs:
         for sm in SMs:
             nvcc_args.append(f"-gencode=arch=compute_{sm},code=sm_{sm}")
-    else:
+    elif len(SMs) == 0 and ONLY_BUILD_SM80:  # --cuaev --only-sm80
+        nvcc_args.append("-gencode=arch=compute_80,code=sm_80")
+    else:  # no gpu detected
+        print('NO gpu detected, will build for all SMs')
         nvcc_args.append("-gencode=arch=compute_60,code=sm_60")
         nvcc_args.append("-gencode=arch=compute_61,code=sm_61")
         nvcc_args.append("-gencode=arch=compute_70,code=sm_70")
@@ -81,11 +89,13 @@ def cuda_extension(build_all=False):
         if cuda_version >= 11.1:
             nvcc_args.append("-gencode=arch=compute_86,code=sm_86")
     print("nvcc_args: ", nvcc_args)
+    print('-' * 75)
+    include_dirs = [*maybe_download_cub(), os.path.abspath("torchani/cuaev/")]
     return CUDAExtension(
         name='torchani.cuaev',
         pkg='torchani.cuaev',
-        sources=glob.glob('torchani/cuaev/*.cu'),
-        include_dirs=maybe_download_cub(),
+        sources=["torchani/cuaev/cuaev.cpp", "torchani/cuaev/aev.cu"],
+        include_dirs=include_dirs,
         extra_compile_args={'cxx': ['-std=c++14'], 'nvcc': nvcc_args})
 
 
