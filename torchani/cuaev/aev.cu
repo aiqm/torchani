@@ -153,7 +153,11 @@ __global__ void pairwiseDistanceSingleMolecule(
     d.i = i;
     d.j = j;
 
-    d_Rij[mol_idx * natom_pairs + i * max_natoms_per_mol + j] = d;
+    int jj = j;
+    if (j > i)
+      jj = j - 1;
+    if (Rij <= 5.2)
+      d_Rij[mol_idx * natom_pairs + i * (max_natoms_per_mol - 1) + jj] = d;
   }
 }
 
@@ -886,7 +890,8 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
 
   const int block_size = 64;
 
-  if (false) {
+  if (n_molecules == 1) {
+    printf("single molecule, %d atoms\n", max_natoms_per_mol);
     int tileWidth = 32;
     int tilesPerRow = (max_natoms_per_mol + tileWidth - 1) / tileWidth;
     dim3 block(tileWidth, tileWidth, 1);
