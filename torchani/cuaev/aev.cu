@@ -115,49 +115,65 @@ __global__ void pairwiseDistance(
   }
 }
 
-template <typename SpeciesT, typename DataT, typename IndexT = int>
+template <int ATOM_I_PER_BLOCK, int ATOM_J_PER_TILE, typename SpeciesT, typename DataT, typename IndexT = int>
 __global__ void pairwiseDistanceSingleMolecule(
     torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
     torch::PackedTensorAccessor32<DataT, 3, torch::RestrictPtrTraits> pos_t,
+    torch::PackedTensorAccessor32<SpeciesT, 1, torch::RestrictPtrTraits> numPairsPerAtom_t,
     PairDist* d_Rij,
+    DataT Rcr,
     IndexT max_natoms_per_mol) {
+  __shared__ int s_pcounter_i[ATOM_I_PER_BLOCK];
+  __shared__ float3 s_coord_j[ATOM_J_PER_TILE];
+  float3* pos_t_3 = reinterpret_cast<float3*>(&pos_t[0][0][0]);
+
   constexpr int mol_idx = 0;
-  int natom_pairs = max_natoms_per_mol * max_natoms_per_mol;
-  int i = blockIdx.x * blockDim.x + threadIdx.x;
-  int j = blockIdx.y * blockDim.y + threadIdx.y;
-  if (i >= max_natoms_per_mol || j >= max_natoms_per_mol)
+  int natom_pairs = max_natoms_per_mol * (max_natoms_per_mol - 1);
+  int i = blockIdx.x * blockDim.y + threadIdx.y;
+  int ii = threadIdx.y;
+  int sidx = blockDim.x * threadIdx.y + threadIdx.x;
+  int num_tiles = (max_natoms_per_mol + ATOM_J_PER_TILE - 1) / ATOM_J_PER_TILE;
+  if (i >= max_natoms_per_mol)
     return;
 
   SpeciesT type_i = species_t[mol_idx][i];
-  DataT xi = pos_t[mol_idx][i][0];
-  DataT yi = pos_t[mol_idx][i][1];
-  DataT zi = pos_t[mol_idx][i][2];
+  float3 coord_i = pos_t_3[mol_idx * max_natoms_per_mol + i];
 
-  SpeciesT type_j = species_t[mol_idx][j];
-  DataT xj = pos_t[mol_idx][j][0];
-  DataT yj = pos_t[mol_idx][j][1];
-  DataT zj = pos_t[mol_idx][j][2];
+  if (sidx < ATOM_I_PER_BLOCK)
+    s_pcounter_i[sidx] = 0;
+  __syncthreads();
 
-  DataT delx = xj - xi;
-  DataT dely = yj - yi;
-  DataT delz = zj - zi;
-
-  DataT Rsq = delx * delx + dely * dely + delz * delz;
-
-  if (type_i != -1 && type_j != -1 && i != j) {
-    DataT Rij = sqrt(Rsq);
-
-    PairDist d;
-    d.Rij = Rij;
-    d.midx = mol_idx;
-    d.i = i;
-    d.j = j;
-
-    int jj = j;
-    if (j > i)
-      jj = j - 1;
-    if (Rij <= 5.2)
-      d_Rij[mol_idx * natom_pairs + i * (max_natoms_per_mol - 1) + jj] = d;
+  for (int tileidx = 0; tileidx < num_tiles; tileidx++) {
+    // load 1024 atoms j into share memory
+    int jidx = ATOM_J_PER_TILE * tileidx + sidx;
+    if (jidx < max_natoms_per_mol) {
+      // TODO Test this is coalescing
+      s_coord_j[sidx] = pos_t_3[max_natoms_per_mol * mol_idx + jidx];
+      printf("jidx %d, sidx %d, s_coord_j[sidx] %f\n", jidx, sidx, s_coord_j[sidx].x);
+    }
+    __syncthreads();
+    for (int jj = threadIdx.x; jj < ATOM_J_PER_TILE; jj += blockDim.x) {
+      int j = jj + ATOM_J_PER_TILE * tileidx;
+      if (j >= max_natoms_per_mol)
+        return;
+      float3 delta = make_float3(s_coord_j[jj].x - coord_i.x, s_coord_j[jj].y - coord_i.y, s_coord_j[jj].z - coord_i.z);
+      SpeciesT type_j = species_t[mol_idx][j];
+      DataT Rsq = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+      if (type_i != -1 && type_j != -1 && i != j) {
+        DataT Rij = sqrt(Rsq);
+        if (Rij <= Rcr) {
+          int pidx = atomicAdd(&s_pcounter_i[ii], 1);
+          PairDist d;
+          d.Rij = Rij;
+          d.midx = mol_idx;
+          d.i = i;
+          d.j = j;
+          d_Rij[mol_idx * natom_pairs + i * (max_natoms_per_mol - 1) + pidx] = d;
+          printf("i %d, j %d, pidx %d, Rij %f\n", i, j, pidx, Rij);
+        }
+      }
+    }
+    __syncthreads();
   }
 }
 
@@ -891,15 +907,21 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
   const int block_size = 64;
 
   if (n_molecules == 1) {
+    Tensor numPairsPerAtom_t = torch::zeros(n_molecules * max_natoms_per_mol, d_options.dtype(torch::kInt32));
+    // int* d_numPairsPerAtom = (int*)tensor_numPairsPerAtom.data_ptr();
     printf("single molecule, %d atoms\n", max_natoms_per_mol);
-    int tileWidth = 32;
-    int tilesPerRow = (max_natoms_per_mol + tileWidth - 1) / tileWidth;
-    dim3 block(tileWidth, tileWidth, 1);
-    dim3 grid(tilesPerRow, tilesPerRow, 1);
-    pairwiseDistanceSingleMolecule<<<grid, block, 0, stream>>>(
+    constexpr int ATOM_I_PER_BLOCK = 32;
+    constexpr int ATOM_J_PER_SUBTILE = 32;
+    constexpr int ATOM_J_PER_TILE = ATOM_I_PER_BLOCK * ATOM_J_PER_SUBTILE;
+    int blocks = (max_natoms_per_mol + ATOM_I_PER_BLOCK - 1) / ATOM_I_PER_BLOCK;
+    dim3 block(ATOM_I_PER_BLOCK, ATOM_J_PER_SUBTILE, 1);
+    dim3 grid(blocks, 1, 1);
+    pairwiseDistanceSingleMolecule<ATOM_I_PER_BLOCK, ATOM_J_PER_TILE><<<grid, block>>>(
         species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
         coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
+        numPairsPerAtom_t.packed_accessor32<int, 1, torch::RestrictPtrTraits>(),
         d_Rij,
+        Rcr,
         max_natoms_per_mol);
   } else {
     dim3 block(32, 1, 1);
