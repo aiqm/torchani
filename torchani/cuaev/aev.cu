@@ -133,11 +133,14 @@ __global__ void pairwiseDistanceSingleMolecule(
   int ii = threadIdx.y;
   int sidx = blockDim.x * threadIdx.y + threadIdx.x;
   int num_tiles = (max_natoms_per_mol + ATOM_J_PER_TILE - 1) / ATOM_J_PER_TILE;
-  if (i >= max_natoms_per_mol)
-    return;
 
-  SpeciesT type_i = species_t[mol_idx][i];
-  float3 coord_i = pos_t_3[mol_idx * max_natoms_per_mol + i];
+  // i >= max_natoms_per_mol is still needed to load share memory for j
+  SpeciesT type_i;
+  float3 coord_i;
+  if (i < max_natoms_per_mol){
+    type_i = species_t[mol_idx][i];
+    coord_i = pos_t_3[mol_idx * max_natoms_per_mol + i];
+  }
 
   if (sidx < ATOM_I_PER_BLOCK)
     s_pcounter_i[sidx] = 0;
@@ -149,10 +152,10 @@ __global__ void pairwiseDistanceSingleMolecule(
     if (jidx < max_natoms_per_mol) {
       // TODO Test this is coalescing
       s_coord_j[sidx] = pos_t_3[max_natoms_per_mol * mol_idx + jidx];
-      printf("jidx %d, sidx %d, s_coord_j[sidx] %f\n", jidx, sidx, s_coord_j[sidx].x);
     }
+
     __syncthreads();
-    for (int jj = threadIdx.x; jj < ATOM_J_PER_TILE; jj += blockDim.x) {
+    for (int jj = threadIdx.x; jj < ATOM_J_PER_TILE && i < max_natoms_per_mol; jj += blockDim.x) {
       int j = jj + ATOM_J_PER_TILE * tileidx;
       if (j >= max_natoms_per_mol)
         return;
@@ -169,7 +172,7 @@ __global__ void pairwiseDistanceSingleMolecule(
           d.i = i;
           d.j = j;
           d_Rij[mol_idx * natom_pairs + i * (max_natoms_per_mol - 1) + pidx] = d;
-          printf("i %d, j %d, pidx %d, Rij %f\n", i, j, pidx, Rij);
+          // printf("i %d, j %d, pidx %d, Rij %f\n", i, j, pidx, Rij);
         }
       }
     }
