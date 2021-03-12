@@ -4,6 +4,7 @@ from ase.md.nptberendsen import NPTBerendsen
 from ase import units
 from ase.io import read
 from ase.calculators.test import numeric_force
+from torchani.testing import TestCase
 import numpy as np
 import torch
 import torchani
@@ -21,7 +22,7 @@ def get_numeric_force(atoms, eps):
     return fn
 
 
-class TestASE(torchani.testing.TestCase):
+class TestASE(TestCase):
 
     def setUp(self):
         self.model = torchani.models.ANI1x(model_index=0).double()

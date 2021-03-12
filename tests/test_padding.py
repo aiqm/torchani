@@ -1,12 +1,13 @@
 import unittest
 import torch
 import torchani
+from torchani.testing import TestCase
 
 
 b = torchani.utils.broadcast_first_dim
 
 
-class TestPaddings(torchani.testing.TestCase):
+class TestPaddings(TestCase):
 
     def testVectorSpecies(self):
         species1 = torch.tensor([[0, 2, 3, 1]])
@@ -90,7 +91,7 @@ class TestPaddings(torchani.testing.TestCase):
         self.assertEqual(expected, present_species)
 
 
-class TestStripRedundantPadding(torchani.testing.TestCase):
+class TestStripRedundantPadding(TestCase):
 
     def testStripRestore(self):
         species1 = torch.randint(4, (5, 4), dtype=torch.long)
