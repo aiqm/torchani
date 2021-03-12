@@ -2,9 +2,10 @@ import torch
 import torchani
 import math
 import unittest
+from torchani.testing import TestCase
 
 
-class TestALAtomic(torchani.testing.TestCase):
+class TestALAtomic(TestCase):
     def setUp(self):
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')

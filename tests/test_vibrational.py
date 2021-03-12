@@ -7,13 +7,14 @@ import ase
 import ase.optimize
 import ase.vibrations
 import numpy
+from torchani.testing import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
 path = os.path.join(path, '../dataset/xyz_files/H2O.xyz')
 
 
-class TestVibrational(torchani.testing.TestCase):
+class TestVibrational(TestCase):
 
     def testVibrationalWavenumbers(self):
         model = torchani.models.ANI1x().double()

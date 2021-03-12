@@ -1,9 +1,10 @@
 import torch
 import torchani
 import os
+from torchani.testing import TestCase
 
 
-class _TestAEVBase(torchani.testing.TestCase):
+class _TestAEVBase(TestCase):
 
     def setUp(self):
         path = os.path.dirname(os.path.realpath(__file__))
