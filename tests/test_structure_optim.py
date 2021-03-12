@@ -6,12 +6,13 @@ import copy
 import pickle
 from ase.optimize import BFGS
 from ase import Atoms
+from torchani.testing import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestStructureOptimization(torchani.testing.TestCase):
+class TestStructureOptimization(TestCase):
 
     def setUp(self):
         self.tolerance = 1e-6
