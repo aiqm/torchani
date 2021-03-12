@@ -116,7 +116,7 @@ __global__ void pairwiseDistance(
 }
 
 // ATOM_J_PER_TILE stands for a tile of atoms J that are loaded into share memory
-// ATOM_J_PER_SUBTILE is the tile of atoms J that are really calculating every time
+// ATOM_J_PER_SUBTILE is the tile of atoms J that are really parallel calculating
 template <int ATOM_I_PER_BLOCK, int ATOM_J_PER_TILE, typename SpeciesT, typename DataT, typename IndexT = int>
 __global__ void pairwiseDistanceSingleMolecule(
     torch::PackedTensorAccessor32<SpeciesT, 2, torch::RestrictPtrTraits> species_t,
