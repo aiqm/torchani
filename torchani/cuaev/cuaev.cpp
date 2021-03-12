@@ -31,7 +31,6 @@ AEVScalarParams::AEVScalarParams(
 
 Result::Result(
     Tensor aev_t_,
-    Tensor tensor_Rij_,
     Tensor tensor_radialRij_,
     Tensor tensor_angularRij_,
     int64_t total_natom_pairs_,
@@ -46,7 +45,6 @@ Result::Result(
     Tensor coordinates_t_,
     Tensor species_t_)
     : aev_t(aev_t_),
-      tensor_Rij(tensor_Rij_),
       tensor_radialRij(tensor_radialRij_),
       tensor_angularRij(tensor_angularRij_),
       total_natom_pairs(total_natom_pairs_),
@@ -63,20 +61,19 @@ Result::Result(
 
 Result::Result(tensor_list tensors)
     : aev_t(tensors[0]), // aev_t will be a undefined tensor
-      tensor_Rij(tensors[1]),
-      tensor_radialRij(tensors[2]),
-      tensor_angularRij(tensors[3]),
-      total_natom_pairs(tensors[4].item<int>()),
-      nRadialRij(tensors[5].item<int>()),
-      nAngularRij(tensors[6].item<int>()),
-      tensor_centralAtom(tensors[7]),
-      tensor_numPairsPerCenterAtom(tensors[8]),
-      tensor_centerAtomStartIdx(tensors[9]),
-      maxnbrs_per_atom_aligned(tensors[10].item<int>()),
-      angular_length_aligned(tensors[11].item<int>()),
-      ncenter_atoms(tensors[12].item<int>()),
-      coordinates_t(tensors[13]),
-      species_t(tensors[14]) {}
+      tensor_radialRij(tensors[1]),
+      tensor_angularRij(tensors[2]),
+      total_natom_pairs(tensors[3].item<int>()),
+      nRadialRij(tensors[4].item<int>()),
+      nAngularRij(tensors[5].item<int>()),
+      tensor_centralAtom(tensors[6]),
+      tensor_numPairsPerCenterAtom(tensors[7]),
+      tensor_centerAtomStartIdx(tensors[8]),
+      maxnbrs_per_atom_aligned(tensors[9].item<int>()),
+      angular_length_aligned(tensors[10].item<int>()),
+      ncenter_atoms(tensors[11].item<int>()),
+      coordinates_t(tensors[12]),
+      species_t(tensors[13]) {}
 
 CuaevComputer::CuaevComputer(
     double Rcr,

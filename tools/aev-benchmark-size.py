@@ -222,6 +222,7 @@ if __name__ == "__main__":
 
     for file in files:
         run(file, nnp_ref, nnp_cuaev, runbackward=False)
+    # for maxatom in [6000, 10000, 13000]:
     for maxatom in [6000, 10000]:
         file = '1C17.pdb'
         run(file, nnp_ref, nnp_cuaev, runbackward=False, maxatoms=maxatom)

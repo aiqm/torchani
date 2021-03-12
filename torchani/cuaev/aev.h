@@ -134,7 +134,6 @@ struct AEVScalarParams {
 
 struct Result {
   Tensor aev_t;
-  Tensor tensor_Rij;
   Tensor tensor_radialRij;
   Tensor tensor_angularRij;
   int total_natom_pairs;
@@ -151,7 +150,6 @@ struct Result {
 
   Result(
       Tensor aev_t_,
-      Tensor tensor_Rij_,
       Tensor tensor_radialRij_,
       Tensor tensor_angularRij_,
       int64_t total_natom_pairs_,
@@ -168,7 +166,6 @@ struct Result {
   Result(tensor_list tensors);
   operator tensor_list() {
     return {Tensor(), // aev_t got removed
-            tensor_Rij,
             tensor_radialRij,
             tensor_angularRij,
             torch::tensor(total_natom_pairs),
