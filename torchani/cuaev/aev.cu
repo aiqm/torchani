@@ -1117,20 +1117,21 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
         angular_length_aligned,
         ncenter_atoms);
 
-    return {aev_t,
-            tensor_radialRij,
-            tensor_angularRij,
-            total_natom_pairs,
-            nRadialRij,
-            nAngularRij,
-            tensor_centralAtom,
-            tensor_numPairsPerCenterAtom,
-            tensor_centerAtomStartIdx,
-            maxnbrs_per_atom_aligned,
-            angular_length_aligned,
-            ncenter_atoms,
-            coordinates_t,
-            species_t};
+    return {
+        aev_t,
+        tensor_radialRij,
+        tensor_angularRij,
+        total_natom_pairs,
+        nRadialRij,
+        nAngularRij,
+        tensor_centralAtom,
+        tensor_numPairsPerCenterAtom,
+        tensor_centerAtomStartIdx,
+        maxnbrs_per_atom_aligned,
+        angular_length_aligned,
+        ncenter_atoms,
+        coordinates_t,
+        species_t};
   }
 }
 
