@@ -792,7 +792,7 @@ __global__ void cutoffSelect(
   if (i >= num_rows)
     return;
 
-  if (idx < ATOM_I_PER_BLOCK){
+  if (idx < ATOM_I_PER_BLOCK) {
     s_pcounter_i[idx] = 0;
     int ii = blockIdx.x * blockDim.y + idx;
     int num_max = ii < num_rows ? nums_per_row[ii] : 0;
@@ -800,17 +800,16 @@ __global__ void cutoffSelect(
     for (int offset = 16; offset > 0; offset /= 2) {
       num_max = max(num_max, __shfl_down_sync(0xFFFFFFFF, num_max, offset));
     }
-    if (idx == 0){
+    if (idx == 0) {
       s_num_max = num_max;
     }
   }
   __syncthreads();
 
-  for(int jj = threadIdx.x; jj < s_num_max && jj < num_i; jj += blockDim.x){
+  for (int jj = threadIdx.x; jj < s_num_max && jj < num_i; jj += blockDim.x) {
     PairDist d = d_in[natom_pairs * mol_idx + i * (max_natoms_per_mol - 1) + jj];
-    d_out[start_i+jj] = d;
+    d_out[start_i + jj] = d;
   }
-
 }
 
 template <typename DataT>
@@ -930,8 +929,7 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
   auto aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length}, coordinates_t.options());
 
   if (species_t.numel() == 0) {
-    return {
-        aev_t, Tensor(), Tensor(), 0, 0, 0, Tensor(), Tensor(), Tensor(), 0, 0, 0, coordinates_t, species_t};
+    return {aev_t, Tensor(), Tensor(), 0, 0, 0, Tensor(), Tensor(), Tensor(), 0, 0, 0, coordinates_t, species_t};
   }
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
@@ -956,7 +954,8 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
   int* d_count_out = (int*)buffer_count.get();
 
   if (n_molecules == 1) {
-    Tensor radialNumPairsPerAtom_t = torch::zeros(n_molecules * max_natoms_per_mol, d_options.dtype(torch::kInt32)); // num_per_atom ranges from 10 - 60
+    // radial_num_per_atom ranges from 10 - 60
+    Tensor radialNumPairsPerAtom_t = torch::zeros(n_molecules * max_natoms_per_mol, d_options.dtype(torch::kInt32));
     int* radialNumPairsPerAtom_p = (int*)radialNumPairsPerAtom_t.data_ptr();
     printf("single molecule, %d atoms\n", max_natoms_per_mol);
     constexpr int ATOM_I_PER_BLOCK = 32;
@@ -993,7 +992,14 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
       dim3 block(ATOM_J_PER_TILE, ATOM_I_PER_BLOCK, 1);
       int blocks = (n_molecules * max_natoms_per_mol + ATOM_I_PER_BLOCK - 1) / ATOM_I_PER_BLOCK;
       cutoffSelect<ATOM_I_PER_BLOCK><<<blocks, block>>>(
-          d_Rij, d_radialRij, radialNumPairsPerAtom_p, radialPairStartIdx_p, Rca, angularNumPairsPerAtom_p, n_molecules * max_natoms_per_mol, max_natoms_per_mol);
+          d_Rij,
+          d_radialRij,
+          radialNumPairsPerAtom_p,
+          radialPairStartIdx_p,
+          Rca,
+          angularNumPairsPerAtom_p,
+          n_molecules * max_natoms_per_mol,
+          max_natoms_per_mol);
     }
 
   } else {
