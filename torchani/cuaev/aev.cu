@@ -28,8 +28,8 @@ constexpr int csubaev_offsets(int i, int j, int n) {
 
 struct alignas(4 * sizeof(int)) PairDist {
   float Rij;
-  int midx;  // TODO remove midx
-  int i;  // TODO remove i
+  int midx; // TODO remove midx
+  int i; // TODO remove i
   int j;
 };
 
