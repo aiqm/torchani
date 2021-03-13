@@ -1,0 +1,18 @@
+name: cancel_pre_tests
+
+on:
+  repository_dispatch:
+    types: [cancel-command]
+
+jobs:
+  cancel:
+    name: 'Cancel Previous Runs'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          # mypy, flake8, cuda, tools, unittests
+          workflow_id: 6081497, 6081498, 6081496, 6081494, 6081499
+          access_token: ${{ github.token }}
+          ignore_sha: true
