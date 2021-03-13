@@ -38,7 +38,6 @@ from . import models
 from . import units
 from pkg_resources import get_distribution, DistributionNotFound
 import warnings
-from . import testing
 
 try:
     __version__ = get_distribution(__name__).version
@@ -47,7 +46,7 @@ except DistributionNotFound:
     pass
 
 __all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble', 'SpeciesConverter',
-           'utils', 'neurochem', 'models', 'units', 'testing']
+           'utils', 'neurochem', 'models', 'units']
 
 try:
     from . import ase  # noqa: F401

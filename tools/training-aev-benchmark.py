@@ -10,6 +10,9 @@ import os
 import pickle
 from torchani.units import hartree2kcalmol
 
+summary = ''
+runcounter = 0
+
 
 def build_network():
     H_network = torch.nn.Sequential(
@@ -51,7 +54,17 @@ def build_network():
         torch.nn.CELU(0.1),
         torch.nn.Linear(96, 1)
     )
-    return [H_network, C_network, N_network, O_network]
+    nets = [H_network, C_network, N_network, O_network]
+
+    for net in nets:
+        net.apply(init_normal)
+
+    return nets
+
+
+def init_normal(m):
+    if type(m) == torch.nn.Linear:
+        torch.nn.init.kaiming_uniform_(m.weight)
 
 
 def checkgpu(device=None):
@@ -66,6 +79,7 @@ def checkgpu(device=None):
     info = pynvml.nvmlDeviceGetMemoryInfo(h)
     name = pynvml.nvmlDeviceGetName(h)
     print('   GPU Memory Used (nvidia-smi): {:7.1f}MB / {:.1f}MB ({})'.format(info.used / 1024 / 1024, info.total / 1024 / 1024, name.decode()))
+    return f'{(info.used / 1024 / 1024):.1f}MB'
 
 
 def alert(text):
@@ -85,7 +99,20 @@ def print_timer(label, t):
     print(f'{label} - {t}')
 
 
-def benchmark(args, dataset, use_cuda_extension, force_inference=False):
+def format_time(t):
+    if t < 1:
+        t = f'{t * 1000:.1f} ms'
+    else:
+        t = f'{t:.3f} sec'
+    return t
+
+
+def benchmark(args, dataset, use_cuda_extension, force_train=False):
+    global summary
+    global runcounter
+
+    if args.nsight and runcounter >= 0:
+        torch.cuda.nvtx.range_push(args.runname)
     synchronize = True
     timers = {}
 
@@ -145,14 +172,14 @@ def benchmark(args, dataset, use_cuda_extension, force_inference=False):
 
         for i, properties in enumerate(dataset):
             species = properties['species'].to(args.device)
-            coordinates = properties['coordinates'].to(args.device).float().requires_grad_(force_inference)
+            coordinates = properties['coordinates'].to(args.device).float().requires_grad_(force_train)
             true_energies = properties['energies'].to(args.device).float()
             num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
             _, predicted_energies = model((species, coordinates))
             # TODO add sync after aev is done
             sync_cuda(synchronize)
             energy_loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
-            if force_inference:
+            if force_train:
                 sync_cuda(synchronize)
                 force_coefficient = 0.1
                 true_forces = properties['forces'].to(args.device).float()
@@ -172,21 +199,21 @@ def benchmark(args, dataset, use_cuda_extension, force_inference=False):
                 loss = energy_loss
             rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
             progbar.update(i, values=[("rmse", rmse)])
-            if not force_inference:
-                sync_cuda(synchronize)
-                loss_start = time.time()
-                loss.backward()
-                # print('2', coordinates.grad)
-                sync_cuda(synchronize)
-                loss_stop = time.time()
-                loss_time += loss_stop - loss_start
-                optimizer.step()
-                sync_cuda(synchronize)
+            sync_cuda(synchronize)
+            loss_start = time.time()
+            loss.backward()
+            sync_cuda(synchronize)
+            loss_stop = time.time()
+            loss_time += loss_stop - loss_start
+            optimizer.step()
+            sync_cuda(synchronize)
 
-        checkgpu()
+        gpumem = checkgpu()
     sync_cuda(synchronize)
     stop = time.time()
 
+    if args.nsight and runcounter >= 0:
+        torch.cuda.nvtx.range_pop()
     print('=> More detail about benchmark PER EPOCH')
     total_time = (stop - start) / args.num_epochs
     loss_time = loss_time / args.num_epochs
@@ -199,8 +226,17 @@ def benchmark(args, dataset, use_cuda_extension, force_inference=False):
     print_timer('   Backward', loss_time)
     print_timer('   Force', force_time)
     print_timer('   Optimizer', opti_time)
-    print_timer('   Others', total_time - loss_time - aev_time - forward_time - opti_time - force_time)
+    others_time = total_time - loss_time - aev_time - forward_time - opti_time - force_time
+    print_timer('   Others', others_time)
     print_timer('   Epoch time', total_time)
+
+    if runcounter == 0:
+        summary += '\n' + 'RUN'.ljust(27) + 'Total AEV'.ljust(13) + 'Forward'.ljust(13) + 'Backward'.ljust(13) + 'Force'.ljust(13) + \
+            'Optimizer'.ljust(13) + 'Others'.ljust(13) + 'Epoch time'.ljust(13) + 'GPU'.ljust(13) + '\n'
+    if runcounter >= 0:
+        summary += f'{runcounter} {args.runname}'.ljust(27) + f'{format_time(aev_time)}'.ljust(13) + f'{format_time(forward_time)}'.ljust(13) + f'{format_time(loss_time)}'.ljust(13) + f'{format_time(force_time)}'.ljust(13) + \
+            f'{format_time(opti_time)}'.ljust(13) + f'{format_time(others_time)}'.ljust(13) + f'{format_time(total_time)}'.ljust(13) + f'{gpumem}'.ljust(13) + '\n'
+    runcounter += 1
 
 
 if __name__ == "__main__":
@@ -249,20 +285,43 @@ if __name__ == "__main__":
         print('   {}'.format(torch.cuda.get_device_properties(i)))
         checkgpu(i)
 
-    print("\n\n=> Test 1: USE cuda extension, Energy training")
-    torch.cuda.empty_cache()
-    gc.collect()
-    benchmark(args, dataset_shuffled, use_cuda_extension=True, force_inference=False)
-    print("\n\n=> Test 2: NO cuda extension, Energy training")
-    torch.cuda.empty_cache()
-    gc.collect()
-    benchmark(args, dataset_shuffled, use_cuda_extension=False, force_inference=False)
+    # Warming UP
+    if len(dataset_shuffled) < 100:
+        runcounter = -1
+        args.runname = 'Warning UP'
+        print(f"\n\n=> Test 0: {args.runname}")
+        torch.cuda.empty_cache()
+        gc.collect()
+        benchmark(args, dataset_shuffled, use_cuda_extension=True, force_train=False)
 
-    print("\n\n=> Test 3: USE cuda extension, Force and Energy inference")
+    if args.nsight:
+        torch.cuda.profiler.start()
+
+    args.runname = 'cu Energy train'
+    print(f"\n\n=> Test 1: {args.runname}")
     torch.cuda.empty_cache()
     gc.collect()
-    benchmark(args, dataset_shuffled, use_cuda_extension=True, force_inference=True)
-    print("\n\n=> Test 4: NO cuda extension, Force and Energy inference")
+    benchmark(args, dataset_shuffled, use_cuda_extension=True, force_train=False)
+
+    args.runname = 'py Energy train'
+    print(f"\n\n=> Test 2: {args.runname}")
     torch.cuda.empty_cache()
     gc.collect()
-    benchmark(args, dataset_shuffled, use_cuda_extension=False, force_inference=True)
+    benchmark(args, dataset_shuffled, use_cuda_extension=False, force_train=False)
+
+    args.runname = 'cu Energy + Force train'
+    print(f"\n\n=> Test 3: {args.runname}")
+    torch.cuda.empty_cache()
+    gc.collect()
+    benchmark(args, dataset_shuffled, use_cuda_extension=True, force_train=True)
+
+    args.runname = 'py Energy + Force train'
+    print(f"\n\n=> Test 4: {args.runname}")
+    torch.cuda.empty_cache()
+    gc.collect()
+    benchmark(args, dataset_shuffled, use_cuda_extension=False, force_train=True)
+
+    print(summary)
+
+    if args.nsight:
+        torch.cuda.profiler.stop()

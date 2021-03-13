@@ -3,11 +3,12 @@ import torchani
 import unittest
 import os
 import pickle
+from torchani.testing import TestCase
 
 path = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestGrad(torchani.testing.TestCase):
+class TestGrad(TestCase):
     # torch.autograd.gradcheck and torch.autograd.gradgradcheck verify that
     # the numerical and analytical gradient and hessian of a function
     # matches to within a given tolerance.
