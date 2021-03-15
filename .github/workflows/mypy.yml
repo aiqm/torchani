@@ -9,16 +9,20 @@ on:
 jobs:
   mypy:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       max-parallel: 4
       matrix:
         python-version: [3.8]
 
     steps:
+    - name: Cancel Previous Runs
+      uses: styfle/cancel-workflow-action@0.8.0
+      with:
+        access_token: ${{ github.token }}
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
