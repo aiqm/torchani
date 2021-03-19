@@ -3,7 +3,6 @@ import torch
 import torchani
 import unittest
 import pickle
-import copy
 from torchani.testing import TestCase, make_tensor
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -68,8 +67,7 @@ class TestCUAEV(TestCase):
             loss = torch.abs(force_true - force).sum(dim=(1, 2)).mean()
             loss.backward()
             param = next(self.nn.parameters())
-            param_grad = copy.deepcopy(param.grad)
-            return aev, force, param_grad
+            return aev, force, param.grad
 
         aev, force_ref, param_grad_ref = double_backward(self.aev_computer, species, coordinates)
         cu_aev, force_cuaev, param_grad = double_backward(self.cuaev_computer, species, coordinates)
@@ -148,15 +146,15 @@ class TestCUAEV(TestCase):
 
         _, aev = self.aev_computer((species, coordinates))
         aev.backward(torch.ones_like(aev))
-        force_ref = coordinates.grad
+        aev_grad = coordinates.grad
 
         coordinates = coordinates.clone().detach()
         coordinates.requires_grad_()
         _, cu_aev = self.cuaev_computer((species, coordinates))
         cu_aev.backward(torch.ones_like(cu_aev))
-        force_cuaev = coordinates.grad
+        cuaev_grad = coordinates.grad
         self.assertEqual(cu_aev, aev, f'cu_aev: {cu_aev}\n aev: {aev}')
-        self.assertEqual(force_cuaev, force_ref, f'\nforce_cuaev: {force_cuaev}\n aev_grad: {force_ref}')
+        self.assertEqual(cuaev_grad, aev_grad, f'\ncuaev_grad: {cuaev_grad}\n aev_grad: {aev_grad}')
 
     def testSimpleDoubleBackward_1(self):
         """
