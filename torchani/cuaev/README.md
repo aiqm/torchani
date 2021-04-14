@@ -8,7 +8,6 @@ If you use conda, you could install it by
 ```
 conda install pytorch torchvision torchaudio cudatoolkit={YOUR_CUDA_VERSION} -c pytorch-nightly
 ```
-Note that [CUDA 11](https://github.com/aiqm/torchani/issues/549) is still not supported yet.
 
 ## Install
 In most cases, if `gcc` and `cuda` environment are well configured, runing the following command at `torchani` directory will install torchani and cuaev together.
@@ -51,15 +50,13 @@ pip install -e . && pip install -v -e . --global-option="--cuaev"
 
 ```bash
 srun -p gpu --ntasks=1 --cpus-per-task=2 --gpus=geforce:1 --time=02:00:00 --mem=10gb  --pty -u bash -i
-module load cuda/10.0.130 gcc/7.3.0 git
-conda remove --name cuaev --all -y && conda create -n cuaev python=3.8 -y
+# create env if necessary
+conda create -n cuaev python=3.8
 conda activate cuaev
-# install compiled torch-cu100 because pytorch droped official build for cuda 10.0
-. /home/jinzexue/pytorch/loadmodule  # note that there is a space after .
-. /home/jinzexue/pytorch/install_deps
-pip install $(realpath /home/jinzexue/pytorch/dist/torch-nightly-cu100.whl)
-# check if pytorch is working, should print available's gpu infomations
-python /home/jinzexue/pytorch/testcuda/testcuda.py
+# modules
+module load cuda/11.1.0 gcc/7.3.0 git
+# pytorch
+conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch-nightly -c conda-forge
 # install torchani
 git clone https://github.com/aiqm/torchani.git
 cd torchani
