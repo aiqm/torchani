@@ -1,7 +1,6 @@
 #include <aev.h>
-#include <thrust/equal.h>
 #include <torch/extension.h>
-#include <cub/cub.cuh>
+#include <cuaev_cub.cuh>
 #include <vector>
 
 #include <ATen/Context.h>
@@ -728,105 +727,6 @@ __global__ void cuRadialAEVs_backward_or_doublebackward(
   }
 }
 
-template <typename DataT>
-void cubScan(const DataT* d_in, DataT* d_out, int num_items, cudaStream_t stream) {
-  auto& allocator = *c10::cuda::CUDACachingAllocator::get();
-
-  // Determine temporary device storage requirements
-  void* d_temp_storage = NULL;
-  size_t temp_storage_bytes = 0;
-  cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
-
-  // Allocate temporary storage
-  auto buffer_tmp = allocator.allocate(temp_storage_bytes);
-  d_temp_storage = buffer_tmp.get();
-
-  // Run exclusive prefix sum
-  cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
-}
-
-template <typename DataT, typename IndexT>
-int cubEncode(
-    const DataT* d_in,
-    DataT* d_unique_out,
-    IndexT* d_counts_out,
-    int num_items,
-    int* d_num_runs_out,
-    cudaStream_t stream) {
-  auto& allocator = *c10::cuda::CUDACachingAllocator::get();
-
-  // Determine temporary device storage requirements
-  void* d_temp_storage = NULL;
-  size_t temp_storage_bytes = 0;
-  cub::DeviceRunLengthEncode::Encode(
-      d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_counts_out, d_num_runs_out, num_items, stream);
-
-  // Allocate temporary storage
-  auto buffer_tmp = allocator.allocate(temp_storage_bytes);
-  d_temp_storage = buffer_tmp.get();
-
-  // Run encoding
-  cub::DeviceRunLengthEncode::Encode(
-      d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_counts_out, d_num_runs_out, num_items, stream);
-
-  int num_selected = 0;
-  cudaMemcpyAsync(&num_selected, d_num_runs_out, sizeof(int), cudaMemcpyDefault, stream);
-  cudaStreamSynchronize(stream);
-  return num_selected;
-}
-
-template <typename DataT, typename LambdaOpT>
-int cubDeviceSelect(
-    const DataT* d_in,
-    DataT* d_out,
-    int num_items,
-    int* d_num_selected_out,
-    LambdaOpT select_op,
-    cudaStream_t stream) {
-  auto& allocator = *c10::cuda::CUDACachingAllocator::get();
-
-  // Determine temporary device storage requirements
-  void* d_temp_storage = NULL;
-  size_t temp_storage_bytes = 0;
-  cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);
-
-  // Allocate temporary storage
-  auto buffer_tmp = allocator.allocate(temp_storage_bytes);
-  d_temp_storage = buffer_tmp.get();
-
-  // Run selection
-  cub::DeviceSelect::If(
-      d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op, stream);
-
-  int num_selected = 0;
-  cudaMemcpyAsync(&num_selected, d_num_selected_out, sizeof(int), cudaMemcpyDefault, stream);
-  cudaStreamSynchronize(stream);
-
-  return num_selected;
-}
-
-template <typename DataT>
-DataT cubMax(const DataT* d_in, int num_items, DataT* d_out, cudaStream_t stream) {
-  auto& allocator = *c10::cuda::CUDACachingAllocator::get();
-  // Determine temporary device storage requirements
-  void* d_temp_storage = NULL;
-  size_t temp_storage_bytes = 0;
-  cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
-
-  // Allocate temporary storage
-  auto buffer_tmp = allocator.allocate(temp_storage_bytes);
-  d_temp_storage = buffer_tmp.get();
-
-  // Run min-reduction
-  cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
-
-  int maxVal = 0;
-  cudaMemcpyAsync(&maxVal, d_out, sizeof(DataT), cudaMemcpyDefault, stream);
-  cudaStreamSynchronize(stream);
-
-  return maxVal;
-}
-
 // NOTE: assumes size of EtaA_t = Zeta_t = EtaR_t = 1
 Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const AEVScalarParams& aev_params) {
   TORCH_CHECK(
@@ -850,20 +750,14 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
   }
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
-  auto thrust_allocator = THCThrustAllocator(at::globalContext().lazyInitCUDA());
-  auto policy = thrust::cuda::par(thrust_allocator).on(stream);
   auto& allocator = *c10::cuda::CUDACachingAllocator::get();
 
   // buffer to store all the pairwise distance (Rij)
   auto total_natom_pairs = n_molecules * max_natoms_per_mol * max_natoms_per_mol;
-  auto d_options = torch::dtype(torch::kUInt8).device(coordinates_t.device());
-  Tensor tensor_Rij = torch::empty(sizeof(PairDist<float>) * total_natom_pairs, d_options);
+  auto d_options = torch::dtype(torch::kFloat32).device(coordinates_t.device());
+  float inf = std::numeric_limits<float>::infinity();
+  Tensor tensor_Rij = torch::full(sizeof(PairDist<float>) / sizeof(float) * total_natom_pairs, inf, d_options);
   PairDist<float>* d_Rij = (PairDist<float>*)tensor_Rij.data_ptr();
-
-  // init all Rij to inf
-  PairDist<float> init;
-  init.Rij = std::numeric_limits<float>::infinity();
-  thrust::fill(policy, d_Rij, d_Rij + total_natom_pairs, init);
 
   // buffer to store all the pairwise distance that is needed for Radial AEV
   // computation
@@ -986,21 +880,22 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
         angular_length_aligned,
         ncenter_atoms);
 
-    return {aev_t,
-            tensor_Rij,
-            tensor_radialRij,
-            tensor_angularRij,
-            total_natom_pairs,
-            nRadialRij,
-            nAngularRij,
-            tensor_centralAtom,
-            tensor_numPairsPerCenterAtom,
-            tensor_centerAtomStartIdx,
-            maxnbrs_per_atom_aligned,
-            angular_length_aligned,
-            ncenter_atoms,
-            coordinates_t,
-            species_t};
+    return {
+        aev_t,
+        tensor_Rij,
+        tensor_radialRij,
+        tensor_angularRij,
+        total_natom_pairs,
+        nRadialRij,
+        nAngularRij,
+        tensor_centralAtom,
+        tensor_numPairsPerCenterAtom,
+        tensor_centerAtomStartIdx,
+        maxnbrs_per_atom_aligned,
+        angular_length_aligned,
+        ncenter_atoms,
+        coordinates_t,
+        species_t};
   }
 }
 
