@@ -3,6 +3,7 @@ import torchani
 import unittest
 import os
 import pickle
+from torchani.testing import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -36,6 +37,7 @@ class TestANI2x(torchani.testing.TestCase):
 
 class TestCorrectInput(torchani.testing.TestCase):
 
+
     def setUp(self):
         self.model = torchani.models.ANI1x(model_index=0, periodic_table_index=False)
         self.converter = torchani.nn.SpeciesConverter(['H', 'C', 'N', 'O'])
@@ -57,7 +59,7 @@ class TestCorrectInput(torchani.testing.TestCase):
         self.assertRaises(AssertionError, self.model, (torch.tensor([0, 1, 2, 3]), torch.zeros((4, 3))))
 
 
-class TestEnergies(torchani.testing.TestCase):
+class TestEnergies(TestCase):
     # tests the predicions for a torchani.nn.Sequential(AEVComputer(),
     # ANIModel(), EnergyShifter()) against precomputed values
 

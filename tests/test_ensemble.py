@@ -3,12 +3,13 @@ import pickle
 import os
 import torch
 import torchani
+from torchani.testing import TestCase
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 10
 
 
-class TestEnsemble(torchani.testing.TestCase):
+class TestEnsemble(TestCase):
 
     def setUp(self):
         self.conformations = 20
