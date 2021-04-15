@@ -14,8 +14,6 @@ class TestANI2x(torchani.testing.TestCase):
     def setUp(self):
         self.model_pti = torchani.models.ANI2x(model_index=0, periodic_table_index=True)
         self.model = torchani.models.ANI2x(model_index=0, periodic_table_index=False)
-        # in 2x the species are not in periodic table order unfortunately
-        self.converter = torchani.nn.SpeciesConverter(['H', 'C', 'N', 'O', 'S', 'F', 'Cl'])
 
     def testDiatomics(self):
         coordinates = torch.tensor([[[0.0, 0.0, 0.0],
@@ -23,6 +21,7 @@ class TestANI2x(torchani.testing.TestCase):
         coordinates = coordinates.repeat(4, 1, 1)
         # F2, S2, O2, Cl2
         species_pti = torch.tensor([[9, 9], [16, 16], [8, 8], [17, 17]])
+        # in 2x the species are not in periodic table order unfortunately
         species = torch.tensor([[5, 5], [4, 4], [3, 3], [6, 6]])
         e_pti = self.model_pti((species_pti, coordinates)).energies
         e = self.model((species, coordinates)).energies
