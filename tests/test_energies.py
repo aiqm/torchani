@@ -10,7 +10,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 N = 97
 
 
-class TestANI2x(torchani.testing.TestCase):
+class TestANI2x(TestCase):
 
     def setUp(self):
         self.model_pti = torchani.models.ANI2x(model_index=0, periodic_table_index=True)
@@ -34,8 +34,7 @@ class TestANI2x(torchani.testing.TestCase):
         self.assertEqual(e_expect.to(torch.float), e.to(torch.float))
 
 
-class TestCorrectInput(torchani.testing.TestCase):
-
+class TestCorrectInput(TestCase):
 
     def setUp(self):
         self.model = torchani.models.ANI1x(model_index=0, periodic_table_index=False)
