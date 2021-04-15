@@ -4,6 +4,7 @@ from ase.md.nptberendsen import NPTBerendsen
 from ase import units
 from ase.io import read
 from ase.calculators.test import numeric_force
+from torchani.testing import TestCase
 import numpy as np
 import torch
 import torchani
@@ -21,7 +22,7 @@ def get_numeric_force(atoms, eps):
     return fn
 
 
-class TestASE(torchani.testing.TestCase):
+class TestASE(TestCase):
 
     def setUp(self):
         self.model = torchani.models.ANI1x(model_index=0).double()
@@ -37,7 +38,7 @@ class TestASE(torchani.testing.TestCase):
         dyn.run(100)
         f = atoms.get_forces()
         fn = get_numeric_force(atoms, 0.001)
-        self.assertEqual(f, fn, rtol=0.1, atol=0)
+        self.assertEqual(f, fn, rtol=0.1, atol=0.1)
 
     def testWithNumericalStressWithPBCEnabled(self):
         # Run NPT dynamics for some steps and periodically check that the

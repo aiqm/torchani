@@ -1,9 +1,10 @@
 import unittest
 import torch
 import torchani
+from torchani.testing import TestCase
 
 
-class TestUtils(torchani.testing.TestCase):
+class TestUtils(TestCase):
 
     def testChemicalSymbolsToInts(self):
         str2i = torchani.utils.ChemicalSymbolsToInts(['A', 'B', 'C', 'D', 'E', 'F'])
