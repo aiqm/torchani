@@ -10,6 +10,30 @@ path = os.path.dirname(os.path.realpath(__file__))
 N = 97
 
 
+class TestANI2x(TestCase):
+
+    def setUp(self):
+        self.model_pti = torchani.models.ANI2x(model_index=0, periodic_table_index=True)
+        self.model = torchani.models.ANI2x(model_index=0, periodic_table_index=False)
+
+    def testDiatomics(self):
+        coordinates = torch.tensor([[[0.0, 0.0, 0.0],
+                                    [0.0, 0.0, 2.0]]])
+        coordinates = coordinates.repeat(4, 1, 1)
+        # F2, S2, O2, Cl2
+        species_pti = torch.tensor([[9, 9], [16, 16], [8, 8], [17, 17]])
+        # in 2x the species are not in periodic table order unfortunately
+        species = torch.tensor([[5, 5], [4, 4], [3, 3], [6, 6]])
+        e_pti = self.model_pti((species_pti, coordinates)).energies
+        e = self.model((species, coordinates)).energies
+        self.assertEqual(e_pti, e)
+
+        # compare against 2x energies calculated directly from neurochem by kdavis
+        e = torchani.units.hartree2kcalmol(e)
+        e_expect = torch.tensor([-125100.7729, -499666.2354, -94191.3460, -577504.1792])
+        self.assertEqual(e_expect.to(torch.float), e.to(torch.float))
+
+
 class TestCorrectInput(TestCase):
 
     def setUp(self):
