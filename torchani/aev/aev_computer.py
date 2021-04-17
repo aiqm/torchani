@@ -127,8 +127,8 @@ class AEVComputer(torch.nn.Module):
         # cuda aev
         if self.use_cuda_extension:
             assert cuaev_is_installed, "AEV cuda extension is not installed"
-            assert angular_terms == 'standard', 'nonstandard aev terms not supported for cuaev'
-            assert radial_terms == 'standard', 'nonstandard aev terms not supported for cuaev'
+            assert angular_terms in ['standard', 'ani1x', 'ani2x'], 'nonstandard aev terms not supported for cuaev'
+            assert radial_terms in ['standard', 'ani1x', 'ani2x'], 'nonstandard aev terms not supported for cuaev'
         if cuaev_is_installed:
             self._register_cuaev_computer()
 
@@ -216,11 +216,11 @@ class AEVComputer(torch.nn.Module):
 
     @classmethod
     def like_1x(cls, **kwargs):
-        return cls(angular_terms='ani1x', radial_terms='ani1x', num_species=4)
+        return cls(angular_terms='ani1x', radial_terms='ani1x', num_species=4, **kwargs)
 
     @classmethod
     def like_2x(cls, **kwargs):
-        return cls(angular_terms='ani2x', radial_terms='ani2x', num_species=7)
+        return cls(angular_terms='ani2x', radial_terms='ani2x', num_species=7, **kwargs)
 
     @classmethod
     def like_1ccx(cls, **kwargs):
