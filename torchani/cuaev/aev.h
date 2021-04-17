@@ -167,21 +167,22 @@ struct Result {
       Tensor species_t_);
   Result(tensor_list tensors);
   operator tensor_list() {
-    return {Tensor(), // aev_t got removed
-            tensor_Rij,
-            tensor_radialRij,
-            tensor_angularRij,
-            torch::tensor(total_natom_pairs),
-            torch::tensor(nRadialRij),
-            torch::tensor(nAngularRij),
-            tensor_centralAtom,
-            tensor_numPairsPerCenterAtom,
-            tensor_centerAtomStartIdx,
-            torch::tensor(maxnbrs_per_atom_aligned),
-            torch::tensor(angular_length_aligned),
-            torch::tensor(ncenter_atoms),
-            coordinates_t,
-            species_t};
+    return {
+        Tensor(), // aev_t got removed
+        tensor_Rij,
+        tensor_radialRij,
+        tensor_angularRij,
+        torch::tensor(total_natom_pairs),
+        torch::tensor(nRadialRij),
+        torch::tensor(nAngularRij),
+        tensor_centralAtom,
+        tensor_numPairsPerCenterAtom,
+        tensor_centerAtomStartIdx,
+        torch::tensor(maxnbrs_per_atom_aligned),
+        torch::tensor(angular_length_aligned),
+        torch::tensor(ncenter_atoms),
+        coordinates_t,
+        species_t};
   }
 };
 

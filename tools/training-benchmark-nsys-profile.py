@@ -3,6 +3,7 @@ import torchani
 import argparse
 import pkbar
 from torchani.units import hartree2kcalmol
+from tool_utils import time_functions_in_model
 
 
 WARM_UP_BATCHES = 50
@@ -22,29 +23,19 @@ def atomic():
     return model
 
 
-def time_func(key, func):
-
-    def wrapper(*args, **kwargs):
-        torch.cuda.nvtx.range_push(key)
-        ret = func(*args, **kwargs)
-        torch.cuda.nvtx.range_pop()
-        return ret
-
-    return wrapper
-
-
 def enable_timers(model):
-    torchani.aev.cutoff_cosine = time_func('cutoff_cosine', torchani.aev.cutoff_cosine)
-    torchani.aev.radial_terms = time_func('radial_terms', torchani.aev.radial_terms)
-    torchani.aev.angular_terms = time_func('angular_terms', torchani.aev.angular_terms)
-    torchani.aev.compute_shifts = time_func('compute_shifts', torchani.aev.compute_shifts)
-    torchani.aev.neighbor_pairs = time_func('neighbor_pairs', torchani.aev.neighbor_pairs)
-    torchani.aev.neighbor_pairs_nopbc = time_func('neighbor_pairs_nopbc', torchani.aev.neighbor_pairs_nopbc)
-    torchani.aev.triu_index = time_func('triu_index', torchani.aev.triu_index)
-    torchani.aev.cumsum_from_zero = time_func('cumsum_from_zero', torchani.aev.cumsum_from_zero)
-    torchani.aev.triple_by_molecule = time_func('triple_by_molecule', torchani.aev.triple_by_molecule)
-    torchani.aev.compute_aev = time_func('compute_aev', torchani.aev.compute_aev)
-    model[1].forward = time_func('nn forward', model[1].forward)
+    # enable timers
+    aev_computer = model[0]
+    nn = model[1]
+    nl = aev_computer.neighborlist
+    fn_to_time_aev = ['_compute_radial_aev', '_compute_angular_aev',
+                             '_compute_aev', '_triple_by_molecule']
+
+    fn_to_time_neighborlist = ['forward']
+    fn_to_time_nn = ['forward']
+    time_functions_in_model(nl, fn_to_time_neighborlist, nvtx=True)
+    time_functions_in_model(nn, fn_to_time_nn, nvtx=True)
+    time_functions_in_model(aev_computer, fn_to_time_aev, nvtx=True)
 
 
 if __name__ == "__main__":
@@ -62,16 +53,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.device = torch.device('cpu' if args.dry_run else 'cuda')
 
-    Rcr = 5.2000e+00
-    Rca = 3.5000e+00
-    EtaR = torch.tensor([1.6000000e+01], device=args.device)
-    ShfR = torch.tensor([9.0000000e-01, 1.1687500e+00, 1.4375000e+00, 1.7062500e+00, 1.9750000e+00, 2.2437500e+00, 2.5125000e+00, 2.7812500e+00, 3.0500000e+00, 3.3187500e+00, 3.5875000e+00, 3.8562500e+00, 4.1250000e+00, 4.3937500e+00, 4.6625000e+00, 4.9312500e+00], device=args.device)
-    Zeta = torch.tensor([3.2000000e+01], device=args.device)
-    ShfZ = torch.tensor([1.9634954e-01, 5.8904862e-01, 9.8174770e-01, 1.3744468e+00, 1.7671459e+00, 2.1598449e+00, 2.5525440e+00, 2.9452431e+00], device=args.device)
-    EtaA = torch.tensor([8.0000000e+00], device=args.device)
-    ShfA = torch.tensor([9.0000000e-01, 1.5500000e+00, 2.2000000e+00, 2.8500000e+00], device=args.device)
     num_species = 4
-    aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
+    aev_computer = torchani.AEVComputer.like_1x()
 
     nn = torchani.ANIModel([atomic() for _ in range(4)])
     model = torch.nn.Sequential(aev_computer, nn).to(args.device)

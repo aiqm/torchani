@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# type: ignore
 """
 .. _training-example:
 
@@ -48,8 +49,8 @@ from torchani.units import hartree2kcalmol
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 ###############################################################################
-# Now let's setup constants and construct an AEV computer. These numbers could
-# be found in `rHCNO-5.2R_16-3.5A_a4-8.params`
+# Now let's setup constants and construct an AEV computer. For simplicity we build
+# an AEVComputer equal to 1x's
 # The atomic self energies given in `sae_linfit.dat`_ are computed from ANI-1x
 # dataset. These constants can be calculated for any given dataset if ``None``
 # is provided as an argument to the object of :class:`EnergyShifter` class.
@@ -64,17 +65,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # .. _sae_linfit.dat:
 #   https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/sae_linfit.dat
 
-Rcr = 5.2000e+00
-Rca = 3.5000e+00
-EtaR = torch.tensor([1.6000000e+01], device=device)
-ShfR = torch.tensor([9.0000000e-01, 1.1687500e+00, 1.4375000e+00, 1.7062500e+00, 1.9750000e+00, 2.2437500e+00, 2.5125000e+00, 2.7812500e+00, 3.0500000e+00, 3.3187500e+00, 3.5875000e+00, 3.8562500e+00, 4.1250000e+00, 4.3937500e+00, 4.6625000e+00, 4.9312500e+00], device=device)
-Zeta = torch.tensor([3.2000000e+01], device=device)
-ShfZ = torch.tensor([1.9634954e-01, 5.8904862e-01, 9.8174770e-01, 1.3744468e+00, 1.7671459e+00, 2.1598449e+00, 2.5525440e+00, 2.9452431e+00], device=device)
-EtaA = torch.tensor([8.0000000e+00], device=device)
-ShfA = torch.tensor([9.0000000e-01, 1.5500000e+00, 2.2000000e+00, 2.8500000e+00], device=device)
-species_order = ['H', 'C', 'N', 'O']
-num_species = len(species_order)
-aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
+aev_computer = torchani.AEVComputer.like_1x()
 energy_shifter = torchani.utils.EnergyShifter(None)
 
 ###############################################################################
@@ -111,8 +102,8 @@ if os.path.isfile(pickled_dataset_path):
 else:
     print(f'Processing dataset in {dspath}')
     training, validation = torchani.data.load(dspath)\
-                                        .subtract_self_energies(energy_shifter, species_order)\
-                                        .species_to_indices(species_order)\
+                                        .subtract_self_energies(energy_shifter)\
+                                        .species_to_indices()\
                                         .shuffle()\
                                         .split(0.8, None)
     with open(pickled_dataset_path, 'wb') as f:

@@ -1,7 +1,6 @@
 import torch
 import torchani
 import time
-import timeit
 import argparse
 import pkbar
 import gc
@@ -9,6 +8,8 @@ import pynvml
 import os
 import pickle
 from torchani.units import hartree2kcalmol
+from typing import Dict
+from tool_utils import time_functions_in_model
 
 summary = ''
 runcounter = 0
@@ -116,29 +117,7 @@ def benchmark(args, dataset, use_cuda_extension, force_train=False):
     synchronize = True
     timers = {}
 
-    def time_func(key, func):
-        timers[key] = 0
-
-        def wrapper(*args, **kwargs):
-            start = timeit.default_timer()
-            ret = func(*args, **kwargs)
-            sync_cuda(synchronize)
-            end = timeit.default_timer()
-            timers[key] += end - start
-            return ret
-
-        return wrapper
-
-    Rcr = 5.2000e+00
-    Rca = 3.5000e+00
-    EtaR = torch.tensor([1.6000000e+01], device=args.device)
-    ShfR = torch.tensor([9.0000000e-01, 1.1687500e+00, 1.4375000e+00, 1.7062500e+00, 1.9750000e+00, 2.2437500e+00, 2.5125000e+00, 2.7812500e+00, 3.0500000e+00, 3.3187500e+00, 3.5875000e+00, 3.8562500e+00, 4.1250000e+00, 4.3937500e+00, 4.6625000e+00, 4.9312500e+00], device=args.device)
-    Zeta = torch.tensor([3.2000000e+01], device=args.device)
-    ShfZ = torch.tensor([1.9634954e-01, 5.8904862e-01, 9.8174770e-01, 1.3744468e+00, 1.7671459e+00, 2.1598449e+00, 2.5525440e+00, 2.9452431e+00], device=args.device)
-    EtaA = torch.tensor([8.0000000e+00], device=args.device)
-    ShfA = torch.tensor([9.0000000e-01, 1.5500000e+00, 2.2000000e+00, 2.8500000e+00], device=args.device)
-    num_species = 4
-    aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension)
+    aev_computer = torchani.AEVComputer.like_1x(use_cuda_extension=use_cuda_extension)
 
     nn = torchani.ANIModel(build_network())
     model = torch.nn.Sequential(aev_computer, nn).to(args.device)
@@ -146,19 +125,19 @@ def benchmark(args, dataset, use_cuda_extension, force_train=False):
     mse = torch.nn.MSELoss(reduction='none')
 
     # enable timers
-    torchani.aev.cutoff_cosine = time_func('torchani.aev.cutoff_cosine', torchani.aev.cutoff_cosine)
-    torchani.aev.radial_terms = time_func('torchani.aev.radial_terms', torchani.aev.radial_terms)
-    torchani.aev.angular_terms = time_func('torchani.aev.angular_terms', torchani.aev.angular_terms)
-    torchani.aev.compute_shifts = time_func('torchani.aev.compute_shifts', torchani.aev.compute_shifts)
-    torchani.aev.neighbor_pairs = time_func('torchani.aev.neighbor_pairs', torchani.aev.neighbor_pairs)
-    torchani.aev.neighbor_pairs_nopbc = time_func('torchani.aev.neighbor_pairs_nopbc', torchani.aev.neighbor_pairs_nopbc)
-    torchani.aev.triu_index = time_func('torchani.aev.triu_index', torchani.aev.triu_index)
-    torchani.aev.cumsum_from_zero = time_func('torchani.aev.cumsum_from_zero', torchani.aev.cumsum_from_zero)
-    torchani.aev.triple_by_molecule = time_func('torchani.aev.triple_by_molecule', torchani.aev.triple_by_molecule)
-    torchani.aev.compute_aev = time_func('torchani.aev.compute_aev', torchani.aev.compute_aev)
-    model[0].forward = time_func('total', model[0].forward)
-    model[1].forward = time_func('forward', model[1].forward)
-    optimizer.step = time_func('optimizer.step', optimizer.step)
+    timers: Dict[str, int] = dict()
+    fn_to_time_aev = ['_compute_radial_aev', '_compute_angular_aev',
+                             '_compute_aev', '_triple_by_molecule', 'forward']
+    fn_to_time_neighborlist = ['forward']
+    fn_to_time_nn = ['forward']
+    fn_to_time_opt = ['step']
+    fn_to_time_model = ['forward']
+
+    time_functions_in_model(model, fn_to_time_model, timers, synchronize)
+    time_functions_in_model(aev_computer, fn_to_time_aev, timers, synchronize)
+    time_functions_in_model(aev_computer.neighborlist, fn_to_time_neighborlist, timers, synchronize)
+    time_functions_in_model(nn, fn_to_time_nn, timers, synchronize)
+    time_functions_in_model(optimizer, fn_to_time_opt, timers, synchronize)
 
     print('=> start training')
     start = time.time()
@@ -218,15 +197,17 @@ def benchmark(args, dataset, use_cuda_extension, force_train=False):
     total_time = (stop - start) / args.num_epochs
     loss_time = loss_time / args.num_epochs
     force_time = force_time / args.num_epochs
-    opti_time = timers['optimizer.step'] / args.num_epochs
-    forward_time = timers['forward'] / args.num_epochs
-    aev_time = timers['total'] / args.num_epochs
-    print_timer('   Total AEV', aev_time)
-    print_timer('   Forward', forward_time)
+    opti_time = timers['Adam.step'] / args.num_epochs
+    nn_time = timers['ANIModel.forward'] / args.num_epochs
+    aev_time = timers['AEVComputer.forward'] / args.num_epochs
+    model_time = timers['Sequential.forward'] / args.num_epochs
+    print_timer('   Full Model forward', model_time)
+    print_timer('   AEV forward', aev_time)
+    print_timer('   NN forward', nn_time)
     print_timer('   Backward', loss_time)
     print_timer('   Force', force_time)
     print_timer('   Optimizer', opti_time)
-    others_time = total_time - loss_time - aev_time - forward_time - opti_time - force_time
+    others_time = total_time - loss_time - aev_time - nn_time - opti_time - force_time
     print_timer('   Others', others_time)
     print_timer('   Epoch time', total_time)
 
@@ -234,7 +215,7 @@ def benchmark(args, dataset, use_cuda_extension, force_train=False):
         summary += '\n' + 'RUN'.ljust(27) + 'Total AEV'.ljust(13) + 'Forward'.ljust(13) + 'Backward'.ljust(13) + 'Force'.ljust(13) + \
             'Optimizer'.ljust(13) + 'Others'.ljust(13) + 'Epoch time'.ljust(13) + 'GPU'.ljust(13) + '\n'
     if runcounter >= 0:
-        summary += f'{runcounter} {args.runname}'.ljust(27) + f'{format_time(aev_time)}'.ljust(13) + f'{format_time(forward_time)}'.ljust(13) + f'{format_time(loss_time)}'.ljust(13) + f'{format_time(force_time)}'.ljust(13) + \
+        summary += f'{runcounter} {args.runname}'.ljust(27) + f'{format_time(aev_time)}'.ljust(13) + f'{format_time(aev_time)}'.ljust(13) + f'{format_time(loss_time)}'.ljust(13) + f'{format_time(force_time)}'.ljust(13) + \
             f'{format_time(opti_time)}'.ljust(13) + f'{format_time(others_time)}'.ljust(13) + f'{format_time(total_time)}'.ljust(13) + f'{gpumem}'.ljust(13) + '\n'
     runcounter += 1
 
@@ -308,18 +289,21 @@ if __name__ == "__main__":
     torch.cuda.empty_cache()
     gc.collect()
     benchmark(args, dataset_shuffled, use_cuda_extension=False, force_train=False)
+    try:
+        args.runname = 'cu Energy + Force train'
+        print(f"\n\n=> Test 3: {args.runname}")
+        torch.cuda.empty_cache()
+        gc.collect()
+        benchmark(args, dataset_shuffled, use_cuda_extension=True, force_train=True)
 
-    args.runname = 'cu Energy + Force train'
-    print(f"\n\n=> Test 3: {args.runname}")
-    torch.cuda.empty_cache()
-    gc.collect()
-    benchmark(args, dataset_shuffled, use_cuda_extension=True, force_train=True)
-
-    args.runname = 'py Energy + Force train'
-    print(f"\n\n=> Test 4: {args.runname}")
-    torch.cuda.empty_cache()
-    gc.collect()
-    benchmark(args, dataset_shuffled, use_cuda_extension=False, force_train=True)
+        args.runname = 'py Energy + Force train'
+        print(f"\n\n=> Test 4: {args.runname}")
+        torch.cuda.empty_cache()
+        gc.collect()
+        benchmark(args, dataset_shuffled, use_cuda_extension=False, force_train=True)
+    except AttributeError:
+        print('Skipping force training benchmark since a dataset without forces was provided')
+        print('Please provide a dataset with forces for this benchmark')
 
     print(summary)
 

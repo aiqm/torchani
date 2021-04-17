@@ -165,7 +165,7 @@ class BuiltinModel(torch.nn.Module):
         # _species_to_tensor is that this sends the final tensor to the model
         # device
         return self._species_to_tensor(*args, **kwargs) \
-            .to(self.aev_computer.ShfR.device)
+            .to(self.aev_computer.radial_terms.ShfR.device)
 
     def ase(self, **kwargs):
         """Get an ASE Calculator using this ANI model

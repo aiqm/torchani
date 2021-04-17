@@ -29,10 +29,8 @@ class TestALAtomic(TestCase):
             (self.species, self.coordinates))
         self.assertEqual(energies.shape, self.coordinates.shape[:-1])
         # energies of all hydrogens should be equal
-        self.assertTrue((torch.isclose(
-            energies[:, :-1],
-            torch.tensor(-0.54853380570289400620,
-                         dtype=torch.double).to(self.device))).all())
+        expect = torch.full(energies[:, :-1].shape, -0.54853380570289400620, dtype=torch.double, device=self.device)
+        self.assertEqual(energies[:, :-1], expect)
 
     def testAtomicEnergies(self):
         _, energies = self.model.atomic_energies(
@@ -40,12 +38,8 @@ class TestALAtomic(TestCase):
         self.assertTrue(energies.shape[1:] == self.coordinates.shape[:-1])
         self.assertTrue(energies.shape[0] == len(self.model.neural_networks))
         # energies of all hydrogens should be equal
-        self.assertTrue(
-            torch.isclose(
-                energies[0, 0, 0],
-                torch.tensor(-0.54562734428531045605,
-                             device=self.device,
-                             dtype=torch.double)))
+        self.assertEqual(energies[0, 0, 0], torch.tensor(-0.54562734428531045605, device=self.device,
+                    dtype=torch.double))
         for e in energies:
             self.assertTrue((e[:, :-1] == e[:, 0]).all())
 
@@ -63,12 +57,10 @@ class TestALQBC(TestALAtomic):
         self.assertEqual(
             energies[0], self.first_model((self.species,
                                            self.coordinates)).energies)
-        self.assertTrue(
-            torch.isclose(
-                energies[0],
-                torch.tensor(-40.277153758433975,
+        expect = torch.tensor([-40.277153758433975],
                              dtype=torch.double,
-                             device=self.device)))
+                             device=self.device)
+        self.assertEqual(energies[0], expect)
 
     def testQBC(self):
         # fully symmetric methane
