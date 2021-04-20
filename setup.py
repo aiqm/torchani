@@ -17,6 +17,11 @@ ONLY_BUILD_SM80 = '--only-sm80' in sys.argv
 if ONLY_BUILD_SM80:
     sys.argv.remove('--only-sm80')
 
+# DEBUG infomation for cuaev
+DEBUG_CUAEV = '--debug' in sys.argv
+if DEBUG_CUAEV:
+    sys.argv.remove('--debug')
+
 if not BUILD_CUAEV_ALL_SM and not FAST_BUILD_CUAEV:
     log.warn("Will not install cuaev")  # type: ignore
 
@@ -88,6 +93,8 @@ def cuda_extension(build_all=False):
             nvcc_args.append("-gencode=arch=compute_80,code=sm_80")
         if cuda_version >= 11.1:
             nvcc_args.append("-gencode=arch=compute_86,code=sm_86")
+    if DEBUG_CUAEV:
+        nvcc_args.append('-DTORCHANI_DEBUG')
     print("nvcc_args: ", nvcc_args)
     print('-' * 75)
     include_dirs = [*maybe_download_cub(), os.path.abspath("torchani/cuaev/")]

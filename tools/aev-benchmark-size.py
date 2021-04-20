@@ -4,13 +4,29 @@ import torchani
 import pynvml
 import gc
 import os
+import numpy as np
 from ase.io import read
 import argparse
+
 
 summary = '\n'
 runcounter = 0
 N = 200
 last_py_speed = None
+
+
+def getGpuName(device=None):
+    i = device if device else torch.cuda.current_device()
+    real_i = int(os.environ['CUDA_VISIBLE_DEVICES'][0]) if 'CUDA_VISIBLE_DEVICES' in os.environ else i
+    pynvml.nvmlInit()
+    h = pynvml.nvmlDeviceGetHandleByIndex(real_i)
+    name = pynvml.nvmlDeviceGetName(h)
+    return name.decode("utf-8")
+
+
+def synchronize(flag=False):
+    if flag:
+        torch.cuda.synchronize()
 
 
 def checkgpu(device=None):
@@ -70,7 +86,7 @@ def benchmark(speciesPositions, aev_comp, runbackward=False, mol_info=None, verb
     force_time = 0
     torch.cuda.empty_cache()
     gc.collect()
-    torch.cuda.synchronize()
+    synchronize(not args.nsight)
     start = time.time()
 
     aev = None
@@ -80,7 +96,7 @@ def benchmark(speciesPositions, aev_comp, runbackward=False, mol_info=None, verb
         species, coordinates = speciesPositions
         coordinates = coordinates.requires_grad_(runbackward)
 
-        torch.cuda.synchronize()
+        synchronize(not args.nsight)
         forward_start = time.time()
         try:
             _, aev = aev_comp((species, coordinates))
@@ -89,7 +105,7 @@ def benchmark(speciesPositions, aev_comp, runbackward=False, mol_info=None, verb
             addSummaryLine(items)
             runcounter += 1
             return None, None, None
-        torch.cuda.synchronize()
+        synchronize(not args.nsight)
         forward_time += time.time() - forward_start
 
         if runbackward:  # backward
@@ -101,13 +117,13 @@ def benchmark(speciesPositions, aev_comp, runbackward=False, mol_info=None, verb
                 addSummaryLine(items)
                 runcounter += 1
                 return None, None, None
-            torch.cuda.synchronize()
+            synchronize(not args.nsight)
             force_time += time.time() - force_start
 
         if i == 2 and verbose:
             gpumem = checkgpu()
 
-    torch.cuda.synchronize()
+    synchronize(not args.nsight)
     total_time = (time.time() - start) / N
     force_time = force_time / N
     forward_time = forward_time / N
@@ -148,16 +164,23 @@ def benchmark(speciesPositions, aev_comp, runbackward=False, mol_info=None, verb
     return aev, total_time, force
 
 
-def check_speedup_error(aev, aev_ref, speed, speed_ref):
+def check_speedup_error(aev, aev_ref, force_cuaev, force_ref, speed, speed_ref):
     if (speed_ref is not None) and (speed is not None) and (aev is not None) and (aev_ref is not None):
+        # aev error
+        aev_error = torch.max(torch.abs(aev - aev_ref))
+        print(f'  aev_error: {aev_error:.2e}')
+        assert aev_error < 1e-4, f'  Error: {aev_error:.1e}\n'
+        # force error
+        if (force_cuaev is not None) and (force_cuaev is not None):
+            force_error = torch.max(torch.abs(force_cuaev - force_ref))
+            print(f'  force_error: {force_error:.2e}')
+            assert force_error < 2e-4, f'  Error: {aev_error:.1e}\n'
+        # speedup
         speedUP = speed_ref / speed
         if speedUP > 1:
             info(f'  Speed up: {speedUP:.2f} X\n')
         else:
             alert(f'  Speed up (slower): {speedUP:.2f} X\n')
-
-        aev_error = torch.max(torch.abs(aev - aev_ref))
-        assert aev_error < 0.02, f'  Error: {aev_error:.1e}\n'
 
 
 def run(file, nnp_ref, nnp_cuaev, runbackward, maxatoms=10000):
@@ -166,18 +189,23 @@ def run(file, nnp_ref, nnp_cuaev, runbackward, maxatoms=10000):
     species = torch.tensor([mol.get_atomic_numbers()], device=device)
     positions = torch.tensor([mol.get_positions()], dtype=torch.float32, requires_grad=False, device=device)
     spelist = list(torch.unique(species.flatten()).cpu().numpy())
+    realmolsize = species.shape[-1]
     species = species[:, :maxatoms]
     positions = positions[:, :maxatoms, :]
+    molsize = species.shape[-1]
     speciesPositions = nnp_ref.species_converter((species, positions))
-    print(f'File: {file}, Molecule size: {species.shape[-1]}, Species: {spelist}\n')
+    print(f'File: {file}, Molecule size: {molsize} / {realmolsize}, Species: {spelist}\n')
 
     if args.nsight:
-        torch.cuda.nvtx.range_push(file)
+        torch.cuda.nvtx.range_push(f'{molsize}-{file}')
 
-    print('Original TorchANI:')
     mol_info = {'name': file, 'atoms': species.shape[-1]}
-    aev_ref, delta_ref, force_ref = benchmark(speciesPositions, nnp_ref.aev_computer, runbackward, mol_info)
-    print()
+    if not args.nsight:
+        print('Original TorchANI:')
+        aev_ref, delta_ref, force_ref = benchmark(speciesPositions, nnp_ref.aev_computer, runbackward, mol_info)
+        print()
+    else:
+        delta_ref = None
 
     print('CUaev:')
     # warm up
@@ -188,8 +216,92 @@ def run(file, nnp_ref, nnp_cuaev, runbackward, maxatoms=10000):
     if args.nsight:
         torch.cuda.nvtx.range_pop()
 
-    check_speedup_error(aev, aev_ref, delta, delta_ref)
+    if not args.nsight:
+        check_speedup_error(aev, aev_ref, force_cuaev, force_ref, delta, delta_ref)
     print('-' * 70 + '\n')
+
+    delta = np.nan if delta is None else delta
+    delta_ref = np.nan if delta_ref is None else delta_ref
+    return delta, delta_ref
+
+
+def plot(maxatoms, aev_fd, cuaev_fd, aev_fdbd, cuaev_fdbd):
+    import numpy as np
+    import os
+    import matplotlib.pyplot as plt
+    from matplotlib import rc
+    import datetime
+    import subprocess
+    from distutils.spawn import find_executable
+
+    rc('mathtext', fontset='cm')
+    usetex = bool(find_executable('latex')) and bool(find_executable('dvipng'))
+    # usetex = False
+    rc('axes.spines', **{'right': False, 'top': False})
+    rc('axes', grid=True)
+    plt.rcParams['grid.linewidth'] = 0.15
+    if usetex:
+        rc('xtick', labelsize=14)
+        rc('ytick', labelsize=14)
+        rc('text', usetex=True)
+        rc('font', **{'size': 16, 'family': 'serif', 'sans-serif': ['Lucid', 'Arial', 'Helvetica'], 'serif': ['Times', 'Times New Roman']})
+    else:
+        rc('font', **{'size': 14})
+
+    aev_fd = np.array(aev_fd) * 1000
+    cuaev_fd = np.array(cuaev_fd) * 1000
+    aev_fdbd = np.array(aev_fdbd) * 1000
+    cuaev_fdbd = np.array(cuaev_fdbd) * 1000
+    plt.figure(figsize=(11, 6), dpi=200)
+    plt.plot(maxatoms, aev_fd, '--bo', label='pyaev forward')
+    plt.plot(maxatoms, cuaev_fd, '--ro', label='cuaev forward')
+    plt.plot(maxatoms, aev_fdbd, '-bo', label='pyaev forward + backward')
+    plt.plot(maxatoms, cuaev_fdbd, '-ro', label='cuaev forward + backward')
+    for i, txt in enumerate(aev_fd):
+        plt.annotate(f'{txt:.2f}', (maxatoms[i], aev_fd[i] - 2.5), ha='center', va='center', fontsize=12)
+    for i, txt in enumerate(cuaev_fd):
+        plt.annotate(f'{txt:.2f}', (maxatoms[i], cuaev_fd[i] - 2.5), ha='center', va='center', fontsize=12)
+    for i, txt in enumerate(aev_fdbd):
+        plt.annotate(f'{txt:.2f}', (maxatoms[i], aev_fdbd[i] + 2.5), ha='center', va='center', fontsize=12)
+    for i, txt in enumerate(cuaev_fdbd):
+        plt.annotate(f'{txt:.2f}', (maxatoms[i], cuaev_fdbd[i] + 2.5), ha='center', va='center', fontsize=12)
+    # plt.legend(frameon=False, fontsize=15, loc='upper left')
+    plt.legend(frameon=True, fontsize=15, loc='best')
+    plt.xlim(maxatoms[0] - 500, maxatoms[-1] + 500)
+    plt.ylim(-3, 85)
+    plt.xlabel(r'System Size (atoms)')
+    plt.ylabel(r'Time (ms)')
+    plt.title(f'Benchmark of cuaev (cuda extension) and pyaev (torch operators) \non {getGpuName()}', fontsize=16)
+    plt.show()
+
+    dir = 'benchmark'
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    timenow = f"{datetime.datetime.now():%Y-%m-%d-%H-%M-%S}"
+    imgfilename = f"{dir}/{timenow}.png"
+    plt.savefig(imgfilename, dpi=200, bbox_inches='tight')
+    cmd = f"if command -v imgcat > /dev/null; then imgcat {imgfilename} --height 30; fi"
+    subprocess.run(cmd, shell=True, check=True, universal_newlines=True)
+    info(f"\nBenchmark plot saved at {os.path.realpath(imgfilename)}")
+
+
+def run_for_plot(file, maxatoms, nnp_ref, nnp_cuaev):
+    aev_fd = []
+    cuaev_fd = []
+    aev_fdbd = []
+    cuaev_fdbd = []
+    for maxatom in maxatoms:
+        cuaev_t, aev_t = run(file, nnp_ref, nnp_cuaev, runbackward=False, maxatoms=maxatom)
+        cuaev_fd.append(cuaev_t)
+        aev_fd.append(aev_t)
+    addSummaryEmptyLine()
+    info('Add Backward\n')
+    for maxatom in maxatoms:
+        cuaev_t, aev_t = run(file, nnp_ref, nnp_cuaev, runbackward=True, maxatoms=maxatom)
+        cuaev_fdbd.append(cuaev_t)
+        aev_fdbd.append(aev_t)
+    addSummaryEmptyLine()
+    plot(maxatoms, aev_fd, cuaev_fd, aev_fdbd, cuaev_fdbd)
 
 
 if __name__ == "__main__":
@@ -201,40 +313,51 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--backward',
                         action='store_true',
                         help='benchmark double backward')
+    parser.add_argument('-p', '--plot',
+                        action='store_true',
+                        help='plot benchmark result')
     parser.add_argument('-n', '--N',
                         help='Number of Repeat',
                         default=200, type=int)
     parser.set_defaults(backward=0)
+    parser.set_defaults(plot=0)
     args = parser.parse_args()
     path = os.path.dirname(os.path.realpath(__file__))
     N = args.N
 
     device = torch.device('cuda')
     files = ['small.pdb', '1hz5.pdb', '6W8H.pdb']
-    # files = ['small.pdb']
     nnp_ref = torchani.models.ANI2x(periodic_table_index=True, model_index=None).to(device)
     nnp_cuaev = torchani.models.ANI2x(periodic_table_index=True, model_index=None).to(device)
     nnp_cuaev.aev_computer.use_cuda_extension = True
+    maxatoms = [6000, 10000]
 
     if args.nsight:
-        N = 3
+        N = 5
         torch.cuda.profiler.start()
+        maxatoms = [10000]
 
-    for file in files:
-        run(file, nnp_ref, nnp_cuaev, runbackward=False)
-    for maxatom in [6000, 10000]:
-        file = '1C17.pdb'
-        run(file, nnp_ref, nnp_cuaev, runbackward=False, maxatoms=maxatom)
-
-    addSummaryEmptyLine()
-    info('Add Backward\n')
-
-    for file in files:
-        run(file, nnp_ref, nnp_cuaev, runbackward=True)
-    for maxatom in [6000, 10000]:
-        file = '1C17.pdb'
-        run(file, nnp_ref, nnp_cuaev, runbackward=True, maxatoms=maxatom)
-    addSummaryEmptyLine()
+    # if run for plots
+    if args.plot:
+        maxatoms = np.concatenate([[5000, 6000, 8000], np.arange(10000, 31000, 5000)])
+        file = '6ZDH.pdb'
+        run_for_plot(file, maxatoms, nnp_ref, nnp_cuaev)
+    else:
+        # if not for nsight
+        if not args.nsight:
+            for file in files:
+                run(file, nnp_ref, nnp_cuaev, runbackward=False)
+            for maxatom in maxatoms:
+                file = '1C17.pdb'
+                run(file, nnp_ref, nnp_cuaev, runbackward=False, maxatoms=maxatom)
+            addSummaryEmptyLine()
+            info('Add Backward\n')
+            for file in files:
+                run(file, nnp_ref, nnp_cuaev, runbackward=True)
+        for maxatom in maxatoms:
+            file = '1C17.pdb'
+            run(file, nnp_ref, nnp_cuaev, runbackward=True, maxatoms=maxatom)
+        addSummaryEmptyLine()
 
     print(summary)
     if args.nsight:

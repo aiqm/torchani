@@ -15,6 +15,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: Lint with clang-format
       run: |
+        which clang-format; clang-format --version
         find -name '*.cpp' -o -name '*.h' -o -name '*.cu' -o -name '*.cuh' | xargs clang-format -i
         GIT_DIFF=$(git diff)
         if [[ -z $GIT_DIFF ]]; then

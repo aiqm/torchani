@@ -10,102 +10,71 @@
 #undef CUB_NS_POSTFIX
 #undef CUB_NS_PREFIX
 
+#include <ATen/cuda/Exceptions.h>
+
+// handle the temporary storage and 'twice' calls for cub API
+#define CUB_WRAPPER(func, ...)                                   \
+  do {                                                           \
+    size_t temp_storage_bytes = 0;                               \
+    func(nullptr, temp_storage_bytes, __VA_ARGS__);              \
+    auto temp_storage = allocator->allocate(temp_storage_bytes); \
+    func(temp_storage.get(), temp_storage_bytes, __VA_ARGS__);   \
+    AT_CUDA_CHECK(cudaGetLastError());                           \
+  } while (false)
+
 template <typename DataT>
 void cubScan(const DataT* d_in, DataT* d_out, int num_items, cudaStream_t stream) {
-  auto& allocator = *c10::cuda::CUDACachingAllocator::get();
-
-  // Determine temporary device storage requirements
-  void* d_temp_storage = NULL;
-  size_t temp_storage_bytes = 0;
-  cuaev::cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
-
-  // Allocate temporary storage
-  auto buffer_tmp = allocator.allocate(temp_storage_bytes);
-  d_temp_storage = buffer_tmp.get();
-
-  // Run exclusive prefix sum
-  cuaev::cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
-}
-
-template <typename DataT, typename IndexT>
-int cubEncode(
-    const DataT* d_in,
-    DataT* d_unique_out,
-    IndexT* d_counts_out,
-    int num_items,
-    int* d_num_runs_out,
-    cudaStream_t stream) {
-  auto& allocator = *c10::cuda::CUDACachingAllocator::get();
-
-  // Determine temporary device storage requirements
-  void* d_temp_storage = NULL;
-  size_t temp_storage_bytes = 0;
-  cuaev::cub::DeviceRunLengthEncode::Encode(
-      d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_counts_out, d_num_runs_out, num_items, stream);
-
-  // Allocate temporary storage
-  auto buffer_tmp = allocator.allocate(temp_storage_bytes);
-  d_temp_storage = buffer_tmp.get();
-
-  // Run encoding
-  cuaev::cub::DeviceRunLengthEncode::Encode(
-      d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_counts_out, d_num_runs_out, num_items, stream);
-
-  int num_selected = 0;
-  cudaMemcpyAsync(&num_selected, d_num_runs_out, sizeof(int), cudaMemcpyDefault, stream);
-  cudaStreamSynchronize(stream);
-  return num_selected;
+  auto allocator = c10::cuda::CUDACachingAllocator::get();
+  CUB_WRAPPER(cuaev::cub::DeviceScan::ExclusiveSum, d_in, d_out, num_items, stream);
 }
 
 template <typename DataT, typename LambdaOpT>
-int cubDeviceSelect(
-    const DataT* d_in,
-    DataT* d_out,
-    int num_items,
-    int* d_num_selected_out,
-    LambdaOpT select_op,
-    cudaStream_t stream) {
-  auto& allocator = *c10::cuda::CUDACachingAllocator::get();
+int cubDeviceSelectIf(const DataT* d_in, DataT* d_out, int num_items, LambdaOpT select_op, cudaStream_t stream) {
+  auto allocator = c10::cuda::CUDACachingAllocator::get();
+  auto buffer_count = allocator->allocate(sizeof(int));
+  int* d_num_selected_out = (int*)buffer_count.get();
 
-  // Determine temporary device storage requirements
-  void* d_temp_storage = NULL;
-  size_t temp_storage_bytes = 0;
-  cuaev::cub::DeviceSelect::If(
-      d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);
+  CUB_WRAPPER(cuaev::cub::DeviceSelect::If, d_in, d_out, d_num_selected_out, num_items, select_op, stream);
 
-  // Allocate temporary storage
-  auto buffer_tmp = allocator.allocate(temp_storage_bytes);
-  d_temp_storage = buffer_tmp.get();
-
-  // Run selection
-  cuaev::cub::DeviceSelect::If(
-      d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op, stream);
-
+  // TODO copy num_selected to host, this part is slow
   int num_selected = 0;
   cudaMemcpyAsync(&num_selected, d_num_selected_out, sizeof(int), cudaMemcpyDefault, stream);
   cudaStreamSynchronize(stream);
-
   return num_selected;
 }
 
 template <typename DataT>
-DataT cubMax(const DataT* d_in, int num_items, DataT* d_out, cudaStream_t stream) {
-  auto& allocator = *c10::cuda::CUDACachingAllocator::get();
-  // Determine temporary device storage requirements
-  void* d_temp_storage = NULL;
-  size_t temp_storage_bytes = 0;
-  cuaev::cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
+void cubDeviceSelectFlagged(const DataT* d_in, DataT* d_out, int num_items, char* d_flags, cudaStream_t stream) {
+  auto allocator = c10::cuda::CUDACachingAllocator::get();
+  auto buffer_count = allocator->allocate(sizeof(int));
+  int* d_num_selected_out = (int*)buffer_count.get();
+  CUB_WRAPPER(cuaev::cub::DeviceSelect::Flagged, d_in, d_flags, d_out, d_num_selected_out, num_items, stream);
+}
 
-  // Allocate temporary storage
-  auto buffer_tmp = allocator.allocate(temp_storage_bytes);
-  d_temp_storage = buffer_tmp.get();
+template <typename DataT>
+DataT cubMax(const DataT* d_in, int num_items, cudaStream_t stream) {
+  auto allocator = c10::cuda::CUDACachingAllocator::get();
+  auto buffer_count = allocator->allocate(sizeof(int));
+  DataT* d_out = (DataT*)buffer_count.get();
 
-  // Run min-reduction
-  cuaev::cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream);
+  CUB_WRAPPER(cuaev::cub::DeviceReduce::Max, d_in, d_out, num_items, stream);
 
-  int maxVal = 0;
+  DataT maxVal = 0;
   cudaMemcpyAsync(&maxVal, d_out, sizeof(DataT), cudaMemcpyDefault, stream);
   cudaStreamSynchronize(stream);
-
   return maxVal;
+}
+
+template <typename DataT>
+DataT cubSum(const DataT* d_in, int num_items, cudaStream_t stream) {
+  auto allocator = c10::cuda::CUDACachingAllocator::get();
+  auto buffer_count = allocator->allocate(sizeof(int));
+  DataT* d_out = (DataT*)buffer_count.get();
+
+  CUB_WRAPPER(cuaev::cub::DeviceReduce::Sum, d_in, d_out, num_items, stream);
+
+  DataT sumVal = 0;
+  cudaMemcpyAsync(&sumVal, d_out, sizeof(DataT), cudaMemcpyDefault, stream);
+  cudaStreamSynchronize(stream);
+  return sumVal;
 }

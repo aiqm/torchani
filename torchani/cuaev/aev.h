@@ -106,6 +106,24 @@ using torch::autograd::tensor_list;
 // ddaev = concatenate(ddradial, ddangular)
 // dparams(ddaev, ...) <-- output
 
+struct alignas(2 * sizeof(int)) AtomI {
+  int midx;
+  int i;
+};
+
+struct NeighborList {
+  int nJ;
+  int maxNumJPerI;
+
+  Tensor atomJ_t; // only j index
+  Tensor numJPerI_t;
+  Tensor distJ_t;
+
+  NeighborList() = default;
+  NeighborList(int nJ, int maxNumJPerI, Tensor atomJ_t, Tensor numJPerI_t, Tensor distJ_t)
+      : nJ(nJ), maxNumJPerI(maxNumJPerI), atomJ_t(atomJ_t), numJPerI_t(numJPerI_t), distJ_t(distJ_t) {}
+};
+
 struct AEVScalarParams {
   float Rcr;
   float Rca;
@@ -121,75 +139,69 @@ struct AEVScalarParams {
   Tensor ShfA_t;
   Tensor ShfZ_t;
   AEVScalarParams(
-      float Rcr_,
-      float Rca_,
-      Tensor EtaR_t_,
-      Tensor ShfR_t_,
-      Tensor EtaA_t_,
-      Tensor Zeta_t_,
-      Tensor ShfA_t_,
-      Tensor ShfZ_t_,
-      int num_species_);
+      float Rcr,
+      float Rca,
+      Tensor EtaR_t,
+      Tensor ShfR_t,
+      Tensor EtaA_t,
+      Tensor Zeta_t,
+      Tensor ShfA_t,
+      Tensor ShfZ_t,
+      int num_species);
 };
 
 struct Result {
   Tensor aev_t;
-  Tensor tensor_Rij;
-  Tensor tensor_radialRij;
-  Tensor tensor_angularRij;
-  int total_natom_pairs;
-  int nRadialRij;
-  int nAngularRij;
-  Tensor tensor_centralAtom;
-  Tensor tensor_numPairsPerCenterAtom;
-  Tensor tensor_centerAtomStartIdx;
-  int maxnbrs_per_atom_aligned;
-  int angular_length_aligned;
-  int ncenter_atoms;
+  Tensor atomI_t;
+  Tensor startIdxJ_t;
+  int nI;
   Tensor coordinates_t;
   Tensor species_t;
+  NeighborList radialNbr;
+  NeighborList angularNbr;
 
   Result(
-      Tensor aev_t_,
-      Tensor tensor_Rij_,
-      Tensor tensor_radialRij_,
-      Tensor tensor_angularRij_,
-      int64_t total_natom_pairs_,
-      int64_t nRadialRij_,
-      int64_t nAngularRij_,
-      Tensor tensor_centralAtom_,
-      Tensor tensor_numPairsPerCenterAtom_,
-      Tensor tensor_centerAtomStartIdx_,
-      int64_t maxnbrs_per_atom_aligned_,
-      int64_t angular_length_aligned_,
-      int64_t ncenter_atoms_,
-      Tensor coordinates_t_,
-      Tensor species_t_);
+      Tensor aev_t,
+      Tensor atomI_t,
+      Tensor startIdxJ_t,
+      int64_t nI,
+      Tensor coordinates_t,
+      Tensor species_t,
+      NeighborList radialNbr,
+      NeighborList angularNbr);
   Result(tensor_list tensors);
+  Result(Tensor coordinates_t, Tensor species_t);
+  Result();
   operator tensor_list() {
     return {
         Tensor(), // aev_t got removed
-        tensor_Rij,
-        tensor_radialRij,
-        tensor_angularRij,
-        torch::tensor(total_natom_pairs),
-        torch::tensor(nRadialRij),
-        torch::tensor(nAngularRij),
-        tensor_centralAtom,
-        tensor_numPairsPerCenterAtom,
-        tensor_centerAtomStartIdx,
-        torch::tensor(maxnbrs_per_atom_aligned),
-        torch::tensor(angular_length_aligned),
-        torch::tensor(ncenter_atoms),
+        atomI_t,
+        startIdxJ_t,
+        torch::tensor(nI),
         coordinates_t,
-        species_t};
+        species_t,
+        torch::tensor(radialNbr.nJ),
+        torch::tensor(radialNbr.maxNumJPerI),
+        radialNbr.atomJ_t,
+        radialNbr.numJPerI_t,
+        radialNbr.distJ_t,
+        torch::tensor(angularNbr.nJ),
+        torch::tensor(angularNbr.maxNumJPerI),
+        angularNbr.atomJ_t,
+        angularNbr.numJPerI_t,
+        angularNbr.distJ_t};
   }
 };
 
 // cuda kernels
-Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const AEVScalarParams& aev_params);
+void cuaev_forward(
+    const Tensor& coordinates_t,
+    const Tensor& species_t,
+    const AEVScalarParams& aev_params,
+    Result& result);
 Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_params, const Result& result);
 Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, const Result& result);
+void initAEVConsts(AEVScalarParams& aev_params, cudaStream_t stream);
 
 // CuaevComputer
 // Only keep one copy of aev parameters
@@ -207,8 +219,11 @@ struct CuaevComputer : torch::CustomClassHolder {
       const Tensor& ShfZ_t,
       int64_t num_species);
 
+  // TODO add option for simulation only forward, which will initilize result space, and no need to allocate any more.
   Result forward(const Tensor& coordinates_t, const Tensor& species_t) {
-    return cuaev_forward(coordinates_t, species_t, aev_params);
+    Result result(coordinates_t, species_t);
+    cuaev_forward(coordinates_t, species_t, aev_params, result);
+    return result;
   }
 
   Tensor backward(const Tensor& grad_e_aev, const Result& result) {
