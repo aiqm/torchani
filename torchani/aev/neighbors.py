@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Union
 from ..compat import Final
 
 
@@ -53,7 +53,7 @@ class BaseNeighborlist(torch.nn.Module):
 
     @staticmethod
     def _screen_with_cutoff(cutoff: float, coordinates: Tensor, input_neighborlist: Tensor,
-            shift_values: Tensor, mask: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+                            shift_values: Optional[Tensor] = None, mask: Optional[Tensor] = None) -> Tuple[Tensor, Union[Tensor, None], Tensor, Tensor]:
         # Screen a given neighborlist using a cutoff and return a neighborlist with
         # atoms that are within that cutoff, for all molecules in a coordinate set.
         #
@@ -67,29 +67,45 @@ class BaseNeighborlist(torch.nn.Module):
         # First we check if there are any dummy atoms in species, if there are
         # we get rid of those pairs to prevent wasting resources in calculation
         # of dummy distances
-        if mask.any():
-            mask = mask.view(-1)[input_neighborlist.view(-1)].view(2, -1)
-            non_dummy_pairs = (~torch.any(mask, dim=0)).nonzero().flatten()
-            input_neighborlist = input_neighborlist.index_select(1, non_dummy_pairs)
-            shift_values = shift_values.index_select(0, non_dummy_pairs)
+        if mask is not None:
+            if mask.any():
+                mask = mask.view(-1)[input_neighborlist.view(-1)].view(2, -1)
+                non_dummy_pairs = (~torch.any(mask, dim=0)).nonzero().flatten()
+                input_neighborlist = input_neighborlist.index_select(1, non_dummy_pairs)
+                # shift_values can be None when there are no pbc conditions to prevent
+                # torch from launching kernels with only zeros
+                if shift_values is not None:
+                    shift_values = shift_values.index_select(0, non_dummy_pairs)
 
         coordinates = coordinates.view(-1, 3)
-        coords0 = coordinates.index_select(0, input_neighborlist[0])
-        coords1 = coordinates.index_select(0, input_neighborlist[1])
-        # Difference vector and distances can be obtained for free when
-        # screening, this prevents recalculation in other modules. We have to
-        # keep coords in the graph for this to work
-        vec = coords0 - coords1 + shift_values
-        distances_sq = vec.pow(2).sum(-1)
-        in_cutoff = (distances_sq <= cutoff ** 2).nonzero().flatten()
+        # Difference vector and distances could be obtained for free when
+        # screening, unfortunately distances have to be recalculated twice each
+        # time they are screened, since otherwise torch prepares to calculate
+        # derivatives of multiple distances that will later be disregarded
+
+        coordinates_ = coordinates.detach()
+        # detached calculation #
+        coords0 = coordinates_.index_select(0, input_neighborlist[0])
+        coords1 = coordinates_.index_select(0, input_neighborlist[1])
+        diff_vectors = coords0 - coords1
+        if shift_values is not None:
+            diff_vectors += shift_values
+        distances = diff_vectors.norm(2, -1)
+        in_cutoff = (distances <= cutoff).nonzero().flatten()
+        # ------------------- #
 
         screened_neighborlist = input_neighborlist.index_select(1, in_cutoff)
-        screened_shift_values = shift_values.index_select(0, in_cutoff)
+        if shift_values is not None:
+            shift_values = shift_values.index_select(0, in_cutoff)
 
-        screened_diff_vector = vec.index_select(0, in_cutoff)
-        screened_distances = distances_sq.index_select(0, in_cutoff).sqrt()
+        coords0 = coordinates.index_select(0, screened_neighborlist[0])
+        coords1 = coordinates.index_select(0, screened_neighborlist[1])
+        screened_diff_vectors = coords0 - coords1
+        if shift_values is not None:
+            screened_diff_vectors += shift_values
+        screened_distances = screened_diff_vectors.norm(2, -1)
 
-        return screened_neighborlist, screened_shift_values, screened_diff_vector, screened_distances
+        return screened_neighborlist, shift_values, screened_diff_vectors, screened_distances
 
 
 class FullPairwise(BaseNeighborlist):
@@ -106,7 +122,7 @@ class FullPairwise(BaseNeighborlist):
         self.default_shift_values: Tensor
 
     def forward(self, species: Tensor, coordinates: Tensor, cell: Optional[Tensor] = None,
-                pbc: Optional[Tensor] = None) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+                pbc: Optional[Tensor] = None) -> Tuple[Tensor, Union[Tensor, None], Tensor, Tensor]:
         """Arguments:
             coordinates (:class:`torch.Tensor`): tensor of shape
                 (molecules, atoms, 3) for atom coordinates.
@@ -123,6 +139,7 @@ class FullPairwise(BaseNeighborlist):
         if pbc.any():
             atom_index12, shift_indices = self._full_pairwise_pbc(species, cell, pbc)
             shift_values = shift_indices.to(cell.dtype) @ cell
+            return self._screen_with_cutoff(self.cutoff, coordinates, atom_index12, shift_values, mask)
         else:
             num_molecules = species.shape[0]
             num_atoms = species.shape[1]
@@ -130,13 +147,11 @@ class FullPairwise(BaseNeighborlist):
             # assuming that there are no atoms at all. Dummy species will be
             # screened later
             atom_index12 = torch.triu_indices(num_atoms, num_atoms, 1, device=species.device)
-            atom_index12 = atom_index12.unsqueeze(1).repeat(1, num_molecules, 1)
-            atom_index12 += num_atoms * torch.arange(num_molecules, device=mask.device).view(1, -1, 1)
-            atom_index12 = atom_index12.view(-1).view(2, -1)
-            # Create dummy shift values that are all zero
-            shift_values = self.default_shift_values.repeat(atom_index12.shape[1], 3)
-
-        return self._screen_with_cutoff(self.cutoff, coordinates, atom_index12, shift_values, mask)
+            if num_molecules > 1:
+                atom_index12 = atom_index12.unsqueeze(1).repeat(1, num_molecules, 1)
+                atom_index12 += num_atoms * torch.arange(num_molecules, device=mask.device).view(1, -1, 1)
+                atom_index12 = atom_index12.view(-1).view(2, -1)
+            return self._screen_with_cutoff(self.cutoff, coordinates, atom_index12, mask=mask)
 
     def _full_pairwise_pbc(self, species: Tensor,
                            cell: Tensor, pbc: Tensor) -> Tuple[Tensor, Tensor]:
