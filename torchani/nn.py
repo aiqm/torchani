@@ -3,6 +3,7 @@ from collections import OrderedDict
 from torch import Tensor
 from typing import Tuple, NamedTuple, Optional
 from . import utils
+from .compat import Final
 
 
 class SpeciesEnergies(NamedTuple):
@@ -116,6 +117,25 @@ class Gaussian(torch.nn.Module):
     """Gaussian activation"""
     def forward(self, x: Tensor) -> Tensor:
         return torch.exp(- x * x)
+
+
+class FittedSoftplus(torch.nn.Module):
+    """Softplus function parametrized to be equal to a CELU
+
+    This allows keeping the good characteristics of CELU, while having an
+    infinitely differentiable function.
+    It is highly recommended to leave alpha and beta as their defaults,
+    which match closely CELU with alpha = 0.1"""
+
+    alpha: Final[float]
+    beta: Final[float]
+
+    def __init__(self, alpha=0.1, beta=20):
+        self.alpha = alpha
+        self.beta = beta
+
+    def forward(self, x: Tensor) -> Tensor:
+        return torch.nn.functional.softplus(x + self.alpha, beta=self.beta) - self.alpha
 
 
 class SpeciesConverter(torch.nn.Module):
