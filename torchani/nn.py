@@ -131,6 +131,7 @@ class FittedSoftplus(torch.nn.Module):
     beta: Final[float]
 
     def __init__(self, alpha=0.1, beta=20):
+        super().__init__()
         self.alpha = alpha
         self.beta = beta
 
