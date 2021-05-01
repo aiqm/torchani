@@ -195,11 +195,11 @@ def _parse_angular_terms(angular_terms, cutoff_fn, EtaA, Zeta, ShfA, ShfZ, Rca):
     assert ShfZ is None
     assert Rca is None
     if angular_terms == 'ani1x':
-        angular_terms = StandardAngular.like_1x()
+        angular_terms = StandardAngular.like_1x(cutoff_fn=cutoff_fn)
     elif angular_terms == 'ani2x':
-        angular_terms = StandardAngular.like_2x()
+        angular_terms = StandardAngular.like_2x(cutoff_fn=cutoff_fn)
     elif angular_terms == 'ani1ccx':
-        angular_terms = StandardAngular.like_1ccx()
+        angular_terms = StandardAngular.like_1ccx(cutoff_fn=cutoff_fn)
     else:
         assert isinstance(angular_terms, torch.nn.Module), "Custom angular terms should be a torch module"
         assert hasattr(angular_terms, 'sublength'), "Custom angular terms should have a sublength attribute"
