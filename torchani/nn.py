@@ -73,11 +73,10 @@ class ANIModel(torch.nn.ModuleDict):
         output = aev.new_zeros(species_.shape)
 
         for i, m in enumerate(self.values()):
-            mask = (species_ == i)
-            midx = mask.nonzero().flatten()
+            midx = (species_ == i).nonzero().view(-1)
             if midx.shape[0] > 0:
                 input_ = aev.index_select(0, midx)
-                output.masked_scatter_(mask, m(input_).flatten())
+                output.index_add_(0, midx, m(input_).view(-1))
         output = output.view_as(species)
         return output
 
