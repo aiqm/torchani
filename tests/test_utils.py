@@ -11,6 +11,11 @@ class TestUtils(TestCase):
         self.assertEqual(len(str2i), 6)
         self.assertListEqual(str2i('BACCC').tolist(), [1, 0, 2, 2, 2])
 
+    def testChemicalSymbolsToAtomicNumbers(self):
+        symbols_to_atomic_nums = torchani.utils.ChemicalSymbolsToAtomicNumbers()
+        atomic_nums = symbols_to_atomic_nums(['H', 'H', 'C', 'Cl', 'N', 'H'])
+        self.assertEqual(atomic_nums, torch.tensor([1, 1, 6, 17, 7, 1], dtype=torch.long))
+
     def testHessianJIT(self):
         torch.jit.script(torchani.utils.hessian)
 

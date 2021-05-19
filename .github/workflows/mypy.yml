@@ -28,6 +28,6 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install mypy
+        pip install --upgrade mypy
     - name: Type checking with mypy
       run: mypy --ignore-missing-imports .

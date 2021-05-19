@@ -1,11 +1,21 @@
 import torch
+import numpy as np
 from torch import Tensor
 import torch.utils.data
 import math
 from collections import defaultdict
-from typing import Tuple, NamedTuple, Optional, Sequence
+from typing import Tuple, NamedTuple, Optional, Sequence, List, Union, Dict
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
 from .nn import SpeciesEnergies
+
+PADDING = {
+    'species': -1,
+    'numbers': -1,
+    'atomic_numbers': -1,
+    'coordinates': 0.0,
+    'forces': 0.0,
+    'energies': 0.0
+}
 
 
 def cumsum_from_zero(input_: Tensor) -> Tensor:
@@ -45,7 +55,8 @@ def broadcast_first_dim(properties):
     return properties
 
 
-def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, species=-1)):
+def pad_atomic_properties(properties: List[Dict[str, Tensor]],
+                          padding_values: Optional[Dict[str, float]] = None) -> Dict[str, Tensor]:
     """Put a sequence of atomic properties together into single tensor.
 
     Inputs are `[{'species': ..., ...}, {'species': ..., ...}, ...]` and the outputs
@@ -55,6 +66,9 @@ def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, sp
         properties (:class:`collections.abc.Sequence`): sequence of properties.
         padding_values (dict): the value to fill to pad tensors to same size
     """
+    if padding_values is None:
+        padding_values = PADDING
+
     vectors = [k for k in properties[0].keys() if properties[0][k].dim() > 1]
     scalars = [k for k in properties[0].keys() if properties[0][k].dim() == 1]
     padded_sizes = {k: max(x[k].shape[1] for x in properties) for k in vectors}
@@ -62,7 +76,7 @@ def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, sp
     total_num_molecules = sum(num_molecules)
     output = {}
     for k in scalars:
-        output[k] = torch.stack([x[k] for x in properties])
+        output[k] = torch.cat([x[k] for x in properties])
     for k in vectors:
         tensor = properties[0][k]
         shape = list(tensor.shape)
@@ -70,7 +84,7 @@ def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, sp
         dtype = tensor.dtype
         shape[0] = total_num_molecules
         shape[1] = padded_sizes[k]
-        output[k] = torch.full(shape, padding_values[k], device=device, dtype=dtype)
+        output[k] = torch.full(shape, padding_values.get(k, 0.0), device=device, dtype=dtype)
         index0 = 0
         for n, x in zip(num_molecules, properties):
             original_size = x[k].shape[1]
@@ -185,7 +199,7 @@ class EnergyShifter(torch.nn.Module):
             intercept = self.self_energies[-1]
 
         self_energies = self.self_energies[species]
-        self_energies[species == torch.tensor(-1, device=species.device)] = torch.tensor(0, device=species.device, dtype=torch.double)
+        self_energies[species == torch.tensor(-1, device=species.device)] = torch.tensor(0, device=species.device, dtype=self.self_energies.dtype)
         return self_energies.sum(dim=1) + intercept
 
     def forward(self, species_energies: Tuple[Tensor, Tensor],
@@ -196,6 +210,26 @@ class EnergyShifter(torch.nn.Module):
         species, energies = species_energies
         sae = self.sae(species)
         return SpeciesEnergies(species, energies + sae)
+
+
+class ChemicalSymbolsToAtomicNumbers:
+    r"""Converts a sequence of chemical symbols into a tensor of atomic numbers, of :class:`torch.long`
+
+    .. code-block:: python
+
+       # We have a species list which we want to convert to atomic numbers
+       symbols_to_numbers = ChemicalSymbolsToAtomicNumbers()
+       atomic_numbers = symbols_to_numbers(['H', 'C', 'H', 'H', 'C', 'Cl', 'Fe'])
+
+       # atomic_numbers is now torch.tensor([1, 6, 1, 1, 6, 17, 26])
+    """
+
+    def __init__(self) -> None:
+        self.converter = np.vectorize(lambda s: ATOMIC_NUMBERS[s])
+
+    def __call__(self, symbols: Union[np.ndarray, List[str]]) -> Tensor:
+        atomic_numbers = self.converter(np.asarray(symbols))
+        return torch.as_tensor(atomic_numbers).to(torch.long)
 
 
 class ChemicalSymbolsToInts(torch.nn.Module):
@@ -433,6 +467,8 @@ PERIODIC_TABLE = ['Dummy'] + """
     Cs  Ba  La  Ce  Pr  Nd  Pm  Sm  Eu  Gd  Tb  Dy  Ho  Er  Tm  Yb  Lu  Hf  Ta  W   Re  Os  Ir  Pt  Au  Hg  Tl  Pb  Bi  Po  At  Rn
     Fr  Ra  Ac  Th  Pa  U   Np  Pu  Am  Cm  Bk  Cf  Es  Fm  Md  No  Lr  Rf  Db  Sg  Bh  Hs  Mt  Ds  Rg  Cn  Nh  Fl  Mc  Lv  Ts  Og
     """.strip().split()
+
+ATOMIC_NUMBERS = {symbol: z for z, symbol in enumerate(PERIODIC_TABLE)}
 
 
 __all__ = ['pad_atomic_properties', 'present_species', 'hessian',
