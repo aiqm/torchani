@@ -69,7 +69,7 @@ class AtomicNumbersToIndices(torch.nn.Module):
         symbols, atomic_numbers = _parse_elements(elements)
 
         self.register_buffer('supported_atomic_numbers', torch.tensor(atomic_numbers, dtype=torch.long))
-        self.converter = SpeciesConverter(elements)
+        self.converter = SpeciesConverter(symbols)
 
     def forward(self, properties: Dict[str, Tensor]) -> Dict[str, Tensor]:
         species = self.converter((properties['species'], properties['coordinates'])).species
