@@ -54,7 +54,7 @@ class XYZ:
                 atom_count -= 1
                 if atom_count == 0:
                     state = 'ready'
-                    species = ani1x.consts.species_to_tensor(species) \
+                    species = ani1x.species_to_tensor(species) \
                         .to(device)
                     coordinates = torch.tensor(coordinates, device=device)
                     self.mols.append((species, coordinates))

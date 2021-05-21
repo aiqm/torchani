@@ -31,9 +31,11 @@ directly calculate energies or get an ASE calculator. For example:
 import os
 import torch
 from torch import Tensor
-from typing import Tuple, Optional, NamedTuple
-from .nn import SpeciesConverter, SpeciesEnergies
+from typing import Tuple, Optional, NamedTuple, Sequence
+from .nn import SpeciesConverter, SpeciesEnergies, Ensemble
+from .utils import ChemicalSymbolsToInts, PERIODIC_TABLE
 from .aev import AEVComputer
+from .compat import Final
 
 
 class SpeciesEnergiesQBC(NamedTuple):
@@ -45,19 +47,46 @@ class SpeciesEnergiesQBC(NamedTuple):
 class BuiltinModel(torch.nn.Module):
     r"""Private template for the builtin ANI models """
 
-    def __init__(self, species_converter, aev_computer, neural_networks, energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index):
+    atomic_numbers: Tensor
+    periodic_table_index: Final[bool]
+
+    def __init__(self,
+                 aev_computer,
+                 neural_networks,
+                 energy_shifter,
+                 elements: Sequence[str],
+                 periodic_table_index: bool = False):
+
         super().__init__()
-        self.species_converter = species_converter
+
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
         self.energy_shifter = energy_shifter
-        self._species_to_tensor = species_to_tensor
-        self.species = consts.species
-        self.periodic_table_index = periodic_table_index
+        self._species_to_tensor = ChemicalSymbolsToInts(elements)
+        self.species_converter = SpeciesConverter(elements)
 
-        # a bit useless maybe
-        self.consts = consts
-        self.sae_dict = sae_dict
+        self.periodic_table_index = periodic_table_index
+        numbers = torch.tensor([PERIODIC_TABLE.index(e) for e in elements], dtype=torch.long)
+        self.register_buffer('atomic_numbers', numbers)
+
+        # checks are performed to make sure all modules passed support the
+        # correct number of species
+        if energy_shifter.fit_intercept:
+            assert len(energy_shifter.self_energies) == len(self.atomic_numbers) + 1
+        else:
+            assert len(energy_shifter.self_energies) == len(self.atomic_numbers)
+
+        assert len(self.atomic_numbers) == self.aev_computer.num_species
+
+        if isinstance(self.neural_networks, Ensemble):
+            for nnp in self.neural_networks:
+                assert len(nnp) == len(self.atomic_numbers)
+        else:
+            assert len(self.neural_networks) == len(self.atomic_numbers)
+
+    @torch.jit.unused
+    def get_chemical_symbols(self) -> Tuple[str, ...]:
+        return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)
 
     @classmethod
     def _from_neurochem_resources(cls, info_file_path, periodic_table_index=False, model_index=0):
@@ -69,16 +98,13 @@ class BuiltinModel(torch.nn.Module):
             raise ValueError("The ensemble size is only {}, model {} can't be loaded".format(ensemble_size, model_index))
 
         consts = neurochem.Constants(const_file)
-        species_converter = SpeciesConverter(consts.species)
         aev_computer = AEVComputer(**consts)
-        energy_shifter, sae_dict = neurochem.load_sae(sae_file, return_dict=True)
-        species_to_tensor = consts.species_to_tensor
+        energy_shifter = neurochem.load_sae(sae_file)
 
         network_dir = os.path.join('{}{}'.format(ensemble_prefix, model_index), 'networks')
         neural_networks = neurochem.load_model(consts.species, network_dir)
 
-        return cls(species_converter, aev_computer, neural_networks,
-                   energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index)
+        return cls(aev_computer, neural_networks, energy_shifter, consts.species, periodic_table_index)
 
     def forward(self, species_coordinates: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
@@ -150,6 +176,7 @@ class BuiltinModel(torch.nn.Module):
         self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(dtype=torch.long)
         self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
 
+    @torch.jit.unused
     def species_to_tensor(self, *args, **kwargs):
         """Convert species from strings to tensor.
 
@@ -161,11 +188,13 @@ class BuiltinModel(torch.nn.Module):
         Returns:
             tensor (:class:`torch.Tensor`): A 1D tensor of integers
         """
+
         # The only difference between this and the "raw" private version
         # _species_to_tensor is that this sends the final tensor to the model
         # device
-        return self._species_to_tensor(*args, **kwargs) \
-            .to(self.aev_computer.radial_terms.ShfR.device)
+
+        out = self._species_to_tensor(*args, **kwargs)
+        return out.to(self.aev_computer.radial_terms.ShfR.device)
 
     def ase(self, **kwargs):
         """Get an ASE Calculator using this ANI model
@@ -177,7 +206,7 @@ class BuiltinModel(torch.nn.Module):
             calculator (:class:`int`): A calculator to be used with ASE
         """
         from . import ase
-        return ase.Calculator(self.species, self, **kwargs)
+        return ase.Calculator(self.get_chemical_symbols(), self, **kwargs)
 
 
 class BuiltinEnsemble(BuiltinModel):
@@ -216,11 +245,8 @@ class BuiltinEnsemble(BuiltinModel):
             where `N` is the number of parametrized species.
     """
 
-    def __init__(self, species_converter, aev_computer, neural_networks,
-                 energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index):
-        super().__init__(species_converter, aev_computer, neural_networks,
-                         energy_shifter, species_to_tensor, consts, sae_dict,
-                         periodic_table_index)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @torch.jit.export
     def atomic_energies(self, species_coordinates: Tuple[Tensor, Tensor],
@@ -259,15 +285,12 @@ class BuiltinEnsemble(BuiltinModel):
         const_file, sae_file, ensemble_prefix, ensemble_size = neurochem.parse_neurochem_resources(info_file_path)
 
         consts = neurochem.Constants(const_file)
-        species_converter = SpeciesConverter(consts.species)
         aev_computer = AEVComputer(**consts)
-        energy_shifter, sae_dict = neurochem.load_sae(sae_file, return_dict=True)
-        species_to_tensor = consts.species_to_tensor
+        energy_shifter = neurochem.load_sae(sae_file)
         neural_networks = neurochem.load_model_ensemble(consts.species,
                                                         ensemble_prefix, ensemble_size)
 
-        return cls(species_converter, aev_computer, neural_networks,
-                   energy_shifter, species_to_tensor, consts, sae_dict, periodic_table_index)
+        return cls(aev_computer, neural_networks, energy_shifter, consts.species, periodic_table_index)
 
     def __getitem__(self, index):
         """Get a single 'AEVComputer -> ANIModel -> EnergyShifter' sequential model
@@ -286,10 +309,9 @@ class BuiltinEnsemble(BuiltinModel):
             ret: (:class:`torchani.models.BuiltinModel`) Model ready for
                 calculations
         """
-        ret = BuiltinModel(self.species_converter, self.aev_computer,
+        ret = BuiltinModel(self.aev_computer,
                            self.neural_networks[index], self.energy_shifter,
-                           self._species_to_tensor, self.consts, self.sae_dict,
-                           self.periodic_table_index)
+                           self.get_chemical_symbols(), self.periodic_table_index)
         return ret
 
     @torch.jit.export
