@@ -126,8 +126,8 @@ class AEVComputer(torch.nn.Module):
         # cuda aev
         if self.use_cuda_extension:
             assert cuaev_is_installed, "AEV cuda extension is not installed"
-            assert isinstance(angular_terms, StandardAngular), 'nonstandard aev terms not supported for cuaev'
-            assert isinstance(radial_terms, StandardRadial), 'nonstandard aev terms not supported for cuaev'
+            assert isinstance(self.angular_terms, StandardAngular), 'nonstandard aev terms not supported for cuaev'
+            assert isinstance(self.radial_terms, StandardRadial), 'nonstandard aev terms not supported for cuaev'
         if cuaev_is_installed:
             self._register_cuaev_computer()
 
