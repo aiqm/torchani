@@ -1,10 +1,9 @@
 import torch
-import numpy as np
 from torch import Tensor
 import torch.utils.data
 import math
 from collections import defaultdict
-from typing import Tuple, NamedTuple, Optional, Sequence, List, Union, Dict
+from typing import Tuple, NamedTuple, Optional, Sequence, List, Dict
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
 from .nn import SpeciesEnergies
 
@@ -212,7 +211,7 @@ class EnergyShifter(torch.nn.Module):
         return SpeciesEnergies(species, energies + sae)
 
 
-class ChemicalSymbolsToAtomicNumbers:
+class ChemicalSymbolsToAtomicNumbers(torch.nn.Module):
     r"""Converts a sequence of chemical symbols into a tensor of atomic numbers, of :class:`torch.long`
 
     .. code-block:: python
@@ -223,13 +222,20 @@ class ChemicalSymbolsToAtomicNumbers:
 
        # atomic_numbers is now torch.tensor([1, 6, 1, 1, 6, 17, 26])
     """
+    _dummy: Tensor
+    atomics_dict: Dict[str, int]
 
-    def __init__(self) -> None:
-        self.converter = np.vectorize(lambda s: ATOMIC_NUMBERS[s])
+    def __init__(self, atomic_numbers: Optional[Dict[str, int]] = None):
+        super().__init__()
+        if atomic_numbers is None:
+            atomic_numbers = ATOMIC_NUMBERS
+        self.atomics_dict = atomic_numbers
+        # dummy tensor to hold output device
+        self.register_buffer('_dummy', torch.empty(0), persistent=False)
 
-    def __call__(self, symbols: Union[np.ndarray, List[str]]) -> Tensor:
-        atomic_numbers = self.converter(np.asarray(symbols))
-        return torch.as_tensor(atomic_numbers).to(torch.long)
+    def forward(self, symbols: List[str]) -> Tensor:
+        numbers = [self.atomics_dict[s] for s in symbols]
+        return torch.tensor(numbers, dtype=torch.long, device=self._dummy.device)
 
 
 class ChemicalSymbolsToInts(torch.nn.Module):
@@ -269,16 +275,19 @@ class ChemicalSymbolsToInts(torch.nn.Module):
         sequence of all supported species, in order (it is recommended to order
         according to atomic number).
     """
+    _dummy: Tensor
+    rev_species: Dict[str, int]
 
     def __init__(self, all_species: Sequence[str]):
         super().__init__()
         self.rev_species = {s: i for i, s in enumerate(all_species)}
+        # dummy tensor to hold output device
+        self.register_buffer('_dummy', torch.empty(0), persistent=False)
 
-    @torch.jit.unused
-    def forward(self, species: Sequence[str]) -> Tensor:
+    def forward(self, species: List[str]) -> Tensor:
         r"""Convert species from sequence of strings to 1D tensor"""
         rev = [self.rev_species[s] for s in species]
-        return torch.tensor(rev, dtype=torch.long)
+        return torch.tensor(rev, dtype=torch.long, device=self._dummy.device)
 
     def __len__(self):
         return len(self.rev_species)

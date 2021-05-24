@@ -62,7 +62,7 @@ class BuiltinModel(torch.nn.Module):
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
         self.energy_shifter = energy_shifter
-        self._species_to_tensor = ChemicalSymbolsToInts(elements)
+        self.species_to_tensor = ChemicalSymbolsToInts(elements)
         self.species_converter = SpeciesConverter(elements)
 
         self.periodic_table_index = periodic_table_index
@@ -175,26 +175,6 @@ class BuiltinModel(torch.nn.Module):
     def _recast_long_buffers(self):
         self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(dtype=torch.long)
         self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
-
-    @torch.jit.unused
-    def species_to_tensor(self, *args, **kwargs):
-        """Convert species from strings to tensor.
-
-        See also :method:`torchani.neurochem.Constant.species_to_tensor`
-
-        Arguments:
-            species (:class:`str`): A string of chemical symbols
-
-        Returns:
-            tensor (:class:`torch.Tensor`): A 1D tensor of integers
-        """
-
-        # The only difference between this and the "raw" private version
-        # _species_to_tensor is that this sends the final tensor to the model
-        # device
-
-        out = self._species_to_tensor(*args, **kwargs)
-        return out.to(self.aev_computer.radial_terms.ShfR.device)
 
     def ase(self, **kwargs):
         """Get an ASE Calculator using this ANI model

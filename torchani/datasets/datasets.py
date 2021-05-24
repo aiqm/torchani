@@ -241,7 +241,7 @@ class AniH5Dataset(Mapping):
             # here we convert species to atomic numbers and repeat along the
             # batch dimension all element_keys
             if 'species' in element_keys:
-                tensor_species = self.symbols_to_atomic_numbers(conformers['species'])
+                tensor_species = self.symbols_to_atomic_numbers(conformers['species'].tolist())
                 conformers['species'] = tensor_species.cpu().numpy()
 
             if isinstance(idx, ndarray):
