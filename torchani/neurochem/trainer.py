@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """Besides running NeuroChem trainer by programming, we can also run it by
 ``python -m torchani.neurochem.trainer``, use the ``-h`` option for help.
 """
 
 import torch
-from . import Trainer
+from .neurochem import Trainer
 
 
 if __name__ == '__main__':

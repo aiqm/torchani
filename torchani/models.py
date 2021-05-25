@@ -29,13 +29,18 @@ directly calculate energies or get an ASE calculator. For example:
     model0.species_to_tensor(['C', 'H', 'H', 'H', 'H'])
 """
 import os
+from copy import deepcopy
+from pathlib import Path
+from collections import OrderedDict
 import torch
 from torch import Tensor
-from typing import Tuple, Optional, NamedTuple, Sequence
-from .nn import SpeciesConverter, SpeciesEnergies, Ensemble
-from .utils import ChemicalSymbolsToInts, PERIODIC_TABLE
+from torch.nn import Module
+from typing import Tuple, Optional, NamedTuple, Sequence, Union, Type
+from .nn import SpeciesConverter, SpeciesEnergies, Ensemble, ANIModel
+from .utils import ChemicalSymbolsToInts, PERIODIC_TABLE, EnergyShifter, path_is_writable
 from .aev import AEVComputer
 from .compat import Final
+from . import atomics
 
 
 class SpeciesEnergiesQBC(NamedTuple):
@@ -44,14 +49,14 @@ class SpeciesEnergiesQBC(NamedTuple):
     qbcs: Tensor
 
 
-class BuiltinModel(torch.nn.Module):
+class BuiltinModel(Module):
     r"""Private template for the builtin ANI models """
 
     atomic_numbers: Tensor
     periodic_table_index: Final[bool]
 
     def __init__(self,
-                 aev_computer,
+                 aev_computer: AEVComputer,
                  neural_networks,
                  energy_shifter,
                  elements: Sequence[str],
@@ -87,24 +92,6 @@ class BuiltinModel(torch.nn.Module):
     @torch.jit.unused
     def get_chemical_symbols(self) -> Tuple[str, ...]:
         return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)
-
-    @classmethod
-    def _from_neurochem_resources(cls, info_file_path, periodic_table_index=False, model_index=0):
-        from . import neurochem  # noqa
-
-        # this is used to load only 1 model (by default model 0)
-        const_file, sae_file, ensemble_prefix, ensemble_size = neurochem.parse_neurochem_resources(info_file_path)
-        if (model_index >= ensemble_size):
-            raise ValueError("The ensemble size is only {}, model {} can't be loaded".format(ensemble_size, model_index))
-
-        consts = neurochem.Constants(const_file)
-        aev_computer = AEVComputer(**consts)
-        energy_shifter = neurochem.load_sae(sae_file)
-
-        network_dir = os.path.join('{}{}'.format(ensemble_prefix, model_index), 'networks')
-        neural_networks = neurochem.load_model(consts.species, network_dir)
-
-        return cls(aev_computer, neural_networks, energy_shifter, consts.species, periodic_table_index)
 
     def forward(self, species_coordinates: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
@@ -258,20 +245,6 @@ class BuiltinEnsemble(BuiltinModel):
             return SpeciesEnergies(species, member_atomic_energies.mean(dim=0))
         return SpeciesEnergies(species, member_atomic_energies)
 
-    @classmethod
-    def _from_neurochem_resources(cls, info_file_path, periodic_table_index=False):
-        from . import neurochem  # noqa
-        # this is used to load only 1 model (by default model 0)
-        const_file, sae_file, ensemble_prefix, ensemble_size = neurochem.parse_neurochem_resources(info_file_path)
-
-        consts = neurochem.Constants(const_file)
-        aev_computer = AEVComputer(**consts)
-        energy_shifter = neurochem.load_sae(sae_file)
-        neural_networks = neurochem.load_model_ensemble(consts.species,
-                                                        ensemble_prefix, ensemble_size)
-
-        return cls(aev_computer, neural_networks, energy_shifter, consts.species, periodic_table_index)
-
     def __getitem__(self, index):
         """Get a single 'AEVComputer -> ANIModel -> EnergyShifter' sequential model
 
@@ -290,8 +263,10 @@ class BuiltinEnsemble(BuiltinModel):
                 calculations
         """
         ret = BuiltinModel(self.aev_computer,
-                           self.neural_networks[index], self.energy_shifter,
-                           self.get_chemical_symbols(), self.periodic_table_index)
+                           self.neural_networks[index],
+                           self.energy_shifter,
+                           self.get_chemical_symbols(),
+                           self.periodic_table_index)
         return ret
 
     @torch.jit.export
@@ -392,7 +367,114 @@ class BuiltinEnsemble(BuiltinModel):
         return len(self.neural_networks)
 
 
-def ANI1x(periodic_table_index=False, model_index=None):
+def _get_component_modules(state_dict_file: str,
+                           model_index: Optional[int] = None,
+                           use_cuda_extension: bool = False,
+                           ensemble_size: int = 8) -> Tuple[AEVComputer, Module, EnergyShifter, Sequence[str]]:
+    # This generates ani-style architectures without neurochem
+    name = state_dict_file.split('_')[0]
+    elements: Tuple[str, ...]
+    if name == 'ani1x':
+        aev_maker = AEVComputer.like_1x
+        atomic_maker = atomics.like_1x
+        elements = ('H', 'C', 'N', 'O')
+    elif name == 'ani1ccx':
+        aev_maker = AEVComputer.like_1ccx
+        atomic_maker = atomics.like_1ccx
+        elements = ('H', 'C', 'N', 'O')
+    elif name == 'ani2x':
+        aev_maker = AEVComputer.like_2x
+        atomic_maker = atomics.like_2x
+        elements = ('H', 'C', 'N', 'O', 'S', 'F', 'Cl')
+    else:
+        raise ValueError(f'{name} is not a supported model')
+    aev_computer = aev_maker(use_cuda_extension=use_cuda_extension)
+    atomic_networks = OrderedDict([(e, atomic_maker(e)) for e in elements])
+
+    neural_networks: Union[ANIModel, Ensemble]
+    if model_index is None:
+        neural_networks = Ensemble([ANIModel(deepcopy(atomic_networks)) for _ in range(ensemble_size)])
+    else:
+        neural_networks = ANIModel(atomic_networks)
+    return aev_computer, neural_networks, EnergyShifter([0.0 for _ in elements]), elements
+
+
+def _fetch_state_dict(state_dict_file: str,
+                      model_index: Optional[int] = None,
+                      local: bool = False) -> 'OrderedDict[str, Tensor]':
+    # if we want a pretrained model then we load the state dict from a
+    # remote url or a local path
+    # NOTE: torch.hub caches remote state_dicts after they have been downloaded
+    if local:
+        return torch.load(state_dict_file)
+
+    model_dir = Path(__file__).parent.joinpath('resources/state_dicts').as_posix()
+    if not path_is_writable(model_dir):
+        model_dir = os.path.expanduser('~/.local/torchani/')
+
+    # NOTE: we need some private url for in-development models of the
+    # group, this url is for public models
+    tag = 'v0.1'
+    url = f'https://github.com/roitberg-group/torchani_model_zoo/releases/download/{tag}/{state_dict_file}'
+    # for now for simplicity we load a state dict for the ensemble directly and
+    # then parse if needed
+    state_dict = torch.hub.load_state_dict_from_url(url, model_dir=model_dir)
+
+    if model_index is not None:
+        new_state_dict = OrderedDict()
+        # Parse the state dict and rename/select only useful keys to build
+        # the individual model
+        for k, v in state_dict.items():
+            tkns = k.split('.')
+            if tkns[0] == 'neural_networks':
+                # rename or discard the key
+                if int(tkns[1]) == model_index:
+                    tkns.pop(1)
+                    k = '.'.join(tkns)
+                else:
+                    continue
+            new_state_dict[k] = v
+        state_dict = new_state_dict
+
+    return state_dict
+
+
+def _load_ani_model(state_dict_file: Optional[str] = None,
+                    info_file: Optional[str] = None,
+                    **model_kwargs) -> Union[BuiltinModel, BuiltinEnsemble]:
+    # Helper function to toggle if the loading is done from an NC file or
+    # directly using torchani and state_dicts
+    use_neurochem_source = model_kwargs.pop('use_neurochem_source', False)
+    use_cuda_extension = model_kwargs.pop('use_cuda_extension', False)
+    model_index = model_kwargs.pop('model_index', None)
+    pretrained = model_kwargs.pop('pretrained', True)
+
+    if use_neurochem_source:
+        assert info_file is not None, "Info file is needed to load from a neurochem source"
+        assert pretrained, "Non pretrained models not available from neurochem source"
+        from . import neurochem  # noqa
+        components = neurochem.parse_resources._get_component_modules(info_file, model_index, use_cuda_extension)
+    else:
+        assert state_dict_file is not None
+        components = _get_component_modules(state_dict_file, model_index, use_cuda_extension)
+
+    aev_computer, neural_networks, energy_shifter, elements = components
+
+    model_class: Union[Type[BuiltinEnsemble], Type[BuiltinModel]]
+    if model_index is None:
+        model_class = BuiltinEnsemble
+    else:
+        model_class = BuiltinModel
+
+    model = model_class(aev_computer, neural_networks, energy_shifter, elements, **model_kwargs)
+
+    if pretrained and not use_neurochem_source:
+        assert state_dict_file is not None
+        model.load_state_dict(_fetch_state_dict(state_dict_file, model_index))
+    return model
+
+
+def ANI1x(**kwargs):
     """The ANI-1x model as in `ani-1x_8x on GitHub`_ and `Active Learning Paper`_.
 
     The ANI-1x model is an ensemble of 8 networks that was trained using
@@ -407,12 +489,11 @@ def ANI1x(periodic_table_index=False, model_index=None):
         https://aip.scitation.org/doi/abs/10.1063/1.5023802
     """
     info_file = 'ani-1x_8x.info'
-    if model_index is None:
-        return BuiltinEnsemble._from_neurochem_resources(info_file, periodic_table_index)
-    return BuiltinModel._from_neurochem_resources(info_file, periodic_table_index, model_index)
+    state_dict_file = 'ani1x_state_dict.pt'
+    return _load_ani_model(state_dict_file, info_file, **kwargs)
 
 
-def ANI1ccx(periodic_table_index=False, model_index=None):
+def ANI1ccx(**kwargs):
     """The ANI-1ccx model as in `ani-1ccx_8x on GitHub`_ and `Transfer Learning Paper`_.
 
     The ANI-1ccx model is an ensemble of 8 networks that was trained
@@ -428,12 +509,11 @@ def ANI1ccx(periodic_table_index=False, model_index=None):
         https://doi.org/10.26434/chemrxiv.6744440.v1
     """
     info_file = 'ani-1ccx_8x.info'
-    if model_index is None:
-        return BuiltinEnsemble._from_neurochem_resources(info_file, periodic_table_index)
-    return BuiltinModel._from_neurochem_resources(info_file, periodic_table_index, model_index)
+    state_dict_file = 'ani1ccx_state_dict.pt'
+    return _load_ani_model(state_dict_file, info_file, **kwargs)
 
 
-def ANI2x(periodic_table_index=False, model_index=None):
+def ANI2x(**kwargs):
     """The ANI-2x model as in `ANI2x Paper`_ and `ANI2x Results on GitHub`_.
 
     The ANI-2x model is an ensemble of 8 networks that was trained on the
@@ -448,6 +528,5 @@ def ANI2x(periodic_table_index=False, model_index=None):
         https://doi.org/10.26434/chemrxiv.11819268.v1
     """
     info_file = 'ani-2x_8x.info'
-    if model_index is None:
-        return BuiltinEnsemble._from_neurochem_resources(info_file, periodic_table_index)
-    return BuiltinModel._from_neurochem_resources(info_file, periodic_table_index, model_index)
+    state_dict_file = 'ani2x_state_dict.pt'
+    return _load_ani_model(state_dict_file, info_file, **kwargs)

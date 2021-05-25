@@ -1,4 +1,5 @@
 import torch
+import warnings
 import torchani
 import unittest
 import os
@@ -10,48 +11,74 @@ import math
 import traceback
 from common_aev_test import _TestAEVBase
 from torchani.testing import TestCase
+from torchani.utils import ChemicalSymbolsToInts
 
 
 path = os.path.dirname(os.path.realpath(__file__))
-const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
+const_file_1x = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')
+const_file_1ccx = os.path.join(path, '../torchani/resources/ani-1ccx_8x/rHCNO-5.2R_16-3.5A_a4-8.params')
+const_file_2x = os.path.join(path, '../torchani/resources/ani-2x_8x/rHCNOSFCl-5.1R_16-3.5A_a8-4.params')
 N = 97
 
 
 class TestAEVConstructor(TestCase):
-    # Test that checks that the friendly constructor
+    # Test that checks that inexact friendly constructor
     # reproduces the values from ANI1x with the correct parameters
+    def testEqualNeurochem1x(self):
+        consts_1x = torchani.neurochem.Constants(const_file_1x)
+        aev_1x_nc = torchani.AEVComputer(**consts_1x)
+        aev_1x = torchani.AEVComputer.like_1x()
+        self._compare_constants(aev_1x_nc, aev_1x, rtol=1e-17, atol=1e-17)
+
+    def testEqualNeurochem2x(self):
+        consts_2x = torchani.neurochem.Constants(const_file_2x)
+        aev_2x_nc = torchani.AEVComputer(**consts_2x)
+        aev_2x = torchani.AEVComputer.like_2x()
+        self._compare_constants(aev_2x_nc, aev_2x, rtol=1e-17, atol=1e-17)
+
+    def testEqualNeurochem1ccx(self):
+        consts_1ccx = torchani.neurochem.Constants(const_file_1ccx)
+        aev_1ccx_nc = torchani.AEVComputer(**consts_1ccx)
+        aev_1ccx = torchani.AEVComputer.like_1ccx()
+        self._compare_constants(aev_1ccx_nc, aev_1ccx, rtol=1e-17, atol=1e-17)
 
     def testANI1x(self):
-        consts = torchani.neurochem.Constants(const_file)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            approx_angular = torchani.aev.StandardAngular.like_1x(exact=False)
+            approx_radial = torchani.aev.StandardRadial.like_1x(exact=False)
+        exact_angular = torchani.aev.StandardAngular.like_1x(exact=True)
+        exact_radial = torchani.aev.StandardRadial.like_1x(exact=True)
 
-        aev_computer = torchani.AEVComputer(**consts)
-        aev_computer_alt = torchani.AEVComputer.like_1x()
-
-        self._compare_constants(aev_computer, aev_computer_alt)
+        self._compare_constants(exact_angular, approx_angular)
+        self._compare_constants(exact_radial, approx_radial)
 
     def testANI2x(self):
-        const_file_2x = os.path.join(path, '../torchani/resources/ani-2x_8x/rHCNOSFCl-5.1R_16-3.5A_a8-4.params')
-        consts = torchani.neurochem.Constants(const_file_2x)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            approx_angular = torchani.aev.StandardAngular.like_2x(exact=False)
+            approx_radial = torchani.aev.StandardRadial.like_2x(exact=False)
+        exact_angular = torchani.aev.StandardAngular.like_2x(exact=True)
+        exact_radial = torchani.aev.StandardRadial.like_2x(exact=True)
 
-        aev_computer = torchani.AEVComputer(**consts)
-        aev_computer_alt = torchani.AEVComputer.like_2x()
-
-        self._compare_constants(aev_computer, aev_computer_alt)
+        self._compare_constants(exact_angular, approx_angular)
+        self._compare_constants(exact_radial, approx_radial)
 
     def testANI1ccx(self):
-        const_file_1ccx = os.path.join(path, '../torchani/resources/ani-1ccx_8x/rHCNO-5.2R_16-3.5A_a4-8.params')
-        consts = torchani.neurochem.Constants(const_file_1ccx)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            approx_angular = torchani.aev.StandardAngular.like_1ccx(exact=False)
+            approx_radial = torchani.aev.StandardRadial.like_1ccx(exact=False)
+        exact_angular = torchani.aev.StandardAngular.like_1ccx(exact=True)
+        exact_radial = torchani.aev.StandardRadial.like_1ccx(exact=True)
 
-        aev_computer = torchani.AEVComputer(**consts)
-        aev_computer_alt = torchani.AEVComputer.like_1ccx()
+        self._compare_constants(exact_angular, approx_angular)
+        self._compare_constants(exact_radial, approx_radial)
 
-        self._compare_constants(aev_computer, aev_computer_alt)
-
-    def _compare_constants(self, aev_computer, aev_computer_alt):
+    def _compare_constants(self, aev_computer, aev_computer_alt, rtol=1e-7, atol=1e-7):
         alt_state_dict = aev_computer_alt.state_dict()
         for k, v in aev_computer.state_dict().items():
-            self.assertEqual(alt_state_dict[k], v, rtol=1e-7, atol=1e-7)
-        self.assertEqual(aev_computer.num_species, aev_computer_alt.num_species)
+            self.assertEqual(alt_state_dict[k], v, rtol=rtol, atol=atol)
 
 
 class TestIsolated(TestCase):
@@ -60,9 +87,8 @@ class TestIsolated(TestCase):
     # this can throw an IndexError for large distances or lone atoms
     def setUp(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        consts = torchani.neurochem.Constants(const_file)
-        self.aev_computer = torchani.AEVComputer(**consts).to(self.device)
-        self.species_to_tensor = consts.species_to_tensor
+        self.aev_computer = torchani.AEVComputer.like_1x().to(self.device)
+        self.species_to_tensor = ChemicalSymbolsToInts(['H', 'C', 'N', 'O'])
         self.rcr = self.aev_computer.radial_terms.cutoff
         self.rca = self.aev_computer.angular_terms.cutoff
 
@@ -216,8 +242,7 @@ class TestAEVJIT(TestAEV):
 
 class TestPBCSeeEachOther(TestCase):
     def setUp(self):
-        consts = torchani.neurochem.Constants(const_file)
-        self.aev_computer = torchani.AEVComputer(**consts).to(torch.double)
+        self.aev_computer = torchani.AEVComputer.like_1x().to(torch.double)
         self.neighborlist = torchani.aev.neighbors.FullPairwise(1.0)
 
     def testTranslationalInvariancePBC(self):
@@ -331,8 +356,7 @@ class TestAEVOnBoundary(TestCase):
         self.pbc = torch.ones(3, dtype=torch.bool)
         self.v1, self.v2, self.v3 = self.cell
         self.center_coordinates = self.coordinates + 0.5 * (self.v1 + self.v2 + self.v3)
-        consts = torchani.neurochem.Constants(const_file)
-        self.aev_computer = torchani.AEVComputer(**consts).to(torch.double)
+        self.aev_computer = torchani.AEVComputer.like_1x().to(torch.double)
 
         _, self.aev = self.aev_computer((self.species, self.center_coordinates), cell=self.cell, pbc=self.pbc)
 
@@ -364,8 +388,7 @@ class TestAEVOnBoundary(TestCase):
 class TestAEVOnBenzenePBC(TestCase):
 
     def setUp(self):
-        consts = torchani.neurochem.Constants(const_file)
-        self.aev_computer = torchani.AEVComputer(**consts)
+        self.aev_computer = torchani.AEVComputer.like_1x()
         filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.json')
         benzene = ase.io.read(filename)
         self.cell = torch.tensor(benzene.get_cell(complete=True)).float()

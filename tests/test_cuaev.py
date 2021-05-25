@@ -24,10 +24,7 @@ class TestCUAEVNoGPU(TestCase):
         self.assertIn("cuaev::run", str(s.graph))
 
     def testAEVComputer(self):
-        path = os.path.dirname(os.path.realpath(__file__))
-        const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
-        consts = torchani.neurochem.Constants(const_file)
-        aev_computer = torchani.AEVComputer(**consts, use_cuda_extension=True)
+        aev_computer = torchani.AEVComputer.like_1x(use_cuda_extension=True)
         s = torch.jit.script(aev_computer)
         # Computation of AEV using cuaev when there is no atoms does not require CUDA, and can be run without GPU
         species = make_tensor((8, 0), 'cpu', torch.int64, low=-1, high=4)

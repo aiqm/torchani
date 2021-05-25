@@ -7,6 +7,7 @@ import torchani
 import unittest
 import tempfile
 import shutil
+import warnings
 from copy import deepcopy
 from torchani.transforms import AtomicNumbersToIndices, SubtractSAE, Compose, calculate_saes
 from torchani.testing import TestCase
@@ -164,7 +165,9 @@ class TestEstimationSAE(TestCase):
         self.train = AniBatchedDataset(self.batched_path, split='training')
 
     def testExactSAE(self):
-        saes, _ = calculate_saes(self.train, ('H', 'C', 'N', 'O'), mode='exact')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            saes, _ = calculate_saes(self.train, ('H', 'C', 'N', 'O'), mode='exact')
         self.assertEqual(saes, torch.tensor([-0.5960, -38.0730, -54.6918, -75.1471], dtype=torch.float),
                          atol=1e-3, rtol=1e-3)
 

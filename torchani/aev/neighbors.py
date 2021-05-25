@@ -27,8 +27,8 @@ class BaseNeighborlist(torch.nn.Module):
         """
         super().__init__()
         self.cutoff = cutoff
-        self.register_buffer('default_cell', torch.eye(3, dtype=torch.float))
-        self.register_buffer('default_pbc', torch.zeros(3, dtype=torch.bool))
+        self.register_buffer('default_cell', torch.eye(3, dtype=torch.float), persistent=False)
+        self.register_buffer('default_pbc', torch.zeros(3, dtype=torch.bool), persistent=False)
         self.default_cell: Tensor
         self.default_pbc: Tensor
 
@@ -118,7 +118,7 @@ class FullPairwise(BaseNeighborlist):
             cutoff (float): the cutoff inside which atoms are considered pairs
         """
         super().__init__(cutoff)
-        self.register_buffer('default_shift_values', torch.tensor(0.0))
+        self.register_buffer('default_shift_values', torch.tensor(0.0), persistent=False)
         self.default_shift_values: Tensor
 
     def forward(self, species: Tensor, coordinates: Tensor, cell: Optional[Tensor] = None,

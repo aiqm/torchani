@@ -1,9 +1,12 @@
 import torch
 import warnings
 import math
+from pathlib import Path
 from torch import Tensor
 from .cutoffs import _parse_cutoff_fn
 from ..compat import Final
+
+state_dicts_path = Path(__file__).parent.parent.joinpath('resources/state_dicts/')
 
 
 def _warn_parameters():
@@ -70,18 +73,29 @@ class StandardRadial(torch.nn.Module):
 
     @classmethod
     def like_1x(cls, **kwargs):
-        _warn_parameters()
-        return cls.cover_linearly(cutoff=5.2, eta=16.0, num_shifts=16, **kwargs)
+        exact = kwargs.pop('exact', True)
+        m = cls.cover_linearly(cutoff=5.2, eta=16.0, num_shifts=16, **kwargs)
+        if exact:
+            state_dict = torch.load(state_dicts_path.joinpath('radial_1x_state_dict.pth'))
+            m.load_state_dict(state_dict)
+        else:
+            _warn_parameters()
+        return m
 
     @classmethod
     def like_2x(cls, **kwargs):
-        _warn_parameters()
-        out = cls.cover_linearly(cutoff=5.1, eta=19.7, num_shifts=16, start=0.8, **kwargs)
+        exact = kwargs.pop('exact', True)
+        m = cls.cover_linearly(cutoff=5.1, eta=19.7, num_shifts=16, start=0.8, **kwargs)
         # note that this term is different in the last decimal in 2x,
         # using this method the term is 2.6812 but in 2x it is 2.681250095,
         # here we keep consistency with 2x
-        out.ShfR[0, 7] = 2.681250095
-        return out
+        m.ShfR[0, 7] = 2.681250095
+        if exact:
+            state_dict = torch.load(state_dicts_path.joinpath('radial_2x_state_dict.pth'))
+            m.load_state_dict(state_dict)
+        else:
+            _warn_parameters()
+        return m
 
     @classmethod
     def like_1ccx(cls, **kwargs):
@@ -165,13 +179,25 @@ class StandardAngular(torch.nn.Module):
 
     @classmethod
     def like_1x(cls, **kwargs):
-        _warn_parameters()
-        return cls.cover_linearly(cutoff=3.5, eta=8.0, zeta=32.0, num_shifts=4, num_angle_sections=8, **kwargs)
+        exact = kwargs.pop('exact', True)
+        m = cls.cover_linearly(cutoff=3.5, eta=8.0, zeta=32.0, num_shifts=4, num_angle_sections=8, **kwargs)
+        if exact:
+            state_dict = torch.load(state_dicts_path.joinpath('angular_1x_state_dict.pth'))
+            m.load_state_dict(state_dict)
+        else:
+            _warn_parameters()
+        return m
 
     @classmethod
     def like_2x(cls, **kwargs):
-        _warn_parameters()
-        return cls.cover_linearly(cutoff=3.5, eta=12.5, num_shifts=8, start=0.8, zeta=14.1, num_angle_sections=4, **kwargs)
+        exact = kwargs.pop('exact', True)
+        m = cls.cover_linearly(cutoff=3.5, eta=12.5, num_shifts=8, start=0.8, zeta=14.1, num_angle_sections=4, **kwargs)
+        if exact:
+            state_dict = torch.load(state_dicts_path.joinpath('angular_2x_state_dict.pth'))
+            m.load_state_dict(state_dict)
+        else:
+            _warn_parameters()
+        return m
 
     @classmethod
     def like_1ccx(cls, **kwargs):
