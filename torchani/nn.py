@@ -3,6 +3,7 @@ from collections import OrderedDict
 from torch import Tensor
 from typing import Tuple, NamedTuple, Optional, Sequence
 from . import utils
+from . import infer
 from .compat import Final
 
 
@@ -80,6 +81,9 @@ class ANIModel(torch.nn.ModuleDict):
         output = output.view_as(species)
         return output
 
+    def to_infer_model(self, use_mnp=True):
+        return infer.ANIInferModel(list(self.items()), use_mnp)
+
 
 class Ensemble(torch.nn.ModuleList):
     """Compute the average output of an ensemble of modules."""
@@ -97,6 +101,9 @@ class Ensemble(torch.nn.ModuleList):
         species, _ = species_input
         return SpeciesEnergies(species, sum_ / self.size)
 
+    def to_infer_model(self, use_mnp=True):
+        return infer.BmmEnsemble(self, use_mnp)
+
 
 class Sequential(torch.nn.ModuleList):
     """Modified Sequential module that accept Tuple type as input"""
@@ -110,6 +117,34 @@ class Sequential(torch.nn.ModuleList):
         for module in self:
             input_ = module(input_, cell=cell, pbc=pbc)
         return input_
+
+
+class InferModelSequential(torch.nn.Module):
+    """
+    Modified Sequential module that accept Tuple type as input,
+    and allow infer_model to run set_species() function.
+
+    Note: infer_model must be the 2nd module in the module list.
+    """
+    def __init__(self, *modules):
+        super().__init__()
+        self.module_list = torch.nn.ModuleList(list(modules))
+        assert isinstance(modules[1], infer.InferModelBase), "The 2nd module in the module list should be Infer model"
+        for i, m in enumerate(modules):
+            if isinstance(m, infer.InferModelBase):
+                assert i == 1, f"Infer model should only be the 2nd module in the module list, but it's {i + 1}"
+
+    def forward(self, input_: Tuple[Tensor, Tensor],  # type: ignore
+                cell: Optional[Tensor] = None,
+                pbc: Optional[Tensor] = None):
+        for module in self.module_list:
+            input_ = module(input_, cell=cell, pbc=pbc)
+        return input_
+
+    @torch.jit.export
+    def set_species(self, species):
+        # cannot use dynamic indexing because of jit
+        self.module_list[1].set_species(species)
 
 
 class Gaussian(torch.nn.Module):

@@ -7,6 +7,7 @@ import os
 import numpy as np
 from ase.io import read
 import argparse
+import textwrap
 
 
 summary = '\n'
@@ -86,7 +87,7 @@ def benchmark(speciesPositions, aev_comp, runbackward=False, mol_info=None, verb
     force_time = 0
     torch.cuda.empty_cache()
     gc.collect()
-    synchronize(not args.nsight)
+    torch.cuda.synchronize()
     start = time.time()
 
     aev = None
@@ -100,6 +101,15 @@ def benchmark(speciesPositions, aev_comp, runbackward=False, mol_info=None, verb
         forward_start = time.time()
         try:
             _, aev = aev_comp((species, coordinates))
+            if args.run_energy:
+                torch.cuda.nvtx.range_push('Network')
+                if args.single_nn:
+                    species_energies = single_model((species, aev))
+                else:
+                    species_energies = neural_networks((species, aev))
+                torch.cuda.nvtx.range_pop()
+                # _, energies = energy_shifter(species_energies)
+                energies = species_energies[1]
         except Exception as e:
             alert(f"  AEV faild: {str(e)[:50]}...")
             addSummaryLine(items)
@@ -111,7 +121,10 @@ def benchmark(speciesPositions, aev_comp, runbackward=False, mol_info=None, verb
         if runbackward:  # backward
             force_start = time.time()
             try:
-                force = -torch.autograd.grad(aev.sum(), coordinates, create_graph=True, retain_graph=True)[0]
+                if args.run_energy:
+                    force = -torch.autograd.grad(energies.sum(), coordinates, create_graph=True, retain_graph=True)[0]
+                else:
+                    force = -torch.autograd.grad(aev.sum(), coordinates, create_graph=True, retain_graph=True)[0]
             except Exception as e:
                 alert(f" Force faild: {str(e)[:50]}...")
                 addSummaryLine(items)
@@ -123,7 +136,7 @@ def benchmark(speciesPositions, aev_comp, runbackward=False, mol_info=None, verb
         if i == 2 and verbose:
             gpumem = checkgpu()
 
-    synchronize(not args.nsight)
+    torch.cuda.synchronize()
     total_time = (time.time() - start) / N
     force_time = force_time / N
     forward_time = forward_time / N
@@ -174,7 +187,7 @@ def check_speedup_error(aev, aev_ref, force_cuaev, force_ref, speed, speed_ref):
         if (force_cuaev is not None) and (force_cuaev is not None):
             force_error = torch.max(torch.abs(force_cuaev - force_ref))
             print(f'  force_error: {force_error:.2e}')
-            assert force_error < 2e-4, f'  Error: {aev_error:.1e}\n'
+            assert force_error < 4e-4, f'  Error: {aev_error:.1e}\n'
         # speedup
         speedUP = speed_ref / speed
         if speedUP > 1:
@@ -253,25 +266,36 @@ def plot(maxatoms, aev_fd, cuaev_fd, aev_fdbd, cuaev_fdbd):
     aev_fdbd = np.array(aev_fdbd) * 1000
     cuaev_fdbd = np.array(cuaev_fdbd) * 1000
     plt.figure(figsize=(11, 6), dpi=200)
-    plt.plot(maxatoms, aev_fd, '--bo', label='pyaev forward')
-    plt.plot(maxatoms, cuaev_fd, '--ro', label='cuaev forward')
-    plt.plot(maxatoms, aev_fdbd, '-bo', label='pyaev forward + backward')
-    plt.plot(maxatoms, cuaev_fdbd, '-ro', label='cuaev forward + backward')
+    # labels
+    num_nn = 1 if args.single_nn else num_models
+    nn_label = ""
+    if args.run_energy:
+        nn_label = f"+ nn ({num_nn}) "
+    energy_label = ""
+    if args.run_energy:
+        energy_label = f"Energy: NN ({num_nn}), Infer Model ({'on' if args.infer_model else 'off'})"
+        if args.infer_model:
+            energy_label += f", MNP ({'on' if args.mnp else 'off'})"
+    # plot
+    plt.plot(maxatoms, aev_fd, '--bo', label=f'pyaev {nn_label}forward')
+    plt.plot(maxatoms, cuaev_fd, '--ro', label=f'cuaev {nn_label}forward')
+    plt.plot(maxatoms, aev_fdbd, '-bo', label=f'pyaev {nn_label}forward + backward')
+    plt.plot(maxatoms, cuaev_fdbd, '-ro', label=f'cuaev {nn_label}forward + backward')
     for i, txt in enumerate(aev_fd):
-        plt.annotate(f'{txt:.2f}', (maxatoms[i], aev_fd[i] - 2.5), ha='center', va='center', fontsize=12)
+        plt.annotate(f'{txt:.2f}', (maxatoms[i], aev_fd[i] - 2.5), ha='center', va='center', fontsize=12, color='b')
     for i, txt in enumerate(cuaev_fd):
-        plt.annotate(f'{txt:.2f}', (maxatoms[i], cuaev_fd[i] - 2.5), ha='center', va='center', fontsize=12)
+        plt.annotate(f'{txt:.2f}', (maxatoms[i], cuaev_fd[i] - 2.5), ha='center', va='center', fontsize=12, color='r')
     for i, txt in enumerate(aev_fdbd):
-        plt.annotate(f'{txt:.2f}', (maxatoms[i], aev_fdbd[i] + 2.5), ha='center', va='center', fontsize=12)
+        plt.annotate(f'{txt:.2f}', (maxatoms[i], aev_fdbd[i] + 2.5), ha='center', va='center', fontsize=12, color='b')
     for i, txt in enumerate(cuaev_fdbd):
-        plt.annotate(f'{txt:.2f}', (maxatoms[i], cuaev_fdbd[i] + 2.5), ha='center', va='center', fontsize=12)
+        plt.annotate(f'{txt:.2f}', (maxatoms[i], cuaev_fdbd[i] + 2.5), ha='center', va='center', fontsize=12, color='r')
     # plt.legend(frameon=False, fontsize=15, loc='upper left')
     plt.legend(frameon=True, fontsize=15, loc='best')
     plt.xlim(maxatoms[0] - 500, maxatoms[-1] + 500)
     plt.ylim(-3, 85)
     plt.xlabel(r'System Size (atoms)')
     plt.ylabel(r'Time (ms)')
-    plt.title(f'Benchmark of cuaev (cuda extension) and pyaev (torch operators) \non {getGpuName()}', fontsize=16)
+    plt.title(f'Benchmark of cuaev (cuda extension) and pyaev (torch operators) \non {getGpuName()}\n{energy_label}', fontsize=16)
     plt.show()
 
     dir = 'benchmark'
@@ -306,20 +330,43 @@ def run_for_plot(file, maxatoms, nnp_ref, nnp_cuaev):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=textwrap.dedent('''\
+        Benchmark Tool
+        Example usage:
+        python tools/aev-benchmark-size.py -p
+        python tools/aev-benchmark-size.py -p -e
+        python tools/aev-benchmark-size.py -p -e --infer_model
+        python tools/aev-benchmark-size.py -p -e --infer_model --mnp
+        python tools/aev-benchmark-size.py -p -e --infer_model --mnp --single_nn
+        '''),
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-s', '--nsight',
                         action='store_true',
                         help='use nsight profile')
-    parser.add_argument('-b', '--backward',
-                        action='store_true',
-                        help='benchmark double backward')
     parser.add_argument('-p', '--plot',
                         action='store_true',
                         help='plot benchmark result')
+    parser.add_argument('-e', '--run_energy',
+                        action='store_true',
+                        help='Run NN to predict energy')
+    parser.add_argument('--single_nn',
+                        action='store_true',
+                        help='Energy: Only Run single NN to predict energy, instead of an ensemble')
+    parser.add_argument('--infer_model',
+                        action='store_true',
+                        help='Energy: Use infer model')
+    parser.add_argument('--mnp',
+                        action='store_true',
+                        help='Energy: Use multi net parallel (mnp) extension')
     parser.add_argument('-n', '--N',
                         help='Number of Repeat',
                         default=200, type=int)
     parser.set_defaults(backward=0)
+    parser.set_defaults(run_energy=0)
+    parser.set_defaults(single_nn=0)
+    parser.set_defaults(infer_model=0)
+    parser.set_defaults(mnp=0)
     parser.set_defaults(plot=0)
     args = parser.parse_args()
     path = os.path.dirname(os.path.realpath(__file__))
@@ -337,9 +384,17 @@ if __name__ == "__main__":
         torch.cuda.profiler.start()
         maxatoms = [10000]
 
+    neural_networks = nnp_ref.neural_networks
+    num_models = len(neural_networks)
+    single_model = neural_networks[0]
+    if args.infer_model:
+        neural_networks = neural_networks.to_infer_model(use_mnp=args.mnp).to(device)
+        single_model = single_model.to_infer_model(use_mnp=args.mnp).to(device)
+    energy_shifter = nnp_ref.energy_shifter
+
     # if run for plots
     if args.plot:
-        maxatoms = np.concatenate([[5000, 6000, 8000], np.arange(10000, 31000, 5000)])
+        maxatoms = np.concatenate([[100, 3000, 5000, 6000, 8000], np.arange(10000, 31000, 5000)])
         file = '6ZDH.pdb'
         run_for_plot(file, maxatoms, nnp_ref, nnp_cuaev)
     else:
