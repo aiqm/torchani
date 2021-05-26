@@ -1041,8 +1041,12 @@ void cuaev_forward(
 #endif
   }
 
+  // Merge two cubMax streamSync into one
+  result.radialNbr.maxNumJPerI = cubMax(radialNbr_numJPerI_p, result.nI, stream, /* sync */ false);
+  result.angularNbr.maxNumJPerI = cubMax(angularNbr_numJPerI_p, result.nI, stream, /* sync */ false);
+  cudaStreamSynchronize(stream);
+
   { // RadialAEV
-    result.radialNbr.maxNumJPerI = cubMax(radialNbr_numJPerI_p, result.nI, stream);
     constexpr dim3 block_radial(8, 16, 1);
     int smem_radial = aev_params.radial_length * sizeof(float) + result.radialNbr.maxNumJPerI * sizeof(float);
     cuRadialAEVs<int, float><<<result.nI, block_radial, smem_radial, stream>>>(
@@ -1075,7 +1079,6 @@ void cuaev_forward(
       return (sm_aev + sxyz + sRij + sfc + sj) * ncatom_per_tpb;
     };
 
-    result.angularNbr.maxNumJPerI = cubMax(angularNbr_numJPerI_p, result.nI, stream);
     int smem_size = cal_smem_size(result.angularNbr.maxNumJPerI, 1);
     constexpr dim3 block(C10_WARP_SIZE, 4, 1);
     cuAngularAEVs<block.x, block.y><<<result.nI, block, smem_size, stream>>>(

@@ -29,7 +29,13 @@ void cubScan(const DataT* d_in, DataT* d_out, int num_items, cudaStream_t stream
 }
 
 template <typename DataT, typename LambdaOpT>
-int cubDeviceSelectIf(const DataT* d_in, DataT* d_out, int num_items, LambdaOpT select_op, cudaStream_t stream) {
+int cubDeviceSelectIf(
+    const DataT* d_in,
+    DataT* d_out,
+    int num_items,
+    LambdaOpT select_op,
+    cudaStream_t stream,
+    bool sync = true) {
   auto allocator = c10::cuda::CUDACachingAllocator::get();
   auto buffer_count = allocator->allocate(sizeof(int));
   int* d_num_selected_out = (int*)buffer_count.get();
@@ -39,7 +45,8 @@ int cubDeviceSelectIf(const DataT* d_in, DataT* d_out, int num_items, LambdaOpT 
   // TODO copy num_selected to host, this part is slow
   int num_selected = 0;
   cudaMemcpyAsync(&num_selected, d_num_selected_out, sizeof(int), cudaMemcpyDefault, stream);
-  cudaStreamSynchronize(stream);
+  if (sync)
+    cudaStreamSynchronize(stream);
   return num_selected;
 }
 
@@ -52,7 +59,7 @@ void cubDeviceSelectFlagged(const DataT* d_in, DataT* d_out, int num_items, char
 }
 
 template <typename DataT>
-DataT cubMax(const DataT* d_in, int num_items, cudaStream_t stream) {
+DataT cubMax(const DataT* d_in, int num_items, cudaStream_t stream, bool sync = true) {
   auto allocator = c10::cuda::CUDACachingAllocator::get();
   auto buffer_count = allocator->allocate(sizeof(int));
   DataT* d_out = (DataT*)buffer_count.get();
@@ -61,12 +68,13 @@ DataT cubMax(const DataT* d_in, int num_items, cudaStream_t stream) {
 
   DataT maxVal = 0;
   cudaMemcpyAsync(&maxVal, d_out, sizeof(DataT), cudaMemcpyDefault, stream);
-  cudaStreamSynchronize(stream);
+  if (sync)
+    cudaStreamSynchronize(stream);
   return maxVal;
 }
 
 template <typename DataT>
-DataT cubSum(const DataT* d_in, int num_items, cudaStream_t stream) {
+DataT cubSum(const DataT* d_in, int num_items, cudaStream_t stream, bool sync = true) {
   auto allocator = c10::cuda::CUDACachingAllocator::get();
   auto buffer_count = allocator->allocate(sizeof(int));
   DataT* d_out = (DataT*)buffer_count.get();
@@ -75,6 +83,7 @@ DataT cubSum(const DataT* d_in, int num_items, cudaStream_t stream) {
 
   DataT sumVal = 0;
   cudaMemcpyAsync(&sumVal, d_out, sizeof(DataT), cudaMemcpyDefault, stream);
-  cudaStreamSynchronize(stream);
+  if (sync)
+    cudaStreamSynchronize(stream);
   return sumVal;
 }

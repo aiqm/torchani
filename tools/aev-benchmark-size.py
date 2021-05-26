@@ -380,7 +380,7 @@ if __name__ == "__main__":
     maxatoms = [6000, 10000]
 
     if args.nsight:
-        N = 5
+        N = 10
         torch.cuda.profiler.start()
         maxatoms = [10000]
 

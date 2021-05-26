@@ -116,7 +116,7 @@ Tensor CuaevAutograd::forward(
     const Tensor& coordinates_t,
     const Tensor& species_t,
     const torch::intrusive_ptr<CuaevComputer>& cuaev_computer) {
-  at::AutoNonVariableTypeMode g;
+  at::AutoDispatchBelowADInplaceOrView guard;
   Result result = cuaev_computer->forward(coordinates_t, species_t);
   if (coordinates_t.requires_grad()) {
     ctx->saved_data["cuaev_computer"] = cuaev_computer;
