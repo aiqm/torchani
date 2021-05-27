@@ -6,7 +6,7 @@ import math
 import pickle
 import warnings
 import importlib
-from typing import Union, Optional, Dict, Generator, Sequence, Iterator, Tuple, List, Set, Callable
+from typing import Union, Optional, Dict, Sequence, Iterator, Tuple, List, Set, Callable
 from collections import OrderedDict, Counter
 from collections.abc import Mapping
 
@@ -29,6 +29,7 @@ Transform = Callable[[Dict[str, Tensor]], Dict[str, Tensor]]
 class AniBatchedDataset(torch.utils.data.Dataset):
 
     SUPPORTED_FILE_FORMATS = ('numpy', 'hdf5', 'single_hdf5', 'pickle')
+    batch_size: Optional[int]
 
     def __init__(self, store_dir: Union[str, Path],
                        file_format: Optional[str] = None,
@@ -36,6 +37,7 @@ class AniBatchedDataset(torch.utils.data.Dataset):
                        transform: Transform = lambda x: x,
                        flag_property: Optional[str] = None,
                        drop_last: bool = False):
+
         self.split = split
         self.store_dir = Path(store_dir).resolve().joinpath(self.split)
         if not self.store_dir.is_dir():
@@ -99,33 +101,37 @@ class AniBatchedDataset(torch.utils.data.Dataset):
         else:
             raise RuntimeError(f'Format for file with extension {suffix} '
                                 'could not be inferred, please specify explicitly')
-
-        self._flag_property = flag_property
-        batch_sizes = {path: _get_properties_size(b, self._flag_property, set(b.keys()))
-                           for b, path in zip(self, self.batch_paths)}
-        different_sizes = Counter(batch_sizes.values())
-        # in case that there are more than one batch sizes, self.batch_size
-        # holds the most common one
-        self.batch_size = different_sizes.most_common(1)[0][0]
-
-        if drop_last:
-            # we drop the batch with the smallest size, if there is only one of
-            # them, otherwise this errors out
-            assert len(different_sizes) in [1, 2], "More than two different batch lengths found"
-            if len(different_sizes) == 2:
-                smallest = min(batch_sizes.items(), key=lambda x: x[1])
-                assert different_sizes[smallest[1]] == 1, "There is more than one small batch"
-                self.batch_paths.remove(smallest[0])
-
-        self._len = len(self.batch_paths)
-
         try:
             with open(self.store_dir.parent.joinpath('creation_log.json'), 'r') as logfile:
                 creation_log = json.load(logfile)
             self.is_inplace_transformed = creation_log['is_inplace_transformed']
+            self.batch_size = creation_log['batch_size']
         except Exception:
-            warnings.warn("No creation log found, is_inplace_transformed assumed False")
+            warnings.warn("No creation log found, is_inplace_transformed assumed False, and batch_size is set to None")
             self.is_inplace_transformed = False
+            self.batch_size = None
+
+        self._flag_property = flag_property
+        if drop_last:
+            self._recalculate_batch_size_and_drop_last()
+
+        self._len = len(self.batch_paths)
+
+    def _recalculate_batch_size_and_drop_last(self) -> None:
+        warnings.warn('Recalculating batch size is necessary for drop_last and it may take considerable time if your disk is an HDD')
+        batch_sizes = {path: _get_properties_size(b, self._flag_property, set(b.keys()))
+                           for b, path in zip(self, self.batch_paths)}
+        batch_size_counts = Counter(batch_sizes.values())
+        # in case that there are more than one batch sizes, self.batch_size
+        # holds the most common one
+        self.batch_size = batch_size_counts.most_common(1)[0][0]
+        # we drop the batch with the smallest size, if there is only one of
+        # them, otherwise this errors out
+        assert len(batch_size_counts) in [1, 2], "More than two different batch lengths found"
+        if len(batch_size_counts) == 2:
+            smallest = min(batch_sizes.items(), key=lambda x: x[1])
+            assert batch_size_counts[smallest[1]] == 1, "There is more than one small batch"
+            self.batch_paths.remove(smallest[0])
 
     def cache(self, pin_memory: bool = True,
                     verbose: bool = True,
@@ -170,7 +176,7 @@ class AniBatchedDataset(torch.utils.data.Dataset):
             properties = self.transform(properties)
         return properties
 
-    def __iter__(self) -> Generator[Dict[str, Tensor], None, None]:
+    def __iter__(self) -> Iterator[Dict[str, Tensor]]:
         j = 0
         try:
             while True:
@@ -256,6 +262,12 @@ class AniH5Dataset(Mapping):
     def iter_conformers(self,
                         include_properties: Optional[Sequence[str]] = None,
                         strict: bool = False) -> Iterator[Dict[str, ndarray]]:
+        for _, _, c in self.iter_key_idx_conformers(include_properties, strict):
+            yield c
+
+    def iter_key_idx_conformers(self,
+                                include_properties: Optional[Sequence[str]] = None,
+                                strict: bool = False) -> Iterator[Tuple[str, int, Dict[str, ndarray]]]:
 
         element_keys, non_element_keys = self._properties_into_keys(include_properties)
 
@@ -266,7 +278,7 @@ class AniH5Dataset(Mapping):
             for idx in range(size):
                 out_conformer_group = {k: conformer_group[k] for k in element_keys}
                 out_conformer_group.update({k: conformer_group[k][idx] for k in non_element_keys})
-                yield out_conformer_group
+                yield k, idx, out_conformer_group
 
     def _properties_into_keys(self,
                               properties: Optional[Sequence[str]] = None) -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
