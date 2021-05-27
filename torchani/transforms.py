@@ -78,6 +78,7 @@ class AtomicNumbersToIndices(torch.nn.Module):
 
 
 def _parse_elements(elements: Union[Sequence[str], Sequence[int]]) -> Tuple[Sequence[str], Sequence[int]]:
+    assert len(elements) == len(set(elements)), 'Elements should not be duplicated'
     symbols: List[str] = []
     atomic_numbers: List[int] = []
     if isinstance(elements[0], int):
