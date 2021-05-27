@@ -261,9 +261,15 @@ Tensor run_autograd(
   }
 }
 
+// check whether the current tensor is the same as last tensor (whether they share the same data_ptr)
+bool is_same_tensor(Tensor last, Tensor current) {
+  return last.data_ptr() == current.data_ptr();
+}
+
 // mnp stands for multi network parallel
 TORCH_LIBRARY(mnp, m) {
   m.def("run", run_autograd);
+  m.def("is_same_tensor", is_same_tensor);
 }
 
 TORCH_LIBRARY_IMPL(mnp, Autograd, m) {

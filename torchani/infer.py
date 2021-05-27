@@ -115,7 +115,7 @@ class InferModelBase(torch.nn.Module):
     def __init__(self, num_network):
         super().__init__()
 
-        self.last_species_ptr = None
+        self.last_species = torch.empty(1)
         assert torch.cuda.is_available(), "Infer model needs cuda is available"
 
         self.num_network = num_network
@@ -149,6 +149,7 @@ class InferModelBase(torch.nn.Module):
     def _single_mol_energies_jittable(self, species_aev: Tuple[Tensor, Tensor]) -> Tensor:
         species, aev = species_aev
         aev = aev.flatten(0, 1)
+        self._check_if_idxlist_needs_updates_jittable(species)
         output = torch.ops.mnp.run(aev, self.num_network, self.num_layers_list, self.start_layers_list, self.idx_list, self.weight_list_, self.bias_list_, self.stream_list, self.is_bmm, self.celu_alpha)
         return output
 
@@ -170,9 +171,17 @@ class InferModelBase(torch.nn.Module):
     def _check_if_idxlist_needs_updates(self, species):
         # initialize each species index if it has not been initialized
         # or the species has changed
-        if self.last_species_ptr is None or self.last_species_ptr != species.data_ptr():
+        if self.last_species.data_ptr() != species.data_ptr():
             self.set_species(species)
-            self.last_species_ptr = species.data_ptr()
+            self.last_species = species
+
+    @torch.jit.export
+    def _check_if_idxlist_needs_updates_jittable(self, species):
+        # initialize each species index if it has not been initialized
+        # or the species has changed
+        if not torch.ops.mnp.is_same_tensor(self.last_species, species):
+            self.set_species(species)
+            self.last_species = species
 
     @torch.jit.export
     def set_species(self, species):

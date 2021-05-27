@@ -24,7 +24,7 @@ class TestInfer(TestCase):
         self.ani2x = ani2x
         self.path = os.path.dirname(os.path.realpath(__file__))
 
-    def _test(self, model_ref, model_infer, jit=False):
+    def _test(self, model_ref, model_infer):
         files = ['small.pdb', '1hz5.pdb', '6W8H.pdb']
         # Skip 6W8H.pdb (slow on cpu) if device is cpu
         files = files[:-1] if self.device == 'cpu' else files
@@ -39,9 +39,6 @@ class TestInfer(TestCase):
 
             _, energy1 = model_ref((species, coordinates))
             force1 = torch.autograd.grad(energy1.sum(), coordinates)[0]
-            if jit:
-                # WARNING: set_species before switch to a new molecule
-                model_infer.set_species(species)
             _, energy2 = model_infer((species, coordinates))
             force2 = torch.autograd.grad(energy2.sum(), coordinates)[0]
 
@@ -67,28 +64,28 @@ class TestInfer(TestCase):
         aev_computer = torchani.AEVComputer.like_2x(use_cuda_extension=(self.device == 'cuda'))
         ensemble = torchani.nn.Sequential(aev_computer, model_iterator).to(self.device)
         # jit
-        bmm_ensemble = torchani.nn.InferModelSequential(aev_computer, self.ani2x.neural_networks.to_infer_model(use_mnp=self.use_mnp)).to(self.device)
+        bmm_ensemble = torchani.nn.Sequential(aev_computer, self.ani2x.neural_networks.to_infer_model(use_mnp=self.use_mnp)).to(self.device)
         bmm_ensemble_jit = torch.jit.script(bmm_ensemble)
         if self.use_mnp:
-            self._test(ensemble, bmm_ensemble_jit, jit=True)
+            self._test(ensemble, bmm_ensemble_jit)
         else:
             with self.assertRaisesRegex(torch.jit.Error, "The following operation failed in the TorchScript interpreter."):
                 # with error "RuntimeError: JIT Infer Model only support use_mnp=True"
-                self._test(ensemble, bmm_ensemble_jit, jit=True)
+                self._test(ensemble, bmm_ensemble_jit)
 
     def testANIInferModelJIT(self):
         model_iterator = self.ani2x.neural_networks
         aev_computer = torchani.AEVComputer.like_2x(use_cuda_extension=(self.device == 'cuda'))
         model_ref = torchani.nn.Sequential(aev_computer, model_iterator[0]).to(self.device)
         # jit
-        model_infer = torchani.nn.InferModelSequential(aev_computer, model_iterator[0].to_infer_model(use_mnp=self.use_mnp)).to(self.device)
+        model_infer = torchani.nn.Sequential(aev_computer, model_iterator[0].to_infer_model(use_mnp=self.use_mnp)).to(self.device)
         model_infer_jit = torch.jit.script(model_infer)
         if self.use_mnp:
-            self._test(model_ref, model_infer_jit, jit=True)
+            self._test(model_ref, model_infer_jit)
         else:
             with self.assertRaisesRegex(torch.jit.Error, "The following operation failed in the TorchScript interpreter."):
                 # with error "RuntimeError: JIT Infer Model only support use_mnp=True"
-                self._test(model_ref, model_infer_jit, jit=True)
+                self._test(model_ref, model_infer_jit)
 
 
 if __name__ == '__main__':
