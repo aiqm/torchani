@@ -20,6 +20,11 @@ batch_size = 256
 ani1x_sae_dict = {'H': -0.60095298, 'C': -38.08316124, 'N': -54.7077577, 'O': -75.19446356}
 
 
+def ignore_unshuffled_warning():
+    warnings.filterwarnings(action='ignore',
+                            message="Dataset will not be shuffled, this should only be used for debugging")
+
+
 class TestFineGrainedShuffle(TestCase):
 
     def testShuffleMixesManyH5(self):
@@ -166,10 +171,13 @@ class TestEstimationSAE(TestCase):
 
     def testExactSAE(self):
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+            warnings.filterwarnings(action='ignore',
+                                    message="Using all batches to estimate SAE, this may take up a lot of memory.")
             saes, _ = calculate_saes(self.train, ('H', 'C', 'N', 'O'), mode='exact')
-        self.assertEqual(saes, torch.tensor([-0.5960, -38.0730, -54.6918, -75.1471], dtype=torch.float),
-                         atol=1e-3, rtol=1e-3)
+            torch.set_printoptions(precision=10)
+        self.assertEqual(saes,
+                         torch.tensor([-0.5983182192, -38.0726242065, -54.6750144958, -75.1433029175], dtype=torch.float),
+                         atol=2.5e-3, rtol=2.5e-3)
 
     def testStochasticSAE(self):
         saes, _ = calculate_saes(self.train, ('H', 'C', 'N', 'O'), mode='sgd')
@@ -226,10 +234,13 @@ class TestTransforms(TestCase):
         subtract_sae = SubtractSAE(self.elements, [0.0, 1.0, 0.0, 1.0])
         numbers_to_indices = AtomicNumbersToIndices(self.elements)
         compose = Compose([numbers_to_indices, subtract_sae])
-        create_batched_dataset(h5_path=dataset_path, dest_path=self.batched_path, shuffle=False,
-                splits={'training': 0.5, 'validation': 0.5}, batch_size=2560, inplace_transform=compose)
-        create_batched_dataset(h5_path=dataset_path, dest_path=self.batched_path2, shuffle=False,
-                splits={'training': 0.5, 'validation': 0.5}, batch_size=2560)
+
+        with warnings.catch_warnings():
+            ignore_unshuffled_warning()
+            create_batched_dataset(h5_path=dataset_path, dest_path=self.batched_path, shuffle=False,
+                    splits={'training': 0.5, 'validation': 0.5}, batch_size=2560, inplace_transform=compose)
+            create_batched_dataset(h5_path=dataset_path, dest_path=self.batched_path2, shuffle=False,
+                    splits={'training': 0.5, 'validation': 0.5}, batch_size=2560)
         train_inplace = AniBatchedDataset(self.batched_path, split='training')
         train = AniBatchedDataset(self.batched_path2, transform=compose, split='training')
         for b, inplace_b in zip(train, train_inplace):
@@ -254,8 +265,10 @@ class TestAniBatchedDataset(TestCase):
         self.batched_path2 = Path('./tmp_dataset2').resolve()
         self.batched_path_shuffled = Path('./tmp_dataset_shuffled').resolve()
         self.batch_size = 2560
-        create_batched_dataset(h5_path=dataset_path, dest_path=self.batched_path, shuffle=False,
-                splits={'training': 0.5, 'validation': 0.5}, batch_size=self.batch_size)
+        with warnings.catch_warnings():
+            ignore_unshuffled_warning()
+            create_batched_dataset(h5_path=dataset_path, dest_path=self.batched_path, shuffle=False,
+                    splits={'training': 0.5, 'validation': 0.5}, batch_size=self.batch_size)
         self.train = AniBatchedDataset(self.batched_path, split='training')
         self.valid = AniBatchedDataset(self.batched_path, split='validation')
 
@@ -270,8 +283,12 @@ class TestAniBatchedDataset(TestCase):
         self.assertTrue(self.train.transform(None) is None)
 
     def testDropLast(self):
-        train_drop_last = AniBatchedDataset(self.batched_path, split='training', drop_last=True)
-        valid_drop_last = AniBatchedDataset(self.batched_path, split='validation', drop_last=True)
+        with warnings.catch_warnings():
+            msg = 'Recalculating batch size is necessary for drop_last and it may take considerable time if your disk is an HDD'
+            warnings.filterwarnings(action='ignore',
+                                    message=msg)
+            train_drop_last = AniBatchedDataset(self.batched_path, split='training', drop_last=True)
+            valid_drop_last = AniBatchedDataset(self.batched_path, split='validation', drop_last=True)
         self.assertEqual(len(train_drop_last), 2)
         self.assertEqual(len(valid_drop_last), 2)
         self.assertEqual(train_drop_last.batch_size, self.batch_size)
@@ -317,19 +334,24 @@ class TestAniBatchedDataset(TestCase):
 
     def testDataLoader(self):
         # check that yielding from the dataloader is equal
-        train_dataloader = torch.utils.data.DataLoader(self.train, shuffle=False, batch_size=None)
+
+        with warnings.catch_warnings():
+            ignore_unshuffled_warning()
+            train_dataloader = torch.utils.data.DataLoader(self.train, shuffle=False, batch_size=None)
         for batch_ref, batch in zip(self.train, train_dataloader):
             for k_ref in batch_ref:
                 self.assertEqual(batch_ref[k_ref], batch[k_ref])
 
     def testCache(self):
         # check that yielding from the cache is equal to non cache
-        train_non_cache = torch.utils.data.DataLoader(self.train,
+        with warnings.catch_warnings():
+            ignore_unshuffled_warning()
+            train_non_cache = torch.utils.data.DataLoader(self.train,
+                                                          shuffle=False,
+                                                          batch_size=None)
+            train_cache = torch.utils.data.DataLoader(deepcopy(self.train).cache(pin_memory=False),
                                                       shuffle=False,
                                                       batch_size=None)
-        train_cache = torch.utils.data.DataLoader(deepcopy(self.train).cache(pin_memory=False),
-                                                  shuffle=False,
-                                                  batch_size=None)
         for batch_ref, batch in zip(train_non_cache, train_cache):
             for k_ref in batch_ref:
                 self.assertEqual(batch_ref[k_ref], batch[k_ref])
@@ -351,9 +373,12 @@ class TestAniBatchedDataset(TestCase):
     def testFileFormats(self):
         # check that batches created with all file formats are equal
         for ff in AniBatchedDataset.SUPPORTED_FILE_FORMATS:
-            create_batched_dataset(h5_path=dataset_path,
-                    dest_path=self.batched_path2, shuffle=False,
-                    splits={'training': 0.5, 'validation': 0.5}, batch_size=self.batch_size)
+
+            with warnings.catch_warnings():
+                ignore_unshuffled_warning()
+                create_batched_dataset(h5_path=dataset_path,
+                        dest_path=self.batched_path2, shuffle=False,
+                        splits={'training': 0.5, 'validation': 0.5}, batch_size=self.batch_size)
             train = AniBatchedDataset(self.batched_path2, split='training')
             valid = AniBatchedDataset(self.batched_path2, split='validation')
             for batch_ref, batch in zip(self.train, train):

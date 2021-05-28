@@ -44,7 +44,7 @@ class TestAEVConstructor(TestCase):
 
     def testANI1x(self):
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+            warnings.filterwarnings(action="ignore", message='Generated parameters may differ from published model to 1e-7')
             approx_angular = torchani.aev.StandardAngular.like_1x(exact=False)
             approx_radial = torchani.aev.StandardRadial.like_1x(exact=False)
         exact_angular = torchani.aev.StandardAngular.like_1x(exact=True)
@@ -55,7 +55,7 @@ class TestAEVConstructor(TestCase):
 
     def testANI2x(self):
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+            warnings.filterwarnings(action="ignore", message='Generated parameters may differ from published model to 1e-7')
             approx_angular = torchani.aev.StandardAngular.like_2x(exact=False)
             approx_radial = torchani.aev.StandardRadial.like_2x(exact=False)
         exact_angular = torchani.aev.StandardAngular.like_2x(exact=True)
@@ -66,7 +66,7 @@ class TestAEVConstructor(TestCase):
 
     def testANI1ccx(self):
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+            warnings.filterwarnings(action="ignore", message='Generated parameters may differ from published model to 1e-7')
             approx_angular = torchani.aev.StandardAngular.like_1ccx(exact=False)
             approx_radial = torchani.aev.StandardRadial.like_1ccx(exact=False)
         exact_angular = torchani.aev.StandardAngular.like_1ccx(exact=True)

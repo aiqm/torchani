@@ -15,6 +15,9 @@ use_mnps = [True, False] if torchani.infer.mnp_is_installed else [False]
 devices = ['cuda', 'cpu']
 ani2x = torchani.models.ANI2x(periodic_table_index=True, model_index=None)
 
+# set num threads for multi net parallel
+os.environ['OMP_NUM_THREADS'] = '2'
+
 
 @parameterized_class(('device', 'use_mnp'), product(devices, use_mnps))
 @unittest.skipIf(not torch.cuda.is_available(), "Infer model needs cuda is available")

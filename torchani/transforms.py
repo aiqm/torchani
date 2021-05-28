@@ -270,10 +270,9 @@ def _calculate_saes_exact(dataset, num_species: int, num_batches_to_use: int,
 
     # here total_true_energies is of shape m x 1 and total_species counts is m x n
     # n = num_species if we don't fit an intercept, and is equal to num_species + 1
-    # if we fit an intercept. See the torch documentation for lstsq for more info
-    x, _ = torch.lstsq(total_true_energies, total_species_counts)
-    # solution to least squares problem is in the first n rows of x
-    m_out = x[:num_species].T.squeeze()
+    # if we fit an intercept. See the torch documentation for linalg.lstsq for more info
+    x = torch.linalg.lstsq(total_species_counts, total_true_energies).solution
+    m_out = x.T.squeeze()
 
     b_out: Union[Tensor, None]
     if fit_intercept:
