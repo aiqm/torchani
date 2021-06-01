@@ -102,6 +102,7 @@ class BuiltinModel(Module):
         self.periodic_table_index = periodic_table_index
         numbers = torch.tensor([PERIODIC_TABLE.index(e) for e in elements], dtype=torch.long)
         self.register_buffer('atomic_numbers', numbers)
+        self._register_types_for_jit()
 
         # checks are performed to make sure all modules passed support the
         # correct number of species
@@ -117,6 +118,22 @@ class BuiltinModel(Module):
                 assert len(nnp) == len(self.atomic_numbers)
         else:
             assert len(self.neural_networks) == len(self.atomic_numbers)
+
+    def _register_types_for_jit(self):
+        # Register dummy modules so that JIT knows their types and can
+        # perform isinstance checks correctly
+        self._dummy_model = ANIModel([torch.nn.Sequential(torch.nn.Identity())])
+        self._dummy_ensemble = Ensemble([self._dummy_model])
+
+    def to_infer_model(self, *args, **kwargs) -> 'BuiltinModel':
+        """ Convert the neural networks module of the model into a module
+            optimized for inference.
+
+            Currently this function assumes that the atomic networks consist of
+            an MLP with CELU activation functions, all with the same alpha.
+        """
+        self.neural_networks = self.neural_networks.to_infer_model(*args, **kwargs)
+        return self
 
     @torch.jit.unused
     def get_chemical_symbols(self) -> Tuple[str, ...]:
@@ -165,6 +182,7 @@ class BuiltinModel(Module):
         Returns:
             species_energies: tuple of tensors, species and atomic energies
         """
+        assert isinstance(self.neural_networks, (Ensemble, ANIModel))
         species_coordinates = self._maybe_convert_species(species_coordinates)
         species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
         atomic_energies = self.neural_networks._atomic_energies(species_aevs)
