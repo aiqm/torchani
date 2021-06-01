@@ -196,6 +196,7 @@ class EnergyShifter(torch.nn.Module):
         fit_intercept (bool): Whether to calculate the intercept during the LSTSQ
             fit. The intercept will also be taken into account to shift energies.
     """
+    self_energies: Tensor
 
     def __init__(self, self_energies, fit_intercept=False):
         super().__init__()
@@ -206,7 +207,15 @@ class EnergyShifter(torch.nn.Module):
 
         self.register_buffer('self_energies', self_energies)
 
-    def sae(self, species):
+    @torch.jit.export
+    def _atomic_saes(self, species: Tensor) -> Tensor:
+        # Compute atomic self energies for a set of species.
+        self_atomic_energies = self.self_energies[species]
+        self_atomic_energies = self_atomic_energies.masked_fill(species == -1, 0.0)
+        return self_atomic_energies
+
+    @torch.jit.export
+    def sae(self, species: Tensor) -> Tensor:
         """Compute self energies for molecules.
 
         Padding atoms will be automatically excluded.
@@ -219,13 +228,10 @@ class EnergyShifter(torch.nn.Module):
             :class:`torch.Tensor`: 1D vector in shape ``(conformations,)``
             for molecular self energies.
         """
-        intercept = 0.0
+        sae = self._atomic_saes(species).sum(dim=1)
         if self.fit_intercept:
-            intercept = self.self_energies[-1]
-
-        self_energies = self.self_energies[species]
-        self_energies[species == torch.tensor(-1, device=species.device)] = torch.tensor(0, device=species.device, dtype=self.self_energies.dtype)
-        return self_energies.sum(dim=1) + intercept
+            sae += self.self_energies[-1]
+        return sae
 
     def forward(self, species_energies: Tuple[Tensor, Tensor],
                 cell: Optional[Tensor] = None,
@@ -233,7 +239,10 @@ class EnergyShifter(torch.nn.Module):
         """(species, molecular energies)->(species, molecular energies + sae)
         """
         species, energies = species_energies
-        sae = self.sae(species)
+        sae = self._atomic_saes(species).sum(dim=1)
+
+        if self.fit_intercept:
+            sae += self.self_energies[-1]
         return SpeciesEnergies(species, energies + sae)
 
 

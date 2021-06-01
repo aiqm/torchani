@@ -88,6 +88,8 @@ class ANIModel(torch.nn.ModuleDict):
 class Ensemble(torch.nn.ModuleList):
     """Compute the average output of an ensemble of modules."""
 
+    size: Final[int]
+
     def __init__(self, modules):
         super().__init__(modules)
         self.size = len(modules)
@@ -99,7 +101,16 @@ class Ensemble(torch.nn.ModuleList):
         for x in self:
             sum_ += x(species_input)[1]
         species, _ = species_input
-        return SpeciesEnergies(species, sum_ / self.size)
+        return SpeciesEnergies(species, sum_ / self.size)  # type: ignore
+
+    @torch.jit.export
+    def _atomic_energies(self, species_aev: Tuple[Tensor, Tensor]) -> Tensor:
+        members_list = []
+        for nnp in self:
+            members_list.append(nnp._atomic_energies((species_aev)).unsqueeze(0))
+        members_atomic_energies = torch.cat(members_list, dim=0)
+        # out shape is (M, C, A)
+        return members_atomic_energies
 
     def to_infer_model(self, use_mnp=True):
         return infer.BmmEnsemble(self, use_mnp)
