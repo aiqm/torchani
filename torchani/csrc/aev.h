@@ -138,6 +138,8 @@ struct AEVScalarParams {
   Tensor Zeta_t;
   Tensor ShfA_t;
   Tensor ShfZ_t;
+  bool use_cos_cutoff;
+
   AEVScalarParams(
       float Rcr,
       float Rca,
@@ -147,7 +149,8 @@ struct AEVScalarParams {
       Tensor Zeta_t,
       Tensor ShfA_t,
       Tensor ShfZ_t,
-      int num_species);
+      int num_species,
+      bool use_cos_cutoff);
 };
 
 struct Result {
@@ -194,13 +197,19 @@ struct Result {
 };
 
 // cuda kernels
+template <bool use_cos_cutoff>
 void cuaev_forward(
     const Tensor& coordinates_t,
     const Tensor& species_t,
     const AEVScalarParams& aev_params,
     Result& result);
+
+template <bool use_cos_cutoff>
 Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_params, const Result& result);
+
+template <bool use_cos_cutoff>
 Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& aev_params, const Result& result);
+
 void initAEVConsts(AEVScalarParams& aev_params, cudaStream_t stream);
 
 // CuaevComputer
@@ -217,22 +226,15 @@ struct CuaevComputer : torch::CustomClassHolder {
       const Tensor& Zeta_t,
       const Tensor& ShfA_t,
       const Tensor& ShfZ_t,
-      int64_t num_species);
+      int64_t num_species,
+      bool use_cos_cutoff);
 
   // TODO add option for simulation only forward, which will initilize result space, and no need to allocate any more.
-  Result forward(const Tensor& coordinates_t, const Tensor& species_t) {
-    Result result(coordinates_t, species_t);
-    cuaev_forward(coordinates_t, species_t, aev_params, result);
-    return result;
-  }
+  Result forward(const Tensor& coordinates_t, const Tensor& species_t);
 
-  Tensor backward(const Tensor& grad_e_aev, const Result& result) {
-    return cuaev_backward(grad_e_aev, aev_params, result); // force
-  }
+  Tensor backward(const Tensor& grad_e_aev, const Result& result);
 
-  Tensor double_backward(const Tensor& grad_force, const Result& result) {
-    return cuaev_double_backward(grad_force, aev_params, result); // grad_grad_aev
-  }
+  Tensor double_backward(const Tensor& grad_force, const Result& result);
 };
 
 // Autograd functions

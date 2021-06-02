@@ -4,8 +4,8 @@ on:
   pull_request:
     paths:
       - 'setup.py'
-      - 'torchani/cuaev/**'
-      - 'torchani/aev.py'
+      - 'torchani/csrc/**'
+      - 'torchani/aev/**'
       - 'ci/**'
       - 'test/test_cuaev.py'
   push:
