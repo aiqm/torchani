@@ -255,7 +255,8 @@ class AniH5Dataset(Mapping):
                     conformers[k] = np.tile(conformers[k].reshape((1, -1)), (len(idx), 1))
             elif idx is None:
                 any_key = non_element_keys[0]
-                conformers[k] = np.tile(conformers[k].reshape((1, -1)), (conformers[any_key].shape[0], 1))
+                for k in element_keys:
+                    conformers[k] = np.tile(conformers[k].reshape((1, -1)), (conformers[any_key].shape[0], 1))
 
             return conformers
 

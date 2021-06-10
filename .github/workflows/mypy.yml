@@ -29,5 +29,6 @@ jobs:
       run: |
         ci/install_dependencies.sh
         pip install --upgrade mypy
+        pip install types-PyYAML types-pkg_resources types-requests  # mypy library stubs
     - name: Type checking with mypy
       run: mypy --ignore-missing-imports .
