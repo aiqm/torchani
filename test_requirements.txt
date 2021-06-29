@@ -8,3 +8,4 @@ pyyaml
 pytest
 pynvml
 parameterized
+expecttest
