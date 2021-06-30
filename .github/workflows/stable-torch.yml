@@ -1,6 +1,7 @@
-name: stable-torch-1.8.1
+name: stable-torch-1.9.0
 
 on:
+  pull_request:
   push:
     branches:
       - master
@@ -48,4 +49,4 @@ jobs:
     - name: install pytest
       run: pip install pytest
     - name: Run all tests
-      run: python -m pytest -v tests/*
+      run: cd tests; python -m pytest -v -s *.py  # import torchani in root dir will not import the compiled one
