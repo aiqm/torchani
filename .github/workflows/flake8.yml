@@ -16,10 +16,6 @@ jobs:
         python-version: [3.8]
 
     steps:
-    - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.8.0
-      with:
-        access_token: ${{ github.token }}
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -31,3 +27,7 @@ jobs:
         pip install flake8
     - name: Lint with flake8
       run: flake8 .
+
+concurrency:
+  group: flake8-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true

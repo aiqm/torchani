@@ -1,7 +1,6 @@
 name: stable-torch-1.9.0
 
 on:
-  pull_request:
   push:
     branches:
       - master
@@ -19,10 +18,6 @@ jobs:
         python-version: [3.8]
 
     steps:
-    - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.8.0
-      with:
-        access_token: ${{ github.token }}
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -38,6 +33,8 @@ jobs:
         echo "PATH=${CUDA_HOME}/bin:$PATH" >> $GITHUB_ENV
     - name: Install dependencies
       run: ci/install_stable_dependencies.sh
+    - name: Pytorch info
+      run: python -c 'from torch.utils.collect_env import get_pretty_env_info; print(get_pretty_env_info())'
     - name: Install TorchANI
       run: |
         echo $CUDA_HOME
@@ -50,3 +47,7 @@ jobs:
       run: pip install pytest
     - name: Run all tests
       run: cd tests; python -m pytest -v -s *.py  # import torchani in root dir will not import the compiled one
+
+concurrency:
+  group: stable-torch
+  cancel-in-progress: true

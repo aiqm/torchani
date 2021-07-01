@@ -13,8 +13,8 @@ on:
       - master
     paths:
       - 'setup.py'
-      - 'torchani/cuaev/**'
-      - 'torchani/aev.py'
+      - 'torchani/csrc/**'
+      - 'torchani/aev/**'
       - 'ci/**'
       - 'test/test_cuaev.py'
 
@@ -28,10 +28,6 @@ jobs:
         python-version: [3.8, 3.6]
 
     steps:
-    - name: Cancel Previous Runs
-      uses: styfle/cancel-workflow-action@0.8.0
-      with:
-        access_token: ${{ github.token }}
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -47,6 +43,8 @@ jobs:
         echo "PATH=${CUDA_HOME}/bin:$PATH" >> $GITHUB_ENV
     - name: Install dependencies
       run: ci/install_dependencies.sh
+    - name: Pytorch info
+      run: python -c 'from torch.utils.collect_env import get_pretty_env_info; print(get_pretty_env_info())'
     - name: Install TorchANI
       run: |
         echo $CUDA_HOME
@@ -55,3 +53,7 @@ jobs:
         python setup.py install --ext --only-sm80
     - name: Run cuaev test
       run: pytest tests/test_cuaev.py -v
+
+concurrency:
+  group: cuda-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true

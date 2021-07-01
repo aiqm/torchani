@@ -10,7 +10,7 @@ If you use conda and your cuda version is 11.1, you could install it by
 conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch-nightly -c nvidia
 ```
 
-## Install
+## Build from source
 In most cases, if `gcc` and `cuda` environment are well configured, runing the following command at `torchani` directory will install torchani and all extensions together.
 
 ```bash

@@ -1,0 +1,62 @@
+package:
+  name: "{{ environ.get('PACKAGE_NAME') }}"
+  version: "{{ environ.get('BUILD_VERSION') }}"
+
+source:
+  path: "{{ environ.get('SOURCE_ROOT_DIR') }}"
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+
+  host:
+    - python {{ python }}
+    - setuptools_scm
+    - cmake
+    - ninja
+    - importlib_metadata
+    - lark-parser
+    - requests
+    - h5py
+    - defaults::numpy >=1.18
+    {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
+    {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
+
+  run:
+    - python {{ python }}
+    - setuptools
+    - importlib_metadata
+    - lark-parser
+    - requests
+    - h5py
+    - defaults::numpy >=1.18
+    {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
+    {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
+
+build:
+  number: 1
+  string: py{{py}}_torch1.9.0_cuda11.1
+  script:
+    - "{{ PYTHON }} setup.py install --ext-all-sms"
+
+test:
+  imports:
+    - torchani
+    - torchani.cuaev
+    - torchani.mnp
+  source_files:
+    - tests/*
+    - download.sh
+    - dataset/*
+  commands:
+    - pip install pytest pynvml pkbar ase parameterized
+    - ./download.sh
+    # cuaev test
+    - python tests/test_cuaev.py
+
+about:
+  home: https://roitberg.chem.ufl.edu
+  license: MIT
+  license_file: LICENSE
+  summary: 'Roiberg Group Sandbox'

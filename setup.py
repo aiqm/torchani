@@ -95,10 +95,10 @@ def cuda_extension(build_all=False):
     if SMs:
         for sm in SMs:
             nvcc_args.append(f"-gencode=arch=compute_{sm},code=sm_{sm}")
-    elif len(SMs) == 0 and ONLY_BUILD_SM80:  # --cuaev --only-sm80
+    elif SMs and len(SMs) == 0 and ONLY_BUILD_SM80:  # --cuaev --only-sm80
         nvcc_args.append("-gencode=arch=compute_80,code=sm_80")
     else:  # no gpu detected
-        print('NO gpu detected, will build for all SMs')
+        print('Will build for all SMs')
         nvcc_args.append("-gencode=arch=compute_60,code=sm_60")
         nvcc_args.append("-gencode=arch=compute_61,code=sm_61")
         nvcc_args.append("-gencode=arch=compute_70,code=sm_70")
