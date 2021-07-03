@@ -3,7 +3,7 @@ name: upgrade-torch-nightly
 
 on:
   schedule:
-    - cron: '7 0 * * *'  # 3AM on everyday
+    - cron: '0 7 * * *'  # 3AM on everyday
 
 jobs:
   upgrade-torch-nightly:
