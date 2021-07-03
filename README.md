@@ -44,7 +44,11 @@ Supported version information when install from anaconda:
 Install from anaconda by the following (Note that we are hosting the packages only for internal usage at: https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
 
 ```bash
-conda create -n ani python=3.8 -y
+conda create -n ani -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville -c pytorch -c nvidia -c defaults -c conda-forge sandbox python=3.8
+```
+Which is equivalent to 
+```bash
+conda create -n ani python=3.8
 conda activate ani
 conda install -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville -c pytorch -c nvidia -c defaults -c conda-forge sandbox
 ```
