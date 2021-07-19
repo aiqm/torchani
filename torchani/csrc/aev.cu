@@ -975,16 +975,16 @@ void cuaev_forward(
   float* coordinates_p = (float*)coordinates_t.data_ptr();
   TORCH_CHECK(coordinates_t.is_contiguous(), "Coordinate data is not contiguous");
 
-  // set cuda device and stream
-  at::cuda::CUDAGuard device_guard(coordinates_t.device().index());
-  at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
-  at::globalContext().lazyInitCUDA();
-
   // TODO replace zeros with empty
   result.aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length}, coordinates_t.options());
   if (species_t.numel() == 0) {
     return;
   }
+
+  // set cuda device and stream
+  at::cuda::CUDAGuard device_guard(coordinates_t.device().index());
+  at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
+  at::globalContext().lazyInitCUDA();
 
   int max_numj_per_i_in_Rcr = min(max_natoms_per_mol, MAX_NUMJ_PER_I_IN_RCR);
   int pairs_per_mol = max_natoms_per_mol * max_numj_per_i_in_Rcr;
