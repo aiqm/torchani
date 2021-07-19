@@ -766,8 +766,8 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
         aev_t, Tensor(), Tensor(), Tensor(), 0, 0, 0, Tensor(), Tensor(), Tensor(), 0, 0, 0, coordinates_t, species_t};
   }
 
-  at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream(coordinates_t.device().index());
-  at::cuda::CUDAStreamGuard guard(stream);
+  at::cuda::CUDAGuard device_guard(coordinates_t.device().index());
+  at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
   auto& allocator = *c10::cuda::CUDACachingAllocator::get();
 
   // buffer to store all the pairwise distance (Rij)
@@ -929,8 +929,8 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
 
   const int n_molecules = coordinates_t.size(0);
   const int max_natoms_per_mol = coordinates_t.size(1);
-  at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream(coordinates_t.device().index());
-  at::cuda::CUDAStreamGuard guard(stream);
+  at::cuda::CUDAGuard device_guard(coordinates_t.device().index());
+  at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
 
   auto grad_coord = torch::zeros(coordinates_t.sizes(), coordinates_t.options().requires_grad(false)); // [2, 5, 3]
 
@@ -1018,8 +1018,8 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
 
   const int n_molecules = coordinates_t.size(0);
   const int max_natoms_per_mol = coordinates_t.size(1);
-  at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream(coordinates_t.device().index());
-  at::cuda::CUDAStreamGuard guard(stream);
+  at::cuda::CUDAGuard device_guard(coordinates_t.device().index());
+  at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
 
   int aev_length = aev_params.radial_length + aev_params.angular_length;
 
