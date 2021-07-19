@@ -8,8 +8,8 @@ from torchani.testing import TestCase, make_tensor
 
 path = os.path.dirname(os.path.realpath(__file__))
 
-skipIfNoGPU = unittest.skipIf(not torch.cuda.is_available(),
-                              'There is no device to run this test')
+skipIfNoGPU = unittest.skipIf(not torch.cuda.is_available(), 'There is no device to run this test')
+skipIfNoMultiGPU = unittest.skipIf(not torch.cuda.device_count() >= 2, 'There is not enough GPU devices to run this test')
 skipIfNoCUAEV = unittest.skipIf(not torchani.aev.has_cuaev, "only valid when cuaev is installed")
 
 
@@ -39,9 +39,9 @@ class TestCUAEVNoGPU(TestCase):
 @skipIfNoCUAEV
 class TestCUAEV(TestCase):
 
-    def setUp(self):
+    def setUp(self, device='cuda:0'):
         self.tolerance = 5e-5
-        self.device = 'cuda'
+        self.device = device
         Rcr = 5.2000e+00
         Rca = 3.5000e+00
         EtaR = torch.tensor([1.6000000e+01], device=self.device)
@@ -130,6 +130,15 @@ class TestCUAEV(TestCase):
         _, aev = self.aev_computer((species, coordinates))
         _, cu_aev = self.cuaev_computer((species, coordinates))
         self.assertEqual(cu_aev, aev)
+
+    @skipIfNoMultiGPU
+    def testMultiGPU(self):
+        self.setUp(device='cuda:1')
+        self.testSimple()
+        self.testSimpleBackward()
+        self.testSimpleDoubleBackward_1()
+        self.testSimpleDoubleBackward_2()
+        self.setUp(device='cuda:0')
 
     def testSimpleBackward(self):
         coordinates = torch.tensor([
