@@ -1,4 +1,7 @@
 #include <aev.h>
+#include <c10/cuda/CUDAException.h>
+#include <c10/cuda/CUDAGuard.h>
+#include <c10/cuda/CUDAStream.h>
 #include <torch/extension.h>
 #include <cuaev_cub.cuh>
 
@@ -955,9 +958,13 @@ void cuaev_forward(
   TORCH_CHECK(
       (species_t.dtype() == torch::kInt32) && (coordinates_t.dtype() == torch::kFloat32), "Unsupported input type");
   TORCH_CHECK(
-      aev_params.EtaR_t.size(0) == 1 || aev_params.EtaA_t.size(0) == 1 || aev_params.Zeta_t.size(0) == 1,
+      aev_params.EtaR_t.size(0) == 1 && aev_params.EtaA_t.size(0) == 1 && aev_params.Zeta_t.size(0) == 1,
       "cuda extension is currently not supported for the specified "
       "configuration");
+  TORCH_CHECK(
+      coordinates_t.device() == species_t.device() && coordinates_t.device() == aev_params.EtaR_t.device() &&
+          coordinates_t.device() == aev_params.EtaA_t.device(),
+      "coordinates, species, and aev_params should be on the same device");
 
   float Rcr = aev_params.Rcr;
   float Rca = aev_params.Rca;
@@ -968,14 +975,16 @@ void cuaev_forward(
   float* coordinates_p = (float*)coordinates_t.data_ptr();
   TORCH_CHECK(coordinates_t.is_contiguous(), "Coordinate data is not contiguous");
 
+  // set cuda device and stream
+  at::cuda::CUDAGuard device_guard(coordinates_t.device().index());
+  at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
+  at::globalContext().lazyInitCUDA();
+
   // TODO replace zeros with empty
   result.aev_t = torch::zeros({n_molecules, max_natoms_per_mol, aev_length}, coordinates_t.options());
   if (species_t.numel() == 0) {
     return;
   }
-
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
-  at::globalContext().lazyInitCUDA();
 
   int max_numj_per_i_in_Rcr = min(max_natoms_per_mol, MAX_NUMJ_PER_I_IN_RCR);
   int pairs_per_mol = max_natoms_per_mol * max_numj_per_i_in_Rcr;
@@ -1046,6 +1055,7 @@ void cuaev_forward(
         Rcr,
         max_natoms_per_mol,
         max_numj_per_i_in_Rcr);
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
 
     // remove padding numJPerI if numj == 0
     result.nI = cubDeviceSelectIf(
@@ -1096,6 +1106,8 @@ void cuaev_forward(
         result.nI,
         max_natoms_per_mol,
         max_numj_per_i_in_Rcr);
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
+
 #ifdef TORCHANI_DEBUG
     result.angularNbr.nJ = cubSum(angularNbr_numJPerI_p, result.nI, stream);
     printf("%-35s %'d\n", "angularNbr nJ", result.angularNbr.nJ);
@@ -1125,6 +1137,8 @@ void cuaev_forward(
         aev_params.radial_sublength,
         result.radialNbr.nJ,
         result.radialNbr.maxNumJPerI);
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
+
 #ifdef TORCHANI_DEBUG
     printf("%-35s %d\n", "radialNbr  maxNumJPerI", result.radialNbr.maxNumJPerI);
 #endif
@@ -1162,6 +1176,8 @@ void cuaev_forward(
         aev_params.num_species,
         result.angularNbr.maxNumJPerI,
         result.nI);
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
+
 #ifdef TORCHANI_DEBUG
     printf("%-35s %d\n", "angularNbr maxNumJPerI", result.angularNbr.maxNumJPerI);
     printf("%-35s %'d bytes\n", "forward  angular smem_size", smem_size);
@@ -1177,7 +1193,8 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
 
   const int n_molecules = coordinates_t.size(0);
   const int max_natoms_per_mol = coordinates_t.size(1);
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+  at::cuda::CUDAGuard device_guard(coordinates_t.device().index());
+  at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
 
   auto grad_coord = torch::zeros(coordinates_t.sizes(), coordinates_t.options().requires_grad(false)); // [2, 5, 3]
 
@@ -1208,6 +1225,7 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
       aev_params.radial_sublength,
       result.radialNbr.nJ,
       result.radialNbr.maxNumJPerI);
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 
   // angular
   auto cal_smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
@@ -1249,6 +1267,7 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
           aev_params.num_species,
           result.angularNbr.maxNumJPerI,
           result.nI);
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 
   return grad_coord;
 }
@@ -1261,7 +1280,8 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
 
   const int n_molecules = coordinates_t.size(0);
   const int max_natoms_per_mol = coordinates_t.size(1);
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+  at::cuda::CUDAGuard device_guard(coordinates_t.device().index());
+  at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
 
   int aev_length = aev_params.radial_length + aev_params.angular_length;
 
@@ -1297,6 +1317,7 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
       aev_params.radial_sublength,
       result.radialNbr.nJ,
       result.radialNbr.maxNumJPerI);
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 
   // angular
   auto cal_smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
@@ -1333,6 +1354,7 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
           aev_params.num_species,
           result.angularNbr.maxNumJPerI,
           result.nI);
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 
   return grad_grad_aev;
 }

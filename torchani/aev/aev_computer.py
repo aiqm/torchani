@@ -100,9 +100,6 @@ class AEVComputer(torch.nn.Module):
         self.num_species = num_species
         self.num_species_pairs = num_species * (num_species + 1) // 2
 
-        self.register_buffer('triu_index',
-                             self._calculate_triu_index(num_species))
-
         # currently only cosine, smooth and custom cutoffs are supported
         # only ANI-1 style angular terms or radial terms
         # and only full pairwise neighborlist
@@ -122,6 +119,9 @@ class AEVComputer(torch.nn.Module):
                 self.cutoff_fn_type = 'smooth_modified'
         else:
             self.cutoff_fn_type = 'others'
+
+        self.register_buffer('triu_index',
+                             self._calculate_triu_index(num_species).to(device=self.radial_terms.EtaR.device))
 
         # length variables are updated once radial and angular terms are initialized
         # The lengths of buffers can't be changed with load_state_dict so we can
