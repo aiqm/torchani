@@ -2,14 +2,14 @@
 #include <torch/extension.h>
 #include <cuaev_cub.cuh>
 
-#include <vector>
-#include <c10/cuda/CUDAException.h>
-#include <c10/cuda/CUDAGuard.h>
-#include <c10/cuda/CUDAStream.h>
 #include <ATen/Context.h>
 #include <THC/THC.h>
 #include <c10/cuda/CUDACachingAllocator.h>
+#include <c10/cuda/CUDAException.h>
+#include <c10/cuda/CUDAGuard.h>
+#include <c10/cuda/CUDAStream.h>
 #include <THC/THCThrustAllocator.cuh>
+#include <vector>
 
 #define PI 3.141592653589793
 using torch::Tensor;
@@ -749,7 +749,8 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
       "cuda extension is currently not supported for the specified "
       "configuration");
   TORCH_CHECK(
-    coordinates_t.device() == species_t.device() && coordinates_t.device() == aev_params.EtaR_t.device() && coordinates_t.device() == aev_params.EtaA_t.device(),
+      coordinates_t.device() == species_t.device() && coordinates_t.device() == aev_params.EtaR_t.device() &&
+          coordinates_t.device() == aev_params.EtaA_t.device(),
       "coordinates, species, and aev_params should be on the same device");
 
   float Rcr = aev_params.Rcr;
@@ -1058,7 +1059,7 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
       aev_params.radial_sublength,
       result.nRadialRij);
   C10_CUDA_KERNEL_LAUNCH_CHECK();
-      
+
   auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
     int sxyz = sizeof(float) * max_nbrs * 3;
     int sj_xyz_grad = sizeof(float) * max_nbrs * 3;
