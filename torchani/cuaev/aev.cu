@@ -1,8 +1,11 @@
 #include <aev.h>
 #include <torch/extension.h>
 #include <cuaev_cub.cuh>
-#include <vector>
 
+#include <vector>
+#include <c10/cuda/CUDAException.h>
+#include <c10/cuda/CUDAGuard.h>
+#include <c10/cuda/CUDAStream.h>
 #include <ATen/Context.h>
 #include <THC/THC.h>
 #include <c10/cuda/CUDACachingAllocator.h>
@@ -742,9 +745,12 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
   TORCH_CHECK(
       (species_t.dtype() == torch::kInt32) && (coordinates_t.dtype() == torch::kFloat32), "Unsupported input type");
   TORCH_CHECK(
-      aev_params.EtaR_t.size(0) == 1 || aev_params.EtaA_t.size(0) == 1 || aev_params.Zeta_t.size(0) == 1,
+      aev_params.EtaR_t.size(0) == 1 && aev_params.EtaA_t.size(0) == 1 && aev_params.Zeta_t.size(0) == 1,
       "cuda extension is currently not supported for the specified "
       "configuration");
+  TORCH_CHECK(
+    coordinates_t.device() == species_t.device() && coordinates_t.device() == aev_params.EtaR_t.device() && coordinates_t.device() == aev_params.EtaA_t.device(),
+      "coordinates, species, and aev_params should be on the same device");
 
   float Rcr = aev_params.Rcr;
   float Rca = aev_params.Rca;
@@ -759,7 +765,8 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
         aev_t, Tensor(), Tensor(), Tensor(), 0, 0, 0, Tensor(), Tensor(), Tensor(), 0, 0, 0, coordinates_t, species_t};
   }
 
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+  at::cuda::CUDAStream stream = at::cuda::getDefaultCUDAStream(coordinates_t.device().index());
+  at::cuda::CUDAStreamGuard guard(stream);
   auto& allocator = *c10::cuda::CUDACachingAllocator::get();
 
   // buffer to store all the pairwise distance (Rij)
@@ -790,6 +797,7 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
         coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
         d_Rij,
         max_natoms_per_mol);
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
   } else {
     dim3 block(8, 8, 1);
     // Compute pairwise distance (Rij) for all atom pairs in a molecule
@@ -800,6 +808,7 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
         coordinates_t.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
         d_Rij,
         max_natoms_per_mol);
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
   }
 
   // Extract Rijs that is needed for RadialAEV comptuation i.e. all the Rij <= Rcr
@@ -822,6 +831,7 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
       aev_params.radial_length,
       aev_params.radial_sublength,
       nRadialRij);
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 
   // reuse buffer allocated for all Rij
   // d_angularRij will store all the Rij required in Angular AEV computation
@@ -890,6 +900,7 @@ Result cuaev_forward(const Tensor& coordinates_t, const Tensor& species_t, const
         maxnbrs_per_atom_aligned,
         angular_length_aligned,
         ncenter_atoms);
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
 
     return {
         aev_t,
@@ -917,7 +928,8 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
 
   const int n_molecules = coordinates_t.size(0);
   const int max_natoms_per_mol = coordinates_t.size(1);
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+  at::cuda::CUDAStream stream = at::cuda::getDefaultCUDAStream(coordinates_t.device().index());
+  at::cuda::CUDAStreamGuard guard(stream);
 
   auto grad_coord = torch::zeros(coordinates_t.sizes(), coordinates_t.options().requires_grad(false)); // [2, 5, 3]
 
@@ -943,6 +955,7 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
       aev_params.radial_length,
       aev_params.radial_sublength,
       result.nRadialRij);
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 
   // For best result, block_size should match average molecule size (no padding) to avoid atomicAdd
   nblocks = (result.nRadialRij + block_size - 1) / block_size;
@@ -952,6 +965,7 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
       grad_coord.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       d_radialRij,
       result.nRadialRij);
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 
   auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
     int sxyz = sizeof(float) * max_nbrs * 3;
@@ -991,6 +1005,7 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
       result.maxnbrs_per_atom_aligned,
       result.angular_length_aligned,
       result.ncenter_atoms);
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 
   return grad_coord;
 }
@@ -1002,7 +1017,8 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
 
   const int n_molecules = coordinates_t.size(0);
   const int max_natoms_per_mol = coordinates_t.size(1);
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+  at::cuda::CUDAStream stream = at::cuda::getDefaultCUDAStream(coordinates_t.device().index());
+  at::cuda::CUDAStreamGuard guard(stream);
 
   int aev_length = aev_params.radial_length + aev_params.angular_length;
 
@@ -1027,6 +1043,7 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
       grad_force.packed_accessor32<float, 3, torch::RestrictPtrTraits>(),
       d_radialRij,
       result.nRadialRij);
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 
   nblocks = (result.nRadialRij * 8 + block_size - 1) / block_size;
   cuRadialAEVs_backward_or_doublebackward<true, int, float, 8><<<nblocks, block_size, 0, stream>>>(
@@ -1040,7 +1057,8 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
       aev_params.radial_length,
       aev_params.radial_sublength,
       result.nRadialRij);
-
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
+      
   auto smem_size = [&aev_params](int max_nbrs, int ncatom_per_tpb) {
     int sxyz = sizeof(float) * max_nbrs * 3;
     int sj_xyz_grad = sizeof(float) * max_nbrs * 3;
@@ -1078,6 +1096,7 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
       result.maxnbrs_per_atom_aligned,
       result.angular_length_aligned,
       result.ncenter_atoms);
+  C10_CUDA_KERNEL_LAUNCH_CHECK();
 
   return grad_grad_aev;
 }
