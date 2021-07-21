@@ -11,7 +11,6 @@ setup_build_version() {
 }
 
 setup_conda_pytorch_constraint() {
-  export CONDA_CHANNEL_FLAGS="-c pytorch -c nvidia -c defaults -c conda-forge"
   export CONDA_PYTORCH_CONSTRAINT="- pytorch 1.9.0 *cuda11.1*"
 }
 
