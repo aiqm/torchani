@@ -32,6 +32,15 @@ class TestCUAEVNoGPU(TestCase):
         coordinates = make_tensor((8, 0, 3), 'cpu', torch.float32, low=-5, high=5)
         self.assertIn("cuaev::run", str(s.graph_for((species, coordinates))))
 
+    def testPickle(self):
+        aev_computer = torchani.AEVComputer.like_1x(use_cuda_extension=True)
+        tmpfile = '/tmp/cuaev.pkl'
+        with open(tmpfile, 'wb') as file:
+            pickle.dump(aev_computer, file)
+        with open(tmpfile, 'rb') as file:
+            aev_computer = pickle.load(file)
+        os.remove(tmpfile)
+
 
 @skipIfNoGPU
 @skipIfNoCUAEV
@@ -147,6 +156,21 @@ class TestCUAEV(TestCase):
         _, aev = self.aev_computer_1x((species, coordinates))
         _, cu_aev = self.cuaev_computer_1x((species, coordinates))
         self.assertEqual(cu_aev, aev)
+
+    def testPickleCorrectness(self):
+        ref_aev_computer = self.cuaev_computer_1x
+        tmpfile = '/tmp/cuaev.pkl'
+        with open(tmpfile, 'wb') as file:
+            pickle.dump(ref_aev_computer, file)
+        with open(tmpfile, 'rb') as file:
+            test_aev_computer = pickle.load(file)
+        os.remove(tmpfile)
+
+        coordinates = torch.rand([2, 50, 3], device=self.device) * 5
+        species = torch.randint(-1, 3, (2, 50), device=self.device)
+        _, ref_aev = ref_aev_computer((species, coordinates))
+        _, test_aev = test_aev_computer((species, coordinates))
+        self.assertEqual(ref_aev, test_aev)
 
     def testSimpleBackward(self):
         coordinates = torch.tensor([

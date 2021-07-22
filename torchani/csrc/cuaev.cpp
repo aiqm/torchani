@@ -152,7 +152,37 @@ Tensor run_autograd(
 
 TORCH_LIBRARY(cuaev, m) {
   m.class_<CuaevComputer>("CuaevComputer")
-      .def(torch::init<double, double, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, int64_t, bool>());
+      .def(torch::init<double, double, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, int64_t, bool>())
+      .def_pickle(
+          // __getstate__
+          [](const c10::intrusive_ptr<CuaevComputer>& self) -> std::vector<Tensor> {
+            std::vector<Tensor> state;
+            state.push_back(torch::tensor(self->aev_params.Rcr));
+            state.push_back(torch::tensor(self->aev_params.Rca));
+            state.push_back(self->aev_params.EtaR_t);
+            state.push_back(self->aev_params.ShfR_t);
+            state.push_back(self->aev_params.EtaA_t);
+            state.push_back(self->aev_params.Zeta_t);
+            state.push_back(self->aev_params.ShfA_t);
+            state.push_back(self->aev_params.ShfZ_t);
+            state.push_back(torch::tensor(self->aev_params.Rca));
+            state.push_back(torch::tensor(self->aev_params.use_cos_cutoff));
+            return state;
+          },
+          // __setstate__
+          [](std::vector<Tensor> state) -> c10::intrusive_ptr<CuaevComputer> {
+            return c10::make_intrusive<CuaevComputer>(
+                state[0].item<double>(),
+                state[1].item<double>(),
+                state[2],
+                state[3],
+                state[4],
+                state[5],
+                state[6],
+                state[7],
+                state[8].item<int64_t>(),
+                state[9].item<bool>());
+          });
   m.def("run", run_only_forward);
 }
 
