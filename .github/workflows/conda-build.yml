@@ -7,6 +7,7 @@ on:
       - 'torchani/csrc/**'
       - 'torchani/aev/**'
       - 'ci/**'
+      - 'conda/**'
       - 'test/test_cuaev.py'
   push:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'torchani/csrc/**'
       - 'torchani/aev/**'
       - 'ci/**'
+      - 'conda/**'
       - 'test/test_cuaev.py'
 
 jobs:
