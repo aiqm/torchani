@@ -1,4 +1,5 @@
 # type: ignore
+"""Training with low memory usage"""
 import torch
 import torchani
 import os
@@ -21,7 +22,7 @@ from torchani.units import hartree2kcalmol
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # --Starting here this is different from the usual nnp_training.py--
-h5_path = '/home/ignacio/Datasets/ani1x_release_wb97x_dz.h5'
+h5_path = '../dataset/ani-1x/sample.h5'
 batched_dataset_path = './batched_dataset_1x'
 
 # We prebatch the dataset to train with memory efficiency, keeping a good performance.
@@ -64,12 +65,12 @@ if not Path(batched_dataset_path).resolve().is_dir():
 # This batched datasets can be directly iterated upon, but it may be more
 # practical to wrap it with a torch DataLoader
 if not folds:
-    training = torchani.datasets.AniBatchedDataset(batched_dataset_path, split='training')
-    validation = torchani.datasets.AniBatchedDataset(batched_dataset_path, split='validation')
+    training = torchani.datasets.ANIBatchedDataset(batched_dataset_path, split='training')
+    validation = torchani.datasets.ANIBatchedDataset(batched_dataset_path, split='validation')
 
 else:
-    training = torchani.datasets.AniBatchedDataset(batched_dataset_path, split='training0')
-    validation = torchani.datasets.AniBatchedDataset(batched_dataset_path, split='validation0')
+    training = torchani.datasets.ANIBatchedDataset(batched_dataset_path, split='training0')
+    validation = torchani.datasets.ANIBatchedDataset(batched_dataset_path, split='validation0')
 
 cache = False
 if not cache:
@@ -131,7 +132,7 @@ elif cache:
 # https://pytorch.org/vision/stable/transforms.html with the difference that
 # the transforms are applied to both target and inputs in all cases.
 #
-# A transform can be passed to the "transform" argument of AniBatchedDataset to
+# A transform can be passed to the "transform" argument of ANIBatchedDataset to
 # perform the transforms on CPU after fetching the batches. If you do this and
 # cache the dataset afterwards, the transform is applied only once, so there is
 # no overhead at all.
@@ -188,7 +189,7 @@ if estimate_saes:
 # --Differences largely end here, besides application of transform in training/validation loops--
 ###############################################################################
 # First lets define an aev computer like the one in the 1x model
-aev_computer = torchani.AEVComputer.like_1x(use_cuda_extension=True)
+aev_computer = torchani.AEVComputer.like_1x(use_cuda_extension=False)
 # Now let's define atomic neural networks.
 aev_dim = aev_computer.aev_length
 

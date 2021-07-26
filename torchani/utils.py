@@ -6,10 +6,13 @@ import torch.utils.data
 import math
 import os
 import warnings
-from collections import defaultdict
+import itertools
+from collections import defaultdict, Counter
 from typing import Tuple, NamedTuple, Optional, Sequence, List, Dict, Union
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
 from .nn import SpeciesEnergies
+import numpy as np
+from .compat import tqdm
 
 PADDING = {
     'species': -1,
@@ -29,6 +32,23 @@ def check_openmp_threads():
         num_threads = int(os.environ["OMP_NUM_THREADS"])
         assert num_threads > 0
         print(f"OMP_NUM_THREADS is set as {num_threads}")
+
+
+def species_to_formula(species: np.ndarray) -> List[str]:
+    r"""Transforms an array of strings into the corresponding formula.  This
+    function expects an array of shape (M, A) and returns a list of
+    formulas of len M.
+    sorts in alphabetical order e.g. [['H', 'H', 'C']] -> ['CH2']"""
+    if species.ndim == 1:
+        species = np.expand_dims(species, axis=0)
+    elif species.ndim != 2:
+        raise ValueError("Species needs to have two dims/axes")
+    formulas = []
+    for s in species:
+        symbol_counts: List[Tuple[str, int]] = sorted(Counter(s).items())
+        iterable = (str(i) if str(i) != '1' else '' for i in itertools.chain.from_iterable(symbol_counts))
+        formulas.append(''.join(iterable))
+    return formulas
 
 
 def path_is_writable(path: Union[str, Path]) -> bool:
@@ -517,4 +537,4 @@ ATOMIC_NUMBERS = {symbol: z for z, symbol in enumerate(PERIODIC_TABLE)}
 
 __all__ = ['pad_atomic_properties', 'present_species', 'hessian',
            'vibrational_analysis', 'strip_redundant_padding',
-           'ChemicalSymbolsToInts', 'get_atomic_masses']
+           'ChemicalSymbolsToInts', 'get_atomic_masses', 'tqdm']

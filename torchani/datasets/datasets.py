@@ -1,710 +1,986 @@
-from pathlib import Path
-from functools import partial
-import json
-import datetime
-import math
+from typing import (Union, Optional, Dict, Sequence, Iterator, Tuple, List, Set,
+                Mapping, Any, Iterable, Callable, cast)
+import inspect
 import pickle
 import warnings
-import importlib
-from typing import Union, Optional, Dict, Sequence, Iterator, Tuple, List, Set, Callable
-from collections import OrderedDict, Counter
-from collections.abc import Mapping
+from os import fspath
+from pathlib import Path
+from functools import partial, wraps
+from contextlib import ExitStack, contextmanager
+from collections import OrderedDict
 
-import h5py
 import torch
 from torch import Tensor
 import numpy as np
-from numpy import ndarray
 
-from torchani import utils
+from ._backends import _H5PY_AVAILABLE, _StoreAdaptor, StoreAdaptorFactory, TemporaryLocation, infer_backend
+from ._annotations import Transform, Conformers, NumpyConformers, MixedConformers, StrPath, DTypeLike, IdxLike
+from ..utils import species_to_formula, PERIODIC_TABLE, ATOMIC_NUMBERS, tqdm
 
-PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None
-if PKBAR_INSTALLED:
-    import pkbar
+if _H5PY_AVAILABLE:
+    import h5py
 
-# type alias for transform
-Transform = Callable[[Dict[str, Tensor]], Dict[str, Tensor]]
+# About _ELEMENT_KEYS:
+# Datasets are assumed to have a "numbers" or "species" property, which has
+# information about the elements. In the legacy format it may have either
+# atomic numbers (1, 6, 8, etc) or strings with the chemical symbols ("H", "C",
+# "O", etc), both are allowed for both names. In the new formats they **must be
+# integers** If both properties are present one should be deleted to avoid
+# redundancies
+
+_ELEMENT_KEYS = {'species', 'numbers'}
+_LEGACY_NONBATCH_KEYS = {'species', 'numbers', 'smiles'}
+_ALWAYS_STRING_KEYS = {'_id', 'smiles'}
+# These broken keys are in some datasets and are basically impossible to parse
+# correctly. If grouping is "legacy" and these are found we give up and ask the
+# user to delete them in a warning
+_LEGACY_BROKEN_KEYS = {'coordinatesHE', 'energiesHE', 'smiles'}
 
 
-class AniBatchedDataset(torch.utils.data.Dataset):
+# Helper functions
+def _get_any_element_key(properties: Iterable[str]):
+    properties = {properties} if isinstance(properties, str) else set(properties)
+    if 'species' in properties:
+        return 'species'
+    else:
+        try:
+            return next(iter(_ELEMENT_KEYS & properties))
+        except StopIteration:
+            raise ValueError("Either species or numbers must be present in conformers") from None
 
-    SUPPORTED_FILE_FORMATS = ('numpy', 'hdf5', 'single_hdf5', 'pickle')
-    batch_size: Optional[int]
 
-    def __init__(self, store_dir: Union[str, Path],
+def _get_formulas(conformers: NumpyConformers) -> List[str]:
+    elements = conformers[_get_any_element_key(conformers.keys())]
+    if issubclass(elements.dtype.type, np.integer):
+        elements = _numbers_to_symbols(elements)
+    return species_to_formula(elements)
+
+
+def _get_dim_size(conformers: NumpyConformers, common_keys: Set[str], dim: int) -> int:
+    # Tries to get dimension size from one of the "common keys" that have the dimension
+    present_keys = common_keys.intersection(conformers.keys())
+    try:
+        any_key = present_keys.pop()
+    except KeyError:
+        raise KeyError(f'Could not get size of dim {dim} in properties'
+                       f' since {common_keys} are missing from conformers')
+    return conformers[any_key].shape[dim]
+
+
+# calculates number of atoms / conformers in a conformer group
+_get_num_atoms = partial(_get_dim_size, common_keys={'coordinates', 'coord', 'forces'}, dim=1)
+_get_num_conformers = partial(_get_dim_size, common_keys={'coordinates', 'coord', 'forces', 'energies'}, dim=0)
+
+
+def _to_strpath_list(obj: Union[Iterable[StrPath], StrPath]) -> List[StrPath]:
+    try:
+        # This will raise an exception if obj is Iterable[StrPath]
+        list_ = [fspath(obj)]  # type: ignore
+    except TypeError:
+        list_ = [o for o in obj]  # type: ignore
+    return cast(List[StrPath], list_)
+
+
+# convert to / from symbols and atomic numbers properties
+_symbols_to_numbers = np.vectorize(lambda x: ATOMIC_NUMBERS[x])
+_numbers_to_symbols = np.vectorize(lambda x: PERIODIC_TABLE[x])
+
+
+class ANIBatchedDataset(torch.utils.data.Dataset[Conformers]):
+
+    _SUFFIXES_AND_FORMATS = {'.npz': 'numpy', '.h5': 'hdf5', '.pkl': 'pickle'}
+    _batch_paths: Optional[List[Path]]
+
+    def __init__(self, store_dir: Optional[StrPath] = None,
+                       batches: Optional[List[Conformers]] = None,
                        file_format: Optional[str] = None,
                        split: str = 'training',
-                       transform: Transform = lambda x: x,
-                       flag_property: Optional[str] = None,
+                       transform: Optional[Transform] = None,
+                       properties: Optional[Sequence[str]] = None,
                        drop_last: bool = False):
-
+        # (store_dir or file_format or transform) and batches are mutually
+        # exclusive options, batches is passed if the dataset directly lives in
+        # memory and has no backing store, otherwise there should be a backing
+        # store in store_dir/split
+        self.lambda_ = lambda x: x
+        if batches is not None and any(v is not None for v in (file_format, store_dir, transform)):
+            raise ValueError('Batches is mutually exclusive with file_format/store_dir/transform')
         self.split = split
-        self.store_dir = Path(store_dir).resolve().joinpath(self.split)
-        if not self.store_dir.is_dir():
-            raise ValueError(f'The directory {self.store_dir.as_posix()} exists, '
-                             f'but the split {split} could not be found')
-
-        self.batch_paths = [f for f in self.store_dir.iterdir()]
-        if not self.batch_paths:
-            raise RuntimeError("The path provided has no files")
-        if not all([f.is_file() for f in self.batch_paths]):
-            raise RuntimeError("Subdirectories were found in path, this is not supported")
-
-        suffix = self.batch_paths[0].suffix
-        if not all([f.suffix == suffix for f in self.batch_paths]):
-            raise RuntimeError("Different file extensions were found in path, not supported")
-
-        self.transform = transform
-
-        def numpy_extractor(idx: int, paths: List[Path]) -> Dict[str, Tensor]:
-            return {k: torch.as_tensor(v) for k, v in np.load(paths[idx]).items()}
-
-        def pickle_extractor(idx: int, paths: List[Path]) -> Dict[str, Tensor]:
-            with open(paths[idx], 'rb') as f:
-                return {k: torch.as_tensor(v) for k, v in pickle.load(f).items()}
-
-        def hdf5_extractor(idx: int, paths: List[Path]) -> Dict[str, Tensor]:
-            with h5py.File(paths[idx], 'r') as f:
-                return {k: torch.as_tensor(v[()]) for k, v in f['/'].items()}
-
-        def single_hdf5_extractor(idx: int, group_keys: List[str], path: Path) -> Dict[str, Tensor]:
-            k = group_keys[idx]
-            with h5py.File(path, 'r') as f:
-                return {k: torch.as_tensor(v[()]) for k, v in f[k].items()}
-
-        # We use pickle or numpy or hdf5 since saving in
-        # pytorch format is extremely slow
-        if file_format is None:
-            format_suffix_map = {'.npz': 'numpy', '.pkl': 'pickle', '.h5': 'hdf5'}
-            file_format = format_suffix_map[suffix]
-            if file_format == 'hdf5' and ('single' in self.batch_paths[0].name):
-                file_format = 'single_hdf5'
-
-        if file_format not in self.SUPPORTED_FILE_FORMATS:
-            raise ValueError(f"The file format {file_format} is not in the"
-                             f"supported formats {self.SUPPORTED_FILE_FORMATS}")
-
-        if file_format == 'numpy':
-            self.extractor = partial(numpy_extractor, paths=self.batch_paths)
-        elif file_format == 'pickle':
-            self.extractor = partial(pickle_extractor, paths=self.batch_paths)
-        elif file_format == 'hdf5':
-            self.extractor = partial(hdf5_extractor, paths=self.batch_paths)
-        elif file_format == 'single_hdf5':
-            warnings.warn('Depending on the implementation, a single HDF5 file '
-                          'may not support parallel reads, so using num_workers > 1 '
-                          'may have a detrimental effect on performance')
-            with h5py.File(self.batch_paths[0], 'r') as f:
-                keys = list(f.keys())
-                self._len = len(keys)
-                self.extractor = partial(single_hdf5_extractor, group_keys=keys, path=self.batch_paths[0])
+        self.properties = ('coordinates', 'species', 'energies') if properties is None else properties
+        self.transform = self._identity if transform is None else transform
+        container: Union[List[Path], List[Conformers]]
+        if not batches:
+            if store_dir is None:
+                raise ValueError("One of batches or store_dir must be specified")
+            store_dir = Path(store_dir).resolve()
+            self._batch_paths = self._get_batch_paths(store_dir / split)
+            self._extractor = self._get_batch_extractor(self._batch_paths[0].suffix, file_format)
+            container = self._batch_paths
         else:
-            raise RuntimeError(f'Format for file with extension {suffix} '
-                                'could not be inferred, please specify explicitly')
+            self._data = batches
+            self._batch_paths = None
+            self._extractor = self._memory_extractor
+            container = self._data
+        # Drops last batch only if requested and if its smaller than the rest
+        if drop_last and self.batch_size(-1) < self.batch_size(0):
+            container.pop()
+        self._len = len(container)
+
+    @staticmethod
+    def _identity(x: Conformers) -> Conformers:
+        return x
+
+    def _memory_extractor(self, idx: int) -> Conformers:
+        return self._data[idx]
+
+    def batch_size(self, idx: int) -> int:
+        batch = self[idx]
+        return batch[next(iter(batch.keys()))].shape[0]
+
+    def _get_batch_paths(self, batches_dir: Path) -> List[Path]:
+        # We assume batch names are prefixed by a zero-filled number so that
+        # sorting alphabetically sorts batch numbers
         try:
-            with open(self.store_dir.parent.joinpath('creation_log.json'), 'r') as logfile:
-                creation_log = json.load(logfile)
-            self.is_inplace_transformed = creation_log['is_inplace_transformed']
-            self.batch_size = creation_log['batch_size']
-        except Exception:
-            warnings.warn("No creation log found, is_inplace_transformed assumed False, and batch_size is set to None")
-            self.is_inplace_transformed = False
-            self.batch_size = None
+            batch_paths = sorted(batches_dir.iterdir())
+            first_batch = batch_paths[0]
+            # notadirectory error is handled
+        except FileNotFoundError:
+            raise FileNotFoundError(f'The dir {batches_dir.parent.as_posix()} exists,'
+                                    f' but the split {batches_dir.as_posix()} does not') from None
+        except IndexError:
+            raise FileNotFoundError(f'The dir {batches_dir.as_posix()} has no files') from None
 
-        self._flag_property = flag_property
-        if drop_last:
-            self._recalculate_batch_size_and_drop_last()
+        if any(f.suffix != first_batch.suffix for f in batch_paths):
+            raise RuntimeError(f'Files with different extensions found in {batches_dir.as_posix()}')
 
-        self._len = len(self.batch_paths)
+        if any(f.is_dir() for f in batch_paths):
+            raise RuntimeError(f'Subdirectories found in {batches_dir.as_posix()}')
+        return batch_paths
 
-    def _recalculate_batch_size_and_drop_last(self) -> None:
-        warnings.warn('Recalculating batch size is necessary for drop_last and it may take considerable time if your disk is an HDD')
-        batch_sizes = {path: _get_properties_size(b, self._flag_property, set(b.keys()))
-                           for b, path in zip(self, self.batch_paths)}
-        batch_size_counts = Counter(batch_sizes.values())
-        # in case that there are more than one batch sizes, self.batch_size
-        # holds the most common one
-        self.batch_size = batch_size_counts.most_common(1)[0][0]
-        # we drop the batch with the smallest size, if there is only one of
-        # them, otherwise this errors out
-        assert len(batch_size_counts) in [1, 2], "More than two different batch lengths found"
-        if len(batch_size_counts) == 2:
-            smallest = min(batch_sizes.items(), key=lambda x: x[1])
-            assert batch_size_counts[smallest[1]] == 1, "There is more than one small batch"
-            self.batch_paths.remove(smallest[0])
+    # We use pickle or numpy or hdf5 since saving in
+    # pytorch format is extremely slow
+    def _get_batch_extractor(self, suffix: str, file_format: Optional[str] = None) -> Callable[[int], Conformers]:
+        if file_format is None:
+            try:
+                file_format = self._SUFFIXES_AND_FORMATS[suffix]
+            except KeyError:
+                raise ValueError(f"The file format {file_format} is not one of the"
+                                 f"supported formats {self._SUFFIXES_AND_FORMATS.values()}")
+        if file_format == 'hdf5' and not _H5PY_AVAILABLE:
+            raise ValueError("File format hdf5 was specified but h5py could not"
+                             " be found, please install h5py or specify a "
+                             " different file format")
+        return {'numpy': self._numpy_extractor,
+                'pickle': self._pickle_extractor,
+                'hdf5': self._hdf5_extractor}[file_format]
+
+    def _numpy_extractor(self, idx: int) -> Conformers:
+        return {k: torch.as_tensor(v)
+                for k, v in np.load(self._batch_paths[idx]).items()  # type: ignore
+                if self.properties is None or k in self.properties}
+
+    def _pickle_extractor(self, idx: int) -> Conformers:
+        with open(self._batch_paths[idx], 'rb') as f:  # type: ignore
+            return {k: torch.as_tensor(v)
+                    for k, v in pickle.load(f).items()
+                    if self.properties is None or k in self.properties}
+
+    def _hdf5_extractor(self, idx: int) -> Conformers:
+        with h5py.File(self._batch_paths[idx], 'r') as f:  # type: ignore
+            return {k: torch.as_tensor(v[()])
+                    for k, v in f['/'].items()
+                    if self.properties is None or k in self.properties}
 
     def cache(self, pin_memory: bool = True,
-                    verbose: bool = True,
-                    apply_transform: bool = True) -> 'AniBatchedDataset':
-        if verbose:
-            print(f"Cacheing split {self.split} of dataset, this may take some time...")
-            print("Important: Cacheing the dataset may use a lot of memory, be careful!")
-
-        def memory_extractor(idx: int, ds: AniBatchedDataset) -> Dict[str, Tensor]:
-            return ds._data[idx]
-
-        self._data = [self.extractor(idx) for idx in range(len(self))]
-
-        if apply_transform:
-            if verbose:
-                print("Applying transforms if they are present...")
-                print("Important: Transformations, if there are any present,"
-                      " will be applied once during cacheing and then discarded.")
-                print("If you want a different behavior pass apply_transform=False")
-            with torch.no_grad():
-                self._data = [self.transform(properties) for properties in self._data]
-            # discard transform after aplication
-            self.transform = lambda x: x
-
-        # When the dataset is cached memory pinning is done here. When the
-        # dataset is not cached memory pinning is done by the torch DataLoader.
+              verbose: bool = True) -> 'ANIBatchedDataset':
+        r"""Saves the full dataset into RAM"""
+        desc = f'Cacheing {self.split}, Warning: this may use a lot of RAM!'
+        self._data = [self._extractor(idx) for idx in tqdm(range(len(self)),
+                                                          total=len(self),
+                                                          disable=not verbose,
+                                                          desc=desc)]
+        desc = "Applying transforms once and discarding"
+        with torch.no_grad():
+            self._data = [self.transform(p) for p in tqdm(self._data,
+                                                          total=len(self),
+                                                          disable=not verbose,
+                                                          desc=desc)]
+            self.transform = self._identity
         if pin_memory:
-            if verbose:
-                print("Pinning memory...")
-                print("Important: Cacheing pins memory automatically.")
-                print("Do **not** use pin_memory=True in torch.utils.data.DataLoader")
-            self._data = [{k: v.pin_memory() for k, v in properties.items()} for properties in self._data]
-
-        self.extractor = partial(memory_extractor, ds=self)
+            desc = 'Pinning memory; dont pin memory in torch DataLoader!'
+            self._data = [{k: v.pin_memory()
+                           for k, v in batch.items()}
+                           for batch in tqdm(self._data,
+                                             total=len(self),
+                                             disable=not verbose,
+                                             desc=desc)]
+        self._extractor = self._memory_extractor
         return self
 
-    def __getitem__(self, idx: int) -> Dict[str, Tensor]:
+    def __getitem__(self, idx: int) -> Conformers:
         # integral indices must be provided for compatibility with pytorch
         # DataLoader API
-        properties = self.extractor(idx)
+        batch = self._extractor(idx)
         with torch.no_grad():
-            properties = self.transform(properties)
-        return properties
-
-    def __iter__(self) -> Iterator[Dict[str, Tensor]]:
-        j = 0
-        try:
-            while True:
-                yield self[j]
-                j += 1
-        except IndexError:
-            return
+            batch = self.transform(batch)
+        return batch
 
     def __len__(self) -> int:
         return self._len
 
 
-class AniH5Dataset(Mapping):
+# Base class for ANIDataset and _ANISubdataset
+class _ANIDatasetBase(Mapping[str, Conformers]):
+    def __init__(self, *args, **kwargs) -> None:
+        # "properties" is read only, needed for validation of inputs, it may
+        # change if a property is renamed or deleted. num_conformers and
+        # num_conformer_groups are all calculated on the fly to guarantee
+        # synchronization with "group_sizes".
+        self._group_sizes: 'OrderedDict[str, int]' = OrderedDict()
+        self._properties: Set[str] = set()
 
-    def __init__(self,
-                 store_file: Union[str, Path],
-                 flag_property: Optional[str] = None,
-                 element_keys: Sequence[str] = ('species', 'numbers', 'atomic_numbers', 'smiles')):
-        store_file = Path(store_file).resolve()
-        if not store_file.is_file():
-            raise FileNotFoundError(f"The h5 file in {store_file.as_posix()} could not be found")
+    @property
+    def group_sizes(self) -> 'OrderedDict[str, int]':
+        return self._group_sizes.copy()
 
-        self._store_file = store_file
+    @property
+    def properties(self) -> Set[str]:
+        return self._properties
 
-        # flag key is used to infer size of molecule groups
-        # when iterating over the dataset
-        self._flag_property = flag_property
+    @property
+    def num_conformers(self) -> int:
+        return sum(self._group_sizes.values())
 
-        group_sizes, supported_properties = self._cache_group_sizes_and_properties()
-        self.group_sizes = OrderedDict(group_sizes)
-        self.supported_properties = supported_properties
+    @property
+    def num_conformer_groups(self) -> int:
+        return len(self._group_sizes.keys())
 
-        # element keys are treated differently because they don't have a batch dimension
-        self._supported_element_keys = tuple((k for k in self.supported_properties if k in element_keys))
-        self._supported_non_element_keys = tuple((k for k in self.supported_properties if k not in element_keys))
+    @property
+    def grouping(self) -> str:
+        raise NotImplementedError
 
-        self.num_conformers = sum(self.group_sizes.values())
-        self.num_conformer_groups = len(self.group_sizes.keys())
-
-        self.symbols_to_atomic_numbers = utils.ChemicalSymbolsToAtomicNumbers()
-
-    def __getitem__(self, key: str) -> Dict[str, ndarray]:
-        # this is a simple extraction that just fetches everything
-        return self._get_group(key, self._supported_non_element_keys, self._supported_element_keys)
+    def __getitem__(self, key: str) -> Conformers:
+        return cast(Conformers, getattr(self, 'get_conformers')(key))
 
     def __len__(self) -> int:
         return self.num_conformer_groups
 
     def __iter__(self) -> Iterator[str]:
-        # Iterating over groups and yield the associated molecule groups as
-        # dictionaries of numpy arrays (except for species, which is a list of
-        # strings)
-        return iter(self.group_sizes.keys())
+        return iter(self._group_sizes.keys())
 
-    def get_conformers(self,
-                       key: str,
-                       idx: Optional[Union[int, ndarray]] = None,
-                       include_properties: Optional[Sequence[str]] = None,
-                       strict: bool = False,
-                       raw_output: bool = True) -> Dict[str, ndarray]:
-        element_keys, non_element_keys = self._properties_into_keys(include_properties)
-        # fetching a conformer actually copies all the group into memory first,
-        # because indexing directly into hdf5 is much slower.
-        conformers = self._get_group(key, non_element_keys, element_keys, idx, strict)
-        if raw_output:
-            return conformers
-        else:
-            # here we convert species to atomic numbers and repeat along the
-            # batch dimension all element_keys
-            if 'species' in element_keys:
-                tensor_species = self.symbols_to_atomic_numbers(conformers['species'].tolist())
-                conformers['species'] = tensor_species.cpu().numpy()
+    def numpy_items(self, **kwargs) -> Iterator[Tuple[str, NumpyConformers]]:
+        for group_name in self.keys():
+            yield group_name, getattr(self, 'get_numpy_conformers')(group_name, **kwargs)
 
-            if isinstance(idx, ndarray):
-                for k in element_keys:
-                    conformers[k] = np.tile(conformers[k].reshape((1, -1)), (len(idx), 1))
-            elif idx is None:
-                any_key = non_element_keys[0]
-                for k in element_keys:
-                    conformers[k] = np.tile(conformers[k].reshape((1, -1)), (conformers[any_key].shape[0], 1))
+    def numpy_values(self, **kwargs) -> Iterator[NumpyConformers]:
+        for group_name in self.keys():
+            yield getattr(self, 'get_numpy_conformers')(group_name, **kwargs)
 
-            return conformers
+    def iter_key_idx_conformers(self, **kwargs) -> Iterator[Tuple[str, int, Conformers]]:
+        for k, size in self._group_sizes.items():
+            conformers = getattr(self, 'get_conformers')(k, **kwargs)
+            for idx in range(size):
+                single_conformer = {k: conformers[k][idx] for k in conformers.keys()}
+                yield k, idx, single_conformer
 
-    def iter_conformers(self,
-                        include_properties: Optional[Sequence[str]] = None,
-                        strict: bool = False) -> Iterator[Dict[str, ndarray]]:
-        for _, _, c in self.iter_key_idx_conformers(include_properties, strict):
+    def iter_conformers(self, **kwargs) -> Iterator[Conformers]:
+        for _, _, c in self.iter_key_idx_conformers(**kwargs):
             yield c
 
-    def iter_key_idx_conformers(self,
-                                include_properties: Optional[Sequence[str]] = None,
-                                strict: bool = False) -> Iterator[Tuple[str, int, Dict[str, ndarray]]]:
 
-        element_keys, non_element_keys = self._properties_into_keys(include_properties)
+# Decorators for ANISubdataset:
+# Decorator that wraps functions that modify the dataset in place. Makes
+# sure that cache updating happens after dataset modification
+def _needs_cache_update(method: Callable[..., '_ANISubdataset']) -> Callable[..., '_ANISubdataset']:
+    @wraps(method)
+    def method_with_cache_update(ds: '_ANISubdataset', *args, **kwargs) -> '_ANISubdataset':
+        ds = method(ds, *args, **kwargs)
+        ds._update_cache()
+        return ds
 
-        # Iterate sequentially over conformers also copies all the group
-        # into memory first, so it is also fast
-        for k, size in self.group_sizes.items():
-            conformer_group = self._get_group(k, non_element_keys, element_keys, None, strict)
-            for idx in range(size):
-                out_conformer_group = {k: conformer_group[k] for k in element_keys}
-                out_conformer_group.update({k: conformer_group[k][idx] for k in non_element_keys})
-                yield k, idx, out_conformer_group
+    return method_with_cache_update
 
-    def _properties_into_keys(self,
-                              properties: Optional[Sequence[str]] = None) -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
-        if properties is None:
-            element_keys = self._supported_element_keys
-            non_element_keys = self._supported_non_element_keys
-        elif set(properties).issubset(self.supported_properties):
-            element_keys = tuple((k for k in properties if k in self._supported_element_keys))
-            non_element_keys = tuple((k for k in properties if k not in self._supported_element_keys))
+
+# methods marked with this decorator
+# should be called on all subdatasets
+def _broadcast(method):
+    method._mark = 'broadcast'
+    return method
+
+
+# methods marked with this decorator
+# should be delegated to one subdataset
+def _delegate(method):
+    method._mark = 'delegate'
+    return method
+
+
+# methods marked with this decorator
+# should be delegated to one subdataset, and return a value != "self"
+def _delegate_with_return(method):
+    method._mark = 'delegate_with_return'
+    return method
+
+
+# Private wrapper over backing storage, with some modifications it could be
+# used for directories with npz files, or other backends. It should never ever
+# be used directly by user code.
+class _ANISubdataset(_ANIDatasetBase):
+    def __init__(self,
+                 store_location: StrPath,
+                 create: bool = False,
+                 grouping: str = 'by_formula',
+                 backend: Optional[str] = None,
+                 verbose: bool = True):
+        super().__init__()
+        self._backend = infer_backend(store_location) if backend is None else backend
+        self._store = StoreAdaptorFactory(store_location, self._backend)
+        self._possible_nonbatch_properties: Set[str]
+        if create:
+            if grouping not in ['by_formula', 'by_num_atoms']:
+                raise ValueError('invalid grouping')
+            self._store.make_empty(grouping)
+            self._possible_nonbatch_properties = set()
         else:
-            raise ValueError(f"Some of the properties demanded {properties} are not "
-                             f"in the dataset, which has properties {self.supported_properties}")
-        return element_keys, non_element_keys
-
-    def _cache_group_sizes_and_properties(self) -> Tuple[List[Tuple[str, int]], Set[str]]:
-        # cache paths of all molecule groups into a list
-        # and all supported properties into a set
-        def visitor_fn(name: str,
-                       object_: Union[h5py.Dataset, h5py.Group],
-                       group_sizes: List[Tuple[str, int]],
-                       supported_properties: Set[str],
-                       flag_property: Optional[str] = None) -> None:
-
-            if isinstance(object_, h5py.Dataset):
-                molecule_group = object_.parent
-                # Check if we already visited this group via one of its
-                # children or not
-                if molecule_group.name not in [tup[0] for tup in group_sizes]:
-                    # Collect properties and check that all the datasets have
-                    # the same properties
-                    if not supported_properties:
-                        supported_properties.update({k for k in molecule_group.keys()})
-                        if flag_property is not None and flag_property not in supported_properties:
-                            raise RuntimeError(f"Flag property {flag_property} "
-                                               f"not found in {supported_properties}")
-                    else:
-                        if not {k for k in molecule_group.keys()} == supported_properties:
-                            raise RuntimeError(f"group {molecule_group.name} has incompatible keys, "
-                                               f"which should be {supported_properties}, inferred from other groups")
-                    # Check for format correctness
-                    for v in molecule_group.values():
-                        if not isinstance(v, h5py.Dataset):
-                            raise RuntimeError("Invalid dataset format, there "
-                                               "shouldn't be Groups inside Groups "
-                                               "that have Datasets")
-                    group_sizes.append((molecule_group.name,
-                                         _get_properties_size(molecule_group,
-                                                              flag_property,
-                                                              supported_properties)))
-
-        group_sizes: List[Tuple[str, int]] = []
-        supported_properties: Set[str] = set()
-
-        with h5py.File(self._store_file, 'r') as f:
-            f.visititems(partial(visitor_fn,
-                                 group_sizes=group_sizes,
-                                 supported_properties=supported_properties,
-                                 flag_property=self._flag_property))
-
-        return group_sizes, supported_properties
-
-    def _get_group(self,
-                   key: str,
-                   non_element_keys: Tuple[str, ...],
-                   element_keys: Tuple[str, ...],
-                   idx: Optional[Union[int, ndarray]] = None,
-                   strict: bool = False) -> Dict[str, ndarray]:
-
-        # NOTE: If some keys are not found then
-        # this returns a partial result with the keys that are found, (maybe
-        # even empty) unless strict is passed.
-        with h5py.File(self._store_file, 'r') as f:
-            group = f[key]
-            if strict and not all([p in group.keys() for p in element_keys + non_element_keys]):
-                raise RuntimeError('Some of the requested properties could not '
-                                  f'be found in group {key}')
-
-            molecules = {k: np.copy(group[k]) for k in element_keys}
-            if idx is None:
-                molecules.update({k: np.copy(group[k]) for k in non_element_keys})
+            if grouping != 'by_formula':
+                raise ValueError("Can't specify grouping, dataset already exists")
+            self._store.validate_location()
+            if self.grouping not in ['by_formula', 'by_num_atoms', 'legacy']:
+                raise RuntimeError(f'Read with unsupported grouping {self.grouping}')
+            if self.grouping == 'legacy':
+                self._possible_nonbatch_properties = _LEGACY_NONBATCH_KEYS
             else:
-                molecules.update({k: np.copy(group[k])[idx] for k in non_element_keys})
+                self._possible_nonbatch_properties = set()
+            # In general properties of the dataset should be equal for all
+            # groups, this can be an issue for HDF5. We check this in the first
+            # call of _update_cache, if it isn't we raise an exception
+            self._update_cache(check_properties=True, verbose=verbose)
+            if self.grouping == 'legacy':
+                if self.properties & _LEGACY_BROKEN_KEYS:
+                    warnings.warn(f'Unsupported properties {_LEGACY_BROKEN_KEYS & self.properties}'
+                                   ' found in legacy dataset, this will generate'
+                                   ' unpredictable issues.'
+                                   ' Probably .items() and .values() will work but'
+                                   ' not much else. It is highly  recommended that'
+                                   ' you backup these properties if needed and'
+                                   ' delete them using dataset.delete_properties')
 
-            if 'species' in element_keys:
-                molecules['species'] = molecules['species'].astype(str)
-        return molecules
+    @contextmanager
+    def keep_open(self, mode: str = 'r') -> Iterator['_ANISubdataset']:
+        r"""Context manager to keep dataset open while iterating over it
 
+        This speeds up access in the context of many operations in a block,
+        Iterating in this context may be much faster than directly iterating
+        over conformers
 
-def _save_batch(path: Path, idx: int, batch: Dict[str, Tensor], file_format: str) -> None:
-    # We use pickle, numpy or hdf5 since saving in
-    # pytorch format is extremely slow
-    batch = {k: v.numpy() for k, v in batch.items()}
-    if file_format == 'pickle':
-        with open(path.joinpath(f'batch{idx}.pkl'), 'wb') as batch_file:
-            pickle.dump(batch, batch_file)
-    elif file_format == 'numpy':
-        np.savez(path.joinpath(f'batch{idx}'), **batch)
-    elif file_format == 'hdf5':
-        with h5py.File(path.joinpath(f'batch{idx}.h5'), 'w-') as f:
-            for k, v in batch.items():
-                f.create_dataset(k, data=v)
-    elif file_format == 'single_hdf5':
-        with h5py.File(path.joinpath(f'{path.name}_single.h5'), 'a') as f:
-            f.create_group(f'batch{idx}')
-            g = f[f'batch{idx}']
-            for k, v in batch.items():
-                g.create_dataset(k, data=v)
+        Usage:
+        with ds.keep_open('r') as ro_ds:
+            for c in ro_ds.iter_conformers():
+                print(c)
+                ... etc
+        """
+        self._store.open(mode)
+        try:
+            yield self
+        finally:
+            self._store.close()
 
+    # This trick makes methods fetch the open file directly
+    # if they are being called from inside a "keep_open" context
+    def _get_open_store(self, stack: ExitStack, mode: str = 'r') -> '_StoreAdaptor':
+        if mode not in ['r+', 'r']:
+            raise ValueError(f"Unsupported mode {mode}")
 
-def create_batched_dataset(h5_path: Union[str, Path],
-                           dest_path: Optional[Union[str, Path]] = None,
-                           shuffle: bool = True,
-                           shuffle_seed: Optional[int] = None,
-                           file_format: str = 'hdf5',
-                           include_properties: Optional[Sequence[str]] = ('species', 'coordinates', 'energies'),
-                           batch_size: int = 2560,
-                           max_batches_per_packet: int = 350,
-                           padding: Optional[Dict[str, float]] = None,
-                           splits: Optional[Dict[str, float]] = None,
-                           folds: Optional[int] = None,
-                           inplace_transform: Optional[Transform] = None,
-                           verbose: bool = True) -> None:
+        if self._store.is_open:
+            if mode == 'r+' and self._store.mode == 'r':
+                raise RuntimeError('Tried to open a store with mode "r+" but'
+                                   ' the store open with mode "r"')
+            return self._store
+        return stack.enter_context(self._store.open(mode))
 
-    if folds is not None and splits is not None:
-        raise ValueError('Only one of ["folds", "splits"] should be specified')
+    def _update_cache(self, check_properties: bool = False, verbose: bool = True) -> None:
+        with ExitStack() as stack:
+            store = self._get_open_store(stack, 'r')
+            self._group_sizes, self._properties = store.update_cache(check_properties, verbose)
 
-    # NOTE: All the tensor manipulation in this function is handled in CPU
-    if file_format == 'single_hdf5':
-        warnings.warn('Depending on the implementation, a single HDF5 file may'
-                      'not support parallel reads, so using num_workers > 1 may'
-                      'have a detrimental effect on performance, its probably better'
-                      'to save in many hdf5 files with file_format=hdf5')
-    if dest_path is None:
-        dest_path = Path(f'./batched_dataset_{file_format}').resolve()
-    dest_path = Path(dest_path).resolve()
+    def __str__(self) -> str:
+        str_ = (f"ANI {self._backend} store:\n"
+                f"Properties: {self.properties}\n"
+                f"Conformers: {self.num_conformers}\n"
+                f"Conformer groups: {self.num_conformer_groups}\n")
+        try:
+            str_ += f"Elements: {self.present_elements(chem_symbols=True)}\n"
+        except ValueError:
+            str_ += "Elements: Unknown\n"
+        return str_
 
-    h5_path = Path(h5_path).resolve()
-    if h5_path.is_dir():
-        h5_datasets = [AniH5Dataset(p) for p in h5_path.iterdir() if p.suffix == '.h5']
-    elif h5_path.is_file():
-        h5_datasets = [AniH5Dataset(h5_path)]
+    def present_elements(self, chem_symbols: bool = False) -> List[Union[str, int]]:
+        r"""Get an ordered list with all elements present in the dataset
 
-    # (1) Get all indices and shuffle them if needed
-    #
-    # These are pairs of indices that index first the group and then the
-    # specific conformer, it is possible to just use one index for
-    # everything but this is simpler at the cost of slightly more memory.
-    # First we get all group sizes for all datasets concatenated in a tensor, in the same
-    # order as h5_datasets
-    group_sizes_values = torch.cat([torch.tensor(list(h5ds.group_sizes.values()), dtype=torch.long) for h5ds in h5_datasets])
-    conformer_indices = torch.cat([torch.stack((torch.full(size=(s.item(),), fill_value=j, dtype=torch.long),
-                                     (torch.arange(0, s.item(), dtype=torch.long))), dim=-1)
-                                     for j, s in enumerate(group_sizes_values)])
+        list is ordered alphabetically. Function raises ValueError if neither
+        'species' or 'numbers' properties are present.
+        """
+        self._check_correct_grouping()
+        element_key = _get_any_element_key(self.properties)
+        present_elements: Set[Union[str, int]] = set()
+        for group_name in self.keys():
+            conformers = self.get_numpy_conformers(group_name,
+                                                   properties=element_key,
+                                                   chem_symbols=chem_symbols)
+            present_elements.update(conformers[element_key].ravel())
+        return sorted(present_elements)
 
-    rng = _get_random_generator(shuffle, shuffle_seed)
+    def _parse_index(self, idx: IdxLike) -> Optional[np.ndarray]:
+        # internally, idx_ is always a numpy array or None, idx can be a tensor
+        # or a list or other iterable, which is must be castable to a numpy int
+        # array of ndim 1
+        if idx is not None:
+            if isinstance(idx, Tensor):
+                idx_ = idx.cpu().numpy()
+            elif isinstance(idx, int):
+                idx_ = np.array(idx)
+            else:
+                idx_ = np.asarray(idx)
+            if idx_.ndim > 1:
+                raise ValueError("index must be a 0 or 1 dim tensor")
+            return idx_
+        return idx
 
-    conformer_indices = _maybe_shuffle_indices(conformer_indices, rng)
+    @_delegate_with_return
+    def get_conformers(self,
+                       group_name: str,
+                       idx: IdxLike = None,
+                       properties: Optional[Iterable[str]] = None) -> Conformers:
+        r"""Get conformers in a given group in the dataset
 
-    # (2) Split shuffled indices according to requested dataset splits or folds
-    # by defaults we use splits, if folds or splits is specified we
-    # do the specified operation
-    if folds is not None:
-        conformer_splits, split_paths = _divide_into_folds(conformer_indices, dest_path, folds, rng)
-    else:
-        if splits is None:
-            splits = {'training': 0.8, 'validation': 0.2}
+        Can obtain conformers with specified indices, and including only
+        specified properties. Conformers are dict of the form {property:
+        Tensor}, where properties are strings"""
+        numpy_conformers = self.get_numpy_conformers(group_name, idx, properties)
+        return {k: torch.tensor(numpy_conformers[k])
+                for k in set(numpy_conformers.keys()) - _ALWAYS_STRING_KEYS}
 
-        if not math.isclose(sum(list(splits.values())), 1.0):
-            raise ValueError("The sum of the split fractions has to add up to one")
+    @_delegate_with_return
+    def get_numpy_conformers(self,
+                             group_name: str,
+                             idx: IdxLike = None,
+                             properties: Optional[Iterable[str]] = None,
+                             chem_symbols: bool = False) -> NumpyConformers:
+        r"""Same as get_conformers but conformers are a dict {property: ndarray}"""
+        if properties is None:
+            properties = self.properties
+        needed_properties = {properties} if isinstance(properties, str) else set(properties)
+        self._check_properties_are_present(needed_properties)
+        nonbatch_properties = needed_properties & self._possible_nonbatch_properties
+        batch_properties = needed_properties - self._possible_nonbatch_properties
+        with ExitStack() as stack:
+            f = self._get_open_store(stack, 'r')
+            numpy_conformers = {p: f[group_name][p] for p in needed_properties}
+        idx_ = self._parse_index(idx)
+        if idx_ is not None:
+            numpy_conformers.update({k: numpy_conformers[k][idx_]
+                                     for k in batch_properties})
+        # Nonbatch properties, if present, need tiling in the first dim
+        if nonbatch_properties:
+            tile_shape: Tuple[int, ...]
+            if idx_ is None or idx_.ndim == 1:
+                tile_shape = (_get_num_conformers(numpy_conformers), 1)
+            else:
+                tile_shape = (1,)
+            numpy_conformers.update({k: np.tile(numpy_conformers[k], tile_shape)
+                                     for k in nonbatch_properties})
+        # Depending on "chem_symbols", "species" / "numbers" are returned as
+        # int64 or as str. In legacy grouping "species" and "numbers" can be
+        # str or ints themselves, so we check for that and convert.
+        for k in needed_properties & _ELEMENT_KEYS:
+            elements = numpy_conformers[k]
+            if issubclass(elements.dtype.type, np.integer):
+                if chem_symbols:
+                    numpy_conformers[k] = _numbers_to_symbols(elements)
+            else:
+                elements = elements.astype(str)
+                if not chem_symbols:
+                    numpy_conformers[k] = _symbols_to_numbers(elements)
+        for k in needed_properties & _ALWAYS_STRING_KEYS:
+            numpy_conformers[k] = numpy_conformers[k].astype(str)
+        return numpy_conformers
 
-        conformer_splits, split_paths = _divide_into_splits(conformer_indices, dest_path, splits)
+    # Convert a dict that maybe has some numpy arrays and / or some torch
+    # tensors into a homogeneous dict with all numpy arrays.
+    def _to_numpy_conformers(self, mixed_conformers: MixedConformers) -> NumpyConformers:
+        numpy_conformers: NumpyConformers = dict()
+        properties = set(mixed_conformers.keys())
+        for k in properties:
+            # try to convert to numpy, failure means it is already an ndarray
+            try:
+                numpy_conformers[k] = mixed_conformers[k].detach().cpu().numpy()  # type: ignore
+            except AttributeError:
+                numpy_conformers[k] = cast(np.ndarray, mixed_conformers[k])
+        for k in properties & _ELEMENT_KEYS:
+            # try to interpret as numeric, failure means we should convert to ints
+            try:
+                if (mixed_conformers[k] <= 0).any():
+                    raise ValueError(f'{k} are atomic numbers, must be positive')
+            except TypeError:
+                numpy_conformers[k] = _symbols_to_numbers(mixed_conformers[k])
+        return numpy_conformers
 
-    # (3) Compute the batch indices for each split and save the conformers to disk
-    _save_splits_into_batches(split_paths,
-                              conformer_splits,
-                              inplace_transform,
-                              file_format,
-                              include_properties,
-                              h5_datasets,
-                              padding,
-                              batch_size,
-                              max_batches_per_packet,
-                              verbose)
+    @_delegate
+    @_needs_cache_update
+    def append_conformers(self, group_name: str, conformers: MixedConformers) -> '_ANISubdataset':
+        r"""Attach a new set of conformers to the dataset.
 
-    # log creation data
-    creation_log = {'datetime_created': str(datetime.datetime.now()),
-                    'source_path': h5_path.as_posix(),
-                    'splits': splits,
-                    'folds': folds,
-                    'padding': utils.PADDING if padding is None else padding,
-                    'is_inplace_transformed': inplace_transform is not None,
-                    'shuffle': shuffle,
-                    'include_properties': include_properties if include_properties is not None else 'all',
-                    'batch_size': batch_size,
-                    'total_num_conformers': len(conformer_indices),
-                    'total_conformer_groups': len(group_sizes_values)}
+        Conformers must be a dict {property: Tensor or ndarray}, and they must have the
+        same properties that the dataset supports. Appending is only supported
+        for grouping 'by_formula' or 'by_num_atoms'
+        """
+        numpy_conformers = self._to_numpy_conformers(conformers)
+        self._check_append_input(group_name, numpy_conformers)
+        with ExitStack() as stack:
+            f = self._get_open_store(stack, 'r+')
+            try:
+                group = f.create_conformer_group(group_name)
+                group.create_numpy_values(numpy_conformers)
+            except ValueError:
+                group = f[group_name]
+                if not group.is_resizable:
+                    raise RuntimeError("Dataset must be resizable to allow appending")
+                group.append_numpy_values(numpy_conformers)
+        return self
 
-    with open(dest_path.joinpath('creation_log.json'), 'w') as logfile:
-        json.dump(creation_log, logfile, indent=1)
+    @_delegate
+    @_needs_cache_update
+    def delete_conformers(self, group_name: str, idx: IdxLike = None) -> '_ANISubdataset':
+        r"""Delete a given selected set of conformers"""
+        self._check_correct_grouping()
+        idx_ = self._parse_index(idx)
+        all_conformers = self.get_numpy_conformers(group_name)
+        with ExitStack() as stack:
+            f = self._get_open_store(stack, 'r+')
+            del f[group_name]
+            # if no index was specified delete everything
+            if idx_ is None:
+                return self
+            good_conformers = {k: np.delete(all_conformers[k], obj=idx_, axis=0)
+                               for k in self.properties}
+            if all(v.shape[0] == 0 for v in good_conformers.values()):
+                # if we deleted everything in the group then just return,
+                # otherwise we recreate the group using the good conformers
+                return self
+            group = f.create_conformer_group(group_name)
+            group.create_numpy_values(good_conformers)
+        return self
 
+    @_broadcast
+    @_needs_cache_update
+    def create_full_property(self,
+                             dest_key: str,
+                             is_atomic: bool = False,
+                             extra_dims: Union[int, Tuple[int, ...]] = tuple(),
+                             fill_value: int = 0,
+                             dtype: DTypeLike = np.int64) -> '_ANISubdataset':
+        r"""Creates a property for all conformer groups
 
-def _get_random_generator(shuffle: bool = False, shuffle_seed: Optional[int] = None) -> Optional[torch.Generator]:
+        Creates a property with a specified shape, dtype and fill value
+        for all conformers in the dataset. Example usage:
 
-    if shuffle_seed is not None:
-        assert shuffle
-        seed = shuffle_seed
-    else:
-        # non deterministic seed
-        seed = torch.random.seed()
+        # shape (N,)
+        ds.create_full_property('new', fill_value=0.0, dtype=np.float64)
+        # shape (N, A)
+        ds.create_full_property('new', is_atomic=True, fill_value=1, dtype=int)
+        # shape (N, A, 3)
+        ds.create_full_property('new', extra_dims=3, fill_value=0.0, dtype=np.float32)
+        # shape (N, 3, 3)
+        ds.create_full_property('new', extra_dims=(3, 3), fill_value=5, dtype=int)
+        """
+        extra_dims_ = (extra_dims,) if isinstance(extra_dims, int) else extra_dims
+        self._check_properties_are_not_present(dest_key)
+        shape: Tuple[int, ...]
+        with ExitStack() as stack:
+            f = self._get_open_store(stack, 'r+')
+            for group_name in self.keys():
+                shape = (_get_num_conformers(f[group_name]),)
+                if is_atomic:
+                    shape += (_get_num_atoms(f[group_name]),)
+                data = np.full(shape=shape + extra_dims_, fill_value=fill_value, dtype=dtype)
+                f[group_name].create_numpy_values({dest_key: data})
+        return self
 
-    rng: Optional[torch.Generator]
+    def _make_empty_copy(self,
+                         location: StrPath,
+                         grouping: Optional[str] = None,
+                         backend: Optional[str] = None) -> '_ANISubdataset':
+        return _ANISubdataset(location,
+                              create=True,
+                              backend=backend if backend is not None else self._backend,
+                              grouping=grouping if grouping is not None else self.grouping,
+                              verbose=False)
 
-    if shuffle:
-        rng = torch.random.manual_seed(seed)
-    else:
-        rng = None
+    @_broadcast
+    @_needs_cache_update
+    def repack(self, verbose: bool = True) -> '_ANISubdataset':
+        r"""Repacks underlying store if it is HDF5
 
-    return rng
+        When a dataset is deleted from an HDF5 file the file size is not
+        reduced since unlinked data is still kept in the file. Repacking is
+        needed in order to reduce the size of the file. Note that this is only
+        useful for the h5py backend, otherwise it is a no-op.
+        """
+        self._check_correct_grouping()
+        if not self._backend == 'h5py':
+            return self
+        with TemporaryLocation(self._backend) as location:
+            new_ds = self._make_empty_copy(location)
+            for group_name, conformers in tqdm(self.numpy_items(),
+                                               total=self.num_conformer_groups,
+                                               desc='Repacking HDF5 file',
+                                               disable=not verbose):
+                # mypy doesn't know that @wrap'ed functions have __wrapped__
+                # attribute, and fixing this is ugly
+                new_ds.append_conformers.__wrapped__(new_ds, group_name, conformers)  # type: ignore
+            self._store.transfer_location_to(new_ds._store)
+        return new_ds
 
+    @_broadcast
+    @_needs_cache_update
+    def regroup_by_formula(self, repack: bool = True, verbose: bool = True) -> '_ANISubdataset':
+        r"""Regroup dataset by formula
 
-def _get_properties_size(molecule_group: Union[h5py.Group, Dict[str, ndarray], Dict[str, Tensor]],
-                        flag_property: Optional[str] = None,
-                        supported_properties: Optional[Set[str]] = None) -> int:
-    if flag_property is not None:
-        size = len(molecule_group[flag_property])
-    else:
-        assert supported_properties is not None
-        if 'coordinates' in supported_properties:
-            size = len(molecule_group['coordinates'])
-        elif 'energies' in supported_properties:
-            size = len(molecule_group['energies'])
-        elif 'forces' in supported_properties:
-            size = len(molecule_group['forces'])
+        All conformers are extracted and redistributed in groups named
+        'C8H5N7', 'C10O3' etc, depending on the formula. Conformers in
+        different stores are not mixed. See the 'repack' method for an
+        explanation of that argument.
+        """
+        self._check_unique_element_key()
+        with TemporaryLocation(self._backend) as location:
+            new_ds = self._make_empty_copy(location, grouping='by_formula')
+            for group_name, conformers in tqdm(self.numpy_items(),
+                                               total=self.num_conformer_groups,
+                                               desc='Regrouping by formulas',
+                                               disable=not verbose):
+                # Get all formulas in the group to discriminate conformers by
+                # formula and then attach conformers with the same formula to the
+                # same groups
+                formulas = np.asarray(_get_formulas(conformers))
+                unique_formulas = np.unique(formulas)
+                formula_idxs = ((formulas == el).nonzero()[0] for el in unique_formulas)
+
+                for formula, idx in zip(unique_formulas, formula_idxs):
+                    selected_conformers = {k: v[idx] for k, v in conformers.items()}
+                    new_ds.append_conformers.__wrapped__(new_ds, formula, selected_conformers)  # type: ignore
+            self._store.transfer_location_to(new_ds._store)
+        if repack:
+            new_ds._update_cache()
+            return new_ds.repack.__wrapped__(new_ds, verbose=verbose)  # type: ignore
+        return new_ds
+
+    @_broadcast
+    @_needs_cache_update
+    def regroup_by_num_atoms(self, repack: bool = True, verbose: bool = True) -> '_ANISubdataset':
+        r"""Regroup dataset by number of atoms
+
+        All conformers are extracted and redistributed in groups named
+        'num_atoms_10', 'num_atoms_8' etc, depending on the number of atoms.
+        Conformers in different stores are not mixed. See the 'repack' method
+        for an explanation of that argument.
+        """
+        self._check_unique_element_key()
+        with TemporaryLocation(self._backend) as location:
+            new_ds = self._make_empty_copy(location, grouping='by_num_atoms')
+            for group_name, conformers in tqdm(self.numpy_items(),
+                                               total=self.num_conformer_groups,
+                                               desc='Regrouping by number of atoms',
+                                               disable=not verbose):
+                # This is done to accomodate the current group convention
+                new_name = str(_get_num_atoms(conformers)).zfill(3)
+                new_ds.append_conformers.__wrapped__(new_ds, new_name, conformers)  # type: ignore
+            self._store.transfer_location_to(new_ds._store)
+        if repack:
+            new_ds._update_cache()
+            return new_ds.repack.__wrapped__(new_ds, verbose=verbose)  # type: ignore
+        return new_ds
+
+    @_broadcast
+    @_needs_cache_update
+    def delete_properties(self, properties: Iterable[str], verbose: bool = True) -> '_ANISubdataset':
+        r"""Delete some properties from the dataset"""
+        properties = {properties} if isinstance(properties, str) else set(properties)
+        self._check_properties_are_present(properties)
+        with ExitStack() as stack:
+            f = self._get_open_store(stack, 'r+')
+            for group_key in tqdm(self.keys(),
+                                  total=self.num_conformer_groups,
+                                  desc='Deleting properties',
+                                  disable=not verbose):
+                for property_ in properties:
+                    del f[group_key][property_]
+                if not f[group_key].keys():
+                    del f[group_key]
+        return self
+
+    @_broadcast
+    @_needs_cache_update
+    def rename_properties(self, old_new_dict: Dict[str, str]) -> '_ANISubdataset':
+        r"""Rename some properties from the dataset
+
+        Expects a dictionary of the form: {old_name: new_name}
+        """
+        self._check_properties_are_present(old_new_dict.keys())
+        self._check_properties_are_not_present(old_new_dict.values())
+        with ExitStack() as stack:
+            f = self._get_open_store(stack, 'r+')
+            for k in self.keys():
+                for old_name, new_name in old_new_dict.items():
+                    f[k].move(old_name, new_name)
+        return self
+
+    @property
+    def grouping(self) -> str:
+        r"""Get the dataset grouping
+
+        Grouping is a string that describes how conformers are grouped in
+        hierarchical datasets. Can be one of 'by_formula', 'by_num_atoms', 'legacy'.
+        """
+        with ExitStack() as stack:
+            grouping = self._get_open_store(stack, 'r').grouping
+        return grouping
+
+    def _check_unique_element_key(self, properties: Optional[Iterable[str]] = None) -> None:
+        if properties is None:
+            properties = self.properties
         else:
-            raise RuntimeError('Could not infer number of molecules in properties'
-                               ' since "coordinates", "forces" and "energies" dont'
-                               ' exist, please provide a key that holds an array/tensor with the'
-                               ' molecule size as its first axis/dim')
-    return size
+            properties = {properties} if isinstance(properties, str) else set(properties)
+        if len(properties.intersection(_ELEMENT_KEYS)) > 1:
+            raise ValueError(f'There can be at most one of {_ELEMENT_KEYS}'
+                             f' present, but found {set(properties)}')
+
+    def _check_correct_grouping(self) -> None:
+        if self.grouping not in ['by_formula', 'by_num_atoms']:
+            calling_fn_name = inspect.stack()[1][3]
+            raise ValueError(f"Can't use the function {calling_fn_name}"
+                              " if the grouping is not by_formula or"
+                              " by_num_atoms, please regroup your dataset")
+
+    def _check_append_input(self, group_name: str, conformers: NumpyConformers) -> None:
+        self._check_correct_grouping()
+        conformers_properties = set(conformers.keys())
+        self._check_unique_element_key(conformers_properties)
+        # check that all formulas are the same
+        if self.grouping == 'by_formula':
+            if len(set(_get_formulas(conformers))) > 1:
+                raise ValueError("All appended conformers must have the same formula")
+        # If this is the first conformer added update the dataset to support
+        # these properties, otherwise check that all properties are present
+        if not self.properties:
+            self._properties = conformers_properties
+        elif not self.properties == conformers_properties:
+            raise ValueError(f'Expected {self.properties} but got {conformers_properties}')
+        if '/' in group_name:
+            raise ValueError('Character "/" not supported in group_name')
+        # All properties must have the same batch dimension
+        size = conformers[next(iter(conformers_properties))].shape[0]
+        if not all(conformers[k].shape[0] == size for k in self.properties):
+            raise ValueError(f"All batch keys {self.properties} must have the same batch dimension")
+
+    def _check_properties_are_present(self, properties: Iterable[str]) -> None:
+        properties = {properties} if isinstance(properties, str) else set(properties)
+        if not properties <= self.properties:
+            raise ValueError(f"Some of the properties requested {properties} are not"
+                             f" in the dataset, which has properties {self.properties}")
+
+    def _check_properties_are_not_present(self, properties: Iterable[str]) -> None:
+        properties = {properties} if isinstance(properties, str) else set(properties)
+        if properties <= self.properties:
+            raise ValueError(f"Some of the properties requested {properties} are"
+                             f" in the dataset, which has properties {self.properties}, but they should not be")
 
 
-def _maybe_shuffle_indices(conformer_indices: Tensor,
-                           rng: Optional[torch.Generator] = None) -> Tensor:
-    total_num_conformers = len(conformer_indices)
-    if rng is not None:
-        shuffle_indices = torch.randperm(total_num_conformers, generator=rng)
-        conformer_indices = conformer_indices[shuffle_indices]
-    else:
-        warnings.warn("Dataset will not be shuffled, this should only be used for debugging")
-    return conformer_indices
+# ANIDataset implementation details:
+#
+# ANIDataset is a mapping, The mapping has keys "group_names" and,
+# values "conformers" or "conformer_group". Each group of conformers is also a
+# mapping, where keys are "properties" and values are numpy arrays / torch
+# tensors (they are just referred to as "values" or "data").
+#
+# In the current HDF5 datasets the group names are formulas (in some
+# CCCCHHH.... etc, in others C2H4, etc) groups could also be smiles or number
+# of atoms. Since HDF5 is hierarchical this grouping is essentially hardcoded
+# into the dataset format.
+#
+# To parse all current HDF5 dataset types it is necessary to first determine
+# where all the conformer groups are. HDF5 has directory structure, and in
+# principle they could be arbitrarily located. One would think that there is
+# some sort of standarization between the datasets, but unfortunately there is
+# none (!!), and the legacy reader, anidataloader, just scans all the groups
+# recursively...
+#
+# Cache update part 1:
+# --------------------
+# Since scanning recursively is super slow we just do this once and cache the
+# location of all the groups, and the sizes of all the groups inside
+# "groups_sizes". After this, it is not necessary to do the recursion again
+# unless some modification to the dataset happens, in which case we need a
+# cache update, to get "group_sizes" and "properties" again. Methods that
+# modify the dataset are decorated so that the internal cache is updated.
+#
+# Cache update part 2:
+# --------------------
+# There is in principle no guarantee that all conformer groups have the same
+# properties. Due to this we have to first traverse the dataset and check that
+# this is the case. We do this only once and then we store the properties the
+# dataset supports inside an internal variable _properties (e.g. it may happen
+# that one molecule has forces but not coordinates, if this happens then
+# ANIDataset raises an error), which gets updated if a property changes.
+#
+# Multiple files:
+# ---------------
+# Current datasets need ANIDataset to be able to manage multiple files, this is
+# achieved by delegating execution of the methods to one of the _ANISubdataset
+# instances that ANIDataset
+# contains. Basically any method is either:
+# 1 - delegated to a subdataset: If you ask for the conformer group "ANI1x/CH4"
+#     in the "full ANI2x" dataset (ANI1x + ANI2x_FSCl + dimers),
+#     then this will be delegated to the "ANI1x" subdataset. Methods that take
+#     a group_name parameter are delegated to subdatasets.
+# 2 - broadcasted to all subdatasets: e.g. If you want to rename a property or
+#     delete a property it will be deleted / renamed in all subdatasets.
+# The mechanism for delegation involves overriding __getattr__.
+#
+# ContextManager usage:
+# ----------------
+# You can turn the dataset into a context manager that keeps all stores
+# open simultaneously by using 'with ds.keep_open('r') as ro_ds:', for example.
+# It seems that HDF5 is quite slow when opening files, it has to aqcuire locks,
+# and do other things, so this speeds up iteration by 12 - 13 % usually. Since
+# many files may need to be opened at the same time then ExitStack is needed to
+# properly clean up everything. Each time a method needs to open a file it first
+# checks if it is already open (i.e. we are inside a 'keep_open' context) in that
+# case it just fetches the already opened file.
+class ANIDataset(_ANIDatasetBase):
+    r"""Dataset that supports multiple stores and manages them as one single entity.
 
+    Datasets have a "grouping" for the different conformers, which can be
+    "by_formula", "by_num_atoms", "legacy".
+    Regrouping to one of the standard groupings can be done using
+    'regroup_by_formula' or 'regroup_by_num_atoms'.
 
-def _divide_into_folds(conformer_indices: Tensor,
-                        dest_path: Path,
-                        folds: int,
-                        rng: Optional[torch.Generator] = None) -> Tuple[Tuple[Tensor, ...], 'OrderedDict[str, Path]']:
+    Conformers can be extracted as {property: Tensor} or {property: ndarray}
+    dicts, and can also be appended or deleted from the backing stores.
 
-    # the idea here is to work with "blocks" of size num_conformers / folds
-    # cast to list for mypy
-    conformer_blocks = list(torch.chunk(conformer_indices, folds))
-    conformer_splits: List[Tensor] = []
-    split_paths_list: List[Tuple[str, Path]] = []
+    All conformers in a datasets must have the same properties and the first
+    dimension in all Tensors/arrays is the same for all conformer groups (it is
+    the batch dimension). Property manipulation (renaming, deleting, adding)
+    is also supported.
+    """
+    def __init__(self, locations: Union[Iterable[StrPath], StrPath], names: Optional[Union[Iterable[str], str]] = None, **kwargs):
+        super().__init__()
+        # _datasets is an OrderedDict {name: _ANISubdataset}.
+        # "locations" and "names" are collections used to build it
+        # First we convert locations / names into lists of strpath / str
+        # if no names are provided they are just '0', '1', '2', etc.
+        locations = _to_strpath_list(locations)
+        if names is None:
+            names = (str(j) for j in range(len(locations)))
+        names = [names] if isinstance(names, str) else [n for n in names]
+        if not len(names) == len(locations):
+            raise ValueError("Length of locations and names must be equal")
+        self._datasets = OrderedDict((n, _ANISubdataset(loc, **kwargs)) for n, loc in zip(names, locations))
+        self._update_cache()
 
-    print(f"Generating {folds} folds for cross validation or ensemble training")
-    for f in range(folds):
-        # the first shuffle is necessary so that validation splits are shuffled
-        validation_split = conformer_blocks[f]
+    @property
+    def grouping(self) -> str:
+        return self._first_subds.grouping
 
-        training_split = torch.cat(conformer_blocks[:f] + conformer_blocks[f + 1:])
-        # afterwards all training folds are reshuffled to get different
-        # batching for different models in the ensemble / cross validation
-        # process (it is technically redundant to reshuffle the first one but
-        # it is done for simplicity)
-        training_split = _maybe_shuffle_indices(training_split, rng)
-        conformer_splits.extend([training_split, validation_split])
-        split_paths_list.extend([(f'training{f}', dest_path.joinpath(f'training{f}')),
-                                 (f'validation{f}', dest_path.joinpath(f'validation{f}'))])
-    split_paths = OrderedDict(split_paths_list)
+    @contextmanager
+    def keep_open(self, mode: str = 'r') -> Iterator['ANIDataset']:
+        with ExitStack() as stack:
+            for k in self._datasets.keys():
+                self._datasets[k] = stack.enter_context(self._datasets[k].keep_open(mode))
+            yield self
 
-    _create_split_paths(split_paths)
+    def present_elements(self, chem_symbols: bool = False) -> List[Union[str, int]]:
+        return sorted({s for ds in self._datasets.values() for s in ds.present_elements(chem_symbols)})
 
-    return tuple(conformer_splits), split_paths
+    @property
+    def store_locations(self) -> List[str]:
+        return [fspath(ds._store.location) for ds in self._datasets.values()]
 
+    @property
+    def num_stores(self) -> int:
+        return len(self._datasets)
 
-def _divide_into_splits(conformer_indices: Tensor,
-                        dest_path: Path,
-                        splits: Dict[str, float]) -> Tuple[Tuple[Tensor, ...], 'OrderedDict[str, Path]']:
-    total_num_conformers = len(conformer_indices)
-    split_sizes = OrderedDict([(k, int(total_num_conformers * v)) for k, v in splits.items()])
-    split_paths = OrderedDict([(k, dest_path.joinpath(k)) for k in split_sizes.keys()])
-
-    _create_split_paths(split_paths)
-
-    leftover = total_num_conformers - sum(split_sizes.values())
-    if leftover != 0:
-        # We slightly modify a random section if the fractions don't split
-        # the dataset perfectly. This also automatically takes care of the
-        # cases leftover > 0 and leftover < 0
-        any_key = list(split_sizes.keys())[0]
-        split_sizes[any_key] += leftover
-        assert sum(split_sizes.values()) == total_num_conformers
-    conformer_splits = torch.split(conformer_indices, list(split_sizes.values()))
-    assert len(conformer_splits) == len(split_sizes.values())
-    print(f'Splits have number of conformers: {dict(split_sizes)}.'
-          f' The requested percentages were: {splits}')
-    return conformer_splits, split_paths
-
-
-def _create_split_paths(split_paths: 'OrderedDict[str, Path]') -> None:
-    for p in split_paths.values():
-        if p.is_dir():
-            subdirs = [d for d in p.iterdir()]
-            if subdirs:
-                raise ValueError('The dest_path provided already has files'
-                                 ' or directories, please provide'
-                                 ' a different path')
+    # Mechanism for delegating calls to the correct _ANISubdatasets:
+    # Functions with a "group_name" argument are delegated to one specific
+    # subdataset, other ones are performed in all subdatasets on a loop
+    # (broadcasted)
+    def __getattr__(self, method: str) -> Callable:
+        unbound_method = getattr(_ANISubdataset, method)
+        mark = unbound_method._mark
+        if mark == 'delegate':
+            @wraps(unbound_method)
+            def delegated_call(group_name: str, *args, **kwargs) -> 'ANIDataset':
+                name, k = self._parse_key(group_name)
+                self._datasets[name] = getattr(self._datasets[name], method)(k, *args, **kwargs)
+                return self._update_cache()
+        elif mark == 'delegate_with_return':
+            @wraps(unbound_method)
+            def delegated_call(group_name: str, *args, **kwargs) -> Any:
+                name, k = self._parse_key(group_name)
+                return getattr(self._datasets[name], method)(k, *args, **kwargs)
+        elif mark == 'broadcast':
+            @wraps(unbound_method)
+            def delegated_call(*args, **kwargs) -> 'ANIDataset':
+                for name in self._datasets.keys():
+                    self._datasets[name] = getattr(self._datasets[name], method)(*args, **kwargs)
+                return self._update_cache()
         else:
-            if p.is_file():
-                raise ValueError('The dest_path is a file, it should be a directory')
-            p.mkdir(parents=True)
+            raise AttributeError("Attribute {unbound_method.__name__} can't be accessed by ANIDataset")
+        return delegated_call
+
+    def __str__(self) -> str:
+        return '\n'.join(str(ds) for ds in self._datasets.values())
+
+    @property
+    def _first_name(self) -> str:
+        return next(iter(self._datasets.keys()))
+
+    @property
+    def _first_subds(self) -> '_ANISubdataset':
+        return next(iter(self._datasets.values()))
+
+    def _update_cache(self) -> 'ANIDataset':
+        self._group_sizes = OrderedDict((k if self.num_stores == 1 else f'{name}/{k}', v)
+                                        for name, ds in self._datasets.items()
+                                        for k, v in ds._group_sizes.items())
+        for name, ds in self._datasets.items():
+            if not ds.grouping == self._first_subds.grouping:
+                raise RuntimeError('Datasets have incompatible groupings,'
+                                  f' got {self._first_subds.grouping} for'
+                                  f' {self._first_name}'
+                                  f' and {ds.grouping} for {name}')
+
+            if not ds.properties == self._first_subds.properties:
+                raise RuntimeError('Datasets have incompatible properties'
+                                  f' got {self._first_subds.properties} for'
+                                  f' {self._first_name}'
+                                  f' and {ds.properties} for {name}')
+        self._properties = self._first_subds.properties
+        return self
+
+    def _parse_key(self, key: str) -> Tuple[str, str]:
+        tokens = key.split('/')
+        if self.num_stores == 1:
+            return self._first_name, '/'.join(tokens)
+        return tokens[0], '/'.join(tokens[1:])
 
 
-def _save_splits_into_batches(split_paths: 'OrderedDict[str, Path]',
-                              conformer_splits: Tuple[Tensor, ...],
-                              inplace_transform: Optional[Transform],
-                              file_format: str,
-                              include_properties: Optional[Sequence[str]],
-                              h5_datasets: Sequence[AniH5Dataset],
-                              padding: Optional[Dict[str, float]],
-                              batch_size: int,
-                              max_batches_per_packet: int,
-                              verbose: bool) -> None:
-    # NOTE: Explanation for following logic, please read
-    #
-    # This sets up a given number of batches (packet) to keep in memory and
-    # then scans the dataset and find the conformers needed for the packet. It
-    # then saves the batches and fetches the next packet.
-    #
-    # A "packet" is a list that has tensors, each of which
-    # has batch indices, for instance [tensor([[0, 0, 1, 1, 2], [1, 2, 3, 5]]),
-    #                                  tensor([[3, 5, 5, 5], [1, 2, 3, 3]])]
-    # would be a "packet" of 2 batch_indices, each of which has in the first
-    # row the index for the group, and in the second row the index for the
-    # conformer
-    #
-    # It is important to do this with a packet and not only 1 batch.  The
-    # number of reads to the h5 file is batches x conformer_groups x 3 for 1x
-    # (factor of 3 from energies, species, coordinates), which means ~ 2000 x
-    # 3000 x 3 = 9M reads, this is a bad bottleneck and very slow, even if we
-    # fetch all necessary molecules from each conformer group simultaneously.
-    #
-    # Doing it for all batches at the same time is (reasonably) fast, ~ 9000
-    # reads, but in this case it means we will have to put all, or almost all
-    # the dataset into memory at some point, which is not feasible for larger
-    # datasets.
-    if inplace_transform is None:
-        inplace_transform = lambda x: x  # noqa: E731
+class AniH5Dataset(ANIDataset):
+    def __init__(self, *args, **kwargs) -> None:
+        warnings.warn("AniH5Dataset has been renamed to ANIDataset, please use ANIDataset instead")
+        super().__init__(*args, **kwargs)
 
-    # get all group keys concatenated in a list, with the associated file indexes
-    file_idxs_and_group_keys = [(j, k)
-                  for j, h5ds in enumerate(h5_datasets)
-                  for k in h5ds.group_sizes.keys()]
 
-    use_pbar = PKBAR_INSTALLED and verbose
-    for split_path, indices_of_split in zip(split_paths.values(), conformer_splits):
-        all_batch_indices = torch.split(indices_of_split, batch_size)
-
-        all_batch_indices_packets = [all_batch_indices[j:j + max_batches_per_packet]
-                                    for j in range(0, len(all_batch_indices), max_batches_per_packet)]
-        num_batch_indices_packets = len(all_batch_indices_packets)
-
-        overall_batch_idx = 0
-        for j, batch_indices_packet in enumerate(all_batch_indices_packets):
-            num_batches_in_packet = len(batch_indices_packet)
-            # Now first we cat and sort according to the first index in order to
-            # fetch all conformers of the same group simultaneously
-            batch_indices_cat = torch.cat(batch_indices_packet, 0)
-            indices_to_sort_batch_indices_cat = torch.argsort(batch_indices_cat[:, 0])
-            sorted_batch_indices_cat = batch_indices_cat[indices_to_sort_batch_indices_cat]
-            uniqued_idxs_cat, counts_cat = torch.unique_consecutive(sorted_batch_indices_cat[:, 0],
-                                                                    return_counts=True)
-            cumcounts_cat = utils.cumsum_from_zero(counts_cat)
-
-            # batch_sizes and indices_to_unsort are needed for the
-            # reverse operation once the conformers have been
-            # extracted
-            batch_sizes = [len(batch_indices) for batch_indices in batch_indices_packet]
-            indices_to_unsort_batch_cat = torch.argsort(indices_to_sort_batch_indices_cat)
-            assert len(batch_sizes) <= max_batches_per_packet
-
-            if use_pbar:
-                pbar = pkbar.Pbar(f'=> Saving batch packet {j + 1} of {num_batch_indices_packets}'
-                                  f' of split {split_path.name},'
-                                  f' in format {file_format}', len(counts_cat))
-
-            all_conformers: List[Dict[str, Tensor]] = []
-            for step, (group_idx, count, start_index) in enumerate(zip(uniqued_idxs_cat, counts_cat, cumcounts_cat)):
-                # select the specific group from the whole list of files
-                file_idx, group_key = file_idxs_and_group_keys[group_idx.item()]
-
-                # get a slice with the indices to extract the necessary
-                # conformers from the group for all batches in pack.
-                end_index = start_index + count
-                selected_indices = sorted_batch_indices_cat[start_index:end_index, 1]
-
-                # Important: to prevent possible bugs / errors, that may happen
-                # due to incorrect conversion to indices, species is **always*
-                # converted to atomic numbers when saving the batched dataset.
-                numpy_conformers = h5_datasets[file_idx].get_conformers(group_key,
-                                                                  selected_indices.cpu().numpy(),
-                                                                  include_properties, raw_output=False)
-                all_conformers.append({k: torch.as_tensor(v) for k, v in numpy_conformers.items()})
-                if use_pbar:
-                    pbar.update(step)
-
-            batches_cat = utils.pad_atomic_properties(all_conformers, padding)
-            # Now we need to reassign the conformers to the specified
-            # batches. Since to get here we cat'ed and sorted, to
-            # reassign we need to unsort and split.
-            # The format of this is {'species': (batch1, batch2, ...), 'coordinates': (batch1, batch2, ...)}
-            batch_packet_dict = {k: torch.split(t[indices_to_unsort_batch_cat], batch_sizes)
-                                 for k, t in batches_cat.items()}
-
-            for packet_batch_idx in range(num_batches_in_packet):
-                batch = {k: v[packet_batch_idx] for k, v in batch_packet_dict.items()}
-                batch = inplace_transform(batch)
-                _save_batch(split_path, overall_batch_idx, batch, file_format)
-                overall_batch_idx += 1
+class AniBatchedDataset(ANIBatchedDataset):
+    def __init__(self, *args, **kwargs) -> None:
+        warnings.warn("AniBatchedDataset has been renamed to ANIBatchedDataset, please use ANIBatchedDataset instead")
+        super().__init__(*args, **kwargs)

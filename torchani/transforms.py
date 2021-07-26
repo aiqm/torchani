@@ -8,11 +8,11 @@ the self atomic energies (SAE) when iterating from a batched dataset you can
 call
 
 from torchani.transforms import AtomicNumbersToIndices, SubtractSAE, Compose
-from torchani.datasets import AniBatchedDataset
+from torchani.datasets import ANIBatchedDataset
 
 transform = Compose([AtomicNumbersToIndices(('H', 'C', 'N'), SubtractSAE([-0.57, -0.0045, -0.0035])])
-training = AniBatchedDataset('/path/to/database/', transform=transform, split='training')
-validation = AniBatchedDataset('/path/to/database/', transform=transform, split='validation')
+training = ANIBatchedDataset('/path/to/database/', transform=transform, split='training')
+validation = ANIBatchedDataset('/path/to/database/', transform=transform, split='validation')
 """
 from typing import Dict, Sequence, Union, Tuple, Optional, List
 import math
@@ -23,7 +23,7 @@ from torch import Tensor
 
 from .utils import EnergyShifter, PERIODIC_TABLE, ATOMIC_NUMBERS
 from .nn import SpeciesConverter
-from .datasets import AniBatchedDataset
+from .datasets import ANIBatchedDataset
 from torch.utils.data import DataLoader
 
 
@@ -136,7 +136,7 @@ class Compose(torch.nn.Module):
         return format_string
 
 
-def calculate_saes(dataset: Union[DataLoader, AniBatchedDataset],
+def calculate_saes(dataset: Union[DataLoader, ANIBatchedDataset],
                          elements: Sequence[str],
                          mode: str = 'sgd',
                          fraction: float = 1.0,
@@ -152,20 +152,13 @@ def calculate_saes(dataset: Union[DataLoader, AniBatchedDataset],
 
     assert mode in ['sgd', 'exact']
     if isinstance(dataset, DataLoader):
-        assert isinstance(dataset.dataset, AniBatchedDataset)
+        assert isinstance(dataset.dataset, ANIBatchedDataset)
         old_transform = dataset.dataset.transform
         dataset.dataset.transform = AtomicNumbersToIndices(elements)
-        wrapped_ds = dataset.dataset
     else:
-        assert isinstance(dataset, AniBatchedDataset)
+        assert isinstance(dataset, ANIBatchedDataset)
         old_transform = dataset.transform
         dataset.transform = AtomicNumbersToIndices(elements)
-        wrapped_ds = dataset
-
-    if wrapped_ds.is_inplace_transformed:
-        warnings.warn("Dataset is inplace transformed, "
-                      "SAE calculation may be incorrect "
-                      "depending on the inplace transforms applied")
 
     num_species = len(elements)
     num_batches_to_use = math.ceil(len(dataset) * fraction)
@@ -183,10 +176,10 @@ def calculate_saes(dataset: Union[DataLoader, AniBatchedDataset],
                                            max_epochs=max_epochs, lr=lr)
 
     if isinstance(dataset, DataLoader):
-        assert isinstance(dataset.dataset, AniBatchedDataset)
+        assert isinstance(dataset.dataset, ANIBatchedDataset)
         dataset.dataset.transform = old_transform
     else:
-        assert isinstance(dataset, AniBatchedDataset)
+        assert isinstance(dataset, ANIBatchedDataset)
         dataset.transform = old_transform
     return m_out, b_out
 

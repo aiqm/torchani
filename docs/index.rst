@@ -23,6 +23,8 @@ Welcome to TorchANI's documentation!
     examples/nnp_training
     examples/nnp_training_force
     examples/neurochem_trainer
+    examples/dataset_example_simple
+    examples/dataset_example_advanced
 
 .. toctree::
     :maxdepth: 2

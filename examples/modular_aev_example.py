@@ -1,3 +1,4 @@
+"""Modular AEV usage Example"""
 import torch
 import torchani
 import math
