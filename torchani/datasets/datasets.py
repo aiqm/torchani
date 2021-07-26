@@ -102,7 +102,6 @@ class ANIBatchedDataset(torch.utils.data.Dataset[Conformers]):
         # exclusive options, batches is passed if the dataset directly lives in
         # memory and has no backing store, otherwise there should be a backing
         # store in store_dir/split
-        self.lambda_ = lambda x: x
         if batches is not None and any(v is not None for v in (file_format, store_dir, transform)):
             raise ValueError('Batches is mutually exclusive with file_format/store_dir/transform')
         self.split = split
