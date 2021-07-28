@@ -28,7 +28,7 @@ class TestStructureOptimization(TestCase):
                 atoms = Atoms(atoms.get_chemical_symbols(), positions=atoms.get_positions())
                 old_coordinates = copy.deepcopy(atoms.get_positions())
                 old_coordinates = torch.from_numpy(old_coordinates)
-                atoms.set_calculator(self.calculator)
+                atoms.calc = self.calculator
                 opt = BFGS(atoms)
                 opt.run()
                 coordinates = atoms.get_positions()

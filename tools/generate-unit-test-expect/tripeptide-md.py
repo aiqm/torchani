@@ -23,7 +23,7 @@ ase.md.velocitydistribution.ZeroRotation(molecule)
 
 print("Initial temperature from velocities %.2f" % molecule.get_temperature())
 
-molecule.set_calculator(torchani.models.ANI1ccx().to('cuda').ase())
+molecule.calc = torchani.models.ANI1ccx().to('cuda').ase()
 
 dyn = ase.md.verlet.VelocityVerlet(
     molecule,

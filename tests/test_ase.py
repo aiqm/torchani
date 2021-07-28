@@ -33,7 +33,7 @@ class TestASE(TestCase):
         # relative tolerance
         atoms = Diamond(symbol="C", pbc=True)
         calculator = self.model.ase()
-        atoms.set_calculator(calculator)
+        atoms.calc = calculator
         dyn = Langevin(atoms, 5 * units.fs, 30000000 * units.kB, 0.002)
         dyn.run(100)
         f = atoms.get_forces()
@@ -53,7 +53,7 @@ class TestASE(TestCase):
         # Benzene.json
         benzene.set_velocities(np.full((48, 3), 1e-15))
         calculator = self.model.ase()
-        benzene.set_calculator(calculator)
+        benzene.calc = calculator
         dyn = NPTBerendsen(benzene, timestep=0.1 * units.fs,
                            temperature=300 * units.kB,
                            taut=0.1 * 1000 * units.fs, pressure=1.01325,
@@ -81,8 +81,8 @@ class TestASEWithPTI(unittest.TestCase):
         calculator = self.model.ase()
         atoms = Diamond(symbol="C", pbc=True)
         atoms_pti = Diamond(symbol="C", pbc=True)
-        atoms.set_calculator(calculator)
-        atoms_pti.set_calculator(calculator_pti)
+        atoms.calc = calculator
+        atoms_pti.calc = calculator_pti
         self.assertEqual(atoms.get_potential_energy(), atoms_pti.get_potential_energy())
 
     def testEqualOneModelPTI(self):
@@ -90,8 +90,8 @@ class TestASEWithPTI(unittest.TestCase):
         calculator = self.model[0].ase()
         atoms = Diamond(symbol="C", pbc=True)
         atoms_pti = Diamond(symbol="C", pbc=True)
-        atoms.set_calculator(calculator)
-        atoms_pti.set_calculator(calculator_pti)
+        atoms.calc = calculator
+        atoms_pti.calc = calculator_pti
         self.assertEqual(atoms.get_potential_energy(), atoms_pti.get_potential_energy())
 
 

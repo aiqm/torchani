@@ -81,7 +81,7 @@ print('Force:', force.squeeze())
 
 ###############################################################################
 # And using the ASE interface of the ensemble:
-methane.set_calculator(calculator1)
+methane.calc = calculator1
 print('Energy:', methane.get_potential_energy() / ase.units.Hartree)
 print('Force:', methane.get_forces() / ase.units.Hartree)
 
@@ -93,6 +93,6 @@ force = -derivative
 print('Energy:', energy.item())
 print('Force:', force.squeeze())
 
-methane.set_calculator(calculator2)
+methane.calc = calculator2
 print('Energy:', methane.get_potential_energy() / ase.units.Hartree)
 print('Force:', methane.get_forces() / ase.units.Hartree)

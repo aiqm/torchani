@@ -39,7 +39,7 @@ class NeuroChem:
     def _per_conformation(self, coordinates, species):
         atoms = coordinates.shape[0]
         mol = ase.Atoms(''.join(species), positions=coordinates)
-        mol.set_calculator(calc())
+        mol.calc = calc()
         energy = mol.get_potential_energy() / conv_au_ev
         aevs = [mol.calc.nc.atomicenvironments(j) for j in range(atoms)]
         force = mol.get_forces() / conv_au_ev
@@ -54,7 +54,7 @@ class NeuroChem:
     def from_atoms_obj(self, mol):
         natoms = len(mol)
         mol = mol.copy()
-        mol.set_calculator(calc())
+        mol.calc = calc()
         energy = mol.get_potential_energy() / conv_au_ev
         aevs = [mol.calc.nc.atomicenvironments(j) for j in range(natoms)]
         aevs = numpy.stack(aevs)

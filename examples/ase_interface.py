@@ -46,7 +46,7 @@ calculator = torchani.models.ANI1ccx().ase()
 
 ###############################################################################
 # Now let's set the calculator for ``atoms``:
-atoms.set_calculator(calculator)
+atoms.calc = calculator
 
 ###############################################################################
 # Now let's minimize the structure:

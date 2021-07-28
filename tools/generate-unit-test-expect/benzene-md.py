@@ -22,7 +22,7 @@ ase.md.velocitydistribution.ZeroRotation(molecule)
 
 print("Initial temperature from velocities %.2f" % molecule.get_temperature())
 
-molecule.set_calculator(calc())
+molecule.calc = calc()
 
 dyn = ase.md.verlet.VelocityVerlet(
     molecule,

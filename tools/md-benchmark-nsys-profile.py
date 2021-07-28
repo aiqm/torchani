@@ -14,7 +14,7 @@ args = parser.parse_args()
 molecule = ase.io.read(args.filename)
 model = torchani.models.ANI1x(model_index=0).cuda()
 calculator = model.ase()
-molecule.set_calculator(calculator)
+molecule.calc = calculator
 dyn = ase.md.verlet.VelocityVerlet(molecule, timestep=1 * ase.units.fs)
 
 dyn.run(1000)  # warm up
