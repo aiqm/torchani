@@ -84,18 +84,17 @@ def create_batched_dataset(locations: Union[Collection[StrPath], StrPath, ANIDat
         conformer_splits, split_paths = _divide_into_splits(conformer_indices, dest_path, splits, direct_cache)
 
     # (3) Compute the batch indices for each split and save the conformers to disk
-    return _save_splits_into_batches(split_paths,
-                                     conformer_splits,
-                                     inplace_transform,
-                                     file_format,
-                                     include_properties,
-                                     dataset,
-                                     padding,
-                                     batch_size,
-                                     max_batches_per_packet,
-                                     direct_cache,
-                                     verbose)
-
+    batched_datasets = _save_splits_into_batches(split_paths,
+                                                 conformer_splits,
+                                                 inplace_transform,
+                                                 file_format,
+                                                 include_properties,
+                                                 dataset,
+                                                 padding,
+                                                 batch_size,
+                                                 max_batches_per_packet,
+                                                 direct_cache,
+                                                 verbose)
     # log creation data
     if not direct_cache:
         creation_log = {'datetime_created': str(datetime.datetime.now()),
@@ -109,9 +108,9 @@ def create_batched_dataset(locations: Union[Collection[StrPath], StrPath, ANIDat
                         'batch_size': batch_size,
                         'total_num_conformers': dataset.num_conformers,
                         'total_conformer_groups': dataset.num_conformer_groups}
-
         with open(dest_path.joinpath('creation_log.json'), 'w') as logfile:
             json.dump(creation_log, logfile, indent=1)
+    return batched_datasets
 
 
 def _get_random_generator(shuffle: bool = False, shuffle_seed: Optional[int] = None) -> Optional[torch.Generator]:
