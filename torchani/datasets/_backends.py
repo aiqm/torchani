@@ -309,9 +309,18 @@ class _H5StoreAdaptor(_StoreAdaptor):
             raise RuntimeError('To infer conformer size need one of "coordinates", "coord", "energies"')
         cache.group_sizes.update({group.name[1:]: group[any_key].shape[0]})
 
-    # Check if the raw hdf5 file has the '/_created' dataset if this is the
-    # case then it can be assumed to be a shallow tree, otherwise we don't know
+    # Check if the raw hdf5 file is one of a number of known files that can be assumed
+    # to have standard format.
     def _quick_standard_format_check(self) -> bool:
+        # This check detects the "ani-release" files which have this property
+        try:
+            key = next(iter(self._store.keys()))
+            self._store[key]['hf_dz.energy']
+            return True
+        except Exception:
+            pass
+
+        # This check tests for the '/_created' which is present in "old HTRQ style"
         try:
             self._store['/_created']
             return True

@@ -28,8 +28,8 @@ if _H5PY_AVAILABLE:
 # integers** If both properties are present one should be deleted to avoid
 # redundancies
 
-_ELEMENT_KEYS = {'species', 'numbers'}
-_LEGACY_NONBATCH_KEYS = {'species', 'numbers', 'smiles'}
+_ELEMENT_KEYS = {'species', 'numbers', 'atomic_numbers'}
+_LEGACY_NONBATCH_KEYS = {'species', 'numbers', 'smiles', 'atomic_numbers'}
 _ALWAYS_STRING_KEYS = {'_id', 'smiles'}
 # These broken keys are in some datasets and are basically impossible to parse
 # correctly. If grouping is "legacy" and these are found we give up and ask the
