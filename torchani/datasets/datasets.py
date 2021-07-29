@@ -105,7 +105,7 @@ class ANIBatchedDataset(torch.utils.data.Dataset[Conformers]):
         if batches is not None and any(v is not None for v in (file_format, store_dir, transform)):
             raise ValueError('Batches is mutually exclusive with file_format/store_dir/transform')
         self.split = split
-        self.properties = ('coordinates', 'species', 'energies') if properties is None else properties
+        self.properties = properties
         self.transform = self._identity if transform is None else transform
         container: Union[List[Path], List[Conformers]]
         if not batches:

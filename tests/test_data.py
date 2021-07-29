@@ -350,7 +350,8 @@ class TestANIBatchedDataset(TestCase):
         with warnings.catch_warnings():
             ignore_unshuffled_warning()
             create_batched_dataset(dataset_path, dest_path=self.tmp_dir_batched.name, shuffle=False,
-                    splits={'training': 0.5, 'validation': 0.5}, batch_size=self.batch_size)
+                                   splits={'training': 0.5, 'validation': 0.5}, batch_size=self.batch_size,
+                                   include_properties=('species', 'coordinates', 'energies'))
         self.train = ANIBatchedDataset(self.tmp_dir_batched.name, split='training')
         self.valid = ANIBatchedDataset(self.tmp_dir_batched.name, split='validation')
 
