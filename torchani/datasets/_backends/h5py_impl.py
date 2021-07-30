@@ -5,14 +5,14 @@ import tempfile
 from os import fspath
 from pathlib import Path
 from functools import partial
-from abc import ABC, abstractmethod
-from typing import ContextManager, Iterator, Mapping, Any, Set, Union, Tuple
+from typing import ContextManager, Iterator, Any, Set, Union, Tuple
 from collections import OrderedDict
 
 import numpy as np
 
-from ._annotations import NumpyConformers, StrPath
-from ..utils import tqdm
+from .._annotations import StrPath
+from ...utils import tqdm
+from .interface import _StoreAdaptor, _ConformerGroupAdaptor, CacheHolder
 
 
 try:
@@ -27,38 +27,6 @@ except ImportError:
     _H5PY_AVAILABLE = False
 
 
-def infer_backend(store_location: StrPath) -> str:
-    if Path(store_location).resolve().suffix == '.h5':
-        return 'h5py'
-    else:
-        raise RuntimeError("Backend could not be infered from store location")
-
-
-def StoreAdaptorFactory(store_location: StrPath, backend: str) -> '_StoreAdaptor':
-    if backend == 'h5py':
-        if not _H5PY_AVAILABLE:
-            raise ValueError('h5py backend was specified but h5py could not be found, please install h5py')
-        return _H5StoreAdaptor(store_location)
-    else:
-        raise RuntimeError(f"Bad backend {backend}")
-
-
-def TemporaryLocation(backend: str) -> 'ContextManager[StrPath]':
-    if backend == 'h5py':
-        return _H5TemporaryLocation()
-    else:
-        raise ValueError(f"Bad backend {backend}")
-
-
-class CacheHolder:
-    group_sizes: 'OrderedDict[str, int]'
-    properties: Set[str]
-
-    def __init__(self) -> None:
-        self.group_sizes = OrderedDict()
-        self.properties = set()
-
-
 class _H5TemporaryLocation(ContextManager[StrPath]):
     def __init__(self) -> None:
         self._tmp_location = tempfile.TemporaryDirectory()
@@ -71,118 +39,39 @@ class _H5TemporaryLocation(ContextManager[StrPath]):
         self._tmp_location.cleanup()
 
 
-# ConformerGroupAdaptor and StoreAdaptor are abstract classes from which
-# all backends should inherit in order to correctly interact with ANIDataset.
-# adding support for a new backend can be done just by coding these two classes and
-# adding the support for the backend inside StoreAdaptorFactory
-class _ConformerGroupAdaptor(Mapping[str, np.ndarray], ABC):
-
-    def __init__(self, *args, **kwargs) -> None:
-        pass
-
-    def create_numpy_values(self, conformers: NumpyConformers) -> None:
-        for p, v in conformers.items():
-            self._create_property_with_data(p, v)
-
-    def append_numpy_values(self, conformers: NumpyConformers) -> None:
-        for p, v in conformers.items():
-            self._append_property_with_data(p, v)
-
-    @property
-    @abstractmethod
-    def is_resizable(self) -> bool: pass  # noqa E704
-
-    @abstractmethod
-    def _append_property_with_data(self, p: str, data: np.ndarray) -> None: pass  # noqa E704
-
-    @abstractmethod
-    def _create_property_with_data(self, p: str, data: np.ndarray) -> None: pass  # noqa E704
-
-    @abstractmethod
-    def move(self, src: str, dest: str) -> None: pass  # noqa E704
-
-    @abstractmethod
-    def __delitem__(self, k: str) -> None: pass  # noqa E704
-
-
-class _StoreAdaptor(ContextManager['_StoreAdaptor'], Mapping[str, '_ConformerGroupAdaptor'], ABC):
-
-    def __init__(self, *args, **kwargs) -> None:
-        pass
-
-    @abstractmethod
-    def transfer_location_to(self, other_store: '_StoreAdaptor') -> None: pass  # noqa E704
-
-    @abstractmethod
-    def validate_location(self) -> None: pass  # noqa E704
-
-    @abstractmethod
-    def make_empty(self, grouping: str) -> None: pass  # noqa E704
-
-    @property
-    @abstractmethod
-    def location(self) -> StrPath: pass  # noqa E704
-
-    @location.setter
-    def location(self, value: StrPath) -> None: pass  # noqa E704
-
-    @abstractmethod
-    def delete_location(self) -> None: pass  # noqa E704
-
-    @property
-    @abstractmethod
-    def mode(self) -> str: pass # noqa E704
-
-    @property
-    @abstractmethod
-    def is_open(self) -> bool: pass # noqa E704
-
-    @abstractmethod
-    def close(self) -> '_StoreAdaptor': pass # noqa E704
-
-    @abstractmethod
-    def open(self, mode: str = 'r') -> '_StoreAdaptor': pass # noqa E704
-
-    @property
-    @abstractmethod
-    def grouping(self) -> str: pass # noqa E704
-
-    @abstractmethod
-    def __delitem__(self, k: str) -> None: pass # noqa E704
-
-    @abstractmethod
-    def create_conformer_group(self, name: str) -> '_ConformerGroupAdaptor': pass # noqa E704
-
-    @abstractmethod
-    def update_cache(self, check_properties: bool = False, verbose: bool = True) -> Tuple['OrderedDict[str, int]', Set[str]]:
-        pass
-
-
 # Backend Specific code starts here
 class _H5StoreAdaptor(_StoreAdaptor):
     def __init__(self, store_location: StrPath):
-        self._store_location = Path(store_location).resolve()
+        self.location = store_location
         self._store_obj = None
         self._has_standard_format = False
         self._made_quick_check = False
 
     def validate_location(self) -> None:
         if not self._store_location.is_file():
-            raise FileNotFoundError(f"The h5 file in {self._store_location} could not be found")
+            raise FileNotFoundError(f"The store in {self._store_location} could not be found")
 
     def transfer_location_to(self, other_store: '_StoreAdaptor') -> None:
-        self._store_location.unlink()
-        other_store.location = self.location
+        self.delete_location()
+        other_store.location = Path(self.location).with_suffix('')
 
     @property
     def location(self) -> StrPath:
-        return self._store_location.as_posix()
+        return self._store_location
 
     @location.setter
     def location(self, value: StrPath) -> None:
+        value = Path(value).resolve()
+        if value.suffix == '':
+            value = value.with_suffix('.h5')
+        if value.suffix != '.h5':
+            raise ValueError(f"Incorrect location {value}")
         # pathlib.rename() may fail if src and dst are in different mounts
-        shutil.move(fspath(self.location), fspath(value))
-        self._store_location = Path(value).resolve()
+        try:
+            shutil.move(fspath(self.location), fspath(value))
+        except AttributeError:
+            pass
+        self._store_location = value
 
     def delete_location(self) -> None:
         self._store_location.unlink()
@@ -215,7 +104,7 @@ class _H5StoreAdaptor(_StoreAdaptor):
             return False
         return True
 
-    def __enter__(self) -> '_H5StoreAdaptor':
+    def __enter__(self) -> '_StoreAdaptor':
         self._store.__enter__()
         return self
 

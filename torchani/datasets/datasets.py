@@ -617,6 +617,26 @@ class _ANISubdataset(_ANIDatasetBase):
 
     @_broadcast
     @_needs_cache_update
+    def to_backend(self, backend: str, verbose: bool = True) -> '_ANISubdataset':
+        r"""Transforms underlying store into a different format
+        """
+        self._check_correct_grouping()
+        if self._backend == backend and backend != 'h5py':
+            return self
+        with TemporaryLocation(backend) as location:
+            new_ds = self._make_empty_copy(location, backend=backend)
+            for group_name, conformers in tqdm(self.numpy_items(),
+                                               total=self.num_conformer_groups,
+                                               desc=f'Converting to {backend}',
+                                               disable=not verbose):
+                # mypy doesn't know that @wrap'ed functions have __wrapped__
+                # attribute, and fixing this is ugly
+                new_ds.append_conformers.__wrapped__(new_ds, group_name, conformers)  # type: ignore
+            self._store.transfer_location_to(new_ds._store)
+        return new_ds
+
+    @_broadcast
+    @_needs_cache_update
     def repack(self, verbose: bool = True) -> '_ANISubdataset':
         r"""Repacks underlying store if it is HDF5
 
@@ -625,20 +645,7 @@ class _ANISubdataset(_ANIDatasetBase):
         needed in order to reduce the size of the file. Note that this is only
         useful for the h5py backend, otherwise it is a no-op.
         """
-        self._check_correct_grouping()
-        if not self._backend == 'h5py':
-            return self
-        with TemporaryLocation(self._backend) as location:
-            new_ds = self._make_empty_copy(location)
-            for group_name, conformers in tqdm(self.numpy_items(),
-                                               total=self.num_conformer_groups,
-                                               desc='Repacking HDF5 file',
-                                               disable=not verbose):
-                # mypy doesn't know that @wrap'ed functions have __wrapped__
-                # attribute, and fixing this is ugly
-                new_ds.append_conformers.__wrapped__(new_ds, group_name, conformers)  # type: ignore
-            self._store.transfer_location_to(new_ds._store)
-        return new_ds
+        return self.to_backend.__wrapped__(self, self._backend, verbose=verbose)  # type: ignore
 
     @_broadcast
     @_needs_cache_update

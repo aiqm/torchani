@@ -2,6 +2,7 @@ tb-nightly
 tqdm
 ase
 h5py
+zarr
 pillow
 pkbar
 pyyaml

@@ -13,6 +13,13 @@ from torchani.utils import PERIODIC_TABLE
 from torchani.testing import TestCase
 from torchani.datasets import ANIDataset, ANIBatchedDataset, create_batched_dataset
 
+# Optional tests for zarr
+try:
+    import zarr
+    ZARR_AVAILABLE = True
+except ImportError:
+    ZARR_AVAILABLE = False
+
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, '../dataset/ani-1x/sample.h5')
 dataset_path_gdb = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s02.h5')
@@ -477,55 +484,60 @@ class TestANIBatchedDataset(TestCase):
 class TestANIDataset(TestCase):
 
     def setUp(self):
-        # create two dummy HDF5 databases, one with 3 groups and one with one
-        # group, and fill them with some data
-        self.tmp_dir = tempfile.TemporaryDirectory()
-        self.tmp_file_one_group = tempfile.NamedTemporaryFile(suffix='.h5')
-        self.tmp_file_three_groups = tempfile.NamedTemporaryFile(suffix='.h5')
-
         self.rng = np.random.default_rng(12345)
-        self.num_conformers1 = 7
-        self.num_conformers2 = 5
-        self.num_conformers3 = 8
-        properties1 = {'species': np.array(['H', 'C', 'N', 'N'], dtype='S'),
-                      'coordinates': self.rng.standard_normal((self.num_conformers1, 4, 3)),
-                      'energies': self.rng.standard_normal((self.num_conformers1,))}
-        properties2 = {'species': np.array(['H', 'O', 'O'], dtype='S'),
-                      'coordinates': self.rng.standard_normal((self.num_conformers2, 3, 3)),
-                      'energies': self.rng.standard_normal((self.num_conformers2,))}
-        properties3 = {'species': np.array(['H', 'C', 'H', 'H', 'H'], dtype='S'),
-                      'coordinates': self.rng.standard_normal((self.num_conformers3, 5, 3)),
-                      'energies': self.rng.standard_normal((self.num_conformers3,))}
-
-        with h5py.File(self.tmp_file_one_group, 'r+') as f1,\
-             h5py.File(self.tmp_file_three_groups, 'r+') as f3:
-            f1.create_group(''.join(properties1['species'].astype(str).tolist()))
-            f3.create_group(''.join(properties1['species'].astype(str).tolist()))
-            f3.create_group(''.join(properties2['species'].astype(str).tolist()))
-            f3.create_group(''.join(properties3['species'].astype(str).tolist()))
-            for k, v in properties1.items():
-                f1['HCNN'].create_dataset(k, data=v)
-            for k, v in properties1.items():
-                f3['HCNN'].create_dataset(k, data=v)
-            for k, v in properties2.items():
-                f3['HOO'].create_dataset(k, data=v)
-            for k, v in properties3.items():
-                f3['HCHHH'].create_dataset(k, data=v)
+        self.num_conformers = [7, 5, 8]
+        numpy_conformers = {'HCNN': {'species': np.array(['H', 'C', 'N', 'N'], dtype='S'),
+                                     'coordinates': self.rng.standard_normal((self.num_conformers[0], 4, 3)),
+                                     'energies': self.rng.standard_normal((self.num_conformers[0],))},
+                            'HOO': {'species': np.array(['H', 'O', 'O'], dtype='S'),
+                                    'coordinates': self.rng.standard_normal((self.num_conformers[1], 3, 3)),
+                                    'energies': self.rng.standard_normal((self.num_conformers[1],))},
+                            'HCHHH': {'species': np.array(['H', 'C', 'H', 'H', 'H'], dtype='S'),
+                                      'coordinates': self.rng.standard_normal((self.num_conformers[2], 5, 3)),
+                                      'energies': self.rng.standard_normal((self.num_conformers[2],))}}
 
         # extra groups for appending
-        self.new_groups_torch = {'H6': {'species': torch.ones((5, 6), dtype=torch.long),
-                      'coordinates': torch.randn((5, 6, 3)),
-                      'energies': torch.randn((5,))},
-                      'C6': {'species': torch.full((5, 6), fill_value=6, dtype=torch.long),
-                      'coordinates': torch.randn((5, 6, 3)),
-                      'energies': torch.randn((5,))},
-                      'O6': {'species': torch.full((5, 6), fill_value=8, dtype=torch.long),
-                      'coordinates': torch.randn((5, 6, 3)),
-                      'energies': torch.randn((5,))}}
+        self.torch_conformers = {'H6': {'species': torch.ones((5, 6), dtype=torch.long),
+                                        'coordinates': torch.randn((5, 6, 3)),
+                                        'energies': torch.randn((5,))},
+                                 'C6': {'species': torch.full((5, 6), fill_value=6, dtype=torch.long),
+                                        'coordinates': torch.randn((5, 6, 3)),
+                                        'energies': torch.randn((5,))},
+                                 'O6': {'species': torch.full((5, 6), fill_value=8, dtype=torch.long),
+                                        'coordinates': torch.randn((5, 6, 3)),
+                                        'energies': torch.randn((5,))}}
+        self._make_random_test_data(numpy_conformers)
+
+    def _make_random_test_data(self, numpy_conformers):
+        # create two HDF5 databases, one with 3 groups and one with one
+        # group, and fill them with some random data
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        self.tmp_store_one_group = tempfile.NamedTemporaryFile(suffix='.h5')
+        self.tmp_store_three_groups = tempfile.NamedTemporaryFile(suffix='.h5')
+        self.new_store_name = self.tmp_dir.name / Path('new.h5')
+
+        with h5py.File(self.tmp_store_one_group, 'r+') as f1,\
+             h5py.File(self.tmp_store_three_groups, 'r+') as f3:
+            for j, (k, g) in enumerate(numpy_conformers.items()):
+                f3.create_group(''.join(k))
+                for p, v in g.items():
+                    f3[k].create_dataset(p, data=v)
+                if j == 0:
+                    f1.create_group(''.join(k))
+                    for p, v in g.items():
+                        f1[k].create_dataset(p, data=v)
+
+    def _make_new_dataset(self):
+        return ANIDataset(self.new_store_name, create=True)
+
+    def tearDown(self):
+        self.tmp_dir.cleanup()
+        self.tmp_store_one_group.close()
+        self.tmp_store_three_groups.close()
 
     def testPresentElements(self):
-        ds = ANIDataset(self.tmp_dir.name / Path('new.h5'), create=True)
-        new_groups = deepcopy(self.new_groups_torch)
+        ds = self._make_new_dataset()
+        new_groups = deepcopy(self.torch_conformers)
         for k in ('H6', 'O6', 'C6'):
             ds.append_conformers(k, new_groups[k])
         self.assertTrue(ds.present_elements(chem_symbols=True), ['C', 'H', 'O'])
@@ -534,11 +546,10 @@ class TestANIDataset(TestCase):
             ds.present_elements()
 
     def testGetConformers(self):
-        ds = ANIDataset(self.tmp_file_three_groups.name)
+        ds = ANIDataset(self.tmp_store_three_groups.name)
 
         # general getter of all conformers
         self.assertEqual(ds.get_conformers('HOO')['coordinates'], ds['HOO']['coordinates'].numpy())
-
         # test getting 1, 2, ... with a list
         idxs = [1, 2, 4]
         conformers = ds.get_conformers('HCHHH', idxs)
@@ -571,10 +582,10 @@ class TestANIDataset(TestCase):
 
     def testAppendAndDeleteConformers(self):
         # tests delitem and setitem analogues for the dataset
-        ds = ANIDataset(self.tmp_dir.name / Path('new.h5'), create=True)
+        ds = self._make_new_dataset()
 
         # check creation
-        new_groups = deepcopy(self.new_groups_torch)
+        new_groups = deepcopy(self.torch_conformers)
         for k in ('H6', 'C6', 'O6'):
             ds.append_conformers(k, new_groups[k])
 
@@ -615,14 +626,14 @@ class TestANIDataset(TestCase):
             ds.append_conformers('O6', new_groups_copy)
 
     def testAppendAndDeleteNumpyConformers(self):
-        ds = ANIDataset(self.tmp_dir.name / Path('new.h5'), create=True)
+        ds = self._make_new_dataset()
         # first we build numpy conformers with ints and str as species (both
         # allowed)
         conformers_int = dict()
         conformers_str = dict()
-        for gn in self.new_groups_torch.keys():
+        for gn in self.torch_conformers.keys():
             conformers_int[gn] = {k: v.detach().cpu().numpy()
-                                  for k, v in self.new_groups_torch[gn].items()}
+                                  for k, v in self.torch_conformers[gn].items()}
             conformers_str[gn] = deepcopy(conformers_int[gn])
             conformers_str[gn]['species'] = _numbers_to_symbols(conformers_int[gn]['species'])
 
@@ -647,8 +658,8 @@ class TestANIDataset(TestCase):
         self.assertTrue(len(ds.items()) == 0)
 
     def testNewScalar(self):
-        ds = ANIDataset(self.tmp_dir.name / Path('new.h5'), create=True)
-        new_groups = deepcopy(self.new_groups_torch)
+        ds = self._make_new_dataset()
+        new_groups = deepcopy(self.torch_conformers)
         initial_len = len(new_groups['C6']['coordinates'])
         for k in ('H6', 'C6', 'O6'):
             ds.append_conformers(k, new_groups[k])
@@ -660,8 +671,8 @@ class TestANIDataset(TestCase):
         self.assertEqual(ds['C6']['charges'], torch.zeros(initial_len, dtype=torch.long))
 
     def testRegroupFormulas(self):
-        ds = ANIDataset(self.tmp_dir.name / Path('new.h5'), create=True)
-        new_groups = deepcopy(self.new_groups_torch)
+        ds = self._make_new_dataset()
+        new_groups = deepcopy(self.torch_conformers)
         for j, k in enumerate(('H6', 'C6', 'O6')):
             ds.append_conformers(f'group{j}', new_groups[k])
         ds.regroup_by_formula()
@@ -669,8 +680,8 @@ class TestANIDataset(TestCase):
             self.assertEqual(v, new_groups[k])
 
     def testRegroupNumAtoms(self):
-        ds = ANIDataset(self.tmp_dir.name / Path('new.h5'), create=True)
-        new_groups = deepcopy(self.new_groups_torch)
+        ds = self._make_new_dataset()
+        new_groups = deepcopy(self.torch_conformers)
         for j, k in enumerate(('H6', 'C6', 'O6')):
             ds.append_conformers(f'group{j}', new_groups[k])
         ds.regroup_by_num_atoms()
@@ -680,8 +691,8 @@ class TestANIDataset(TestCase):
         self.assertEqual(len(ds['006']['energies']), 15)
 
     def testDeleteProperty(self):
-        ds = ANIDataset(self.tmp_dir.name / Path('new.h5'), create=True)
-        new_groups = deepcopy(self.new_groups_torch)
+        ds = self._make_new_dataset()
+        new_groups = deepcopy(self.torch_conformers)
         for k in ('H6', 'C6', 'O6'):
             ds.append_conformers(k, new_groups[k])
         ds.delete_properties({'energies'})
@@ -694,8 +705,8 @@ class TestANIDataset(TestCase):
         self.assertEqual(len(ds.items()), 0)
 
     def testRenameProperty(self):
-        ds = ANIDataset(self.tmp_dir.name / Path('new.h5'), create=True)
-        new_groups = deepcopy(self.new_groups_torch)
+        ds = self._make_new_dataset()
+        new_groups = deepcopy(self.torch_conformers)
         for k in ('H6', 'C6', 'O6'):
             ds.append_conformers(k, new_groups[k])
         ds.rename_properties({'energies': 'renamed_energies'})
@@ -707,71 +718,108 @@ class TestANIDataset(TestCase):
             ds.rename_properties({'species': 'renamed_energies'})
 
     def testCreation(self):
-        with self.assertRaisesRegex(FileNotFoundError, "The h5 file in .* could not be found"):
-            ANIDataset(self.tmp_dir.name / Path('new.h5'))
+        with self.assertRaisesRegex(FileNotFoundError, "The store in .* could not be found"):
+            ANIDataset(self.new_store_name)
 
     def testSizesOneGroup(self):
-        ds = ANIDataset(self.tmp_file_one_group.name)
-        self.assertEqual(ds.num_conformers, self.num_conformers1)
+        ds = ANIDataset(self.tmp_store_one_group.name)
+        self.assertEqual(ds.num_conformers, self.num_conformers[0])
         self.assertEqual(ds.num_conformer_groups, 1)
         self.assertEqual(len(ds), ds.num_conformer_groups)
 
     def testSizesThreeGroups(self):
-        ds = ANIDataset(self.tmp_file_three_groups.name)
-        self.assertEqual(ds.num_conformers, self.num_conformers1 + self.num_conformers2 + self.num_conformers3)
+        ds = ANIDataset(self.tmp_store_three_groups.name)
+        self.assertEqual(ds.num_conformers, sum(self.num_conformers))
         self.assertEqual(ds.num_conformer_groups, 3)
         self.assertEqual(len(ds), ds.num_conformer_groups)
 
     def testKeys(self):
-        ds = ANIDataset(self.tmp_file_three_groups.name)
+        ds = ANIDataset(self.tmp_store_three_groups.name)
         keys = set()
         for k in ds.keys():
             keys.update({k})
-        self.assertTrue(keys == {'HOO', 'HCNN', 'HCHHH'})
+        self.assertEqual(keys, {'HOO', 'HCNN', 'HCHHH'})
         self.assertEqual(len(ds.keys()), 3)
 
     def testValues(self):
-        ds = ANIDataset(self.tmp_file_three_groups.name)
+        ds = ANIDataset(self.tmp_store_three_groups.name)
         for d in ds.values():
-            self.assertTrue('species' in d.keys())
-            self.assertTrue('coordinates' in d.keys())
-            self.assertTrue('energies' in d.keys())
+            self.assertEqual(set(d.keys()), {'species', 'coordinates', 'energies'})
             self.assertEqual(d['coordinates'].shape[-1], 3)
             self.assertEqual(d['coordinates'].shape[0], d['energies'].shape[0])
         self.assertEqual(len(ds.values()), 3)
 
     def testItems(self):
-        ds = ANIDataset(self.tmp_file_three_groups.name)
+        ds = ANIDataset(self.tmp_store_three_groups.name)
         for k, v in ds.items():
             self.assertTrue(isinstance(k, str))
             self.assertTrue(isinstance(v, dict))
-            self.assertTrue('species' in v.keys())
-            self.assertTrue('coordinates' in v.keys())
-            self.assertTrue('energies' in v.keys())
+            self.assertEqual(set(v.keys()), {'species', 'coordinates', 'energies'})
         self.assertEqual(len(ds.items()), 3)
 
     def testNumpyItems(self):
-        ds = ANIDataset(self.tmp_file_three_groups.name)
+        ds = ANIDataset(self.tmp_store_three_groups.name)
         for k, v in ds.numpy_items():
             self.assertTrue(isinstance(k, str))
             self.assertTrue(isinstance(v, dict))
-            self.assertTrue('species' in v.keys())
-            self.assertTrue('coordinates' in v.keys())
-            self.assertTrue('energies' in v.keys())
+            self.assertEqual(set(v.keys()), {'species', 'coordinates', 'energies'})
         self.assertEqual(len(ds.items()), 3)
 
     def testIterConformers(self):
-        ds = ANIDataset(self.tmp_file_three_groups.name)
+        ds = ANIDataset(self.tmp_store_three_groups.name)
         confs = []
         for c in ds.iter_conformers():
             self.assertTrue(isinstance(c, dict))
             confs.append(c)
         self.assertEqual(len(confs), ds.num_conformers)
 
+
+@unittest.skipIf(not ZARR_AVAILABLE, 'Zarr not installed')
+class TestANIDatasetZarr(TestANIDataset):
+    def _make_random_test_data(self, numpy_conformers):
+        for j, (k, v) in enumerate(deepcopy(numpy_conformers).items()):
+            # Zarr does not support legacy format, so we tile the species and add
+            # a "grouping" attribute
+            numpy_conformers[k]['species'] = np.tile(numpy_conformers[k]['species'].reshape(1, -1), (self.num_conformers[j], 1))
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        self.tmp_store_one_group = tempfile.TemporaryDirectory(suffix='.zarr', dir=self.tmp_dir.name)
+        self.tmp_store_three_groups = tempfile.TemporaryDirectory(suffix='.zarr', dir=self.tmp_dir.name)
+        self.new_store_name = self.tmp_dir.name / Path('new.zarr')
+
+        store1 = zarr.DirectoryStore(self.tmp_store_one_group.name)
+        store3 = zarr.DirectoryStore(self.tmp_store_three_groups.name)
+        with zarr.hierarchy.open_group(store1, mode='w') as f1,\
+             zarr.hierarchy.open_group(store3, mode='w') as f3:
+            f3.attrs['grouping'] = 'by_formula'
+            f1.attrs['grouping'] = 'by_formula'
+            for j, (k, g) in enumerate(numpy_conformers.items()):
+                f3.create_group(''.join(k))
+                for p, v in g.items():
+                    f3[k].create_dataset(p, data=v)
+                if j == 0:
+                    f1.create_group(''.join(k))
+                    for p, v in g.items():
+                        f1[k].create_dataset(p, data=v)
+
     def tearDown(self):
+        self.tmp_store_one_group.cleanup()
+        self.tmp_store_three_groups.cleanup()
         self.tmp_dir.cleanup()
-        self.tmp_file_one_group.close()
-        self.tmp_file_three_groups.close()
+
+    def testConvert(self):
+        ds = ANIDataset(self.tmp_store_three_groups.name)
+        ds.to_backend('h5py')
+        for d in ds.values():
+            self.assertEqual(set(d.keys()), {'species', 'coordinates', 'energies'})
+            self.assertEqual(d['coordinates'].shape[-1], 3)
+            self.assertEqual(d['coordinates'].shape[0], d['energies'].shape[0])
+        self.assertEqual(len(ds.values()), 3)
+        ds.to_backend('zarr')
+        for d in ds.values():
+            self.assertEqual(set(d.keys()), {'species', 'coordinates', 'energies'})
+            self.assertEqual(d['coordinates'].shape[-1], 3)
+            self.assertEqual(d['coordinates'].shape[0], d['energies'].shape[0])
+        self.assertEqual(len(ds.values()), 3)
 
 
 class TestData(TestCase):
