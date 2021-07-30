@@ -391,7 +391,7 @@ class TestAEVOnBenzenePBC(TestCase):
         self.aev_computer = torchani.AEVComputer.like_1x()
         filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.json')
         benzene = ase.io.read(filename)
-        self.cell = torch.tensor(benzene.get_cell(complete=True)).float()
+        self.cell = torch.tensor(benzene.get_cell(complete=True)[:], dtype=torch.float)
         self.pbc = torch.tensor(benzene.get_pbc(), dtype=torch.bool)
         species_to_tensor = torchani.utils.ChemicalSymbolsToInts(['H', 'C', 'N', 'O'])
         self.species = species_to_tensor(benzene.get_chemical_symbols()).unsqueeze(0)
