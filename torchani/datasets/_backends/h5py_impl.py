@@ -5,7 +5,7 @@ import tempfile
 from os import fspath
 from pathlib import Path
 from functools import partial
-from typing import ContextManager, Iterator, Any, Set, Union, Tuple
+from typing import ContextManager, Iterator, Any, Set, Union, Tuple, Mapping
 from collections import OrderedDict
 
 import numpy as np
@@ -39,7 +39,6 @@ class _H5TemporaryLocation(ContextManager[StrPath]):
         self._tmp_location.cleanup()
 
 
-# Backend Specific code starts here
 class _H5StoreAdaptor(_StoreAdaptor):
     def __init__(self, store_location: StrPath):
         self.location = store_location
@@ -221,6 +220,20 @@ class _H5StoreAdaptor(_StoreAdaptor):
         mode = self._store.mode
         assert isinstance(mode, str)
         return mode
+
+    @property
+    def metadata(self) -> Mapping[str, str]:
+        try:
+            meta = {name: attr for name, attr in self._store.attrs.items() if name != 'grouping'}
+        except Exception:
+            meta = dict()
+        return meta
+
+    def set_metadata(self, value: Mapping[str, str]) -> None:
+        if 'grouping' in value.keys():
+            raise ValueError('Grouping is not a valid metadata key')
+        for k, v in value.items():
+            self._store.attrs[k] = v
 
     @property
     def grouping(self) -> str:

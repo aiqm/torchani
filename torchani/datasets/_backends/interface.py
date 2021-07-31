@@ -92,6 +92,15 @@ class _StoreAdaptor(ContextManager['_StoreAdaptor'], Mapping[str, '_ConformerGro
     @abstractmethod
     def grouping(self) -> str: pass # noqa E704
 
+    @property
+    @abstractmethod
+    def metadata(self) -> Mapping[str, str]:
+        pass
+
+    @abstractmethod
+    def set_metadata(self, value: Mapping[str, str]) -> None:
+        pass
+
     @abstractmethod
     def __delitem__(self, k: str) -> None: pass # noqa E704
 
