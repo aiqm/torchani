@@ -30,8 +30,8 @@ if _H5PY_AVAILABLE:
 # redundancies
 
 _ELEMENT_KEYS = {'species', 'numbers', 'atomic_numbers'}
-_LEGACY_NONBATCH_KEYS = {'species', 'numbers', 'smiles', 'atomic_numbers'}
-_ALWAYS_STRING_KEYS = {'_id', 'smiles'}
+_LEGACY_NONBATCH_KEYS = {'species', 'numbers', 'smiles', 'atomic_numbers', 'lot'}
+_ALWAYS_STRING_KEYS = {'_id', 'smiles', 'lot'}
 # These broken keys are in some datasets and are basically impossible to parse
 # correctly. If grouping is "legacy" and these are found we give up and ask the
 # user to delete them in a warning
