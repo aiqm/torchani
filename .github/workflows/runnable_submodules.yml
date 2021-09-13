@@ -24,7 +24,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      run: ci/install_dependencies.sh
+      run: ci/install_stable_dependencies.sh
     - name: Install TorchANI
       run: python setup.py install
     - name: Download data files

@@ -24,7 +24,7 @@ jobs:
     - name: Fetch submodules
       run: git submodule update --init
     - name: Install dependencies
-      run: ci/install_dependencies.sh
+      run: ci/install_stable_dependencies.sh
     - name: Pytorch info
       run: python -c 'from torch.utils.collect_env import get_pretty_env_info; print(get_pretty_env_info())'
     - name: Install TorchANI

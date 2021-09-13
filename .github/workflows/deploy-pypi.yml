@@ -22,7 +22,7 @@ jobs:
     - name: Fail build on non-release commits
       run: git describe --exact-match --tags HEAD
     - name: Install dependencies
-      run: ci/install_dependencies.sh
+      run: ci/install_stable_dependencies.sh
     - name: Deploy
       run: |
         rm -rf dist/*
