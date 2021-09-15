@@ -1,4 +1,31 @@
-r"""Torchani Builtin Datasets"""
+r"""Torchani Builtin Datasets
+
+This module provides access to the following datasets, calculated with specific
+levels of theory (LoT) which are combinations functional/basis_set or
+wavefunction_method/basis_set when appropriate.
+
+- ANI-1x, with LoT:
+    - wB97X/6-31G(d)
+    - B97-3c/def2-mTZVP
+
+- ANI-2x, with LoT:
+    - wB97X/6-31G(d)
+    - B97-3c/def2-mTZVP
+
+- COMP6-v1, with LoT:
+    - wB97X/6-31G(d)
+    - B97-3c/def2-mTZVP
+
+- COMP6-v2, with LoT:
+    - wB97X/6-31G(d)
+    - B97-3c/def2-mTZVP
+
+- AminoacidDimers, with LoT:
+    - B97-3c/def2-mTZVP
+
+(note that the conformations present in datasets with different LoT may be
+different).
+"""
 from pathlib import Path
 from typing import Optional, Any
 from collections import OrderedDict
@@ -77,6 +104,17 @@ class TestData(_BaseBuiltinDataset):
 
     def __init__(self, root: StrPath, download: bool = False, verbose: bool = True):
         super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
+
+
+class AminoacidDimers(_BaseBuiltinDataset):
+    _ARCHIVE = {'B973c-def2mTZVP': 'Aminoacid-dimers-B973c-def2mTZVP-data.tar.gz'}
+    _FILES_AND_MD5S = {'B973c-def2mTZVP': OrderedDict([('Aminoacid-dimers-B973c-def2mTZVP.h5', '7db327a3cf191c19a06f5495453cfe56')])}
+
+    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='def2mTZVP', functional='B973c'):
+        lot = f'{functional}-{basis_set}'
+        if lot not in self._ARCHIVE.keys():
+            raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
+        super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
 
 
 class ANI1x(_BaseBuiltinDataset):

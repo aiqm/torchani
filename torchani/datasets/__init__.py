@@ -1,7 +1,7 @@
 from .datasets import AniBatchedDataset, AniH5Dataset, ANIDataset, ANIBatchedDataset
 from ._batching import create_batched_dataset
-from ._builtin_datasets import ANI1x, ANI2x, COMP6v1, COMP6v2, TestData
+from ._builtin_datasets import ANI1x, ANI2x, COMP6v1, COMP6v2, TestData, AminoacidDimers
 from . import utils
 
 __all__ = ['ANIBatchedDataset', 'ANIDataset', 'AniH5Dataset', 'AniBatchedDataset',
-           'create_batched_dataset', 'utils', 'ANI1x', 'ANI2x', 'COMP6v1', 'COMP6v2', 'TestData']
+           'create_batched_dataset', 'utils', 'ANI1x', 'ANI2x', 'COMP6v1', 'COMP6v2', 'AminoacidDimers', 'TestData']
