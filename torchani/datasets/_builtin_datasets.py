@@ -46,9 +46,6 @@ datasets, which contain extra structures.
 
 Known issues:
 - The wB97X/def2-TZVPP datasets are still not available through this module
-- The wB97X/6-31G(d) 1x and 2x datasets may be "cleaned up" versions, slightly
-  different from the canonical ones. Also, this dataset is provided in legacy format
-  and has to be regrouped before further manipulation.
 - The B97-3c/def2-mTZVP dataset has slightly different names than the other datasets
   for some properties. The "charge" and "mult" properties are redundant, since
   all molecules are calculated with spin multiplicity 1 and zero charge in this
@@ -56,9 +53,6 @@ Known issues:
 - There are small inconsistencies with the names of some files:
     * COMP6 files are v1_full instead of full_v1 for wB97MV
     * for wB97M-D3BJ some files are labeled wB97D3BJ instead of wB97MD3BJ
-    * for wB97X/6-31G(d) some files are named 6-31Gd instead of 6-31G-d, the 2x
-      files are also labeled 2x-heavy and 2x-dimers instead of 2x_heavy and
-      2x_dimers.
     * for B97-3c/def2-mTZVP the 2x file is named 2x-heavy_and_dimers instead of
       2x_heavy_and_dimers
 """
@@ -104,6 +98,8 @@ class _BaseBuiltinDataset(ANIDataset):
                                      key=lambda tup: filenames_order[tup[0]])
         filenames_and_paths = OrderedDict(_filenames_and_paths)
         super().__init__(locations=filenames_and_paths.values(), names=filenames_and_paths.keys(), **h5_dataset_kwargs)
+        if h5_dataset_kwargs.get('verbose', True):
+            print(self)
 
     def _check_hdf5_files_integrity(self, root: Path) -> bool:
         # Checks that all HDF5 files in the provided path are equal to the
@@ -165,11 +161,11 @@ class AminoacidDimers(_BaseBuiltinDataset):
 
 
 class ANI1x(_BaseBuiltinDataset):
-    _ARCHIVE = {'wB97X-631Gd': 'ANI-1x-wB97X-6-31Gd-data.tar.gz',
+    _ARCHIVE = {'wB97X-631Gd': 'ANI-1x-wB97X-631Gd-data.tar.gz',
                 'B973c-def2mTZVP': 'ANI-1x-B973c-def2mTZVP-data.tar.gz',
                 'wB97MD3BJ-def2TZVPP': 'ANI-1x-wB97MD3BJ-def2TZVPP-data.tar.gz',
                 'wB97MV-def2TZVPP': 'ANI-1x-wB97MV-def2TZVPP-data.tar.gz'}
-    _FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-1x-wB97X-6-31Gd.h5', 'c9d63bdbf90d093db9741c94d9b20972')]),
+    _FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-1x-wB97X-631Gd.h5', '2cd8cbc7a5106f88d8b21cde58074aef')]),
                        'B973c-def2mTZVP': OrderedDict([('ANI-1x-B973c-def2mTZVP.h5', '2f50da8c73236a41f33a8e561a80c77e')]),
                        'wB97MD3BJ-def2TZVPP': OrderedDict([('ANI-1x-wB97D3BJ-def2TZVPP.h5', '6d7d3ba93d4c57e4ac6a6d5dc9598596')]),
                        'wB97MV-def2TZVPP': OrderedDict([('ANI-1x-wB97MV-def2TZVPP.h5', '7f3107e3474f3f673922a0155e11d3aa')])}
@@ -182,13 +178,13 @@ class ANI1x(_BaseBuiltinDataset):
 
 
 class ANI2x(_BaseBuiltinDataset):
-    _ARCHIVE = {'wB97X-631Gd': 'ANI-2x-wB97X-6-31Gd-data.tar.gz',
+    _ARCHIVE = {'wB97X-631Gd': 'ANI-2x-wB97X-631Gd-data.tar.gz',
                 'B973c-def2mTZVP': 'ANI-2x-B973c-def2mTZVP-data.tar.gz',
                 'wB97MD3BJ-def2TZVPP': 'ANI-2x-wB97MD3BJ-def2TZVPP-data.tar.gz',
                 'wB97MV-def2TZVPP': 'ANI-2x-wB97MV-def2TZVPP-data.tar.gz'}
-    _FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-1x-wB97X-6-31Gd.h5', 'c9d63bdbf90d093db9741c94d9b20972'),
-                                                   ('ANI-2x-heavy-wB97X-6-31Gd.h5', '49ec3dc5d046f5718802f5d1f102391c'),
-                                                   ('ANI-2x-dimers-wB97X-6-31Gd.h5', '3455d82a50c63c389126b68607fb9ca8')]),
+    _FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-1x-wB97X-631Gd.h5', '2cd8cbc7a5106f88d8b21cde58074aef'),
+                                                    ('ANI-2x_heavy-wB97X-631Gd.h5', '0bf1f7fb8c97768116deea672cae8d8e'),
+                                                    ('ANI-2x_dimers-wB97X-631Gd.h5', '0043cc1f908851601d9cfbbec2d957e8')]),
                        'B973c-def2mTZVP': OrderedDict([('ANI-1x-B973c-def2mTZVP.h5', '2f50da8c73236a41f33a8e561a80c77e'),
                                                        ('ANI-2x-heavy_and_dimers-B973c-def2mTZVP.h5', 'cffbe6e0e076d2fa7de7c3d15d4dd1f2')]),
                        'wB97MD3BJ-def2TZVPP': OrderedDict([('ANI-1x-wB97D3BJ-def2TZVPP.h5', '6d7d3ba93d4c57e4ac6a6d5dc9598596'),
