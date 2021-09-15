@@ -419,10 +419,6 @@ class _ANISubdataset(_ANIDatasetBase):
         str_ = f"ANI {self._backend} store:\n"
         d: Dict[str, Any] = {'Conformers': self.num_conformers}
         d.update({'Conformer groups': self.num_conformer_groups})
-        try:
-            d.update({"Present Elements": self.present_elements(chem_symbols=True)})
-        except ValueError:
-            d.update({"Present Elements": "Unknown"})
         d.update({'Properties': sorted(self.properties)})
         d.update({'Store Metadata': self.metadata})
         return str_ + pformat(d)
@@ -501,7 +497,7 @@ class _ANISubdataset(_ANIDatasetBase):
             else:
                 tile_shape = (1,)
             numpy_conformers.update({k: np.tile(numpy_conformers[k], tile_shape)
-                                     for k in nonbatch_properties})
+                                     for k in nonbatch_properties if numpy_conformers[k].ndim == 1})
         # Depending on "chem_symbols", "species" / "numbers" are returned as
         # int64 or as str. In legacy grouping "species" and "numbers" can be
         # str or ints themselves, so we check for that and convert.
@@ -988,7 +984,7 @@ class ANIDataset(_ANIDatasetBase):
         return delegated_call
 
     def __str__(self) -> str:
-        return '\n'.join(str(ds) for ds in self._datasets.values())
+        return '\n'.join(f'Name: {name}' + '\n' + str(ds) for name, ds in self._datasets.items())
 
     @property
     def _first_name(self) -> str:

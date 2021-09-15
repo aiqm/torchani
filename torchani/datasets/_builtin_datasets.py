@@ -80,37 +80,84 @@ class TestData(_BaseBuiltinDataset):
 
 
 class ANI1x(_BaseBuiltinDataset):
-    _ARCHIVE = 'ANI-1x-wB97X-6-31Gd-data.tar.gz'
-    _FILES_AND_MD5S = OrderedDict([('ANI-1x-wB97X-6-31Gd.h5', 'c9d63bdbf90d093db9741c94d9b20972')])
+    _ARCHIVE = {'wB97X-631Gd': 'ANI-1x-wB97X-6-31Gd-data.tar.gz',
+                'B973c-def2mTZVP': 'ANI-1x-B973c-def2mTZVP-data.tar.gz'}
+    _FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-1x-wB97X-6-31Gd.h5', 'c9d63bdbf90d093db9741c94d9b20972')]),
+                       'B973c-def2mTZVP': OrderedDict([('ANI-1x-B973c-def2mTZVP.h5', '2f50da8c73236a41f33a8e561a80c77e')]),
+                       }
 
-    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True):
-        super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
+    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
+        lot = f'{functional}-{basis_set}'
+        if lot not in self._ARCHIVE.keys():
+            raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
+        super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
 
 
 class ANI2x(_BaseBuiltinDataset):
-    _ARCHIVE = 'ANI-2x-wB97X-6-31Gd-data.tar.gz'
-    _FILES_AND_MD5S = OrderedDict([('ANI-1x-wB97X-6-31Gd.h5', 'c9d63bdbf90d093db9741c94d9b20972'),
-                                   ('ANI-2x-heavy-wB97X-6-31Gd.h5', '49ec3dc5d046f5718802f5d1f102391c'),
-                                   ('ANI-2x-dimers-wB97X-6-31Gd.h5', '3455d82a50c63c389126b68607fb9ca8')])
+    _ARCHIVE = {'wB97X-631Gd': 'ANI-2x-wB97X-6-31Gd-data.tar.gz',
+                'B973c-def2mTZVP': 'ANI-2x-B973c-def2mTZVP-data.tar.gz'}
+    _FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-1x-wB97X-6-31Gd.h5', 'c9d63bdbf90d093db9741c94d9b20972'),
+                                                   ('ANI-2x-heavy-wB97X-6-31Gd.h5', '49ec3dc5d046f5718802f5d1f102391c'),
+                                                   ('ANI-2x-dimers-wB97X-6-31Gd.h5', '3455d82a50c63c389126b68607fb9ca8')]),
+                       'B973c-def2mTZVP': OrderedDict([('ANI-1x-B973c-def2mTZVP.h5', '2f50da8c73236a41f33a8e561a80c77e'),
+                                                       ('ANI-2x-heavy_and_dimers-B973c-def2mTZVP.h5', 'cffbe6e0e076d2fa7de7c3d15d4dd1f2')])}
 
-    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True):
-        super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
+    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
+        lot = f'{functional}-{basis_set}'
+        if lot not in self._ARCHIVE.keys():
+            raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
+        super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
 
 
 class COMP6v1(_BaseBuiltinDataset):
-    _ARCHIVE = 'COMP6-v1-data.tar.gz'
-    _FILES_AND_MD5S = OrderedDict([('GDB11-07-test-500.h5', '9200755bfc755405e64100a53a9f7468'),
-                                   ('GDB11-08-test-500.h5', '202b078f98a911a7a9bdc21ee0ae1af7'),
-                                   ('GDB11-09-test-500.h5', '5d2f6573c07e01493e4c7f72edabe483'),
-                                   ('GDB11-10-test-500.h5', '96acd0003f6faeacb51b4db483c1d6f8'),
-                                   ('GDB11-11-test-500.h5', 'b7bf4fa7d2f78b8168f243b1a6aa6071'),
-                                   ('GDB13-12-test-1000.h5', '4317beed9425ee63659e41144475115c'),
-                                   ('GDB13-13-test-1000.h5', '4095ae8981a5e4b10fbc1f29669b0af5'),
-                                   ('DrugBank-Testset.h5', 'fae59730172c7849478271dbf585c8ce'),
-                                   ('DrugBank-Testset-SFCl.h5', 'dca0987a6030feca5b8e9a1e24102b44'),
-                                   ('Tripeptides-Full.h5', 'bb7238f3634217e834b7eee94febc816'),
-                                   ('ANI-MD-Bench.h5', '9e3a1327d01730033edeeebd6fac4d6c'),
-                                   ('S66-x8-wB97X-6-31Gd.h5', 'df1a5f3b9b6599d56f1a78631a83b720')])
+    _ARCHIVE = {'wB97X-631Gd': 'COMP6-v1-wB97X-631Gd-data.tar.gz',
+                'B973c-def2mTZVP': 'COMP6-v1-B973c-def2mTZVP-data.tar.gz'}
+    _FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-BenchMD-wB97X-631Gd.h5', '04c03ec8796359a0e3eb301346efbb03'),
+                                                   ('S66x8-v1-wB97X-631Gd.h5', '2b932f920397ae92bf55cfbc26de9a33'),
+                                                   ('DrugBank-testset-wB97X-631Gd.h5', 'ed92ec0b47061f8a1ae370390c8eff6e'),
+                                                   ('Tripeptides-v1-wB97X-631Gd.h5', '7fd7ddf224b2c329135b16f80d5cad75'),
+                                                   ('GDB11-07-wB97X-631Gd.h5', '719d5442ddf1cd2f02b94eb048ce0c56'),
+                                                   ('GDB11-08-wB97X-631Gd.h5', 'abf76ddcfed962ba8b91d7a99fb86a1b'),
+                                                   ('GDB11-09-wB97X-631Gd.h5', '70841880e1bbdf063ed943af94367b70'),
+                                                   ('GDB11-10-wB97X-631Gd.h5', 'cb86b0ee9de2d719b7e7bca789f297d9'),
+                                                   ('GDB11-11-wB97X-631Gd.h5', '367c0fa78b8eac584009fbe81f7198ba'),
+                                                   ('GDB13-12-wB97X-631Gd.h5', '9757ac7e7c937074894b314aa82de41a'),
+                                                   ('GDB13-13-wB97X-631Gd.h5', '86fb89bb64066a60e6013e33c704565b')]),
+                       'B973c-def2mTZVP': OrderedDict([('COMP6-full_v1-B97c3-def2mTZVP.h5', '044556f8490cc9e92975b949c0da5099')])}
 
-    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True):
-        super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
+    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
+        lot = f'{functional}-{basis_set}'
+        if lot not in self._ARCHIVE.keys():
+            raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
+        super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
+
+
+class COMP6v2(_BaseBuiltinDataset):
+    _ARCHIVE = {'wB97X-631Gd': 'COMP6-v2-wB97X-631Gd-data.tar.gz',
+                'B973c-def2mTZVP': 'COMP6-v2-B973c-def2mTZVP-data.tar.gz'}
+    _FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-BenchMD-wB97X-631Gd.h5', '04c03ec8796359a0e3eb301346efbb03'),
+                                                   ('S66x8-v1-wB97X-631Gd.h5', '2b932f920397ae92bf55cfbc26de9a33'),
+                                                   ('DrugBank-testset-wB97X-631Gd.h5', 'ed92ec0b47061f8a1ae370390c8eff6e'),
+                                                   ('Tripeptides-v1-wB97X-631Gd.h5', '7fd7ddf224b2c329135b16f80d5cad75'),
+                                                   ('GDB11-07-wB97X-631Gd.h5', '719d5442ddf1cd2f02b94eb048ce0c56'),
+                                                   ('GDB11-08-wB97X-631Gd.h5', 'abf76ddcfed962ba8b91d7a99fb86a1b'),
+                                                   ('GDB11-09-wB97X-631Gd.h5', '70841880e1bbdf063ed943af94367b70'),
+                                                   ('GDB11-10-wB97X-631Gd.h5', 'cb86b0ee9de2d719b7e7bca789f297d9'),
+                                                   ('GDB11-11-wB97X-631Gd.h5', '367c0fa78b8eac584009fbe81f7198ba'),
+                                                   ('GDB13-12-wB97X-631Gd.h5', '9757ac7e7c937074894b314aa82de41a'),
+                                                   ('GDB13-13-wB97X-631Gd.h5', '86fb89bb64066a60e6013e33c704565b'),
+                                                   ('GDB-heavy07-wB97X-631Gd.h5', '3b2b6fc298d06acb8380de70e4dca5dc'),
+                                                   ('GDB-heavy08-wB97X-631Gd.h5', '8877bdfc95419c6b818b6f07bf147fa0'),
+                                                   ('GDB-heavy09-wB97X-631Gd.h5', '416aa86b57ca9915135a6d99d4a2d23a'),
+                                                   ('GDB-heavy10-wB97X-631Gd.h5', 'e45852f95ec876dfd41984d1c159130b'),
+                                                   ('GDB-heavy11-wB97X-631Gd.h5', 'e4716b57d02e64e3b2bb7096d0ab70ab'),
+                                                   ('Tripeptides-sulphur-wB97X-631Gd.h5', '3309d50ede42ceaa96e5d3f897e9bac0'),
+                                                   ('DrugBank-SFCl-wB97X-631Gd.h5', '76db51f3750d9322656682b104299442')]),
+                       'B973c-def2mTZVP': OrderedDict([('COMP6-full_v1-B97c3-def2mTZVP.h5', '044556f8490cc9e92975b949c0da5099'),
+                                                       ('COMP6-heavy-B97c3-def2mTZVP.h5', '425d73d6a1c14c5897907b415e6f7f92')])}
+
+    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
+        lot = f'{functional}-{basis_set}'
+        if lot not in self._ARCHIVE.keys():
+            raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
+        super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)

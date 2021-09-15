@@ -76,11 +76,15 @@ class TestBuiltinDatasets(TestCase):
             self.assertEqual(ds.grouping, 'by_formula')
 
     def testBuiltins(self):
-        classes = ['ANI1x', 'ANI2x', 'COMP6v1']
+        classes = ['ANI1x', 'ANI2x', 'COMP6v1', 'COMP6v2']
         for c in classes:
             with tempfile.TemporaryDirectory() as tmpdir:
                 with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
                     getattr(torchani.datasets, c)(tmpdir, download=False)
+        for c in classes:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
+                    getattr(torchani.datasets, c)(tmpdir, download=False, basis_set='def2mTZVP', functional='B973c')
 
 
 class TestFineGrainedShuffle(TestCase):
