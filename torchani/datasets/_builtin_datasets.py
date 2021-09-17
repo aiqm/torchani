@@ -46,15 +46,9 @@ datasets, which contain extra structures.
 
 Known issues:
 - The wB97X/def2-TZVPP datasets are still not available through this module
-- The B97-3c/def2-mTZVP dataset has slightly different names than the other datasets
-  for some properties. The "charge" and "mult" properties are redundant, since
-  all molecules are calculated with spin multiplicity 1 and zero charge in this
-  dataset (as in all others).
 - There are small inconsistencies with the names of some files:
     * COMP6 files are v1_full instead of full_v1 for wB97MV
     * for wB97M-D3BJ some files are labeled wB97D3BJ instead of wB97MD3BJ
-    * for B97-3c/def2-mTZVP the 2x file is named 2x-heavy_and_dimers instead of
-      2x_heavy_and_dimers
 """
 from pathlib import Path
 from typing import Optional, Any
@@ -171,12 +165,13 @@ _ANI2x_ARCHIVE = {'wB97X-631Gd': 'ANI-2x-wB97X-631Gd-data.tar.gz',
 _ANI2x_FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-1x-wB97X-631Gd.h5', '2cd8cbc7a5106f88d8b21cde58074aef'),
                                                      ('ANI-2x_heavy-wB97X-631Gd.h5', '0bf1f7fb8c97768116deea672cae8d8e'),
                                                      ('ANI-2x_dimers-wB97X-631Gd.h5', '0043cc1f908851601d9cfbbec2d957e8')]),
-                         'B973c-def2mTZVP': OrderedDict([('ANI-1x-B973c-def2mTZVP.h5', '2f50da8c73236a41f33a8e561a80c77e'),
-                                                         ('ANI-2x-heavy_and_dimers-B973c-def2mTZVP.h5', 'cffbe6e0e076d2fa7de7c3d15d4dd1f2')]),
+                         'B973c-def2mTZVP': OrderedDict([('ANI-1x-B973c-def2mTZVP.h5', '4351aedf74683d858b834ccef3a727b8'),
+                                                         ('ANI-2x_heavy_and_dimers-B973c-def2mTZVP.h5', '09f7c991c78327d92c6de479aff69aca')]),
                          'wB97MD3BJ-def2TZVPP': OrderedDict([('ANI-1x-wB97D3BJ-def2TZVPP.h5', '6d7d3ba93d4c57e4ac6a6d5dc9598596'),
                                                              ('ANI-2x_heavy_and_dimers-wB97D3BJ-def2TZVPP.h5', '827a3eb6124ef2c0c3ab4487b63ff329')]),
                          'wB97MV-def2TZVPP': OrderedDict([('ANI-1x-wB97MV-def2TZVPP.h5', '7f3107e3474f3f673922a0155e11d3aa'),
                                                           ('ANI-2x_heavy_and_dimers-wB97MV-def2TZVPP.h5', 'b60d7938e16b776eb72209972c54721c')])}
+
 
 # ANI1x is the same as 2x, but all files that have heavy atoms or dimers are omitted
 _ANI1x_ARCHIVE = {k: v.replace('-2x-', '-1x-') for k, v in _ANI2x_ARCHIVE.items()}
@@ -229,8 +224,8 @@ _COMP6v2_FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-BenchMD-wB97X-631Gd
                                                        ('GDB-heavy11-wB97X-631Gd.h5', 'e4716b57d02e64e3b2bb7096d0ab70ab'),
                                                        ('Tripeptides-sulphur-wB97X-631Gd.h5', '3309d50ede42ceaa96e5d3f897e9bac0'),
                                                        ('DrugBank-SFCl-wB97X-631Gd.h5', '76db51f3750d9322656682b104299442')]),
-                           'B973c-def2mTZVP': OrderedDict([('COMP6-full_v1-B97c3-def2mTZVP.h5', '044556f8490cc9e92975b949c0da5099'),
-                                                           ('COMP6-heavy-B97c3-def2mTZVP.h5', '425d73d6a1c14c5897907b415e6f7f92')]),
+                           'B973c-def2mTZVP': OrderedDict([('COMP6-full_v1-B97c3-def2mTZVP.h5', '9cd1e1403c0ca91e07c480eda86332f8'),
+                                                           ('COMP6-heavy-B97c3-def2mTZVP.h5', '1cf3ecd2a2ec7257909c693350d66d18')]),
                            'wB97MD3BJ-def2TZVPP': OrderedDict([('COMP6-heavy-wB97D3BJ-def2TZVPP.h5', '88aac626d4963aacf9e856ca1408f47b'),
                                                                ('COMP6-full_v1-wB97D3BJ-def2TZVPP.h5', '057d89c8d046ccd9155ee24f3f47faa6')]),
                            'wB97MV-def2TZVPP': OrderedDict([('COMP6-heavy-wB97MV-def2TZVPP.h5', '804e7a7655903c8a4599f2c48bd584aa'),
