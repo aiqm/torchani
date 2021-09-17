@@ -46,12 +46,14 @@ Install from anaconda by the following (Note that we are hosting the packages on
 ```bash
 conda create -n ani -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville -c pytorch -c nvidia -c defaults -c conda-forge sandbox python=3.8
 ```
-Which is equivalent to 
+Which is equivalent to the following:
 ```bash
 conda create -n ani python=3.8
 conda activate ani
 conda install -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville -c pytorch -c nvidia -c defaults -c conda-forge sandbox
 ```
+- The `conda install` command could also be used for your own conda environment or could be used to update to the latest nightly version.  
+- In the case where multiple updates has been released within a day, you may need to add a `--force-reinstall` flag instead of waiting for the next nightly update.
 
 To install a version that is compatible with cudf, because of [cudatoolkit confilcts](https://github.com/rapidsai/cudf/issues/8510), you will need to install it by the following (currently only support python 3.8):
 ```bash
