@@ -104,7 +104,7 @@ def create_batched_dataset(locations: Union[Collection[StrPath], StrPath, ANIDat
                         'padding': PADDING if padding is None else padding,
                         'shuffle': shuffle,
                         'shuffle_seed': shuffle_seed,
-                        'include_properties': include_properties if include_properties is not None else 'all',
+                        'include_properties': sorted(include_properties) if include_properties is not None else 'all',
                         'batch_size': batch_size,
                         'total_num_conformers': dataset.num_conformers,
                         'total_conformer_groups': dataset.num_conformer_groups}

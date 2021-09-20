@@ -277,14 +277,24 @@ class _ANIDatasetBase(Mapping[str, Conformers]):
             yield getattr(self, 'get_numpy_conformers')(group_name, **kwargs)
 
     def iter_key_idx_conformers(self, **kwargs) -> Iterator[Tuple[str, int, Conformers]]:
+        kwargs = kwargs.copy()
+        getter = kwargs.pop('getter', 'get_conformers')
         for k, size in self._group_sizes.items():
-            conformers = getattr(self, 'get_conformers')(k, **kwargs)
+            conformers = getattr(self, getter)(k, **kwargs)
             for idx in range(size):
                 single_conformer = {k: conformers[k][idx] for k in conformers.keys()}
                 yield k, idx, single_conformer
 
+    def iter_key_idx_numpy_conformers(self, **kwargs) -> Iterator[Tuple[str, int, Conformers]]:
+        kwargs.update({'getter': 'get_numpy_conformers'})
+        yield from self.iter_key_idx_conformers(**kwargs)
+
     def iter_conformers(self, **kwargs) -> Iterator[Conformers]:
         for _, _, c in self.iter_key_idx_conformers(**kwargs):
+            yield c
+
+    def iter_numpy_conformers(self, **kwargs) -> Iterator[Conformers]:
+        for _, _, c in self.iter_key_idx_numpy_conformers(**kwargs):
             yield c
 
 
