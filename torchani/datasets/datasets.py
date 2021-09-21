@@ -919,6 +919,16 @@ class ANIDataset(_ANIDatasetBase):
         self._datasets = OrderedDict((n, _ANISubdataset(loc, **kwargs)) for n, loc in zip(names, locations))
         self._update_cache()
 
+    @classmethod
+    def from_dir(cls, dir_: StrPath, **kwargs):
+        r"""Reads all files in a given directory"""
+        dir_ = Path(dir_).resolve()
+        if not dir_.is_dir():
+            raise ValueError("Input should be a directory")
+        locations = sorted([p for p in dir_.iterdir() if p.suffix != '.tar.gz'])
+        names = [p.stem for p in locations]
+        return cls(locations=locations, names=names, **kwargs)
+
     @property
     def grouping(self) -> str:
         return self._first_subds.grouping
