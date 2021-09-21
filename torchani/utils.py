@@ -23,6 +23,52 @@ PADDING = {
     'energies': 0.0
 }
 
+# GSAES were calculating using the following splin multiplicities:
+# H: 2, C: 3, N: 4, O: 3, S: 3, F: 2, Cl: 2
+# and using UKS in all cases, with tightscf, on orca 4.2.3
+# (except for the wB97X-631Gd energies, which were computed with Gaussian 09)
+# the coupled cluster energies are calculated using
+# DLPNO-CCSD def2-TZVPP def2-TZVPP/C which is not the exact same as
+# CCSD(T)*/CBS but is close enough for atomic energies. For H I set the E to
+# -0.5 since that is the exact nonrelativistic solution and I believe CC can't
+# really converge for H.
+GSAES = {'B973c-def2mTZVP': {'C': -37.81441001258,
+                             'Cl': -460.082223445159,
+                             'F': -99.688618987039,
+                             'H': -0.506930113968,
+                             'N': -54.556538547322,
+                             'O': -75.029181326588,
+                             'S': -398.043159341582},
+         'wB97X-631Gd': {'C': -37.8338334,
+                         'Cl': -460.116700600,
+                         'F': -99.6949007,
+                         'H': -0.4993212,
+                         'N': -54.5732825,
+                         'O': -75.0424519,
+                         'S': -398.0814169},
+
+        'wB97MD3BJ-def2TZVPP': {'C': -37.870597534068,
+                                'Cl': -460.197921425433,
+                                'F': -99.784869113871,
+                                'H': -0.498639663159,
+                                'N': -54.621568655507,
+                                'O': -75.111870707635,
+                                'S': -398.158126819835},
+        'wB97MV-def2TZVPP': {'C': -37.844395699666,
+                             'Cl': -460.124987825603,
+                             'F': -99.745234404775,
+                             'H': -0.494111111003,
+                             'N': -54.590952163069,
+                             'O': -75.076760965132,
+                             'S': -398.089446664032},
+        'CCSD(T)star-CBS': {'C': -37.780724507998,
+                            'Cl': -459.664237510771,
+                            'F': -99.624864557142,
+                            'H': -0.5000000000000,
+                            'N': -54.515992576387,
+                            'O': -74.976148184192,
+                            'S': -397.646401989238}}
+
 
 def check_openmp_threads():
     if "OMP_NUM_THREADS" not in os.environ:
@@ -537,4 +583,4 @@ ATOMIC_NUMBERS = {symbol: z for z, symbol in enumerate(PERIODIC_TABLE)}
 
 __all__ = ['pad_atomic_properties', 'present_species', 'hessian',
            'vibrational_analysis', 'strip_redundant_padding',
-           'ChemicalSymbolsToInts', 'get_atomic_masses', 'tqdm']
+           'ChemicalSymbolsToInts', 'get_atomic_masses', 'tqdm', 'GSAES', 'PERIODIC_TABLE', 'ATOMIC_NUMBERS']
