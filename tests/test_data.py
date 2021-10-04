@@ -94,6 +94,9 @@ class TestBuiltinDatasets(TestCase):
             with tempfile.TemporaryDirectory() as tmpdir:
                 with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
                     getattr(torchani.datasets, c)(tmpdir, download=False, basis_set='def2TZVPP', functional='wB97MD3BJ')
+                # Case insensitivity
+                with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
+                    getattr(torchani.datasets, c)(tmpdir, download=False, basis_set='DEF2tZvPp', functional='Wb97md3Bj')
 
 
 class TestFineGrainedShuffle(TestCase):

@@ -134,42 +134,42 @@ class TestData(_BaseBuiltinDataset):
 
 
 class ANI1ccx(_BaseBuiltinDataset):
-    _ARCHIVE = {'CCSD(T)star-CBS': 'ANI-1ccx-CCSD_parentheses_T_star-CBS-data.tar.gz'}
-    _FILES_AND_MD5S = {'CCSD(T)star-CBS': OrderedDict([('ANI-1ccx-CCSD_parentheses_T_star-CBS.h5', 'a7218b99f843bc56a1ec195271082c40')])}
+    _ARCHIVE = {'ccsd(t)star-cbs': 'ANI-1ccx-CCSD_parentheses_T_star-CBS-data.tar.gz'}
+    _FILES_AND_MD5S = {'ccsd(t)star-cbs': OrderedDict([('ANI-1ccx-CCSD_parentheses_T_star-CBS.h5', 'a7218b99f843bc56a1ec195271082c40')])}
 
     def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='CBS', functional='CCSD(T)star'):
-        lot = f'{functional}-{basis_set}'
+        lot = f'{functional.lower()}-{basis_set.lower()}'
         if lot not in self._ARCHIVE.keys():
             raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
 
 
 class AminoacidDimers(_BaseBuiltinDataset):
-    _ARCHIVE = {'B973c-def2mTZVP': 'Aminoacid-dimers-B973c-def2mTZVP-data.tar.gz'}
-    _FILES_AND_MD5S = {'B973c-def2mTZVP': OrderedDict([('Aminoacid-dimers-B973c-def2mTZVP.h5', '7db327a3cf191c19a06f5495453cfe56')])}
+    _ARCHIVE = {'b973c-def2mtzvp': 'Aminoacid-dimers-B973c-def2mTZVP-data.tar.gz'}
+    _FILES_AND_MD5S = {'b973c-def2mtzvp': OrderedDict([('Aminoacid-dimers-B973c-def2mTZVP.h5', '7db327a3cf191c19a06f5495453cfe56')])}
 
     def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='def2mTZVP', functional='B973c'):
-        lot = f'{functional}-{basis_set}'
+        lot = f'{functional.lower()}-{basis_set.lower()}'
         if lot not in self._ARCHIVE.keys():
             raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
 
 
-_ANI_LOT = {'wB97X-631Gd', 'B973c-def2mTZVP', 'wB97MD3BJ-def2TZVPP', 'wB97MV-def2TZVPP'}
+_ANI_LOT = {'wb97x-631gd', 'b973c-def2mtzvp', 'wb97md3bj-def2tzvpp', 'wb97mv-def2tzvpp'}
 
-_ANI2x_ARCHIVE = {'wB97X-631Gd': 'ANI-2x-wB97X-631Gd-data.tar.gz',
-                  'B973c-def2mTZVP': 'ANI-2x-B973c-def2mTZVP-data.tar.gz',
-                  'wB97MD3BJ-def2TZVPP': 'ANI-2x-wB97MD3BJ-def2TZVPP-data.tar.gz',
-                  'wB97MV-def2TZVPP': 'ANI-2x-wB97MV-def2TZVPP-data.tar.gz'}
+_ANI2x_ARCHIVE = {'wb97x-631gd': 'ANI-2x-wB97X-631Gd-data.tar.gz',
+                  'b973c-def2mtzvp': 'ANI-2x-B973c-def2mTZVP-data.tar.gz',
+                  'wb97md3bj-def2tzvpp': 'ANI-2x-wB97MD3BJ-def2TZVPP-data.tar.gz',
+                  'wb97mv-def2tzvpp': 'ANI-2x-wB97MV-def2TZVPP-data.tar.gz'}
 
-_ANI2x_FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-1x-wB97X-631Gd.h5', '2cd8cbc7a5106f88d8b21cde58074aef'),
+_ANI2x_FILES_AND_MD5S = {'wb97x-631gd': OrderedDict([('ANI-1x-wB97X-631Gd.h5', '2cd8cbc7a5106f88d8b21cde58074aef'),
                                                      ('ANI-2x_heavy-wB97X-631Gd.h5', '0bf1f7fb8c97768116deea672cae8d8e'),
                                                      ('ANI-2x_dimers-wB97X-631Gd.h5', '0043cc1f908851601d9cfbbec2d957e8')]),
-                         'B973c-def2mTZVP': OrderedDict([('ANI-1x-B973c-def2mTZVP.h5', '4351aedf74683d858b834ccef3a727b8'),
+                         'b973c-def2mtzvp': OrderedDict([('ANI-1x-B973c-def2mTZVP.h5', '4351aedf74683d858b834ccef3a727b8'),
                                                          ('ANI-2x_heavy_and_dimers-B973c-def2mTZVP.h5', '09f7c991c78327d92c6de479aff69aca')]),
-                         'wB97MD3BJ-def2TZVPP': OrderedDict([('ANI-1x-wB97D3BJ-def2TZVPP.h5', '6d7d3ba93d4c57e4ac6a6d5dc9598596'),
+                         'wb97md3bj-def2tzvpp': OrderedDict([('ANI-1x-wB97D3BJ-def2TZVPP.h5', '6d7d3ba93d4c57e4ac6a6d5dc9598596'),
                                                              ('ANI-2x_heavy_and_dimers-wB97D3BJ-def2TZVPP.h5', '827a3eb6124ef2c0c3ab4487b63ff329')]),
-                         'wB97MV-def2TZVPP': OrderedDict([('ANI-1x-wB97MV-def2TZVPP.h5', '7f3107e3474f3f673922a0155e11d3aa'),
+                         'wb97mv-def2tzvpp': OrderedDict([('ANI-1x-wB97MV-def2TZVPP.h5', '7f3107e3474f3f673922a0155e11d3aa'),
                                                           ('ANI-2x_heavy_and_dimers-wB97MV-def2TZVPP.h5', 'b60d7938e16b776eb72209972c54721c')])}
 
 
@@ -187,7 +187,7 @@ class ANI2x(_BaseBuiltinDataset):
     _FILES_AND_MD5S = _ANI2x_FILES_AND_MD5S
 
     def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
-        lot = f'{functional}-{basis_set}'
+        lot = f'{functional.lower()}-{basis_set.lower()}'
         if lot not in self._ARCHIVE.keys():
             raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
@@ -198,15 +198,15 @@ class ANI1x(_BaseBuiltinDataset):
     _FILES_AND_MD5S = _ANI1x_FILES_AND_MD5S
 
     def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
-        lot = f'{functional}-{basis_set}'
+        lot = f'{functional.lower()}-{basis_set.lower()}'
         if lot not in self._ARCHIVE.keys():
             raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
 
 
-_COMP6_LOT = {'wB97X-631Gd', 'B973c-def2mTZVP', 'wB97MD3BJ-def2TZVPP', 'wB97MV-def2TZVPP'}
+_COMP6_LOT = {'wb97x-631gd', 'b973c-def2mtzvp', 'wb97md3bj-def2tzvpp', 'wb97mv-def2tzvpp'}
 
-_COMP6v2_FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-BenchMD-wB97X-631Gd.h5', '04c03ec8796359a0e3eb301346efbb03'),
+_COMP6v2_FILES_AND_MD5S = {'wb97x-631gd': OrderedDict([('ANI-BenchMD-wB97X-631Gd.h5', '04c03ec8796359a0e3eb301346efbb03'),
                                                        ('S66x8-v1-wB97X-631Gd.h5', '2b932f920397ae92bf55cfbc26de9a33'),
                                                        ('DrugBank-testset-wB97X-631Gd.h5', 'ed92ec0b47061f8a1ae370390c8eff6e'),
                                                        ('Tripeptides-v1-wB97X-631Gd.h5', '7fd7ddf224b2c329135b16f80d5cad75'),
@@ -224,17 +224,17 @@ _COMP6v2_FILES_AND_MD5S = {'wB97X-631Gd': OrderedDict([('ANI-BenchMD-wB97X-631Gd
                                                        ('GDB-heavy11-wB97X-631Gd.h5', 'e4716b57d02e64e3b2bb7096d0ab70ab'),
                                                        ('Tripeptides-sulphur-wB97X-631Gd.h5', '3309d50ede42ceaa96e5d3f897e9bac0'),
                                                        ('DrugBank-SFCl-wB97X-631Gd.h5', '76db51f3750d9322656682b104299442')]),
-                           'B973c-def2mTZVP': OrderedDict([('COMP6-full_v1-B97c3-def2mTZVP.h5', '9cd1e1403c0ca91e07c480eda86332f8'),
+                           'b973c-def2mtzvp': OrderedDict([('COMP6-full_v1-B97c3-def2mTZVP.h5', '9cd1e1403c0ca91e07c480eda86332f8'),
                                                            ('COMP6-heavy-B97c3-def2mTZVP.h5', '1cf3ecd2a2ec7257909c693350d66d18')]),
-                           'wB97MD3BJ-def2TZVPP': OrderedDict([('COMP6-heavy-wB97D3BJ-def2TZVPP.h5', '88aac626d4963aacf9e856ca1408f47b'),
+                           'wb97md3bj-def2tzvpp': OrderedDict([('COMP6-heavy-wB97D3BJ-def2TZVPP.h5', '88aac626d4963aacf9e856ca1408f47b'),
                                                                ('COMP6-full_v1-wB97D3BJ-def2TZVPP.h5', '057d89c8d046ccd9155ee24f3f47faa6')]),
-                           'wB97MV-def2TZVPP': OrderedDict([('COMP6-heavy-wB97MV-def2TZVPP.h5', '804e7a7655903c8a4599f2c48bd584aa'),
+                           'wb97mv-def2tzvpp': OrderedDict([('COMP6-heavy-wB97MV-def2TZVPP.h5', '804e7a7655903c8a4599f2c48bd584aa'),
                                                             ('COMP6-v1_full-wB97MV-def2TZVPP.h5', 'bccdf302f361c0213450381b493e17d8')])}
 
-_COMP6v2_ARCHIVE = {'wB97X-631Gd': 'COMP6-v2-wB97X-631Gd-data.tar.gz',
-                    'B973c-def2mTZVP': 'COMP6-v2-B973c-def2mTZVP-data.tar.gz',
-                    'wB97MD3BJ-def2TZVPP': 'COMP6-v2-wB97MD3BJ-def2TZVPP-data.tar.gz',
-                    'wB97MV-def2TZVPP': 'COMP6-v2-wB97MV-def2TZVPP-data.tar.gz'}
+_COMP6v2_ARCHIVE = {'wb97x-631gd': 'COMP6-v2-wB97X-631Gd-data.tar.gz',
+                    'b973c-def2mtzvp': 'COMP6-v2-B973c-def2mTZVP-data.tar.gz',
+                    'wb97md3bj-def2tzvpp': 'COMP6-v2-wB97MD3BJ-def2TZVPP-data.tar.gz',
+                    'wb97mv-def2tzvpp': 'COMP6-v2-wB97MV-def2TZVPP-data.tar.gz'}
 
 # COMP6v1 is the same as v2, but all files that have heavy atoms are omitted
 _COMP6v1_ARCHIVE = {k: v.replace('-v2-', '-v1-') for k, v in _COMP6v2_ARCHIVE.items()}
@@ -250,7 +250,7 @@ class COMP6v1(_BaseBuiltinDataset):
     _FILES_AND_MD5S = _COMP6v1_FILES_AND_MD5S
 
     def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
-        lot = f'{functional}-{basis_set}'
+        lot = f'{functional.lower()}-{basis_set.lower()}'
         if lot not in self._ARCHIVE.keys():
             raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
@@ -261,7 +261,7 @@ class COMP6v2(_BaseBuiltinDataset):
     _FILES_AND_MD5S = _COMP6v2_FILES_AND_MD5S
 
     def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
-        lot = f'{functional}-{basis_set}'
+        lot = f'{functional.lower()}-{basis_set.lower()}'
         if lot not in self._ARCHIVE.keys():
             raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
