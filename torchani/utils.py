@@ -80,9 +80,7 @@ def sorted_gsaes(elements: Sequence[str], functional: str, basis_set: str, ):
     Functional and basis set are case insensitive
     """
     gsaes = GSAES[f'{functional.lower()}-{basis_set.lower()}']
-    # sort GSAES by element
-    self_energies = sorted(gsaes.items(), key=lambda it: elements.index(it[0]) if it[0] in elements else math.inf)
-    return [it[1] for it in self_energies][:len(elements)]
+    return [gsaes[e] for e in elements]
 
 
 def check_openmp_threads():
