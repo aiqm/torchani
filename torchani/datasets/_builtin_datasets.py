@@ -61,6 +61,7 @@ from ._annotations import StrPath
 from ..utils import tqdm
 
 _BASE_URL = 'http://moria.chem.ufl.edu/animodel/datasets/'
+_DEFAULT_DATA_PATH = Path.home().joinpath('.local/torchani/Datasets')
 
 
 class _BaseBuiltinDataset(ANIDataset):
@@ -78,13 +79,11 @@ class _BaseBuiltinDataset(ANIDataset):
 
         root = Path(root).resolve()
         if download:
-            if not self._maybe_download_hdf5_archive_and_check_integrity(root):
-                raise RuntimeError('Dataset could not be download or is corrupted, '
-                                   'please try downloading again')
+            # If the dataset is not found we download it, if the dataset is corrupted we
+            # exit with error
+            self._maybe_download_hdf5_archive_and_check_integrity(root)
         else:
-            if not self._check_hdf5_files_integrity(root):
-                raise RuntimeError('Dataset not found or is corrupted, '
-                                   'you can use "download = True" to download it')
+            self._check_hdf5_files_integrity(root)
         dataset_paths = [Path(p).resolve() for p in list_files(root, suffix='.h5', prefix=True)]
 
         # Order dataset paths using the order given in "files and md5s"
@@ -96,31 +95,39 @@ class _BaseBuiltinDataset(ANIDataset):
         if h5_dataset_kwargs.get('verbose', True):
             print(self)
 
-    def _check_hdf5_files_integrity(self, root: Path) -> bool:
-        # Checks that all HDF5 files in the provided path are equal to the
-        # expected ones and have the correct checksum, other files such as
-        # tar.gz archives are neglected
+    def _check_hdf5_files_integrity(self, root: Path) -> None:
+        # Checks that:
+        # (1) There are HDF5 files in the dataset
+        # (2) All HDF5 files names in the provided path are equal to the expected ones
+        # (3) They have the correct checksum
+        # If any of these conditions fails the function exits with a RuntimeError
+        # other files such as tar.gz archives are neglected
         present_files = [Path(f).resolve() for f in list_files(root, suffix='.h5', prefix=True)]
         expected_file_names = set(self._files_and_md5s.keys())
         present_file_names = set([f.name for f in present_files])
+        if not present_files:
+            raise RuntimeError(f'Dataset not found in path {root.as_posix()}')
         if expected_file_names != present_file_names:
-            print(f"Wrong files found for dataset {self.__class__.__name__}, "
-                  f"expected {expected_file_names} but found {present_file_names}")
-            return False
+            raise RuntimeError(f"Wrong files found for dataset {self.__class__.__name__} in provided path, "
+                               f"expected {expected_file_names} but found {present_file_names}")
         for f in tqdm(present_files, desc=f'Checking integrity of files for dataset {self.__class__.__name__}'):
             if not check_integrity(f, self._files_and_md5s[f.name]):
-                print(f"All expected files for dataset {self.__class__.__name__} "
-                      f"were found but file {f.name} failed integrity check")
-                return False
-        return True
+                raise RuntimeError(f"All expected files for dataset {self.__class__.__name__} "
+                                   f"were found but file {f.name} failed integrity check, "
+                                    "your dataset is corrupted or has been modified")
 
-    def _maybe_download_hdf5_archive_and_check_integrity(self, root: Path) -> bool:
-        # Downloads only if the files have not been found or are corrupted
+    def _maybe_download_hdf5_archive_and_check_integrity(self, root: Path) -> None:
+        # Downloads only if the files have not been found,
+        # If the files are corrupted it fails and asks you to delete them
         root = Path(root).resolve()
-        if root.is_dir() and self._check_hdf5_files_integrity(root):
-            return True
+        if root.is_dir() and list(root.iterdir()):
+            self._check_hdf5_files_integrity(root)
+            return
         download_and_extract_archive(url=f'{_BASE_URL}{self._archive}', download_root=root, md5=None)
-        return self._check_hdf5_files_integrity(root)
+        tarfile = root / self._archive
+        if tarfile.is_file():
+            tarfile.unlink()
+        self._check_hdf5_files_integrity(root)
 
 
 # NOTE: The order of the _FILES_AND_MD5S is important since it deterimenes the order of iteration over the files
@@ -129,7 +136,9 @@ class TestData(_BaseBuiltinDataset):
     _FILES_AND_MD5S = OrderedDict([('test_data1.h5', '05c8eb5f92cc2e1623355229b53b7f30'),
                                    ('test_data2.h5', 'a496d2792c5fb7a9f6d9ce2116819626')])
 
-    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True):
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True):
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath('Test-Data')
         super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
 
 
@@ -137,10 +146,12 @@ class ANI1ccx(_BaseBuiltinDataset):
     _ARCHIVE = {'ccsd(t)star-cbs': 'ANI-1ccx-CCSD_parentheses_T_star-CBS-data.tar.gz'}
     _FILES_AND_MD5S = {'ccsd(t)star-cbs': OrderedDict([('ANI-1ccx-CCSD_parentheses_T_star-CBS.h5', 'a7218b99f843bc56a1ec195271082c40')])}
 
-    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='CBS', functional='CCSD(T)star'):
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='CBS', functional='CCSD(T)star'):
         lot = f'{functional.lower()}-{basis_set.lower()}'
         if lot not in self._ARCHIVE.keys():
             raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'ANI-1ccx-{lot}')
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
 
 
@@ -148,10 +159,12 @@ class AminoacidDimers(_BaseBuiltinDataset):
     _ARCHIVE = {'b973c-def2mtzvp': 'Aminoacid-dimers-B973c-def2mTZVP-data.tar.gz'}
     _FILES_AND_MD5S = {'b973c-def2mtzvp': OrderedDict([('Aminoacid-dimers-B973c-def2mTZVP.h5', '7db327a3cf191c19a06f5495453cfe56')])}
 
-    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='def2mTZVP', functional='B973c'):
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='def2mTZVP', functional='B973c'):
         lot = f'{functional.lower()}-{basis_set.lower()}'
         if lot not in self._ARCHIVE.keys():
             raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'Aminoacid-Dimers-{lot}')
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
 
 
@@ -186,10 +199,12 @@ class ANI2x(_BaseBuiltinDataset):
     _ARCHIVE = _ANI2x_ARCHIVE
     _FILES_AND_MD5S = _ANI2x_FILES_AND_MD5S
 
-    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
         lot = f'{functional.lower()}-{basis_set.lower()}'
         if lot not in self._ARCHIVE.keys():
             raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'ANI-2x-{lot}')
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
 
 
@@ -197,10 +212,12 @@ class ANI1x(_BaseBuiltinDataset):
     _ARCHIVE = _ANI1x_ARCHIVE
     _FILES_AND_MD5S = _ANI1x_FILES_AND_MD5S
 
-    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
         lot = f'{functional.lower()}-{basis_set.lower()}'
         if lot not in self._ARCHIVE.keys():
             raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'ANI-1x-{lot}')
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
 
 
@@ -261,10 +278,12 @@ class COMP6v1(_BaseBuiltinDataset):
     _ARCHIVE = _COMP6v1_ARCHIVE
     _FILES_AND_MD5S = _COMP6v1_FILES_AND_MD5S
 
-    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
         lot = f'{functional.lower()}-{basis_set.lower()}'
         if lot not in self._ARCHIVE.keys():
             raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'COMP6-v1-{lot}')
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
 
 
@@ -272,8 +291,10 @@ class COMP6v2(_BaseBuiltinDataset):
     _ARCHIVE = _COMP6v2_ARCHIVE
     _FILES_AND_MD5S = _COMP6v2_FILES_AND_MD5S
 
-    def __init__(self, root: StrPath, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
         lot = f'{functional.lower()}-{basis_set.lower()}'
         if lot not in self._ARCHIVE.keys():
             raise ValueError(f"Unsupported functional-basis set combination, try one of {set(self._ARCHIVE.keys())}")
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'COMP6-v2-{lot}')
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
