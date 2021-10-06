@@ -244,6 +244,18 @@ for lot in _COMP6_LOT:
         if '-heavy' in k or '-sulphur-' in k or '-SFCl-' in k:
             del _COMP6v1_FILES_AND_MD5S[lot][k]
 
+# There is some extra TZ data for which we have v1 values but not v2 values
+# Note that the ANI-BenchMD, S66x8 and the "13" molecules (with 13 heavy atoms)
+# of GDB-10to13 were recalculated using ORCA 5.0 instead of 4.2 so the integration
+# grids may be slightly different, but the difference should not be significant
+_COMP6v1_FILES_AND_MD5S.update({'wb97x-tzvpp': OrderedDict([('ANI-BenchMD-wB97X-TZVPP.h5', '9cd6d267b2d3d651cba566650642ed62'),
+                                                            ('S66x8-v1-wB97X-TZVPP.h5', 'a7aa6ce11497d182c1265219e5e2925f'),
+                                                            ('DrugBank-testset-wB97X-TZVPP.h5', '977e1d6863fccdbbc6340acb15b1eec2'),
+                                                            ('Tripeptides-v1-wB97X-TZVPP.h5', '6b838fee970244ad85419165bb71c557'),
+                                                            ('GDB-7to9-wB97X-TZVPP.h5', '23b80666f75cb71030534efdc7df7c97'),
+                                                            ('GDB-10to13-wB97X-TZVPP.h5', 'bd9730961eaf15a3d823b97f39c41908')])})
+_COMP6v1_ARCHIVE.update({'wb97x-tzvpp': 'COMP6-v1-wB97X-TZVPP-data.tar.gz'})
+
 
 class COMP6v1(_BaseBuiltinDataset):
     _ARCHIVE = _COMP6v1_ARCHIVE
