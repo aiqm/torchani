@@ -3,6 +3,7 @@ from typing import (Union, Optional, Dict, Sequence, Iterator, Tuple, List, Set,
 import inspect
 import pickle
 import warnings
+import math
 from os import fspath
 from pathlib import Path
 from pprint import pformat
@@ -268,22 +269,66 @@ class _ANIDatasetBase(Mapping[str, Conformers]):
     def __iter__(self) -> Iterator[str]:
         return iter(self._group_sizes.keys())
 
-    def numpy_items(self, **kwargs) -> Iterator[Tuple[str, NumpyConformers]]:
+    def numpy_items(self, limit: float = math.inf, **kwargs) -> Iterator[Tuple[str, NumpyConformers]]:
+        count = 0
         for group_name in self.keys():
+            count += 1
             yield group_name, getattr(self, 'get_numpy_conformers')(group_name, **kwargs)
+            if count >= limit:
+                return
 
     def numpy_values(self, **kwargs) -> Iterator[NumpyConformers]:
-        for group_name in self.keys():
-            yield getattr(self, 'get_numpy_conformers')(group_name, **kwargs)
+        for k, v in self.numpy_items(**kwargs):
+            yield v
 
-    def iter_key_idx_conformers(self, **kwargs) -> Iterator[Tuple[str, int, Conformers]]:
+    def chunked_items(self, max_size: int = 2500, limit: float = math.inf, **kwargs) -> Iterator[Tuple[str, int, MixedConformers]]:
+        r"""Sequentially iterate over chunked pieces of the dataset with a maximum size
+
+        The iteration is "chunked" into pieces, so instead of yielding groups
+        this yields chunks of max size "max_size" which may be useful e.g.
+        if groups are too large and they don't fit in GPU memory.
+
+        The minimum size can't be controlled, and chunks may have different
+        sizes in general, but they will not exceed max_size. An estimate of
+        the number of chunks of the whole dataset is num_conformers //
+        max_size.
+
+        "limit" limits the number of output chunks to that number and then stops iteration
+        (iteration is still sequential, not random).
+        """
+        getter = kwargs.pop('getter', 'get_conformers')
+        splitter = torch.split if getter == 'get_conformers' else np.array_split
+        count = 0
+        for group_name in self.keys():
+            conformers = getattr(self, getter)(group_name, **kwargs)
+            keys_copy = list(conformers.keys())
+            splitted_conformers: NumpyConformers = dict()
+            for k in keys_copy:
+                splitted_conformers.update({k: splitter(conformers.pop(k), max_size)})
+            any_key = next(iter(splitted_conformers.keys()))
+            num_chunks = len(splitted_conformers[any_key])
+            for j in range(num_chunks):
+                count += 1
+                yield group_name, j, {k: v[j] for k, v in splitted_conformers.items()}
+                if count >= limit:
+                    return
+
+    def chunked_numpy_items(self, **kwargs) -> Iterator[Tuple[str, int, MixedConformers]]:
+        kwargs.update({'getter': 'get_numpy_conformers'})
+        yield from self.chunked_items(**kwargs)
+
+    def iter_key_idx_conformers(self, limit: float = math.inf, **kwargs) -> Iterator[Tuple[str, int, Conformers]]:
         kwargs = kwargs.copy()
         getter = kwargs.pop('getter', 'get_conformers')
+        count = 0
         for k, size in self._group_sizes.items():
             conformers = getattr(self, getter)(k, **kwargs)
             for idx in range(size):
+                count += 1
                 single_conformer = {k: conformers[k][idx] for k in conformers.keys()}
                 yield k, idx, single_conformer
+                if count >= limit:
+                    return
 
     def iter_key_idx_numpy_conformers(self, **kwargs) -> Iterator[Tuple[str, int, Conformers]]:
         kwargs.update({'getter': 'get_numpy_conformers'})

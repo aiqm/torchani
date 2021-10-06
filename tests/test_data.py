@@ -641,6 +641,33 @@ class TestANIDataset(TestCase):
             new_groups_copy['species'] = torch.ones((5, 6, 1), dtype=torch.long)
             ds.append_conformers('O6', new_groups_copy)
 
+    def testChunkedIteration(self):
+        ds = self._make_new_dataset()
+        # first we build numpy conformers with ints and str as species (both
+        # allowed)
+        conformers = dict()
+        for gn in self.torch_conformers.keys():
+            conformers[gn] = {k: v.detach().cpu().numpy()
+                                  for k, v in self.torch_conformers[gn].items()}
+
+        # Build the dataset using conformers
+        for k, v in conformers.items():
+            ds.append_conformers(k, v)
+
+        keys = {}
+        coords = []
+        for k, _, v in ds.chunked_numpy_items(max_size=10):
+            coords.append(torch.from_numpy(v['coordinates']))
+            keys.update({k})
+
+        keys_expect = {}
+        coords_expect = []
+        for k, v in ds.numpy_items():
+            coords_expect.append(torch.from_numpy(v['coordinates']))
+            keys_expect.update({k})
+        self.assertEqual(keys_expect, keys)
+        self.assertEqual(torch.cat(coords_expect), torch.cat(coords))
+
     def testAppendAndDeleteNumpyConformers(self):
         ds = self._make_new_dataset()
         # first we build numpy conformers with ints and str as species (both
