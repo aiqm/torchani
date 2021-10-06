@@ -6,12 +6,14 @@ wavefunction_method/basis_set when appropriate.
 
 - ANI-1x, with LoT:
     - wB97X/6-31G(d)
+    - wB97X/def2-TZVPP
     - B97-3c/def2-mTZVP
     - wB97M-D3BJ/def2-TZVPP
     - wB97MV/def2-TZVPP
 
 - ANI-2x, with LoT:
     - wB97X/6-31G(d)
+    - wB97X/def2-TZVPP
     - B97-3c/def2-mTZVP
     - wB97M-D3BJ/def2-TZVPP
     - wB97MV/def2-TZVPP
@@ -24,6 +26,7 @@ wavefunction_method/basis_set when appropriate.
 
 - COMP6-v1, with LoT:
     - wB97X/6-31G(d)
+    - wB97X/def2-TZVPP
     - B97-3c/def2-mTZVP
     - wB97M-D3BJ/def2-TZVPP
     - wB97MV/def2-TZVPP
@@ -45,7 +48,6 @@ datasets, so everything that is in the v1/1x datasets is also in the v2/2x
 datasets, which contain extra structures.
 
 Known issues:
-- The wB97X/def2-TZVPP datasets are still not available through this module
 - There are small inconsistencies with the names of some files:
     * COMP6 files are v1_full instead of full_v1 for wB97MV
     * for wB97M-D3BJ some files are labeled wB97D3BJ instead of wB97MD3BJ
@@ -168,12 +170,13 @@ class AminoacidDimers(_BaseBuiltinDataset):
         super().__init__(root, download, archive=self._ARCHIVE[lot], files_and_md5s=self._FILES_AND_MD5S[lot], verbose=verbose)
 
 
-_ANI_LOT = {'wb97x-631gd', 'b973c-def2mtzvp', 'wb97md3bj-def2tzvpp', 'wb97mv-def2tzvpp'}
+_ANI_LOT = {'wb97x-631gd', 'b973c-def2mtzvp', 'wb97md3bj-def2tzvpp', 'wb97mv-def2tzvpp', 'wb97x-def2tzvpp'}
 
 _ANI2x_ARCHIVE = {'wb97x-631gd': 'ANI-2x-wB97X-631Gd-data.tar.gz',
                   'b973c-def2mtzvp': 'ANI-2x-B973c-def2mTZVP-data.tar.gz',
                   'wb97md3bj-def2tzvpp': 'ANI-2x-wB97MD3BJ-def2TZVPP-data.tar.gz',
-                  'wb97mv-def2tzvpp': 'ANI-2x-wB97MV-def2TZVPP-data.tar.gz'}
+                  'wb97mv-def2tzvpp': 'ANI-2x-wB97MV-def2TZVPP-data.tar.gz',
+                  'wb97x-def2tzvpp': 'ANI-2x-wB97X-def2TZVPP-data.tar.gz'}
 
 _ANI2x_FILES_AND_MD5S = {'wb97x-631gd': OrderedDict([('ANI-1x-wB97X-631Gd.h5', '2cd8cbc7a5106f88d8b21cde58074aef'),
                                                      ('ANI-2x_heavy-wB97X-631Gd.h5', '0bf1f7fb8c97768116deea672cae8d8e'),
@@ -183,7 +186,9 @@ _ANI2x_FILES_AND_MD5S = {'wb97x-631gd': OrderedDict([('ANI-1x-wB97X-631Gd.h5', '
                          'wb97md3bj-def2tzvpp': OrderedDict([('ANI-1x-wB97D3BJ-def2TZVPP.h5', '6d7d3ba93d4c57e4ac6a6d5dc9598596'),
                                                              ('ANI-2x_heavy_and_dimers-wB97D3BJ-def2TZVPP.h5', '827a3eb6124ef2c0c3ab4487b63ff329')]),
                          'wb97mv-def2tzvpp': OrderedDict([('ANI-1x-wB97MV-def2TZVPP.h5', '7f3107e3474f3f673922a0155e11d3aa'),
-                                                          ('ANI-2x_heavy_and_dimers-wB97MV-def2TZVPP.h5', 'b60d7938e16b776eb72209972c54721c')])}
+                                                          ('ANI-2x_heavy_and_dimers-wB97MV-def2TZVPP.h5', 'b60d7938e16b776eb72209972c54721c')]),
+                         'wb97x-def2tzvpp': OrderedDict([('ANI-1x-wB97X-def2TZVPP.h5', '8bd2f258c8b4588d2d64499af199dc74'),
+                                                          ('ANI-2x_subset-wB97X-def2TZVPP.h5', '6db204f90128a9ad470575cb17373586')])}
 
 
 # ANI1x is the same as 2x, but all files that have heavy atoms or dimers are omitted
@@ -265,13 +270,13 @@ for lot in _COMP6_LOT:
 # Note that the ANI-BenchMD, S66x8 and the "13" molecules (with 13 heavy atoms)
 # of GDB-10to13 were recalculated using ORCA 5.0 instead of 4.2 so the integration
 # grids may be slightly different, but the difference should not be significant
-_COMP6v1_FILES_AND_MD5S.update({'wb97x-tzvpp': OrderedDict([('ANI-BenchMD-wB97X-TZVPP.h5', '9cd6d267b2d3d651cba566650642ed62'),
-                                                            ('S66x8-v1-wB97X-TZVPP.h5', 'a7aa6ce11497d182c1265219e5e2925f'),
-                                                            ('DrugBank-testset-wB97X-TZVPP.h5', '977e1d6863fccdbbc6340acb15b1eec2'),
-                                                            ('Tripeptides-v1-wB97X-TZVPP.h5', '6b838fee970244ad85419165bb71c557'),
-                                                            ('GDB-7to9-wB97X-TZVPP.h5', '23b80666f75cb71030534efdc7df7c97'),
-                                                            ('GDB-10to13-wB97X-TZVPP.h5', 'bd9730961eaf15a3d823b97f39c41908')])})
-_COMP6v1_ARCHIVE.update({'wb97x-tzvpp': 'COMP6-v1-wB97X-TZVPP-data.tar.gz'})
+_COMP6v1_FILES_AND_MD5S.update({'wb97x-def2tzvpp': OrderedDict([('ANI-BenchMD-wB97X-def2TZVPP.h5', '9cd6d267b2d3d651cba566650642ed62'),
+                                                            ('S66x8-v1-wB97X-def2TZVPP.h5', 'a7aa6ce11497d182c1265219e5e2925f'),
+                                                            ('DrugBank-testset-wB97X-def2TZVPP.h5', '977e1d6863fccdbbc6340acb15b1eec2'),
+                                                            ('Tripeptides-v1-wB97X-def2TZVPP.h5', '6b838fee970244ad85419165bb71c557'),
+                                                            ('GDB-7to9-wB97X-def2TZVPP.h5', '23b80666f75cb71030534efdc7df7c97'),
+                                                            ('GDB-10to13-wB97X-def2TZVPP.h5', 'bd9730961eaf15a3d823b97f39c41908')])})
+_COMP6v1_ARCHIVE.update({'wb97x-def2tzvpp': 'COMP6-v1-wB97X-def2TZVPP-data.tar.gz'})
 
 
 class COMP6v1(_BaseBuiltinDataset):
