@@ -77,7 +77,7 @@ class TestBuiltinDatasets(TestCase):
 
     def testBuiltins(self):
         # all these have default levels of theory
-        classes = ['ANI1x', 'ANI2x', 'COMP6v1', 'COMP6v2', 'ANI1ccx', 'AminoacidDimers']
+        classes = ['ANI1x', 'ANI2x', 'COMP6v1', 'COMP6v2', 'ANI1ccx', 'AminoacidDimers', 'ANI1q', 'ANI2qHeavy', 'IonsLight', 'IonsHeavy', 'IonsVeryHeavy', 'TestData']
         for c in classes:
             with tempfile.TemporaryDirectory() as tmpdir:
                 with self.assertRaisesRegex(RuntimeError, "Dataset not found"):

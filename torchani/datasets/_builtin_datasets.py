@@ -23,6 +23,7 @@ wavefunction_method/basis_set when appropriate.
   Note that this dataset also has Hartree Fock (HF) energies, RI-MP2 energies
   and forces and DPLNO-CCSD(T) energies for different basis sets and PNO
   settings.
+  This dataset was originally used for transfer learning, not direct training.
 
 - COMP6-v1, with LoT:
     - wB97X/6-31G(d)
@@ -30,15 +31,53 @@ wavefunction_method/basis_set when appropriate.
     - B97-3c/def2-mTZVP
     - wB97M-D3BJ/def2-TZVPP
     - wB97MV/def2-TZVPP
+  This dataset is not meant to be trained to, it is a test set.
 
 - COMP6-v2, with LoT:
     - wB97X/6-31G(d)
     - B97-3c/def2-mTZVP
     - wB97M-D3BJ/def2-TZVPP
     - wB97MV/def2-TZVPP
+  This dataset is not meant to be trained to, it is a test set.
 
 - AminoacidDimers, with LoT:
     - B97-3c/def2-mTZVP
+  This dataset is not meant to be trained to on its own.
+
+- ANI1q, with LoT:
+    - wB97X/631Gd
+  Very limited subset of ANI-1x
+  for which 'atomic CM5 charges' are available.
+  This dataset is not meant to be trained to on its own.
+
+- ANI2qHeavy, with LoT:
+    - wB97X/631Gd
+  Subset of ANI-2x "heavy"
+  for which 'atomic CM5 charges' are available.
+  This dataset is not meant to be trained to on its own.
+
+- IonsLight, with LoT:
+    - B973c/def2mTZVP
+  Dataset that includes ions, with H,C,N,O elements only
+  This dataset is not meant to be trained to on its own.
+
+- IonsHeavy, with LoT:
+    - B973c/def2mTZVP
+  Dataset that includes ions, with H,C,N,O elements and at least one of F,S,Cl
+  (disjoint from IonsLight)
+  This dataset is not meant to be trained to on its own.
+
+- IonsVeryHeavy, with LoT:
+    - B973c/def2mTZVP
+  Dataset that includes ions, with H,C,N,O,F,S,Cl elements and at least one of
+  Si,As,Br,Se,P,B,I
+  (disjoint from LightIons and IonsHeavy)
+  This dataset is not meant to be trained to on its own.
+
+- TestData, with LoT:
+    - wB97X/631Gd
+  GDB subset, only for debugging and code testing purposes.
+
 
 (note that the conformations present in datasets with different LoT may be
 different).
@@ -138,9 +177,86 @@ class TestData(_BaseBuiltinDataset):
     _FILES_AND_MD5S = OrderedDict([('test_data1.h5', '05c8eb5f92cc2e1623355229b53b7f30'),
                                    ('test_data2.h5', 'a496d2792c5fb7a9f6d9ce2116819626')])
 
-    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True):
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
+        assert basis_set.lower() == '631gd', "Only wB97X/631Gd data is available for this dataset"
+        assert functional.lower() == 'wb97x'
+        lot = f'{functional.lower()}-{basis_set.lower()}'
         if root is None:
-            root = _DEFAULT_DATA_PATH.joinpath('Test-Data')
+            root = _DEFAULT_DATA_PATH.joinpath(f'Test-Data-{lot}')
+        super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
+
+
+class IonsVeryHeavy(_BaseBuiltinDataset):
+    _ARCHIVE = 'Ions-very_heavy-B973c-def2mTZVP-data.tar.gz'
+    _FILES_AND_MD5S = OrderedDict([('Ions-very_heavy-B973c-def2mTZVP.h5', '64d872442fb6226ce2010a50565fe7bb')])
+
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='def2mTZVP', functional='B973c'):
+        assert basis_set.lower() == 'def2mtzvp', "Only B973c/def2mTZVP data is available for this dataset"
+        assert functional.lower() == 'b973c'
+        lot = f'{functional.lower()}-{basis_set.lower()}'
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'Ions-very_heavy-{lot}')
+        super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
+
+
+class IonsHeavy(_BaseBuiltinDataset):
+    _ARCHIVE = 'Ions-heavy-B973c-def2mTZVP-data.tar.gz'
+    _FILES_AND_MD5S = OrderedDict([('Ions-heavy-B973c-def2mTZVP.h5', 'ef1b406d453b71488683c1cf9f1aa316')])
+
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='def2mTZVP', functional='B973c'):
+        assert basis_set.lower() == 'def2mtzvp', "Only B973c/def2mTZVP data is available for this dataset"
+        assert functional.lower() == 'b973c'
+        lot = f'{functional.lower()}-{basis_set.lower()}'
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'Ions-heavy-{lot}')
+        super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
+
+
+class IonsLight(_BaseBuiltinDataset):
+    _ARCHIVE = 'Ions-light-B973c-def2mTZVP-data.tar.gz'
+    _FILES_AND_MD5S = OrderedDict([('Ions-light-B973c-def2mTZVP.h5', 'af2e520d3eace248a1ad7a8bdb8ec7c7')])
+
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='def2mTZVP', functional='B973c'):
+        assert basis_set.lower() == 'def2mtzvp', "Only B973c/def2mTZVP data is available for this dataset"
+        assert functional.lower() == 'b973c'
+        lot = f'{functional.lower()}-{basis_set.lower()}'
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'Ions-light-{lot}')
+        super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
+
+
+class ANI1q(_BaseBuiltinDataset):
+    _ARCHIVE = 'ANI-1q-wB97X-631Gd-data.tar.gz'
+    _FILES_AND_MD5S = OrderedDict([('ANI-1q-wB97X-631Gd.h5', 'a66e3d50e44ed0c863abc52e943ca1c2')])
+
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
+        assert basis_set.lower() == '631gd', "Only wB97X/631Gd data is available for this dataset"
+        assert functional.lower() == 'wb97x'
+        r"""ANI-1x subset with CM5 atomic charges and multipoles
+
+         Very limited subset of the wB97X/631G(d) ANI-1x dataset for which 'atomic CM5 charges',
+        'QM dipoles' and 'QM quadrupoles' are available"""
+        lot = f'{functional.lower()}-{basis_set.lower()}'
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'ANI-1q-{lot}')
+        super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
+
+
+class ANI2qHeavy(_BaseBuiltinDataset):
+    _ARCHIVE = 'ANI-2q_heavy-wB97X-631Gd-data.tar.gz'
+    _FILES_AND_MD5S = OrderedDict([('ANI-2q_heavy-wB97X-631Gd.h5', '3d5a1ab8f6065f130b89e633f453abaf')])
+
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='631Gd', functional='wB97X'):
+        assert basis_set.lower() == '631gd', "Only wB97X/631Gd data is available for this dataset"
+        assert functional.lower() == 'wb97x'
+        r"""ANI-2x "heavy" subset with CM5 atomic charges
+
+        Subset of the wB97X/631G(d) ANI-2x dataset ("heavy" part only) for
+        which 'atomic CM5 charges' and 'atomic hirshfeld dipole magnitudes' are
+        available"""
+        lot = f'{functional.lower()}-{basis_set.lower()}'
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'ANI-2q_heavy-{lot}')
         super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
 
 
