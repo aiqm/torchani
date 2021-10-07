@@ -105,7 +105,7 @@ from ..utils import tqdm
 _BASE_URL = 'http://moria.chem.ufl.edu/animodel/datasets/'
 _DEFAULT_DATA_PATH = Path.home().joinpath('.local/torchani/Datasets')
 
-_BUILTIN_DATASETS = ['ANI1x', 'ANI2x', 'COMP6v1', 'COMP6v2', 'ANI1ccx', 'AminoacidDimers', 'ANI1q', 'HeavyANI2q', 'LightIons', 'HeavyIons', 'VeryHeavyIons', 'TestData']
+_BUILTIN_DATASETS = ['ANI1x', 'ANI2x', 'COMP6v1', 'COMP6v2', 'ANI1ccx', 'AminoacidDimers', 'ANI1q', 'ANI2qHeavy', 'IonsLight', 'IonsHeavy', 'IonsVeryHeavy', 'TestData']
 _BUILTIN_DATASETS_LOT = ['wb97x-631gd', 'b973c-def2mtzvp', 'wb97md3bj-def2tzvpp', 'wb97mv-def2tzvpp', 'wb97x-def2tzvpp', 'ccsd(t)star-cbs']
 
 
