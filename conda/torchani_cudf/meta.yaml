@@ -39,10 +39,10 @@ requirements:
 
 build:
   number: 1
-  string: py{{py}}_torch1.9.0_cuda11.1
+  string: py{{py}}_torch1.9.1_cuda11.1
   script:
-    - pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 -f https://download.pytorch.org/whl/torch_stable.html
-    - "{{ PYTHON }} setup.py install --ext-all-sms"
+    - pip install torch==1.9.1+cu111 torchvision==0.10.1+cu111 -f https://download.pytorch.org/whl/torch_stable.html
+    - "{{ PYTHON }} -m pip install . --global-option='--ext-all-sms' -vvv --no-deps"
 
 test:
   imports:

@@ -1,4 +1,4 @@
-name: stable-torch-1.9.0
+name: stable-torch-1.9.1
 
 on:
   push:

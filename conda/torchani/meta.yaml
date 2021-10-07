@@ -37,9 +37,9 @@ requirements:
 
 build:
   number: 1
-  string: py{{py}}_torch1.9.0_cuda11.1
+  string: py{{py}}_torch1.9.1_cuda11.1
   script:
-    - "{{ PYTHON }} setup.py install --ext-all-sms"
+    - "{{ PYTHON }} -m pip install . --global-option='--ext-all-sms' -vvv --no-deps"
 
 test:
   imports:

@@ -49,14 +49,14 @@ conda build $CONDA_CHANNEL_FLAGS --no-anaconda-upload --no-copy-test-source-file
 
 # upload to anaconda.org if has release_anaconda argument
 if [[ $1 == release_anaconda ]]; then
-    BUILD_FILE="${CONDA}/conda-bld/linux-64/${PACKAGE_NAME}-${BUILD_VERSION}-py${PYTHON_VERSION//./}_torch1.9.0_cuda11.1.tar.bz2"
+    BUILD_FILE="${CONDA}/conda-bld/linux-64/${PACKAGE_NAME}-${BUILD_VERSION}-py${PYTHON_VERSION//./}_torch1.9.1_cuda11.1.tar.bz2"
     echo $BUILD_FILE
     anaconda -t $CONDA_TOKEN upload -u $USER $BUILD_FILE --force
 fi
 
 # upload to roitberg server if has release argument
 if [[ $1 == release ]]; then
-    BUILD_FILE="${CONDA}/conda-bld/linux-64/${PACKAGE_NAME}-${BUILD_VERSION}-py${PYTHON_VERSION//./}_torch1.9.0_cuda11.1.tar.bz2"
+    BUILD_FILE="${CONDA}/conda-bld/linux-64/${PACKAGE_NAME}-${BUILD_VERSION}-py${PYTHON_VERSION//./}_torch1.9.1_cuda11.1.tar.bz2"
     echo $BUILD_FILE
     mkdir -p /release/conda-packages/linux-64
     if [[ $PACKAGE == torchani_cudf ]]; then

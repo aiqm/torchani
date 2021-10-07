@@ -11,7 +11,7 @@ setup_build_version() {
 }
 
 setup_conda_pytorch_constraint() {
-  export CONDA_PYTORCH_CONSTRAINT="- pytorch 1.9.0 *cuda11.1*"
+  export CONDA_PYTORCH_CONSTRAINT="- pytorch 1.9.1 *cuda11.1*"
 }
 
 setup_conda_cudatoolkit_constraint(){
