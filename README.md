@@ -76,6 +76,14 @@ cd tests
 python -m pytest -v -s *.py
 ```
 
+# Command Line Interface
+After installation, there will be an executable script (torchani) available on you path, which contain some builtin utilities.
+
+Check usage with: 
+```
+$ torchani --help
+```
+
 # TorchANI Extensions
 [TorchANI CSRC](torchani/csrc) provides AEV CUDA Extension (speedup for AEV calculation) and MNP extension (Multi Net Parallel for inference) for speedup training and inference.
 
