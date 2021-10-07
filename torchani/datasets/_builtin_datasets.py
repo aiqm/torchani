@@ -91,6 +91,7 @@ Known issues:
     * COMP6 files are v1_full instead of full_v1 for wB97MV
     * for wB97M-D3BJ some files are labeled wB97D3BJ instead of wB97MD3BJ
 """
+import sys
 from pathlib import Path
 from typing import Optional, Any
 from collections import OrderedDict
@@ -103,6 +104,29 @@ from ..utils import tqdm
 
 _BASE_URL = 'http://moria.chem.ufl.edu/animodel/datasets/'
 _DEFAULT_DATA_PATH = Path.home().joinpath('.local/torchani/Datasets')
+
+_BUILTIN_DATASETS = ['ANI1x', 'ANI2x', 'COMP6v1', 'COMP6v2', 'ANI1ccx', 'AminoacidDimers', 'ANI1q', 'HeavyANI2q', 'LightIons', 'HeavyIons', 'VeryHeavyIons', 'TestData']
+_BUILTIN_DATASETS_LOT = ['wb97x-631gd', 'b973c-def2mtzvp', 'wb97md3bj-def2tzvpp', 'wb97mv-def2tzvpp', 'wb97x-def2tzvpp', 'ccsd(t)star-cbs']
+
+
+def download_builtin_dataset(dataset, lot, root=None):
+    """
+    Download dataset at specified root folder, or at the default folder: ./datasets/{dataset}-{lot}/
+    """
+    assert dataset in _BUILTIN_DATASETS, f"{dataset} is not avaiable"
+    assert lot in _BUILTIN_DATASETS_LOT, f"{lot} is not avaiable"
+
+    parts = lot.split('-')
+    assert len(parts) == 2, f"bad LoT format: {lot}"
+
+    functional = parts[0]
+    basis_set = parts[1]
+    location = f'./datasets/{dataset}-{lot}/' if root is None else root
+    if Path(location).exists():
+        print(f"Found existing dataset at {Path(location).absolute().as_posix()}, will check files integrality.")
+    else:
+        print(f"Will download dataset at {Path(location).absolute().as_posix()}")
+    getattr(sys.modules[__name__], dataset)(location, download=True, functional=functional, basis_set=basis_set)
 
 
 class _BaseBuiltinDataset(ANIDataset):

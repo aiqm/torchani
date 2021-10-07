@@ -75,6 +75,12 @@ class TestBuiltinDatasets(TestCase):
             ds = torchani.datasets.TestData(tmpdir, download=True)
             self.assertEqual(ds.grouping, 'by_formula')
 
+    def testDownloadSmallSample(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            torchani.datasets.download_builtin_dataset('TestData', 'wb97x-631gd', tmpdir)
+            num_h5_files = len(list(Path(tmpdir).glob("*.h5")))
+            self.assertGreater(num_h5_files, 0)
+
     def testBuiltins(self):
         # all these have default levels of theory
         classes = ['ANI1x', 'ANI2x', 'COMP6v1', 'COMP6v2', 'ANI1ccx', 'AminoacidDimers', 'ANI1q', 'ANI2qHeavy', 'IonsLight', 'IonsHeavy', 'IonsVeryHeavy', 'TestData']
