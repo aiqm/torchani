@@ -667,6 +667,12 @@ class TestANIDataset(TestCase):
             coords.append(torch.from_numpy(v['coordinates']))
             keys.update({k})
 
+        keys_large = {}
+        coords_large = []
+        for k, _, v in ds.chunked_numpy_items(max_size=100000):
+            coords_large.append(torch.from_numpy(v['coordinates']))
+            keys_large.update({k})
+
         keys_expect = {}
         coords_expect = []
         for k, v in ds.numpy_items():
@@ -674,6 +680,8 @@ class TestANIDataset(TestCase):
             keys_expect.update({k})
         self.assertEqual(keys_expect, keys)
         self.assertEqual(torch.cat(coords_expect), torch.cat(coords))
+        self.assertEqual(keys_expect, keys_large)
+        self.assertEqual(torch.cat(coords_expect), torch.cat(coords_large))
 
     def testAppendAndDeleteNumpyConformers(self):
         ds = self._make_new_dataset()

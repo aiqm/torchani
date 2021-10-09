@@ -297,15 +297,18 @@ class _ANIDatasetBase(Mapping[str, Conformers]):
         (iteration is still sequential, not random).
         """
         getter = kwargs.pop('getter', 'get_conformers')
-        splitter = torch.split if getter == 'get_conformers' else np.array_split
         count = 0
         for group_name in self.keys():
             conformers = getattr(self, getter)(group_name, **kwargs)
+            any_key = next(iter(conformers.keys()))
             keys_copy = list(conformers.keys())
             splitted_conformers: NumpyConformers = dict()
             for k in keys_copy:
-                splitted_conformers.update({k: splitter(conformers.pop(k), max_size)})
-            any_key = next(iter(splitted_conformers.keys()))
+                if getter == 'get_conformers':
+                    splits = torch.split(conformers.pop(k), max_size)
+                else:
+                    splits = [conformers[k][j:j + max_size] for j in range(0, len(conformers[k]), max_size)]
+                splitted_conformers.update({k: splits})
             num_chunks = len(splitted_conformers[any_key])
             for j in range(num_chunks):
                 count += 1
