@@ -78,6 +78,14 @@ wavefunction_method/basis_set when appropriate.
     - wB97X/631Gd
   GDB subset, only for debugging and code testing purposes.
 
+- TestDataIons, with LoT:
+    - B973c/def2mTZVP
+  Only for debugging and code testing purposes, includes forces, dipoles and charges.
+
+- TestDataForcesDipoles, with LoT:
+    - B973c/def2mTZVP
+  Only for debugging and code testing purposes, includes forces and dipoles.
+
 
 (note that the conformations present in datasets with different LoT may be
 different).
@@ -105,7 +113,7 @@ from ..utils import tqdm
 _BASE_URL = 'http://moria.chem.ufl.edu/animodel/datasets/'
 _DEFAULT_DATA_PATH = Path.home().joinpath('.local/torchani/Datasets')
 
-_BUILTIN_DATASETS = ['ANI1x', 'ANI2x', 'COMP6v1', 'COMP6v2', 'ANI1ccx', 'AminoacidDimers', 'ANI1q', 'ANI2qHeavy', 'IonsLight', 'IonsHeavy', 'IonsVeryHeavy', 'TestData']
+_BUILTIN_DATASETS = ['ANI1x', 'ANI2x', 'COMP6v1', 'COMP6v2', 'ANI1ccx', 'AminoacidDimers', 'ANI1q', 'ANI2qHeavy', 'IonsLight', 'IonsHeavy', 'IonsVeryHeavy', 'TestData', 'TestDataIons', 'TestDataForcesDipoles']
 _BUILTIN_DATASETS_LOT = ['wb97x-631gd', 'b973c-def2mtzvp', 'wb97md3bj-def2tzvpp', 'wb97mv-def2tzvpp', 'wb97x-def2tzvpp', 'ccsd(t)star-cbs']
 
 
@@ -207,6 +215,33 @@ class TestData(_BaseBuiltinDataset):
         lot = f'{functional.lower()}-{basis_set.lower()}'
         if root is None:
             root = _DEFAULT_DATA_PATH.joinpath(f'Test-Data-{lot}')
+        super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
+
+
+class TestDataIons(_BaseBuiltinDataset):
+    _ARCHIVE = 'TestData-ions-B973c-def2mTZVP.tar.gz'
+    _FILES_AND_MD5S = OrderedDict([('ANI-1x_sample-B973c-def2mTZVP.h5', '7294f4872ca9874814452f0411fe3ed6'),
+                                   ('Ions-sample-B973c-def2mTZVP.h5', 'd5821fca9d231a5e2c3f40d65ad245d6')])
+
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='def2mTZVP', functional='B973c'):
+        assert basis_set.lower() == 'def2mtzvp', "Only B973c/def2-mTZVP data is available for this dataset"
+        assert functional.lower() == 'b973c'
+        lot = f'{functional.lower()}-{basis_set.lower()}'
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'TestData-ions-{lot}')
+        super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
+
+
+class TestDataForcesDipoles(_BaseBuiltinDataset):
+    _ARCHIVE = 'TestData-forces_dipoles-B973c-def2mTZVP.tar.gz'
+    _FILES_AND_MD5S = OrderedDict([('ANI-1x_sample-B973c-def2mTZVP.h5', '7294f4872ca9874814452f0411fe3ed6')])
+
+    def __init__(self, root: StrPath = None, download: bool = False, verbose: bool = True, basis_set='def2mTZVP', functional='B973c'):
+        assert basis_set.lower() == 'def2mtzvp', "Only B973c/def2-mTZVP data is available for this dataset"
+        assert functional.lower() == 'b973c'
+        lot = f'{functional.lower()}-{basis_set.lower()}'
+        if root is None:
+            root = _DEFAULT_DATA_PATH.joinpath(f'TestData-forces_dipoles-{lot}')
         super().__init__(root, download, archive=self._ARCHIVE, files_and_md5s=self._FILES_AND_MD5S, verbose=verbose)
 
 
