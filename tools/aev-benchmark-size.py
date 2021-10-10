@@ -362,6 +362,9 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--N',
                         help='Number of Repeat',
                         default=200, type=int)
+    parser.add_argument('--no-cell-list',
+                        help='No use of cell list for pyaev',
+                        action='store_true', default=False)
     parser.set_defaults(backward=0)
     parser.set_defaults(run_energy=0)
     parser.set_defaults(single_nn=0)
@@ -374,7 +377,11 @@ if __name__ == "__main__":
 
     device = torch.device('cuda')
     files = ['small.pdb', '1hz5.pdb', '6W8H.pdb']
-    nnp_ref = torchani.models.ANI2x(periodic_table_index=True, model_index=None).to(device)
+    if args.no_cell_list:
+        use_cell_list = False
+    else:
+        use_cell_list = True
+    nnp_ref = torchani.models.ANI2x(periodic_table_index=True, model_index=None, cell_list=use_cell_list).to(device)
     nnp_cuaev = torchani.models.ANI2x(periodic_table_index=True, model_index=None).to(device)
     nnp_cuaev.aev_computer.use_cuda_extension = True
     maxatoms = [6000, 10000]

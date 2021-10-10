@@ -3,7 +3,7 @@ import os
 import io
 import requests
 import zipfile
-from typing import Optional, Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union, Dict, Any
 from distutils import dir_util
 from pathlib import Path
 from ..aev import AEVComputer
@@ -82,14 +82,16 @@ def _get_resources(resource_path, info_file):
 
 def _get_component_modules(info_file: str,
                            model_index: Optional[int] = None,
-                           use_cuda_extension: bool = False) -> Tuple[AEVComputer, NN, EnergyShifter, Sequence[str]]:
+                           aev_computer_kwargs: Optional[Dict[str, Any]] = None) -> Tuple[AEVComputer, NN, EnergyShifter, Sequence[str]]:
     # this creates modules from a neurochem info path,
     # since for neurochem architecture and parameters are kind of mixed up,
     # this doesn't support non pretrained models, it directly outputs a pretrained module
+    if aev_computer_kwargs is None:
+        aev_computer_kwargs = dict()
     const_file, sae_file, ensemble_prefix, ensemble_size = parse_neurochem_resources(info_file)
     consts = Constants(const_file)
     elements = consts.species
-    aev_computer = AEVComputer(**consts, use_cuda_extension=use_cuda_extension)
+    aev_computer = AEVComputer(**consts, **aev_computer_kwargs)
 
     if model_index is None:
         neural_networks = load_model_ensemble(elements, ensemble_prefix, ensemble_size)

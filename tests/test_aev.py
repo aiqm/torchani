@@ -378,7 +378,7 @@ class TestAEVOnBoundary(TestCase):
                 continue
             coordinates = self.coordinates + i * self.v1 + j * self.v2 + k * self.v3
             self.assertNotInCell(coordinates)
-            coordinates = torchani.utils.map2central(self.cell, coordinates, self.pbc)
+            coordinates = torchani.utils.map_to_central(coordinates, self.cell, self.pbc)
             self.assertInCell(coordinates)
             _, aev = self.aev_computer((self.species, coordinates), cell=self.cell, pbc=self.pbc)
             self.assertGreater(aev.abs().max().item(), 0)

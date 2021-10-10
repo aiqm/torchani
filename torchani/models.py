@@ -61,7 +61,7 @@ from collections import OrderedDict
 import torch
 from torch import Tensor
 from torch.nn import Module
-from typing import Tuple, Optional, NamedTuple, Sequence, Union
+from typing import Tuple, Optional, NamedTuple, Sequence, Union, Dict, Any
 from .nn import SpeciesConverter, SpeciesEnergies, Ensemble, ANIModel
 from .utils import ChemicalSymbolsToInts, PERIODIC_TABLE, EnergyShifter, path_is_writable
 from .aev import AEVComputer
@@ -194,10 +194,12 @@ class BuiltinModel(Module):
             atomic_energies = atomic_energies.mean(dim=0)
         return SpeciesEnergies(species_coordinates[0], atomic_energies)
 
+    # unfortunately this is an UGLY workaround to a torchscript bug
     @torch.jit.export
     def _recast_long_buffers(self):
         self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(dtype=torch.long)
         self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
+        self.aev_computer.neighborlist._recast_long_buffers()
 
     def ase(self, **kwargs):
         """Get an ASE Calculator using this ANI model
@@ -282,8 +284,10 @@ class BuiltinModel(Module):
 
 def _get_component_modules(state_dict_file: str,
                            model_index: Optional[int] = None,
-                           use_cuda_extension: bool = False,
+                           aev_computer_kwargs: Optional[Dict[str, Any]] = None,
                            ensemble_size: int = 8) -> Tuple[AEVComputer, NN, EnergyShifter, Sequence[str]]:
+    if aev_computer_kwargs is None:
+        aev_computer_kwargs = dict()
     # This generates ani-style architectures without neurochem
     name = state_dict_file.split('_')[0]
     elements: Tuple[str, ...]
@@ -301,7 +305,7 @@ def _get_component_modules(state_dict_file: str,
         elements = ('H', 'C', 'N', 'O', 'S', 'F', 'Cl')
     else:
         raise ValueError(f'{name} is not a supported model')
-    aev_computer = aev_maker(use_cuda_extension=use_cuda_extension)
+    aev_computer = aev_maker(**aev_computer_kwargs)
     atomic_networks = OrderedDict([(e, atomic_maker(e)) for e in elements])
 
     neural_networks: NN
@@ -358,18 +362,27 @@ def _load_ani_model(state_dict_file: Optional[str] = None,
     # Helper function to toggle if the loading is done from an NC file or
     # directly using torchani and state_dicts
     use_neurochem_source = model_kwargs.pop('use_neurochem_source', False)
-    use_cuda_extension = model_kwargs.pop('use_cuda_extension', False)
     model_index = model_kwargs.pop('model_index', None)
     pretrained = model_kwargs.pop('pretrained', True)
+
+    # aev computer args
+    if model_kwargs.pop('cell_list', False):
+        neighborlist = 'cell_list'
+    elif model_kwargs.pop('verlet_cell_list', False):
+        neighborlist = 'verlet_cell_list'
+    else:
+        neighborlist = 'full_pairwise'
+    aev_computer_kwargs = {'neighborlist': neighborlist,
+                           'use_cuda_extension': model_kwargs.pop('use_cuda_extension', False)}
 
     if use_neurochem_source:
         assert info_file is not None, "Info file is needed to load from a neurochem source"
         assert pretrained, "Non pretrained models not available from neurochem source"
         from . import neurochem  # noqa
-        components = neurochem.parse_resources._get_component_modules(info_file, model_index, use_cuda_extension)
+        components = neurochem.parse_resources._get_component_modules(info_file, model_index, aev_computer_kwargs)
     else:
         assert state_dict_file is not None
-        components = _get_component_modules(state_dict_file, model_index, use_cuda_extension)
+        components = _get_component_modules(state_dict_file, model_index, aev_computer_kwargs)
 
     aev_computer, neural_networks, energy_shifter, elements = components
     model = BuiltinModel(aev_computer, neural_networks, energy_shifter, elements, **model_kwargs)

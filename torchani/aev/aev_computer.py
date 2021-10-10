@@ -299,6 +299,9 @@ class AEVComputer(torch.nn.Module):
             aev = self._compute_cuaev(species, coordinates)
             return SpeciesAEV(species, aev)
 
+        # WARNING: The coordinates that are input into the neighborlist are **not** assumed to be
+        # mapped into the central cell for pbc calculations,
+        # and **in general are not**
         atom_index12, _, diff_vector, distances = self.neighborlist(species, coordinates, cell, pbc)
         aev = self._compute_aev(species, atom_index12, diff_vector, distances)
         return SpeciesAEV(species, aev)
