@@ -186,12 +186,15 @@ def pad_atomic_properties(properties: List[Dict[str, Tensor]],
         shape = list(tensor.shape)
         device = tensor.device
         dtype = tensor.dtype
+        if dtype in [torch.uint8, torch.int8, torch.int16, torch.int32]:
+            dtype = torch.long
         shape[0] = total_num_molecules
         shape[1] = padded_sizes[k]
         output[k] = torch.full(shape, padding_values.get(k, 0.0), device=device, dtype=dtype)
         index0 = 0
         for n, x in zip(num_molecules, properties):
             original_size = x[k].shape[1]
+            # here x[k] is implicitly cast to long if it has another integer type
             output[k][index0: index0 + n, 0: original_size, ...] = x[k]
             index0 += n
     return output
