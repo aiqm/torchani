@@ -74,7 +74,7 @@ class TestBuiltinDatasets(TestCase):
     def testSmallSample(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             ds = torchani.datasets.TestData(tmpdir, download=True)
-            self.assertEqual(ds.grouping, 'by_formula')
+            self.assertEqual(ds.grouping, 'by_num_atoms')
 
     def testDownloadSmallSample(self):
         with tempfile.TemporaryDirectory() as tmpdir:
