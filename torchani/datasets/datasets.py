@@ -475,7 +475,7 @@ class _ANISubdataset(_ANIDatasetBase):
 
     def __str__(self) -> str:
         str_ = f"ANI {self._backend} store:\n"
-        d: Dict[str, Any] = {'Conformers': self.num_conformers}
+        d: Dict[str, Any] = {'Conformers': f'{self.num_conformers:,}'}
         d.update({'Conformer groups': self.num_conformer_groups})
         d.update({'Properties': sorted(self.properties)})
         d.update({'Store Metadata': self.metadata})
