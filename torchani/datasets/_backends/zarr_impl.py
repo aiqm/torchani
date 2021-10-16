@@ -2,8 +2,8 @@ import shutil
 import tempfile
 from os import fspath
 from pathlib import Path
-from typing import ContextManager, Set, Tuple, Optional
-from collections import OrderedDict
+from typing import ContextManager, Set, Tuple, Optional, Mapping, Any
+from collections import OrderedDict  # noqa F401
 
 import numpy as np
 
@@ -33,10 +33,11 @@ class _ZarrTemporaryLocation(ContextManager[StrPath]):
 
 # Backend Specific code starts here
 class _ZarrStoreAdaptor(_H5StoreAdaptor):
-    def __init__(self, store_location: StrPath):
+    def __init__(self, store_location: StrPath, dummy_properties: Mapping[str, Any]):
         self.location = store_location
         self._store_obj = None
         self._mode: Optional[str] = None
+        self._dummy_properties = dummy_properties
 
     def validate_location(self) -> None:
         if not self._store_location.is_dir():
@@ -103,7 +104,9 @@ class _ZarrStoreAdaptor(_H5StoreAdaptor):
             self._update_groups_cache(cache, g)
         if list(cache.group_sizes) != sorted(cache.group_sizes):
             raise RuntimeError("Groups were not iterated upon alphanumerically")
-        return cache.group_sizes, cache.properties
+        # we get rid of dummy properties if they are already in the dataset
+        self._dummy_properties = {k: v for k, v in self._dummy_properties.items() if k not in cache.properties}
+        return cache.group_sizes, cache.properties.union(self._dummy_properties.keys())
 
     def _update_properties_cache(self, cache: CacheHolder, conformers: "zarr.Group", check_properties: bool = False) -> None:
         if not cache.properties:
@@ -137,11 +140,12 @@ class _ZarrStoreAdaptor(_H5StoreAdaptor):
         return g
 
     def __getitem__(self, name: str) -> '_ConformerGroupAdaptor':
-        return _ZarrConformerGroupAdaptor(self._store[name])
+        return _ZarrConformerGroupAdaptor(self._store[name], self._dummy_properties)
 
 
 class _ZarrConformerGroupAdaptor(_H5ConformerGroupAdaptor):
-    def __init__(self, group_obj: "zarr.Group"):
+    def __init__(self, group_obj: "zarr.Group", dummy_properties):
+        self._dummy_properties = dummy_properties
         self._group_obj = group_obj
 
     @property

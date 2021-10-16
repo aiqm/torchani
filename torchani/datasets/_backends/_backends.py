@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import ContextManager
+from typing import ContextManager, Mapping, Any
 
 from .._annotations import StrPath
 from .interface import _StoreAdaptor
@@ -17,15 +17,15 @@ def infer_backend(store_location: StrPath) -> str:
         raise RuntimeError("Backend could not be infered from store location")
 
 
-def StoreAdaptorFactory(store_location: StrPath, backend: str) -> '_StoreAdaptor':
+def StoreAdaptorFactory(store_location: StrPath, backend: str, dummy_properties: Mapping[str, Any]) -> '_StoreAdaptor':
     if backend == 'h5py':
         if not _H5PY_AVAILABLE:
             raise ValueError('h5py backend was specified but h5py could not be found, please install h5py')
-        return _H5StoreAdaptor(store_location)
+        return _H5StoreAdaptor(store_location, dummy_properties)
     elif backend == 'zarr':
         if not _ZARR_AVAILABLE:
             raise ValueError('zarr backend was specified but zarr could not be found, please install zarr')
-        return _ZarrStoreAdaptor(store_location)
+        return _ZarrStoreAdaptor(store_location, dummy_properties)
     else:
         raise RuntimeError(f"Bad backend {backend}")
 

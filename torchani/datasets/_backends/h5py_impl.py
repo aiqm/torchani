@@ -5,8 +5,9 @@ import tempfile
 from os import fspath
 from pathlib import Path
 from functools import partial
+from itertools import chain
 from typing import ContextManager, Iterator, Any, Set, Union, Tuple, Mapping
-from collections import OrderedDict
+from collections import OrderedDict  # noqa F401
 
 import numpy as np
 
@@ -40,11 +41,12 @@ class _H5TemporaryLocation(ContextManager[StrPath]):
 
 
 class _H5StoreAdaptor(_StoreAdaptor):
-    def __init__(self, store_location: StrPath):
+    def __init__(self, store_location: StrPath, dummy_properties: Mapping[str, Any]):
         self.location = store_location
         self._store_obj = None
         self._has_standard_format = False
         self._made_quick_check = False
+        self._dummy_properties = dummy_properties
 
     def validate_location(self) -> None:
         if not self._store_location.is_file():
@@ -138,7 +140,9 @@ class _H5StoreAdaptor(_StoreAdaptor):
         # function worked properly.
         if list(cache.group_sizes) != sorted(cache.group_sizes):
             raise RuntimeError("Groups were not iterated upon alphanumerically")
-        return cache.group_sizes, cache.properties
+        # we get rid of dummy properties if they are already in the dataset
+        self._dummy_properties = {k: v for k, v in self._dummy_properties.items() if k not in cache.properties}
+        return cache.group_sizes, cache.properties.union(self._dummy_properties)
 
     def _update_cache_nonstandard(self, cache: CacheHolder, check_properties: bool, verbose: bool) -> bool:
         def visitor_fn(name: str,
@@ -260,7 +264,7 @@ class _H5StoreAdaptor(_StoreAdaptor):
         return self[name]
 
     def __getitem__(self, name: str) -> '_ConformerGroupAdaptor':
-        return _H5ConformerGroupAdaptor(self._store[name])
+        return _H5ConformerGroupAdaptor(self._store[name], self._dummy_properties)
 
     def __len__(self) -> int:
         return len(self._store)
@@ -270,7 +274,8 @@ class _H5StoreAdaptor(_StoreAdaptor):
 
 
 class _H5ConformerGroupAdaptor(_ConformerGroupAdaptor):
-    def __init__(self, group_obj: h5py.Group):
+    def __init__(self, group_obj: h5py.Group, dummy_properties):
+        self._dummy_properties = dummy_properties
         self._group_obj = group_obj
 
     @property
@@ -299,13 +304,13 @@ class _H5ConformerGroupAdaptor(_ConformerGroupAdaptor):
     def __delitem__(self, k: str) -> None:
         del self._group_obj[k]
 
-    def __getitem__(self, p: str) -> np.ndarray:
+    def _getitem_impl(self, p: str) -> np.ndarray:
         array = self._group_obj[p][()]
         assert isinstance(array, np.ndarray)
         return array
 
     def __len__(self) -> int:
-        return len(self._group_obj)
+        return len(self._group_obj) + len(self._dummy_properties)
 
     def __iter__(self) -> Iterator[str]:
-        yield from self._group_obj.keys()
+        yield from chain(self._group_obj.keys(), self._dummy_properties.keys())

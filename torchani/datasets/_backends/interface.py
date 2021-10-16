@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import ContextManager, Mapping, Set, Tuple
+from typing import ContextManager, Mapping, Set, Tuple, Any
 from collections import OrderedDict
 
 import numpy as np
@@ -23,7 +23,7 @@ class CacheHolder:
 class _ConformerGroupAdaptor(Mapping[str, np.ndarray], ABC):
 
     def __init__(self, *args, **kwargs) -> None:
-        pass
+        self._dummy_properties = kwargs.pop("dummy_properties", dict())
 
     def create_numpy_values(self, conformers: NumpyConformers) -> None:
         for p, v in conformers.items():
@@ -49,11 +49,43 @@ class _ConformerGroupAdaptor(Mapping[str, np.ndarray], ABC):
     @abstractmethod
     def __delitem__(self, k: str) -> None: pass  # noqa E704
 
+    def __getitem__(self, p: str) -> np.ndarray:
+        try:
+            array = self._getitem_impl(p)
+        except KeyError:
+            # A dummy property is defined with a padding value, a dtype, a shape, and an "is atomic" flag
+            # example: dummy_params =
+            # {'dtype': np.int64, 'extra_dims': (3,), 'is_atomic': True, 'fill_value': 0.0}
+            # this generates a property with shape (C, A, extra_dims), filled with value 0.0
+            params = self._dummy_properties[p]
+            array = self._make_dummy_property(**params)
+        assert isinstance(array, np.ndarray)
+        return array
+
+    @abstractmethod
+    def _getitem_impl(self, p: str) -> np.ndarray: pass  # noqa E704
+
+    def _make_dummy_property(self, extra_dims: Tuple[int, ...] = tuple(), is_atomic: bool = False, fill_value: float = 0.0, dtype=np.int64):
+        try:
+            species = self._getitem_impl('species')
+        except KeyError:
+            species = self._getitem_impl('numbers')
+        if species.ndim != 2:
+            raise RuntimeError("Attempted to create dummy properties in a legacy dataset, this is not supported!")
+        shape: Tuple[int, ...] = (species.shape[0],)
+        if is_atomic:
+            shape += (species.shape[1],)
+        return np.full(shape + extra_dims, fill_value, dtype)
+
 
 class _StoreAdaptor(ContextManager['_StoreAdaptor'], Mapping[str, '_ConformerGroupAdaptor'], ABC):
 
     def __init__(self, *args, **kwargs) -> None:
-        pass
+        self._dummy_properties = kwargs.pop("dummy_properties", dict())
+
+    @property
+    def dummy_properties(self) -> Mapping[str, Any]:
+        return self._dummy_properties.copy()
 
     @abstractmethod
     def transfer_location_to(self, other_store: '_StoreAdaptor') -> None: pass  # noqa E704

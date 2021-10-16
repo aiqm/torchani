@@ -829,6 +829,52 @@ class TestANIDataset(TestCase):
             self.assertEqual(set(v.keys()), {'species', 'coordinates', 'energies'})
         self.assertEqual(len(ds.items()), 3)
 
+    def testDummyPropertiesAlreadyPresent(self):
+        # creating dummy properties in a dataset that already has them does nothing
+        ds = ANIDataset(self.tmp_store_three_groups.name)
+        for k, v in ds.numpy_items(limit=1):
+            expect_coords = v['coordinates']
+        ds = ANIDataset(self.tmp_store_three_groups.name, dummy_properties={'coordinates': {'fill_value': 0}})
+        for k, v in ds.numpy_items(limit=1):
+            self.assertEqual(v['coordinates'], expect_coords)
+
+    def testDummyPropertiesRegroup(self):
+        # creating dummy properties in a dataset that already has them does nothing
+        ANIDataset(self.tmp_store_three_groups.name).regroup_by_num_atoms()
+        ds = ANIDataset(self.tmp_store_three_groups.name, dummy_properties={'charges': dict(), 'dipoles': dict()})
+        self.assertEqual(ds.properties, {'charges', 'dipoles', 'species', 'coordinates', 'energies'})
+        ds = ANIDataset(self.tmp_store_three_groups.name)
+        self.assertEqual(ds.properties, {'species', 'coordinates', 'energies'})
+
+    def testDummyPropertiesNotPresent(self):
+        charges_params = {'fill_value': 0, 'dtype': np.int64, 'extra_dims': tuple(), 'is_atomic': False}
+        dipoles_params = {'fill_value': 1, 'dtype': np.float64, 'extra_dims': (3,), 'is_atomic': True}
+        ANIDataset(self.tmp_store_three_groups.name).regroup_by_num_atoms()
+        ds = ANIDataset(self.tmp_store_three_groups.name, dummy_properties={'charges': charges_params, 'atomic_dipoles': dipoles_params})
+        self.assertEqual(ds.properties, {'species', 'coordinates', 'energies', 'charges', 'atomic_dipoles'})
+        for k, v in ds.numpy_items():
+            self.assertTrue((v['charges'] == 0).all())
+            self.assertTrue(v['charges'].dtype == np.int64)
+            self.assertEqual(v['charges'].shape, (v['species'].shape[0],))
+            self.assertTrue((v['atomic_dipoles'] == 1.0).all())
+            self.assertTrue(v['atomic_dipoles'].dtype == np.float64)
+            self.assertEqual(v['atomic_dipoles'].shape, v['species'].shape + (3,))
+            self.assertEqual(set(v.keys()), {'species', 'coordinates', 'energies', 'charges', 'atomic_dipoles'})
+
+        # renaming works as expected
+        ds.rename_properties({'charges': 'other_charges', 'atomic_dipoles': 'other_atomic_dipoles'})
+        self.assertEqual(ds.properties, {'species', 'coordinates', 'energies', 'other_charges', 'other_atomic_dipoles'})
+        for k, v in ds.numpy_items():
+            self.assertTrue((v['other_charges'] == 0).all())
+            self.assertTrue((v['other_atomic_dipoles'] == 1.0).all())
+            self.assertEqual(set(v.keys()), {'species', 'coordinates', 'energies', 'other_charges', 'other_atomic_dipoles'})
+
+        # deleting works as expected
+        ds.delete_properties(('other_charges', 'other_atomic_dipoles'))
+        self.assertEqual(ds.properties, {'species', 'coordinates', 'energies'})
+        for k, v in ds.numpy_items():
+            self.assertEqual(set(v.keys()), {'species', 'coordinates', 'energies'})
+
     def testIterConformers(self):
         ds = ANIDataset(self.tmp_store_three_groups.name)
         confs = []
