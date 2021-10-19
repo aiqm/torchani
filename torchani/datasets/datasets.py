@@ -15,7 +15,7 @@ import torch
 from torch import Tensor
 import numpy as np
 
-from ._backends import _H5PY_AVAILABLE, _StoreAdaptor, StoreAdaptorFactory, TemporaryLocation, infer_backend
+from ._backends import _H5PY_AVAILABLE, _Store, StoreFactory, TemporaryLocation, _ConformerWrapper, _SUFFIXES
 from ._annotations import Transform, Conformers, NumpyConformers, MixedConformers, StrPath, DTypeLike, IdxLike
 from ..utils import species_to_formula, PERIODIC_TABLE, ATOMIC_NUMBERS, tqdm
 
@@ -387,28 +387,23 @@ class _ANISubdataset(_ANIDatasetBase):
     def __init__(self,
                  store_location: StrPath,
                  create: bool = False,
-                 grouping: str = 'by_formula',
+                 grouping: str = None,
                  backend: Optional[str] = None,
                  verbose: bool = True,
-                 dummy_properties: Dict[str, Any] = None):
+                 dummy_properties: Dict[str, Any] = None,
+                 use_cudf: bool = False):
         # dummy_properties must be a dict of the form
         # {'name': {'dtype': dtype, 'is_atomic': is_atomic, 'extra_dims': extra_dims, 'fill_value': fill_value}, ...}
         # with one or more dummy properties. These will be created on the fly only if they are not
         # present in the dataset already.
         super().__init__()
-        dummy_properties = dict() if dummy_properties is None else dummy_properties
-        self._backend = infer_backend(store_location) if backend is None else backend
-        self._store = StoreAdaptorFactory(store_location, self._backend, dummy_properties)
+        self._store = StoreFactory(store_location, backend, grouping, create, dummy_properties, use_cudf=use_cudf)
+        # we StoreFactory monkey patches all stores with "backend" attribute
+        self._backend = self._store.backend  # type: ignore
         self._possible_nonbatch_properties: Set[str]
         if create:
-            if grouping not in ['by_formula', 'by_num_atoms']:
-                raise ValueError('invalid grouping')
-            self._store.make_empty(grouping)
             self._possible_nonbatch_properties = set()
         else:
-            if grouping != 'by_formula':
-                raise ValueError("Can't specify grouping, dataset already exists")
-            self._store.validate_location()
             if self.grouping not in ['by_formula', 'by_num_atoms', 'legacy']:
                 raise RuntimeError(f'Read with unsupported grouping {self.grouping}')
             if self.grouping == 'legacy':
@@ -434,12 +429,12 @@ class _ANISubdataset(_ANIDatasetBase):
         r"""Get the dataset metadata
         """
         with ExitStack() as stack:
-            metadata = self._get_open_store(stack, 'r').metadata
+            metadata = self._get_open_store(stack, 'r', only_meta=True).metadata
         return metadata
 
     def _set_metadata(self, meta: Mapping[str, str]) -> None:
         with ExitStack() as stack:
-            self._get_open_store(stack, 'r+').set_metadata(meta)
+            self._get_open_store(stack, 'r+', only_meta=True).set_metadata(meta)
 
     @contextmanager
     def keep_open(self, mode: str = 'r') -> Iterator['_ANISubdataset']:
@@ -454,6 +449,11 @@ class _ANISubdataset(_ANIDatasetBase):
             for c in ro_ds.iter_conformers():
                 print(c)
                 ... etc
+
+
+        Note: for parquet datasets append operations are queued while the dataset
+        is open and are only executed once it is closed, so calling append_conformers
+        inside a "keep_open" should be done with care.
         """
         self._store.open(mode)
         try:
@@ -463,7 +463,7 @@ class _ANISubdataset(_ANIDatasetBase):
 
     # This trick makes methods fetch the open file directly
     # if they are being called from inside a "keep_open" context
-    def _get_open_store(self, stack: ExitStack, mode: str = 'r') -> '_StoreAdaptor':
+    def _get_open_store(self, stack: ExitStack, mode: str = 'r', only_meta: bool = False) -> '_Store':
         if mode not in ['r+', 'r']:
             raise ValueError(f"Unsupported mode {mode}")
 
@@ -472,7 +472,7 @@ class _ANISubdataset(_ANIDatasetBase):
                 raise RuntimeError('Tried to open a store with mode "r+" but'
                                    ' the store open with mode "r"')
             return self._store
-        return stack.enter_context(self._store.open(mode))
+        return stack.enter_context(self._store.open(mode, only_meta))
 
     def _update_cache(self, check_properties: bool = False, verbose: bool = True) -> None:
         with ExitStack() as stack:
@@ -614,14 +614,19 @@ class _ANISubdataset(_ANIDatasetBase):
         self._check_append_input(group_name, numpy_conformers)
         with ExitStack() as stack:
             f = self._get_open_store(stack, 'r+')
+            wrapper = _ConformerWrapper(numpy_conformers)
+            dummies = f._dummy_properties.copy()
+            if dummies:
+                # Trying to append to a dataset that has dummy properties
+                # triggers the materialization of all dummy properties
+                f._dummy_properties = dict()
+                self._update_cache(verbose=False)
+                for k, v in dummies.items():
+                    self.create_full_property(k, **v)
             try:
-                group = f.create_conformer_group(group_name)
-                group.create_numpy_values(numpy_conformers)
+                f[group_name] = wrapper
             except ValueError:
-                group = f[group_name]
-                if not group.is_resizable:
-                    raise RuntimeError("Dataset must be resizable to allow appending")
-                group.append_numpy_values(numpy_conformers)
+                f[group_name].append_conformers(wrapper)
         return self
 
     @_delegate
@@ -643,8 +648,7 @@ class _ANISubdataset(_ANIDatasetBase):
                 # if we deleted everything in the group then just return,
                 # otherwise we recreate the group using the good conformers
                 return self
-            group = f.create_conformer_group(group_name)
-            group.create_numpy_values(good_conformers)
+            f[group_name] = _ConformerWrapper(good_conformers)
         return self
 
     @_broadcast
@@ -671,15 +675,18 @@ class _ANISubdataset(_ANIDatasetBase):
         """
         extra_dims_ = (extra_dims,) if isinstance(extra_dims, int) else extra_dims
         self._check_properties_are_not_present(dest_key)
-        shape: Tuple[int, ...]
         with ExitStack() as stack:
             f = self._get_open_store(stack, 'r+')
-            for group_name in self.keys():
-                shape = (_get_num_conformers(f[group_name]),)
-                if is_atomic:
-                    shape += (_get_num_atoms(f[group_name]),)
-                data = np.full(shape=shape + extra_dims_, fill_value=fill_value, dtype=dtype)
-                f[group_name].create_numpy_values({dest_key: data})
+            if hasattr(f, "create_full_direct"):
+                # mypy does not understand monkey patching
+                f.create_full_direct(dest_key, is_atomic=is_atomic, extra_dims=extra_dims,  # type: ignore
+                                     fill_value=fill_value, dtype=dtype, num_conformers=self.num_conformers)
+            else:
+                for group_name in self.keys():
+                    shape: Tuple[int, ...] = (_get_num_conformers(f[group_name]),)
+                    if is_atomic:
+                        shape += (_get_num_atoms(f[group_name]),)
+                    f[group_name][dest_key] = np.full(shape + extra_dims_, fill_value, dtype)
         return self
 
     def _make_empty_copy(self,
@@ -692,39 +699,54 @@ class _ANISubdataset(_ANIDatasetBase):
                               grouping=grouping if grouping is not None else self.grouping,
                               verbose=False)
 
-    def _attach_dummy_properties(self, dummy_properties: Mapping[str, Any]) -> None:
+    def _attach_dummy_properties(self, dummy_properties: Dict[str, Any]) -> None:
         with ExitStack() as stack:
-            f = self._get_open_store(stack, 'r+')
+            f = self._get_open_store(stack, 'r+', only_meta=True)
             f._dummy_properties = dummy_properties
 
     @property
-    def _dummy_properties(self) -> Mapping[str, Any]:
+    def _dummy_properties(self) -> Dict[str, Any]:
         with ExitStack() as stack:
-            dummy = self._get_open_store(stack, 'r+')._dummy_properties
+            dummy = self._get_open_store(stack, 'r+', only_meta=True)._dummy_properties
         return dummy
 
     @_broadcast
     @_needs_cache_update
-    def to_backend(self, backend: str, verbose: bool = True) -> '_ANISubdataset':
+    def to_backend(self, backend: str = None, dest_root: StrPath = None, verbose: bool = True, inplace: bool = False) -> '_ANISubdataset':
         r"""Transforms underlying store into a different format
         """
+        if backend is None:
+            backend = self._backend
+
+        if inplace:
+            assert dest_root is None
+        elif dest_root is None:
+            dest_root = Path(self._store.location.root).parent
+
         self._check_correct_grouping()
         if self._backend == backend and backend != 'h5py':
             return self
         with TemporaryLocation(backend) as location:
             new_ds = self._make_empty_copy(location, backend=backend)
-            for group_name, conformers in tqdm(self.numpy_items(exclude_dummy=True),
-                                               total=self.num_conformer_groups,
-                                               desc=f'Converting to {backend}',
-                                               disable=not verbose):
-                # mypy doesn't know that @wrap'ed functions have __wrapped__
-                # attribute, and fixing this is ugly
-                new_ds.append_conformers.__wrapped__(new_ds, group_name, conformers)  # type: ignore
+            with new_ds.keep_open('r+') as rwds:
+                for group_name, conformers in tqdm(self.numpy_items(exclude_dummy=True),
+                                                   total=self.num_conformer_groups,
+                                                   desc=f'Converting to {backend}',
+                                                   disable=not verbose):
+                    # mypy doesn't know that @wrap'ed functions have __wrapped__
+                    # attribute, and fixing this is ugly
+                    rwds.append_conformers.__wrapped__(rwds, group_name, conformers)  # type: ignore
             meta = self.metadata
             new_ds._attach_dummy_properties(self._dummy_properties)
-            self._store.transfer_location_to(new_ds._store)
-            new_ds._set_metadata(meta)
-        return new_ds
+            if inplace:
+                self._store.location.transfer_to(new_ds._store)
+                new_ds._set_metadata(meta)
+                return new_ds
+            else:
+                new_parent = Path(cast(StrPath, dest_root)).resolve()
+                new_ds._store.location.root = new_parent / self._store.location.root.with_suffix('').name
+                new_ds._set_metadata(meta)
+                return self
 
     @_broadcast
     @_needs_cache_update
@@ -736,7 +758,7 @@ class _ANISubdataset(_ANIDatasetBase):
         needed in order to reduce the size of the file. Note that this is only
         useful for the h5py backend, otherwise it is a no-op.
         """
-        return self.to_backend.__wrapped__(self, self._backend, verbose=verbose)  # type: ignore
+        return self.to_backend.__wrapped__(self, verbose=verbose, inplace=True)  # type: ignore
 
     @_broadcast
     @_needs_cache_update
@@ -751,23 +773,24 @@ class _ANISubdataset(_ANIDatasetBase):
         self._check_unique_element_key()
         with TemporaryLocation(self._backend) as location:
             new_ds = self._make_empty_copy(location, grouping='by_formula')
-            for group_name, conformers in tqdm(self.numpy_items(exclude_dummy=True),
-                                               total=self.num_conformer_groups,
-                                               desc='Regrouping by formulas',
-                                               disable=not verbose):
-                # Get all formulas in the group to discriminate conformers by
-                # formula and then attach conformers with the same formula to the
-                # same groups
-                formulas = np.asarray(_get_formulas(conformers))
-                unique_formulas = np.unique(formulas)
-                formula_idxs = ((formulas == el).nonzero()[0] for el in unique_formulas)
+            with new_ds.keep_open('r+') as rwds:
+                for group_name, conformers in tqdm(self.numpy_items(exclude_dummy=True),
+                                                   total=self.num_conformer_groups,
+                                                   desc='Regrouping by formulas',
+                                                   disable=not verbose):
+                    # Get all formulas in the group to discriminate conformers by
+                    # formula and then attach conformers with the same formula to the
+                    # same groups
+                    formulas = np.asarray(_get_formulas(conformers))
+                    unique_formulas = np.unique(formulas)
+                    formula_idxs = ((formulas == el).nonzero()[0] for el in unique_formulas)
 
-                for formula, idx in zip(unique_formulas, formula_idxs):
-                    selected_conformers = {k: v[idx] for k, v in conformers.items()}
-                    new_ds.append_conformers.__wrapped__(new_ds, formula, selected_conformers)  # type: ignore
+                    for formula, idx in zip(unique_formulas, formula_idxs):
+                        selected_conformers = {k: v[idx] for k, v in conformers.items()}
+                        rwds.append_conformers.__wrapped__(rwds, formula, selected_conformers)  # type: ignore
             meta = self.metadata
             new_ds._attach_dummy_properties(self._dummy_properties)
-            self._store.transfer_location_to(new_ds._store)
+            self._store.location.transfer_to(new_ds._store)
             new_ds._set_metadata(meta)
         if repack:
             new_ds._update_cache()
@@ -787,16 +810,17 @@ class _ANISubdataset(_ANIDatasetBase):
         self._check_unique_element_key()
         with TemporaryLocation(self._backend) as location:
             new_ds = self._make_empty_copy(location, grouping='by_num_atoms')
-            for group_name, conformers in tqdm(self.numpy_items(exclude_dummy=True),
-                                               total=self.num_conformer_groups,
-                                               desc='Regrouping by number of atoms',
-                                               disable=not verbose):
-                # This is done to accomodate the current group convention
-                new_name = str(_get_num_atoms(conformers)).zfill(3)
-                new_ds.append_conformers.__wrapped__(new_ds, new_name, conformers)  # type: ignore
+            with new_ds.keep_open('r+') as rwds:
+                for group_name, conformers in tqdm(self.numpy_items(exclude_dummy=True),
+                                                   total=self.num_conformer_groups,
+                                                   desc='Regrouping by number of atoms',
+                                                   disable=not verbose):
+                    # This is done to accomodate the current group convention
+                    new_name = str(_get_num_atoms(conformers)).zfill(3)
+                    rwds.append_conformers.__wrapped__(rwds, new_name, conformers)  # type: ignore
             meta = self.metadata
             new_ds._attach_dummy_properties(self._dummy_properties)
-            self._store.transfer_location_to(new_ds._store)
+            self._store.location.transfer_to(new_ds._store)
             new_ds._set_metadata(meta)
         if repack:
             new_ds._update_cache()
@@ -816,15 +840,18 @@ class _ANISubdataset(_ANIDatasetBase):
                 if property_ in f._dummy_properties.keys():
                     f._dummy_properties.pop(property_)
                     properties.remove(property_)
-
-            for group_key in tqdm(self.keys(),
-                                  total=self.num_conformer_groups,
-                                  desc='Deleting properties',
-                                  disable=not verbose):
-                for property_ in properties:
-                    del f[group_key][property_]
-                if not f[group_key].keys():
-                    del f[group_key]
+            if hasattr(f, "delete_direct"):
+                # mypy does not understand monkey patching
+                f.delete_direct(properties)  # type: ignore
+            else:
+                for group_key in tqdm(self.keys(),
+                                      total=self.num_conformer_groups,
+                                      desc='Deleting properties',
+                                      disable=not verbose):
+                    for property_ in properties:
+                        del f[group_key][property_]
+                    if not f[group_key].keys():
+                        del f[group_key]
         return self
 
     @_broadcast
@@ -844,9 +871,13 @@ class _ANISubdataset(_ANIDatasetBase):
                     f._dummy_properties[new_name] = f._dummy_properties.pop(old_name)
                     old_new_dict.pop(old_name)
 
-            for k in self.keys():
-                for old_name, new_name in old_new_dict.items():
-                    f[k].move(old_name, new_name)
+            if hasattr(f, "rename_direct"):
+                # mypy does not understand monkey patching
+                f.rename_direct(old_new_dict)  # type: ignore
+            else:
+                for k in self.keys():
+                    for old_name, new_name in old_new_dict.items():
+                        f[k].move(old_name, new_name)
         return self
 
     @property
@@ -857,7 +888,7 @@ class _ANISubdataset(_ANIDatasetBase):
         hierarchical datasets. Can be one of 'by_formula', 'by_num_atoms', 'legacy'.
         """
         with ExitStack() as stack:
-            grouping = self._get_open_store(stack, 'r').grouping
+            grouping = self._get_open_store(stack, 'r', only_meta=True).grouping
         return grouping
 
     def _check_unique_element_key(self, properties: Optional[Iterable[str]] = None) -> None:
@@ -1003,12 +1034,16 @@ class ANIDataset(_ANIDatasetBase):
         self._update_cache()
 
     @classmethod
-    def from_dir(cls, dir_: StrPath, **kwargs):
-        r"""Reads all files in a given directory"""
+    def from_dir(cls, dir_: StrPath, only_backend: Optional[str] = 'h5py', **kwargs):
+        r"""Reads all files in a given directory, if there are multiple files
+        with the same name only one of them will be considered"""
         dir_ = Path(dir_).resolve()
         if not dir_.is_dir():
             raise ValueError("Input should be a directory")
         locations = sorted([p for p in dir_.iterdir() if p.suffix != '.tar.gz'])
+        if only_backend is not None:
+            suffix = _SUFFIXES[only_backend]
+            locations = [loc for loc in locations if loc.suffix == suffix]
         names = [p.stem for p in locations]
         return cls(locations=locations, names=names, **kwargs)
 
@@ -1052,7 +1087,7 @@ class ANIDataset(_ANIDatasetBase):
 
     @property
     def store_locations(self) -> List[str]:
-        return [fspath(ds._store.location) for ds in self._datasets.values()]
+        return [fspath(ds._store.location.root) for ds in self._datasets.values()]
 
     @property
     def num_stores(self) -> int:

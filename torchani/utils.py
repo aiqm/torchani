@@ -8,7 +8,7 @@ import os
 import warnings
 import itertools
 from collections import defaultdict, Counter
-from typing import Tuple, NamedTuple, Optional, Sequence, List, Dict, Union
+from typing import Tuple, NamedTuple, Optional, Sequence, List, Dict, Union, Mapping
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
 from .nn import SpeciesEnergies
 import numpy as np
@@ -159,7 +159,7 @@ def broadcast_first_dim(properties):
     return properties
 
 
-def pad_atomic_properties(properties: List[Dict[str, Tensor]],
+def pad_atomic_properties(properties: Sequence[Mapping[str, Tensor]],
                           padding_values: Optional[Dict[str, float]] = None) -> Dict[str, Tensor]:
     """Put a sequence of atomic properties together into single tensor.
 

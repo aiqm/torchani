@@ -1,19 +1,16 @@
 import warnings
 from uuid import uuid4
-import shutil
 import tempfile
-from os import fspath
 from pathlib import Path
 from functools import partial
-from itertools import chain
-from typing import ContextManager, Iterator, Any, Set, Union, Tuple, Mapping
+from typing import ContextManager, Any, Set, Union, Tuple, Dict
 from collections import OrderedDict  # noqa F401
 
 import numpy as np
 
 from .._annotations import StrPath
 from ...utils import tqdm
-from .interface import _StoreAdaptor, _ConformerGroupAdaptor, CacheHolder
+from .interface import _Store, _ConformerGroup, _ConformerWrapper, CacheHolder, _HierarchicalStoreWrapper
 
 
 try:
@@ -40,78 +37,23 @@ class _H5TemporaryLocation(ContextManager[StrPath]):
         self._tmp_location.cleanup()
 
 
-class _H5StoreAdaptor(_StoreAdaptor):
-    def __init__(self, store_location: StrPath, dummy_properties: Mapping[str, Any]):
-        self.location = store_location
-        self._store_obj = None
-        self._has_standard_format = False
-        self._made_quick_check = False
-        self._dummy_properties = dummy_properties
-
-    def validate_location(self) -> None:
-        if not self._store_location.is_file():
-            raise FileNotFoundError(f"The store in {self._store_location} could not be found")
-
-    def transfer_location_to(self, other_store: '_StoreAdaptor') -> None:
-        self.delete_location()
-        other_store.location = Path(self.location).with_suffix('')
-
-    @property
-    def location(self) -> StrPath:
-        return self._store_location
-
-    @location.setter
-    def location(self, value: StrPath) -> None:
-        value = Path(value).resolve()
-        if value.suffix == '':
-            value = value.with_suffix('.h5')
-        if value.suffix != '.h5':
-            raise ValueError(f"Incorrect location {value}")
-        # pathlib.rename() may fail if src and dst are in different mounts
-        try:
-            shutil.move(fspath(self.location), fspath(value))
-        except AttributeError:
-            pass
-        self._store_location = value
-
-    def delete_location(self) -> None:
-        self._store_location.unlink()
-
-    def make_empty(self, grouping: str) -> None:
+class _H5Store(_HierarchicalStoreWrapper["h5py.File"]):
+    def __init__(self, store_location: StrPath, dummy_properties: Dict[str, Any]):
+        super().__init__(store_location, '.h5', 'file', dummy_properties=dummy_properties)
         self._has_standard_format = True
-        with h5py.File(self._store_location, 'x') as f:
+        self._made_quick_check = False
+
+    @classmethod
+    def make_empty(cls, store_location: StrPath, grouping: str, **kwargs) -> '_Store':
+        with h5py.File(store_location, 'x') as f:
             f.attrs['grouping'] = grouping
+        obj = cls(store_location, **kwargs)
+        obj._has_standard_format = True
+        return obj
 
-    def open(self, mode: str = 'r') -> '_StoreAdaptor':
-        self._store_obj = h5py.File(self._store_location, mode)
+    def open(self, mode: str = 'r', only_meta: bool = False) -> '_Store':
+        self._store_obj = h5py.File(self.location.root, mode)
         return self
-
-    def close(self) -> '_StoreAdaptor':
-        self._store.close()
-        self._store_obj = None
-        return self
-
-    @property
-    def _store(self) -> h5py.File:
-        if self._store_obj is None:
-            raise RuntimeError("Can't access store")
-        return self._store_obj
-
-    @property
-    def is_open(self) -> bool:
-        try:
-            self._store
-        except RuntimeError:
-            return False
-        return True
-
-    def __enter__(self) -> '_StoreAdaptor':
-        self._store.__enter__()
-        return self
-
-    def __exit__(self, *args, **kwargs) -> None:
-        self._store.__exit__(*args, **kwargs)
-        self._store_obj = None
 
     def update_cache(self,
                      check_properties: bool = False,
@@ -146,8 +88,8 @@ class _H5StoreAdaptor(_StoreAdaptor):
 
     def _update_cache_nonstandard(self, cache: CacheHolder, check_properties: bool, verbose: bool) -> bool:
         def visitor_fn(name: str,
-                       object_: Union[h5py.Dataset, h5py.Group],
-                       store: '_H5StoreAdaptor',
+                       object_: Union["h5py.Dataset", "h5py.Group"],
+                       store: '_H5Store',
                        cache: CacheHolder,
                        check_properties: bool,
                        pbar: Any) -> None:
@@ -183,24 +125,6 @@ class _H5StoreAdaptor(_StoreAdaptor):
         has_standard_format = not any('/' in k[1:] for k in cache.group_sizes.keys())
         return has_standard_format
 
-    def _update_properties_cache(self, cache: CacheHolder, conformers: h5py.Group, check_properties: bool = False) -> None:
-        if not cache.properties:
-            cache.properties = set(conformers.keys())
-        elif check_properties and not set(conformers.keys()) == cache.properties:
-            raise RuntimeError(f"Group {conformers.name} has bad keys, "
-                               f"found {set(conformers.keys())}, but expected "
-                               f"{cache.properties}")
-
-    # updates "group_sizes" which holds the batch dimension (number of
-    # molecules) of all groups in the dataset.
-    def _update_groups_cache(self, cache: CacheHolder, group: h5py.Group) -> None:
-        present_keys = {'coordinates', 'coord', 'energies'}.intersection(set(group.keys()))
-        try:
-            any_key = next(iter(present_keys))
-        except StopIteration:
-            raise RuntimeError('To infer conformer size need one of "coordinates", "coord", "energies"')
-        cache.group_sizes.update({group.name[1:]: group[any_key].shape[0]})
-
     # Check if the raw hdf5 file is one of a number of known files that can be assumed
     # to have standard format.
     def _quick_standard_format_check(self) -> bool:
@@ -211,7 +135,6 @@ class _H5StoreAdaptor(_StoreAdaptor):
             return True
         except Exception:
             pass
-
         # This check tests for the '/_created' which is present in "old HTRQ style"
         try:
             self._store['/_created']
@@ -219,98 +142,29 @@ class _H5StoreAdaptor(_StoreAdaptor):
         except KeyError:
             return False
 
-    @property
-    def mode(self) -> str:
-        mode = self._store.mode
-        assert isinstance(mode, str)
-        return mode
+    def __getitem__(self, name: str) -> '_ConformerGroup':
+        return _H5ConformerGroup(self._store[name], dummy_properties=self._dummy_properties)
 
-    @property
-    def metadata(self) -> Mapping[str, str]:
+
+class _H5ConformerGroup(_ConformerWrapper["h5py.Group"]):
+    def __init__(self, data: h5py.Group, **kwargs):
+        super().__init__(data=data, **kwargs)
+
+    def _is_resizable(self) -> bool:
+        return all(ds.maxshape[0] is None for ds in self._data.values())
+
+    def _append_to_property(self, p: str, v: np.ndarray) -> None:
+        h5_dataset = self._data[p]
+        h5_dataset.resize(h5_dataset.shape[0] + v.shape[0], axis=0)
         try:
-            meta = {name: attr for name, attr in self._store.attrs.items() if name != 'grouping'}
-        except Exception:
-            meta = dict()
-        return meta
-
-    def set_metadata(self, value: Mapping[str, str]) -> None:
-        if 'grouping' in value.keys():
-            raise ValueError('Grouping is not a valid metadata key')
-        for k, v in value.items():
-            self._store.attrs[k] = v
-
-    @property
-    def grouping(self) -> str:
-        # This detects Roman's formatting style which doesn't have a
-        # 'grouping' key but is still grouped by num atoms.
-        try:
-            self._store.attrs['readme']
-            return 'by_num_atoms'
-        except (KeyError, OSError):
-            pass
-
-        try:
-            g = self._store.attrs['grouping']
-            assert isinstance(g, str)
-            return g
-        except (KeyError, OSError):
-            return 'legacy'
-
-    def __delitem__(self, k: str) -> None:
-        del self._store[k]
-
-    def create_conformer_group(self, name: str) -> '_ConformerGroupAdaptor':
-        self._store.create_group(name)
-        return self[name]
-
-    def __getitem__(self, name: str) -> '_ConformerGroupAdaptor':
-        return _H5ConformerGroupAdaptor(self._store[name], self._dummy_properties)
-
-    def __len__(self) -> int:
-        return len(self._store)
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self._store)
-
-
-class _H5ConformerGroupAdaptor(_ConformerGroupAdaptor):
-    def __init__(self, group_obj: h5py.Group, dummy_properties):
-        self._dummy_properties = dummy_properties
-        self._group_obj = group_obj
-
-    @property
-    def is_resizable(self) -> bool:
-        return all(ds.maxshape[0] is None for ds in self._group_obj.values())
-
-    def _append_property_with_data(self, p: str, data: np.ndarray) -> None:
-        h5_dataset = self._group_obj[p]
-        h5_dataset.resize(h5_dataset.shape[0] + data.shape[0], axis=0)
-        try:
-            h5_dataset[-data.shape[0]:] = data
+            h5_dataset[-v.shape[0]:] = v
         except TypeError:
-            h5_dataset[-data.shape[0]:] = data.astype(bytes)
+            h5_dataset[-v.shape[0]:] = v.astype(bytes)
 
-    def _create_property_with_data(self, p: str, data: np.ndarray) -> None:
+    def __setitem__(self, p: str, data: np.ndarray) -> None:
         # This correctly handles strings and make the first axis resizable
         maxshape = (None,) + data.shape[1:]
         try:
-            self._group_obj.create_dataset(name=p, data=data, maxshape=maxshape)
+            self._data.create_dataset(name=p, data=data, maxshape=maxshape)
         except TypeError:
-            self._group_obj.create_dataset(name=p, data=data.astype(bytes), maxshape=maxshape)
-
-    def move(self, src: str, dest: str) -> None:
-        self._group_obj.move(src, dest)
-
-    def __delitem__(self, k: str) -> None:
-        del self._group_obj[k]
-
-    def _getitem_impl(self, p: str) -> np.ndarray:
-        array = self._group_obj[p][()]
-        assert isinstance(array, np.ndarray)
-        return array
-
-    def __len__(self) -> int:
-        return len(self._group_obj) + len(self._dummy_properties)
-
-    def __iter__(self) -> Iterator[str]:
-        yield from chain(self._group_obj.keys(), self._dummy_properties.keys())
+            self._data.create_dataset(name=p, data=data.astype(bytes), maxshape=maxshape)

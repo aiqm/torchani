@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import h5py
 import numpy as np
+import json
 import torch
 import torchani
 import unittest
@@ -9,7 +10,7 @@ import tempfile
 import warnings
 from copy import deepcopy
 from torchani.transforms import AtomicNumbersToIndices, SubtractSAE, Compose, calculate_saes
-from torchani.utils import PERIODIC_TABLE
+from torchani.utils import PERIODIC_TABLE, ATOMIC_NUMBERS
 from torchani.testing import TestCase
 from torchani.datasets import ANIDataset, ANIBatchedDataset, create_batched_dataset
 from torchani.datasets._builtin_datasets import _BUILTIN_DATASETS
@@ -20,6 +21,12 @@ try:
     ZARR_AVAILABLE = True
 except ImportError:
     ZARR_AVAILABLE = False
+
+try:
+    import pandas
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
 
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, '../dataset/ani-1x/sample.h5')
@@ -846,6 +853,17 @@ class TestANIDataset(TestCase):
         ds = ANIDataset(self.tmp_store_three_groups.name)
         self.assertEqual(ds.properties, {'species', 'coordinates', 'energies'})
 
+    def testDummyPropertiesAppend(self):
+        # creating dummy properties in a dataset that already has them does nothing
+        ANIDataset(self.tmp_store_three_groups.name).regroup_by_num_atoms()
+        ds = ANIDataset(self.tmp_store_three_groups.name, dummy_properties={'charges': dict()})
+        ds.append_conformers("003", {'species': np.asarray([[1, 1, 1]], dtype=np.int64),
+                                     'energies': np.asarray([10.0], dtype=np.float64),
+                                     'coordinates': np.random.standard_normal((1, 3, 3)).astype(np.float32),
+                                     'charges': np.asarray([1], dtype=np.int64)})
+        ds = ANIDataset(self.tmp_store_three_groups.name)
+        self.assertEqual(ds.properties, {'species', 'coordinates', 'energies', 'charges'})
+
     def testDummyPropertiesNotPresent(self):
         charges_params = {'fill_value': 0, 'dtype': np.int64, 'extra_dims': tuple(), 'is_atomic': False}
         dipoles_params = {'fill_value': 1, 'dtype': np.float64, 'extra_dims': (3,), 'is_atomic': True}
@@ -917,19 +935,63 @@ class TestANIDatasetZarr(TestANIDataset):
         self.tmp_dir.cleanup()
 
     def testConvert(self):
+        self._testConvert('zarr')
+
+    def _testConvert(self, backend):
         ds = ANIDataset(self.tmp_store_three_groups.name)
-        ds.to_backend('h5py')
+        ds.to_backend('h5py', inplace=True)
         for d in ds.values():
             self.assertEqual(set(d.keys()), {'species', 'coordinates', 'energies'})
             self.assertEqual(d['coordinates'].shape[-1], 3)
             self.assertEqual(d['coordinates'].shape[0], d['energies'].shape[0])
         self.assertEqual(len(ds.values()), 3)
-        ds.to_backend('zarr')
+        ds.to_backend(backend, inplace=True)
         for d in ds.values():
             self.assertEqual(set(d.keys()), {'species', 'coordinates', 'energies'})
             self.assertEqual(d['coordinates'].shape[-1], 3)
             self.assertEqual(d['coordinates'].shape[0], d['energies'].shape[0])
         self.assertEqual(len(ds.values()), 3)
+
+
+@unittest.skipIf(not PANDAS_AVAILABLE, 'pandas not installed')
+class TestANIDatasetPandas(TestANIDatasetZarr):
+    def _make_random_test_data(self, numpy_conformers):
+        for j, (k, v) in enumerate(deepcopy(numpy_conformers).items()):
+            # Parquet does not support legacy format, so we tile the species and add
+            # a "grouping" attribute
+            numpy_conformers[k]['species'] = np.tile(numpy_conformers[k]['species'].reshape(1, -1), (self.num_conformers[j], 1))
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        self.tmp_store_one_group = tempfile.TemporaryDirectory(suffix='.pqdir', dir=self.tmp_dir.name)
+        self.tmp_store_three_groups = tempfile.TemporaryDirectory(suffix='.pqdir', dir=self.tmp_dir.name)
+        self.new_store_name = self.tmp_dir.name / Path('new.pqdir')
+
+        f1 = pandas.DataFrame()
+        f3 = pandas.DataFrame()
+        meta = {'grouping': 'by_formula',
+                'extra_dims': {'coordinates': (3,)},
+                'dtypes': {'coordinates': np.dtype(np.float32).name, 'species': np.dtype(np.int64).name, 'energies': np.dtype(np.float64).name}}
+        with open(Path(self.tmp_store_one_group.name) / Path(self.tmp_store_one_group.name).with_suffix('.json').name, 'x') as f:
+            json.dump(meta, f)
+
+        with open(Path(self.tmp_store_three_groups.name) / Path(self.tmp_store_three_groups.name).with_suffix('.json').name, 'x') as f:
+            json.dump(meta, f)
+
+        frames = []
+        for j, (k, g) in enumerate(numpy_conformers.items()):
+            num_conformations = g['species'].shape[0]
+            tmp_df = pandas.DataFrame()
+            tmp_df['group'] = pandas.Series([k] * num_conformations)
+            tmp_df['species'] = pandas.Series(np.vectorize(lambda x: ATOMIC_NUMBERS[x])(g['species'].astype(str)).tolist())
+            tmp_df['energies'] = pandas.Series(g['energies'])
+            tmp_df['coordinates'] = pandas.Series(g['coordinates'].reshape(num_conformations, -1).tolist())
+            frames.append(tmp_df)
+        f3 = pandas.concat(frames)
+        f1 = frames[0]
+        f1.to_parquet(Path(self.tmp_store_one_group.name) / Path(self.tmp_store_one_group.name).with_suffix('.pq').name)
+        f3.to_parquet(Path(self.tmp_store_three_groups.name) / Path(self.tmp_store_three_groups.name).with_suffix('.pq').name)
+
+    def testConvert(self):
+        self._testConvert('pq')
 
 
 class TestData(TestCase):
