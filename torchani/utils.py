@@ -536,7 +536,7 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     return VibAnalysis(wavenumbers, modes, fconstants, rmasses)
 
 
-def get_atomic_masses(species):
+def get_atomic_masses(species, dtype=torch.float):
     r"""Convert a tensor of atomic numbers ("periodic table indices") into a tensor of atomic masses
 
     Atomic masses supported are the first 119 elements, and are taken from:
@@ -588,7 +588,7 @@ def get_atomic_masses(species):
            269.1338    , 278.156     , 281.165     , 281.166     , # noqa
            285.177     , 286.182     , 289.19      , 289.194     , # noqa
            293.204     , 293.208     , 294.214], # noqa
-        dtype=torch.double, device=species.device) # noqa
+        dtype=dtype, device=species.device) # noqa
     masses = default_atomic_masses[species]
     return masses
 

@@ -1,5 +1,24 @@
 """ Utilities to generate some specific geometries"""
 import torch
+from torch import Tensor
+from typing import Tuple
+from .utils import get_atomic_masses
+
+
+def displace_to_com_frame(species_coordinates: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
+    r"""Displace coordinates to the center-of-mass frame, input species must be
+    atomic numbers, padding atoms can be included with -1 as padding,
+    returns the displaced coordinates and the center-of-mass coordinates"""
+    species, coordinates = species_coordinates
+    mask = (species == -1)
+    masses = get_atomic_masses(species, dtype=coordinates.dtype)
+    masses.masked_fill_(mask, 0.0)
+    mass_sum = masses.unsqueeze(-1).sum(dim=1, keepdim=True)
+    com_coordinates = coordinates * masses.unsqueeze(-1) / mass_sum
+    com_coordinates = com_coordinates.sum(dim=1, keepdim=True)
+    centered_coordinates = coordinates - com_coordinates
+    centered_coordinates[mask, :] = 0.0
+    return species, centered_coordinates
 
 
 def tile_into_tight_cell(species_coordinates, repeats=(3, 3, 3), noise=None, delta=1.0,

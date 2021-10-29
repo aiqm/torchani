@@ -44,7 +44,7 @@ coordinates = torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_g
 # TorchANI needs the masses of elements in AMU to compute vibrations. The
 # masses in AMU can be obtained from a tensor with atomic numbers by using
 # this utility:
-masses = torchani.utils.get_atomic_masses(species)
+masses = torchani.utils.get_atomic_masses(species, dtype=torch.double)
 
 ###############################################################################
 # To do vibration analysis, we first need to generate a graph that computes
