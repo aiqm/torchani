@@ -6,3 +6,4 @@ pillow
 pkbar
 pyyaml
 pytest
+expecttest
