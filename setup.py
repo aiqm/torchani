@@ -53,10 +53,9 @@ def maybe_download_cub():
 def cuda_extension(build_all=False):
     import torch
     from torch.utils.cpp_extension import CUDAExtension
-    SMs = None
+    SMs = []
     print('-' * 75)
     if not build_all:
-        SMs = []
         devices = torch.cuda.device_count()
         print('FAST_BUILD_CUAEV: ON')
         print('This build will only support the following devices or the devices with same cuda capability: ')
@@ -71,13 +70,13 @@ def cuda_extension(build_all=False):
                 SMs.append(sm)
 
     nvcc_args = ["-Xptxas=-v", '--expt-extended-lambda', '-use_fast_math']
-    if SMs:
+    if SMs and not ONLY_BUILD_SM80:
         for sm in SMs:
             nvcc_args.append(f"-gencode=arch=compute_{sm},code=sm_{sm}")
-    elif len(SMs) == 0 and ONLY_BUILD_SM80:  # --cuaev --only-sm80
+    elif ONLY_BUILD_SM80:  # --cuaev --only-sm80
         nvcc_args.append("-gencode=arch=compute_80,code=sm_80")
     else:  # no gpu detected
-        print('NO gpu detected, will build for all SMs')
+        print('Will build for all SMs')
         nvcc_args.append("-gencode=arch=compute_60,code=sm_60")
         nvcc_args.append("-gencode=arch=compute_61,code=sm_61")
         nvcc_args.append("-gencode=arch=compute_70,code=sm_70")
