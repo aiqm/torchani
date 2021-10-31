@@ -39,12 +39,12 @@ def maybe_download_cub():
             os.makedirs('include')
         commands = """
         echo "Downloading CUB library";
-        wget -q https://github.com/NVIDIA/cub/archive/main.zip;
-        unzip -q main.zip -d include;
-        mv include/cub-main/cub include;
+        wget -q https://github.com/NVIDIA/cub/archive/refs/tags/1.11.0.zip;
+        unzip -q 1.11.0.zip -d include;
+        mv include/cub-1.11.0/cub include;
         echo "Removing unnecessary files";
-        rm main.zip;
-        rm -rf include/cub-main;
+        rm 1.11.0.zip;
+        rm -rf include/cub-1.11.0;
         """
         subprocess.run(commands, shell=True, check=True, universal_newlines=True)
     return [os.path.abspath("./include")]
