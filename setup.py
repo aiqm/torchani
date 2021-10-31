@@ -39,7 +39,7 @@ def maybe_download_cub():
             os.makedirs('include')
         commands = """
         echo "Downloading CUB library";
-        wget -q https://github.com/NVIDIA/cub/archive/main.zip;
+        wget -q https://github.com/NVIDIA/cub/archive/refs/tags/1.11.0.zip;
         unzip -q main.zip -d include;
         mv include/cub-main/cub include;
         echo "Removing unnecessary files";
