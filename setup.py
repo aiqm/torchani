@@ -40,10 +40,10 @@ def maybe_download_cub():
         commands = """
         echo "Downloading CUB library";
         wget -q https://github.com/NVIDIA/cub/archive/refs/tags/1.11.0.zip;
-        unzip -q main.zip -d include;
+        unzip -q 1.11.0.zip -d include;
         mv include/cub-main/cub include;
         echo "Removing unnecessary files";
-        rm main.zip;
+        rm 1.11.0.zip;
         rm -rf include/cub-main;
         """
         subprocess.run(commands, shell=True, check=True, universal_newlines=True)
