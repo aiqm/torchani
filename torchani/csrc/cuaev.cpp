@@ -165,7 +165,7 @@ TORCH_LIBRARY(cuaev, m) {
             state.push_back(self->aev_params.Zeta_t);
             state.push_back(self->aev_params.ShfA_t);
             state.push_back(self->aev_params.ShfZ_t);
-            state.push_back(torch::tensor(self->aev_params.Rca));
+            state.push_back(torch::tensor(self->aev_params.num_species));
             state.push_back(torch::tensor(self->aev_params.use_cos_cutoff));
             return state;
           },
