@@ -8,7 +8,6 @@
 #include <c10/cuda/CUDAException.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <c10/cuda/CUDAStream.h>
-#include <THC/THCThrustAllocator.cuh>
 #include <vector>
 
 #define PI 3.141592653589793
