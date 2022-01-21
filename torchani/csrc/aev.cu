@@ -6,7 +6,6 @@
 #include <cuaev_cub.cuh>
 
 #include <ATen/Context.h>
-#include <THC/THC.h>
 #include <c10/cuda/CUDACachingAllocator.h>
 
 #define PI 3.141592653589793
@@ -1155,8 +1154,11 @@ void cuaev_forward(
     };
 
     int smem_size = cal_smem_size(result.angularNbr.maxNumJPerI, 1);
-    constexpr dim3 block(C10_WARP_SIZE, 4, 1);
-    cuAngularAEVs<block.x, block.y, use_cos_cutoff><<<result.nI, block, smem_size, stream>>>(
+    // temporary fix because of nvcc constexpr BUG
+    constexpr int block_x = C10_WARP_SIZE;
+    constexpr int block_y = 4;
+    constexpr dim3 block(block_x, block_y, 1);
+    cuAngularAEVs<block_x, block_y, use_cos_cutoff><<<result.nI, block, smem_size, stream>>>(
         species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
         coordinates_p,
         aev_params.ShfA_t.packed_accessor32<float, 1, torch::RestrictPtrTraits>(),
@@ -1244,8 +1246,10 @@ Tensor cuaev_backward(const Tensor& grad_output, const AEVScalarParams& aev_para
   printf("%-35s %'d bytes\n", "backward angular smem_size", smem_size);
 #endif
 
-  constexpr dim3 block(C10_WARP_SIZE, 4, 1);
-  cuAngularAEVs_backward_or_doublebackward<false, block.x, block.y, use_cos_cutoff>
+  constexpr int block_x = C10_WARP_SIZE;
+  constexpr int block_y = 4;
+  constexpr dim3 block(block_x, block_y, 1);
+  cuAngularAEVs_backward_or_doublebackward<false, block_x, block_y, use_cos_cutoff>
       <<<result.nI, block, smem_size, stream>>>(
           species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
           coordinates_p,
@@ -1331,8 +1335,10 @@ Tensor cuaev_double_backward(const Tensor& grad_force, const AEVScalarParams& ae
     return sm_aev + (sxyz + sj_xyz_grad + sRij + sfc + sfc_grad + sj) * ncatom_per_tpb;
   };
   int smem_size = cal_smem_size(result.angularNbr.maxNumJPerI, 1);
-  constexpr dim3 block(C10_WARP_SIZE, 4, 1);
-  cuAngularAEVs_backward_or_doublebackward<true, block.x, block.y, use_cos_cutoff>
+  constexpr int block_x = C10_WARP_SIZE;
+  constexpr int block_y = 4;
+  constexpr dim3 block(block_x, block_y, 1);
+  cuAngularAEVs_backward_or_doublebackward<true, block_x, block_y, use_cos_cutoff>
       <<<result.nI, block, smem_size, stream>>>(
           species_t.packed_accessor32<int, 2, torch::RestrictPtrTraits>(),
           coordinates_p,
