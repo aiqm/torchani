@@ -3,7 +3,6 @@
 #include <cuaev_cub.cuh>
 
 #include <ATen/Context.h>
-#include <THC/THC.h>
 #include <c10/cuda/CUDACachingAllocator.h>
 #include <c10/cuda/CUDAException.h>
 #include <c10/cuda/CUDAGuard.h>
