@@ -67,5 +67,5 @@ if [[ $1 == release ]]; then
     conda index /release/conda-packages
     chown -R 1003:1003 /release/conda-packages
     apt install rsync -y
-    rsync -av --delete -e "ssh -p $SERVER_PORT" /release/conda-packages/ $SERVER_USERNAME@roitberg.chem.ufl.edu:/home/statics/conda-packages/
+    rsync -av --delete -e "ssh -p $SERVER_PORT -o StrictHostKeyChecking=no" /release/conda-packages/ $SERVER_USERNAME@roitberg.chem.ufl.edu:/home/statics/conda-packages/
 fi
