@@ -14,7 +14,7 @@ conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch-nightly
 In most cases, if `gcc` and `cuda` environment are well configured, runing the following command at `torchani` directory will install torchani and all extensions together.
 
 ```bash
-git clone git@github.com:torchani_sandbox/torchani.git
+git clone git@github.com:roitberg-group/torchani_sandbox.git
 cd torchani
 # choose one option below
 # use --ext-all-sms if you are building in SLURM environment and there are multiple different gpus in a node
@@ -50,7 +50,7 @@ module load cuda/10.2.0
 # pytorch
 conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-nightly
 # install torchani
-git clone https://github.com/torchani_sandbox/torchani.git
+git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani
 pip install -e . && pip install -v -e . --global-option="--ext"
 ```
@@ -70,7 +70,7 @@ module load cuda/11.1.0 gcc/7.3.0 git
 # pytorch
 conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch-nightly -c nvidia
 # install torchani
-git clone https://github.com/torchani_sandbox/torchani.git
+git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani
 pip install -e . && pip install -v -e . --global-option="--ext"
 ```
@@ -90,7 +90,7 @@ module load cuda10.2/toolkit/10.2.89 gcc/7.5.0
 # pytorch
 conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-nightly
 # install torchani
-git clone https://github.com/torchani_sandbox/torchani.git
+git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani
 pip install -e . && pip install -v -e . --global-option="--ext"
 ```
@@ -113,7 +113,7 @@ export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 # pytorch
 conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch-nightly -c nvidia
 # install torchani
-git clone https://github.com/torchani_sandbox/torchani.git
+git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani
 pip install -e . && pip install -v -e . --global-option="--ext-all-sms"
 ```
@@ -158,7 +158,7 @@ model = ani2x.neural_networks[0].to_infer_model(use_mnp=True)
 ## Benchmark
 
 #### CUAEV
-Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/torchani_sandbox/torchani/blob/master/tools/training-aev-benchmark.py):
+Benchmark of [torchani/tools/training-aev-benchmark.py](https://github.com/roitberg-group/torchani_sandbox/blob/master/tools/training-aev-benchmark.py):
 
 Train ANI-1x dataset (Batchsize 2560) on Tesla V100 for 1 epoch:
 ```
