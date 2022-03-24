@@ -1,9 +1,10 @@
 import unittest
 import torch
 import torchani
+from torchani.testing import TestCase
 
 
-class TestSpeciesConverter(unittest.TestCase):
+class TestSpeciesConverter(TestCase):
 
     def setUp(self):
         self.c = torchani.SpeciesConverter(['H', 'C', 'N', 'O'])
@@ -19,7 +20,7 @@ class TestSpeciesConverter(unittest.TestCase):
         ], dtype=torch.long)
         dummy_coordinates = torch.empty(2, 5, 3)
         output = self.c((input_, dummy_coordinates)).species
-        self.assertTrue(torch.allclose(output, expect))
+        self.assertEqual(output, expect)
 
 
 class TestSpeciesConverterJIT(TestSpeciesConverter):
@@ -29,7 +30,7 @@ class TestSpeciesConverterJIT(TestSpeciesConverter):
         self.c = torch.jit.script(self.c)
 
 
-class TestBuiltinNetPeriodicTableIndex(unittest.TestCase):
+class TestBuiltinEnsemblePeriodicTableIndex(TestCase):
 
     def setUp(self):
         self.model1 = torchani.models.ANI1x()
@@ -40,7 +41,7 @@ class TestBuiltinNetPeriodicTableIndex(unittest.TestCase):
                                           [0.45554739, 0.54289633, 0.81170881],
                                           [0.66091919, -0.16799635, -0.91037834]]],
                                         requires_grad=True)
-        self.species1 = self.model1.species_to_tensor('CHHHH').unsqueeze(0)
+        self.species1 = self.model1.species_to_tensor(['C', 'H', 'H', 'H', 'H']).unsqueeze(0)
         self.species2 = torch.tensor([[6, 1, 1, 1, 1]])
 
     def testCH4Ensemble(self):
@@ -48,16 +49,16 @@ class TestBuiltinNetPeriodicTableIndex(unittest.TestCase):
         energy2 = self.model2((self.species2, self.coordinates)).energies
         derivative1 = torch.autograd.grad(energy1.sum(), self.coordinates)[0]
         derivative2 = torch.autograd.grad(energy2.sum(), self.coordinates)[0]
-        self.assertTrue(torch.allclose(energy1, energy2))
-        self.assertTrue(torch.allclose(derivative1, derivative2))
+        self.assertEqual(energy1, energy2)
+        self.assertEqual(derivative1, derivative2)
 
     def testCH4Single(self):
         energy1 = self.model1[0]((self.species1, self.coordinates)).energies
         energy2 = self.model2[0]((self.species2, self.coordinates)).energies
         derivative1 = torch.autograd.grad(energy1.sum(), self.coordinates)[0]
         derivative2 = torch.autograd.grad(energy2.sum(), self.coordinates)[0]
-        self.assertTrue(torch.allclose(energy1, energy2))
-        self.assertTrue(torch.allclose(derivative1, derivative2))
+        self.assertEqual(energy1, energy2)
+        self.assertEqual(derivative1, derivative2)
 
 
 if __name__ == '__main__':

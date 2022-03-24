@@ -5,7 +5,7 @@ on:
     types: [published]
 
 jobs:
-  build:
+  deploy-pypi:
 
     runs-on: ubuntu-latest
     strategy:
@@ -22,11 +22,9 @@ jobs:
     - name: Fail build on non-release commits
       run: git describe --exact-match --tags HEAD
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install twine wheel
+      run: ci/install_dependencies.sh
     - name: Deploy
       run: |
         rm -rf dist/*
-        python setup.py bdist bdist_wheel
+        python setup.py sdist bdist_wheel
         twine upload -u zasdfgbnm-bot -p ${{secrets.zasdfgbnm_bot_pypi_password}} dist/*

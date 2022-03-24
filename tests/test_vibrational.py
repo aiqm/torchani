@@ -7,13 +7,14 @@ import ase
 import ase.optimize
 import ase.vibrations
 import numpy
+from torchani.testing import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
 path = os.path.join(path, '../dataset/xyz_files/H2O.xyz')
 
 
-class TestVibrational(unittest.TestCase):
+class TestVibrational(TestCase):
 
     def testVibrationalWavenumbers(self):
         model = torchani.models.ANI1x().double()
@@ -34,6 +35,7 @@ class TestVibrational(unittest.TestCase):
         modes = []
         for j in range(6, 6 + len(freq)):
             modes.append(vib.get_mode(j))
+        vib.clean()
         modes = torch.tensor(modes)
         # compute vibrational by torchani
         species = model.species_to_tensor(molecule.get_chemical_symbols()).unsqueeze(0)
@@ -43,8 +45,7 @@ class TestVibrational(unittest.TestCase):
         freq2, modes2, _, _ = torchani.utils.vibrational_analysis(masses[species], hessian)
         freq2 = freq2[6:].float()
         modes2 = modes2[6:]
-        ratio = freq2 / freq
-        self.assertLess((ratio - 1).abs().max(), 0.02)
+        self.assertEqual(freq, freq2, atol=0, rtol=0.02, exact_dtype=False)
 
         diff1 = (modes - modes2).abs().max(dim=-1).values.max(dim=-1).values
         diff2 = (modes + modes2).abs().max(dim=-1).values.max(dim=-1).values

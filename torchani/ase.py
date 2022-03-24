@@ -27,9 +27,12 @@ class Calculator(ase.calculators.calculator.Calculator):
     implemented_properties = ['energy', 'forces', 'stress', 'free_energy']
 
     def __init__(self, species, model, overwrite=False):
-        super(Calculator, self).__init__()
+        super().__init__()
         self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
         self.model = model
+        # Since ANI is used in inference mode, no gradients on model parameters are required here
+        for p in self.model.parameters():
+            p.requires_grad_(False)
         self.overwrite = overwrite
 
         a_parameter = next(self.model.parameters())
@@ -46,7 +49,7 @@ class Calculator(ase.calculators.calculator.Calculator):
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=ase.calculators.calculator.all_changes):
-        super(Calculator, self).calculate(atoms, properties, system_changes)
+        super().calculate(atoms, properties, system_changes)
         cell = torch.tensor(self.atoms.get_cell(complete=True),
                             dtype=self.dtype, device=self.device)
         pbc = torch.tensor(self.atoms.get_pbc(), dtype=torch.bool,

@@ -1,27 +1,25 @@
 Installation
 ============
 
-TorchANI requires the latest preview version of PyTorch. You can install PyTorch by the following commands (assuming cuda10):
+TorchANI requires the latest preview version of PyTorch.
 
-.. code-block:: bash
+Please see `PyTorch's official site`_ for instructions of installing latest preview version of PyTorch.
 
-    pip install numpy
-    pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
+Note that if you updated TorchANI, you may also need to update PyTorch.
 
-If you updated TorchANI, you may also need to update PyTorch:
-
-.. code-block:: bash
-
-    pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
-
-
-After installing the correct PyTorch, you can install TorchANI by:
+After installing the correct PyTorch, you can install TorchANI by `pip` or `conda`:
 
 .. code-block:: bash
 
     pip install torchani
 
-See also `PyTorch's official site`_ for instructions of installing latest preview version of PyTorch.
+or
+
+.. code-block:: bash
+
+    conda install -c conda-forge torchani
+
+See https://github.com/conda-forge/torchani-feedstock for more information about the conda package.
 
 .. _PyTorch's official site:
     https://pytorch.org/get-started/locally/

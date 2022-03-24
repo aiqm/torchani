@@ -1,8 +1,27 @@
 import torch
+
 from torch import Tensor
 import math
 from typing import Tuple, Optional, NamedTuple
-from torch.jit import Final
+import sys
+import warnings
+import importlib_metadata
+
+has_cuaev = 'torchani.cuaev' in importlib_metadata.metadata(__package__).get_all('Provides')
+
+if has_cuaev:
+    # We need to import torchani.cuaev to tell PyTorch to initialize torch.ops.cuaev
+    from . import cuaev  # type: ignore # noqa: F401
+else:
+    warnings.warn("cuaev not installed")
+
+if sys.version_info[:2] < (3, 7):
+    class FakeFinal:
+        def __getitem__(self, x):
+            return x
+    Final = FakeFinal()
+else:
+    from torch.jit import Final
 
 
 class SpeciesAEV(NamedTuple):
@@ -28,17 +47,17 @@ def radial_terms(Rcr: float, EtaR: Tensor, ShfR: Tensor, distances: Tensor) -> T
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
     """
-    distances = distances.unsqueeze(-1).unsqueeze(-1)
+    distances = distances.view(-1, 1, 1)
     fc = cutoff_cosine(distances, Rcr)
     # Note that in the equation in the paper there is no 0.25
     # coefficient, but in NeuroChem there is such a coefficient.
     # We choose to be consistent with NeuroChem instead of the paper here.
     ret = 0.25 * torch.exp(-EtaR * (distances - ShfR)**2) * fc
-    # At this point, ret now have shape
-    # (conformations, atoms, N, ?, ?) where ? depend on constants.
-    # We then should flat the last 2 dimensions to view the subAEV as one
-    # dimension vector
-    return ret.flatten(start_dim=-2)
+    # At this point, ret now has shape
+    # (conformations x atoms, ?, ?) where ? depend on constants.
+    # We then should flat the last 2 dimensions to view the subAEV as a two
+    # dimensional tensor (onnx doesn't support negative indices in flatten)
+    return ret.flatten(start_dim=1)
 
 
 def angular_terms(Rca: float, ShfZ: Tensor, EtaA: Tensor, Zeta: Tensor,
@@ -55,23 +74,21 @@ def angular_terms(Rca: float, ShfZ: Tensor, EtaA: Tensor, Zeta: Tensor,
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
     """
-    vectors12 = vectors12.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
+    vectors12 = vectors12.view(2, -1, 3, 1, 1, 1, 1)
     distances12 = vectors12.norm(2, dim=-5)
-
-    # 0.95 is multiplied to the cos values to prevent acos from
-    # returning NaN.
-    cos_angles = 0.95 * torch.nn.functional.cosine_similarity(vectors12[0], vectors12[1], dim=-5)
-    angles = torch.acos(cos_angles)
+    cos_angles = vectors12.prod(0).sum(1) / torch.clamp(distances12.prod(0), min=1e-10)
+    # 0.95 is multiplied to the cos values to prevent acos from returning NaN.
+    angles = torch.acos(0.95 * cos_angles)
 
     fcj12 = cutoff_cosine(distances12, Rca)
     factor1 = ((1 + torch.cos(angles - ShfZ)) / 2) ** Zeta
     factor2 = torch.exp(-EtaA * (distances12.sum(0) / 2 - ShfA) ** 2)
     ret = 2 * factor1 * factor2 * fcj12.prod(0)
-    # At this point, ret now have shape
-    # (conformations, atoms, N, ?, ?, ?, ?) where ? depend on constants.
-    # We then should flat the last 4 dimensions to view the subAEV as one
-    # dimension vector
-    return ret.flatten(start_dim=-4)
+    # At this point, ret now has shape
+    # (conformations x atoms, ?, ?, ?, ?) where ? depend on constants.
+    # We then should flat the last 4 dimensions to view the subAEV as a two
+    # dimensional tensor (onnx doesn't support negative indices in flatten)
+    return ret.flatten(start_dim=1)
 
 
 def compute_shifts(cell: Tensor, pbc: Tensor, cutoff: float) -> Tensor:
@@ -95,9 +112,9 @@ def compute_shifts(cell: Tensor, pbc: Tensor, cutoff: float) -> Tensor:
     inv_distances = reciprocal_cell.norm(2, -1)
     num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
     num_repeats = torch.where(pbc, num_repeats, num_repeats.new_zeros(()))
-    r1 = torch.arange(1, num_repeats[0] + 1, device=cell.device)
-    r2 = torch.arange(1, num_repeats[1] + 1, device=cell.device)
-    r3 = torch.arange(1, num_repeats[2] + 1, device=cell.device)
+    r1 = torch.arange(1, num_repeats[0].item() + 1, device=cell.device)
+    r2 = torch.arange(1, num_repeats[1].item() + 1, device=cell.device)
+    r3 = torch.arange(1, num_repeats[2].item() + 1, device=cell.device)
     o = torch.zeros(1, dtype=torch.long, device=cell.device)
     return torch.cat([
         torch.cartesian_prod(r1, r2, r3),
@@ -130,7 +147,7 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
         cutoff (float): the cutoff inside which atoms are considered pairs
         shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts
     """
-    coordinates = coordinates.detach()
+    coordinates = coordinates.detach().masked_fill(padding_mask.unsqueeze(-1), math.nan)
     cell = cell.detach()
     num_atoms = padding_mask.shape[1]
     num_mols = padding_mask.shape[0]
@@ -148,18 +165,16 @@ def neighbor_pairs(padding_mask: Tensor, coordinates: Tensor, cell: Tensor,
     prod = torch.cartesian_prod(all_shifts, all_atoms, all_atoms).t()
     shift_index = prod[0]
     p12 = prod[1:]
-    shifts_outide = shifts.index_select(0, shift_index)
+    shifts_outside = shifts.index_select(0, shift_index)
 
     # Step 4: combine results for all cells
-    shifts_all = torch.cat([shifts_center, shifts_outide])
+    shifts_all = torch.cat([shifts_center, shifts_outside])
     p12_all = torch.cat([p12_center, p12], dim=1)
     shift_values = shifts_all.to(cell.dtype) @ cell
 
     # step 5, compute distances, and find all pairs within cutoff
     selected_coordinates = coordinates.index_select(1, p12_all.view(-1)).view(num_mols, 2, -1, 3)
     distances = (selected_coordinates[:, 0, ...] - selected_coordinates[:, 1, ...] + shift_values).norm(2, -1)
-    padding_mask = padding_mask.index_select(1, p12_all.view(-1)).view(2, -1).any(0)
-    distances.masked_fill_(padding_mask, math.inf)
     in_cutoff = (distances <= cutoff).nonzero()
     molecule_index, pair_index = in_cutoff.unbind(1)
     molecule_index *= num_atoms
@@ -178,10 +193,10 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: floa
         padding_mask (:class:`torch.Tensor`): boolean tensor of shape
             (molecules, atoms) for padding mask. 1 == is padding.
         coordinates (:class:`torch.Tensor`): tensor of shape
-            (molecules * atoms, 3) for atom coordinates.
+            (molecules, atoms, 3) for atom coordinates.
         cutoff (float): the cutoff inside which atoms are considered pairs
     """
-    coordinates = coordinates.detach()
+    coordinates = coordinates.detach().masked_fill(padding_mask.unsqueeze(-1), math.nan)
     current_device = coordinates.device
     num_atoms = padding_mask.shape[1]
     num_mols = padding_mask.shape[0]
@@ -190,8 +205,6 @@ def neighbor_pairs_nopbc(padding_mask: Tensor, coordinates: Tensor, cutoff: floa
 
     pair_coordinates = coordinates.index_select(1, p12_all_flattened).view(num_mols, 2, -1, 3)
     distances = (pair_coordinates[:, 0, ...] - pair_coordinates[:, 1, ...]).norm(2, -1)
-    padding_mask = padding_mask.index_select(1, p12_all_flattened).view(num_mols, 2, -1).any(dim=1)
-    distances.masked_fill_(padding_mask, math.inf)
     in_cutoff = (distances <= cutoff).nonzero()
     molecule_index, pair_index = in_cutoff.unbind(1)
     molecule_index *= num_atoms
@@ -230,9 +243,7 @@ def triple_by_molecule(atom_index12: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
     sorted_ai1, rev_indices = ai1.sort()
 
     # sort and compute unique key
-    unique_results = torch.unique_consecutive(sorted_ai1, return_inverse=True, return_counts=True)
-    uniqued_central_atom_index = unique_results[0]
-    counts = unique_results[-1]
+    uniqued_central_atom_index, counts = torch.unique_consecutive(sorted_ai1, return_inverse=False, return_counts=True)
 
     # compute central_atom_index
     pair_sizes = counts * (counts - 1) // 2
@@ -312,6 +323,14 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     return torch.cat([radial_aev, angular_aev], dim=-1)
 
 
+def jit_unused_if_no_cuaev(condition=has_cuaev):
+    def decorator(func):
+        if not condition:
+            return torch.jit.unused(func)
+        return func
+    return decorator
+
+
 class AEVComputer(torch.nn.Module):
     r"""The AEV computer that takes coordinates as input and outputs aevs.
 
@@ -333,6 +352,7 @@ class AEVComputer(torch.nn.Module):
         ShfZ (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
             equation (4) in the `ANI paper`_.
         num_species (int): Number of supported atom types.
+        use_cuda_extension (bool): Whether to use cuda extension for faster calculation (needs cuaev installed).
 
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
@@ -347,13 +367,20 @@ class AEVComputer(torch.nn.Module):
     angular_length: Final[int]
     aev_length: Final[int]
     sizes: Final[Tuple[int, int, int, int, int]]
+    triu_index: Tensor
+    use_cuda_extension: Final[bool]
 
-    def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species):
-        super(AEVComputer, self).__init__()
+    def __init__(self, Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=False):
+        super().__init__()
         self.Rcr = Rcr
         self.Rca = Rca
         assert Rca <= Rcr, "Current implementation of AEVComputer assumes Rca <= Rcr"
         self.num_species = num_species
+
+        # cuda aev
+        if use_cuda_extension:
+            assert has_cuaev, "AEV cuda extension is not installed"
+        self.use_cuda_extension = use_cuda_extension
 
         # convert constant tensors to a ready-to-broadcast shape
         # shape convension (..., EtaR, ShfR)
@@ -387,6 +414,58 @@ class AEVComputer(torch.nn.Module):
         default_shifts = compute_shifts(default_cell, default_pbc, cutoff)
         self.register_buffer('default_cell', default_cell)
         self.register_buffer('default_shifts', default_shifts)
+
+        # Should create only when use_cuda_extension is True.
+        # However jit needs to know cuaev_computer's Type even when use_cuda_extension is False, because it is enabled when cuaev is available
+        if has_cuaev:
+            self.init_cuaev_computer()
+        # When has_cuaev is true, and use_cuda_extension is false, and user enable use_cuda_extension afterwards,
+        # then another init_cuaev_computer will be needed
+        self.cuaev_enabled = True if self.use_cuda_extension else False
+
+    @jit_unused_if_no_cuaev()
+    def init_cuaev_computer(self):
+        self.cuaev_computer = torch.classes.cuaev.CuaevComputer(self.Rcr, self.Rca, self.EtaR.flatten(), self.ShfR.flatten(), self.EtaA.flatten(), self.Zeta.flatten(), self.ShfA.flatten(), self.ShfZ.flatten(), self.num_species)
+
+    @jit_unused_if_no_cuaev()
+    def compute_cuaev(self, species, coordinates):
+        species_int = species.to(torch.int32)
+        aev = torch.ops.cuaev.run(coordinates, species_int, self.cuaev_computer)
+        return aev
+
+    @classmethod
+    def cover_linearly(cls, radial_cutoff: float, angular_cutoff: float,
+                       radial_eta: float, angular_eta: float,
+                       radial_dist_divisions: int, angular_dist_divisions: int,
+                       zeta: float, angle_sections: int, num_species: int,
+                       angular_start: float = 0.9, radial_start: float = 0.9):
+        r""" Provides a convenient way to linearly fill cutoffs
+
+        This is a user friendly constructor that builds an
+        :class:`torchani.AEVComputer` where the subdivisions along the the
+        distance dimension for the angular and radial sub-AEVs, and the angle
+        sections for the angular sub-AEV, are linearly covered with shifts. By
+        default the distance shifts start at 0.9 Angstroms.
+
+        To reproduce the ANI-1x AEV's the signature ``(5.2, 3.5, 16.0, 8.0, 16, 4, 32.0, 8, 4)``
+        can be used.
+        """
+        # This is intended to be self documenting code that explains the way
+        # the AEV parameters for ANI1x were chosen. This is not necessarily the
+        # best or most optimal way but it is a relatively sensible default.
+        Rcr = radial_cutoff
+        Rca = angular_cutoff
+        EtaR = torch.tensor([float(radial_eta)])
+        EtaA = torch.tensor([float(angular_eta)])
+        Zeta = torch.tensor([float(zeta)])
+
+        ShfR = torch.linspace(radial_start, radial_cutoff, radial_dist_divisions + 1)[:-1]
+        ShfA = torch.linspace(angular_start, angular_cutoff, angular_dist_divisions + 1)[:-1]
+        angle_start = math.pi / (2 * angle_sections)
+
+        ShfZ = (torch.linspace(0, math.pi, angle_sections + 1) + angle_start)[:-1]
+
+        return cls(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
 
     def constants(self):
         return self.Rcr, self.EtaR, self.ShfR, self.Rca, self.ShfZ, self.EtaA, self.Zeta, self.ShfA
@@ -433,6 +512,17 @@ class AEVComputer(torch.nn.Module):
             unchanged, and AEVs is a tensor of shape ``(N, A, self.aev_length())``
         """
         species, coordinates = input_
+        assert species.dim() == 2
+        assert species.shape == coordinates.shape[:-1]
+        assert coordinates.shape[-1] == 3
+
+        if self.use_cuda_extension:
+            assert (cell is None and pbc is None), "cuaev currently does not support PBC"
+            # if use_cuda_extension is enabled after initialization
+            if not self.cuaev_enabled:
+                self.init_cuaev_computer()
+            aev = self.compute_cuaev(species, coordinates)
+            return SpeciesAEV(species, aev)
 
         if cell is None and pbc is None:
             aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, None)

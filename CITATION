@@ -1,0 +1,13 @@
+@article{doi:10.1021/acs.jcim.0c00451,
+	author = {Gao, Xiang and Ramezanghorbani, Farhad and Isayev, Olexandr and Smith, Justin S. and Roitberg, Adrian E.},
+	doi = {10.1021/acs.jcim.0c00451},
+	eprint = { https://doi.org/10.1021/acs.jcim.0c00451 },
+	journal = {Journal of Chemical Information and Modeling},
+	note = {PMID: 32568524},
+	number = {7},
+	pages = {3408–3415},
+	title = {TorchANI: A Free and Open Source PyTorch-Based Deep Learning Implementation of the ANI Neural Network Potentials},
+	url = {https://doi.org/10.1021/acs.jcim.0c00451},
+	volume = {60},
+	year = {2020}
+}

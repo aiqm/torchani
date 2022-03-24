@@ -49,7 +49,11 @@ dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
 
 batch_size = 2560
 
-training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices(species_order).shuffle().split(0.8, None)
+training, validation = torchani.data.load(
+    dspath,
+    additional_properties=('forces',)
+).subtract_self_energies(energy_shifter, species_order).species_to_indices(species_order).shuffle().split(0.8, None)
+
 training = training.collate(batch_size).cache()
 validation = validation.collate(batch_size).cache()
 
@@ -131,7 +135,7 @@ model = torchani.nn.Sequential(aev_computer, nn).to(device)
 # Here we will use Adam with weight decay for the weights and Stochastic Gradient
 # Descent for biases.
 
-AdamW = torchani.optim.AdamW([
+AdamW = torch.optim.AdamW([
     # H networks
     {'params': [H_network[0].weight]},
     {'params': [H_network[2].weight], 'weight_decay': 0.00001},
@@ -204,13 +208,16 @@ def validate():
     mse_sum = torch.nn.MSELoss(reduction='sum')
     total_mse = 0.0
     count = 0
-    for properties in validation:
-        species = properties['species'].to(device)
-        coordinates = properties['coordinates'].to(device).float()
-        true_energies = properties['energies'].to(device).float()
-        _, predicted_energies = model((species, coordinates))
-        total_mse += mse_sum(predicted_energies, true_energies).item()
-        count += predicted_energies.shape[0]
+    model.train(False)
+    with torch.no_grad():
+        for properties in validation:
+            species = properties['species'].to(device)
+            coordinates = properties['coordinates'].to(device).float()
+            true_energies = properties['energies'].to(device).float()
+            _, predicted_energies = model((species, coordinates))
+            total_mse += mse_sum(predicted_energies, true_energies).item()
+            count += predicted_energies.shape[0]
+    model.train(True)
     return hartree2kcalmol(math.sqrt(total_mse / count))
 
 

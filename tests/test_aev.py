@@ -3,32 +3,52 @@ import torchani
 import unittest
 import os
 import pickle
-import copy
 import itertools
 import ase
 import ase.io
 import math
 import traceback
 from common_aev_test import _TestAEVBase
+from torchani.testing import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
+const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
 N = 97
 
 
-class TestIsolated(unittest.TestCase):
+class TestAEVConstructor(TestCase):
+    # Test that checks that the friendly constructor
+    # reproduces the values from ANI1x with the correct parameters
+    def testCoverLinearly(self):
+        consts = torchani.neurochem.Constants(const_file)
+        aev_computer = torchani.AEVComputer(**consts)
+        ani1x_values = {'radial_cutoff': 5.2,
+                        'angular_cutoff': 3.5,
+                        'radial_eta': 16.0,
+                        'angular_eta': 8.0,
+                        'radial_dist_divisions': 16,
+                        'angular_dist_divisions': 4,
+                        'zeta': 32.0,
+                        'angle_sections': 8,
+                        'num_species': 4}
+        aev_computer_alt = torchani.AEVComputer.cover_linearly(**ani1x_values)
+        constants = aev_computer.constants()
+        constants_alt = aev_computer_alt.constants()
+        for c, ca in zip(constants, constants_alt):
+            self.assertEqual(c, ca)
+
+
+class TestIsolated(TestCase):
     # Tests that there is no error when atoms are separated
     # a distance greater than the cutoff radius from all other atoms
     # this can throw an IndexError for large distances or lone atoms
     def setUp(self):
-        if torch.cuda.is_available():
-            self.device = 'cuda'
-        else:
-            self.device = 'cpu'
-        ani1x = torchani.models.ANI1x().to(self.device)
-        self.aev_computer = ani1x.aev_computer
-        self.species_to_tensor = ani1x.species_to_tensor
-        self.rcr = ani1x.aev_computer.Rcr
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        consts = torchani.neurochem.Constants(const_file)
+        self.aev_computer = torchani.AEVComputer(**consts).to(self.device)
+        self.species_to_tensor = consts.species_to_tensor
+        self.rcr = self.aev_computer.Rcr
         self.rca = self.aev_computer.Rca
 
     def testCO2(self):
@@ -96,12 +116,15 @@ class TestAEV(_TestAEVBase):
                 species = torch.from_numpy(species)
                 expected_radial = torch.from_numpy(expected_radial)
                 expected_angular = torch.from_numpy(expected_angular)
-                coordinates = self.transform(coordinates)
-                species = self.transform(species)
-                expected_radial = self.transform(expected_radial)
-                expected_angular = self.transform(expected_angular)
                 _, aev = self.aev_computer((species, coordinates))
                 self.assertAEVEqual(expected_radial, expected_angular, aev)
+
+    def testNoNan(self):
+        # AEV should not output NaN even when coordinates are superimposed
+        coordinates = torch.ones(1, 3, 3, dtype=torch.float)
+        species = torch.zeros(1, 3, dtype=torch.long)
+        _, aev = self.aev_computer((species, coordinates))
+        self.assertFalse(torch.isnan(aev).any())
 
     def testPadding(self):
         species_coordinates = []
@@ -114,10 +137,6 @@ class TestAEV(_TestAEVBase):
                 species = torch.from_numpy(species)
                 radial = torch.from_numpy(radial)
                 angular = torch.from_numpy(angular)
-                coordinates = self.transform(coordinates)
-                species = self.transform(species)
-                radial = self.transform(radial)
-                angular = self.transform(angular)
                 species_coordinates.append(torchani.utils.broadcast_first_dim(
                     {'species': species, 'coordinates': coordinates}))
                 radial_angular.append((radial, angular))
@@ -132,41 +151,6 @@ class TestAEV(_TestAEVBase):
             start += conformations
             self.assertAEVEqual(expected_radial, expected_angular, aev_)
 
-    @unittest.skipIf(not torch.cuda.is_available(), "Too slow on CPU")
-    def testGradient(self):
-        """Test validity of autodiff by comparing analytical and numerical
-        gradients.
-        """
-        datafile = os.path.join(path, 'test_data/NIST/all')
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        # Create local copy of aev_computer to avoid interference with other
-        # tests.
-        aev_computer = copy.deepcopy(self.aev_computer).to(device).to(torch.float64)
-        with open(datafile, 'rb') as f:
-            data = pickle.load(f)
-            for coordinates, species, _, _, _, _ in data:
-                coordinates = torch.from_numpy(coordinates).to(device).to(torch.float64)
-                coordinates.requires_grad_(True)
-                species = torch.from_numpy(species).to(device)
-
-                # PyTorch gradcheck expects to test a funtion with inputs and
-                # outputs of type torch.Tensor. The numerical estimation of
-                # the deriviate involves making small modifications to the
-                # input and observing how it affects the output. The species
-                # tensor needs to be removed from the input so that gradcheck
-                # does not attempt to estimate the gradient with respect to
-                # species and fail.
-                # Create simple function wrapper to handle this.
-                def aev_forward_wrapper(coords):
-                    # Return only the aev portion of the output.
-                    return aev_computer((species, coords))[1]
-                # Sanity Check: Forward wrapper returns aev without error.
-                aev_forward_wrapper(coordinates)
-                torch.autograd.gradcheck(
-                    aev_forward_wrapper,
-                    coordinates
-                )
-
 
 class TestAEVJIT(TestAEV):
     def setUp(self):
@@ -174,10 +158,10 @@ class TestAEVJIT(TestAEV):
         self.aev_computer = torch.jit.script(self.aev_computer)
 
 
-class TestPBCSeeEachOther(unittest.TestCase):
+class TestPBCSeeEachOther(TestCase):
     def setUp(self):
-        self.ani1x = torchani.models.ANI1x()
-        self.aev_computer = self.ani1x.aev_computer.to(torch.double)
+        consts = torchani.neurochem.Constants(const_file)
+        self.aev_computer = torchani.AEVComputer(**consts).to(torch.double)
 
     def testTranslationalInvariancePBC(self):
         coordinates = torch.tensor(
@@ -196,7 +180,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
         for _ in range(100):
             translation = torch.randn(3, dtype=torch.double)
             _, aev2 = self.aev_computer((species, coordinates + translation), cell=cell, pbc=pbc)
-            self.assertTrue(torch.allclose(aev, aev2))
+            self.assertEqual(aev, aev2)
 
     def testPBCConnersSeeEachOther(self):
         species = torch.tensor([[0, 0]])
@@ -278,7 +262,7 @@ class TestPBCSeeEachOther(unittest.TestCase):
         self.assertEqual(atom_index2.tolist(), [1])
 
 
-class TestAEVOnBoundary(unittest.TestCase):
+class TestAEVOnBoundary(TestCase):
 
     def setUp(self):
         self.eps = 1e-9
@@ -294,19 +278,20 @@ class TestAEVOnBoundary(unittest.TestCase):
         self.pbc = torch.ones(3, dtype=torch.bool)
         self.v1, self.v2, self.v3 = self.cell
         self.center_coordinates = self.coordinates + 0.5 * (self.v1 + self.v2 + self.v3)
-        ani1x = torchani.models.ANI1x()
-        self.aev_computer = ani1x.aev_computer.to(torch.double)
+        consts = torchani.neurochem.Constants(const_file)
+        self.aev_computer = torchani.AEVComputer(**consts).to(torch.double)
+
         _, self.aev = self.aev_computer((self.species, self.center_coordinates), cell=self.cell, pbc=self.pbc)
 
     def assertInCell(self, coordinates):
         coordinates_cell = coordinates @ self.inv_cell
-        self.assertTrue(torch.allclose(coordinates, coordinates_cell @ self.cell))
+        self.assertEqual(coordinates, coordinates_cell @ self.cell)
         in_cell = (coordinates_cell >= -self.eps) & (coordinates_cell <= 1 + self.eps)
         self.assertTrue(in_cell.all())
 
     def assertNotInCell(self, coordinates):
         coordinates_cell = coordinates @ self.inv_cell
-        self.assertTrue(torch.allclose(coordinates, coordinates_cell @ self.cell))
+        self.assertEqual(coordinates, coordinates_cell @ self.cell)
         in_cell = (coordinates_cell >= -self.eps) & (coordinates_cell <= 1 + self.eps)
         self.assertFalse(in_cell.all())
 
@@ -320,15 +305,15 @@ class TestAEVOnBoundary(unittest.TestCase):
             self.assertInCell(coordinates)
             _, aev = self.aev_computer((self.species, coordinates), cell=self.cell, pbc=self.pbc)
             self.assertGreater(aev.abs().max().item(), 0)
-            self.assertTrue(torch.allclose(aev, self.aev))
+            self.assertEqual(aev, self.aev)
 
 
-class TestAEVOnBenzenePBC(unittest.TestCase):
+class TestAEVOnBenzenePBC(TestCase):
 
     def setUp(self):
-        ani1x = torchani.models.ANI1x()
-        self.aev_computer = ani1x.aev_computer
-        filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.cif')
+        consts = torchani.neurochem.Constants(const_file)
+        self.aev_computer = torchani.AEVComputer(**consts)
+        filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.json')
         benzene = ase.io.read(filename)
         self.cell = torch.tensor(benzene.get_cell(complete=True)).float()
         self.pbc = torch.tensor(benzene.get_pbc(), dtype=torch.bool)
@@ -339,7 +324,6 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
         self.natoms = self.aev.shape[1]
 
     def testRepeat(self):
-        tolerance = 5e-6
         c1, c2, c3 = self.cell
         species2 = self.species.repeat(1, 4)
         coordinates2 = torch.cat([
@@ -352,7 +336,7 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
         _, aev2 = self.aev_computer((species2, coordinates2), cell=cell2, pbc=self.pbc)
         for i in range(3):
             aev3 = aev2[:, i * self.natoms: (i + 1) * self.natoms, :]
-            self.assertTrue(torch.allclose(self.aev, aev3, atol=tolerance))
+            self.assertEqual(self.aev, aev3)
 
     def testManualMirror(self):
         c1, c2, c3 = self.cell
@@ -363,7 +347,7 @@ class TestAEVOnBenzenePBC(unittest.TestCase):
         ], dim=1)
         _, aev2 = self.aev_computer((species2, coordinates2))
         aev2 = aev2[:, :self.natoms, :]
-        self.assertTrue(torch.allclose(self.aev, aev2))
+        self.assertEqual(self.aev, aev2)
 
 
 if __name__ == '__main__':

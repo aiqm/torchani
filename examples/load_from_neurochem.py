@@ -68,8 +68,8 @@ coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
                              [0.45554739, 0.54289633, 0.81170881],
                              [0.66091919, -0.16799635, -0.91037834]]],
                            requires_grad=True)
-species = consts.species_to_tensor('CHHHH').unsqueeze(0)
-methane = ase.Atoms('CHHHH', positions=coordinates.squeeze().detach().numpy())
+species = consts.species_to_tensor(['C', 'H', 'H', 'H', 'H']).unsqueeze(0)
+methane = ase.Atoms(['C', 'H', 'H', 'H', 'H'], positions=coordinates.squeeze().detach().numpy())
 
 ###############################################################################
 # Now let's compute energies using the ensemble directly:

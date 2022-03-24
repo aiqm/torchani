@@ -6,17 +6,17 @@ import copy
 import pickle
 from ase.optimize import BFGS
 from ase import Atoms
+from torchani.testing import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestStructureOptimization(unittest.TestCase):
+class TestStructureOptimization(TestCase):
 
     def setUp(self):
         self.tolerance = 1e-6
-        self.ani1x = torchani.models.ANI1x()
-        self.calculator = self.ani1x[0].ase()
+        self.calculator = torchani.models.ANI1x(model_index=0).ase()
 
     def testRMSE(self):
         datafile = os.path.join(path, 'test_data/NeuroChemOptimized/all')
@@ -32,10 +32,7 @@ class TestStructureOptimization(unittest.TestCase):
                 opt = BFGS(atoms)
                 opt.run()
                 coordinates = atoms.get_positions()
-                coordinates = torch.from_numpy(coordinates)
-                distances = (old_coordinates - coordinates).norm(dim=1)
-                rmse = distances.mean()
-                self.assertLess(rmse, self.tolerance)
+                self.assertEqual(old_coordinates, coordinates)
 
 
 if __name__ == '__main__':

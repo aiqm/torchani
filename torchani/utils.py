@@ -3,17 +3,13 @@ from torch import Tensor
 import torch.utils.data
 import math
 from collections import defaultdict
-from typing import Tuple, NamedTuple, Optional
+from typing import Tuple, NamedTuple, Optional, Sequence, List, Dict
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
 from .nn import SpeciesEnergies
 
 
-def empty_list():
-    return []
-
-
 def stack_with_padding(properties, padding):
-    output = defaultdict(empty_list)
+    output = defaultdict(list)
     for p in properties:
         for k, v in p.items():
             output[k].append(torch.as_tensor(v))
@@ -75,7 +71,6 @@ def pad_atomic_properties(properties, padding_values=defaultdict(lambda: 0.0, sp
     return output
 
 
-# @torch.jit.script
 def present_species(species):
     """Given a vector of species of atoms, compute the unique species present.
 
@@ -156,7 +151,7 @@ class EnergyShifter(torch.nn.Module):
     """
 
     def __init__(self, self_energies, fit_intercept=False):
-        super(EnergyShifter, self).__init__()
+        super().__init__()
 
         self.fit_intercept = fit_intercept
         if self_energies is not None:
@@ -195,50 +190,45 @@ class EnergyShifter(torch.nn.Module):
         return SpeciesEnergies(species, energies + sae)
 
 
-class ChemicalSymbolsToInts:
+class ChemicalSymbolsToInts(torch.nn.Module):
     r"""Helper that can be called to convert chemical symbol string to integers
-
     On initialization the class should be supplied with a :class:`list` (or in
     general :class:`collections.abc.Sequence`) of :class:`str`. The returned
     instance is a callable object, which can be called with an arbitrary list
     of the supported species that is converted into a tensor of dtype
     :class:`torch.long`. Usage example:
-
     .. code-block:: python
-
        from torchani.utils import ChemicalSymbolsToInts
-
-
        # We initialize ChemicalSymbolsToInts with the supported species
        species_to_tensor = ChemicalSymbolsToInts(['H', 'C', 'Fe', 'Cl'])
-
        # We have a species list which we want to convert to an index tensor
        index_tensor = species_to_tensor(['H', 'C', 'H', 'H', 'C', 'Cl', 'Fe'])
-
        # index_tensor is now [0 1 0 0 1 3 2]
-
-
     .. warning::
-
         If the input is a string python will iterate over
         characters, this means that a string such as 'CHClFe' will be
         intepreted as 'C' 'H' 'C' 'l' 'F' 'e'. It is recommended that you
         input either a :class:`list` or a :class:`numpy.ndarray` ['C', 'H', 'Cl', 'Fe'],
         and not a string. The output of a call does NOT correspond to a
         tensor of atomic numbers.
-
     Arguments:
         all_species (:class:`collections.abc.Sequence` of :class:`str`):
-            sequence of all supported species, in order.
+        sequence of all supported species, in order (it is recommended to order
+        according to atomic number).
     """
+    _dummy: Tensor
+    rev_species: Dict[str, int]
 
-    def __init__(self, all_species):
+    def __init__(self, all_species: Sequence[str]):
+        super().__init__()
         self.rev_species = {s: i for i, s in enumerate(all_species)}
+        # dummy tensor to hold output device
+        self.register_buffer('_dummy', torch.empty(0), persistent=False)
 
-    def __call__(self, species):
+    def forward(self, species: List[str]) -> Tensor:
         r"""Convert species from sequence of strings to 1D tensor"""
         rev = [self.rev_species[s] for s in species]
-        return torch.tensor(rev, dtype=torch.long)
+        return torch.tensor(rev, dtype=torch.long, device=self._dummy.device)
 
     def __len__(self):
         return len(self.rev_species)
@@ -317,7 +307,7 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     elif unit == 'cm^-1':
         unit_converter = sqrt_mhessian2invcm
     else:
-        raise ValueError(f'Only meV and cm^-1 are supported right now')
+        raise ValueError('Only meV and cm^-1 are supported right now')
 
     assert hessian.shape[0] == 1, 'Currently only supporting computing one molecule a time'
     # Solving the eigenvalue problem: Hq = w^2 * T q
@@ -341,7 +331,7 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     # Note that the normal modes are the COLUMNS of the eigenvectors matrix
     mw_normalized = eigenvectors.t()
     md_unnormalized = mw_normalized * inv_sqrt_mass
-    norm_factors = 1 / torch.norm(md_unnormalized, dim=1)  # units are sqrt(AMU)
+    norm_factors = 1 / torch.linalg.norm(md_unnormalized, dim=1)  # units are sqrt(AMU)
     md_normalized = md_unnormalized * norm_factors.unsqueeze(1)
 
     rmasses = norm_factors**2  # units are AMU
@@ -359,7 +349,7 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
 
 
 def get_atomic_masses(species):
-    r"""Convert a tensor of znumbers into a tensor of atomic masses
+    r"""Convert a tensor of atomic numbers ("periodic table indices") into a tensor of atomic masses
 
     Atomic masses supported are the first 119 elements, and are taken from:
 
@@ -410,12 +400,15 @@ def get_atomic_masses(species):
            269.1338    , 278.156     , 281.165     , 281.166     , # noqa
            285.177     , 286.182     , 289.19      , 289.194     , # noqa
            293.204     , 293.208     , 294.214], # noqa
-           dtype=torch.double, device=species.device)
+        dtype=torch.double, device=species.device) # noqa
     masses = default_atomic_masses[species]
     return masses
 
 
-PERIODIC_TABLE = """
+# This constant, when indexed with the corresponding atomic number, gives the
+# element associated with it. Note that there is no element with atomic number
+# 0, so 'Dummy' returned in this case.
+PERIODIC_TABLE = ['Dummy'] + """
     H                                                                                                                           He
     Li  Be                                                                                                  B   C   N   O   F   Ne
     Na  Mg                                                                                                  Al  Si  P   S   Cl  Ar

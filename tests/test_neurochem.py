@@ -2,6 +2,7 @@ import torchani
 import torch
 import os
 import unittest
+from torchani.testing import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -9,11 +10,11 @@ iptpath = os.path.join(path, 'test_data/inputtrain.ipt')
 dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 
 
-class TestNeuroChem(unittest.TestCase):
+class TestNeuroChem(TestCase):
 
     def testNeuroChemTrainer(self):
-        d = torch.device('cpu')
-        trainer = torchani.neurochem.Trainer(iptpath, d, True, 'runs')
+        d = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        trainer = torchani.neurochem.Trainer(iptpath, d, True, os.path.join(path, 'runs'))
 
         # test if loader construct correct model
         self.assertEqual(trainer.aev_computer.aev_length, 384)
