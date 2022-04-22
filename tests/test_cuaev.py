@@ -30,8 +30,8 @@ class TestCUAEVNoGPU(TestCase):
         aev_computer = torchani.AEVComputer(**consts, use_cuda_extension=True)
         s = torch.jit.script(aev_computer)
         # Computation of AEV using cuaev when there is no atoms does not require CUDA, and can be run without GPU
-        species = make_tensor((8, 0), 'cpu', torch.int64, low=-1, high=4)
-        coordinates = make_tensor((8, 0, 3), 'cpu', torch.float32, low=-5, high=5)
+        species = make_tensor((8, 0), device='cpu', dtype=torch.int64, low=-1, high=4)
+        coordinates = make_tensor((8, 0, 3), device='cpu', dtype=torch.float32, low=-5, high=5)
         self.assertIn("cuaev::run", str(s.graph_for((species, coordinates))))
 
     def testPickle(self):
