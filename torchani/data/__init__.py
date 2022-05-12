@@ -251,14 +251,14 @@ class Transformations:
         return IterableAdapter(lambda: filter(lambda x: abs(x['energies'] - mean) < threshold2 * std, filtered))
 
     @staticmethod
-    def shuffle(reenterable_iterable):
+    def shuffle(reenterable_iterable, seed=0):
         if isinstance(reenterable_iterable, list):
             list_ = reenterable_iterable
         else:
             list_ = list(reenterable_iterable)
             del reenterable_iterable
             gc.collect()
-        random.shuffle(list_)
+        random.Random(seed).shuffle(list_)
         return list_
 
     @staticmethod
