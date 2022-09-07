@@ -1,16 +1,7 @@
 #pragma once
 
-// include cub in a safe manner, see:
-// https://github.com/pytorch/pytorch/pull/55292
-#undef CUB_NS_POSTFIX // undef to avoid redefinition warnings
-#undef CUB_NS_PREFIX
-#define CUB_NS_PREFIX namespace cuaev {
-#define CUB_NS_POSTFIX }
-#include <cub/cub.cuh>
-#undef CUB_NS_POSTFIX
-#undef CUB_NS_PREFIX
-
 #include <ATen/cuda/Exceptions.h>
+#include <cub/cub.cuh>
 
 // handle the temporary storage and 'twice' calls for cub API
 #define CUB_WRAPPER(func, ...)                                   \
