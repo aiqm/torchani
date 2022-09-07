@@ -7,7 +7,7 @@ import warnings
 
 
 def alert(text):
-    return('\033[91m{}\33[0m'.format(text))  # red
+    return ('\033[91m{}\33[0m'.format(text))  # red
 
 
 BUILD_EXT_ALL_SM = '--cuaev-all-sms' in sys.argv

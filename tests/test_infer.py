@@ -74,6 +74,8 @@ class TestInfer(TestCase):
         self._test(model_ref, model_infer)
 
     def testANI2xInferJIT(self):
+        # TODO: waiting for the NVFuser [Bug](https://github.com/pytorch/pytorch/issues/84510) to be fixed
+        torch._C._jit_set_nvfuser_enabled(False)
         ani2x_infer_jit = torchani.models.ANI2x().to_infer_model(use_mnp=self.use_mnp).to(self.device)
         ani2x_infer_jit = torch.jit.script(ani2x_infer_jit)
         if self.use_mnp:

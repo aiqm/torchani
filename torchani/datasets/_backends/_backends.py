@@ -49,4 +49,4 @@ def TemporaryLocation(backend: str) -> 'ContextManager[StrPath]':
     if not _BACKEND_AVAILABLE.get(backend, False):
         raise ValueError(f'{backend} could not be found, please install it if supported.'
                          f' Supported backends are {set(_BACKEND_AVAILABLE.keys())}')
-    return _CONCRETE_LOCATIONS[backend]()
+    return _CONCRETE_LOCATIONS[backend]()  # type: ignore

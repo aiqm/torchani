@@ -1,4 +1,4 @@
-name: build_conda
+name: build_conda_docker
 
 on:
   pull_request:
@@ -7,7 +7,6 @@ on:
       - 'torchani/csrc/**'
       - 'torchani/aev/**'
       - 'ci/**'
-      - 'conda/**'
       - 'test/test_cuaev.py'
   push:
     branches:
@@ -17,7 +16,6 @@ on:
       - 'torchani/csrc/**'
       - 'torchani/aev/**'
       - 'ci/**'
-      - 'conda/**'
       - 'test/test_cuaev.py'
 
 env:
@@ -25,7 +23,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build_conda:
+  build_conda_docker:
     runs-on: self-hosted
     permissions:
       contents: read
@@ -45,9 +43,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Conda
-        run: docker run --rm -v $PWD:/examples --gpus all ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}_conda:latest bash -c "nvidia-smi && cd /examples && export PYTHON_VERSION=3.8 && export CONDA_TOKEN=${{ secrets.CONDA_TOKEN }} && ./conda/build_conda.sh"
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: Dockerfile.conda
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}_conda:latest
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Remove image
+        if: ${{ always() }}
+        continue-on-error: true
+        run: docker image rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}_conda:latest
 
 concurrency:
-  group: build_conda-${{ github.event.pull_request.number || github.sha }}
+  group: build_conda_docker-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

@@ -1,0 +1,70 @@
+name: build_docker
+
+on:
+  pull_request:
+    paths:
+      - 'setup.py'
+      - 'torchani/csrc/**'
+      - 'torchani/aev/**'
+      - 'ci/**'
+      - 'test/test_cuaev.py'
+  push:
+    branches:
+      - master
+    paths:
+      - 'setup.py'
+      - 'torchani/csrc/**'
+      - 'torchani/aev/**'
+      - 'ci/**'
+      - 'test/test_cuaev.py'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build_docker_and_unittest:
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT }}
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: UnitTests
+        run: docker run --rm --gpus all ${{ steps.meta.outputs.tags }} bash -c "nvidia-smi && cd tests/ && pytest -s -v ."
+
+      - name: Remove image
+        if: ${{ always() }}
+        continue-on-error: true
+        run: docker image rm ${{ steps.meta.outputs.tags }}
+
+concurrency:
+  group: build_docker-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true

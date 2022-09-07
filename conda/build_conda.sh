@@ -2,7 +2,7 @@
 set -ex
 
 # USAGE:
-# Build packages of torchani or torchani_cudf
+# Build packages of torchani
 # 1. test
 # PYTHON_VERSION=3.8 PACKAGE=torchani ./build_conda.sh
 # 2. release
@@ -25,16 +25,14 @@ export USER=roitberg-group
 PYTHON_VERSION="${PYTHON_VERSION:-3.8}"
 # default package is torchani
 PACKAGE="${PACKAGE:-torchani}"
+export CONDA=$(conda info --base)
 
-# set package-name and channel for torchani or torchani_cudf
+# set package-name and channel for torchani
 if [[ $PACKAGE == torchani ]]; then
     export PACKAGE_NAME=sandbox
     export CONDA_CHANNEL_FLAGS="-c pytorch -c nvidia -c defaults -c conda-forge"
-elif [[ $PACKAGE == torchani_cudf ]]; then
-    export PACKAGE_NAME=sandbox_cudf
-    export CONDA_CHANNEL_FLAGS="-c rapidsai -c nvidia -c defaults -c conda-forge"
 else
-    echo PACKAGE must be torchani or torchani_cudf
+    echo PACKAGE must be torchani
     exit 1
 fi
 
@@ -49,19 +47,16 @@ conda build $CONDA_CHANNEL_FLAGS --no-anaconda-upload --no-copy-test-source-file
 
 # upload to anaconda.org if has release_anaconda argument
 if [[ $1 == release_anaconda ]]; then
-    BUILD_FILE="${CONDA}/conda-bld/linux-64/${PACKAGE_NAME}-${BUILD_VERSION}-py${PYTHON_VERSION//./}_torch1.9.1_cuda11.1.tar.bz2"
+    BUILD_FILE="${CONDA}/conda-bld/linux-64/${PACKAGE_NAME}-${BUILD_VERSION}-py${PYTHON_VERSION//./}_torch1.12.1_cuda11.3.tar.bz2"
     echo $BUILD_FILE
     anaconda -t $CONDA_TOKEN upload -u $USER $BUILD_FILE --force
 fi
 
 # upload to roitberg server if has release argument
 if [[ $1 == release ]]; then
-    BUILD_FILE="${CONDA}/conda-bld/linux-64/${PACKAGE_NAME}-${BUILD_VERSION}-py${PYTHON_VERSION//./}_torch1.9.1_cuda11.1.tar.bz2"
+    BUILD_FILE="${CONDA}/conda-bld/linux-64/${PACKAGE_NAME}-${BUILD_VERSION}-py${PYTHON_VERSION//./}_torch1.12.1_cuda11.3.tar.bz2"
     echo $BUILD_FILE
     mkdir -p /release/conda-packages/linux-64
-    if [[ $PACKAGE == torchani_cudf ]]; then
-        rm -f /release/conda-packages/linux-64/sandbox_cudf*  # remove all old sandbox_cudf packages
-    fi
     cp $BUILD_FILE /release/conda-packages/linux-64
     rm -rf "${CONDA}/conda-bld/*"                             # remove conda-bld directory
     conda index /release/conda-packages

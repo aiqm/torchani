@@ -707,7 +707,8 @@ class TestANIDataset(TestCase):
             ds.append_conformers(k, v)
         # Check that getters give the same result as what was input
         for k, v in ds.numpy_items(chem_symbols=True):
-            self.assertEqual(v, conformers_str[k])
+            for key in v.keys():
+                self.assertEqual(v[key], conformers_str[k][key])
         # Now we delete everything
         for k in conformers_str.keys():
             ds.delete_conformers(k)

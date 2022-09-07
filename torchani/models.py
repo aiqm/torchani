@@ -97,7 +97,8 @@ class BuiltinModel(Module):
         self.neural_networks = neural_networks
         self.energy_shifter = energy_shifter
         self.species_to_tensor = ChemicalSymbolsToInts(elements)
-        self.species_converter = SpeciesConverter(elements)
+        device = energy_shifter.self_energies.device
+        self.species_converter = SpeciesConverter(elements).to(device)
 
         self.periodic_table_index = periodic_table_index
         numbers = torch.tensor([PERIODIC_TABLE.index(e) for e in elements], dtype=torch.long)

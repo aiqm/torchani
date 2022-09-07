@@ -37,9 +37,9 @@ TorchANI is a pytorch implementation of ANI. It is currently under alpha release
 
 # Install
 Supported version information when install from anaconda:
-- pytorch 1.9
-- cuda 11.1
-- python 3.6 or python 3.8
+- pytorch 1.12.1
+- cuda 11.3
+- python 3.8
 
 Install from anaconda by the following (Note that we are hosting the packages only for internal usage at: https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
 
@@ -54,14 +54,6 @@ conda install -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gaines
 ```
 - The `conda install` command could also be used for your own conda environment or could be used to update to the latest nightly version.  
 - In the case where multiple updates has been released within a day, you may need to add a `--force-reinstall` flag instead of waiting for the next nightly update.
-
-To install a version that is compatible with cudf, because of [cudatoolkit confilcts](https://github.com/rapidsai/cudf/issues/8510), you will need to install it by the following (currently only support python 3.8):
-```bash
-# important: update conda and conda-package-handling
-conda update -n base -c defaults conda
-# install torchani, torch and cudf together
-conda create -n cudf -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville -c rapidsai -c nvidia -c defaults -c conda-forge sandbox_cudf python=3.8
-```
 
 You could also build torchani from source, check at [TorchANI CSRC](torchani/csrc).
 

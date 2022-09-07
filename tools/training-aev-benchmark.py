@@ -253,9 +253,10 @@ if __name__ == "__main__":
         dataset = torchani.data.load(args.dataset_path, additional_properties=('forces',)).subtract_self_energies(shifter).species_to_indices()
         print('=> Caching shuffled dataset...')
         dataset_shuffled = list(dataset.shuffle().collate(args.batch_size))
-        f = open(f'{args.dataset_path}.pickle', 'wb')
-        pickle.dump(dataset_shuffled, f)
-        f.close()
+        # use f2 so mypy does not complain
+        f2 = open(f'{args.dataset_path}.pickle', 'wb')
+        pickle.dump(dataset_shuffled, f2)
+        f2.close()
 
     print("=> CUDA info:")
     devices = torch.cuda.device_count()

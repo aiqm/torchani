@@ -1,4 +1,4 @@
-name: unittests
+name: unittests_cpu
 
 on:
   pull_request:
@@ -7,35 +7,19 @@ on:
       - master
 
 jobs:
-  unittests:
-
+  unittests_cpu:
     runs-on: self-hosted
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.8, 3.6]
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Fetch submodules
-      run: git submodule update --init
-    - name: Install dependencies
-      run: ci/install_stable_dependencies.sh
-    - name: Pytorch info
-      run: python -c 'from torch.utils.collect_env import get_pretty_env_info; print(get_pretty_env_info())'
-    - name: Install TorchANI
-      run: python setup.py install
-    - name: Download data files
-      run: ./download.sh
-    - name: install pytest
-      run: pip install pytest
-    - name: Run all tests
-      run: python -m pytest -v tests/*
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT }}
+          submodules: recursive
+
+      - name: Install and Run tests
+        run: docker run --rm --gpus '"device=none"' -v $PWD:/examples nvcr.io/nvidia/pytorch:22.08-py3 bash -c "mkdir -p /torchani_sandbox && cd /torchani_sandbox && cp -r /examples/. /torchani_sandbox/ && pip install -r test_requirements.txt && pip uninstall cudf -y && ./download.sh && python setup.py develop && cd tests/ && pytest -s -v ."
 
 concurrency:
-  group: unittest-${{ github.event.pull_request.number || github.sha }}
+  group: unittests_cpu-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

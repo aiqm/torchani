@@ -7,76 +7,39 @@ on:
   schedule:
     - cron: '0 0 * * *'
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   conda-release:
-
-    runs-on: [self-hosted, miniconda]
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix:
-        python-version: [3.8, 3.6]
-        package: [torchani, torchani_cudf]
-        exclude:
-          # excludes py3.6 for torchani_cudf
-          - package: torchani_cudf
-            python-version: 3.6
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Use saved pkgs
-      run: |
-        if [ -d /root/conda_pkgs_dir_saved ]; then
-          mv /root/conda_pkgs_dir_saved /root/conda_pkgs_dir
-        fi
-    - name: Set up conda path prefix
-      run: |
-        echo "CONDA=/root/miniconda" >> $GITHUB_ENV
-    - name: Set up conda
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        miniconda-version: "latest"
-        activate-environment: foo${{ matrix.python-version }}
-        auto-update-conda: true
-        python-version: ${{ matrix.python-version }}
-    - name: Conda info
-      shell: bash -l {0}
-      run: conda info
-    - name: Fetch submodules
-      run: git submodule update --init
-    - name: Install cuda
-      run: |
-        source ci/install_cuda.sh
-        echo "CUDA_HOME=${CUDA_HOME}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
-        echo "PATH=${CUDA_HOME}/bin:$PATH" >> $GITHUB_ENV
-    - name: Setup Server Key
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SERVER_PUBKEY }}" > ~/.ssh/id_rsa.pub
-        echo "${{ secrets.SERVER_PRIKEY }}" > ~/.ssh/id_rsa
-        chmod 400 ~/.ssh/id_rsa
-    - name: Conda Build
-      run: |
-        echo $CUDA_HOME
-        echo $LD_LIBRARY_PATH
-        nvcc -V
-        export PYTHON_VERSION=${{ matrix.python-version }}
-        export CONDA_TOKEN=${{ secrets.CONDA_TOKEN }}
-        export SERVER_USERNAME=${{ secrets.SERVER_USERNAME }}
-        export SERVER_PORT=${{ secrets.SERVER_PORT }}
-        export PACKAGE=${{ matrix.package }}
-        ./conda/build_conda.sh release
-    - name: Remove Server Key
-      run: |
-        rm ~/.ssh/id_rsa.pub
-        rm ~/.ssh/id_rsa
-    - name: Save pkgs to avoid to be removed
-      # Waiting feature to be added: https://github.com/conda-incubator/setup-miniconda/issues/181
-      run: mv /root/conda_pkgs_dir /root/conda_pkgs_dir_saved
-    - name: Remove conda env
-      if: ${{ always() }}
-      run: conda env remove --name foo${{ matrix.python-version }}
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT }}
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Conda && Release
+        run: >
+          docker run --rm -v $PWD:/examples --gpus all ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}_conda:latest bash -c
+          "mkdir -p ~/.ssh && echo "${{ secrets.SERVER_PUBKEY }}" > ~/.ssh/id_rsa.pub && echo "${{ secrets.SERVER_PRIKEY }}" > ~/.ssh/id_rsa && chmod 400 ~/.ssh/id_rsa &&
+          nvidia-smi && cd /examples &&
+          export PYTHON_VERSION=3.8 && export CONDA_TOKEN=${{ secrets.CONDA_TOKEN }} && export SERVER_USERNAME=${{ secrets.SERVER_USERNAME }} && export SERVER_PORT=${{ secrets.SERVER_PORT }} &&
+          ./conda/build_conda.sh release &&
+          rm ~/.ssh/id_rsa.pub && rm ~/.ssh/id_rsa"
 
 concurrency:
   group: conda-release
