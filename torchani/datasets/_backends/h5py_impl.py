@@ -147,7 +147,7 @@ class _H5Store(_HierarchicalStoreWrapper["h5py.File"]):
 
 
 class _H5ConformerGroup(_ConformerWrapper["h5py.Group"]):
-    def __init__(self, data: h5py.Group, **kwargs):
+    def __init__(self, data: "h5py.Group", **kwargs):
         super().__init__(data=data, **kwargs)
 
     def _is_resizable(self) -> bool:

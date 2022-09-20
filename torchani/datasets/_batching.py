@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Tuple, Dict, Optional, Sequence, List, Union, Collection
 from collections import OrderedDict
 
-import h5py
 import torch
 from torch import Tensor
 import numpy as np
@@ -16,6 +15,10 @@ import numpy as np
 from ..utils import pad_atomic_properties, cumsum_from_zero, PADDING, tqdm
 from .datasets import ANIDataset, ANIBatchedDataset
 from ._annotations import Conformers, StrPath, Transform
+from ._backends import _H5PY_AVAILABLE
+
+if _H5PY_AVAILABLE:
+    import h5py
 
 
 # TODO a batcher class would make this code much more clear
