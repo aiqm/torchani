@@ -13,7 +13,7 @@ torch.backends.cuda.matmul.allow_tf32 = False
 
 use_mnps = [True, False] if torchani.infer.mnp_is_installed else [False]
 devices = ['cuda', 'cpu']
-ani2x = torchani.models.ANI2x()
+ani2x = torchani.models.ANI2x(periodic_table_index=False)
 species_converter = torchani.nn.SpeciesConverter(ani2x.get_chemical_symbols())
 
 # set num threads for multi net parallel
@@ -56,7 +56,7 @@ class TestInfer(TestCase):
             self._test(model, model_jit)
 
     def testANI2xInfer(self):
-        ani2x_infer = torchani.models.ANI2x().to_infer_model(use_mnp=self.use_mnp).to(self.device)
+        ani2x_infer = torchani.models.ANI2x(periodic_table_index=False).to_infer_model(use_mnp=self.use_mnp).to(self.device)
         self._test(ani2x, ani2x_infer)
 
     def testBmmEnsemble(self):
@@ -76,7 +76,7 @@ class TestInfer(TestCase):
     def testANI2xInferJIT(self):
         # TODO: waiting for the NVFuser [Bug](https://github.com/pytorch/pytorch/issues/84510) to be fixed
         torch._C._jit_set_nvfuser_enabled(False)
-        ani2x_infer_jit = torchani.models.ANI2x().to_infer_model(use_mnp=self.use_mnp).to(self.device)
+        ani2x_infer_jit = torchani.models.ANI2x(periodic_table_index=False).to_infer_model(use_mnp=self.use_mnp).to(self.device)
         ani2x_infer_jit = torch.jit.script(ani2x_infer_jit)
         if self.use_mnp:
             self._test(ani2x, ani2x_infer_jit)

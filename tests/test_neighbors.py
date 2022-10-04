@@ -238,8 +238,8 @@ class TestCellListEnergies(TestCase):
                           self.cell_size])).float()
         self.aev_cl = AEVComputer.like_1x(neighborlist='cell_list')
         self.aev_fp = AEVComputer.like_1x(neighborlist='full_pairwise')
-        self.model_cl = torchani.models.ANI1x(model_index=0).to(self.device)
-        self.model_fp = torchani.models.ANI1x(model_index=0).to(self.device)
+        self.model_cl = torchani.models.ANI1x(model_index=0, periodic_table_index=False).to(self.device)
+        self.model_fp = torchani.models.ANI1x(model_index=0, periodic_table_index=False).to(self.device)
         self.model_cl.aev_computer = self.aev_cl
         self.model_fp.aev_computer = self.aev_fp
         self.num_to_test = 10

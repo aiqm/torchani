@@ -138,7 +138,6 @@ def plot_many(path_to_files, comment, show=False):
 def get_model(model_arg, cell_list, model_index,
               verlet_cell_list):
     args = {
-        'periodic_table_index': True,
         'cell_list': cell_list,
         'verlet_cell_list': verlet_cell_list
     }

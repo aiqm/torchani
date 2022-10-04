@@ -16,8 +16,6 @@ class Calculator(ase.calculators.calculator.Calculator):
     """TorchANI calculator for ASE
 
     Arguments:
-        species (:class:`collections.abc.Sequence` of :class:`str`):
-            sequence of all supported species, in order.
         model (:class:`torch.nn.Module`): neural network potential model
             that convert coordinates into energies.
         overwrite (bool): After wrapping atoms into central box, whether
@@ -27,9 +25,8 @@ class Calculator(ase.calculators.calculator.Calculator):
 
     implemented_properties = ['energy', 'forces', 'stress', 'free_energy']
 
-    def __init__(self, species, model, overwrite=False):
+    def __init__(self, model, overwrite: bool = False):
         super().__init__()
-        self.species_to_tensor = utils.ChemicalSymbolsToInts(species)
         self.model = model
         # Since ANI is used in inference mode, no gradients on model parameters are required here
         for p in self.model.parameters():
@@ -39,14 +36,14 @@ class Calculator(ase.calculators.calculator.Calculator):
         a_parameter = next(self.model.parameters())
         self.device = a_parameter.device
         self.dtype = a_parameter.dtype
+
         try:
-            # We assume that the model has a "periodic_table_index" attribute
-            # if it doesn't we set the calculator's attribute to false and we
-            # assume that species will be correctly transformed by
-            # species_to_tensor
-            self.periodic_table_index = model.periodic_table_index
+            periodic_table_index = model.periodic_table_index
         except AttributeError:
-            self.periodic_table_index = False
+            periodic_table_index = False
+
+        if not periodic_table_index:
+            raise ValueError("ASE models must have periodic_table_index=True")
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=ase.calculators.calculator.all_changes):
@@ -57,11 +54,7 @@ class Calculator(ase.calculators.calculator.Calculator):
                            device=self.device)
         pbc_enabled = pbc.any().item()
 
-        if self.periodic_table_index:
-            species = torch.tensor(self.atoms.get_atomic_numbers(), dtype=torch.long, device=self.device)
-        else:
-            species = self.species_to_tensor(self.atoms.get_chemical_symbols()).to(self.device)
-
+        species = torch.tensor(self.atoms.get_atomic_numbers(), dtype=torch.long, device=self.device)
         species = species.unsqueeze(0)
         coordinates = torch.tensor(self.atoms.get_positions())
         coordinates = coordinates.to(self.device).to(self.dtype) \

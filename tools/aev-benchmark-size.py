@@ -381,8 +381,8 @@ if __name__ == "__main__":
         use_cell_list = False
     else:
         use_cell_list = True
-    nnp_ref = torchani.models.ANI2x(periodic_table_index=True, model_index=None, cell_list=use_cell_list).to(device)
-    nnp_cuaev = torchani.models.ANI2x(periodic_table_index=True, model_index=None).to(device)
+    nnp_ref = torchani.models.ANI2x(model_index=None, cell_list=use_cell_list).to(device)
+    nnp_cuaev = torchani.models.ANI2x(model_index=None).to(device)
     nnp_cuaev.aev_computer.use_cuda_extension = True
     maxatoms = [6000, 10000]
 

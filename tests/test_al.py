@@ -9,8 +9,7 @@ class TestALAtomic(TestCase):
     def setUp(self):
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = torchani.models.ANI1x(periodic_table_index=True).to(
-            self.device).double()
+        self.model = torchani.models.ANI1x().to(self.device).double()
         self.converter = torchani.nn.SpeciesConverter(['H', 'C', 'N', 'O'])
         self.aev_computer = self.model.aev_computer
         self.ani_model = self.model.neural_networks

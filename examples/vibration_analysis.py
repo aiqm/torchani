@@ -20,7 +20,7 @@ import math
 ###############################################################################
 # Let's now manually specify the device we want TorchANI to run:
 device = torch.device('cpu')
-model = torchani.models.ANI1x(periodic_table_index=True).to(device).double()
+model = torchani.models.ANI1x().to(device).double()
 
 ###############################################################################
 # Let's first construct a water molecule and do structure optimization:

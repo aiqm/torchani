@@ -55,6 +55,7 @@ example usage:
     _, energies = model0((species, coordinates))
 """
 import os
+import warnings
 from copy import deepcopy
 from pathlib import Path
 from collections import OrderedDict
@@ -89,9 +90,14 @@ class BuiltinModel(Module):
                  neural_networks: NN,
                  energy_shifter: EnergyShifter,
                  elements: Sequence[str],
-                 periodic_table_index: bool = False):
+                 periodic_table_index: bool = True):
 
         super().__init__()
+        # if periodic table index is True then it has been
+        # set by the user, so lets output a warning that this is the default
+        warnings.warn("The default is now to accept atomic numbers as indexes,"
+                      " do not set periodic_table_index=True."
+                      " if you need to accept raw indices set periodic_table_index=False")
 
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
@@ -212,7 +218,7 @@ class BuiltinModel(Module):
             calculator (:class:`ase.Calculator`): A calculator to be used with ASE
         """
         from . import ase
-        return ase.Calculator(self.get_chemical_symbols(), self, **kwargs)
+        return ase.Calculator(self, **kwargs)
 
     def __getitem__(self, index: int) -> 'BuiltinModel':
         assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"

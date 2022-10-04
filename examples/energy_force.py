@@ -22,11 +22,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # using the average of the 8 models outperform using a single model, so it is
 # always recommended to use an ensemble, unless the speed of computation is an
 # issue in your application.
-#
-# The ``periodic_table_index`` arguments tells TorchANI to use element index
-# in periodic table to index species. If not specified, you need to use
-# 0, 1, 2, 3, ... to index species
-model = torchani.models.ANI2x(periodic_table_index=True).to(device)
+model = torchani.models.ANI2x().to(device)
 
 ###############################################################################
 # Now let's define the coordinate and species. If you just want to compute the

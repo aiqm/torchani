@@ -19,7 +19,7 @@ parser.add_argument('-d', '--device',
 args = parser.parse_args()
 
 # run benchmark
-ani1x = torchani.models.ANI1x().to(args.device)
+ani1x = torchani.models.ANI1x(periodic_table_index=False).to(args.device)
 
 
 def recursive_h5_files(base):

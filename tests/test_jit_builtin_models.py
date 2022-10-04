@@ -31,11 +31,11 @@ class TestBuiltinModelsJIT(TestCase):
             self._test_model(m)
 
     def testANI1x(self):
-        ani1x = torchani.models.ANI1x()
+        ani1x = torchani.models.ANI1x(periodic_table_index=False)
         self._test_ensemble(ani1x)
 
     def testANI1ccx(self):
-        ani1ccx = torchani.models.ANI1ccx()
+        ani1ccx = torchani.models.ANI1ccx(periodic_table_index=False)
         self._test_ensemble(ani1ccx)
 
 

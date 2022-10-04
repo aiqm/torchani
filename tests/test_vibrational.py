@@ -27,7 +27,6 @@ class TestVibrational(TestCase):
         ], calculator=model.ase())
         opt = ase.optimize.BFGS(molecule)
         opt.run(fmax=1e-6)
-        masses = torch.tensor([1.008, 12.011, 14.007, 15.999], dtype=torch.double)
         # compute vibrational frequencies by ASE
         vib = ase.vibrations.Vibrations(molecule)
         vib.run()
@@ -38,11 +37,12 @@ class TestVibrational(TestCase):
         vib.clean()
         modes = torch.tensor(modes)
         # compute vibrational by torchani
-        species = model.species_to_tensor(molecule.get_chemical_symbols()).unsqueeze(0)
+        species = torch.tensor(molecule.get_atomic_numbers()).unsqueeze(0)
+        masses = torchani.utils.get_atomic_masses(species, dtype=torch.double)
         coordinates = torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_grad_(True)
         _, energies = model((species, coordinates))
         hessian = torchani.utils.hessian(coordinates, energies=energies)
-        freq2, modes2, _, _ = torchani.utils.vibrational_analysis(masses[species], hessian)
+        freq2, modes2, _, _ = torchani.utils.vibrational_analysis(masses, hessian)
         freq2 = freq2[6:].float()
         modes2 = modes2[6:]
         self.assertEqual(freq, freq2, atol=0, rtol=0.02, exact_dtype=False)

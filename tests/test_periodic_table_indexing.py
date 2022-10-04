@@ -33,8 +33,8 @@ class TestSpeciesConverterJIT(TestSpeciesConverter):
 class TestBuiltinEnsemblePeriodicTableIndex(TestCase):
 
     def setUp(self):
-        self.model1 = torchani.models.ANI1x()
-        self.model2 = torchani.models.ANI1x(periodic_table_index=True)
+        self.model1 = torchani.models.ANI1x(periodic_table_index=False)
+        self.model2 = torchani.models.ANI1x()
         self.coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
                                           [-0.83140486, 0.39370209, -0.26395324],
                                           [-0.66518241, -0.84461308, 0.20759389],

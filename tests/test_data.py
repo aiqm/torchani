@@ -70,7 +70,7 @@ class TestDatasetUtils(TestCase):
 
     def testFilterEnergyError(self):
         ds = self.test_ds_single
-        model = torchani.models.ANI1x(periodic_table_index=True)[0]
+        model = torchani.models.ANI1x()[0]
         out = torchani.datasets.utils.filter_by_high_energy_error(ds, model, threshold=1.0, delete_inplace=True)
         self.assertEqual(len(out[0]), 3)
         self.assertEqual(sum(len(c['coordinates']) for c in out[0]), 412)

@@ -137,36 +137,5 @@ class TestASE(TestCase):
         dyn.run(10)
 
 
-class TestASEWithPeriodicTableIndex(unittest.TestCase):
-    # Tests that the values obtained by wrapping a BuiltinModel or
-    # BuiltinEnsemble with a calculator are the same with and without
-    # periodic_table_index
-
-    def setUp(self):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model_pti = torchani.models.ANI1x(periodic_table_index=True)
-        self.model = torchani.models.ANI1x()
-        self.model = self.model.to(dtype=torch.double, device=self.device)
-        self.model_pti = self.model_pti.to(dtype=torch.double, device=self.device)
-
-    def testEqualEnsemblePeriodicTableIndex(self):
-        calculator_pti = self.model_pti.ase()
-        calculator = self.model.ase()
-        atoms = Diamond(symbol="C", pbc=True)
-        atoms_pti = Diamond(symbol="C", pbc=True)
-        atoms.calc = calculator
-        atoms_pti.calc = calculator_pti
-        self.assertEqual(atoms.get_potential_energy(), atoms_pti.get_potential_energy())
-
-    def testEqualOneModelPeriodicTableIndex(self):
-        calculator_pti = self.model_pti[0].ase()
-        calculator = self.model[0].ase()
-        atoms = Diamond(symbol="C", pbc=True)
-        atoms_pti = Diamond(symbol="C", pbc=True)
-        atoms.calc = calculator
-        atoms_pti.calc = calculator_pti
-        self.assertEqual(atoms.get_potential_energy(), atoms_pti.get_potential_energy())
-
-
 if __name__ == '__main__':
     unittest.main()

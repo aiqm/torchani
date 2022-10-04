@@ -49,7 +49,7 @@ class TestCUAEV(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.ani2x = torchani.models.ANI2x(periodic_table_index=True, model_index=None)
+        cls.ani2x = torchani.models.ANI2x(model_index=None)
 
     def setUp(self, device='cuda:0'):
         self.tolerance = 5e-5

@@ -23,7 +23,7 @@ class TestActivation(TestCase):
 class TestANI2x(TestCase):
 
     def setUp(self):
-        self.model_pti = torchani.models.ANI2x(model_index=0, periodic_table_index=True)
+        self.model_pti = torchani.models.ANI2x(model_index=0)
         self.model = torchani.models.ANI2x(model_index=0, periodic_table_index=False)
 
     def testDiatomics(self):
@@ -72,7 +72,7 @@ class TestEnergies(TestCase):
     # ANIModel(), EnergyShifter()) against precomputed values
 
     def setUp(self):
-        model = torchani.models.ANI1x(model_index=0)
+        model = torchani.models.ANI1x(model_index=0, periodic_table_index=False)
         self.aev_computer = model.aev_computer
         self.nnp = model.neural_networks
         self.energy_shifter = model.energy_shifter

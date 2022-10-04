@@ -21,7 +21,7 @@ from torch import Tensor
 #
 # Let's now load the built-in ANI-1ccx models. The builtin ANI-1ccx contains 8
 # models trained with diffrent initialization.
-model = torchani.models.ANI1ccx(periodic_table_index=True)
+model = torchani.models.ANI1ccx()
 
 ###############################################################################
 # It is very easy to compile and save the model using `torch.jit`.
@@ -77,9 +77,7 @@ class CustomModule(torch.nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.model = torchani.models.ANI1x(periodic_table_index=True).double()
-        # self.model = torchani.models.ANI1x(periodic_table_index=True)[0].double()
-        # self.model = torchani.models.ANI1ccx(periodic_table_index=True).double()
+        self.model = torchani.models.ANI1x().double()
 
     def forward(self, species: Tensor, coordinates: Tensor, return_forces: bool = False,
                 return_hessians: bool = False) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
