@@ -102,7 +102,7 @@ pip install -e . && pip install -v -e . --global-option="--ext"
 <summary>Moria</summary>
 
 ```bash
-srun --ntasks=1 --cpus-per-task=2 --gres=gpus:1 --time=02:00:00 --mem=10gb  --pty -u bash -i
+srun --ntasks=1 --cpus-per-task=2 --gres=gpu:1 --time=02:00:00 --mem=10gb  --pty -u bash -i
 # create env if necessary
 conda create -n cuaev python=3.8
 conda activate cuaev
