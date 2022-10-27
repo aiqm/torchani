@@ -108,7 +108,7 @@ class AngularCosDiff(torch.nn.Module):
         term1 = self.Gamma * (cos_angles - torch.cos(self.ShfZ))**2
         term2 = self.EtaA * (distances12.sum(0) / 2 - self.ShfA)**2
         exponent = term1 + term2
-        ret = 4 * torch.exp(-exponent) * fcj12.prod(0)
+        ret = 4 * torch.exp(-exponent) * (fcj12[0] * fcj12[1])
         out = ret.flatten(start_dim=1)
         return out
 
