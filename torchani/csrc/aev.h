@@ -125,8 +125,8 @@ struct NeighborList {
 };
 
 struct AEVScalarParams {
-  float Rcr;
-  float Rca;
+  double Rcr;
+  double Rca;
   int radial_sublength;
   int radial_length;
   int angular_sublength;
@@ -141,8 +141,8 @@ struct AEVScalarParams {
   bool use_cos_cutoff;
 
   AEVScalarParams(
-      float Rcr,
-      float Rca,
+      double Rcr,
+      double Rca,
       Tensor EtaR_t,
       Tensor ShfR_t,
       Tensor EtaA_t,

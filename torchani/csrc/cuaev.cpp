@@ -5,8 +5,8 @@ using torch::autograd::AutogradContext;
 using torch::autograd::tensor_list;
 
 AEVScalarParams::AEVScalarParams(
-    float Rcr,
-    float Rca,
+    double Rcr,
+    double Rca,
     Tensor EtaR_t,
     Tensor ShfR_t,
     Tensor EtaA_t,

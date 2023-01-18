@@ -309,7 +309,6 @@ class AEVComputer(torch.nn.Module):
     @jit_unused_if_no_cuaev()
     def _compute_cuaev(self, species, coordinates):
         species_int = species.to(torch.int32)
-        coordinates = coordinates.to(torch.float)
         aev = torch.ops.cuaev.run(coordinates, species_int, self.cuaev_computer)
         return aev
 

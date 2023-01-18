@@ -4,3 +4,4 @@ sphinx_rtd_theme
 matplotlib
 pillow
 sphinx-gallery
+tensorboard
