@@ -489,6 +489,10 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     MDN modes are not orthogonal, and normalized.
     MWN modes are orthonormal, but they correspond
     to mass weighted cartesian coordinates (x' = sqrt(m)x).
+
+    Imaginary frequencies are output as negative numbers.
+    Very small negative or positive frequencies may correspond to
+    translational, and rotational modes.
     """
     if unit == 'meV':
         unit_converter = sqrt_mhessian2milliev
@@ -511,8 +515,10 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
         raise ValueError('The input should contain only one molecule')
     mass_scaled_hessian = mass_scaled_hessian.squeeze(0)
     eigenvalues, eigenvectors = torch.linalg.eigh(mass_scaled_hessian)
-    angular_frequencies = eigenvalues.sqrt()
+    signs = torch.sign(eigenvalues)
+    angular_frequencies = eigenvalues.abs().sqrt()
     frequencies = angular_frequencies / (2 * math.pi)
+    frequencies = frequencies * signs
     # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1 or meV
     wavenumbers = unit_converter(frequencies)
 
