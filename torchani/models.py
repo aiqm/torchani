@@ -342,7 +342,7 @@ def _fetch_state_dict(state_dict_file: str,
     url = f'https://github.com/roitberg-group/torchani_model_zoo/releases/download/{tag}/{state_dict_file}'
     # for now for simplicity we load a state dict for the ensemble directly and
     # then parse if needed
-    state_dict = torch.hub.load_state_dict_from_url(url, model_dir=model_dir)
+    state_dict = torch.hub.load_state_dict_from_url(url, model_dir=model_dir, map_location=torch.device('cpu'))
 
     if model_index is not None:
         new_state_dict = OrderedDict()
