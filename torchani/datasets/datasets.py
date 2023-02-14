@@ -17,7 +17,7 @@ import numpy as np
 
 from ._backends import _H5PY_AVAILABLE, _Store, StoreFactory, TemporaryLocation, _ConformerWrapper, _SUFFIXES
 from ._annotations import Transform, Conformers, NumpyConformers, MixedConformers, StrPath, DTypeLike, IdxLike
-from ..utils import species_to_formula, PERIODIC_TABLE, ATOMIC_NUMBERS, tqdm
+from ..utils import species_to_formula, PERIODIC_TABLE, ATOMIC_NUMBERS, tqdm, PADDING
 
 if _H5PY_AVAILABLE:
     import h5py
@@ -37,6 +37,16 @@ _ALWAYS_STRING_KEYS = {'_id', 'smiles', 'lot'}
 # correctly. If grouping is "legacy" and these are found we give up and ask the
 # user to delete them in a warning
 _LEGACY_BROKEN_KEYS = {'coordinatesHE', 'energiesHE', 'smiles'}
+_ATOMIC_KEYS = (
+    "species",
+    "numbers",
+    "atomic_numbers",
+    "coordinates",
+    "forces",
+    "atomic_charges",
+    "atomic_dipoles",
+    "atomic_polarizabilities",
+)
 
 
 # Helper functions
@@ -583,7 +593,7 @@ class _ANISubdataset(_ANIDatasetBase):
 
     # Convert a dict that maybe has some numpy arrays and / or some torch
     # tensors into a homogeneous dict with all numpy arrays.
-    def _to_numpy_conformers(self, mixed_conformers: MixedConformers) -> NumpyConformers:
+    def _to_numpy_conformers(self, mixed_conformers: MixedConformers, allow_negative_indices: bool = False) -> NumpyConformers:
         numpy_conformers: NumpyConformers = dict()
         properties = set(mixed_conformers.keys())
         for k in properties:
@@ -596,7 +606,8 @@ class _ANISubdataset(_ANIDatasetBase):
             # try to interpret as numeric, failure means we should convert to ints
             try:
                 if (mixed_conformers[k] <= 0).any():
-                    raise ValueError(f'{k} are atomic numbers, must be positive')
+                    if not allow_negative_indices:
+                        raise ValueError(f'{k} are atomic numbers, must be positive')
             except TypeError:
                 numpy_conformers[k] = _symbols_to_numbers(mixed_conformers[k])
         return numpy_conformers
@@ -905,7 +916,8 @@ class _ANISubdataset(_ANIDatasetBase):
             calling_fn_name = inspect.stack()[1][3]
             raise ValueError(f"Can't use the function {calling_fn_name}"
                               " if the grouping is not by_formula or"
-                              " by_num_atoms, please regroup your dataset")
+                             f" by_num_atoms. Grouping is {self.grouping}."
+                              " Please regroup your dataset")
 
     def _check_append_input(self, group_name: str, conformers: NumpyConformers) -> None:
         self._check_correct_grouping()
@@ -1092,6 +1104,44 @@ class ANIDataset(_ANIDatasetBase):
     @property
     def num_stores(self) -> int:
         return len(self._datasets)
+
+    def auto_append_conformers(self,
+            conformers: MixedConformers,
+            atomic_properties: Iterable[str] = _ATOMIC_KEYS,
+            padding: int = int(PADDING["numbers"])) -> "ANIDataset":
+        assert self.num_stores == 1, "Can currently only perform auto-appending for single store datasets"
+        atomic_properties = set(atomic_properties)
+        numpy_conformers = self._first_subds._to_numpy_conformers(
+            conformers,
+            allow_negative_indices=True
+        )
+        element_key = _get_any_element_key(numpy_conformers.keys())
+        elements = numpy_conformers[element_key]
+        groups: Dict[str, Any] = {}
+        for j, znumbers in enumerate(elements):
+            idxs = np.argsort(znumbers)
+            znumbers = znumbers[idxs]
+            mask = (znumbers != padding)
+            # sort atomic properties along second axis
+            for property_ in numpy_conformers:
+                if property_ in atomic_properties:
+                    numpy_conformers[property_][j] = numpy_conformers[property_][j, idxs]
+            if self.grouping == "by_formula":
+                group_key = species_to_formula(_numbers_to_symbols(znumbers[mask]))[0]
+            elif self.grouping == "by_num_atoms":
+                group_key = str(znumbers[mask].shape[0]).zfill(3)
+            else:
+                raise ValueError("Incorrect grouping")
+            if group_key not in groups.keys():
+                groups[group_key] = {k: [] for k in numpy_conformers}
+            for k in numpy_conformers:
+                if k in atomic_properties:
+                    groups[group_key][k].append(numpy_conformers[k][j, mask])
+                else:
+                    groups[group_key][k].append(numpy_conformers[k][j])
+        for j, (name, group) in enumerate(groups.items()):
+            self.append_conformers(name, {k: np.asarray(v) for k, v in group.items()})
+        return self
 
     # Mechanism for delegating calls to the correct _ANISubdatasets:
     # Functions with a "group_name" argument are delegated to one specific
