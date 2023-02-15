@@ -1,0 +1,53 @@
+name: ani
+channels:
+  - nodefaults
+  - https://conda.anaconda.org/pytorch
+  - https://conda.anaconda.org/conda-forge
+  - https://conda.anaconda.org/nvidia
+dependencies:
+  # general
+  - python >=3.9
+  - pip
+
+  # linters / checkers / tests / CI
+  - black
+  - flake8
+  - mypy
+  - coverage
+  - pytest
+  - parameterized
+  - expecttest
+
+  # docs and tools
+  - sphinx
+  - sphinx_rtd_theme
+  - sphinx-gallery
+  - matplotlib
+  - pillow
+  - pynvml
+
+  # data
+  - pandas  # csv support
+  - pyarrow  # Parquet backend
+  - h5py  # HDF5 backend
+  - zarr  # Zarr backend
+
+  # DL
+  - numpy
+  - pytorch=1.13
+  - torchvision=0.14
+  - cudatoolkit=11.7
+
+  # progress bars
+  - tqdm  # progress bars
+  - pkbar
+
+  # legacy neurochem parser
+  - lark-parser
+  - pyyaml
+
+  # downloading models via web
+  - requests
+
+  # ase interface
+  - ase
