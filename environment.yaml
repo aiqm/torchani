@@ -37,6 +37,7 @@ dependencies:
   - pytorch=1.13
   - torchvision=0.14
   - cudatoolkit=11.7
+  - tensorboard
 
   # progress bars
   - tqdm  # progress bars
