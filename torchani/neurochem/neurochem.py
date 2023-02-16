@@ -1,3 +1,5 @@
+# type: ignore
+# This file is legacy, it should not be type-checked
 import torch
 import os
 import bz2

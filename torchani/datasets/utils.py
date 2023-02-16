@@ -157,5 +157,5 @@ def _fetch_and_delete_conformations(dataset: ANIDataset,
 # corresponding to the input keys, each of which has at most "max_split" len
 def _fetch_splitted(conformers: Conformers,
                     keys_to_split: Tuple[str, ...],
-                    max_split: int) -> Tuple[Tuple[Tensor, ...], ...]:
+                    max_split: int) -> Tuple[List[Tensor], ...]:
     return tuple(torch.split(conformers[k], max_split) for k in keys_to_split)

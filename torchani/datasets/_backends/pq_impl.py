@@ -109,7 +109,7 @@ class DataFrameAdaptor:
     def __init__(self, df=None):
         self._df = df
         self.attrs = dict()
-        self.mode: str = None
+        self.mode: Optional[str] = None
         self._is_dirty = False
         self._meta_is_dirty = False
 

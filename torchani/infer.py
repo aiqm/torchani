@@ -1,3 +1,5 @@
+# type: ignore
+# This file is too dynamic to type-check correctly
 import torch
 import warnings
 from . import utils

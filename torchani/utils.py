@@ -7,7 +7,7 @@ import math
 import os
 import warnings
 import itertools
-from collections import defaultdict, Counter
+from collections import Counter
 from typing import Tuple, NamedTuple, Optional, Sequence, List, Dict, Union, Mapping
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
 from .nn import SpeciesEnergies
@@ -128,19 +128,6 @@ def cumsum_from_zero(input_: Tensor) -> Tensor:
     cumsum = torch.zeros_like(input_)
     torch.cumsum(input_[:-1], dim=0, out=cumsum[1:])
     return cumsum
-
-
-def stack_with_padding(properties, padding):
-    output = defaultdict(list)
-    for p in properties:
-        for k, v in p.items():
-            output[k].append(torch.as_tensor(v))
-    for k, v in output.items():
-        if v[0].dim() == 0:
-            output[k] = torch.stack(v)
-        else:
-            output[k] = torch.nn.utils.rnn.pad_sequence(v, True, padding[k])
-    return output
 
 
 def broadcast_first_dim(properties):

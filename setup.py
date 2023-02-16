@@ -82,8 +82,8 @@ def cuda_extension(build_all=False):
         print('This build will only support the following devices or the devices with same cuda capability: ')
         for i in range(devices):
             d = 'cuda:{}'.format(i)
-            sm = torch.cuda.get_device_capability(i)
-            sm = int(f'{sm[0]}{sm[1]}')
+            _sm = torch.cuda.get_device_capability(i)
+            sm = int(f'{_sm[0]}{_sm[1]}')
             if sm >= 50:
                 print('{}: {}'.format(i, torch.cuda.get_device_name(d)))
                 print('   {}'.format(torch.cuda.get_device_properties(i)))

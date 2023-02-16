@@ -1,3 +1,5 @@
+# type: ignore
+# legacy module, should not be type-checked
 r"""Tools for loading/running NeuroChem input files."""
 from .neurochem import Constants, load_sae, load_atomic_network, load_model, load_model_ensemble, Trainer
 from .parse_resources import parse_neurochem_resources

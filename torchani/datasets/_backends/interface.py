@@ -97,7 +97,7 @@ class _ConformerGroup(MutableMapping[str, np.ndarray], ABC):
         pass
 
     @abstractmethod
-    def _iter_impl(self, p: str):
+    def _iter_impl(self):
         pass
 
     @abstractmethod
@@ -138,28 +138,9 @@ class _ConformerWrapper(_ConformerGroup, Generic[_MutMapSubtype]):
         self._data[p] = np.append(self._data[p], v, axis=0)
 
 
-class _LocationManager(ABC):
-    @property
-    def root(self) -> StrPath:
-        pass
-
-    @root.setter
-    def root(self, value: StrPath) -> None:
-        pass
-
-    @root.deleter
-    def root(self) -> None:
-        pass
-
-    def transfer_to(self, other_store: '_Store') -> None:
-        root = Path(self.root).with_suffix('')
-        del self.root
-        other_store.location.root = root
-
-
 # Base location manager for datasets that use either directories or files as
 # locations
-class _FileOrDirLocation(_LocationManager):
+class _FileOrDirLocation:
     def __init__(self, root: StrPath, suffix: str = '', kind: str = 'file'):
         if kind not in ['file', 'dir']:
             raise ValueError("Kind must be one of 'file' or 'dir'")
@@ -196,6 +177,11 @@ class _FileOrDirLocation(_LocationManager):
             else:
                 shutil.rmtree(self._root_location)
         self._root_location = None
+
+    def transfer_to(self, other_store: '_Store') -> None:
+        root = Path(self.root).with_suffix('')
+        del self.root
+        other_store.location.root = root
 
     def _validate(self) -> None:
         root = Path(self.root)

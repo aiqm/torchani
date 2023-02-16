@@ -144,7 +144,7 @@ def _divide_into_folds(conformer_indices: Tensor,
                         dest_path: Path,
                         folds: int,
                         rng: Optional[torch.Generator] = None,
-                        direct_cache: bool = False) -> Tuple[Tuple[Tensor, ...], 'OrderedDict[str, Path]']:
+                        direct_cache: bool = False) -> Tuple[List[Tensor], 'OrderedDict[str, Path]']:
 
     # the idea here is to work with "blocks" of size num_conformers / folds
     # cast to list for mypy
@@ -170,13 +170,13 @@ def _divide_into_folds(conformer_indices: Tensor,
     if not direct_cache:
         _create_split_paths(split_paths)
 
-    return tuple(conformer_splits), split_paths
+    return conformer_splits, split_paths
 
 
 def _divide_into_splits(conformer_indices: Tensor,
                         dest_path: Path,
                         splits: Dict[str, float],
-                        direct_cache: bool = False) -> Tuple[Tuple[Tensor, ...], 'OrderedDict[str, Path]']:
+                        direct_cache: bool = False) -> Tuple[List[Tensor], 'OrderedDict[str, Path]']:
     total_num_conformers = len(conformer_indices)
     split_sizes = OrderedDict([(k, int(total_num_conformers * v)) for k, v in splits.items()])
     split_paths = OrderedDict([(k, dest_path.joinpath(k)) for k in split_sizes.keys()])
@@ -213,7 +213,7 @@ def _create_split_paths(split_paths: 'OrderedDict[str, Path]') -> None:
 
 
 def _save_splits_into_batches(split_paths: 'OrderedDict[str, Path]',
-                              conformer_splits: Tuple[Tensor, ...],
+                              conformer_splits: List[Tensor],
                               inplace_transform: Optional[Transform],
                               file_format: str,
                               include_properties: Optional[Sequence[str]],

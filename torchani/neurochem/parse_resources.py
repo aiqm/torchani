@@ -76,8 +76,7 @@ def _get_resources(resource_path, info_file):
         const_file = os.path.join(resource_path, const_file_path)
         sae_file = os.path.join(resource_path, sae_file_path)
         ensemble_prefix = os.path.join(resource_path, ensemble_prefix_path)
-        ensemble_size = int(ensemble_size)
-    return const_file, sae_file, ensemble_prefix, ensemble_size
+    return const_file, sae_file, ensemble_prefix, int(ensemble_size)
 
 
 def _get_component_modules(info_file: str,

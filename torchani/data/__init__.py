@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+# type: ignore
+# This file is legacy, it should not be type-checked
 """Tools for loading, shuffling, and batching ANI datasets
 
 The `torchani.data.load(path)` creates an iterable of raw data,
@@ -103,9 +104,11 @@ import importlib
 import functools
 import math
 import random
-from collections import Counter
+from collections import Counter, defaultdict
 import numpy
 import gc
+
+import torch
 
 PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None  # type: ignore
 if PKBAR_INSTALLED:
@@ -123,11 +126,24 @@ PADDING = {
 }
 
 
+def stack_with_padding(properties, padding):
+    output = defaultdict(list)
+    for p in properties:
+        for k, v in p.items():
+            output[k].append(torch.as_tensor(v))
+    for k, v in output.items():
+        if v[0].dim() == 0:
+            output[k] = torch.stack(v)
+        else:
+            output[k] = torch.nn.utils.rnn.pad_sequence(v, True, padding[k])
+    return output
+
+
 def collate_fn(samples, padding=None):
     if padding is None:
         padding = PADDING
 
-    return utils.stack_with_padding(samples, padding)
+    return stack_with_padding(samples, padding)
 
 
 class IterableAdapter:

@@ -26,7 +26,10 @@ jobs:
         pip install --upgrade mypy
         pip install types-PyYAML types-pkg_resources types-requests  # mypy library stubs
     - name: Type checking with mypy
-      run: mypy --ignore-missing-imports --implicit-optional --exclude examples/ .
+      # infer.py is too dynamic to check. data/ and neurochem/ are legacy.
+      # examples/ and tests/ could be checked,
+      # but to type them correctly is time consuming
+      run: mypy --ignore-missing-imports --check-untyped-defs --implicit-optional --exclude examples/ --exclude tests/ .
 
 concurrency:
   group: mypy-${{ github.event.pull_request.number || github.sha }}
