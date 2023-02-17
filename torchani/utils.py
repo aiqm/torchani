@@ -10,7 +10,7 @@ import itertools
 from collections import Counter
 from typing import Tuple, NamedTuple, Optional, Sequence, List, Dict, Union, Mapping
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
-from .nn import SpeciesEnergies
+from .structs import SpeciesEnergies
 import numpy as np
 from .compat import tqdm
 

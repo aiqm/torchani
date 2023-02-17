@@ -1,5 +1,9 @@
 import torch
+from pathlib import Path
+from torch import Tensor
 import math
+import warnings
+from typing import Tuple, Optional
 from torchani.utils import PERIODIC_TABLE
 
 
@@ -49,3 +53,31 @@ def tensor_from_xyz(path):
         assert coordinates.shape[0] == num_atoms
         assert species.shape[0] == num_atoms
     return species, coordinates, cell
+
+
+def tensor_to_xyz(path, species_coordinates: Tuple[Tensor, Tensor], cell: Optional[Tensor] = None, no_exponent: bool = True):
+    path = Path(path).resolve()
+    # input species must be atomic numbers
+    species, coordinates = species_coordinates
+    num_atoms = species.shape[1]
+
+    assert coordinates.dim() == 3, "bad number of dimensions for coordinates"
+    assert species.dim() == 2, "bad number of dimensions for species"
+    assert coordinates.shape[0] == 1, "Batch printing not implemented"
+    assert species.shape[0] == 1, "Batch printing not implemented"
+
+    coordinates = coordinates.view(-1, 3)
+    species = species.view(-1)
+
+    with open(path, 'w') as f:
+        f.write(f'{num_atoms}\n')
+        if cell is not None:
+            warnings.warn("Cell printing is not yet implemented, ignoring cell")
+        f.write('\n')
+        for s, c in zip(species, coordinates):
+            if no_exponent:
+                line = f"{c[0]:.15f} {c[1]:.15f} {c[2]:.15f}\n"
+            else:
+                line = f"{c[0]} {c[1]} {c[2]}\n"
+            line = f"{PERIODIC_TABLE[s]} " + line
+            f.write(line)

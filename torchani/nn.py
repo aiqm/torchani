@@ -5,11 +5,7 @@ from typing import Tuple, NamedTuple, Optional, Sequence
 from . import utils
 from . import infer
 from .compat import Final
-
-
-class SpeciesEnergies(NamedTuple):
-    species: Tensor
-    energies: Tensor
+from .structs import SpeciesEnergies
 
 
 class SpeciesCoordinates(NamedTuple):

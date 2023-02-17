@@ -1,10 +1,11 @@
 import torch
 import math
+from typing import Union
 from torch import Tensor
 from ..compat import Final
 
 
-def _parse_cutoff_fn(cutoff_fn):
+def _parse_cutoff_fn(cutoff_fn: Union[str, torch.nn.Module]) -> torch.nn.Module:
     # currently only cosine, smooth and custom cutoffs are supported
     if cutoff_fn == 'cosine':
         cutoff_fn = CutoffCosine()

@@ -1,10 +1,18 @@
-from typing import Tuple, Optional, Union
+from typing import Tuple, Optional, Union, NamedTuple
 
 import torch
+import math
 from torch import Tensor
 from torch.nn import functional, Module
 from ..utils import map_to_central, cumsum_from_zero
 from ..compat import Final
+
+
+class NeighborData(NamedTuple):
+    indices: Tensor
+    distances: Tensor
+    diff_vectors: Tensor
+    shift_values: Optional[Tensor]
 
 
 def _parse_neighborlist(neighborlist: Optional[Union[Module, str]], cutoff: float):
@@ -61,8 +69,16 @@ class BaseNeighborlist(Module):
         return coordinates, cell
 
     @staticmethod
-    def _screen_with_cutoff(cutoff: float, coordinates: Tensor, input_neighborlist: Tensor,
-                            shift_values: Optional[Tensor] = None, mask: Optional[Tensor] = None) -> Tuple[Tensor, Union[Tensor, None], Tensor, Tensor]:
+    def _screen_with_cutoff(
+        cutoff: float,
+        coordinates: Tensor,
+        input_neighbor_indices: Tensor,
+        shift_values: Optional[Tensor] = None,
+        mask: Optional[Tensor] = None
+    ) -> NeighborData:
+        # passing an infinite cutoff will only work for non pbc conditions
+        # (shift values must be None)
+        #
         # Screen a given neighborlist using a cutoff and return a neighborlist with
         # atoms that are within that cutoff, for all molecules in a coordinate set.
         #
@@ -78,9 +94,9 @@ class BaseNeighborlist(Module):
         # of dummy distances
         if mask is not None:
             if mask.any():
-                mask = mask.view(-1)[input_neighborlist.view(-1)].view(2, -1)
+                mask = mask.view(-1)[input_neighbor_indices.view(-1)].view(2, -1)
                 non_dummy_pairs = (~torch.any(mask, dim=0)).nonzero().flatten()
-                input_neighborlist = input_neighborlist.index_select(1, non_dummy_pairs)
+                input_neighbor_indices = input_neighbor_indices.index_select(1, non_dummy_pairs)
                 # shift_values can be None when there are no pbc conditions to prevent
                 # torch from launching kernels with only zeros
                 if shift_values is not None:
@@ -91,30 +107,72 @@ class BaseNeighborlist(Module):
         # screening, unfortunately distances have to be recalculated twice each
         # time they are screened, since otherwise torch prepares to calculate
         # derivatives of multiple distances that will later be disregarded
+        if cutoff != math.inf:
+            coordinates_ = coordinates.detach()
+            # detached calculation #
+            coords0 = coordinates_.index_select(0, input_neighbor_indices[0])
+            coords1 = coordinates_.index_select(0, input_neighbor_indices[1])
+            diff_vectors = coords0 - coords1
+            if shift_values is not None:
+                diff_vectors += shift_values
+            distances = diff_vectors.norm(2, -1)
+            in_cutoff = (distances <= cutoff).nonzero().flatten()
+            # ------------------- #
 
-        coordinates_ = coordinates.detach()
-        # detached calculation #
-        coords0 = coordinates_.index_select(0, input_neighborlist[0])
-        coords1 = coordinates_.index_select(0, input_neighborlist[1])
-        diff_vectors = coords0 - coords1
-        if shift_values is not None:
-            diff_vectors += shift_values
-        distances = diff_vectors.norm(2, -1)
-        in_cutoff = (distances <= cutoff).nonzero().flatten()
-        # ------------------- #
+            screened_neighbor_indices = input_neighbor_indices.index_select(1, in_cutoff)
+            if shift_values is not None:
+                shift_values = shift_values.index_select(0, in_cutoff)
+        else:
+            assert shift_values is None, "PBC can't be implemented with an infinite cutoff"
+            screened_neighbor_indices = input_neighbor_indices
 
-        screened_neighborlist = input_neighborlist.index_select(1, in_cutoff)
-        if shift_values is not None:
-            shift_values = shift_values.index_select(0, in_cutoff)
-
-        coords0 = coordinates.index_select(0, screened_neighborlist[0])
-        coords1 = coordinates.index_select(0, screened_neighborlist[1])
+        coords0 = coordinates.index_select(0, screened_neighbor_indices[0])
+        coords1 = coordinates.index_select(0, screened_neighbor_indices[1])
         screened_diff_vectors = coords0 - coords1
         if shift_values is not None:
             screened_diff_vectors += shift_values
         screened_distances = screened_diff_vectors.norm(2, -1)
+        return NeighborData(
+            indices=screened_neighbor_indices,
+            distances=screened_distances,
+            diff_vectors=screened_diff_vectors,
+            shift_values=shift_values,
+        )
 
-        return screened_neighborlist, shift_values, screened_diff_vectors, screened_distances
+    @staticmethod
+    def _rescreen_with_cutoff(
+        cutoff: float,
+        neighbor_idxs: Tensor,
+        distances: Tensor,
+        diff_vectors: Tensor,
+        shift_values: Optional[Tensor] = None
+    ) -> NeighborData:
+        closer_indices = (distances <= cutoff).nonzero().flatten()
+        neighbor_idxs = neighbor_idxs.index_select(1, closer_indices)
+        if shift_values is not None:
+            shift_values = shift_values.index_select(0, closer_indices)
+        diff_vectors = diff_vectors.index_select(0, closer_indices)
+        distances = distances.index_select(0, closer_indices)
+        return NeighborData(
+            indices=neighbor_idxs,
+            distances=distances,
+            diff_vectors=diff_vectors,
+            shift_values=shift_values
+        )
+
+    def dummy(self) -> NeighborData:
+        # return dummy neighbor data
+        device = self.default_cell.device
+        dtype = self.default_cell.dtype
+        indices = torch.tensor([[0], [1]], dtype=torch.long, device=device)
+        distances = torch.tensor([1.0], dtype=dtype, device=device)
+        diff_vectors = torch.tensor([[1.0, 0.0, 0.0]], dtype=dtype, device=device)
+        return NeighborData(
+            indices=indices,
+            distances=distances,
+            diff_vectors=diff_vectors,
+            shift_values=None
+        )
 
     @torch.jit.export
     def _recast_long_buffers(self) -> None:
@@ -135,8 +193,13 @@ class FullPairwise(BaseNeighborlist):
         super().__init__(cutoff)
         self.register_buffer('default_shift_values', torch.tensor(0.0), persistent=False)
 
-    def forward(self, species: Tensor, coordinates: Tensor, cell: Optional[Tensor] = None,
-                pbc: Optional[Tensor] = None) -> Tuple[Tensor, Union[Tensor, None], Tensor, Tensor]:
+    def forward(
+        self,
+        species: Tensor,
+        coordinates: Tensor,
+        cell: Optional[Tensor] = None,
+        pbc: Optional[Tensor] = None
+    ) -> NeighborData:
         """Arguments:
             coordinates (:class:`torch.Tensor`): tensor of shape
                 (molecules, atoms, 3) for atom coordinates.
@@ -157,7 +220,13 @@ class FullPairwise(BaseNeighborlist):
             # central cell in case they are not inside it, this is not necessary
             # if there is no pbc
             coordinates = map_to_central(coordinates, cell, pbc)
-            return self._screen_with_cutoff(self.cutoff, coordinates, atom_index12, shift_values, mask)
+            return self._screen_with_cutoff(
+                self.cutoff,
+                coordinates,
+                atom_index12,
+                shift_values,
+                mask
+            )
         else:
             num_molecules = species.shape[0]
             num_atoms = species.shape[1]
@@ -169,7 +238,13 @@ class FullPairwise(BaseNeighborlist):
                 atom_index12 = atom_index12.unsqueeze(1).repeat(1, num_molecules, 1)
                 atom_index12 += num_atoms * torch.arange(num_molecules, device=mask.device).view(1, -1, 1)
                 atom_index12 = atom_index12.view(-1).view(2, -1)
-            return self._screen_with_cutoff(self.cutoff, coordinates, atom_index12, mask=mask)
+            return self._screen_with_cutoff(
+                self.cutoff,
+                coordinates,
+                atom_index12,
+                shift_values=None,
+                mask=mask
+            )
 
     def _full_pairwise_pbc(self, species: Tensor,
                            cell: Tensor, pbc: Tensor) -> Tuple[Tensor, Tensor]:
@@ -380,10 +455,13 @@ class CellList(BaseNeighborlist):
         self.vector_index_displacement = self.vector_index_displacement.to(dtype=torch.long)
         self.translation_displacement_indices = self.translation_displacement_indices.to(dtype=torch.long)
 
-    def forward(self, species: Tensor,
-                coordinates: Tensor,
-                cell: Optional[Tensor] = None,
-                pbc: Optional[Tensor] = None) -> Tuple[Tensor, Optional[Tensor], Tensor, Tensor]:
+    def forward(
+        self,
+        species: Tensor,
+        coordinates: Tensor,
+        cell: Optional[Tensor] = None,
+        pbc: Optional[Tensor] = None
+    ) -> NeighborData:
 
         assert coordinates.shape[0] == 1, "Cell list doesn't support batches"
         if cell is None:
@@ -434,9 +512,21 @@ class CellList(BaseNeighborlist):
             # enough distance that the neighborlist is not rebuilt. Rebuilds
             # happen only if it can't be guaranteed that the cached
             # neighborlist holds at least all atom pairs, but it may hold more.
-            return self._screen_with_cutoff(self.cutoff, coordinates, atom_pairs, shift_values, (species == -1))
+            return self._screen_with_cutoff(
+                self.cutoff,
+                coordinates,
+                atom_pairs,
+                shift_values,
+                (species == -1)
+            )
         else:
-            return self._screen_with_cutoff(self.cutoff, coordinates, atom_pairs, mask=(species == -1))
+            return self._screen_with_cutoff(
+                self.cutoff,
+                coordinates,
+                atom_pairs,
+                shift_values=None,
+                mask=(species == -1)
+            )
 
     def _calculate_cell_list(self, coordinates: Tensor, pbc: Tensor) -> Tuple[Tensor, Union[Tensor, None]]:
         # 1) Fractionalize coordinates

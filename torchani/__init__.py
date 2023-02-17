@@ -36,6 +36,7 @@ from . import utils
 from . import neurochem
 from . import models
 from . import units
+from . import repulsion
 from . import datasets
 from . import transforms
 from . import cli
@@ -52,7 +53,7 @@ except DistributionNotFound:
     pass
 
 __all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble', 'SpeciesConverter',
-           'utils', 'neurochem', 'models', 'units', 'datasets', 'transforms', 'cli', 'geometry', 'calc']
+           'utils', 'neurochem', 'models', 'units', 'repulsion', 'datasets', 'transforms', 'cli', 'geometry', 'calc']
 
 # disable tf32
 torch.backends.cuda.matmul.allow_tf32 = False

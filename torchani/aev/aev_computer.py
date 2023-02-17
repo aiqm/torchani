@@ -227,15 +227,15 @@ class AEVComputer(torch.nn.Module):
         return cls(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, **kwargs)
 
     @classmethod
-    def like_1x(cls, **kwargs):
+    def like_1x(cls, **kwargs) -> "AEVComputer":
         return cls(angular_terms='ani1x', radial_terms='ani1x', num_species=4, **kwargs)
 
     @classmethod
-    def like_2x(cls, **kwargs):
+    def like_2x(cls, **kwargs) -> "AEVComputer":
         return cls(angular_terms='ani2x', radial_terms='ani2x', num_species=7, **kwargs)
 
     @classmethod
-    def like_1ccx(cls, **kwargs):
+    def like_1ccx(cls, **kwargs) -> "AEVComputer":
         # just a synonym
         return cls.like_1x(**kwargs)
 
@@ -302,8 +302,13 @@ class AEVComputer(torch.nn.Module):
         # WARNING: The coordinates that are input into the neighborlist are **not** assumed to be
         # mapped into the central cell for pbc calculations,
         # and **in general are not**
-        atom_index12, _, diff_vector, distances = self.neighborlist(species, coordinates, cell, pbc)
-        aev = self._compute_aev(species, atom_index12, diff_vector, distances)
+        neighbor_data = self.neighborlist(species, coordinates, cell, pbc)
+        aev = self._compute_aev(
+            element_idxs=species,
+            neighbor_idxs=neighbor_data.indices,
+            distances=neighbor_data.distances,
+            diff_vectors=neighbor_data.diff_vectors,
+        )
         return SpeciesAEV(species, aev)
 
     @jit_unused_if_no_cuaev()
@@ -312,33 +317,49 @@ class AEVComputer(torch.nn.Module):
         aev = torch.ops.cuaev.run(coordinates, species_int, self.cuaev_computer)
         return aev
 
-    def _compute_aev(self, species: Tensor,
-            atom_index12: Tensor, diff_vector: Tensor, distances: Tensor) -> Tensor:
+    def _compute_aev(
+        self,
+        element_idxs: Tensor,
+        neighbor_idxs: Tensor,
+        distances: Tensor,
+        diff_vectors: Tensor
+    ) -> Tensor:
+        num_molecules = element_idxs.shape[0]
+        num_atoms = element_idxs.shape[1]
+        species12 = element_idxs.flatten()[neighbor_idxs]
 
-        species12 = species.flatten()[atom_index12]
-        radial_aev = self._compute_radial_aev(species.shape[0], species.shape[1], species12,
-                                              distances, atom_index12)
+        radial_aev = self._compute_radial_aev(
+            num_molecules,
+            num_atoms,
+            species12,
+            neighbor_idxs=neighbor_idxs,
+            distances=distances
+        )
 
         # Rca is usually much smaller than Rcr, using neighbor list with
         # cutoff = Rcr is a waste of resources. Now we will get a smaller neighbor
         # list that only cares about atoms with distances <= Rca
         even_closer_indices = (distances <= self.angular_terms.cutoff).nonzero().flatten()
-        atom_index12 = atom_index12.index_select(1, even_closer_indices)
+        neighbor_idxs = neighbor_idxs.index_select(1, even_closer_indices)
         species12 = species12.index_select(1, even_closer_indices)
-        diff_vector = diff_vector.index_select(0, even_closer_indices)
+        diff_vectors = diff_vectors.index_select(0, even_closer_indices)
 
-        angular_aev = self._compute_angular_aev(species.shape[0], species.shape[1], species12,
-                                                diff_vector, atom_index12)
+        angular_aev = self._compute_angular_aev(
+            num_molecules,
+            num_atoms,
+            species12,
+            neighbor_idxs=neighbor_idxs,
+            diff_vectors=diff_vectors
+        )
 
         return torch.cat([radial_aev, angular_aev], dim=-1)
 
-    def _compute_angular_aev(self, num_molecules: int, num_atoms: int, species12: Tensor, vec: Tensor,
-                             atom_index12: Tensor) -> Tensor:
+    def _compute_angular_aev(self, num_molecules: int, num_atoms: int, species12: Tensor, neighbor_idxs: Tensor, diff_vectors: Tensor) -> Tensor:
 
         central_atom_index, pair_index12, sign12 = self._triple_by_molecule(
-            atom_index12)
+            neighbor_idxs)
         species12_small = species12[:, pair_index12]
-        vec12 = vec.index_select(0, pair_index12.view(-1)).view(
+        vec12 = diff_vectors.index_select(0, pair_index12.view(-1)).view(
             2, -1, 3) * sign12.unsqueeze(-1)
         species12_ = torch.where(sign12 == 1, species12_small[1],
                                  species12_small[0])
@@ -354,18 +375,15 @@ class AEVComputer(torch.nn.Module):
                                           self.angular_length)
         return angular_aev
 
-    def _compute_radial_aev(self, num_molecules: int, num_atoms: int, species12: Tensor, distances: Tensor,
-                            atom_index12: Tensor) -> Tensor:
-
+    def _compute_radial_aev(self, num_molecules: int, num_atoms: int, species12: Tensor, neighbor_idxs: Tensor, distances: Tensor) -> Tensor:
         radial_terms_ = self.radial_terms(distances)
         radial_aev = radial_terms_.new_zeros(
             (num_molecules * num_atoms * self.num_species,
              self.radial_sublength))
-        index12 = atom_index12 * self.num_species + species12.flip(0)
+        index12 = neighbor_idxs * self.num_species + species12.flip(0)
         radial_aev.index_add_(0, index12[0], radial_terms_)
         radial_aev.index_add_(0, index12[1], radial_terms_)
-        radial_aev = radial_aev.reshape(num_molecules, num_atoms,
-                                        self.radial_length)
+        radial_aev = radial_aev.reshape(num_molecules, num_atoms, self.radial_length)
         return radial_aev
 
     def _triple_by_molecule(
