@@ -1,5 +1,8 @@
-ARG PYT_VER=22.08
-FROM nvcr.io/nvidia/pytorch:$PYT_VER-py3
+# The conda environment in the nvcr pytorch docker is not working, so we
+# us the pytorch docker here.
+# ARG PYT_VER=22.08
+# FROM nvcr.io/nvidia/pytorch:$PYT_VER-py3
+FROM pytorch/pytorch:1.13.1-cuda11.6-cudnn8-devel
 
 # environment
 # NGC Container forces using TF32, disable it
@@ -8,10 +11,14 @@ ENV TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=0
 # Set default shell to /bin/bash
 SHELL ["/bin/bash", "-cu"]
 
+# install some packages
+RUN apt-get update && \
+    apt-get install -y git wget unzip
+
 # Copy files into container
 COPY . /torchani_sandbox
 
-# Install modulus and dependencies
+# Install torchani and dependencies
 RUN cd /torchani_sandbox \
     && ./conda/build_conda.sh
 

@@ -4,10 +4,10 @@ Cpp source files for CUAEV and MNP extensions.
 - MNP: Multi Net Parallel between different species networks using OpenMP (Inference Only) to reduce CUDA call overhead.
 
 ## Requirement
-The extensions need the nightly version [pytorch](https://pytorch.org/) to be able to work.
-If you use conda and your cuda version is 11.1, you could install it by
+Following [pytorch.org](https://pytorch.org/) to install PyTorch.
+On linux, for example:
 ```
-conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch-nightly -c nvidia
+conda install pytorch torchvision cudatoolkit=11.6 -c pytorch
 ```
 
 ## Build from source
@@ -17,11 +17,10 @@ In most cases, if `gcc` and `cuda` environment are well configured, runing the f
 git clone git@github.com:roitberg-group/torchani_sandbox.git
 cd torchani
 # choose one option below
-# use --ext-all-sms if you are building in SLURM environment and there are multiple different gpus in a node
-# use --ext will only build for detected gpus
+# ============== install ==============
 python setup.py install --ext          # only build for detected gpus
 python setup.py install --ext-all-sms  # build for all gpus
-# or for development
+# ============== development ==============
 # `pip install -e . && ` is only needed for the very first install (because issue of https://github.com/pypa/pip/issues/1883)
 pip install -e . && pip install -v -e . --global-option="--ext"          # only build for detected gpus
 pip install -e . && pip install -v -e . --global-option="--ext-all-sms"  # build for all gpus
@@ -35,7 +34,27 @@ git pull
 pip install -v -e . --global-option="--ext"
 ```
 
-Some notes for building extensions on multiple HPC
+Some notes for building extensions on multiple HPC, cuda version might be outdated and please check again.
+<details>
+<summary>Hipergator</summary>
+
+```bash
+srun -p gpu --ntasks=1 --cpus-per-task=2 --gpus=geforce:1 --time=02:00:00 --mem=10gb  --pty -u bash -i
+# create env if necessary
+conda create -n cuaev python=3.8
+conda activate cuaev
+# modules
+module load cuda/11.4.3 gcc/9.3.0 git/2.30.1
+# pytorch
+conda install pytorch torchvision cudatoolkit=11.6 -c pytorch
+# install torchani
+git clone https://github.com/roitberg-group/torchani_sandbox.git
+cd torchani
+pip install -e . && pip install -v -e . --global-option="--ext"
+```
+
+</details>
+
 <details>
 <summary>Bridges2</summary>
 
@@ -48,27 +67,7 @@ conda activate cuaev
 # modules
 module load cuda/10.2.0
 # pytorch
-conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-nightly
-# install torchani
-git clone https://github.com/roitberg-group/torchani_sandbox.git
-cd torchani
-pip install -e . && pip install -v -e . --global-option="--ext"
-```
-
-</details>
-
-<details>
-<summary>Hipergator</summary>
-
-```bash
-srun -p gpu --ntasks=1 --cpus-per-task=2 --gpus=geforce:1 --time=02:00:00 --mem=10gb  --pty -u bash -i
-# create env if necessary
-conda create -n cuaev python=3.8
-conda activate cuaev
-# modules
-module load cuda/11.1.0 gcc/7.3.0 git
-# pytorch
-conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch-nightly -c nvidia
+conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
 # install torchani
 git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani
@@ -88,7 +87,7 @@ conda activate cuaev
 # modules
 module load cuda10.2/toolkit/10.2.89 gcc/7.5.0
 # pytorch
-conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch-nightly
+conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
 # install torchani
 git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani
@@ -111,7 +110,7 @@ export CUDA_HOME=/usr/local/cuda-11.1
 export PATH=${CUDA_HOME}/bin:$PATH
 export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 # pytorch
-conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch-nightly -c nvidia
+conda install pytorch torchvision cudatoolkit=11.6 -c pytorch
 # install torchani
 git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani

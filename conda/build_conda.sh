@@ -39,7 +39,7 @@ fi
 # conda-build dependency
 conda install conda-build conda-verify anaconda-client -y
 conda install conda-package-handling -y  # Update to newer version, Issue: https://github.com/conda/conda-package-handling/issues/71
-export PATH="${CONDA_PREFIX}/bin:${CONDA}/bin:$PATH"  # anaconda bin location
+export PATH="$PATH:${CONDA_PREFIX}/bin:${CONDA}/bin"  # anaconda bin location
 which anaconda
 
 # build package
@@ -47,14 +47,14 @@ conda build $CONDA_CHANNEL_FLAGS --no-anaconda-upload --no-copy-test-source-file
 
 # upload to anaconda.org if has release_anaconda argument
 if [[ $1 == release_anaconda ]]; then
-    BUILD_FILE="${CONDA}/conda-bld/linux-64/${PACKAGE_NAME}-${BUILD_VERSION}-py${PYTHON_VERSION//./}_torch1.12.1_cuda11.3.tar.bz2"
+    BUILD_FILE="${CONDA}/conda-bld/linux-64/${PACKAGE_NAME}-${BUILD_VERSION}-py${PYTHON_VERSION//./}_torch1.13.1_cuda11.6.tar.bz2"
     echo $BUILD_FILE
     anaconda -t $CONDA_TOKEN upload -u $USER $BUILD_FILE --force
 fi
 
 # upload to roitberg server if has release argument
 if [[ $1 == release ]]; then
-    BUILD_FILE="${CONDA}/conda-bld/linux-64/${PACKAGE_NAME}-${BUILD_VERSION}-py${PYTHON_VERSION//./}_torch1.12.1_cuda11.3.tar.bz2"
+    BUILD_FILE="${CONDA}/conda-bld/linux-64/${PACKAGE_NAME}-${BUILD_VERSION}-py${PYTHON_VERSION//./}_torch1.13.1_cuda11.6.tar.bz2"
     echo $BUILD_FILE
     mkdir -p /release/conda-packages/linux-64
     cp $BUILD_FILE /release/conda-packages/linux-64

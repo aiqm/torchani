@@ -15,7 +15,7 @@ Checks:
 [![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/clang-format/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
 [![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/mypy/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
 [![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/unittests/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
-[![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/cuda/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
+[![Actions Status](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-docker.yml/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-docker.yml)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/docs/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/runnable-submodules/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/tools/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
