@@ -174,7 +174,6 @@ setup(
         'torch',
         'lark-parser',
         'requests',
-        'importlib_metadata',
     ],
     entry_points={
         'console_scripts': ['torchani = torchani.cli:main'],
