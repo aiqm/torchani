@@ -128,12 +128,6 @@ class Sequential(torch.nn.ModuleList):
         return input_
 
 
-class Gaussian(torch.nn.Module):
-    """Gaussian activation"""
-    def forward(self, x: Tensor) -> Tensor:
-        return torch.exp(- x * x)
-
-
 class FittedSoftplus(torch.nn.Module):
     """Softplus function parametrized to be equal to a CELU
 

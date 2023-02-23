@@ -9,7 +9,6 @@ TorchANI
     :members:
 .. autoclass:: torchani.EnergyShifter
     :members:
-.. autoclass:: torchani.nn.Gaussian
 
 
 Model Zoo

@@ -9,7 +9,7 @@ import itertools
 import math
 import timeit
 import collections.abc
-from ..nn import ANIModel, Ensemble, Gaussian, Sequential
+from ..nn import ANIModel, Ensemble, Sequential
 from ..utils import EnergyShifter, ChemicalSymbolsToInts
 from ..aev import AEVComputer
 from torch.optim import AdamW
@@ -93,7 +93,7 @@ def _get_activation(activation_index):
     if activation_index == 6:
         return None
     elif activation_index == 5:  # Gaussian
-        return Gaussian()
+        raise NotImplementedError("Gaussian activations should not be used in NN models")
     elif activation_index == 9:  # CELU
         return torch.nn.CELU(alpha=0.1)
     else:
