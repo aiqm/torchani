@@ -3,8 +3,8 @@ import warnings
 import math
 from pathlib import Path
 from torch import Tensor
+from torch.jit import Final
 from .cutoffs import _parse_cutoff_fn
-from ..compat import Final
 
 state_dicts_path = Path(__file__).parent.parent.joinpath('resources/state_dicts/')
 

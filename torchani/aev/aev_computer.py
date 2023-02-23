@@ -5,9 +5,9 @@ import importlib_metadata
 
 import torch
 from torch import Tensor
+from torch.jit import Final
 
 from ..utils import cumsum_from_zero
-from ..compat import Final
 # modular parts of AEVComputer
 from .cutoffs import _parse_cutoff_fn, CutoffCosine, CutoffSmooth
 from .aev_terms import _parse_angular_terms, _parse_radial_terms, StandardAngular, StandardRadial

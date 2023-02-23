@@ -2,13 +2,13 @@ from typing import Sequence, Union, Optional, Tuple
 
 import torch
 from torch import Tensor
+from torch.jit import Final
 
 from . import units
 from .utils import ATOMIC_NUMBERS, PERIODIC_TABLE
 from .wrappers import StandaloneWrapper
 from .parse_repulsion_constants import alpha_constants, y_eff_constants
 from .aev.cutoffs import _parse_cutoff_fn
-from .compat import Final
 
 
 class RepulsionXTB(torch.nn.Module):

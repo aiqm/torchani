@@ -1,10 +1,11 @@
 import torch
 from collections import OrderedDict
 from torch import Tensor
+from torch.jit import Final
+
 from typing import Tuple, NamedTuple, Optional, Sequence
 from . import utils
 from . import infer
-from .compat import Final
 from .structs import SpeciesEnergies
 
 

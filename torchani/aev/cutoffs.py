@@ -2,7 +2,7 @@ import torch
 import math
 from typing import Union
 from torch import Tensor
-from ..compat import Final
+from torch.jit import Final
 
 
 def _parse_cutoff_fn(cutoff_fn: Union[str, torch.nn.Module]) -> torch.nn.Module:

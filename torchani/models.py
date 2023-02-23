@@ -62,12 +62,12 @@ from collections import OrderedDict
 import torch
 from torch import Tensor
 from torch.nn import Module
+from torch.jit import Final
 from typing import Tuple, Optional, NamedTuple, Sequence, Union, Dict, Any, Type, Callable, List
 from .nn import SpeciesConverter, SpeciesEnergies, Ensemble, ANIModel
 from .utils import ChemicalSymbolsToInts, PERIODIC_TABLE, EnergyShifter, path_is_writable
 from .aev import AEVComputer
 from .repulsion import RepulsionXTB
-from .compat import Final
 from . import atomics
 
 

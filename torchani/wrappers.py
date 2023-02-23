@@ -3,8 +3,8 @@ from typing import Tuple, Optional, Type
 import torch
 from torch import Tensor
 from torch.nn import Module
+from torch.jit import Final
 
-from .compat import Final
 from .nn import SpeciesConverter
 from .structs import SpeciesEnergies
 from .aev import FullPairwise, BaseNeighborlist
