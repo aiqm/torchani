@@ -7,7 +7,7 @@ Cpp source files for CUAEV and MNP extensions.
 Following [pytorch.org](https://pytorch.org/) to install PyTorch.
 On linux, for example:
 ```
-conda install pytorch torchvision cudatoolkit=11.6 -c pytorch
+conda install pytorch cudatoolkit=11.6 -c pytorch
 ```
 
 ## Build from source
@@ -46,7 +46,7 @@ conda activate cuaev
 # modules
 module load cuda/11.4.3 gcc/9.3.0 git/2.30.1
 # pytorch
-conda install pytorch torchvision cudatoolkit=11.6 -c pytorch
+conda install pytorch cudatoolkit=11.6 -c pytorch
 # install torchani
 git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani
@@ -67,7 +67,7 @@ conda activate cuaev
 # modules
 module load cuda/10.2.0
 # pytorch
-conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
+conda install pytorch cudatoolkit=10.2 -c pytorch
 # install torchani
 git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani
@@ -87,7 +87,7 @@ conda activate cuaev
 # modules
 module load cuda10.2/toolkit/10.2.89 gcc/7.5.0
 # pytorch
-conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
+conda install pytorch cudatoolkit=10.2 -c pytorch
 # install torchani
 git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani
@@ -110,7 +110,7 @@ export CUDA_HOME=/usr/local/cuda-11.1
 export PATH=${CUDA_HOME}/bin:$PATH
 export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 # pytorch
-conda install pytorch torchvision cudatoolkit=11.6 -c pytorch
+conda install pytorch cudatoolkit=11.6 -c pytorch
 # install torchani
 git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani

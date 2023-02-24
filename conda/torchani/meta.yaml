@@ -29,7 +29,6 @@ requirements:
     - requests
     - h5py
     - defaults::numpy >=1.18
-    - torchvision >=0.10
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 

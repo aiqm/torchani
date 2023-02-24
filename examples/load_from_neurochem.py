@@ -15,7 +15,6 @@ This tutorial illustrates how to manually load model from `NeuroChem files`_.
 import os
 import torch
 import torchani
-import ase
 
 
 ###############################################################################
@@ -54,13 +53,6 @@ print(nnp1)
 print(nnp2)
 
 ###############################################################################
-# You can also create an ASE calculator using the ensemble or single model:
-calculator1 = torchani.ase.Calculator(nnp1)
-calculator2 = torchani.ase.Calculator(nnp2)
-print(calculator1)
-print(calculator1)
-
-###############################################################################
 # Now let's define a methane molecule
 coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
                              [-0.83140486, 0.39370209, -0.26395324],
@@ -69,7 +61,6 @@ coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
                              [0.66091919, -0.16799635, -0.91037834]]],
                            requires_grad=True)
 species = consts.species_to_tensor(['C', 'H', 'H', 'H', 'H']).unsqueeze(0)
-methane = ase.Atoms(['C', 'H', 'H', 'H', 'H'], positions=coordinates.squeeze().detach().numpy())
 
 ###############################################################################
 # Now let's compute energies using the ensemble directly:
@@ -80,19 +71,9 @@ print('Energy:', energy.item())
 print('Force:', force.squeeze())
 
 ###############################################################################
-# And using the ASE interface of the ensemble:
-methane.calc = calculator1
-print('Energy:', methane.get_potential_energy() / ase.units.Hartree)
-print('Force:', methane.get_forces() / ase.units.Hartree)
-
-###############################################################################
 # We can do the same thing with the single model:
 energy = nnp2((species, coordinates)).energies
 derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
 force = -derivative
 print('Energy:', energy.item())
 print('Force:', force.squeeze())
-
-methane.calc = calculator2
-print('Energy:', methane.get_potential_energy() / ase.units.Hartree)
-print('Force:', methane.get_forces() / ase.units.Hartree)

@@ -100,7 +100,7 @@ from typing import Optional, Any
 from collections import OrderedDict
 from copy import deepcopy
 
-from torchvision.datasets.utils import download_and_extract_archive, list_files, check_integrity
+from .download import _download_and_extract_archive, _check_integrity
 from .datasets import ANIDataset
 from ._annotations import StrPath
 from ..utils import tqdm
@@ -156,63 +156,50 @@ class _BaseBuiltinDataset(ANIDataset):
                        download: bool = False,
                        archive: Optional[str] = None,
                        files_and_md5s: Optional['OrderedDict[str, str]'] = None,
-                       **h5_dataset_kwargs: Any):
+                       **ani_dataset_kwargs: Any):
         assert isinstance(files_and_md5s, OrderedDict)
 
         self._archive: str = '' if archive is None else archive
         self._files_and_md5s = OrderedDict([('', '')]) if files_and_md5s is None else files_and_md5s
 
         root = Path(root).resolve()
-        if download:
-            # If the dataset is not found we download it, if the dataset is corrupted we
-            # exit with error
-            self._maybe_download_hdf5_archive_and_check_integrity(root)
-        else:
-            self._check_hdf5_files_integrity(root)
-        dataset_paths = [Path(p).resolve() for p in list_files(root, suffix='.h5', prefix=True)]
+        # If the dataset is not found we download it
+        suffix = ".h5"
+        if download and ((not root.is_dir()) or (not any(root.glob(f"*{suffix}")))):
+            _download_and_extract_archive(base_url=_BASE_URL, file_name=self._archive, dest_dir=root)
+        # check for corruption
+        self._check_files_integrity(root, suffix)
+        dataset_paths = sorted(root.glob(f"*{suffix}"))
 
         # Order dataset paths using the order given in "files and md5s"
         filenames_order = {Path(k).stem: j for j, k in enumerate(self._files_and_md5s.keys())}
         _filenames_and_paths = sorted([(p.stem, p) for p in dataset_paths],
                                      key=lambda tup: filenames_order[tup[0]])
         filenames_and_paths = OrderedDict(_filenames_and_paths)
-        super().__init__(locations=filenames_and_paths.values(), names=filenames_and_paths.keys(), **h5_dataset_kwargs)
-        if h5_dataset_kwargs.get('verbose', True):
+        super().__init__(locations=filenames_and_paths.values(), names=filenames_and_paths.keys(), **ani_dataset_kwargs)
+        if ani_dataset_kwargs.get('verbose', True):
             print(self)
 
-    def _check_hdf5_files_integrity(self, root: Path) -> None:
+    def _check_files_integrity(self, root: Path, suffix: str = ".h5") -> None:
         # Checks that:
-        # (1) There are HDF5 files in the dataset
-        # (2) All HDF5 files names in the provided path are equal to the expected ones
+        # (1) There are files in the dataset
+        # (2) All file names in the provided path are equal to the expected ones
         # (3) They have the correct checksum
         # If any of these conditions fails the function exits with a RuntimeError
         # other files such as tar.gz archives are neglected
-        present_files = [Path(f).resolve() for f in list_files(root, suffix='.h5', prefix=True)]
+        present_files = sorted(root.glob(f"*{suffix}"))
         expected_file_names = set(self._files_and_md5s.keys())
         present_file_names = set([f.name for f in present_files])
         if not present_files:
-            raise RuntimeError(f'Dataset not found in path {root.as_posix()}')
+            raise RuntimeError(f'Dataset not found in path {str(root)}')
         if expected_file_names != present_file_names:
             raise RuntimeError(f"Wrong files found for dataset {self.__class__.__name__} in provided path, "
                                f"expected {expected_file_names} but found {present_file_names}")
         for f in tqdm(present_files, desc=f'Checking integrity of files for dataset {self.__class__.__name__}'):
-            if not check_integrity(f, self._files_and_md5s[f.name]):
+            if not _check_integrity(f, self._files_and_md5s[f.name]):
                 raise RuntimeError(f"All expected files for dataset {self.__class__.__name__} "
                                    f"were found but file {f.name} failed integrity check, "
                                     "your dataset is corrupted or has been modified")
-
-    def _maybe_download_hdf5_archive_and_check_integrity(self, root: Path) -> None:
-        # Downloads only if the files have not been found,
-        # If the files are corrupted it fails and asks you to delete them
-        root = Path(root).resolve()
-        if root.is_dir() and list(root.iterdir()):
-            self._check_hdf5_files_integrity(root)
-            return
-        download_and_extract_archive(url=f'{_BASE_URL}{self._archive}', download_root=root, md5=None)
-        tarfile = root / self._archive
-        if tarfile.is_file():
-            tarfile.unlink()
-        self._check_hdf5_files_integrity(root)
 
 
 class _ArchivedBuiltinDataset(_BaseBuiltinDataset):
@@ -224,7 +211,7 @@ class _ArchivedBuiltinDataset(_BaseBuiltinDataset):
         files_and_md5s = OrderedDict([(k, _MD5S[k]) for k in files[lot][1]])
         if root is None:
             # the default name is the name of the tarred file, here we strip "tar" and "gz"
-            root = _DEFAULT_DATA_PATH.joinpath(Path(archive).with_suffix('').with_suffix('').as_posix())
+            root = _DEFAULT_DATA_PATH / archive.replace(".tar.gz", "")
         super().__init__(root, download, archive=archive, files_and_md5s=files_and_md5s, verbose=verbose, **kwargs)
 
 

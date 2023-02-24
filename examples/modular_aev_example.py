@@ -1,9 +1,11 @@
 """Modular AEV usage Example"""
-import torch
-import torchani
 import math
+
+import torch
 from torch import Tensor
-from torchani.compat import Final
+from torch.jit import Final
+
+import torchani
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

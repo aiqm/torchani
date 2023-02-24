@@ -1,3 +1,10 @@
+"""
+Using the XTB-Repulsion module
+==========================================================
+
+TorchANI can use semiempirical XTB repulsion to improve the description of the
+potential energy surface at short distances
+"""
 import torch
 from torchani.repulsion import RepulsionXTB, StandaloneRepulsionXTB
 
