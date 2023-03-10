@@ -46,7 +46,7 @@ conda activate cuaev
 # modules
 module load cuda/11.4.3 gcc/9.3.0 git/2.30.1
 # pytorch
-conda install pytorch cudatoolkit=11.6 -c pytorch
+conda install pytorch==1.12.1 cudatoolkit=11.6 -c pytorch -c conda-forge
 # install torchani
 git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani
