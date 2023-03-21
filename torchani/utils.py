@@ -322,7 +322,7 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     if mass_scaled_hessian.shape[0] != 1:
         raise ValueError('The input should contain only one molecule')
     mass_scaled_hessian = mass_scaled_hessian.squeeze(0)
-    eigenvalues, eigenvectors = torch.symeig(mass_scaled_hessian, eigenvectors=True)
+    eigenvalues, eigenvectors = torch.linalg.eigh(mass_scaled_hessian)
     angular_frequencies = eigenvalues.sqrt()
     frequencies = angular_frequencies / (2 * math.pi)
     # converting from sqrt(hartree / (amu * angstrom^2)) to cm^-1 or meV
