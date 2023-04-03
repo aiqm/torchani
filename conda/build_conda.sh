@@ -61,6 +61,6 @@ if [[ $1 == release ]]; then
     rm -rf "${CONDA}/conda-bld/*"                             # remove conda-bld directory
     conda index /release/conda-packages
     chown -R 1003:1003 /release/conda-packages
-    apt install rsync -y
+    apt update && apt install rsync -y
     rsync -av --delete -e "ssh -p $SERVER_PORT -o StrictHostKeyChecking=no" /release/conda-packages/ $SERVER_USERNAME@roitberg.chem.ufl.edu:/home/statics/conda-packages/
 fi
