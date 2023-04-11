@@ -63,12 +63,12 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 from torch.jit import Final
-from typing import Tuple, Optional, NamedTuple, Sequence, Union, Dict, Any, Type, Callable, List
+from typing import Tuple, Optional, NamedTuple, Sequence, Union, Dict, Any, Type, Callable, List, Iterable
 from .nn import SpeciesConverter, SpeciesEnergies, Ensemble, ANIModel
 from .utils import ChemicalSymbolsToInts, PERIODIC_TABLE, EnergyShifter, path_is_writable
 from .aev import AEVComputer
-from .repulsion import RepulsionXTB
 from . import atomics
+from .potentials import AEVPotential, RepulsionXTB, Potential, PairwisePotential
 
 
 NN = Union[ANIModel, Ensemble]
@@ -354,72 +354,23 @@ class BuiltinModel(Module):
         return self.neural_networks.size
 
 
-# Adaptor to use the aev computer as a three body potential
-class AEVPotential(torch.nn.Module):
-    cutoff: Final[float]
-
-    def __init__(self, aev_computer: AEVComputer, neural_networks: NN):
-        super().__init__()
-        self.aev_computer = aev_computer
-        self.neural_networks = neural_networks
-        self.cutoff = aev_computer.radial_terms.cutoff
-
-    def forward(
-        self,
-        element_idxs: Tensor,
-        neighbor_idxs: Tensor,
-        distances: Tensor,
-        diff_vectors: Tensor,
-    ) -> Tensor:
-        assert diff_vectors is not None, "AEV potential needs diff vectors always"
-        aevs = self.aev_computer._compute_aev(
-            element_idxs=element_idxs,
-            neighbor_idxs=neighbor_idxs,
-            distances=distances,
-            diff_vectors=diff_vectors,
-        )
-        energies = self.neural_networks((element_idxs, aevs)).energies
-        return energies
-
-    def members_energies(
-        self,
-        element_idxs: Tensor,
-        neighbor_idxs: Tensor,
-        distances: Tensor,
-        diff_vectors: Tensor,
-    ) -> Tensor:
-        """
-        Returns: members energies for the given configurations with shape (M, C),
-            where M is the number of modules in the ensemble.
-        """
-        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
-        aevs = self.aev_computer._compute_aev(
-            element_idxs=element_idxs,
-            neighbor_idxs=neighbor_idxs,
-            distances=distances,
-            diff_vectors=diff_vectors,
-        )
-        atomic_energies = self.neural_networks._atomic_energies((element_idxs, aevs))
-        return atomic_energies.sum(-1)
-
-
 class BuiltinModelPairInteractions(BuiltinModel):
-    # NOTE: contribution of pairwise interactions to atomic energies is not
-    # implemented yet
-
-    def __init__(self, *args, **kwargs):
-        potentials = kwargs.pop('pairwise_potentials', list())
+    def __init__(
+        self,
+        *args,
+        pairwise_potentials: Iterable[PairwisePotential] = tuple(),
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
-        assert isinstance(potentials, (tuple, list))
-        potentials = list(potentials)
-        potentials.append(AEVPotential(self.aev_computer, self.neural_networks))
+        potentials: List[Potential] = list(pairwise_potentials)
+        aev_potential = AEVPotential(self.aev_computer, self.neural_networks)
+        self.size = aev_potential.size
+        potentials.append(aev_potential)
 
-        # We want to check the cutoffs of the potentials, and the cutoff of the
-        # aev computer, and sort the "aev energy" and the "pairwise energies"
-        # in order of decreasing cutoffs. this way the energy with the LARGEST
+        # We want to check the cutoffs of the potentials, and sort them
+        # in order of decreasing cutoffs. this way the potential with the LARGEST
         # cutoff is computed first, then sequentially things that need smaller
         # cutoffs are computed.
-        #
         # e.g. if the aev-potential has cutoff 10, and we have SRB with cutoff
         # 5 and repulsion with cutoff 3, we want to calculate:
         #
@@ -427,7 +378,7 @@ class BuiltinModelPairInteractions(BuiltinModel):
         potentials = sorted(potentials, key=lambda x: x.cutoff, reverse=True)
         self.potentials = torch.nn.ModuleList(potentials)
 
-        # Set the neighborlist cutoff to the largest cutoff in existence
+        # Override the neighborlist cutoff with the largest cutoff in existence
         self.aev_computer.neighborlist.cutoff = self.potentials[0].cutoff
 
     def forward(
@@ -450,13 +401,59 @@ class BuiltinModelPairInteractions(BuiltinModel):
                     diff_vectors=neighbor_data.diff_vectors,
                 )
                 previous_cutoff = pot.cutoff
-            energies = energies + pot(
+            energies += pot(
                 element_idxs=element_idxs,
                 neighbor_idxs=neighbor_data.indices,
                 distances=neighbor_data.distances,
                 diff_vectors=neighbor_data.diff_vectors,
             )
         return self.energy_shifter((element_idxs, energies))
+
+    @torch.jit.export
+    def atomic_energies(
+        self,
+        species_coordinates: Tuple[Tensor, Tensor],
+        cell: Optional[Tensor] = None,
+        pbc: Optional[Tensor] = None,
+        average: bool = True
+    ) -> SpeciesEnergies:
+        assert isinstance(self.neural_networks, (Ensemble, ANIModel))
+        element_idxs, coordinates = self._maybe_convert_species(species_coordinates)
+        neighbor_data = self.aev_computer.neighborlist(element_idxs, coordinates, cell, pbc)
+        previous_cutoff = self.aev_computer.neighborlist.cutoff
+        rescreen = self.aev_computer.neighborlist._rescreen_with_cutoff
+
+        # Here we add an extra axis to account for different models,
+        # some potentials output atomic energies with shape (M, N, A), where
+        # M is all models in the ensemble
+        atomic_energies = torch.zeros(
+            (self.size, element_idxs.shape[0], element_idxs.shape[1]),
+            dtype=coordinates.dtype,
+            device=coordinates.device
+        )
+        for pot in self.potentials:
+            if pot.cutoff < previous_cutoff:
+                neighbor_data = rescreen(
+                    pot.cutoff,
+                    neighbor_idxs=neighbor_data.indices,
+                    distances=neighbor_data.distances,
+                    diff_vectors=neighbor_data.diff_vectors,
+                )
+                previous_cutoff = pot.cutoff
+            atomic_energies += pot.atomic_energies(
+                element_idxs,
+                neighbor_idxs=neighbor_data.indices,
+                distances=neighbor_data.distances,
+                diff_vectors=neighbor_data.diff_vectors,
+            )
+
+        atomic_energies += self.energy_shifter._atomic_saes(element_idxs).unsqueeze(0)
+
+        if average:
+            atomic_energies = atomic_energies.mean(dim=0)
+        return SpeciesEnergies(species_coordinates[0], atomic_energies)
+
+    # NOTE: members_energies does not need to be overriden, it works correctly as is
 
     def __getitem__(self, index: int) -> 'BuiltinModel':
         assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
@@ -469,45 +466,6 @@ class BuiltinModelPairInteractions(BuiltinModel):
             periodic_table_index=self.periodic_table_index,
             pairwise_potentials=non_aev_potentials,
         )
-
-    @torch.jit.export
-    def members_energies(self, species_coordinates: Tuple[Tensor, Tensor],
-                         cell: Optional[Tensor] = None,
-                         pbc: Optional[Tensor] = None) -> SpeciesEnergies:
-        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
-        element_idxs, coordinates = self._maybe_convert_species(species_coordinates)
-        neighbor_data = self.aev_computer.neighborlist(element_idxs, coordinates, cell, pbc)
-        energies = torch.zeros(element_idxs.shape[0], device=element_idxs.device, dtype=coordinates.dtype)
-        previous_cutoff = self.aev_computer.neighborlist.cutoff
-        members_energies: Optional[Tensor] = None
-        rescreen = self.aev_computer.neighborlist._rescreen_with_cutoff
-        for pot in self.potentials:
-            if pot.cutoff < previous_cutoff:
-                neighbor_data = rescreen(
-                    pot.cutoff,
-                    neighbor_idxs=neighbor_data.indices,
-                    distances=neighbor_data.distances,
-                    diff_vectors=neighbor_data.diff_vectors,
-                )
-                previous_cutoff = pot.cutoff
-            if isinstance(pot, AEVPotential):
-                members_energies = pot.members_energies(
-                    element_idxs,
-                    neighbor_idxs=neighbor_data.indices,
-                    distances=neighbor_data.distances,
-                    diff_vectors=neighbor_data.diff_vectors,
-                )
-            else:
-                energies += pot(
-                    element_idxs,
-                    neighbor_idxs=neighbor_data.indices,
-                    distances=neighbor_data.distances,
-                    diff_vectors=neighbor_data.diff_vectors,
-                )
-        assert members_energies is not None
-        energies = self.energy_shifter((element_idxs, energies)).energies
-        members_energies += energies.unsqueeze(0)
-        return SpeciesEnergies(element_idxs, members_energies)
 
 
 def _get_component_modules(

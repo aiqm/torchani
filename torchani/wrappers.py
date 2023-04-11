@@ -36,7 +36,7 @@ class StandaloneWrapper(Module):
         self.neighborlist = neighborlist(neighborlist_cutoff)
         self.znumbers_to_idxs = SpeciesConverter(self.module.get_chemical_symbols())  # type: ignore
         # module must implement
-        # def _calculate_energy(
+        # def forward(
         #     self,
         #     element_idxs: Tensor,
         #     coordinates: Tensor,
@@ -79,7 +79,7 @@ class StandaloneWrapper(Module):
         else:
             neighbor_data = self.neighborlist.dummy()
 
-        energy = self.module._calculate_energy(  # type: ignore
+        energy = self.module(  # type: ignore
             element_idxs,
             neighbor_idxs=neighbor_data.indices,
             distances=neighbor_data.distances,
