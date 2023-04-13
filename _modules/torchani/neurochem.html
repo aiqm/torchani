@@ -1,97 +1,55 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html4" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>torchani.neurochem &mdash; TorchANI 2.2.3 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>torchani.neurochem &mdash; TorchANI 2.1.1 documentation</title>
-  
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/gallery-dataframe.css" type="text/css" />
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../index.html" class="icon icon-home"> TorchANI
           
-
-          
+          <a href="../../index.html" class="icon icon-home">
+            TorchANI
           </a>
-
-          
-            
-            
               <div class="version">
-                2.1.1
+                2.2.3
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../start.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tips.html">Tips</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
@@ -102,7 +60,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
-<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<p class="caption" role="heading"><span class="caption-text">TorchANI's API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html">TorchANI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.models">Model Zoo</a></li>
@@ -113,66 +71,30 @@
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.units">Units</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">TorchANI</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html">Docs</a> &raquo;</li>
-        
-          <li><a href="../index.html">Module code</a> &raquo;</li>
-        
-      <li>torchani.neurochem</li>
-    
-    
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">torchani.neurochem</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for torchani.neurochem</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="sd">&quot;&quot;&quot;Tools for loading/running NeuroChem input files.&quot;&quot;&quot;</span>
@@ -185,18 +107,19 @@
 <span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">timeit</span>
-<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">collections.abc</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">..nn</span> <span class="kn">import</span> <span class="n">ANIModel</span><span class="p">,</span> <span class="n">Ensemble</span><span class="p">,</span> <span class="n">Gaussian</span><span class="p">,</span> <span class="n">Sequential</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">EnergyShifter</span><span class="p">,</span> <span class="n">ChemicalSymbolsToInts</span>
 <span class="kn">from</span> <span class="nn">..aev</span> <span class="kn">import</span> <span class="n">AEVComputer</span>
+<span class="kn">from</span> <span class="nn">.parse_resources</span> <span class="kn">import</span> <span class="n">parse_neurochem_resources</span>
 <span class="kn">from</span> <span class="nn">torch.optim</span> <span class="kn">import</span> <span class="n">AdamW</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">torchani.units</span> <span class="kn">import</span> <span class="n">hartree2kcalmol</span>
 
 
 <div class="viewcode-block" id="Constants"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Constants">[docs]</a><span class="k">class</span> <span class="nc">Constants</span><span class="p">(</span><span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;NeuroChem constants. Objects of this class can be used as arguments</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;NeuroChem constants. Objects of this class can be used as arguments</span>
 <span class="sd">    to :class:`torchani.AEVComputer`, like ``torchani.AEVComputer(**consts)``.</span>
 
 <span class="sd">    Attributes:</span>
@@ -247,7 +170,7 @@
 
 
 <div class="viewcode-block" id="load_sae"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_sae">[docs]</a><span class="k">def</span> <span class="nf">load_sae</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">return_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns an object of :class:`EnergyShifter` with self energies from</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns an object of :class:`EnergyShifter` with self energies from</span>
 <span class="sd">    NeuroChem sae file&quot;&quot;&quot;</span>
     <span class="n">self_energies</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
@@ -280,7 +203,7 @@
 
 
 <div class="viewcode-block" id="load_atomic_network"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_atomic_network">[docs]</a><span class="k">def</span> <span class="nf">load_atomic_network</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns an instance of :class:`torch.nn.Sequential` with hyperparameters</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns an instance of :class:`torch.nn.Sequential` with hyperparameters</span>
 <span class="sd">    and parameters loaded NeuroChem&#39;s .nnf, .wparam and .bparam files.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">decompress_nnf</span><span class="p">(</span><span class="n">buffer_</span><span class="p">):</span>
@@ -323,7 +246,7 @@
 <span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.CNAME</span>
 <span class="s1">        </span><span class="si">%i</span><span class="s1">mport common.WS</span>
 <span class="s1">        </span><span class="si">%i</span><span class="s1">gnore WS</span>
-<span class="s1">        &#39;&#39;&#39;</span><span class="p">)</span>
+<span class="s1">        &#39;&#39;&#39;</span><span class="p">,</span> <span class="n">parser</span><span class="o">=</span><span class="s1">&#39;lalr&#39;</span><span class="p">)</span>
         <span class="n">tree</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">nnf_file</span><span class="p">)</span>
 
         <span class="c1"># execute parse tree</span>
@@ -373,7 +296,7 @@
         <span class="k">return</span> <span class="n">layer_setups</span>
 
     <span class="k">def</span> <span class="nf">load_param_file</span><span class="p">(</span><span class="n">linear</span><span class="p">,</span> <span class="n">in_size</span><span class="p">,</span> <span class="n">out_size</span><span class="p">,</span> <span class="n">wfn</span><span class="p">,</span> <span class="n">bfn</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Load `.wparam` and `.bparam` files&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load `.wparam` and `.bparam` files&quot;&quot;&quot;</span>
         <span class="n">wsize</span> <span class="o">=</span> <span class="n">in_size</span> <span class="o">*</span> <span class="n">out_size</span>
         <span class="n">fw</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">wfn</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
         <span class="n">w</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">f&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">wsize</span><span class="p">),</span> <span class="n">fw</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
@@ -415,7 +338,7 @@
 
 
 <div class="viewcode-block" id="load_model"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_model">[docs]</a><span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">dir_</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns an instance of :class:`torchani.ANIModel` loaded from</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns an instance of :class:`torchani.ANIModel` loaded from</span>
 <span class="sd">    NeuroChem&#39;s network directory.</span>
 
 <span class="sd">    Arguments:</span>
@@ -431,7 +354,7 @@
 
 
 <div class="viewcode-block" id="load_model_ensemble"><a class="viewcode-back" href="../../api.html#torchani.neurochem.load_model_ensemble">[docs]</a><span class="k">def</span> <span class="nf">load_model_ensemble</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns an instance of :class:`torchani.Ensemble` loaded from</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns an instance of :class:`torchani.Ensemble` loaded from</span>
 <span class="sd">    NeuroChem&#39;s network directories beginning with the given prefix.</span>
 
 <span class="sd">    Arguments:</span>
@@ -451,7 +374,7 @@
 <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
 
 <div class="viewcode-block" id="Trainer"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer">[docs]</a>    <span class="k">class</span> <span class="nc">Trainer</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Train with NeuroChem training configurations.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Train with NeuroChem training configurations.</span>
 
 <span class="sd">        Arguments:</span>
 <span class="sd">            filename (str): Input file name</span>
@@ -538,7 +461,7 @@
 <span class="s1">            </span><span class="si">%i</span><span class="s1">mport common.WS</span>
 <span class="s1">            </span><span class="si">%i</span><span class="s1">gnore WS</span>
 <span class="s1">            </span><span class="si">%i</span><span class="s1">gnore /!.*/</span>
-<span class="s1">            &#39;&#39;&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
+<span class="s1">            &#39;&#39;&#39;</span><span class="p">,</span> <span class="n">parser</span><span class="o">=</span><span class="s1">&#39;lalr&#39;</span><span class="p">)</span>  <span class="c1"># noqa: E501</span>
             <span class="n">tree</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span>
 
             <span class="k">class</span> <span class="nc">TreeExec</span><span class="p">(</span><span class="n">lark</span><span class="o">.</span><span class="n">Transformer</span><span class="p">):</span>
@@ -732,12 +655,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">best_validation_rmse</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span>
 
 <div class="viewcode-block" id="Trainer.load_data"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer.load_data">[docs]</a>        <span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training_path</span><span class="p">,</span> <span class="n">validation_path</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Load training and validation dataset from file.&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Load training and validation dataset from file.&quot;&quot;&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">training_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">training_path</span><span class="p">)</span><span class="o">.</span><span class="n">subtract_self_energies</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sae</span><span class="p">)</span><span class="o">.</span><span class="n">species_to_indices</span><span class="p">()</span><span class="o">.</span><span class="n">shuffle</span><span class="p">()</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_batch_size</span><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">validation_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imports</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">validation_path</span><span class="p">)</span><span class="o">.</span><span class="n">subtract_self_energies</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sae</span><span class="p">)</span><span class="o">.</span><span class="n">species_to_indices</span><span class="p">()</span><span class="o">.</span><span class="n">shuffle</span><span class="p">()</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">validation_batch_size</span><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Trainer.evaluate"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer.evaluate">[docs]</a>        <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Run the evaluation&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Run the evaluation&quot;&quot;&quot;</span>
             <span class="n">total_mse</span> <span class="o">=</span> <span class="mf">0.0</span>
             <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">for</span> <span class="n">properties</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
@@ -750,7 +673,7 @@
             <span class="k">return</span> <span class="n">hartree2kcalmol</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">total_mse</span> <span class="o">/</span> <span class="n">count</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="Trainer.run"><a class="viewcode-back" href="../../api.html#torchani.neurochem.Trainer.run">[docs]</a>        <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Run the training&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Run the training&quot;&quot;&quot;</span>
             <span class="n">start</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">default_timer</span><span class="p">()</span>
             <span class="n">no_improve_count</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -820,46 +743,34 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;time_vs_epoch&#39;</span><span class="p">,</span> <span class="n">elapsed</span><span class="p">,</span> <span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span><span class="p">)</span></div></div>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Constants&#39;</span><span class="p">,</span> <span class="s1">&#39;load_sae&#39;</span><span class="p">,</span> <span class="s1">&#39;load_model&#39;</span><span class="p">,</span> <span class="s1">&#39;load_model_ensemble&#39;</span><span class="p">,</span> <span class="s1">&#39;Trainer&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Constants&#39;</span><span class="p">,</span> <span class="s1">&#39;load_sae&#39;</span><span class="p">,</span> <span class="s1">&#39;load_model&#39;</span><span class="p">,</span> <span class="s1">&#39;load_model_ensemble&#39;</span><span class="p">,</span> <span class="s1">&#39;Trainer&#39;</span><span class="p">,</span> <span class="s1">&#39;parse_neurochem_resources&#39;</span><span class="p">]</span>
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2018, Roitberg Group
-
-    </p>
+    <p>&#169; Copyright 2018, Roitberg Group.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

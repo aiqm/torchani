@@ -1,99 +1,57 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html4" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Computing Vibrational Frequencies Using Analytical Hessian &mdash; TorchANI 2.2.3 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>Computing Vibrational Frequencies Using Analytical Hessian &mdash; TorchANI 2.1.1 documentation</title>
-  
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Construct Model From NeuroChem Files" href="load_from_neurochem.html" />
     <link rel="prev" title="Using TorchScript to serialize and deploy model" href="jit.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../index.html" class="icon icon-home"> TorchANI
           
-
-          
+          <a href="../index.html" class="icon icon-home">
+            TorchANI
           </a>
-
-          
-            
-            
               <div class="version">
-                2.1.1
+                2.2.3
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../start.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tips.html">Tips</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
@@ -104,7 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
-<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<p class="caption" role="heading"><span class="caption-text">TorchANI's API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">TorchANI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.models">Model Zoo</a></li>
@@ -115,74 +73,37 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.units">Units</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">TorchANI</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html">Docs</a> &raquo;</li>
-        
-      <li>Computing Vibrational Frequencies Using Analytical Hessian</li>
-    
-    
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Computing Vibrational Frequencies Using Analytical Hessian</li>
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../_sources/examples/vibration_analysis.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <div class="sphx-glr-download-link-note admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-vibration-analysis-py"><span class="std std-ref">here</span></a>     to download the full example code</p>
+<p class="last"><a class="reference internal" href="#sphx-glr-download-examples-vibration-analysis-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="computing-vibrational-frequencies-using-analytical-hessian">
-<span id="sphx-glr-examples-vibration-analysis-py"></span><h1>Computing Vibrational Frequencies Using Analytical Hessian<a class="headerlink" href="#computing-vibrational-frequencies-using-analytical-hessian" title="Permalink to this headline">¶</a></h1>
+<span id="sphx-glr-examples-vibration-analysis-py"></span><h1>Computing Vibrational Frequencies Using Analytical Hessian<a class="headerlink" href="#computing-vibrational-frequencies-using-analytical-hessian" title="Permalink to this heading">¶</a></h1>
 <p>TorchANI is able to use ASE interface to do structure optimization and
 vibration analysis, but the Hessian in ASE’s vibration analysis is computed
 numerically, which is slow and less accurate.</p>
@@ -196,8 +117,11 @@ vibration analysis analytically, thanks to the super power of <cite>torch.autogr
 </pre></div>
 </div>
 <p>Let’s now manually specify the device we want TorchANI to run:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1x</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">double</span><span class="p">()</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">device</span></a><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1x</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span><span class="o">.</span><span class="n">double</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/torchani-2.2.3-py3.8.egg/torchani/resources/
 </pre></div>
 </div>
 <p>Let’s first construct a water molecule and do structure optimization:</p>
@@ -212,23 +136,22 @@ vibration analysis analytically, thanks to the super power of <cite>torch.autogr
 <a href="https://wiki.fysik.dtu.dk/ase/ase/optimize.html#ase.optimize.BFGS" title="ase.optimize.BFGS" class="sphx-glr-backref-module-ase-optimize sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">opt</span></a><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">fmax</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>      Step     Time          Energy         fmax
-BFGS:    0 19:52:51    -2078.633392        0.6576
-BFGS:    1 19:52:51    -2078.637244        0.1905
-BFGS:    2 19:52:51    -2078.637801        0.0292
-BFGS:    3 19:52:51    -2078.637827        0.0183
-BFGS:    4 19:52:51    -2078.637849        0.0014
-BFGS:    5 19:52:51    -2078.637849        0.0001
-BFGS:    6 19:52:52    -2078.637849        0.0000
-BFGS:    7 19:52:52    -2078.637849        0.0000
+BFGS:    0 18:14:27    -2078.633392        0.6576
+BFGS:    1 18:14:27    -2078.637244        0.1905
+BFGS:    2 18:14:28    -2078.637801        0.0292
+BFGS:    3 18:14:28    -2078.637827        0.0183
+BFGS:    4 18:14:28    -2078.637849        0.0014
+BFGS:    5 18:14:28    -2078.637849        0.0001
+BFGS:    6 18:14:28    -2078.637849        0.0000
+BFGS:    7 18:14:28    -2078.637849        0.0000
 
 True
 </pre></div>
 </div>
 <p>Now let’s extract coordinates and species from ASE to use it directly with
 TorchANI:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">(</span><a href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#ase.Atoms.get_atomic_numbers" title="ase.Atoms.get_atomic_numbers" class="sphx-glr-backref-module-ase sphx-glr-backref-type-py-method"><span class="n">molecule</span><span class="o">.</span><span class="n">get_atomic_numbers</span></a><span class="p">(),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">(</span><a href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#ase.Atoms.get_atomic_numbers" title="ase.Atoms.get_atomic_numbers" class="sphx-glr-backref-module-ase sphx-glr-backref-type-py-method"><span class="n">molecule</span><span class="o">.</span><span class="n">get_atomic_numbers</span></a><span class="p">(),</span> <a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.dtype" title="torch.dtype" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">torch</span><span class="o">.</span><span class="n">long</span></a><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.from_numpy.html#torch.from_numpy" title="torch.from_numpy" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span></a><span class="p">(</span><a href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#ase.Atoms.get_positions" title="ase.Atoms.get_positions" class="sphx-glr-backref-module-ase sphx-glr-backref-type-py-method"><span class="n">molecule</span><span class="o">.</span><span class="n">get_positions</span></a><span class="p">())</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -253,7 +176,6 @@ one molecule to compute, 9 means <cite>3 atoms * 3D space = 9 degree of freedom<
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">hessian</span></a><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>torch.Size([1, 9, 9])
 </pre></div>
 </div>
@@ -270,25 +192,24 @@ We output the modes as MDU (mass deweighted unnormalized), to compare with ASE.<
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Modes:&#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">modes</span></a><span class="p">[</span><span class="mi">6</span><span class="p">:])</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Frequencies (cm^-1): tensor([1913.200, 3882.404, 3911.185], dtype=torch.float64)
 Force Constants (mDyne/A): tensor([2.339, 9.269, 9.743], dtype=torch.float64)
 Reduced masses (AMU): tensor([1.085, 1.044, 1.081], dtype=torch.float64)
-Modes: tensor([[[     0.015,      0.677,     -0.000],
-         [     0.652,      0.184,      0.000],
-         [    -0.042,     -0.054,     -0.000]],
+Modes: tensor([[[     0.015,      0.677,      0.000],
+         [     0.652,      0.184,     -0.000],
+         [    -0.042,     -0.054,      0.000]],
 
-        [[    -0.689,      0.054,     -0.000],
-         [     0.225,     -0.654,     -0.000],
-         [     0.029,      0.038,      0.000]],
+        [[     0.689,     -0.054,      0.000],
+         [    -0.225,      0.654,      0.000],
+         [    -0.029,     -0.038,      0.000]],
 
-        [[    -0.678,     -0.006,     -0.000],
+        [[    -0.678,     -0.006,      0.000],
          [    -0.164,      0.658,     -0.000],
-         [     0.053,     -0.041,      0.000]]], dtype=torch.float64)
+         [     0.053,     -0.041,     -0.000]]], dtype=torch.float64)
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  2.566 seconds)</p>
-<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-vibration-analysis-py">
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.777 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-vibration-analysis-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <a class="reference download internal" download="" href="../_downloads/ee78bc2f4e1967149696942823208fe8/vibration_analysis.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">vibration_analysis.py</span></code></a></div>
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
@@ -299,51 +220,33 @@ Modes: tensor([[[     0.015,      0.677,     -0.000],
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="load_from_neurochem.html" class="btn btn-neutral float-right" title="Construct Model From NeuroChem Files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="jit.html" class="btn btn-neutral float-left" title="Using TorchScript to serialize and deploy model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="jit.html" class="btn btn-neutral float-left" title="Using TorchScript to serialize and deploy model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="load_from_neurochem.html" class="btn btn-neutral float-right" title="Construct Model From NeuroChem Files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2018, Roitberg Group
-
-    </p>
+    <p>&#169; Copyright 2018, Roitberg Group.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

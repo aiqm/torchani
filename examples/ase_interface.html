@@ -1,99 +1,57 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html4" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 2.2.3 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>Structure minimization and constant temperature MD using ASE interface &mdash; TorchANI 2.1.1 documentation</title>
-  
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Using TorchScript to serialize and deploy model" href="jit.html" />
     <link rel="prev" title="Computing Energy and Force Using Models Inside Model Zoo" href="energy_force.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../index.html" class="icon icon-home"> TorchANI
           
-
-          
+          <a href="../index.html" class="icon icon-home">
+            TorchANI
           </a>
-
-          
-            
-            
               <div class="version">
-                2.1.1
+                2.2.3
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../start.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tips.html">Tips</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Structure minimization and constant temperature MD using ASE interface</a></li>
@@ -104,7 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
-<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<p class="caption" role="heading"><span class="caption-text">TorchANI's API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">TorchANI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.models">Model Zoo</a></li>
@@ -115,74 +73,37 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.units">Units</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">TorchANI</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html">Docs</a> &raquo;</li>
-        
-      <li>Structure minimization and constant temperature MD using ASE interface</li>
-    
-    
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Structure minimization and constant temperature MD using ASE interface</li>
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../_sources/examples/ase_interface.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <div class="sphx-glr-download-link-note admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-ase-interface-py"><span class="std std-ref">here</span></a>     to download the full example code</p>
+<p class="last"><a class="reference internal" href="#sphx-glr-download-examples-ase-interface-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="structure-minimization-and-constant-temperature-md-using-ase-interface">
-<span id="sphx-glr-examples-ase-interface-py"></span><h1>Structure minimization and constant temperature MD using ASE interface<a class="headerlink" href="#structure-minimization-and-constant-temperature-md-using-ase-interface" title="Permalink to this headline">¶</a></h1>
+<span id="sphx-glr-examples-ase-interface-py"></span><h1>Structure minimization and constant temperature MD using ASE interface<a class="headerlink" href="#structure-minimization-and-constant-temperature-md-using-ase-interface" title="Permalink to this heading">¶</a></h1>
 <p>This example is modified from the official <cite>home page</cite> and
 <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/tutorials/md/md.html#constant-temperature-md">Constant temperature MD</a> to use the ASE interface of TorchANI as energy
 calculator.</p>
@@ -199,12 +120,15 @@ calculator.</p>
 <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">),</span> <span class="s2">&quot;atoms in the cell&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>8 atoms in the cell
 </pre></div>
 </div>
 <p>Now let’s create a calculator from builtin models:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">calculator</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI1ccx</span><span class="p">()</span><span class="o">.</span><span class="n">ase</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/torchani-2.2.3-py3.8.egg/torchani/resources/
+Downloading ANI model parameters ...
 </pre></div>
 </div>
 <div class="admonition note">
@@ -229,15 +153,14 @@ large for structure minimization. If you insist on using
 <span class="nb">print</span><span class="p">()</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Begin minimizing...
       Step     Time          Energy         fmax
-BFGS:    0 19:52:12    -8311.226183        0.0000
+BFGS:    0 18:14:04    -8311.226180        0.0000
 </pre></div>
 </div>
 <p>Now create a callback function that print interesting physical quantities:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">printenergy</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">atoms</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Function to print the potential, kinetic and total energy.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to print the potential, kinetic and total energy.&quot;&quot;&quot;</span>
     <span class="n">epot</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
     <span class="n">ekin</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">get_kinetic_energy</span><span class="p">()</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Energy per atom: Epot = </span><span class="si">%.3f</span><span class="s1">eV  Ekin = </span><span class="si">%.3f</span><span class="s1">eV (T=</span><span class="si">%3.0f</span><span class="s1">K)  &#39;</span>
@@ -251,32 +174,35 @@ coefficient to 0.02 atomic units.</p>
 <a href="https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.langevin.Langevin" title="ase.md.langevin.Langevin" class="sphx-glr-backref-module-ase-md-langevin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dyn</span></a><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">printenergy</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
 </pre></div>
 </div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/ase/md/md.py:48: FutureWarning: Specify the temperature in K using the &#39;temperature_K&#39; argument
+  warnings.warn(FutureWarning(w))
+</pre></div>
+</div>
 <p>Now run the dynamics:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Beginning dynamics...&quot;</span><span class="p">)</span>
 <span class="n">printenergy</span><span class="p">()</span>
 <a href="https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.langevin.Langevin" title="ase.md.langevin.Langevin" class="sphx-glr-backref-module-ase-md-langevin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dyn</span></a><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Beginning dynamics...
 Energy per atom: Epot = -1038.903eV  Ekin = 0.000eV (T=  0K)  Etot = -1038.903eV
 Energy per atom: Epot = -1038.903eV  Ekin = 0.000eV (T=  0K)  Etot = -1038.903eV
-Energy per atom: Epot = -1038.867eV  Ekin = 0.019eV (T=145K)  Etot = -1038.848eV
-Energy per atom: Epot = -1038.866eV  Ekin = 0.015eV (T=116K)  Etot = -1038.851eV
-Energy per atom: Epot = -1038.873eV  Ekin = 0.035eV (T=273K)  Etot = -1038.837eV
-Energy per atom: Epot = -1038.873eV  Ekin = 0.036eV (T=279K)  Etot = -1038.837eV
-Energy per atom: Epot = -1038.880eV  Ekin = 0.023eV (T=179K)  Etot = -1038.857eV
-Energy per atom: Epot = -1038.860eV  Ekin = 0.032eV (T=248K)  Etot = -1038.828eV
-Energy per atom: Epot = -1038.869eV  Ekin = 0.037eV (T=284K)  Etot = -1038.833eV
-Energy per atom: Epot = -1038.866eV  Ekin = 0.032eV (T=251K)  Etot = -1038.833eV
-Energy per atom: Epot = -1038.860eV  Ekin = 0.020eV (T=151K)  Etot = -1038.840eV
-Energy per atom: Epot = -1038.877eV  Ekin = 0.033eV (T=255K)  Etot = -1038.844eV
+Energy per atom: Epot = -1038.885eV  Ekin = 0.029eV (T=223K)  Etot = -1038.856eV
+Energy per atom: Epot = -1038.878eV  Ekin = 0.018eV (T=141K)  Etot = -1038.859eV
+Energy per atom: Epot = -1038.875eV  Ekin = 0.025eV (T=194K)  Etot = -1038.850eV
+Energy per atom: Epot = -1038.875eV  Ekin = 0.024eV (T=187K)  Etot = -1038.850eV
+Energy per atom: Epot = -1038.863eV  Ekin = 0.026eV (T=202K)  Etot = -1038.837eV
+Energy per atom: Epot = -1038.859eV  Ekin = 0.024eV (T=186K)  Etot = -1038.835eV
+Energy per atom: Epot = -1038.881eV  Ekin = 0.023eV (T=180K)  Etot = -1038.858eV
+Energy per atom: Epot = -1038.871eV  Ekin = 0.054eV (T=416K)  Etot = -1038.817eV
+Energy per atom: Epot = -1038.877eV  Ekin = 0.059eV (T=458K)  Etot = -1038.818eV
+Energy per atom: Epot = -1038.866eV  Ekin = 0.039eV (T=301K)  Etot = -1038.827eV
 
 True
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  13.983 seconds)</p>
-<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-ase-interface-py">
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  14.111 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-ase-interface-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <a class="reference download internal" download="" href="../_downloads/63fc96e3617a5d12dad01b74efe5c292/ase_interface.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">ase_interface.py</span></code></a></div>
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
@@ -287,51 +213,33 @@ True
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="jit.html" class="btn btn-neutral float-right" title="Using TorchScript to serialize and deploy model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="energy_force.html" class="btn btn-neutral float-left" title="Computing Energy and Force Using Models Inside Model Zoo" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="energy_force.html" class="btn btn-neutral float-left" title="Computing Energy and Force Using Models Inside Model Zoo" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="jit.html" class="btn btn-neutral float-right" title="Using TorchScript to serialize and deploy model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2018, Roitberg Group
-
-    </p>
+    <p>&#169; Copyright 2018, Roitberg Group.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

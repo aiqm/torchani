@@ -1,99 +1,57 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html4" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Computing Energy and Force Using Models Inside Model Zoo &mdash; TorchANI 2.2.3 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>Computing Energy and Force Using Models Inside Model Zoo &mdash; TorchANI 2.1.1 documentation</title>
-  
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Structure minimization and constant temperature MD using ASE interface" href="ase_interface.html" />
     <link rel="prev" title="Tips" href="../tips.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../index.html" class="icon icon-home"> TorchANI
           
-
-          
+          <a href="../index.html" class="icon icon-home">
+            TorchANI
           </a>
-
-          
-            
-            
               <div class="version">
-                2.1.1
+                2.2.3
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../start.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tips.html">Tips</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Computing Energy and Force Using Models Inside Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
@@ -104,7 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
-<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<p class="caption" role="heading"><span class="caption-text">TorchANI's API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">TorchANI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.models">Model Zoo</a></li>
@@ -115,74 +73,37 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.units">Units</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">TorchANI</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html">Docs</a> &raquo;</li>
-        
-      <li>Computing Energy and Force Using Models Inside Model Zoo</li>
-    
-    
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Computing Energy and Force Using Models Inside Model Zoo</li>
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../_sources/examples/energy_force.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <div class="sphx-glr-download-link-note admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-energy-force-py"><span class="std std-ref">here</span></a>     to download the full example code</p>
+<p class="last"><a class="reference internal" href="#sphx-glr-download-examples-energy-force-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="computing-energy-and-force-using-models-inside-model-zoo">
-<span id="sphx-glr-examples-energy-force-py"></span><h1>Computing Energy and Force Using Models Inside Model Zoo<a class="headerlink" href="#computing-energy-and-force-using-models-inside-model-zoo" title="Permalink to this headline">¶</a></h1>
+<span id="sphx-glr-examples-energy-force-py"></span><h1>Computing Energy and Force Using Models Inside Model Zoo<a class="headerlink" href="#computing-energy-and-force-using-models-inside-model-zoo" title="Permalink to this heading">¶</a></h1>
 <p>TorchANI has a model zoo trained by NeuroChem. These models are shipped with
 TorchANI and can be used directly.</p>
 <p>To begin with, let’s first import the modules we will use:</p>
@@ -191,7 +112,7 @@ TorchANI and can be used directly.</p>
 </pre></div>
 </div>
 <p>Let’s now manually specify the device we want TorchANI to run:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <a href="https://pytorch.org/docs/master/cuda.html#torch.cuda.is_available" title="torch.cuda.is_available" class="sphx-glr-backref-module-torch-cuda sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">device</span></a><span class="p">(</span><span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <a href="https://pytorch.org/docs/master/generated/torch.cuda.is_available.html#torch.cuda.is_available" title="torch.cuda.is_available" class="sphx-glr-backref-module-torch-cuda sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Let’s now load the built-in ANI-1ccx models. The builtin ANI-1ccx contains 8
@@ -202,11 +123,10 @@ issue in your application.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">periodic_table_index</span></code> arguments tells TorchANI to use element index
 in periodic table to index species. If not specified, you need to use
 0, 1, 2, 3, … to index species</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI2x</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">ANI2x</span><span class="p">(</span><span class="n">periodic_table_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading ANI model parameters ...
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/torchani-2.2.3-py3.8.egg/torchani/resources/
 </pre></div>
 </div>
 <p>Now let’s define the coordinate and species. If you just want to compute the
@@ -225,14 +145,14 @@ training. If you have <code class="docutils literal notranslate"><span class="pr
                              <span class="p">[</span><span class="o">-</span><span class="mf">0.66518241</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.84461308</span><span class="p">,</span> <span class="mf">0.20759389</span><span class="p">],</span>
                              <span class="p">[</span><span class="mf">0.45554739</span><span class="p">,</span> <span class="mf">0.54289633</span><span class="p">,</span> <span class="mf">0.81170881</span><span class="p">],</span>
                              <span class="p">[</span><span class="mf">0.66091919</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.16799635</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.91037834</span><span class="p">]]],</span>
-                           <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+                           <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
 <span class="c1"># In periodic table, C = 6 and H = 1</span>
-<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now let’s compute energy and force:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy</span></a> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">))</span><span class="o">.</span><span class="n">energies</span>
-<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">derivative</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/autograd.html#torch.autograd.grad" title="torch.autograd.grad" class="sphx-glr-backref-module-torch-autograd sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy</span></a><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">derivative</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.autograd.grad.html#torch.autograd.grad" title="torch.autograd.grad" class="sphx-glr-backref-module-torch-autograd sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy</span></a><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">force</span></a> <span class="o">=</span> <span class="o">-</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">derivative</span></a>
 </pre></div>
 </div>
@@ -241,17 +161,40 @@ training. If you have <code class="docutils literal notranslate"><span class="pr
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">force</span></a><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.459790705366636
-Force: tensor([[ 0.0478, -0.1304, -0.0551],
-        [-0.1353,  0.1581, -0.0776],
-        [ 0.0804, -0.0388,  0.0387],
-        [ 0.0254,  0.0076,  0.0433],
-        [-0.0183,  0.0035,  0.0508]])
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.45979070350399
+Force: tensor([[ 0.048, -0.130, -0.055],
+        [-0.135,  0.158, -0.078],
+        [ 0.080, -0.039,  0.039],
+        [ 0.025,  0.008,  0.043],
+        [-0.018,  0.004,  0.051]])
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  6.016 seconds)</p>
-<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-energy-force-py">
+<p>you can also get the atomic energies (WARNING: these have no physical
+meaning) by calling:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">_</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">atomic_energies</span></a> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">atomic_energies</span></a><span class="p">((</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">))</span>
+</pre></div>
+</div>
+<p>this gives you the average (shifted) energies over all models of the ensemble by default,
+with the same shape as the coordinates. Dummy atoms, if present, will have an
+energy of zero</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Average Atomic energies, for species 6 1 1 1 1&#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">atomic_energies</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Average Atomic energies, for species 6 1 1 1 1 tensor([[-38.080,  -0.581,  -0.591,  -0.605,  -0.604]],
+       grad_fn=&lt;MeanBackward1&gt;)
+</pre></div>
+</div>
+<p>you can also access model specific atomic energies</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">_</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">atomic_energies</span></a> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">atomic_energies</span></a><span class="p">((</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">),</span> <span class="n">average</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Atomic energies of first model, for species 6 1 1 1 1&#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">atomic_energies</span></a><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Atomic energies of first model, for species 6 1 1 1 1 tensor([[-38.084,  -0.580,  -0.590,  -0.603,  -0.603]],
+       grad_fn=&lt;SliceBackward0&gt;)
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  4.259 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-energy-force-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <a class="reference download internal" download="" href="../_downloads/45cd52b8df9d781ce483dcbafddf1cd2/energy_force.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">energy_force.py</span></code></a></div>
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
@@ -262,51 +205,33 @@ Force: tensor([[ 0.0478, -0.1304, -0.0551],
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="ase_interface.html" class="btn btn-neutral float-right" title="Structure minimization and constant temperature MD using ASE interface" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="../tips.html" class="btn btn-neutral float-left" title="Tips" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../tips.html" class="btn btn-neutral float-left" title="Tips" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ase_interface.html" class="btn btn-neutral float-right" title="Structure minimization and constant temperature MD using ASE interface" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2018, Roitberg Group
-
-    </p>
+    <p>&#169; Copyright 2018, Roitberg Group.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

@@ -39,6 +39,7 @@ import os
 import math
 import torch.utils.tensorboard
 import tqdm
+import pickle
 
 # helper function to convert energy unit from Hartree to kcal/mol
 from torchani.units import hartree2kcalmol
@@ -95,9 +96,31 @@ except NameError:
 dspath = os.path.join(path, '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5')
 batch_size = 2560
 
-training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter, species_order).species_to_indices(species_order).shuffle().split(0.8, None)
-training = training.collate(batch_size).cache()
-validation = validation.collate(batch_size).cache()
+pickled_dataset_path = 'dataset.pkl'
+
+# We pickle the dataset after loading to ensure we use the same validation set
+# each time we restart training, otherwise we risk mixing the validation and
+# training sets on each restart.
+if os.path.isfile(pickled_dataset_path):
+    print(f'Unpickling preprocessed dataset found in {pickled_dataset_path}')
+    with open(pickled_dataset_path, 'rb') as f:
+        dataset = pickle.load(f)
+    training = dataset['training'].collate(batch_size).cache()
+    validation = dataset['validation'].collate(batch_size).cache()
+    energy_shifter.self_energies = dataset['self_energies'].to(device)
+else:
+    print(f'Processing dataset in {dspath}')
+    training, validation = torchani.data.load(dspath)\
+                                        .subtract_self_energies(energy_shifter, species_order)\
+                                        .species_to_indices(species_order)\
+                                        .shuffle()\
+                                        .split(0.8, None)
+    with open(pickled_dataset_path, 'wb') as f:
+        pickle.dump({'training': training,
+                     'validation': validation,
+                     'self_energies': energy_shifter.self_energies.cpu()}, f)
+    training = training.collate(batch_size).cache()
+    validation = validation.collate(batch_size).cache()
 print('Self atomic energies: ', energy_shifter.self_energies)
 
 ###############################################################################
@@ -271,13 +294,16 @@ def validate():
     mse_sum = torch.nn.MSELoss(reduction='sum')
     total_mse = 0.0
     count = 0
-    for properties in validation:
-        species = properties['species'].to(device)
-        coordinates = properties['coordinates'].to(device).float()
-        true_energies = properties['energies'].to(device).float()
-        _, predicted_energies = model((species, coordinates))
-        total_mse += mse_sum(predicted_energies, true_energies).item()
-        count += predicted_energies.shape[0]
+    model.train(False)
+    with torch.no_grad():
+        for properties in validation:
+            species = properties['species'].to(device)
+            coordinates = properties['coordinates'].to(device).float()
+            true_energies = properties['energies'].to(device).float()
+            _, predicted_energies = model((species, coordinates))
+            total_mse += mse_sum(predicted_energies, true_energies).item()
+            count += predicted_energies.shape[0]
+    model.train(True)
     return hartree2kcalmol(math.sqrt(total_mse / count))
 
 

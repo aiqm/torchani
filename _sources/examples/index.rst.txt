@@ -1,9 +1,5 @@
 :orphan:
 
-
-
-.. _sphx_glr_examples:
-
 ========
 Examples
 ========
@@ -12,24 +8,8 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI has a model zoo trained by NeuroChem. These models are shipped with TorchANI and can b...">
+    <div class="sphx-glr-thumbnails">
 
-.. only:: html
-
- .. figure:: /examples/images/thumb/sphx_glr_energy_force_thumb.png
-     :alt: Computing Energy and Force Using Models Inside Model Zoo
-
-     :ref:`sphx_glr_examples_energy_force.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /examples/energy_force
 
 .. raw:: html
 
@@ -37,10 +17,135 @@ Examples
 
 .. only:: html
 
- .. figure:: /examples/images/thumb/sphx_glr_ase_interface_thumb.png
-     :alt: Structure minimization and constant temperature MD using ASE interface
+  .. image:: /examples/images/thumb/sphx_glr_ase_interface_thumb.png
+    :alt:
 
-     :ref:`sphx_glr_examples_ase_interface.py`
+  :ref:`sphx_glr_examples_ase_interface.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Structure minimization and constant temperature MD using ASE interface</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI&#x27;s NeuroChem trainer to read and run NeuroChem&#x27;s training...">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_neurochem_trainer_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_neurochem_trainer.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Train Neural Network Potential From NeuroChem Input File</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI is able to use ASE interface to do structure optimization and vibration analysis, but ...">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_vibration_analysis_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_vibration_analysis.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Computing Vibrational Frequencies Using Analytical Hessian</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI has a model zoo trained by NeuroChem. These models are shipped with TorchANI and can b...">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_energy_force_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_energy_force.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Computing Energy and Force Using Models Inside Model Zoo</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This tutorial illustrates how to manually load model from `NeuroChem files`_.">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_load_from_neurochem_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_load_from_neurochem.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Construct Model From NeuroChem Files</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Models in TorchANI&#x27;s model zoo support TorchScript. TorchScript is a way to create serializable...">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_jit_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_jit.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Using TorchScript to serialize and deploy model</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI to train a neural network potential with the setup ident...">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_nnp_training_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_nnp_training.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Train Your Own Neural Network Potential</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="We have seen how to train a neural network potential by manually writing training loop in train...">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_nnp_training_force_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_nnp_training_force.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Train Neural Network Potential To Both Energies and Forces</div>
+    </div>
+
 
 .. raw:: html
 
@@ -51,153 +156,26 @@ Examples
    :hidden:
 
    /examples/ase_interface
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI&#x27;s NeuroChem trainer to read and run NeuroChem&#x27;s training...">
-
-.. only:: html
-
- .. figure:: /examples/images/thumb/sphx_glr_neurochem_trainer_thumb.png
-     :alt: Train Neural Network Potential From NeuroChem Input File
-
-     :ref:`sphx_glr_examples_neurochem_trainer.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
    /examples/neurochem_trainer
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="TorchANI is able to use ASE interface to do structure optimization and vibration analysis, but ...">
-
-.. only:: html
-
- .. figure:: /examples/images/thumb/sphx_glr_vibration_analysis_thumb.png
-     :alt: Computing Vibrational Frequencies Using Analytical Hessian
-
-     :ref:`sphx_glr_examples_vibration_analysis.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
    /examples/vibration_analysis
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This tutorial illustrates how to manually load model from `NeuroChem files`_.">
-
-.. only:: html
-
- .. figure:: /examples/images/thumb/sphx_glr_load_from_neurochem_thumb.png
-     :alt: Construct Model From NeuroChem Files
-
-     :ref:`sphx_glr_examples_load_from_neurochem.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
+   /examples/energy_force
    /examples/load_from_neurochem
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Models in TorchANI&#x27;s model zoo support TorchScript. TorchScript is a way to create serializable...">
-
-.. only:: html
-
- .. figure:: /examples/images/thumb/sphx_glr_jit_thumb.png
-     :alt: Using TorchScript to serialize and deploy model
-
-     :ref:`sphx_glr_examples_jit.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
    /examples/jit
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="This example shows how to use TorchANI to train a neural network potential with the setup ident...">
-
-.. only:: html
-
- .. figure:: /examples/images/thumb/sphx_glr_nnp_training_thumb.png
-     :alt: Train Your Own Neural Network Potential
-
-     :ref:`sphx_glr_examples_nnp_training.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
    /examples/nnp_training
+   /examples/nnp_training_force
 
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="We have seen how to train a neural network potential by manually writing training loop in train...">
 
 .. only:: html
 
- .. figure:: /examples/images/thumb/sphx_glr_nnp_training_force_thumb.png
-     :alt: Train Neural Network Potential To Both Energies and Forces
+  .. container:: sphx-glr-footer sphx-glr-footer-gallery
 
-     :ref:`sphx_glr_examples_nnp_training_force.py`
+    .. container:: sphx-glr-download sphx-glr-download-python
 
-.. raw:: html
+      :download:`Download all examples in Python source code: examples_python.zip </examples/examples_python.zip>`
 
-    </div>
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
 
-
-.. toctree::
-   :hidden:
-
-   /examples/nnp_training_force
-.. raw:: html
-
-    <div class="sphx-glr-clear"></div>
-
-
-
-.. only :: html
-
- .. container:: sphx-glr-footer
-    :class: sphx-glr-footer-gallery
-
-
-  .. container:: sphx-glr-download sphx-glr-download-python
-
-    :download:`Download all examples in Python source code: examples_python.zip <//home/runner/work/torchani/torchani/docs/examples/examples_python.zip>`
-
-
-
-  .. container:: sphx-glr-download sphx-glr-download-jupyter
-
-    :download:`Download all examples in Jupyter notebooks: examples_jupyter.zip <//home/runner/work/torchani/torchani/docs/examples/examples_jupyter.zip>`
+      :download:`Download all examples in Jupyter notebooks: examples_jupyter.zip </examples/examples_jupyter.zip>`
 
 
 .. only:: html

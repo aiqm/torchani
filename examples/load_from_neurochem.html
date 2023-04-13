@@ -1,99 +1,57 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html4" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Construct Model From NeuroChem Files &mdash; TorchANI 2.2.3 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>Construct Model From NeuroChem Files &mdash; TorchANI 2.1.1 documentation</title>
-  
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Train Your Own Neural Network Potential" href="nnp_training.html" />
     <link rel="prev" title="Computing Vibrational Frequencies Using Analytical Hessian" href="vibration_analysis.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../index.html" class="icon icon-home"> TorchANI
           
-
-          
+          <a href="../index.html" class="icon icon-home">
+            TorchANI
           </a>
-
-          
-            
-            
               <div class="version">
-                2.1.1
+                2.2.3
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../start.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tips.html">Tips</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
@@ -104,7 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
-<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<p class="caption" role="heading"><span class="caption-text">TorchANI's API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">TorchANI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.models">Model Zoo</a></li>
@@ -115,74 +73,37 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.units">Units</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">TorchANI</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html">Docs</a> &raquo;</li>
-        
-      <li>Construct Model From NeuroChem Files</li>
-    
-    
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Construct Model From NeuroChem Files</li>
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../_sources/examples/load_from_neurochem.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <div class="sphx-glr-download-link-note admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-load-from-neurochem-py"><span class="std std-ref">here</span></a>     to download the full example code</p>
+<p class="last"><a class="reference internal" href="#sphx-glr-download-examples-load-from-neurochem-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="construct-model-from-neurochem-files">
-<span id="sphx-glr-examples-load-from-neurochem-py"></span><h1>Construct Model From NeuroChem Files<a class="headerlink" href="#construct-model-from-neurochem-files" title="Permalink to this headline">¶</a></h1>
+<span id="sphx-glr-examples-load-from-neurochem-py"></span><h1>Construct Model From NeuroChem Files<a class="headerlink" href="#construct-model-from-neurochem-files" title="Permalink to this heading">¶</a></h1>
 <p>This tutorial illustrates how to manually load model from <a class="reference external" href="https://github.com/isayev/ASE_ANI/tree/master/ani_models">NeuroChem files</a>.</p>
 <p>To begin with, let’s first import the modules we will use:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
@@ -226,277 +147,10 @@ From using either the ensemble or a single model:</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">nnp2</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Sequential(
   (0): AEVComputer()
   (1): Ensemble(
-    (0): ANIModel(
-      (H): Sequential(
-        (0): Linear(in_features=384, out_features=160, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=160, out_features=128, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=128, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (C): Sequential(
-        (0): Linear(in_features=384, out_features=144, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=144, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (N): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (O): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-    )
-    (1): ANIModel(
-      (H): Sequential(
-        (0): Linear(in_features=384, out_features=160, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=160, out_features=128, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=128, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (C): Sequential(
-        (0): Linear(in_features=384, out_features=144, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=144, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (N): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (O): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-    )
-    (2): ANIModel(
-      (H): Sequential(
-        (0): Linear(in_features=384, out_features=160, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=160, out_features=128, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=128, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (C): Sequential(
-        (0): Linear(in_features=384, out_features=144, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=144, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (N): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (O): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-    )
-    (3): ANIModel(
-      (H): Sequential(
-        (0): Linear(in_features=384, out_features=160, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=160, out_features=128, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=128, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (C): Sequential(
-        (0): Linear(in_features=384, out_features=144, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=144, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (N): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (O): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-    )
-    (4): ANIModel(
-      (H): Sequential(
-        (0): Linear(in_features=384, out_features=160, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=160, out_features=128, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=128, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (C): Sequential(
-        (0): Linear(in_features=384, out_features=144, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=144, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (N): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (O): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-    )
-    (5): ANIModel(
-      (H): Sequential(
-        (0): Linear(in_features=384, out_features=160, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=160, out_features=128, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=128, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (C): Sequential(
-        (0): Linear(in_features=384, out_features=144, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=144, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (N): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (O): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-    )
-    (6): ANIModel(
-      (H): Sequential(
-        (0): Linear(in_features=384, out_features=160, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=160, out_features=128, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=128, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (C): Sequential(
-        (0): Linear(in_features=384, out_features=144, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=144, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (N): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-      (O): Sequential(
-        (0): Linear(in_features=384, out_features=128, bias=True)
-        (1): CELU(alpha=0.1)
-        (2): Linear(in_features=128, out_features=112, bias=True)
-        (3): CELU(alpha=0.1)
-        (4): Linear(in_features=112, out_features=96, bias=True)
-        (5): CELU(alpha=0.1)
-        (6): Linear(in_features=96, out_features=1, bias=True)
-      )
-    )
-    (7): ANIModel(
+    (0-7): 8 x ANIModel(
       (H): Sequential(
         (0): Linear(in_features=384, out_features=160, bias=True)
         (1): CELU(alpha=0.1)
@@ -588,9 +242,8 @@ Sequential(
 <span class="nb">print</span><span class="p">(</span><span class="n">calculator1</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.ase.Calculator object at 0x7f340a68fa90&gt;
-&lt;torchani.ase.Calculator object at 0x7f340a68fa90&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.ase.Calculator object at 0x7f691d6df640&gt;
+&lt;torchani.ase.Calculator object at 0x7f691d6df640&gt;
 </pre></div>
 </div>
 <p>Now let’s define a methane molecule</p>
@@ -606,14 +259,13 @@ Sequential(
 </div>
 <p>Now let’s compute energies using the ensemble directly:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy</span></a> <span class="o">=</span> <span class="n">nnp1</span><span class="p">((</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">))</span><span class="o">.</span><span class="n">energies</span>
-<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">derivative</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/autograd.html#torch.autograd.grad" title="torch.autograd.grad" class="sphx-glr-backref-module-torch-autograd sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy</span></a><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">derivative</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.autograd.grad.html#torch.autograd.grad" title="torch.autograd.grad" class="sphx-glr-backref-module-torch-autograd sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy</span></a><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">force</span></a> <span class="o">=</span> <span class="o">-</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">derivative</span></a>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy</span></a><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">force</span></a><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.459022101999686
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.45902210758762
 Force: tensor([[ 0.031, -0.132, -0.053],
         [-0.129,  0.164, -0.077],
         [ 0.086, -0.043,  0.041],
@@ -627,18 +279,17 @@ Force: tensor([[ 0.031, -0.132, -0.053],
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <a href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#ase.Atoms.get_forces" title="ase.Atoms.get_forces" class="sphx-glr-backref-module-ase sphx-glr-backref-type-py-method"><span class="n">methane</span><span class="o">.</span><span class="n">get_forces</span></a><span class="p">()</span> <span class="o">/</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ase</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">Hartree</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.459022101999686
-Force: [[ 0.03062527 -0.13160461 -0.05265211]
- [-0.12927504  0.16388634 -0.07736802]
- [ 0.08563144 -0.04288924  0.04082094]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.45902210758762
+Force: [[ 0.03062528 -0.13160461 -0.05265211]
+ [-0.12927507  0.16388635 -0.07736803]
+ [ 0.08563145 -0.04288925  0.04082095]
  [ 0.02681219  0.00601404  0.03809873]
- [-0.01379385  0.00459347  0.05110046]]
+ [-0.01379385  0.00459347  0.05110047]]
 </pre></div>
 </div>
 <p>We can do the same thing with the single model:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy</span></a> <span class="o">=</span> <span class="n">nnp2</span><span class="p">((</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">))</span><span class="o">.</span><span class="n">energies</span>
-<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">derivative</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/autograd.html#torch.autograd.grad" title="torch.autograd.grad" class="sphx-glr-backref-module-torch-autograd sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy</span></a><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">derivative</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.autograd.grad.html#torch.autograd.grad" title="torch.autograd.grad" class="sphx-glr-backref-module-torch-autograd sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy</span></a><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">force</span></a> <span class="o">=</span> <span class="o">-</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">derivative</span></a>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Energy:&#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy</span></a><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">force</span></a><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
@@ -648,7 +299,6 @@ Force: [[ 0.03062527 -0.13160461 -0.05265211]
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Force:&#39;</span><span class="p">,</span> <a href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#ase.Atoms.get_forces" title="ase.Atoms.get_forces" class="sphx-glr-backref-module-ase sphx-glr-backref-type-py-method"><span class="n">methane</span><span class="o">.</span><span class="n">get_forces</span></a><span class="p">()</span> <span class="o">/</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ase</span><span class="o">.</span><span class="n">units</span><span class="o">.</span><span class="n">Hartree</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Energy: -40.46280037151413
 Force: tensor([[ 0.056, -0.127, -0.054],
         [-0.140,  0.155, -0.075],
@@ -656,15 +306,15 @@ Force: tensor([[ 0.056, -0.127, -0.054],
         [ 0.024,  0.002,  0.033],
         [-0.016,  0.007,  0.057]])
 Energy: -40.46280037151413
-Force: [[ 0.05614965 -0.1269716  -0.05413404]
- [-0.14007527  0.15523373 -0.07533834]
- [ 0.0753209  -0.03744108  0.03949668]
- [ 0.02423099  0.00235087  0.03344228]
+Force: [[ 0.05614968 -0.12697159 -0.05413406]
+ [-0.1400753   0.15523373 -0.07533834]
+ [ 0.0753209  -0.0374411   0.03949669]
+ [ 0.02423098  0.00235087  0.03344228]
  [-0.01562626  0.00682809  0.05653343]]
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  2.017 seconds)</p>
-<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-load-from-neurochem-py">
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  1.601 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-load-from-neurochem-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <a class="reference download internal" download="" href="../_downloads/6e47da231026b2cca4300c62c515ca96/load_from_neurochem.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">load_from_neurochem.py</span></code></a></div>
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
@@ -675,51 +325,33 @@ Force: [[ 0.05614965 -0.1269716  -0.05413404]
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="nnp_training.html" class="btn btn-neutral float-right" title="Train Your Own Neural Network Potential" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="vibration_analysis.html" class="btn btn-neutral float-left" title="Computing Vibrational Frequencies Using Analytical Hessian" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="vibration_analysis.html" class="btn btn-neutral float-left" title="Computing Vibrational Frequencies Using Analytical Hessian" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="nnp_training.html" class="btn btn-neutral float-right" title="Train Your Own Neural Network Potential" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2018, Roitberg Group
-
-    </p>
+    <p>&#169; Copyright 2018, Roitberg Group.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

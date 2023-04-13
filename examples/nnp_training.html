@@ -1,99 +1,57 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html4" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Train Your Own Neural Network Potential &mdash; TorchANI 2.2.3 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>Train Your Own Neural Network Potential &mdash; TorchANI 2.1.1 documentation</title>
-  
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script src="../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Train Neural Network Potential To Both Energies and Forces" href="nnp_training_force.html" />
     <link rel="prev" title="Construct Model From NeuroChem Files" href="load_from_neurochem.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../index.html" class="icon icon-home"> TorchANI
           
-
-          
+          <a href="../index.html" class="icon icon-home">
+            TorchANI
           </a>
-
-          
-            
-            
               <div class="version">
-                2.1.1
+                2.2.3
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../start.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tips.html">Tips</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
@@ -104,7 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
-<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<p class="caption" role="heading"><span class="caption-text">TorchANI's API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">TorchANI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.models">Model Zoo</a></li>
@@ -115,74 +73,37 @@
 <li class="toctree-l1"><a class="reference internal" href="../api.html#module-torchani.units">Units</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">TorchANI</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../index.html">Docs</a> &raquo;</li>
-        
-      <li>Train Your Own Neural Network Potential</li>
-    
-    
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Train Your Own Neural Network Potential</li>
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../_sources/examples/nnp_training.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <div class="sphx-glr-download-link-note admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Click <a class="reference internal" href="#sphx-glr-download-examples-nnp-training-py"><span class="std std-ref">here</span></a>     to download the full example code</p>
+<p class="last"><a class="reference internal" href="#sphx-glr-download-examples-nnp-training-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code</p>
 </div>
 <div class="sphx-glr-example-title section" id="train-your-own-neural-network-potential">
-<span id="training-example"></span><span id="sphx-glr-examples-nnp-training-py"></span><h1>Train Your Own Neural Network Potential<a class="headerlink" href="#train-your-own-neural-network-potential" title="Permalink to this headline">¶</a></h1>
+<span id="training-example"></span><span id="sphx-glr-examples-nnp-training-py"></span><h1>Train Your Own Neural Network Potential<a class="headerlink" href="#train-your-own-neural-network-potential" title="Permalink to this heading">¶</a></h1>
 <p>This example shows how to use TorchANI to train a neural network potential
 with the setup identical to NeuroChem. We will use the same configuration as
 specified in <a class="reference external" href="https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/inputtrain.ipt">inputtrain.ipt</a></p>
@@ -209,12 +130,13 @@ they should setup their models.</p>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">torch.utils.tensorboard</span>
 <span class="kn">import</span> <span class="nn">tqdm</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
 
 <span class="c1"># helper function to convert energy unit from Hartree to kcal/mol</span>
 <span class="kn">from</span> <span class="nn">torchani.units</span> <span class="kn">import</span> <span class="n">hartree2kcalmol</span>
 
 <span class="c1"># device to run the training</span>
-<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <a href="https://pytorch.org/docs/master/cuda.html#torch.cuda.is_available" title="torch.cuda.is_available" class="sphx-glr-backref-module-torch-cuda sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">device</span></a><span class="p">(</span><span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <a href="https://pytorch.org/docs/master/generated/torch.cuda.is_available.html#torch.cuda.is_available" title="torch.cuda.is_available" class="sphx-glr-backref-module-torch-cuda sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now let’s setup constants and construct an AEV computer. These numbers could
@@ -229,12 +151,12 @@ is provided as an argument to the object of <code class="xref py py-class docuti
 </div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">Rcr</span></a> <span class="o">=</span> <span class="mf">5.2000e+00</span>
 <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">Rca</span></a> <span class="o">=</span> <span class="mf">3.5000e+00</span>
-<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">EtaR</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([</span><span class="mf">1.6000000e+01</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
-<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ShfR</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([</span><span class="mf">9.0000000e-01</span><span class="p">,</span> <span class="mf">1.1687500e+00</span><span class="p">,</span> <span class="mf">1.4375000e+00</span><span class="p">,</span> <span class="mf">1.7062500e+00</span><span class="p">,</span> <span class="mf">1.9750000e+00</span><span class="p">,</span> <span class="mf">2.2437500e+00</span><span class="p">,</span> <span class="mf">2.5125000e+00</span><span class="p">,</span> <span class="mf">2.7812500e+00</span><span class="p">,</span> <span class="mf">3.0500000e+00</span><span class="p">,</span> <span class="mf">3.3187500e+00</span><span class="p">,</span> <span class="mf">3.5875000e+00</span><span class="p">,</span> <span class="mf">3.8562500e+00</span><span class="p">,</span> <span class="mf">4.1250000e+00</span><span class="p">,</span> <span class="mf">4.3937500e+00</span><span class="p">,</span> <span class="mf">4.6625000e+00</span><span class="p">,</span> <span class="mf">4.9312500e+00</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
-<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">Zeta</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([</span><span class="mf">3.2000000e+01</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
-<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ShfZ</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([</span><span class="mf">1.9634954e-01</span><span class="p">,</span> <span class="mf">5.8904862e-01</span><span class="p">,</span> <span class="mf">9.8174770e-01</span><span class="p">,</span> <span class="mf">1.3744468e+00</span><span class="p">,</span> <span class="mf">1.7671459e+00</span><span class="p">,</span> <span class="mf">2.1598449e+00</span><span class="p">,</span> <span class="mf">2.5525440e+00</span><span class="p">,</span> <span class="mf">2.9452431e+00</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
-<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">EtaA</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([</span><span class="mf">8.0000000e+00</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
-<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ShfA</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([</span><span class="mf">9.0000000e-01</span><span class="p">,</span> <span class="mf">1.5500000e+00</span><span class="p">,</span> <span class="mf">2.2000000e+00</span><span class="p">,</span> <span class="mf">2.8500000e+00</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">EtaR</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([</span><span class="mf">1.6000000e+01</span><span class="p">],</span> <a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ShfR</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([</span><span class="mf">9.0000000e-01</span><span class="p">,</span> <span class="mf">1.1687500e+00</span><span class="p">,</span> <span class="mf">1.4375000e+00</span><span class="p">,</span> <span class="mf">1.7062500e+00</span><span class="p">,</span> <span class="mf">1.9750000e+00</span><span class="p">,</span> <span class="mf">2.2437500e+00</span><span class="p">,</span> <span class="mf">2.5125000e+00</span><span class="p">,</span> <span class="mf">2.7812500e+00</span><span class="p">,</span> <span class="mf">3.0500000e+00</span><span class="p">,</span> <span class="mf">3.3187500e+00</span><span class="p">,</span> <span class="mf">3.5875000e+00</span><span class="p">,</span> <span class="mf">3.8562500e+00</span><span class="p">,</span> <span class="mf">4.1250000e+00</span><span class="p">,</span> <span class="mf">4.3937500e+00</span><span class="p">,</span> <span class="mf">4.6625000e+00</span><span class="p">,</span> <span class="mf">4.9312500e+00</span><span class="p">],</span> <a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">Zeta</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([</span><span class="mf">3.2000000e+01</span><span class="p">],</span> <a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ShfZ</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([</span><span class="mf">1.9634954e-01</span><span class="p">,</span> <span class="mf">5.8904862e-01</span><span class="p">,</span> <span class="mf">9.8174770e-01</span><span class="p">,</span> <span class="mf">1.3744468e+00</span><span class="p">,</span> <span class="mf">1.7671459e+00</span><span class="p">,</span> <span class="mf">2.1598449e+00</span><span class="p">,</span> <span class="mf">2.5525440e+00</span><span class="p">,</span> <span class="mf">2.9452431e+00</span><span class="p">],</span> <a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">EtaA</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([</span><span class="mf">8.0000000e+00</span><span class="p">],</span> <a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
+<a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ShfA</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.tensor.html#torch.tensor" title="torch.tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span></a><span class="p">([</span><span class="mf">9.0000000e-01</span><span class="p">,</span> <span class="mf">1.5500000e+00</span><span class="p">,</span> <span class="mf">2.2000000e+00</span><span class="p">,</span> <span class="mf">2.8500000e+00</span><span class="p">],</span> <a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species_order</span></a> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;N&#39;</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span><span class="p">]</span>
 <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_species</span></a> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species_order</span></a><span class="p">)</span>
 <span class="n">aev_computer</span> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">torchani</span><span class="o">.</span><span class="n">AEVComputer</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">Rcr</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">Rca</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">EtaR</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ShfR</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">EtaA</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">Zeta</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ShfA</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ShfZ</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_species</span></a><span class="p">)</span>
@@ -257,24 +179,46 @@ to tensor, that is, for all supported chemical symbols, which is correspond to
 <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dspath</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/os.path.html#os.path.join" title="os.path.join" class="sphx-glr-backref-module-os-path sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">path</span></a><span class="p">,</span> <span class="s1">&#39;../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5&#39;</span><span class="p">)</span>
 <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a> <span class="o">=</span> <span class="mi">2560</span>
 
-<span class="n">training</span><span class="p">,</span> <span class="n">validation</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dspath</span></a><span class="p">)</span><span class="o">.</span><span class="n">subtract_self_energies</span><span class="p">(</span><span class="n">energy_shifter</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species_order</span></a><span class="p">)</span><span class="o">.</span><span class="n">species_to_indices</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species_order</span></a><span class="p">)</span><span class="o">.</span><span class="n">shuffle</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-<span class="n">training</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
-<span class="n">validation</span> <span class="o">=</span> <span class="n">validation</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">pickled_dataset_path</span></a> <span class="o">=</span> <span class="s1">&#39;dataset.pkl&#39;</span>
+
+<span class="c1"># We pickle the dataset after loading to ensure we use the same validation set</span>
+<span class="c1"># each time we restart training, otherwise we risk mixing the validation and</span>
+<span class="c1"># training sets on each restart.</span>
+<span class="k">if</span> <a href="https://docs.python.org/3/library/os.path.html#os.path.isfile" title="os.path.isfile" class="sphx-glr-backref-module-os-path sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">pickled_dataset_path</span></a><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unpickling preprocessed dataset found in </span><span class="si">{</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">pickled_dataset_path</span></a><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">pickled_dataset_path</span></a><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <a href="https://docs.python.org/3/library/io.html#io.BufferedWriter" title="io.BufferedWriter" class="sphx-glr-backref-module-io sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f</span></a><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <a href="https://docs.python.org/3/library/pickle.html#pickle.load" title="pickle.load" class="sphx-glr-backref-module-pickle sphx-glr-backref-type-py-function"><span class="n">pickle</span><span class="o">.</span><span class="n">load</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/io.html#io.BufferedWriter" title="io.BufferedWriter" class="sphx-glr-backref-module-io sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f</span></a><span class="p">)</span>
+    <span class="n">training</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;training&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+    <span class="n">validation</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;validation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+    <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy_shifter</span><span class="o">.</span><span class="n">self_energies</span></a> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;self_energies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Processing dataset in </span><span class="si">{</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dspath</span></a><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">training</span><span class="p">,</span> <span class="n">validation</span> <span class="o">=</span> <span class="n">torchani</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">dspath</span></a><span class="p">)</span>\
+                                        <span class="o">.</span><span class="n">subtract_self_energies</span><span class="p">(</span><span class="n">energy_shifter</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species_order</span></a><span class="p">)</span>\
+                                        <span class="o">.</span><span class="n">species_to_indices</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species_order</span></a><span class="p">)</span>\
+                                        <span class="o">.</span><span class="n">shuffle</span><span class="p">()</span>\
+                                        <span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">pickled_dataset_path</span></a><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <a href="https://docs.python.org/3/library/io.html#io.BufferedWriter" title="io.BufferedWriter" class="sphx-glr-backref-module-io sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f</span></a><span class="p">:</span>
+        <a href="https://docs.python.org/3/library/pickle.html#pickle.dump" title="pickle.dump" class="sphx-glr-backref-module-pickle sphx-glr-backref-type-py-function"><span class="n">pickle</span><span class="o">.</span><span class="n">dump</span></a><span class="p">({</span><span class="s1">&#39;training&#39;</span><span class="p">:</span> <span class="n">training</span><span class="p">,</span>
+                     <span class="s1">&#39;validation&#39;</span><span class="p">:</span> <span class="n">validation</span><span class="p">,</span>
+                     <span class="s1">&#39;self_energies&#39;</span><span class="p">:</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy_shifter</span><span class="o">.</span><span class="n">self_energies</span></a><span class="o">.</span><span class="n">cpu</span><span class="p">()},</span> <a href="https://docs.python.org/3/library/io.html#io.BufferedWriter" title="io.BufferedWriter" class="sphx-glr-backref-module-io sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">f</span></a><span class="p">)</span>
+    <span class="n">training</span> <span class="o">=</span> <span class="n">training</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+    <span class="n">validation</span> <span class="o">=</span> <span class="n">validation</span><span class="o">.</span><span class="n">collate</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">batch_size</span></a><span class="p">)</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Self atomic energies: &#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">energy_shifter</span><span class="o">.</span><span class="n">self_energies</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>=&gt; loading /home/runner/work/torchani/torchani/examples/../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5, total molecules: 1
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Processing dataset in /home/runner/work/torchani/torchani/examples/../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5
+=&gt; loading /home/runner/work/torchani/torchani/examples/../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5, total molecules: 1
 
 1/1  [==============================] - 0.0s
 
-2/1  [============================================================] - 0.1s
+2/1  [============================================================] - 0.0s
 3/1  [==========================================================================================] - 0.1s=&gt; loading /home/runner/work/torchani/torchani/examples/../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5, total molecules: 1
 
 1/1  [==============================] - 0.0s
 
-2/1  [============================================================] - 0.1s
-3/1  [==========================================================================================] - 0.1sSelf atomic energies:  tensor([-16.140,  24.082,  -8.092, -44.095], dtype=torch.float64)
+2/1  [============================================================] - 0.0s
+3/1  [==========================================================================================] - 0.0sSelf atomic energies:  tensor([-16.140,  24.082,  -8.092, -44.095], dtype=torch.float64)
 </pre></div>
 </div>
 <p>When iterating the dataset, we will get a dict of name-&gt;property mapping</p>
@@ -324,7 +268,6 @@ to tensor, that is, for all supported chemical symbols, which is correspond to
 <span class="nb">print</span><span class="p">(</span><span class="n">nn</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>ANIModel(
   (0): Sequential(
     (0): Linear(in_features=384, out_features=160, bias=True)
@@ -382,7 +325,6 @@ The biases were initialized to zero.</p>
 <a href="https://pytorch.org/docs/master/generated/torch.nn.Module.html#torch.nn.Module.apply" title="torch.nn.Module.apply" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-method"><span class="n">nn</span><span class="o">.</span><span class="n">apply</span></a><span class="p">(</span><span class="n">init_params</span><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>ANIModel(
   (0): Sequential(
     (0): Linear(in_features=384, out_features=160, bias=True)
@@ -424,7 +366,7 @@ The biases were initialized to zero.</p>
 </pre></div>
 </div>
 <p>Let’s now create a pipeline of AEV Computer –&gt; Neural Networks.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.nn.ModuleList.html#torch.nn.ModuleList" title="torch.nn.ModuleList" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">torchani</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span></a><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">nn</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.nn.ModuleList.html#torch.nn.ModuleList" title="torch.nn.ModuleList" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">torchani</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span></a><span class="p">(</span><span class="n">aev_computer</span><span class="p">,</span> <span class="n">nn</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now let’s setup the optimizers. NeuroChem uses Adam with decoupled weight decay
@@ -438,7 +380,7 @@ mistake in deep learning.  See: <a class="reference external" href="https://arxi
 Also note that the weight decay only applies to weight in the training
 of ANI models, not bias.</p>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/optim.html#torch.optim.AdamW" title="torch.optim.AdamW" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/optim.html#torch.optim.AdamW" title="torch.optim.AdamW" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">AdamW</span></a><span class="p">([</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/generated/torch.optim.AdamW.html#torch.optim.AdamW" title="torch.optim.AdamW" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.optim.AdamW.html#torch.optim.AdamW" title="torch.optim.AdamW" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">AdamW</span></a><span class="p">([</span>
     <span class="c1"># H networks</span>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><a href="https://pytorch.org/docs/master/generated/torch.nn.Sequential.html#torch.nn.Sequential" title="torch.nn.Sequential" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">H_network</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">]},</span>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><a href="https://pytorch.org/docs/master/generated/torch.nn.Sequential.html#torch.nn.Sequential" title="torch.nn.Sequential" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">H_network</span></a><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">],</span> <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.00001</span><span class="p">},</span>
@@ -461,7 +403,7 @@ of ANI models, not bias.</p>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><a href="https://pytorch.org/docs/master/generated/torch.nn.Sequential.html#torch.nn.Sequential" title="torch.nn.Sequential" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">O_network</span></a><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">weight</span><span class="p">]},</span>
 <span class="p">])</span>
 
-<a href="https://pytorch.org/docs/master/optim.html#torch.optim.SGD" title="torch.optim.SGD" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">SGD</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/optim.html#torch.optim.SGD" title="torch.optim.SGD" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span></a><span class="p">([</span>
+<a href="https://pytorch.org/docs/master/generated/torch.optim.SGD.html#torch.optim.SGD" title="torch.optim.SGD" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">SGD</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.optim.SGD.html#torch.optim.SGD" title="torch.optim.SGD" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span></a><span class="p">([</span>
     <span class="c1"># H networks</span>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><a href="https://pytorch.org/docs/master/generated/torch.nn.Sequential.html#torch.nn.Sequential" title="torch.nn.Sequential" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">H_network</span></a><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
     <span class="p">{</span><span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">[</span><a href="https://pytorch.org/docs/master/generated/torch.nn.Sequential.html#torch.nn.Sequential" title="torch.nn.Sequential" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">H_network</span></a><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">bias</span><span class="p">]},</span>
@@ -486,8 +428,8 @@ of ANI models, not bias.</p>
 </pre></div>
 </div>
 <p>Setting up a learning rate scheduler to do learning rate decay</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/optim.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/optim.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">ReduceLROnPlateau</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/optim.html#torch.optim.AdamW" title="torch.optim.AdamW" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW</span></a><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">patience</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<a href="https://pytorch.org/docs/master/optim.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">SGD_scheduler</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/optim.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">ReduceLROnPlateau</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/optim.html#torch.optim.SGD" title="torch.optim.SGD" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">SGD</span></a><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">patience</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">ReduceLROnPlateau</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/generated/torch.optim.AdamW.html#torch.optim.AdamW" title="torch.optim.AdamW" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW</span></a><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">patience</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<a href="https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">SGD_scheduler</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">ReduceLROnPlateau</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/generated/torch.optim.SGD.html#torch.optim.SGD" title="torch.optim.SGD" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">SGD</span></a><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">patience</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Train the model by minimizing the MSE loss, until validation RMSE no longer
@@ -502,10 +444,10 @@ to store current training state.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <a href="https://docs.python.org/3/library/os.path.html#os.path.isfile" title="os.path.isfile" class="sphx-glr-backref-module-os-path sphx-glr-backref-type-py-function"><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">latest_checkpoint</span></a><span class="p">):</span>
     <span class="n">checkpoint</span> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.load.html#torch.load" title="torch.load" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">load</span></a><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">latest_checkpoint</span></a><span class="p">)</span>
     <a href="https://pytorch.org/docs/master/generated/torch.nn.Module.html#torch.nn.Module.load_state_dict" title="torch.nn.Module.load_state_dict" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-method"><span class="n">nn</span><span class="o">.</span><span class="n">load_state_dict</span></a><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;nn&#39;</span><span class="p">])</span>
-    <a href="https://pytorch.org/docs/master/optim.html#torch.optim.Optimizer.load_state_dict" title="torch.optim.Optimizer.load_state_dict" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">AdamW</span><span class="o">.</span><span class="n">load_state_dict</span></a><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;AdamW&#39;</span><span class="p">])</span>
-    <a href="https://pytorch.org/docs/master/optim.html#torch.optim.Optimizer.load_state_dict" title="torch.optim.Optimizer.load_state_dict" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">SGD</span><span class="o">.</span><span class="n">load_state_dict</span></a><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;SGD&#39;</span><span class="p">])</span>
-    <a href="https://pytorch.org/docs/master/optim.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span></a><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;AdamW_scheduler&#39;</span><span class="p">])</span>
-    <a href="https://pytorch.org/docs/master/optim.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">SGD_scheduler</span></a><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;SGD_scheduler&#39;</span><span class="p">])</span>
+    <a href="https://pytorch.org/docs/master/generated/torch.optim.AdamW.html#torch.optim.AdamW.load_state_dict" title="torch.optim.AdamW.load_state_dict" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">AdamW</span><span class="o">.</span><span class="n">load_state_dict</span></a><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;AdamW&#39;</span><span class="p">])</span>
+    <a href="https://pytorch.org/docs/master/generated/torch.optim.SGD.html#torch.optim.SGD.load_state_dict" title="torch.optim.SGD.load_state_dict" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">SGD</span><span class="o">.</span><span class="n">load_state_dict</span></a><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;SGD&#39;</span><span class="p">])</span>
+    <a href="https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span></a><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;AdamW_scheduler&#39;</span><span class="p">])</span>
+    <a href="https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">SGD_scheduler</span></a><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;SGD_scheduler&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>During training, we need to validate on validation set and if validation error
@@ -515,18 +457,21 @@ is better than the best, then save the new best model to a checkpoint</p>
     <span class="n">mse_sum</span> <span class="o">=</span> <a href="https://pytorch.org/docs/master/generated/torch.nn.MSELoss.html#torch.nn.MSELoss" title="torch.nn.MSELoss" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span></a><span class="p">(</span><span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">)</span>
     <span class="n">total_mse</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a> <span class="ow">in</span> <span class="n">validation</span><span class="p">:</span>
-        <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-        <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a><span class="p">[</span><span class="s1">&#39;coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
-        <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">true_energies</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
-        <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">_</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">predicted_energies</span></a> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">))</span>
-        <span class="n">total_mse</span> <span class="o">+=</span> <span class="n">mse_sum</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">predicted_energies</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">true_energies</span></a><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-        <span class="n">count</span> <span class="o">+=</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">predicted_energies</span></a><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <a href="https://pytorch.org/docs/master/generated/torch.nn.Module.html#torch.nn.Module.train" title="torch.nn.Module.train" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-method"><span class="n">model</span><span class="o">.</span><span class="n">train</span></a><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">with</span> <a href="https://pytorch.org/docs/master/generated/torch.no_grad.html#torch.no_grad" title="torch.no_grad" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span></a><span class="p">():</span>
+        <span class="k">for</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a> <span class="ow">in</span> <span class="n">validation</span><span class="p">:</span>
+            <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
+            <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a><span class="p">[</span><span class="s1">&#39;coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+            <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">true_energies</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+            <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">_</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">predicted_energies</span></a> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">))</span>
+            <span class="n">total_mse</span> <span class="o">+=</span> <span class="n">mse_sum</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">predicted_energies</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">true_energies</span></a><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">count</span> <span class="o">+=</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">predicted_energies</span></a><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <a href="https://pytorch.org/docs/master/generated/torch.nn.Module.html#torch.nn.Module.train" title="torch.nn.Module.train" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-method"><span class="n">model</span><span class="o">.</span><span class="n">train</span></a><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">hartree2kcalmol</span><span class="p">(</span><a href="https://docs.python.org/3/library/math.html#math.sqrt" title="math.sqrt" class="sphx-glr-backref-module-math sphx-glr-backref-type-py-function"><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span></a><span class="p">(</span><span class="n">total_mse</span> <span class="o">/</span> <span class="n">count</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>We will also use TensorBoard to visualize our training process</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tensorboard</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">SummaryWriter</span><span class="p">()</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://pytorch.org/docs/master/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter" title="torch.utils.tensorboard.writer.SummaryWriter" class="sphx-glr-backref-module-torch-utils-tensorboard-writer sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">tensorboard</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/master/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter" title="torch.utils.tensorboard.writer.SummaryWriter" class="sphx-glr-backref-module-torch-utils-tensorboard-writer sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">tensorboard</span><span class="o">.</span><span class="n">SummaryWriter</span></a><span class="p">()</span>
 </pre></div>
 </div>
 <p>Finally, we come to the training loop.</p>
@@ -550,125 +495,115 @@ set to a much larger value</p>
         <span class="k">break</span>
 
     <span class="c1"># checkpoint</span>
-    <span class="k">if</span> <a href="https://pytorch.org/docs/master/optim.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span></a><span class="o">.</span><span class="n">is_better</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">rmse</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">best</span></a><span class="p">):</span>
+    <span class="k">if</span> <a href="https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span></a><span class="o">.</span><span class="n">is_better</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">rmse</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">best</span></a><span class="p">):</span>
         <a href="https://pytorch.org/docs/master/generated/torch.save.html#torch.save" title="torch.save" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">save</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/generated/torch.nn.Module.html#torch.nn.Module.state_dict" title="torch.nn.Module.state_dict" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-method"><span class="n">nn</span><span class="o">.</span><span class="n">state_dict</span></a><span class="p">(),</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">best_model_checkpoint</span></a><span class="p">)</span>
 
-    <a href="https://pytorch.org/docs/master/optim.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span></a><span class="o">.</span><span class="n">step</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">rmse</span></a><span class="p">)</span>
-    <a href="https://pytorch.org/docs/master/optim.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">SGD_scheduler</span></a><span class="o">.</span><span class="n">step</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">rmse</span></a><span class="p">)</span>
+    <a href="https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span></a><span class="o">.</span><span class="n">step</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">rmse</span></a><span class="p">)</span>
+    <a href="https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">SGD_scheduler</span></a><span class="o">.</span><span class="n">step</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">rmse</span></a><span class="p">)</span>
 
-    <span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;validation_rmse&#39;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">rmse</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span></a><span class="p">)</span>
-    <span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;best_validation_rmse&#39;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">best</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span></a><span class="p">)</span>
-    <span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">learning_rate</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span></a><span class="p">)</span>
+    <a href="https://pytorch.org/docs/master/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter.add_scalar" title="torch.utils.tensorboard.writer.SummaryWriter.add_scalar" class="sphx-glr-backref-module-torch-utils-tensorboard-writer sphx-glr-backref-type-py-method"><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span></a><span class="p">(</span><span class="s1">&#39;validation_rmse&#39;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">rmse</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span></a><span class="p">)</span>
+    <a href="https://pytorch.org/docs/master/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter.add_scalar" title="torch.utils.tensorboard.writer.SummaryWriter.add_scalar" class="sphx-glr-backref-module-torch-utils-tensorboard-writer sphx-glr-backref-type-py-method"><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span></a><span class="p">(</span><span class="s1">&#39;best_validation_rmse&#39;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">best</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span></a><span class="p">)</span>
+    <a href="https://pytorch.org/docs/master/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter.add_scalar" title="torch.utils.tensorboard.writer.SummaryWriter.add_scalar" class="sphx-glr-backref-module-torch-utils-tensorboard-writer sphx-glr-backref-type-py-method"><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span></a><span class="p">(</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">learning_rate</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span></a><span class="p">)</span>
 
     <span class="k">for</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span>
         <span class="nb">enumerate</span><span class="p">(</span><span class="n">training</span><span class="p">),</span>
         <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">training</span><span class="p">),</span>
         <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;epoch </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span></a><span class="p">)</span>
     <span class="p">):</span>
-        <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-        <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a><span class="p">[</span><span class="s1">&#39;coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
-        <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">true_energies</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
-        <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_atoms</span></a> <span class="o">=</span> <span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">true_energies</span></a><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a><span class="p">[</span><span class="s1">&#39;species&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span>
+        <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a><span class="p">[</span><span class="s1">&#39;coordinates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">true_energies</span></a> <span class="o">=</span> <a href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="collections.defaultdict" class="sphx-glr-backref-module-collections sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">properties</span></a><span class="p">[</span><span class="s1">&#39;energies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.device" title="torch.device" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_atoms</span></a> <span class="o">=</span> <span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><a href="https://pytorch.org/docs/master/tensor_attributes.html#torch.dtype" title="torch.dtype" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">true_energies</span><span class="o">.</span><span class="n">dtype</span></a><span class="p">)</span>
         <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">_</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">predicted_energies</span></a> <span class="o">=</span> <span class="n">model</span><span class="p">((</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">species</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">coordinates</span></a><span class="p">))</span>
 
         <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">loss</span></a> <span class="o">=</span> <span class="p">(</span><a href="https://pytorch.org/docs/master/generated/torch.nn.MSELoss.html#torch.nn.MSELoss" title="torch.nn.MSELoss" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">mse</span></a><span class="p">(</span><a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">predicted_energies</span></a><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">true_energies</span></a><span class="p">)</span> <span class="o">/</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_atoms</span></a><span class="o">.</span><span class="n">sqrt</span><span class="p">())</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 
-        <a href="https://pytorch.org/docs/master/optim.html#torch.optim.Optimizer.zero_grad" title="torch.optim.Optimizer.zero_grad" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">AdamW</span><span class="o">.</span><span class="n">zero_grad</span></a><span class="p">()</span>
-        <a href="https://pytorch.org/docs/master/optim.html#torch.optim.Optimizer.zero_grad" title="torch.optim.Optimizer.zero_grad" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">SGD</span><span class="o">.</span><span class="n">zero_grad</span></a><span class="p">()</span>
-        <a href="https://pytorch.org/docs/master/autograd.html#torch.Tensor.backward" title="torch.Tensor.backward" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-method"><span class="n">loss</span><span class="o">.</span><span class="n">backward</span></a><span class="p">()</span>
-        <a href="https://pytorch.org/docs/master/optim.html#torch.optim.AdamW.step" title="torch.optim.AdamW.step" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">AdamW</span><span class="o">.</span><span class="n">step</span></a><span class="p">()</span>
-        <a href="https://pytorch.org/docs/master/optim.html#torch.optim.SGD.step" title="torch.optim.SGD.step" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">SGD</span><span class="o">.</span><span class="n">step</span></a><span class="p">()</span>
+        <a href="https://pytorch.org/docs/master/generated/torch.optim.AdamW.html#torch.optim.AdamW.zero_grad" title="torch.optim.AdamW.zero_grad" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">AdamW</span><span class="o">.</span><span class="n">zero_grad</span></a><span class="p">()</span>
+        <a href="https://pytorch.org/docs/master/generated/torch.optim.SGD.html#torch.optim.SGD.zero_grad" title="torch.optim.SGD.zero_grad" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">SGD</span><span class="o">.</span><span class="n">zero_grad</span></a><span class="p">()</span>
+        <a href="https://pytorch.org/docs/master/generated/torch.Tensor.backward.html#torch.Tensor.backward" title="torch.Tensor.backward" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-method"><span class="n">loss</span><span class="o">.</span><span class="n">backward</span></a><span class="p">()</span>
+        <a href="https://pytorch.org/docs/master/generated/torch.optim.Optimizer.step.html#torch.optim.Optimizer.step" title="torch.optim.Optimizer.step" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">AdamW</span><span class="o">.</span><span class="n">step</span></a><span class="p">()</span>
+        <a href="https://pytorch.org/docs/master/generated/torch.optim.Optimizer.step.html#torch.optim.Optimizer.step" title="torch.optim.Optimizer.step" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">SGD</span><span class="o">.</span><span class="n">step</span></a><span class="p">()</span>
 
         <span class="c1"># write current batch loss to TensorBoard</span>
-        <span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span><span class="s1">&#39;batch_loss&#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">loss</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span></a> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">training</span><span class="p">)</span> <span class="o">+</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a><span class="p">)</span>
+        <a href="https://pytorch.org/docs/master/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter.add_scalar" title="torch.utils.tensorboard.writer.SummaryWriter.add_scalar" class="sphx-glr-backref-module-torch-utils-tensorboard-writer sphx-glr-backref-type-py-method"><span class="n">tensorboard</span><span class="o">.</span><span class="n">add_scalar</span></a><span class="p">(</span><span class="s1">&#39;batch_loss&#39;</span><span class="p">,</span> <a href="https://pytorch.org/docs/master/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">loss</span></a><span class="p">,</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span><span class="o">.</span><span class="n">last_epoch</span></a> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">training</span><span class="p">)</span> <span class="o">+</span> <a href="https://docs.python.org/3/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">i</span></a><span class="p">)</span>
 
     <a href="https://pytorch.org/docs/master/generated/torch.save.html#torch.save" title="torch.save" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">save</span></a><span class="p">({</span>
         <span class="s1">&#39;nn&#39;</span><span class="p">:</span> <a href="https://pytorch.org/docs/master/generated/torch.nn.Module.html#torch.nn.Module.state_dict" title="torch.nn.Module.state_dict" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-method"><span class="n">nn</span><span class="o">.</span><span class="n">state_dict</span></a><span class="p">(),</span>
-        <span class="s1">&#39;AdamW&#39;</span><span class="p">:</span> <a href="https://pytorch.org/docs/master/optim.html#torch.optim.Optimizer.state_dict" title="torch.optim.Optimizer.state_dict" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">AdamW</span><span class="o">.</span><span class="n">state_dict</span></a><span class="p">(),</span>
-        <span class="s1">&#39;SGD&#39;</span><span class="p">:</span> <a href="https://pytorch.org/docs/master/optim.html#torch.optim.Optimizer.state_dict" title="torch.optim.Optimizer.state_dict" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">SGD</span><span class="o">.</span><span class="n">state_dict</span></a><span class="p">(),</span>
-        <span class="s1">&#39;AdamW_scheduler&#39;</span><span class="p">:</span> <a href="https://pytorch.org/docs/master/optim.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span></a><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
-        <span class="s1">&#39;SGD_scheduler&#39;</span><span class="p">:</span> <a href="https://pytorch.org/docs/master/optim.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">SGD_scheduler</span></a><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+        <span class="s1">&#39;AdamW&#39;</span><span class="p">:</span> <a href="https://pytorch.org/docs/master/generated/torch.optim.AdamW.html#torch.optim.AdamW.state_dict" title="torch.optim.AdamW.state_dict" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">AdamW</span><span class="o">.</span><span class="n">state_dict</span></a><span class="p">(),</span>
+        <span class="s1">&#39;SGD&#39;</span><span class="p">:</span> <a href="https://pytorch.org/docs/master/generated/torch.optim.SGD.html#torch.optim.SGD.state_dict" title="torch.optim.SGD.state_dict" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-method"><span class="n">SGD</span><span class="o">.</span><span class="n">state_dict</span></a><span class="p">(),</span>
+        <span class="s1">&#39;AdamW_scheduler&#39;</span><span class="p">:</span> <a href="https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">AdamW_scheduler</span></a><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+        <span class="s1">&#39;SGD_scheduler&#39;</span><span class="p">:</span> <a href="https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau" title="torch.optim.lr_scheduler.ReduceLROnPlateau" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">SGD_scheduler</span></a><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
     <span class="p">},</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">latest_checkpoint</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<p class="sphx-glr-script-out">Out:</p>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>training starting from epoch 1
-RMSE: 65.12504163929033 at epoch 1
+RMSE: 131.69915654000263 at epoch 1
 
 epoch 1:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 1:  25%|##5       | 1/4 [00:00&lt;00:00,  3.04it/s]
-epoch 1:  50%|#####     | 2/4 [00:00&lt;00:00,  3.09it/s]
-epoch 1:  75%|#######5  | 3/4 [00:00&lt;00:00,  3.11it/s]
-epoch 1: 100%|##########| 4/4 [00:01&lt;00:00,  3.79it/s]
-epoch 1: 100%|##########| 4/4 [00:01&lt;00:00,  3.67it/s]
-RMSE: 246.039369410568 at epoch 2
+epoch 1:  25%|##5       | 1/4 [00:00&lt;00:00,  6.71it/s]
+epoch 1:  50%|#####     | 2/4 [00:00&lt;00:00,  6.88it/s]
+epoch 1:  75%|#######5  | 3/4 [00:00&lt;00:00,  6.99it/s]
+epoch 1: 100%|##########| 4/4 [00:00&lt;00:00,  8.12it/s]
+RMSE: 133.3053020199091 at epoch 2
 
 epoch 2:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 2:  25%|##5       | 1/4 [00:00&lt;00:00,  3.15it/s]
-epoch 2:  50%|#####     | 2/4 [00:00&lt;00:00,  3.16it/s]
-epoch 2:  75%|#######5  | 3/4 [00:00&lt;00:00,  3.17it/s]
-epoch 2: 100%|##########| 4/4 [00:01&lt;00:00,  3.85it/s]
-epoch 2: 100%|##########| 4/4 [00:01&lt;00:00,  3.71it/s]
-RMSE: 102.4277214830537 at epoch 3
+epoch 2:  25%|##5       | 1/4 [00:00&lt;00:00,  7.12it/s]
+epoch 2:  50%|#####     | 2/4 [00:00&lt;00:00,  7.14it/s]
+epoch 2:  75%|#######5  | 3/4 [00:00&lt;00:00,  7.15it/s]
+epoch 2: 100%|##########| 4/4 [00:00&lt;00:00,  8.33it/s]
+RMSE: 65.24803736824568 at epoch 3
 
 epoch 3:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 3:  25%|##5       | 1/4 [00:00&lt;00:00,  3.20it/s]
-epoch 3:  50%|#####     | 2/4 [00:00&lt;00:00,  3.19it/s]
-epoch 3:  75%|#######5  | 3/4 [00:00&lt;00:00,  3.18it/s]
-epoch 3: 100%|##########| 4/4 [00:01&lt;00:00,  3.87it/s]
-epoch 3: 100%|##########| 4/4 [00:01&lt;00:00,  3.73it/s]
-RMSE: 55.72407433867792 at epoch 4
+epoch 3:  25%|##5       | 1/4 [00:00&lt;00:00,  7.11it/s]
+epoch 3:  50%|#####     | 2/4 [00:00&lt;00:00,  7.11it/s]
+epoch 3:  75%|#######5  | 3/4 [00:00&lt;00:00,  7.13it/s]
+epoch 3: 100%|##########| 4/4 [00:00&lt;00:00,  8.32it/s]
+RMSE: 25.67967103952448 at epoch 4
 
 epoch 4:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 4:  25%|##5       | 1/4 [00:00&lt;00:00,  3.19it/s]
-epoch 4:  50%|#####     | 2/4 [00:00&lt;00:00,  3.16it/s]
-epoch 4:  75%|#######5  | 3/4 [00:00&lt;00:00,  3.17it/s]
-epoch 4: 100%|##########| 4/4 [00:01&lt;00:00,  3.87it/s]
-epoch 4: 100%|##########| 4/4 [00:01&lt;00:00,  3.71it/s]
-RMSE: 97.47953344097084 at epoch 5
+epoch 4:  25%|##5       | 1/4 [00:00&lt;00:00,  7.04it/s]
+epoch 4:  50%|#####     | 2/4 [00:00&lt;00:00,  6.96it/s]
+epoch 4:  75%|#######5  | 3/4 [00:00&lt;00:00,  7.02it/s]
+epoch 4: 100%|##########| 4/4 [00:00&lt;00:00,  8.20it/s]
+RMSE: 59.19369350701647 at epoch 5
 
 epoch 5:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 5:  25%|##5       | 1/4 [00:00&lt;00:00,  3.18it/s]
-epoch 5:  50%|#####     | 2/4 [00:00&lt;00:00,  3.13it/s]
-epoch 5:  75%|#######5  | 3/4 [00:00&lt;00:00,  3.15it/s]
-epoch 5: 100%|##########| 4/4 [00:01&lt;00:00,  3.85it/s]
-epoch 5: 100%|##########| 4/4 [00:01&lt;00:00,  3.69it/s]
-RMSE: 16.772017114901693 at epoch 6
+epoch 5:  25%|##5       | 1/4 [00:00&lt;00:00,  7.15it/s]
+epoch 5:  50%|#####     | 2/4 [00:00&lt;00:00,  7.13it/s]
+epoch 5:  75%|#######5  | 3/4 [00:00&lt;00:00,  7.08it/s]
+epoch 5: 100%|##########| 4/4 [00:00&lt;00:00,  8.27it/s]
+RMSE: 35.32657262349891 at epoch 6
 
 epoch 6:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 6:  25%|##5       | 1/4 [00:00&lt;00:00,  3.19it/s]
-epoch 6:  50%|#####     | 2/4 [00:00&lt;00:00,  3.18it/s]
-epoch 6:  75%|#######5  | 3/4 [00:00&lt;00:00,  3.17it/s]
-epoch 6: 100%|##########| 4/4 [00:01&lt;00:00,  3.88it/s]
-epoch 6: 100%|##########| 4/4 [00:01&lt;00:00,  3.73it/s]
-RMSE: 54.84499358653589 at epoch 7
+epoch 6:  25%|##5       | 1/4 [00:00&lt;00:00,  7.06it/s]
+epoch 6:  50%|#####     | 2/4 [00:00&lt;00:00,  7.02it/s]
+epoch 6:  75%|#######5  | 3/4 [00:00&lt;00:00,  7.05it/s]
+epoch 6: 100%|##########| 4/4 [00:00&lt;00:00,  8.24it/s]
+RMSE: 18.11028976287304 at epoch 7
 
 epoch 7:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 7:  25%|##5       | 1/4 [00:00&lt;00:00,  3.15it/s]
-epoch 7:  50%|#####     | 2/4 [00:00&lt;00:00,  3.10it/s]
-epoch 7:  75%|#######5  | 3/4 [00:00&lt;00:00,  3.13it/s]
-epoch 7: 100%|##########| 4/4 [00:01&lt;00:00,  3.80it/s]
-epoch 7: 100%|##########| 4/4 [00:01&lt;00:00,  3.64it/s]
-RMSE: 28.789778754964637 at epoch 8
+epoch 7:  25%|##5       | 1/4 [00:00&lt;00:00,  7.07it/s]
+epoch 7:  50%|#####     | 2/4 [00:00&lt;00:00,  7.02it/s]
+epoch 7:  75%|#######5  | 3/4 [00:00&lt;00:00,  7.02it/s]
+epoch 7: 100%|##########| 4/4 [00:00&lt;00:00,  8.19it/s]
+RMSE: 30.805631221574284 at epoch 8
 
 epoch 8:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 8:  25%|##5       | 1/4 [00:00&lt;00:00,  3.15it/s]
-epoch 8:  50%|#####     | 2/4 [00:00&lt;00:00,  3.15it/s]
-epoch 8:  75%|#######5  | 3/4 [00:00&lt;00:00,  3.15it/s]
-epoch 8: 100%|##########| 4/4 [00:01&lt;00:00,  3.83it/s]
-epoch 8: 100%|##########| 4/4 [00:01&lt;00:00,  3.70it/s]
-RMSE: 26.42728818830205 at epoch 9
+epoch 8:  25%|##5       | 1/4 [00:00&lt;00:00,  7.04it/s]
+epoch 8:  50%|#####     | 2/4 [00:00&lt;00:00,  7.06it/s]
+epoch 8:  75%|#######5  | 3/4 [00:00&lt;00:00,  7.05it/s]
+epoch 8: 100%|##########| 4/4 [00:00&lt;00:00,  8.23it/s]
+RMSE: 10.526330425054946 at epoch 9
 
 epoch 9:   0%|          | 0/4 [00:00&lt;?, ?it/s]
-epoch 9:  25%|##5       | 1/4 [00:00&lt;00:00,  3.16it/s]
-epoch 9:  50%|#####     | 2/4 [00:00&lt;00:00,  3.11it/s]
-epoch 9:  75%|#######5  | 3/4 [00:00&lt;00:00,  3.10it/s]
-epoch 9: 100%|##########| 4/4 [00:01&lt;00:00,  3.80it/s]
-epoch 9: 100%|##########| 4/4 [00:01&lt;00:00,  3.63it/s]
+epoch 9:  25%|##5       | 1/4 [00:00&lt;00:00,  6.92it/s]
+epoch 9:  50%|#####     | 2/4 [00:00&lt;00:00,  7.00it/s]
+epoch 9:  75%|#######5  | 3/4 [00:00&lt;00:00,  7.03it/s]
+epoch 9: 100%|##########| 4/4 [00:00&lt;00:00,  8.20it/s]
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  11.573 seconds)</p>
-<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-nnp-training-py">
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  5.761 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-nnp-training-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <a class="reference download internal" download="" href="../_downloads/1a1c456fc1c08da39ec892b2971889ce/nnp_training.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">nnp_training.py</span></code></a></div>
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
@@ -679,51 +614,33 @@ epoch 9: 100%|##########| 4/4 [00:01&lt;00:00,  3.63it/s]
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="nnp_training_force.html" class="btn btn-neutral float-right" title="Train Neural Network Potential To Both Energies and Forces" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="load_from_neurochem.html" class="btn btn-neutral float-left" title="Construct Model From NeuroChem Files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="load_from_neurochem.html" class="btn btn-neutral float-left" title="Construct Model From NeuroChem Files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="nnp_training_force.html" class="btn btn-neutral float-right" title="Train Neural Network Potential To Both Energies and Forces" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2018, Roitberg Group
-
-    </p>
+    <p>&#169; Copyright 2018, Roitberg Group.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

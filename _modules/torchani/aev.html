@@ -1,97 +1,55 @@
-
-
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html4" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>torchani.aev &mdash; TorchANI 2.2.3 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>torchani.aev &mdash; TorchANI 2.1.1 documentation</title>
-  
-
-  
-  
-  
-  
-
-  
-  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
-  
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/doctools.js"></script>
-        <script src="../../_static/language_data.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
-
-  
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/gallery.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/gallery-dataframe.css" type="text/css" />
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
 
           
-            <a href="../../index.html" class="icon icon-home"> TorchANI
           
-
-          
+          <a href="../../index.html" class="icon icon-home">
+            TorchANI
           </a>
-
-          
-            
-            
               <div class="version">
-                2.1.1
+                2.2.3
               </div>
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../start.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../tips.html">Tips</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/energy_force.html">Computing Energy and Force Using Models Inside Model Zoo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/ase_interface.html">Structure minimization and constant temperature MD using ASE interface</a></li>
@@ -102,7 +60,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../examples/nnp_training_force.html">Train Neural Network Potential To Both Energies and Forces</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../examples/neurochem_trainer.html">Train Neural Network Potential From NeuroChem Input File</a></li>
 </ul>
-<p class="caption"><span class="caption-text">TorchANI's API</span></p>
+<p class="caption" role="heading"><span class="caption-text">TorchANI's API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html">TorchANI</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.models">Model Zoo</a></li>
@@ -113,72 +71,55 @@
 <li class="toctree-l1"><a class="reference internal" href="../../api.html#module-torchani.units">Units</a></li>
 </ul>
 
-            
-          
         </div>
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">TorchANI</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html">Docs</a> &raquo;</li>
-        
-          <li><a href="../index.html">Module code</a> &raquo;</li>
-        
-      <li>torchani.aev</li>
-    
-    
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">torchani.aev</li>
       <li class="wy-breadcrumbs-aside">
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
+             
   <h1>Source code for torchani.aev</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
+
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">NamedTuple</span>
-<span class="kn">from</span> <span class="nn">torch.jit</span> <span class="kn">import</span> <span class="n">Final</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">importlib_metadata</span>
+
+<span class="n">has_cuaev</span> <span class="o">=</span> <span class="s1">&#39;torchani.cuaev&#39;</span> <span class="ow">in</span> <span class="n">importlib_metadata</span><span class="o">.</span><span class="n">metadata</span><span class="p">(</span><span class="n">__package__</span><span class="p">)</span><span class="o">.</span><span class="n">get_all</span><span class="p">(</span><span class="s1">&#39;Provides&#39;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">has_cuaev</span><span class="p">:</span>
+    <span class="c1"># We need to import torchani.cuaev to tell PyTorch to initialize torch.ops.cuaev</span>
+    <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">cuaev</span>  <span class="c1"># type: ignore # noqa: F401</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;cuaev not installed&quot;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">FakeFinal</span><span class="p">:</span>
+        <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">x</span>
+    <span class="n">Final</span> <span class="o">=</span> <span class="n">FakeFinal</span><span class="p">()</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">torch.jit</span> <span class="kn">import</span> <span class="n">Final</span>
 
 
 <span class="k">class</span> <span class="nc">SpeciesAEV</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
@@ -192,7 +133,7 @@
 
 
 <span class="k">def</span> <span class="nf">radial_terms</span><span class="p">(</span><span class="n">Rcr</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">distances</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Compute the radial subAEV terms of the center atom given neighbors</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the radial subAEV terms of the center atom given neighbors</span>
 
 <span class="sd">    This correspond to equation (3) in the `ANI paper`_. This function just</span>
 <span class="sd">    compute the terms. The sum in the equation is not computed.</span>
@@ -204,22 +145,22 @@
 <span class="sd">    .. _ANI paper:</span>
 <span class="sd">        http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">distances</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">fc</span> <span class="o">=</span> <span class="n">cutoff_cosine</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">Rcr</span><span class="p">)</span>
     <span class="c1"># Note that in the equation in the paper there is no 0.25</span>
     <span class="c1"># coefficient, but in NeuroChem there is such a coefficient.</span>
     <span class="c1"># We choose to be consistent with NeuroChem instead of the paper here.</span>
     <span class="n">ret</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">EtaR</span> <span class="o">*</span> <span class="p">(</span><span class="n">distances</span> <span class="o">-</span> <span class="n">ShfR</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">fc</span>
-    <span class="c1"># At this point, ret now have shape</span>
-    <span class="c1"># (conformations, atoms, N, ?, ?) where ? depend on constants.</span>
-    <span class="c1"># We then should flat the last 2 dimensions to view the subAEV as one</span>
-    <span class="c1"># dimension vector</span>
-    <span class="k">return</span> <span class="n">ret</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># At this point, ret now has shape</span>
+    <span class="c1"># (conformations x atoms, ?, ?) where ? depend on constants.</span>
+    <span class="c1"># We then should flat the last 2 dimensions to view the subAEV as a two</span>
+    <span class="c1"># dimensional tensor (onnx doesn&#39;t support negative indices in flatten)</span>
+    <span class="k">return</span> <span class="n">ret</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">angular_terms</span><span class="p">(</span><span class="n">Rca</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
                   <span class="n">ShfA</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">vectors12</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Compute the angular subAEV terms of the center atom given neighbor pairs.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the angular subAEV terms of the center atom given neighbor pairs.</span>
 
 <span class="sd">    This correspond to equation (4) in the `ANI paper`_. This function just</span>
 <span class="sd">    compute the terms. The sum in the equation is not computed.</span>
@@ -231,27 +172,25 @@
 <span class="sd">    .. _ANI paper:</span>
 <span class="sd">        http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">vectors12</span> <span class="o">=</span> <span class="n">vectors12</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">vectors12</span> <span class="o">=</span> <span class="n">vectors12</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">distances12</span> <span class="o">=</span> <span class="n">vectors12</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">5</span><span class="p">)</span>
-
-    <span class="c1"># 0.95 is multiplied to the cos values to prevent acos from</span>
-    <span class="c1"># returning NaN.</span>
-    <span class="n">cos_angles</span> <span class="o">=</span> <span class="mf">0.95</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">cosine_similarity</span><span class="p">(</span><span class="n">vectors12</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vectors12</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">5</span><span class="p">)</span>
-    <span class="n">angles</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">acos</span><span class="p">(</span><span class="n">cos_angles</span><span class="p">)</span>
+    <span class="n">cos_angles</span> <span class="o">=</span> <span class="n">vectors12</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">distances12</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="nb">min</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">)</span>
+    <span class="c1"># 0.95 is multiplied to the cos values to prevent acos from returning NaN.</span>
+    <span class="n">angles</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">acos</span><span class="p">(</span><span class="mf">0.95</span> <span class="o">*</span> <span class="n">cos_angles</span><span class="p">)</span>
 
     <span class="n">fcj12</span> <span class="o">=</span> <span class="n">cutoff_cosine</span><span class="p">(</span><span class="n">distances12</span><span class="p">,</span> <span class="n">Rca</span><span class="p">)</span>
     <span class="n">factor1</span> <span class="o">=</span> <span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angles</span> <span class="o">-</span> <span class="n">ShfZ</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="n">Zeta</span>
     <span class="n">factor2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">EtaA</span> <span class="o">*</span> <span class="p">(</span><span class="n">distances12</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">ShfA</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
     <span class="n">ret</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">factor1</span> <span class="o">*</span> <span class="n">factor2</span> <span class="o">*</span> <span class="n">fcj12</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="c1"># At this point, ret now have shape</span>
-    <span class="c1"># (conformations, atoms, N, ?, ?, ?, ?) where ? depend on constants.</span>
-    <span class="c1"># We then should flat the last 4 dimensions to view the subAEV as one</span>
-    <span class="c1"># dimension vector</span>
-    <span class="k">return</span> <span class="n">ret</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=-</span><span class="mi">4</span><span class="p">)</span>
+    <span class="c1"># At this point, ret now has shape</span>
+    <span class="c1"># (conformations x atoms, ?, ?, ?, ?) where ? depend on constants.</span>
+    <span class="c1"># We then should flat the last 4 dimensions to view the subAEV as a two</span>
+    <span class="c1"># dimensional tensor (onnx doesn&#39;t support negative indices in flatten)</span>
+    <span class="k">return</span> <span class="n">ret</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">compute_shifts</span><span class="p">(</span><span class="n">cell</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">pbc</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Compute the shifts of unit cell along the given cell vectors to make it</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the shifts of unit cell along the given cell vectors to make it</span>
 <span class="sd">    large enough to contain all pairs of neighbor atoms with PBC under</span>
 <span class="sd">    consideration</span>
 
@@ -271,9 +210,9 @@
     <span class="n">inv_distances</span> <span class="o">=</span> <span class="n">reciprocal_cell</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">num_repeats</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">cutoff</span> <span class="o">*</span> <span class="n">inv_distances</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
     <span class="n">num_repeats</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">pbc</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">,</span> <span class="n">num_repeats</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(()))</span>
-    <span class="n">r1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-    <span class="n">r2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-    <span class="n">r3</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">r1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">r2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">r3</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
     <span class="n">o</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cell</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">cartesian_prod</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">r3</span><span class="p">),</span>
@@ -294,7 +233,7 @@
 
 <span class="k">def</span> <span class="nf">neighbor_pairs</span><span class="p">(</span><span class="n">padding_mask</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">cell</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
                    <span class="n">shifts</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;Compute pairs of atoms that are neighbors</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute pairs of atoms that are neighbors</span>
 
 <span class="sd">    Arguments:</span>
 <span class="sd">        padding_mask (:class:`torch.Tensor`): boolean tensor of shape</span>
@@ -306,7 +245,7 @@
 <span class="sd">        cutoff (float): the cutoff inside which atoms are considered pairs</span>
 <span class="sd">        shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span><span class="n">padding_mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">math</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
     <span class="n">cell</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
     <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">padding_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">num_mols</span> <span class="o">=</span> <span class="n">padding_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -334,8 +273,6 @@
     <span class="c1"># step 5, compute distances, and find all pairs within cutoff</span>
     <span class="n">selected_coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p12_all</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">num_mols</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
     <span class="n">distances</span> <span class="o">=</span> <span class="p">(</span><span class="n">selected_coordinates</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">-</span> <span class="n">selected_coordinates</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">+</span> <span class="n">shift_values</span><span class="p">)</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">padding_mask</span> <span class="o">=</span> <span class="n">padding_mask</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p12_all</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="n">distances</span><span class="o">.</span><span class="n">masked_fill_</span><span class="p">(</span><span class="n">padding_mask</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
     <span class="n">in_cutoff</span> <span class="o">=</span> <span class="p">(</span><span class="n">distances</span> <span class="o">&lt;=</span> <span class="n">cutoff</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
     <span class="n">molecule_index</span><span class="p">,</span> <span class="n">pair_index</span> <span class="o">=</span> <span class="n">in_cutoff</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">molecule_index</span> <span class="o">*=</span> <span class="n">num_atoms</span>
@@ -345,7 +282,7 @@
 
 
 <span class="k">def</span> <span class="nf">neighbor_pairs_nopbc</span><span class="p">(</span><span class="n">padding_mask</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Compute pairs of atoms that are neighbors (doesn&#39;t use PBC)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute pairs of atoms that are neighbors (doesn&#39;t use PBC)</span>
 
 <span class="sd">    This function bypasses the calculation of shifts and duplication</span>
 <span class="sd">    of atoms in order to make calculations faster</span>
@@ -354,10 +291,10 @@
 <span class="sd">        padding_mask (:class:`torch.Tensor`): boolean tensor of shape</span>
 <span class="sd">            (molecules, atoms) for padding mask. 1 == is padding.</span>
 <span class="sd">        coordinates (:class:`torch.Tensor`): tensor of shape</span>
-<span class="sd">            (molecules * atoms, 3) for atom coordinates.</span>
+<span class="sd">            (molecules, atoms, 3) for atom coordinates.</span>
 <span class="sd">        cutoff (float): the cutoff inside which atoms are considered pairs</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+    <span class="n">coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span><span class="n">padding_mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">math</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
     <span class="n">current_device</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">device</span>
     <span class="n">num_atoms</span> <span class="o">=</span> <span class="n">padding_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">num_mols</span> <span class="o">=</span> <span class="n">padding_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -366,8 +303,6 @@
 
     <span class="n">pair_coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p12_all_flattened</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">num_mols</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
     <span class="n">distances</span> <span class="o">=</span> <span class="p">(</span><span class="n">pair_coordinates</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">-</span> <span class="n">pair_coordinates</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">padding_mask</span> <span class="o">=</span> <span class="n">padding_mask</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p12_all_flattened</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">num_mols</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">distances</span><span class="o">.</span><span class="n">masked_fill_</span><span class="p">(</span><span class="n">padding_mask</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
     <span class="n">in_cutoff</span> <span class="o">=</span> <span class="p">(</span><span class="n">distances</span> <span class="o">&lt;=</span> <span class="n">cutoff</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
     <span class="n">molecule_index</span><span class="p">,</span> <span class="n">pair_index</span> <span class="o">=</span> <span class="n">in_cutoff</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">molecule_index</span> <span class="o">*=</span> <span class="n">num_atoms</span>
@@ -391,7 +326,7 @@
 
 
 <span class="k">def</span> <span class="nf">triple_by_molecule</span><span class="p">(</span><span class="n">atom_index12</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;Input: indices for pairs of atoms that are close to each other.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Input: indices for pairs of atoms that are close to each other.</span>
 <span class="sd">    each pair only appear once, i.e. only one of the pairs (1, 2) and</span>
 <span class="sd">    (2, 1) exists.</span>
 
@@ -406,12 +341,10 @@
     <span class="n">sorted_ai1</span><span class="p">,</span> <span class="n">rev_indices</span> <span class="o">=</span> <span class="n">ai1</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
 
     <span class="c1"># sort and compute unique key</span>
-    <span class="n">unique_results</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique_consecutive</span><span class="p">(</span><span class="n">sorted_ai1</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">uniqued_central_atom_index</span> <span class="o">=</span> <span class="n">unique_results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">counts</span> <span class="o">=</span> <span class="n">unique_results</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">uniqued_central_atom_index</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique_consecutive</span><span class="p">(</span><span class="n">sorted_ai1</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># compute central_atom_index</span>
-    <span class="n">pair_sizes</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">*</span> <span class="p">(</span><span class="n">counts</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">pair_sizes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">counts</span> <span class="o">*</span> <span class="p">(</span><span class="n">counts</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="s1">&#39;trunc&#39;</span><span class="p">)</span>
     <span class="n">pair_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">pair_sizes</span><span class="p">)</span>
     <span class="n">central_atom_index</span> <span class="o">=</span> <span class="n">uniqued_central_atom_index</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pair_indices</span><span class="p">)</span>
 
@@ -488,8 +421,16 @@
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">radial_aev</span><span class="p">,</span> <span class="n">angular_aev</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
 
+<span class="k">def</span> <span class="nf">jit_unused_if_no_cuaev</span><span class="p">(</span><span class="n">condition</span><span class="o">=</span><span class="n">has_cuaev</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">condition</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">unused</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">func</span>
+    <span class="k">return</span> <span class="n">decorator</span>
+
+
 <div class="viewcode-block" id="AEVComputer"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer">[docs]</a><span class="k">class</span> <span class="nc">AEVComputer</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;The AEV computer that takes coordinates as input and outputs aevs.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;The AEV computer that takes coordinates as input and outputs aevs.</span>
 
 <span class="sd">    Arguments:</span>
 <span class="sd">        Rcr (float): :math:`R_C` in equation (2) when used at equation (3)</span>
@@ -509,6 +450,7 @@
 <span class="sd">        ShfZ (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in</span>
 <span class="sd">            equation (4) in the `ANI paper`_.</span>
 <span class="sd">        num_species (int): Number of supported atom types.</span>
+<span class="sd">        use_cuda_extension (bool): Whether to use cuda extension for faster calculation (needs cuaev installed).</span>
 
 <span class="sd">    .. _ANI paper:</span>
 <span class="sd">        http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract</span>
@@ -523,13 +465,20 @@
     <span class="n">angular_length</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="n">aev_length</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="n">sizes</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span>
+    <span class="n">triu_index</span><span class="p">:</span> <span class="n">Tensor</span>
+    <span class="n">use_cuda_extension</span><span class="p">:</span> <span class="n">Final</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Rcr</span><span class="p">,</span> <span class="n">Rca</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span> <span class="n">num_species</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">AEVComputer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Rcr</span><span class="p">,</span> <span class="n">Rca</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span> <span class="n">num_species</span><span class="p">,</span> <span class="n">use_cuda_extension</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span> <span class="o">=</span> <span class="n">Rcr</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span> <span class="o">=</span> <span class="n">Rca</span>
         <span class="k">assert</span> <span class="n">Rca</span> <span class="o">&lt;=</span> <span class="n">Rcr</span><span class="p">,</span> <span class="s2">&quot;Current implementation of AEVComputer assumes Rca &lt;= Rcr&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span> <span class="o">=</span> <span class="n">num_species</span>
+
+        <span class="c1"># cuda aev</span>
+        <span class="k">if</span> <span class="n">use_cuda_extension</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">has_cuaev</span><span class="p">,</span> <span class="s2">&quot;AEV cuda extension is not installed&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda_extension</span> <span class="o">=</span> <span class="n">use_cuda_extension</span>
 
         <span class="c1"># convert constant tensors to a ready-to-broadcast shape</span>
         <span class="c1"># shape convension (..., EtaR, ShfR)</span>
@@ -564,13 +513,65 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;default_cell&#39;</span><span class="p">,</span> <span class="n">default_cell</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;default_shifts&#39;</span><span class="p">,</span> <span class="n">default_shifts</span><span class="p">)</span>
 
+        <span class="c1"># Should create only when use_cuda_extension is True.</span>
+        <span class="c1"># However jit needs to know cuaev_computer&#39;s Type even when use_cuda_extension is False, because it is enabled when cuaev is available</span>
+        <span class="k">if</span> <span class="n">has_cuaev</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_cuaev_computer</span><span class="p">()</span>
+        <span class="c1"># When has_cuaev is true, and use_cuda_extension is false, and user enable use_cuda_extension afterwards,</span>
+        <span class="c1"># then another init_cuaev_computer will be needed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cuaev_enabled</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda_extension</span> <span class="k">else</span> <span class="kc">False</span>
+
+    <span class="nd">@jit_unused_if_no_cuaev</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">init_cuaev_computer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cuaev_computer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">cuaev</span><span class="o">.</span><span class="n">CuaevComputer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfR</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">EtaA</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">Zeta</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfA</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfZ</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_species</span><span class="p">)</span>
+
+    <span class="nd">@jit_unused_if_no_cuaev</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">compute_cuaev</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">):</span>
+        <span class="n">species_int</span> <span class="o">=</span> <span class="n">species</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">aev</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cuaev</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">species_int</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuaev_computer</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">aev</span>
+
+<div class="viewcode-block" id="AEVComputer.cover_linearly"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer.cover_linearly">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">cover_linearly</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">radial_cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">angular_cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                       <span class="n">radial_eta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">angular_eta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                       <span class="n">radial_dist_divisions</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">angular_dist_divisions</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                       <span class="n">zeta</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">angle_sections</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_species</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                       <span class="n">angular_start</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">,</span> <span class="n">radial_start</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot; Provides a convenient way to linearly fill cutoffs</span>
+
+<span class="sd">        This is a user friendly constructor that builds an</span>
+<span class="sd">        :class:`torchani.AEVComputer` where the subdivisions along the the</span>
+<span class="sd">        distance dimension for the angular and radial sub-AEVs, and the angle</span>
+<span class="sd">        sections for the angular sub-AEV, are linearly covered with shifts. By</span>
+<span class="sd">        default the distance shifts start at 0.9 Angstroms.</span>
+
+<span class="sd">        To reproduce the ANI-1x AEV&#39;s the signature ``(5.2, 3.5, 16.0, 8.0, 16, 4, 32.0, 8, 4)``</span>
+<span class="sd">        can be used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># This is intended to be self documenting code that explains the way</span>
+        <span class="c1"># the AEV parameters for ANI1x were chosen. This is not necessarily the</span>
+        <span class="c1"># best or most optimal way but it is a relatively sensible default.</span>
+        <span class="n">Rcr</span> <span class="o">=</span> <span class="n">radial_cutoff</span>
+        <span class="n">Rca</span> <span class="o">=</span> <span class="n">angular_cutoff</span>
+        <span class="n">EtaR</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">radial_eta</span><span class="p">)])</span>
+        <span class="n">EtaA</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">angular_eta</span><span class="p">)])</span>
+        <span class="n">Zeta</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">zeta</span><span class="p">)])</span>
+
+        <span class="n">ShfR</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">radial_start</span><span class="p">,</span> <span class="n">radial_cutoff</span><span class="p">,</span> <span class="n">radial_dist_divisions</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">ShfA</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">angular_start</span><span class="p">,</span> <span class="n">angular_cutoff</span><span class="p">,</span> <span class="n">angular_dist_divisions</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">angle_start</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">angle_sections</span><span class="p">)</span>
+
+        <span class="n">ShfZ</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">angle_sections</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">angle_start</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">Rcr</span><span class="p">,</span> <span class="n">Rca</span><span class="p">,</span> <span class="n">EtaR</span><span class="p">,</span> <span class="n">ShfR</span><span class="p">,</span> <span class="n">EtaA</span><span class="p">,</span> <span class="n">Zeta</span><span class="p">,</span> <span class="n">ShfA</span><span class="p">,</span> <span class="n">ShfZ</span><span class="p">,</span> <span class="n">num_species</span><span class="p">)</span></div>
+
     <span class="k">def</span> <span class="nf">constants</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rcr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">EtaR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Rca</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfZ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">EtaA</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Zeta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShfA</span>
 
 <div class="viewcode-block" id="AEVComputer.forward"><a class="viewcode-back" href="../../api.html#torchani.AEVComputer.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
                 <span class="n">cell</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">pbc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpeciesAEV</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;Compute AEVs</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute AEVs</span>
 
 <span class="sd">        Arguments:</span>
 <span class="sd">            input_ (tuple): Can be one of the following two cases:</span>
@@ -609,6 +610,17 @@
 <span class="sd">            unchanged, and AEVs is a tensor of shape ``(N, A, self.aev_length())``</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span> <span class="o">=</span> <span class="n">input_</span>
+        <span class="k">assert</span> <span class="n">species</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="k">assert</span> <span class="n">species</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda_extension</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">(</span><span class="n">cell</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;cuaev currently does not support PBC&quot;</span>
+            <span class="c1"># if use_cuda_extension is enabled after initialization</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cuaev_enabled</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">init_cuaev_computer</span><span class="p">()</span>
+            <span class="n">aev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_cuaev</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">SpeciesAEV</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">aev</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">cell</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pbc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">aev</span> <span class="o">=</span> <span class="n">compute_aev</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">triu_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">constants</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -622,42 +634,30 @@
 </pre></div>
 
            </div>
-           
           </div>
           <footer>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &copy; Copyright 2018, Roitberg Group
-
-    </p>
+    <p>&#169; Copyright 2018, Roitberg Group.</p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>
