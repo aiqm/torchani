@@ -5,11 +5,13 @@ from ase import units
 from ase.io import read
 from ase.calculators.test import numeric_force
 from torchani.testing import TestCase
+from torchani.models import _fetch_state_dict
 import numpy as np
 import torch
 import torchani
 from torchani.aev import CellList
 import unittest
+from parameterized import parameterized
 import os
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -131,17 +133,28 @@ class TestASE(TestCase):
                 fn[i, j] = numeric_force(atoms, i, j, eps)
         return fn
 
-    def testWithNumericalStressFullPairwise(self):
-        model = torchani.models.ANI1x(model_index=0)
+    @parameterized.expand([(False, False),
+                           (False, True),
+                           (True, False),
+                           (True, True)],
+                          name_func=lambda func, index, param:
+                              f"{func.__name__}_{index}_stress_partial_fdotr_{param.args[0]}_repulsion_{param.args[1]}")
+    def testWithNumericalStressFullPairwise(self, stress_partial_fdotr, repulsion):
+        if repulsion:
+            model = self._makeRepulsionModel()
+        else:
+            model = torchani.models.ANI1x(model_index=0)
         model = model.to(dtype=torch.double, device=self.device)
-        self._testWithNumericalStressPBC(model)
+        self._testWithNumericalStressPBC(model, stress_partial_fdotr=stress_partial_fdotr)
 
-    def testWithNumericalStressCellList(self):
+    @parameterized.expand([(False,), (True,)],
+                          name_func=lambda func, index, param: f"{func.__name__}_{index}_{param.args[0]}")
+    def testWithNumericalStressCellList(self, stress_partial_fdotr):
         model = torchani.models.ANI1x(model_index=0, cell_list=True)
         model = model.to(dtype=torch.double, device=self.device)
-        self._testWithNumericalStressPBC(model)
+        self._testWithNumericalStressPBC(model, stress_partial_fdotr=stress_partial_fdotr)
 
-    def _testWithNumericalStressPBC(self, model):
+    def _testWithNumericalStressPBC(self, model, stress_partial_fdotr):
         # Run NPT dynamics for some steps and periodically check that the
         # numerical and analytical stresses agree up to a given
         # absolute difference
@@ -153,7 +166,7 @@ class TestASE(TestCase):
         # Note that there are 4 benzene molecules, thus, 48 atoms in
         # Benzene.json
         benzene.set_velocities(np.full((48, 3), 1e-15))
-        calculator = model.ase()
+        calculator = model.ase(stress_partial_fdotr=stress_partial_fdotr)
         benzene.calc = calculator
         dyn = NPTBerendsen(benzene, timestep=0.1 * units.fs,
                            temperature_K=300,
@@ -167,6 +180,16 @@ class TestASE(TestCase):
 
         dyn.attach(test_stress, interval=2)
         dyn.run(10)
+
+    def _makeRepulsionModel(self):
+        model = torchani.models.ANI1x(
+            repulsion=True,
+            pretrained=False,
+            model_index=0,
+            cutoff_fn='smooth'
+        )
+        model.load_state_dict(_fetch_state_dict('ani1x_state_dict.pt', 0), strict=False)
+        return model
 
 
 if __name__ == '__main__':
