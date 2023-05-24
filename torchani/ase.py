@@ -23,7 +23,7 @@ class Calculator(ase.calculators.calculator.Calculator):
             object with the wrapped positions.
         stress_partial_fdotr (bool): whether to use partial_fdotr approach to
             calculate stress. This approach does not need the cell's box
-            information and could be used for multiple domians when running 
+            information and could be used for multiple domians when running
             parallel on multi-GPUs using lammps. Default as False.
     """
 

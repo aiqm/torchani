@@ -5,35 +5,32 @@ from torch import Tensor
 from torch.jit import Final
 
 
-def _parse_cutoff_fn(cutoff_fn: Union[str, torch.nn.Module]) -> torch.nn.Module:
-    # currently only cosine, smooth and custom cutoffs are supported
-    if cutoff_fn == 'cosine':
-        cutoff_fn = CutoffCosine()
-    elif cutoff_fn == 'smooth':
-        cutoff_fn = CutoffSmooth()
-    else:
-        assert isinstance(cutoff_fn, torch.nn.Module)
-    return cutoff_fn
-
-
-class CutoffCosine(torch.nn.Module):
-
-    def __init__(self):
+# All cutoffs assume the elements in "distances" are smaller than "cutoff"
+class Cutoff(torch.nn.Module):
+    def __init__(self, *args, **kwargs):
         super().__init__()
 
     def forward(self, distances: Tensor, cutoff: float) -> Tensor:
-        # assuming all elements in distances are smaller than cutoff
+        raise NotImplementedError
+
+
+class CutoffDummy(Cutoff):
+    def forward(self, distances: Tensor, cutoff: float) -> Tensor:
+        return torch.ones_like(distances)
+
+
+class CutoffCosine(Cutoff):
+    def forward(self, distances: Tensor, cutoff: float) -> Tensor:
         return 0.5 * torch.cos(distances * (math.pi / cutoff)) + 0.5
 
 
-class CutoffSmooth(torch.nn.Module):
-
+class CutoffSmooth(Cutoff):
     order: Final[int]
     eps: Final[float]
 
     def __init__(self, eps: float = 1e-10, order: int = 2):
         super().__init__()
-        # higher orders make the cutoff more similar to 1
+        # Higher orders make the cutoff more similar to 1
         # for a wider range of distances, before the cutoff.
         # lower orders distort the underlying function more
         assert order > 0, "order must be a positive integer greater than zero"
@@ -43,6 +40,17 @@ class CutoffSmooth(torch.nn.Module):
         self.eps = eps
 
     def forward(self, distances: Tensor, cutoff: float) -> Tensor:
-        # assuming all elements in distances are smaller than cutoff
         e = 1 - 1 / (1 - (distances / cutoff) ** self.order).clamp(min=self.eps)
         return torch.exp(e)
+
+
+def _parse_cutoff_fn(cutoff_fn: Union[str, Cutoff]) -> torch.nn.Module:
+    if cutoff_fn == 'dummy':
+        cutoff_fn = CutoffDummy()
+    elif cutoff_fn == 'cosine':
+        cutoff_fn = CutoffCosine()
+    elif cutoff_fn == 'smooth':
+        cutoff_fn = CutoffSmooth()
+    else:
+        assert isinstance(cutoff_fn, Cutoff)
+    return cutoff_fn

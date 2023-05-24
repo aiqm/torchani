@@ -5,6 +5,7 @@ from pathlib import Path
 from torchani.models import _fetch_state_dict
 from torchani.testing import TestCase
 from torchani.repulsion import RepulsionXTB, StandaloneRepulsionXTB
+from torchani.aev.neighbors import NeighborData
 
 
 class TestRepulsion(TestCase):
@@ -13,11 +14,14 @@ class TestRepulsion(TestCase):
         self.sa_rep = StandaloneRepulsionXTB(cutoff=5.2, neighborlist_cutoff=5.2)
 
     def testRepulsionXTB(self):
-        neighbor_idxs = torch.tensor([[0], [1]])
-        distances = torch.tensor([3.5])
         element_idxs = torch.tensor([[0, 0]])
         energies = torch.tensor([0.0])
-        energies = self.rep(element_idxs, neighbor_idxs, distances)
+        neighbors = NeighborData(
+            indices=torch.tensor([[0], [1]]),
+            distances=torch.tensor([3.5]),
+            diff_vectors=torch.tensor([[3.5, 0, 0]]),
+        )
+        energies = self.rep(element_idxs, neighbors)
         self.assertEqual(torch.tensor([3.5325e-08]), energies)
 
     def testStandalone(self):
@@ -53,11 +57,14 @@ class TestRepulsion(TestCase):
         self.assertEqual(energies, energies_cat)
 
     def testRepulsionLongDistances(self):
-        neighbor_idxs = torch.tensor([[0], [1]])
-        distances = torch.tensor([6.0])
         element_idxs = torch.tensor([[0, 0]])
         energies = torch.tensor([0.0])
-        energies = self.rep(element_idxs, neighbor_idxs, distances)
+        neighbors = NeighborData(
+            indices=torch.tensor([[0], [1]]),
+            distances=torch.tensor([6.0]),
+            diff_vectors=torch.tensor([[6.0, 0, 0]]),
+        )
+        energies = self.rep(element_idxs, neighbors)
         self.assertEqual(torch.tensor([0.0]), energies)
 
     def testRepulsionEnergy(self):
@@ -87,7 +94,7 @@ class TestRepulsion(TestCase):
     def _testRepulsionEnergy(self, model, device, atomic: bool = False):
         model = model.to(device, dtype=torch.double)
         species = torch.tensor([[8, 1, 1]], device=device)
-        energies = []
+        _energies = []
         distances = torch.linspace(0.1, 6.0, 100)
         for d in distances:
             coordinates = torch.tensor([[[0.0, 0.0, 0.0],
@@ -95,10 +102,10 @@ class TestRepulsion(TestCase):
                                         [-0.250380004 * d, 0.96814764 * d, 0.0]]],
                                        requires_grad=True, device=device, dtype=torch.double)
             if atomic:
-                energies.append(model.atomic_energies((species, coordinates), average=True).energies.sum(-1).item())
+                _energies.append(model.atomic_energies((species, coordinates), average=True).energies.sum(-1).item())
             else:
-                energies.append(model((species, coordinates)).energies.item())
-        energies = torch.tensor(energies)
+                _energies.append(model((species, coordinates)).energies.item())
+        energies = torch.tensor(_energies)
         path = Path(__file__).resolve().parent.joinpath('test_data/energies_repulsion_1x.pkl')
         with open(path, 'rb') as f:
             energies_expect = torch.load(f)

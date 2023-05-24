@@ -1,29 +1,23 @@
+import os
+import unittest
+
+import torch
+import numpy as np
+from parameterized import parameterized
 from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
 from ase.md.nptberendsen import NPTBerendsen
 from ase import units
 from ase.io import read
 from ase.calculators.test import numeric_force
-from torchani.testing import TestCase
-from torchani.models import _fetch_state_dict
-import numpy as np
-import torch
-import torchani
+
 from torchani.aev import CellList
-import unittest
-from parameterized import parameterized
-import os
+from torchani.testing import TestCase
+from torchani.models import _fetch_state_dict, ANI1x, BuiltinModelPairInteractions
+from torchani.potentials import DummyPairwisePotential
+
 
 path = os.path.dirname(os.path.realpath(__file__))
-
-
-class DummyPotential(torch.nn.Module):
-    def __init__(self, cutoff):
-        super().__init__()
-        self.register_buffer('cutoff', torch.tensor(cutoff))
-
-    def forward(self, element_idxs, neighbor_idxs, distances, diff_vectors):
-        return torch.zeros(element_idxs.shape[0], device=distances.device, dtype=distances.dtype)
 
 
 class TestASE(TestCase):
@@ -35,9 +29,9 @@ class TestASE(TestCase):
         # Run a Langevin thermostat dynamic for 100 steps and after the dynamic
         # check once that the numerical and analytical force agree to a given
         # relative tolerance
-        model_cell = torchani.models.ANI1x(model_index=0, cell_list=True)
+        model_cell = ANI1x(model_index=0, cell_list=True)
         model_cell = model_cell.to(dtype=torch.double, device=self.device)
-        model = torchani.models.ANI1x(model_index=0)
+        model = ANI1x(model_index=0)
         model = model.to(dtype=torch.double, device=self.device)
 
         f_cell = self._testForcesPBC(model_cell, only_get_forces=True)
@@ -48,16 +42,20 @@ class TestASE(TestCase):
         # Run a Langevin thermostat dynamic for 100 steps and after the dynamic
         # check once that the numerical and analytical force agree to a given
         # relative tolerance
-        model_cell = torchani.models.ANI1x(model_index=0, cell_list=True)
+        model_cell = ANI1x(model_index=0, cell_list=True)
         model_cell = model_cell.to(dtype=torch.double, device=self.device)
-        model = torchani.models.ANI1x(model_index=0)
+        model = ANI1x(model_index=0)
         model = model.to(dtype=torch.double, device=self.device)
-        model_pair = torchani.models.BuiltinModelPairInteractions(
+        model_pair = BuiltinModelPairInteractions(
             aev_computer=model_cell.aev_computer,
             neural_networks=model_cell.neural_networks,
             energy_shifter=model_cell.energy_shifter,
             elements=model_cell.get_chemical_symbols(),
-            pairwise_potentials=[DummyPotential(6.4), DummyPotential(5.2), DummyPotential(3.0)]
+            pairwise_potentials=[
+                DummyPairwisePotential(cutoff=6.4),
+                DummyPairwisePotential(cutoff=5.2),
+                DummyPairwisePotential(cutoff=3.0),
+            ]
         )
         model_pair = model_pair.to(dtype=torch.double, device=self.device)
 
@@ -71,9 +69,9 @@ class TestASE(TestCase):
         # Run a Langevin thermostat dynamic for 100 steps and after the dynamic
         # check once that the numerical and analytical force agree to a given
         # relative tolerance
-        model_cell = torchani.models.ANI1x(model_index=0, cell_list=True)
+        model_cell = ANI1x(model_index=0, cell_list=True)
         model_cell = model_cell.to(dtype=torch.double, device=self.device)
-        model_dyn = torchani.models.ANI1x(model_index=0, cell_list=True)
+        model_dyn = ANI1x(model_index=0, cell_list=True)
         model_dyn.aev_computer.neighborlist = CellList(model_dyn.aev_computer.radial_terms.cutoff, verlet=True)
         model_dyn = model_cell.to(dtype=torch.double, device=self.device)
 
@@ -82,23 +80,23 @@ class TestASE(TestCase):
         self.assertEqual(f_dyn, f_cell, rtol=0.1, atol=0.1)
 
     def testNumericalForcesFullPairwise(self):
-        model = torchani.models.ANI1x(model_index=0)
+        model = ANI1x(model_index=0)
         model = model.to(dtype=torch.double, device=self.device)
         self._testForcesPBC(model, repeats=1)
 
     def testNumericalForcesCellList(self):
-        model = torchani.models.ANI1x(model_index=0, cell_list=True)
+        model = ANI1x(model_index=0, cell_list=True)
         model = model.to(dtype=torch.double, device=self.device)
         self._testForcesPBC(model)
 
     def testNumericalForcesCellListVerlet(self):
-        model = torchani.models.ANI1x(model_index=0, cell_list=True)
+        model = ANI1x(model_index=0, cell_list=True)
         model.aev_computer.neighborlist = CellList(model.aev_computer.radial_terms.cutoff, verlet=True)
         model = model.to(dtype=torch.double, device=self.device)
         self._testForcesPBC(model, steps=100)
 
     def testNumericalForcesCellListConstantV(self):
-        model = torchani.models.ANI1x(model_index=0, cell_list=True)
+        model = ANI1x(model_index=0, cell_list=True)
         model.aev_computer.neighborlist = CellList(model.aev_computer.radial_terms.cutoff, constant_volume=True)
         model = model.to(dtype=torch.double, device=self.device)
         self._testForcesPBC(model)
@@ -143,14 +141,14 @@ class TestASE(TestCase):
         if repulsion:
             model = self._makeRepulsionModel()
         else:
-            model = torchani.models.ANI1x(model_index=0)
+            model = ANI1x(model_index=0)
         model = model.to(dtype=torch.double, device=self.device)
         self._testWithNumericalStressPBC(model, stress_partial_fdotr=stress_partial_fdotr)
 
     @parameterized.expand([(False,), (True,)],
                           name_func=lambda func, index, param: f"{func.__name__}_{index}_{param.args[0]}")
     def testWithNumericalStressCellList(self, stress_partial_fdotr):
-        model = torchani.models.ANI1x(model_index=0, cell_list=True)
+        model = ANI1x(model_index=0, cell_list=True)
         model = model.to(dtype=torch.double, device=self.device)
         self._testWithNumericalStressPBC(model, stress_partial_fdotr=stress_partial_fdotr)
 
@@ -182,7 +180,7 @@ class TestASE(TestCase):
         dyn.run(10)
 
     def _makeRepulsionModel(self):
-        model = torchani.models.ANI1x(
+        model = ANI1x(
             repulsion=True,
             pretrained=False,
             model_index=0,
