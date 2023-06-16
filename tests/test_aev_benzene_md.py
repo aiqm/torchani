@@ -1,8 +1,10 @@
 import os
-import torch
 import pickle
 import unittest
-from torchani.aev import CellList
+
+import torch
+
+from torchani.neighbors import CellList
 from common_aev_test import _TestAEVBase
 
 path = os.path.dirname(os.path.realpath(__file__))

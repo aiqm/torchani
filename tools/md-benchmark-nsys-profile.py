@@ -1,10 +1,12 @@
+import argparse
+
+import torch
 import ase
 import ase.io
 import ase.md
-import argparse
-import torchani
 import autonvtx
-import torch
+
+from torchani.models import ANI1x
 from tool_utils import time_functions_in_model
 
 parser = argparse.ArgumentParser()
@@ -12,7 +14,7 @@ parser.add_argument('filename', help="file for the molecule")
 args = parser.parse_args()
 
 molecule = ase.io.read(args.filename)
-model = torchani.models.ANI1x(model_index=0).cuda()
+model = ANI1x(model_index=0).cuda()
 calculator = model.ase()
 molecule.calc = calculator
 dyn = ase.md.verlet.VelocityVerlet(molecule, timestep=1 * ase.units.fs)

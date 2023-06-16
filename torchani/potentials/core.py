@@ -4,8 +4,8 @@ from torch import Tensor
 from torch.jit import Final
 
 from torchani.utils import ATOMIC_NUMBERS, PERIODIC_TABLE
-from torchani.aev.cutoffs import _parse_cutoff_fn, Cutoff
-from torchani.aev.neighbors import NeighborData
+from torchani.cutoffs import _parse_cutoff_fn, Cutoff
+from torchani.neighbors import NeighborData
 
 
 class Potential(torch.nn.Module):

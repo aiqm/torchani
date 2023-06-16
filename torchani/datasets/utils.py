@@ -5,13 +5,13 @@ from typing import List, Tuple, Optional, Dict
 import torch
 from torch import Tensor
 
-from ..units import hartree2kcalmol
-from ..models import BuiltinModel
-from ..utils import tqdm
-from ..nn import Ensemble
-from ._annotations import Conformers, StrPath
-from .datasets import ANIDataset
-from ._backends import TemporaryLocation
+from torchani.units import hartree2kcalmol
+from torchani.models import BuiltinModel
+from torchani.utils import tqdm
+from torchani.nn import Ensemble
+from torchani.datasets._annotations import Conformers, StrPath
+from torchani.datasets.datasets import ANIDataset
+from torchani.datasets._backends import TemporaryLocation
 
 
 __all__ = ['filter_by_high_force', 'filter_by_high_energy_error', 'concatenate']

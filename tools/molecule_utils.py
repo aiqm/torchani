@@ -1,9 +1,11 @@
-import torch
 from pathlib import Path
-from torch import Tensor
 import math
 import warnings
 from typing import Tuple, Optional
+
+import torch
+from torch import Tensor
+
 from torchani.utils import PERIODIC_TABLE
 
 

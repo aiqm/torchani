@@ -1,11 +1,12 @@
+import math
 from typing import Tuple, Optional, Union, NamedTuple
 
 import torch
-import math
 from torch import Tensor
 from torch.nn import functional, Module
 from torch.jit import Final
-from ..utils import map_to_central, cumsum_from_zero
+
+from torchani.utils import map_to_central, cumsum_from_zero
 
 
 class NeighborData(NamedTuple):

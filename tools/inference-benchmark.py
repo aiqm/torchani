@@ -1,9 +1,10 @@
 import argparse
-import torchani
-import torch
 import timeit
-import tqdm
 
+import tqdm
+import torch
+
+from torchani.models import ANI1x
 
 # parse command line arguments
 parser = argparse.ArgumentParser()
@@ -18,7 +19,7 @@ args = parser.parse_args()
 
 # set up benchmark
 device = torch.device(args.device)
-ani1x = torchani.models.ANI1x()
+ani1x = ANI1x()
 nnp = torch.nn.Sequential(
     ani1x.aev_computer,
     ani1x.neural_networks[0],

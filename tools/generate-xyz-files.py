@@ -1,11 +1,11 @@
+import argparse
+
 from ase import Atoms
 from ase.md import Langevin
 import ase.units as units
+from ase.calculators.emt import EMT
 from rdkit import Chem
 from rdkit.Chem import AllChem
-# from asap3 import EMT
-from ase.calculators.emt import EMT
-import argparse
 
 
 # parse command line arguments

@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import ContextManager, Dict, Any, Type, cast
 
-from .._annotations import StrPath
+from torchani.datasets._annotations import StrPath
 from .interface import _Store
 from .h5py_impl import _H5PY_AVAILABLE, _H5Store, _H5TemporaryLocation
 from .zarr_impl import _ZARR_AVAILABLE, _ZarrStore, _ZarrTemporaryLocation

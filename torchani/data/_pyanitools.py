@@ -1,7 +1,8 @@
 # Written by Roman Zubatyuk and Justin S. Smith
+import os
+
 import h5py
 import numpy as np
-import os
 
 
 class datapacker:

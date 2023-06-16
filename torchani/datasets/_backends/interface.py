@@ -9,7 +9,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from .._annotations import NumpyConformers, StrPath
+from torchani.datasets._annotations import NumpyConformers, StrPath
 
 
 # Keeps track of variables that must be updated each time the datasets get

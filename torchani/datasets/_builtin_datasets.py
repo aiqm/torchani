@@ -100,10 +100,10 @@ from typing import Optional, Any
 from collections import OrderedDict
 from copy import deepcopy
 
-from .download import _download_and_extract_archive, _check_integrity
-from .datasets import ANIDataset
-from ._annotations import StrPath
-from ..utils import tqdm
+from torchani.utils import tqdm
+from torchani.datasets.download import _download_and_extract_archive, _check_integrity
+from torchani.datasets.datasets import ANIDataset
+from torchani.datasets._annotations import StrPath
 
 _BASE_URL = 'http://moria.chem.ufl.edu/animodel/ground_truth_data/'
 _DEFAULT_DATA_PATH = Path.home().joinpath('.local/torchani/Datasets')

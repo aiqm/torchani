@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Computing Energy and Force Using Models Inside Model Zoo
 ========================================================

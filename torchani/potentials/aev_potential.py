@@ -1,11 +1,12 @@
 from typing import Optional, Union
 
 from torch import Tensor
-from torchani.aev.aev_computer import AEVComputer
-from torchani.aev.neighbors import NeighborData
+
+from torchani.neighbors import NeighborData
 from torchani.nn import Ensemble, ANIModel
-from torchani.potentials.core import Potential
 from torchani.utils import PERIODIC_TABLE
+from torchani.aev.aev_computer import AEVComputer
+from torchani.potentials.core import Potential
 
 NN = Union[ANIModel, Ensemble]
 

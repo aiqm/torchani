@@ -1,21 +1,22 @@
-import torch
-import torchani
+from pathlib import Path
 import time
 import pickle
-import ase
 import copy
-import numpy as np
 from typing import Union, List
-from tqdm import tqdm
 import timeit
 
-from torchani import geometry
-from ase.md.langevin import Langevin
+import torch
+import numpy as np
+import ase
 from ase import units
-
+from ase.md.langevin import Langevin
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from pathlib import Path
+
+from torchani import geometry
+from torchani.models import ANI1x, ANI2x, ANI1ccx
+from torchani.ase import Calculator
 from molecule_utils import make_water, tensor_from_xyz
 
 
@@ -146,11 +147,11 @@ def get_model(model_arg, cell_list, model_index,
         args.update({'model_index': model_index})
 
     if model_arg == 'ani1x':
-        model = torchani.models.ANI1x(**args).to(device, dtype=torch.double)
+        model = ANI1x(**args).to(device, dtype=torch.double)
     elif model_arg == 'ani2x':
-        model = torchani.models.ANI2x(**args).to(device, dtype=torch.double)
+        model = ANI2x(**args).to(device, dtype=torch.double)
     elif model_arg == 'ani1ccx':
-        model = torchani.models.ANI1ccx(**args).to(device, dtype=torch.double)
+        model = ANI1ccx(**args).to(device, dtype=torch.double)
     return model.to(torch.float)
 
 
@@ -296,8 +297,8 @@ if __name__ == "__main__":
             model.aev_computer.neighborlist.forward = time_func(  # type: ignore
                 'neighborlist', model.aev_computer.neighborlist.forward)
             model.forward = time_func('forward', model.forward)  # type: ignore
-            torchani.ase.Calculator._get_ani_forces = time_func(  # type: ignore
-                'backward', torchani.ase.Calculator._get_ani_forces)
+            Calculator._get_ani_forces = time_func(  # type: ignore
+                'backward', Calculator._get_ani_forces)
         all_trials = []
         timers_list = []
         raw_trials = []

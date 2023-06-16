@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Using TorchScript to serialize and deploy model
 ===============================================

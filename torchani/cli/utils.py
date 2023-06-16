@@ -1,5 +1,6 @@
 from pathlib import Path
-from ..datasets import ANIDataset
+
+from torchani.datasets import ANIDataset
 
 
 def h5info(path):

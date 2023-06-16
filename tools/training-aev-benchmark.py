@@ -1,14 +1,16 @@
-import torch
-import torchani
 import time
 import argparse
-import pkbar
 import gc
-import pynvml
 import os
 import pickle
-from torchani.units import hartree2kcalmol
 from typing import Dict
+
+import torch
+import pkbar
+import pynvml
+
+import torchani
+from torchani.units import hartree2kcalmol
 from tool_utils import time_functions_in_model
 
 summary = ''

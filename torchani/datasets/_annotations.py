@@ -1,10 +1,11 @@
 r"""Mypy type aliases"""
 import sys
+from os import PathLike
 from typing import Union, Callable, Iterable, MutableMapping, TypeVar
+from collections import OrderedDict
+
 from torch import Tensor
 from numpy import ndarray, dtype
-from collections import OrderedDict
-from os import PathLike
 
 # This is needed for compatibility with python 3.6, where numpy typing doesn't
 # work correctly

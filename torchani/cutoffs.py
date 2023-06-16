@@ -1,15 +1,13 @@
-import torch
 import math
 from typing import Union
+
+import torch
 from torch import Tensor
 from torch.jit import Final
 
 
 # All cutoffs assume the elements in "distances" are smaller than "cutoff"
 class Cutoff(torch.nn.Module):
-    def __init__(self, *args, **kwargs):
-        super().__init__()
-
     def forward(self, distances: Tensor, cutoff: float) -> Tensor:
         raise NotImplementedError
 

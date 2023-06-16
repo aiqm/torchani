@@ -1,11 +1,13 @@
 import os
+import math
+import argparse
+
 import torch
-import torchani
+import tqdm
+
+from torchani.models import ANI1x
 from torchani.data._pyanitools import anidataloader
 from torchani.units import hartree2kcalmol
-import argparse
-import math
-import tqdm
 
 
 # parse command line arguments
@@ -19,7 +21,7 @@ parser.add_argument('-d', '--device',
 args = parser.parse_args()
 
 # run benchmark
-ani1x = torchani.models.ANI1x(periodic_table_index=False).to(args.device)
+ani1x = ANI1x(periodic_table_index=False).to(args.device)
 
 
 def recursive_h5_files(base):

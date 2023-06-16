@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Computing Vibrational Frequencies Using Analytical Hessian
 ==========================================================

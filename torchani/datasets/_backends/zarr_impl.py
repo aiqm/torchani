@@ -5,7 +5,7 @@ from collections import OrderedDict  # noqa F401
 
 import numpy as np
 
-from .._annotations import StrPath
+from torchani.datasets._annotations import StrPath
 from .interface import _Store, _ConformerGroup, _ConformerWrapper, _HierarchicalStoreWrapper
 
 try:

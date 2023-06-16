@@ -95,20 +95,20 @@ with multiprocessing to achieve comparable performance with less memory usage:
     training = torch.utils.data.DataLoader(list(training), batch_size=batch_size, collate_fn=torchani.data.collate_fn, num_workers=64)
     validation = torch.utils.data.DataLoader(list(validation), batch_size=batch_size, collate_fn=torchani.data.collate_fn, num_workers=64)
 """
-
 from os.path import join, isfile, isdir
 import os
-from ._pyanitools import anidataloader
-from .. import utils
 import importlib
 import functools
 import math
 import random
 from collections import Counter, defaultdict
-import numpy
 import gc
 
+import numpy
 import torch
+
+from torchani.data._pyanitools import anidataloader
+from torchani import utils
 
 PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None  # type: ignore
 if PKBAR_INSTALLED:

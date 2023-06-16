@@ -15,9 +15,9 @@ import torch
 from torch import Tensor
 import numpy as np
 
-from ._backends import _H5PY_AVAILABLE, _Store, StoreFactory, TemporaryLocation, _ConformerWrapper, _SUFFIXES
-from ._annotations import Transform, Conformers, NumpyConformers, MixedConformers, StrPath, DTypeLike, IdxLike
-from ..utils import species_to_formula, PERIODIC_TABLE, ATOMIC_NUMBERS, tqdm, PADDING
+from torchani.utils import species_to_formula, PERIODIC_TABLE, ATOMIC_NUMBERS, tqdm, PADDING
+from torchani.datasets._backends import _H5PY_AVAILABLE, _Store, StoreFactory, TemporaryLocation, _ConformerWrapper, _SUFFIXES
+from torchani.datasets._annotations import Transform, Conformers, NumpyConformers, MixedConformers, StrPath, DTypeLike, IdxLike
 
 if _H5PY_AVAILABLE:
     import h5py

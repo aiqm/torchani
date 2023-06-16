@@ -1,8 +1,15 @@
 import torch
-from .geometry import displace_to_com_frame
+from torch import Tensor
+
+from torchani.geometry import displace_to_com_frame
 
 
-def compute_dipole(species, coordinates, charges, center_of_mass=True):
+def compute_dipole(
+    species: Tensor,
+    coordinates: Tensor,
+    charges: Tensor,
+    center_of_mass: bool = True
+) -> Tensor:
     """
     Compute dipoles in eA
 

@@ -6,7 +6,7 @@ TorchANI can use semiempirical XTB repulsion to improve the description of the
 potential energy surface at short distances
 """
 import torch
-from torchani.repulsion import RepulsionXTB, StandaloneRepulsionXTB
+from torchani.potentials import StandaloneRepulsionXTB
 
 # This is an example of how to use the repulsion interactions coded in torchani
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -65,24 +65,3 @@ derivative = torch.autograd.grad(rep_energy.sum(), coordinates)[0]
 force = -derivative
 print('Repulsion Energy:', rep_energy)
 print('Force:', force.squeeze())
-
-
-# Internally torchani's models should NOT use StandaloneRepulsionXTB,
-# since it recalculates the neighborlist and all pairwise distances,
-# internally ani models use RepulsionXTB instead, which also
-# takes in distances and a neighborlist, for example, this means
-# atom 0 is a neighbor of atoms 1 and 2, and atom 1 is a neighbor of atom 2
-neighbor_idxs = torch.tensor([[0, 0, 1],
-                             [1, 2, 2]], dtype=torch.long, device=device)
-distances = torch.tensor([0.1, 0.2, 0.5], dtype=torch.double, device=device)
-# since this is internal to the models instead of atomic numbers we pass
-# indices
-atomic_idxs = torch.tensor([[0, 0, 1]], device=device, dtype=torch.long)
-rep_ = RepulsionXTB(symbols=("H", "O")).to(device)
-
-rep_energy = rep_(
-    atomic_idxs,
-    neighbor_idxs,
-    distances
-)
-print('Repulsion energy', rep_energy)

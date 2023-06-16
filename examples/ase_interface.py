@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Structure minimization and constant temperature MD using ASE interface
 ======================================================================

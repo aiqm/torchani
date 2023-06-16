@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from .._annotations import StrPath
+from torchani.datasets._annotations import StrPath
 from .interface import _Store, _StoreWrapper, _ConformerGroup, CacheHolder, _FileOrDirLocation
 from .zarr_impl import _ZarrTemporaryLocation
 

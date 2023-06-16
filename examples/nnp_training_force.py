@@ -1,5 +1,4 @@
 # type: ignore
-# -*- coding: utf-8 -*-
 """
 .. _force-training-example:
 

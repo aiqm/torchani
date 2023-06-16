@@ -4,7 +4,8 @@ import torch
 
 import torchani
 from torchani.testing import TestCase
-from torchani.aev import AEVComputer, CellList
+from torchani.aev import AEVComputer
+from torchani.neighbors import CellList
 from torchani.geometry import tile_into_tight_cell
 
 

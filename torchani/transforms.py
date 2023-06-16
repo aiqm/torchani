@@ -20,11 +20,11 @@ import warnings
 
 import torch
 from torch import Tensor
-
-from .utils import EnergyShifter, PERIODIC_TABLE, ATOMIC_NUMBERS
-from .nn import SpeciesConverter
-from .datasets import ANIBatchedDataset
 from torch.utils.data import DataLoader
+
+from torchani.utils import EnergyShifter, PERIODIC_TABLE, ATOMIC_NUMBERS
+from torchani.nn import SpeciesConverter
+from torchani.datasets import ANIBatchedDataset
 
 
 class SubtractRepulsion(torch.nn.Module):

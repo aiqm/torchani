@@ -8,8 +8,8 @@ from collections import OrderedDict  # noqa F401
 
 import numpy as np
 
-from .._annotations import StrPath
-from ...utils import tqdm
+from torchani.utils import tqdm
+from torchani.datasets._annotations import StrPath
 from .interface import _Store, _ConformerGroup, _ConformerWrapper, CacheHolder, _HierarchicalStoreWrapper
 
 

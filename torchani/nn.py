@@ -1,12 +1,13 @@
-import torch
+from typing import Tuple, NamedTuple, Optional, Sequence
 from collections import OrderedDict
+
+import torch
 from torch import Tensor
 from torch.jit import Final
 
-from typing import Tuple, NamedTuple, Optional, Sequence
-from . import utils
-from . import infer
-from .structs import SpeciesEnergies
+from torchani import utils
+from torchani import infer
+from torchani.structs import SpeciesEnergies
 
 
 class SpeciesCoordinates(NamedTuple):

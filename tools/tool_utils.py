@@ -1,5 +1,6 @@
-import torch
 import timeit
+
+import torch
 
 
 def time_func(key, func, timers=None, synchronize=False, nvtx=False):
@@ -28,7 +29,6 @@ def time_func(key, func, timers=None, synchronize=False, nvtx=False):
 
 
 def time_functions_in_model(model, function_names_list, timers=None, synchronize=False, nvtx=False):
-    # Wrap all the functions from "function_names_list" from the model
-    # "model" with a timer
+    # Wrap all the functions from "function_names_list" from "model"
     for n in function_names_list:
         setattr(model, n, time_func(model.__class__.__name__ + '.' + n, getattr(model, n), timers, synchronize, nvtx))

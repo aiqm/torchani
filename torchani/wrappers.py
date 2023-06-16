@@ -7,7 +7,7 @@ from torch.jit import Final
 
 from torchani.nn import SpeciesConverter
 from torchani.structs import SpeciesEnergies
-from torchani.aev.neighbors import FullPairwise, BaseNeighborlist
+from torchani.neighbors import FullPairwise, BaseNeighborlist
 
 
 # This helper class wraps modules so that they can function directly with

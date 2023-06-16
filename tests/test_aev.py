@@ -243,7 +243,7 @@ class TestAEVJIT(TestAEV):
 class TestPBCSeeEachOther(TestCase):
     def setUp(self):
         self.aev_computer = torchani.AEVComputer.like_1x().to(torch.double)
-        self.neighborlist = torchani.aev.neighbors.FullPairwise(1.0)
+        self.neighborlist = torchani.neighbors.FullPairwise(1.0)
 
     def testTranslationalInvariancePBC(self):
         coordinates = torch.tensor(

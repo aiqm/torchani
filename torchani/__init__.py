@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """`TorchANI`_ is a PyTorch implementation of `ANI`_, created and maintained by
 the `Roitberg group`_.  TorchANI contains classes like
 :class:`AEVComputer`, :class:`ANIModel`, and :class:`EnergyShifter` that can
@@ -36,12 +35,13 @@ from . import utils
 from . import neurochem
 from . import models
 from . import units
-from . import repulsion
 from . import datasets
 from . import transforms
 from . import cli
 from . import geometry
 from . import calc
+from . import neighbors
+from . import cutoffs
 from pkg_resources import get_distribution, DistributionNotFound
 import warnings
 import torch
@@ -52,8 +52,25 @@ except DistributionNotFound:
     # package is not installed
     pass
 
-__all__ = ['AEVComputer', 'EnergyShifter', 'ANIModel', 'Ensemble', 'SpeciesConverter',
-           'utils', 'neurochem', 'models', 'units', 'repulsion', 'datasets', 'transforms', 'cli', 'geometry', 'calc']
+__all__ = [
+    'AEVComputer',
+    'EnergyShifter',
+    'ANIModel',
+    'Ensemble',
+    'SpeciesConverter',
+    'utils',
+    'neurochem',  # TODO: Get rid of this
+    'models',
+    'units',
+    'potentials',
+    'neighbors',
+    'cutoffs',
+    'datasets',
+    'transforms',
+    'cli',
+    'geometry',
+    'calc',
+]
 
 # disable tf32
 torch.backends.cuda.matmul.allow_tf32 = False

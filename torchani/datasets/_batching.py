@@ -12,10 +12,10 @@ import torch
 from torch import Tensor
 import numpy as np
 
-from ..utils import pad_atomic_properties, cumsum_from_zero, PADDING, tqdm
-from .datasets import ANIDataset, ANIBatchedDataset
-from ._annotations import Conformers, StrPath, Transform
-from ._backends import _H5PY_AVAILABLE
+from torchani.utils import pad_atomic_properties, cumsum_from_zero, PADDING, tqdm
+from torchani.datasets.datasets import ANIDataset, ANIBatchedDataset
+from torchani.datasets._annotations import Conformers, StrPath, Transform
+from torchani.datasets._backends import _H5PY_AVAILABLE
 
 if _H5PY_AVAILABLE:
     import h5py

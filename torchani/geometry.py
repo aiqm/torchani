@@ -1,8 +1,10 @@
-""" Utilities to generate some specific geometries"""
+r""" Utilities to generate some specific geometries"""
+from typing import Tuple
+
 import torch
 from torch import Tensor
-from typing import Tuple
-from .utils import get_atomic_masses
+
+from torchani.utils import get_atomic_masses
 
 
 def displace_to_com_frame(species_coordinates: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:

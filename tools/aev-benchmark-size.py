@@ -1,13 +1,15 @@
 import time
-import torch
-import torchani
-import pynvml
 import gc
 import os
-import numpy as np
-from ase.io import read
 import argparse
 import textwrap
+
+import torch
+import pynvml
+import numpy as np
+from ase.io import read
+
+from torchani.models import ANI2x
 
 
 summary = '\n'
@@ -381,8 +383,8 @@ if __name__ == "__main__":
         use_cell_list = False
     else:
         use_cell_list = True
-    nnp_ref = torchani.models.ANI2x(model_index=None, cell_list=use_cell_list).to(device)
-    nnp_cuaev = torchani.models.ANI2x(model_index=None).to(device)
+    nnp_ref = ANI2x(model_index=None, cell_list=use_cell_list).to(device)
+    nnp_cuaev = ANI2x(model_index=None).to(device)
     nnp_cuaev.aev_computer.use_cuda_extension = True
     maxatoms = [6000, 10000]
 

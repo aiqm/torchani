@@ -1,7 +1,9 @@
-import torch
-import torchani
 import argparse
+
+import torch
 import pkbar
+
+import torchani
 from torchani.units import hartree2kcalmol
 from tool_utils import time_functions_in_model
 

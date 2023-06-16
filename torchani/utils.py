@@ -1,18 +1,20 @@
 import tempfile
-from pathlib import Path
-import torch
-from torch import Tensor
-import torch.utils.data
-import math
 import os
 import warnings
 import itertools
+import math
+from pathlib import Path
 from collections import Counter
 from typing import Tuple, NamedTuple, Optional, Sequence, List, Dict, Union, Mapping
-from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
-from .structs import SpeciesEnergies
+
+import torch
 import numpy as np
-from .compat import tqdm
+from torch import Tensor
+import torch.utils.data
+
+from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
+from torchani.structs import SpeciesEnergies
+from torchani.compat import tqdm
 
 PADDING = {
     'species': -1,

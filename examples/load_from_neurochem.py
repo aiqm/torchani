@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Construct Model From NeuroChem Files
 ====================================
