@@ -47,8 +47,10 @@ def _parse_cutoff_fn(cutoff_fn: Union[str, Cutoff]) -> torch.nn.Module:
         cutoff_fn = CutoffDummy()
     elif cutoff_fn == 'cosine':
         cutoff_fn = CutoffCosine()
-    elif cutoff_fn == 'smooth':
-        cutoff_fn = CutoffSmooth()
+    elif cutoff_fn in ['smooth', 'smooth2']:
+        cutoff_fn = CutoffSmooth(order=2)
+    elif cutoff_fn == 'smooth4':
+        cutoff_fn = CutoffSmooth(order=4)
     else:
         assert isinstance(cutoff_fn, Cutoff)
     return cutoff_fn

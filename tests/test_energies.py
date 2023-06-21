@@ -44,6 +44,27 @@ class TestANI2x(TestCase):
         self.assertEqual(e_expect.to(torch.float), e.to(torch.float))
 
 
+class TestANIdr(TestCase):
+    def setUp(self):
+        self.model = torchani.models.ANIdr()[0]
+
+    def testDiatomics(self):
+        coordinates = torch.tensor(
+            [[[0.0, 0.0, 0.0],
+             [0.0, 0.0, 2.0]]]
+        )
+        coordinates = coordinates.repeat(4, 1, 1)
+        # F2, S2, O2, Cl2
+        species = torch.tensor([[9, 9], [16, 16], [8, 8], [17, 17]])
+        e = self.model((species, coordinates)).energies
+
+        e = torchani.units.hartree2kcalmol(e)
+        e_expect = torch.tensor(
+            [-125122.7685, -499630.9805, -94078.2276, -577468.0107]
+        )
+        self.assertEqual(e_expect.to(torch.float), e.to(torch.float))
+
+
 class TestCorrectInput(TestCase):
 
     def setUp(self):
