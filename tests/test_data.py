@@ -12,8 +12,12 @@ from copy import deepcopy
 from torchani.transforms import AtomicNumbersToIndices, SubtractSAE, Compose, calculate_saes
 from torchani.utils import PERIODIC_TABLE, ATOMIC_NUMBERS
 from torchani.testing import TestCase
-from torchani.datasets import ANIDataset, ANIBatchedDataset, create_batched_dataset
-from torchani.datasets._builtin_datasets import _BUILTIN_DATASETS
+from torchani.datasets import (
+    ANIDataset,
+    ANIBatchedDataset,
+    create_batched_dataset,
+    _BUILTIN_DATASETS,
+)
 
 # Optional tests for zarr
 try:

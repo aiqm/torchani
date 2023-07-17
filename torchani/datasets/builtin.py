@@ -1,0 +1,278 @@
+r"""Torchani Builtin Datasets
+
+This module provides access to the following datasets, calculated with specific
+levels of theory (LoT) which are combinations functional/basis_set or
+wavefunction_method/basis_set when appropriate.
+
+- ANI-1x, with LoT:
+    - wB97X/6-31G(d)
+    - wB97X/def2-TZVPP
+    - B97-3c/def2-mTZVP
+    - wB97M-D3BJ/def2-TZVPP
+    - wB97MV/def2-TZVPP
+
+- ANI-2x, with LoT:
+    - wB97X/6-31G(d)
+    - wB97X/def2-TZVPP
+    - B97-3c/def2-mTZVP
+    - wB97M-D3BJ/def2-TZVPP
+    - wB97MV/def2-TZVPP
+
+- ANI-1ccx, with LoT:
+    - CCSD(T)star/CBS
+  Note that this dataset also has Hartree Fock (HF) energies, RI-MP2 energies
+  and forces and DPLNO-CCSD(T) energies for different basis sets and PNO
+  settings.
+  This dataset was originally used for transfer learning, not direct training.
+
+- COMP6-v1, with LoT:
+    - wB97X/6-31G(d)
+    - wB97X/def2-TZVPP
+    - B97-3c/def2-mTZVP
+    - wB97M-D3BJ/def2-TZVPP
+    - wB97MV/def2-TZVPP
+  This dataset is not meant to be trained to, it is a test set.
+
+- COMP6-v2, with LoT:
+    - wB97X/6-31G(d)
+    - B97-3c/def2-mTZVP
+    - wB97M-D3BJ/def2-TZVPP
+    - wB97MV/def2-TZVPP
+  This dataset is not meant to be trained to, it is a test set.
+
+- AminoacidDimers, with LoT:
+    - B97-3c/def2-mTZVP
+  This dataset is not meant to be trained to on its own.
+
+- ANI1q, with LoT:
+    - wB97X/631Gd
+  Very limited subset of ANI-1x
+  for which 'atomic CM5 charges' are available.
+  This dataset is not meant to be trained to on its own.
+
+- ANI2qHeavy, with LoT:
+    - wB97X/631Gd
+  Subset of ANI-2x "heavy"
+  for which 'atomic CM5 charges' are available.
+  This dataset is not meant to be trained to on its own.
+
+- IonsLight, with LoT:
+    - B973c/def2mTZVP
+  Dataset that includes ions, with H,C,N,O elements only
+  This dataset is not meant to be trained to on its own.
+
+- IonsHeavy, with LoT:
+    - B973c/def2mTZVP
+  Dataset that includes ions, with H,C,N,O elements and at least one of F,S,Cl
+  (disjoint from IonsLight)
+  This dataset is not meant to be trained to on its own.
+
+- IonsVeryHeavy, with LoT:
+    - B973c/def2mTZVP
+  Dataset that includes ions, with H,C,N,O,F,S,Cl elements and at least one of
+  Si,As,Br,Se,P,B,I
+  (disjoint from LightIons and IonsHeavy)
+  This dataset is not meant to be trained to on its own.
+
+- TestData, with LoT:
+    - wB97X/631Gd
+  GDB subset, only for debugging and code testing purposes.
+
+- TestDataIons, with LoT:
+    - B973c/def2mTZVP
+  Only for debugging and code testing purposes, includes forces, dipoles and charges.
+
+- TestDataForcesDipoles, with LoT:
+    - B973c/def2mTZVP
+  Only for debugging and code testing purposes, includes forces and dipoles.
+
+
+Note that the conformations present in datasets with different LoT may be
+different.
+
+In all cases the "v2" and "2x" datasets are supersets of the "v1" and "1x"
+datasets, so everything that is in the v1/1x datasets is also in the v2/2x
+datasets, which contain extra structures.
+
+There is some extra wb97X/def2-TZVPP data for which there are "v1" values but not
+"v2" values.
+
+Note that the ANI-BenchMD, S66x8 and the "13" molecules (with 13 heavy atoms)
+of GDB-10to13 were recalculated using ORCA 5.0 instead of 4.2 so the
+integration grids may be slightly different, but the difference should not be
+significant.
+"""
+import sys
+from pathlib import Path
+from typing import Optional, Dict, Any, List
+from collections import OrderedDict
+
+import yaml
+
+from torchani.utils import tqdm
+from torchani.datasets.download import _download_and_extract_archive, _check_integrity
+from torchani.datasets.datasets import ANIDataset
+from torchani.datasets._annotations import StrPath
+
+_BASE_URL = 'http://moria.chem.ufl.edu/animodel/ground_truth_data/'
+_DEFAULT_DATA_PATH = Path.home().joinpath('.local/torchani/Datasets')
+_DATASETS_YAML_PATH = Path(__file__).parent / "builtin-datasets.yaml"
+
+with open(_DATASETS_YAML_PATH, mode="rt", encoding="utf-8") as f:
+    _BUILTIN_DATASETS_SPEC = yaml.safe_load(f)
+
+# Convert csv file with format "file_name, MD5-hash" into a dictionary
+_MD5S: Dict[str, str] = dict()
+with open(Path(__file__).resolve().parent / "md5s.csv") as f:
+    lines = f.readlines()
+    for line in lines[1:]:
+        file_, md5 = line.split(',')
+        _MD5S[file_.strip()] = md5.strip()
+
+_BUILTIN_DATASETS: List[str] = list(_BUILTIN_DATASETS_SPEC.keys())
+_BUILTIN_DATASETS_LOT: List[str] = list(
+    {
+        lot for name in _BUILTIN_DATASETS_SPEC.keys()
+        for lot in _BUILTIN_DATASETS_SPEC[name]["lot"]
+    }
+)
+
+
+def download_builtin_dataset(dataset: str, lot: str, root=None):
+    """
+    Download dataset at specified root folder, or at the default folder:
+    ./datasets/{dataset}-{lot}/
+    """
+    assert dataset in _BUILTIN_DATASETS, f"{dataset} is not avaiable"
+    assert lot in _BUILTIN_DATASETS_LOT, f"{lot} is not avaiable"
+
+    parts = lot.split('-')
+    assert len(parts) == 2, f"bad LoT format: {lot}"
+
+    functional = parts[0]
+    basis_set = parts[1]
+    location = f'./datasets/{dataset}-{lot}/' if root is None else root
+    if Path(location).exists():
+        print(
+            f"Found existing dataset at {Path(location).absolute().as_posix()},"
+            f" will check files integrality."
+        )
+    else:
+        print(f"Will download dataset at {Path(location).absolute().as_posix()}")
+    getattr(sys.modules[__name__], dataset)(
+        location,
+        download=True,
+        functional=functional,
+        basis_set=basis_set
+    )
+
+
+def _check_files_integrity(
+    files_and_md5s: 'OrderedDict[str, str]',
+    root: Path,
+    suffix: str = ".h5",
+    name: str = "Dataset",
+) -> None:
+    # Checks that:
+    # (1) There are files in the dataset
+    # (2) All file names in the provided path are equal to the expected ones
+    # (3) They have the correct checksum
+    # If any of these conditions fails the function exits with a RuntimeError
+    # other files such as tar.gz archives are neglected
+    present_files = sorted(root.glob(f"*{suffix}"))
+    expected_file_names = set(files_and_md5s.keys())
+    present_file_names = set([f.name for f in present_files])
+    if not present_files:
+        raise RuntimeError(f'Dataset not found in path {str(root)}')
+    if expected_file_names != present_file_names:
+        raise RuntimeError(
+            f"Wrong files found for dataset {name} in provided path,"
+            f" expected {expected_file_names} but found {present_file_names}"
+        )
+    for f in tqdm(present_files, desc=f'Checking integrity of dataset {name}'):
+        if not _check_integrity(f, files_and_md5s[f.name]):
+            raise RuntimeError(
+                f"All expected files for dataset {name}"
+                f" were found but file {f.name} failed integrity check,"
+                " your dataset is corrupted or has been modified"
+            )
+
+
+# This Function is a Builder Factory that creates builder functions
+# that instantiate builtin ani datasets.
+# Functions are created using a yaml file as a template, their names are:
+#   - COMP6V1
+#   - ANI1x
+#   - ANI2x
+#   ...
+# Options for the builder functions are:
+#   - root
+#   - functional
+#   - basis_set
+#   - verbose
+#   - download
+#   - dummy_properties
+def _register_dataset_builder(name: str) -> None:
+    data = _BUILTIN_DATASETS_SPEC[name]["lot"]
+    default_fn, default_basis = _BUILTIN_DATASETS_SPEC[name]["default-lot"].split("-")
+
+    def builder(
+        root: Optional[StrPath] = None,
+        functional: str = default_fn,
+        basis_set: str = default_basis,
+        verbose: bool = True,
+        download: bool = True,
+        dummy_properties: Optional[Dict[str, Any]] = None
+    ) -> ANIDataset:
+        lot = f"{functional}-{basis_set}".lower()
+        try:
+            archive = data[lot]["archive"]
+        except KeyError:
+            raise ValueError(
+                f"Unsupported functional-basis set combination"
+                f" try one of {set(data.keys()) - {'default-lot'}}"
+            ) from None
+        suffix = ".h5"
+
+        _root = root or _DEFAULT_DATA_PATH / archive.replace(".tar.gz", "")
+        _root = Path(_root).resolve()
+
+        _files_and_md5s = OrderedDict([(k, _MD5S[k]) for k in data[lot]["files"]])
+
+        # If the dataset is not found we download it
+        if download and ((not _root.is_dir()) or (not any(_root.glob(f"*{suffix}")))):
+            _download_and_extract_archive(
+                base_url=_BASE_URL,
+                file_name=archive,
+                dest_dir=_root
+            )
+
+        # Check for corruption
+        _check_files_integrity(_files_and_md5s, _root, suffix, name)
+
+        # Order dataset paths using the order given in "files and md5s"
+        filenames_order = {
+            Path(k).stem: j for j, k in enumerate(_files_and_md5s.keys())
+        }
+        _filenames_and_paths = sorted(
+            [(p.stem, p) for p in sorted(_root.glob(f"*{suffix}"))],
+            key=lambda tup: filenames_order[tup[0]]
+        )
+        filenames_and_paths = OrderedDict(_filenames_and_paths)
+        ds = ANIDataset(
+            locations=filenames_and_paths.values(),
+            names=filenames_and_paths.keys(),
+            verbose=verbose,
+            dummy_properties=dummy_properties,
+        )
+        if verbose:
+            print(ds)
+        return ds
+
+    builder.__name__ = name
+    setattr(sys.modules[__name__], name, builder)
+
+
+for name in _BUILTIN_DATASETS:
+    if name not in sys.modules[__name__].__dict__:
+        _register_dataset_builder(name)

@@ -1206,15 +1206,3 @@ class ANIDataset(_ANIDatasetBase):
         if self.num_stores == 1:
             return self._first_name, '/'.join(tokens)
         return tokens[0], '/'.join(tokens[1:])
-
-
-class AniH5Dataset(ANIDataset):
-    def __init__(self, *args, **kwargs) -> None:
-        warnings.warn("AniH5Dataset has been renamed to ANIDataset, please use ANIDataset instead")
-        super().__init__(*args, **kwargs)
-
-
-class AniBatchedDataset(ANIBatchedDataset):
-    def __init__(self, *args, **kwargs) -> None:
-        warnings.warn("AniBatchedDataset has been renamed to ANIBatchedDataset, please use ANIBatchedDataset instead")
-        super().__init__(*args, **kwargs)

@@ -1,11 +1,20 @@
-from .datasets import AniBatchedDataset, AniH5Dataset, ANIDataset, ANIBatchedDataset
+from .datasets import ANIDataset, ANIBatchedDataset
 from ._batching import create_batched_dataset
-from ._builtin_datasets import (ANI1x, ANI2x, COMP6v1, COMP6v2, TestData, ANI1ccx, AminoacidDimers,  # noqa F401
-                               ANI1q, ANI2qHeavy, IonsLight, IonsHeavy, IonsVeryHeavy, TestDataIons, TestDataForcesDipoles,
-                               download_builtin_dataset, _BUILTIN_DATASETS)
 from . import utils
+# Some attrs are created programmatically, so a star import is needed
+from .builtin import *  # noqa:F403
+from .builtin import _BUILTIN_DATASETS, _BUILTIN_DATASETS_LOT
 
-__all__ = ['ANIBatchedDataset', 'ANIDataset', 'AniH5Dataset', 'AniBatchedDataset',
-           'create_batched_dataset', 'utils', 'download_builtin_dataset']
 
-__all__ += _BUILTIN_DATASETS
+__all__ = [
+    'ANIBatchedDataset',
+    'ANIDataset',
+    'create_batched_dataset',
+    'utils',
+    'download_builtin_dataset',
+    "_BUILTIN_DATASETS",
+    "_BUILTIN_DATASETS_LOT",
+]
+
+# download_builtin_dataset defined from star import
+__all__ += _BUILTIN_DATASETS  # noqa:F405
