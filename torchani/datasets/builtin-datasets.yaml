@@ -242,3 +242,33 @@ COMP6v2:
                 - "COMP6-v1_full-wB97MV-def2TZVPP.h5"
     default-lot:
         "wb97x-631gd"
+ANICCScan:
+    lot:
+        b973c-def2mtzvp:
+            archive:
+                "ANI-ccscan-b973c-def2mtzvp.tar.gz"
+            files:
+                - "ANI-ccscan-b973c-def2mtzvp.h5"
+        uwb97x-631gd:
+            archive:
+                "ANI-ccscan-Uwb97x-631gd.tar.gz"
+            files:
+                - "ANI-ccscan-Uwb97x-631gd.h5"
+    default-lot:
+        "uwb97x-631gd"
+DielsAlder:
+    lot:
+        uwb97x-631gd:
+            archive:
+                "DielsAlder-Uwb97x-631gd.tar.gz"
+            files:
+                - "DielsAlder-0001-Uwb97x-631gd.h5"
+                - "DielsAlder-0002-Uwb97x-631gd.h5"
+                - "DielsAlder-0003-Uwb97x-631gd.h5"
+                - "DielsAlder-0004-Uwb97x-631gd.h5"
+                - "DielsAlder-0005-Uwb97x-631gd.h5"
+                - "DielsAlder-0006-Uwb97x-631gd.h5"
+                - "DielsAlder-0007_irc_pes_and_nms_qbc-Uwb97x-631gd.h5"
+                - "DielsAlder-0008_md_qbc_and_aniirc_pes-Uwb97x-631gd.h5"
+    default-lot:
+        "uwb97x-631gd"
