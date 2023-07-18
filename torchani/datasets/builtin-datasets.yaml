@@ -272,3 +272,10 @@ DielsAlder:
                 - "DielsAlder-0008_md_qbc_and_aniirc_pes-Uwb97x-631gd.h5"
     default-lot:
         "uwb97x-631gd"
+ANI1e:
+  default-lot: wb97x-631gd
+  lot:
+    wb97x-631gd:
+      archive: ANI1e-wb97x-631gd.tar.gz
+      files:
+      - ANI1e-equilibrium_structures-wb97x-631gd.h5

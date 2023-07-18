@@ -25,6 +25,23 @@ wavefunction_method/basis_set when appropriate.
   settings.
   This dataset was originally used for transfer learning, not direct training.
 
+- ANI-1e, with LoT:
+    - wB97X/6-31G(d)
+    This dataset consists of structures corresponding to all smiles extracted
+    from the ANI-1x dataset, embedded in 3D space and optimized with PM7.
+    The ANI-1e dataset is presented in
+    `ANI-1E: An equilibrium database from the ANI-1 database`
+    by Vazquez-Salazar, Luis Itza and Meuwly, Markus.
+    This dataset does not have forces, it has instead a variety of properties that
+    the QM9-style datasets have:
+        - Rotational constants A, B, C (GHz)
+        - Dipole and Polarizability magnitudes (Debye and a_0^3 respectively)
+        - Energy of HOMO and LUMO, and HOMO-LUMO gap (Ha)
+        - average <r^2> (spatial extent, a_0^2)
+        - Zero point vibrational energies (ZPVE, Ha)
+        - Zero Kelvin internal energy (Ha)
+        - Thermal quantities, U, H, G, C_v, at 298.15 K (C_v in cal/K/mol, rest in Ha)
+
 - COMP6-v1, with LoT:
     - wB97X/6-31G(d)
     - wB97X/def2-TZVPP
@@ -87,6 +104,7 @@ wavefunction_method/basis_set when appropriate.
   specific points of the potential energy surface (PES), in some cases using
   active learning, with the QBC criteria, and with normal mode sampling.
   UwB97x means "Unrestricted" Kohn-Sham was used.
+
 - TestData, with LoT:
     - wB97X/631Gd
   GDB subset, only for debugging and code testing purposes.
