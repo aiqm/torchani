@@ -242,6 +242,41 @@ COMP6v2:
                 - "COMP6-v1_full-wB97MV-def2TZVPP.h5"
     default-lot:
         "wb97x-631gd"
+Iso17EquilibriumSet1:
+  default-lot: pbe_ts-fhi_aims_numerical
+  lot:
+    pbe_ts-fhi_aims_numerical:
+      archive: Iso17EquilibriumSet1-pbe_ts-fhi_aims_numerical.tar.gz
+      files:
+      - Iso17Equilibrium-set_1-pbe_ts-fhi_aims_numerical.h5
+Iso17EquilibriumSet2:
+  default-lot: pbe_ts-fhi_aims_numerical
+  lot:
+    pbe_ts-fhi_aims_numerical:
+      archive: Iso17EquilibriumSet2-pbe_ts-fhi_aims_numerical.tar.gz
+      files:
+      - Iso17Equilibrium-set_2-pbe_ts-fhi_aims_numerical.h5
+Iso17TestSet1:
+  default-lot: pbe_ts-fhi_aims_numerical
+  lot:
+    pbe_ts-fhi_aims_numerical:
+      archive: Iso17TestSet1-pbe_ts-fhi_aims_numerical.tar.gz
+      files:
+      - Iso17Test-set_1-pbe_ts-fhi_aims_numerical.h5
+Iso17TestSet2:
+  default-lot: pbe_ts-fhi_aims_numerical
+  lot:
+    pbe_ts-fhi_aims_numerical:
+      archive: Iso17TestSet2-pbe_ts-fhi_aims_numerical.tar.gz
+      files:
+      - Iso17Test-set_2-pbe_ts-fhi_aims_numerical.h5
+Iso17TrainSet1:
+  default-lot: pbe_ts-fhi_aims_numerical
+  lot:
+    pbe_ts-fhi_aims_numerical:
+      archive: Iso17TrainSet1-pbe_ts-fhi_aims_numerical.tar.gz
+      files:
+      - Iso17Train-set_1-pbe_ts-fhi_aims_numerical.h5
 SN2:
   default-lot: dsd_blyp_d3bj-def2tzvp
   lot:

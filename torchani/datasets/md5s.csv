@@ -51,6 +51,11 @@ test_data2.h5,cd57a243e344776a49f24776ae2ff440
 Tripeptides-sulphur-wB97X-631Gd.h5,f21c22858182c69b8b7a5ff2c674eb50
 Tripeptides-v1-wB97X-631Gd.h5,543cd0de994270f3bc3cbafb4d29236c
 Tripeptides-v1-wB97X-def2TZVPP.h5,e7cef6693516bddae33a1c9011acd0ca
+Iso17Equilibrium-set_1-pbe_ts-fhi_aims_numerical.h5,97d27341d7141b9ec51fb6ab44071162
+Iso17Equilibrium-set_2-pbe_ts-fhi_aims_numerical.h5,27e1cb85c46f7b36531450e571ae152d
+Iso17Test-set_1-pbe_ts-fhi_aims_numerical.h5,c6a68ad4ffab0418eb397ba8d11ffb35
+Iso17Test-set_2-pbe_ts-fhi_aims_numerical.h5,e48c5f65f1eee7e63588e97a092a6055
+Iso17Train-set_1-pbe_ts-fhi_aims_numerical.h5,b2dbcb1976eba4b69628b48f93ecf5f0
 SN2-h_c_f_cl_br_i-dsd_blyp_d3bj-def2tzvp.h5,8c541bbb5124d4a909326edf8a706fbb
 ANI-ccscan-Uwb97x-631gd.h5,073aead7f8a1d61658f2ec085bad6399
 ANI-ccscan-b973c-def2mtzvp.h5,f1d7715bd01afab9a3c86d7975c57a0a

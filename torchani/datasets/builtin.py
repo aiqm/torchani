@@ -117,6 +117,40 @@ wavefunction_method/basis_set when appropriate.
     - B973c/def2mTZVP
   Only for debugging and code testing purposes, includes forces and dipoles.
 
+Iso17 dataset:
+    MD trajectories using FHI-aims, with a resolution of 1 frame / fs. . Dataset
+    has total energies and atomic forces.
+
+    From paper:
+
+    K.T. Schütt, P.-J. Kindermans, H.E. Sauceda, S. Chmiela, A. Tkatchenko, K.-R.
+    Müller. SchNet: A continuous-filter convolutional neural network for modeling
+    quantum interactions. Advances in Neural Information Processing System. 2017.
+
+    - Iso17TrainSet1, with LoT:
+        - PBE-TS/Numerical-FHI-aims
+        Training set of trajectories of molecules with C7O2H10 stoichiometry
+
+    - Iso17TestSet1, with LoT:
+        - PBE-TS/Numerical-FHI-aims
+        Testing set of trajectories of molecules with C7O2H10 stoichiometry,
+        same molecules as TrainSet1
+
+    - Iso17EquilibriumSet1, with LoT:
+        - PBE-TS/Numerical-FHI-aims
+        Equilibrium geometries of molecules with C7O2H10 stoichiometry,
+        same molecules as TrainSet1
+
+    - Iso17TestSet2, with LoT:
+        - PBE-TS/Numerical-FHI-aims
+        Testing set of trajectories of molecules with C7O2H10 stoichiometry,
+        different molecules from TrainSet1
+
+    - Iso17EquilibriumSet2, with LoT:
+        - PBE-TS/Numerical-FHI-aims
+        Equilibrium geometries of molecules with C7O2H10 stoichiometry,
+        same molecules as TestSet2
+
 - SN2, with LoT:
     - DSD-BLYP-D3(BJ)/def2mTZVP
     Dataset from the PhysNet paper
