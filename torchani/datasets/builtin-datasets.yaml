@@ -242,6 +242,13 @@ COMP6v2:
                 - "COMP6-v1_full-wB97MV-def2TZVPP.h5"
     default-lot:
         "wb97x-631gd"
+SN2:
+  default-lot: dsd_blyp_d3bj-def2tzvp
+  lot:
+    dsd_blyp_d3bj-def2tzvp:
+      archive: SN2-dsd_blyp_d3bj-def2tzvp.tar.gz
+      files:
+      - SN2-h_c_f_cl_br_i-dsd_blyp_d3bj-def2tzvp.h5
 ANICCScan:
     lot:
         b973c-def2mtzvp:
