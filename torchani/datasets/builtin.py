@@ -117,6 +117,31 @@ wavefunction_method/basis_set when appropriate.
     - B973c/def2mTZVP
   Only for debugging and code testing purposes, includes forces and dipoles.
 
+- QM9Dirty, with LoT:
+    - B3LYP/631G_2df_p
+  QM9 dataset, as published in  https://doi.org/10.1038/sdata.2014.22,
+  The dirty version of the dataset contains the full dataset including the structures
+  that "failed geometry consistensy checks". This dataset does not contain forces,
+  but contains various physical quantities.
+  Vibrational frequencies are included, and are always 3 A - 5
+  Molecules have a "is_linear" boolean flag, for non linear molecules the last
+  vibrational frequency is 0.0 and should be discarded.
+  Some molecules have a "has_alternative_frequencies" flag. These molecules have
+  two sets of vibrational frequencies. Molecules that don't have this second set have
+  zeros for this field.
+
+- QM9Clean, with LoT:
+    - B973c/def2mTZVP
+  Clean version of the QM9 dataset, which does not include the structures that
+  failed geometry consistency checks.
+
+- QM9C7O2H10, with LoT:
+    - G4MP2/631G_2df_p
+  Subset of QM9 with thermal properties recalculated at the higher G4MP2 level
+  of theory. *Note that the rest of the properties in this dataset are
+  calculated at the B3LYP/631G_2df_p level of theory*. Properties correspond
+  only to conformations of the stoichiometry C7O2H10.
+
 Iso17 dataset:
     MD trajectories using FHI-aims, with a resolution of 1 frame / fs. . Dataset
     has total energies and atomic forces.

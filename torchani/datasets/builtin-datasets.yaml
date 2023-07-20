@@ -242,6 +242,28 @@ COMP6v2:
                 - "COMP6-v1_full-wB97MV-def2TZVPP.h5"
     default-lot:
         "wb97x-631gd"
+QM9C7O2H10:
+  default-lot: g4mp2-631g_2df_p
+  lot:
+    g4mp2-631g_2df_p:
+      archive: QM9C7O2H10-g4mp2-631g_2df_p.tar.gz
+      files:
+      - QM9C7O2H10-C7O2H10-g4mp2-631g_2df_p.h5
+QM9Clean:
+  default-lot: b3lyp-631g_2df_p
+  lot:
+    b3lyp-631g_2df_p:
+      archive: QM9Clean-b3lyp-631g_2df_p.tar.gz
+      files:
+      - QM9Clean-gdb17_clean-b3lyp-631g_2df_p.h5
+QM9Dirty:
+  default-lot: b3lyp-631g_2df_p
+  lot:
+    b3lyp-631g_2df_p:
+      archive: QM9Dirty-b3lyp-631g_2df_p.tar.gz
+      files:
+      - QM9Clean-gdb17_clean-b3lyp-631g_2df_p.h5
+      - QM9Dirty-gdb17_failed-b3lyp-631g_2df_p.h5
 Iso17EquilibriumSet1:
   default-lot: pbe_ts-fhi_aims_numerical
   lot:

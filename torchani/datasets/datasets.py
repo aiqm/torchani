@@ -4,6 +4,7 @@ import inspect
 import pickle
 import warnings
 import math
+import re
 from os import fspath
 from pathlib import Path
 from pprint import pformat
@@ -32,7 +33,7 @@ if _H5PY_AVAILABLE:
 
 _ELEMENT_KEYS = {'species', 'numbers', 'atomic_numbers'}
 _LEGACY_NONBATCH_KEYS = {'species', 'numbers', 'smiles', 'atomic_numbers', 'lot'}
-_ALWAYS_STRING_KEYS = {'_id', 'smiles', 'lot'}
+_ALWAYS_STRING_PATTERNS = {r"^_id$", r"^smiles_.*", r"^inchis_.*", r"^lot$", r"^smiles$"}
 # These broken keys are in some datasets and are basically impossible to parse
 # correctly. If grouping is "legacy" and these are found we give up and ask the
 # user to delete them in a warning
@@ -540,8 +541,11 @@ class _ANISubdataset(_ANIDatasetBase):
         specified properties. Conformers are dict of the form {property:
         Tensor}, where properties are strings"""
         numpy_conformers = self.get_numpy_conformers(group_name, idx, properties)
-        return {k: torch.tensor(numpy_conformers[k])
-                for k in set(numpy_conformers.keys()) - _ALWAYS_STRING_KEYS}
+        return {
+            k: torch.tensor(numpy_conformers[k])
+            for k in set(numpy_conformers.keys())
+            if not any(re.match(pattern, k) for pattern in _ALWAYS_STRING_PATTERNS)
+        }
 
     @_delegate_with_return
     def get_numpy_conformers(self,
@@ -587,8 +591,9 @@ class _ANISubdataset(_ANIDatasetBase):
                 elements = elements.astype(str)
                 if not chem_symbols:
                     numpy_conformers[k] = _symbols_to_numbers(elements)
-        for k in needed_properties & _ALWAYS_STRING_KEYS:
-            numpy_conformers[k] = numpy_conformers[k].astype(str)
+        for k in needed_properties:
+            if any(re.match(pattern, k) for pattern in _ALWAYS_STRING_PATTERNS):
+                numpy_conformers[k] = numpy_conformers[k].astype(str)
         return numpy_conformers
 
     # Convert a dict that maybe has some numpy arrays and / or some torch
