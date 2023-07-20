@@ -343,3 +343,10 @@ ANI1e:
       archive: ANI1e-wb97x-631gd.tar.gz
       files:
       - ANI1e-equilibrium_structures-wb97x-631gd.h5
+SolvatedProteinFragments:
+  default-lot: revpbe_d3bj-def2tzvp
+  lot:
+    revpbe_d3bj-def2tzvp:
+      archive: SolvatedProteinFragments-revpbe_d3bj-def2tzvp.tar.gz
+      files:
+      - SolvatedProteinFragments-fragments-revpbe_d3bj-def2tzvp.h5

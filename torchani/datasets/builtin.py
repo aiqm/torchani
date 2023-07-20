@@ -62,7 +62,7 @@ wavefunction_method/basis_set when appropriate.
   This dataset is not meant to be trained to on its own.
 
 - ANI1q, with LoT:
-    - wB97X/631Gd
+    - wB97X/631G(d)
   Very limited subset of ANI-1x
   for which 'atomic CM5 charges' are available.
   This dataset is not meant to be trained to on its own.
@@ -74,7 +74,7 @@ wavefunction_method/basis_set when appropriate.
   This dataset is not meant to be trained to on its own.
 
 - IonsLight, with LoT:
-    - B973c/def2mTZVP
+    - B973c/def2-mTZVP
   Dataset that includes ions, with H,C,N,O elements only
   This dataset is not meant to be trained to on its own.
 
@@ -85,14 +85,14 @@ wavefunction_method/basis_set when appropriate.
   This dataset is not meant to be trained to on its own.
 
 - IonsVeryHeavy, with LoT:
-    - B973c/def2mTZVP
+    - B973c/def2-mTZVP
   Dataset that includes ions, with H,C,N,O,F,S,Cl elements and at least one of
   Si,As,Br,Se,P,B,I
   (disjoint from LightIons and IonsHeavy)
   This dataset is not meant to be trained to on its own.
 
 - ANI-CCScan, with LoT:
-    - B973c/def2mTZVP
+    - B973c/def2-mTZVP
     - UwB97x/6-31Gd
   Dataset includes relaxed scans of stretching carbon-carbon single bonds
   for a number of compounds. UwB97x means "Unrestricted" Kohn-Sham was used.
@@ -104,6 +104,20 @@ wavefunction_method/basis_set when appropriate.
   specific points of the potential energy surface (PES), in some cases using
   active learning, with the QBC criteria, and with normal mode sampling.
   UwB97x means "Unrestricted" Kohn-Sham was used.
+
+- SolvatedProteinFragments, with LoT:
+    - revPBE-D3(BJ)/def2-TZVP
+    The solvated protein fragments dataset probes many-body intermolecular
+    interactions between "protein fragments" and water molecules, which are
+    important for the description of many biologically relevant condensed phase
+    systems. It contains structures for all possible "amons"
+    (hydrogen-saturated covalently bonded fragments) of up to eight heavy atoms
+    (C, N, O, S) that can be derived from chemical graphs of proteins
+    containing the 20 natural amino acids connected via peptide bonds or
+    disulfide bridges.
+    Note that molecules in this dataset may have charges.
+    dataset presented in the physnet paper:
+    https://arxiv.org/abs/1902.08408 (2019)
 
 - TestData, with LoT:
     - wB97X/631Gd
