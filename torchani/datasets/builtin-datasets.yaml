@@ -114,9 +114,9 @@ ANI1x:
                 - "ANI-1x-wB97MV-def2TZVPP.h5"
         wb97x-def2tzvpp:
             archive:
-                "ANI-1x-wb97x-def2tzvpp.tar.gz"
+                "ANI1x-wb97x-def2tzvpp.tar.gz"
             files:
-                - "ANI-1x-wB97X-def2TZVPP.h5"
+                - "ANI-1x-wb97x-def2tzvpp.h5"
     default-lot:
         "wb97x-631gd"
 ANI2x:
@@ -148,10 +148,10 @@ ANI2x:
                 - "ANI-2x_heavy_and_dimers-wB97MV-def2TZVPP.h5"
         wb97x-def2tzvpp:
             archive:
-                "ANI-2x-wb97x-def2tzvpp.tar.gz"
+                "ANI2x-wb97x-def2tzvpp.tar.gz"
             files:
-                - "ANI-1x-wB97X-def2TZVPP.h5"
-                - "ANI-2x_subset-wB97X-def2TZVPP.h5"
+                - "ANI-1x-wb97x-def2tzvpp.h5"
+                - "ANI-2x_subset-wb97x-def2tzvpp.h5"
     default-lot:
         "wb97x-631gd"
 COMP6v1:
