@@ -156,7 +156,58 @@ wavefunction_method/basis_set when appropriate.
   calculated at the B3LYP/631G_2df_p level of theory*. Properties correspond
   only to conformations of the stoichiometry C7O2H10.
 
+SPICE dataset:
+    All sets with LoT:
+    - wB97M-D3(BJ)/def2-TZVPPD
+
+    From paper:
+
+    SPICE, A Dataset of Drug-like Molecules and Peptides for Training Machine
+    Learning Potentials." https://doi.org/10.48550/arXiv.2209.10702 (2022).
+
+    For more information consult the relevant paper. Note that some molecules
+    in these datasets contain ions or counterions, but there are no structures
+    with net charge.
+
+    NOTE: Some of the fields in these sets are missing for some conformations,
+    namely, the MBIS fields and bond-indices are missing for IonPairs and Des370K,
+    and the bond-indices fields only are missing for the PubChem data (except the
+    subset "6")
+
+    - SPICEPubChem:
+        With elements:
+            H, C, N, O, S, F, Cl, Br, I, P
+
+    - SPICEPubChem2xCompatible:
+        Subset of SPICEPubChem that contains only H, C, N, O, S, F, Cl elements.
+
+    - SPICEIonPairs:
+        With ions:
+            Li+, Na+, K+, Ca2+, Mg2+, F-, Cl-, Br-, I-
+
+    - SPICEDipeptides:
+        With elements:
+            H, C, N, O, S
+
+    - SPICESolvatedAminoacids:
+        With elements:
+            H, C, N, O, S
+
+    - SPICEDesMonomers:
+        With elements:
+            H, C, N, O, S, F, Cl, Br, I, P
+
+    - SPICEDes370K:
+        With elements:
+            H, C, N, O, S, F, Cl, Br, I, P
+
+        And ions:
+            Li+, Na+, K+, Ca2+, Mg2+
+
 Iso17 dataset:
+    All sets with LoT:
+    - PBE-TS/Numerical-FHI-aims
+
     MD trajectories using FHI-aims, with a resolution of 1 frame / fs. . Dataset
     has total energies and atomic forces.
 
@@ -166,27 +217,22 @@ Iso17 dataset:
     Müller. SchNet: A continuous-filter convolutional neural network for modeling
     quantum interactions. Advances in Neural Information Processing System. 2017.
 
-    - Iso17TrainSet1, with LoT:
-        - PBE-TS/Numerical-FHI-aims
+    - Iso17TrainSet1:
         Training set of trajectories of molecules with C7O2H10 stoichiometry
 
-    - Iso17TestSet1, with LoT:
-        - PBE-TS/Numerical-FHI-aims
+    - Iso17TestSet1:
         Testing set of trajectories of molecules with C7O2H10 stoichiometry,
         same molecules as TrainSet1
 
-    - Iso17EquilibriumSet1, with LoT:
-        - PBE-TS/Numerical-FHI-aims
+    - Iso17EquilibriumSet1:
         Equilibrium geometries of molecules with C7O2H10 stoichiometry,
         same molecules as TrainSet1
 
-    - Iso17TestSet2, with LoT:
-        - PBE-TS/Numerical-FHI-aims
+    - Iso17TestSet2:
         Testing set of trajectories of molecules with C7O2H10 stoichiometry,
         different molecules from TrainSet1
 
-    - Iso17EquilibriumSet2, with LoT:
-        - PBE-TS/Numerical-FHI-aims
+    - Iso17EquilibriumSet2:
         Equilibrium geometries of molecules with C7O2H10 stoichiometry,
         same molecules as TestSet2
 

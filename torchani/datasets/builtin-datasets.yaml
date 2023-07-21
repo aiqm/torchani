@@ -343,6 +343,61 @@ ANI1e:
       archive: ANI1e-wb97x-631gd.tar.gz
       files:
       - ANI1e-equilibrium_structures-wb97x-631gd.h5
+SPICEDes370K:
+  default-lot: wb97m_d3bj-def2tzvppd
+  lot:
+    wb97m_d3bj-def2tzvppd:
+      archive: SPICEDes370K-wb97m_d3bj-def2tzvppd.tar.gz
+      files:
+      - SPICE-des_370K_supplement-wb97m_d3bj-def2tzvppd.h5
+      - SPICE-des_370K-wb97m_d3bj-def2tzvppd.h5
+SPICEDesMonomers:
+  default-lot: wb97m_d3bj-def2tzvppd
+  lot:
+    wb97m_d3bj-def2tzvppd:
+      archive: SPICEDesMonomers-wb97m_d3bj-def2tzvppd.tar.gz
+      files:
+      - SPICE-des_monomers-wb97m_d3bj-def2tzvppd.h5
+SPICEDipeptides:
+  default-lot: wb97m_d3bj-def2tzvppd
+  lot:
+    wb97m_d3bj-def2tzvppd:
+      archive: SPICEDipeptides-wb97m_d3bj-def2tzvppd.tar.gz
+      files:
+      - SPICE-dipeptides-wb97m_d3bj-def2tzvppd.h5
+SPICEIonPairs:
+  default-lot: wb97m_d3bj-def2tzvppd
+  lot:
+    wb97m_d3bj-def2tzvppd:
+      archive: SPICEIonPairs-wb97m_d3bj-def2tzvppd.tar.gz
+      files:
+      - SPICE-ion_pairs_v1_1-wb97m_d3bj-def2tzvppd.h5
+SPICEPubChem2xCompatible:
+  default-lot: wb97m_d3bj-def2tzvppd
+  lot:
+    wb97m_d3bj-def2tzvppd:
+      archive: SPICEPubChem2xCompatible-wb97m_d3bj-def2tzvppd.tar.gz
+      files:
+      - SPICE-pubchem_2x_compatible-wb97m_d3bj-def2tzvppd.h5
+SPICEPubChem:
+  default-lot: wb97m_d3bj-def2tzvppd
+  lot:
+    wb97m_d3bj-def2tzvppd:
+      archive: SPICEPubChem-wb97m_d3bj-def2tzvppd.tar.gz
+      files:
+      - SPICE-pubchem_set_1-wb97m_d3bj-def2tzvppd.h5
+      - SPICE-pubchem_set_2-wb97m_d3bj-def2tzvppd.h5
+      - SPICE-pubchem_set_3-wb97m_d3bj-def2tzvppd.h5
+      - SPICE-pubchem_set_4-wb97m_d3bj-def2tzvppd.h5
+      - SPICE-pubchem_set_5-wb97m_d3bj-def2tzvppd.h5
+      - SPICE-pubchem_set_6-wb97m_d3bj-def2tzvppd.h5
+SPICESolvatedAminoacids:
+  default-lot: wb97m_d3bj-def2tzvppd
+  lot:
+    wb97m_d3bj-def2tzvppd:
+      archive: SPICESolvatedAminoacids-wb97m_d3bj-def2tzvppd.tar.gz
+      files:
+      - SPICE-solvated_aminoacids_v1_1-wb97m_d3bj-def2tzvppd.h5
 SolvatedProteinFragments:
   default-lot: revpbe_d3bj-def2tzvp
   lot:
