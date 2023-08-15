@@ -713,7 +713,7 @@ class CellList(BaseNeighborlist):
         # (N1, ..., Nd), which holds the flat bucket indices this can be done a
         # different way, same as between but this is possibly faster (?) NOTE:
         # should benchmark this or simplify the code
-        assert self.scaling_for_flat_index is not None,\
+        assert self.scaling_for_flat_index is not None, \
             "Scaling for flat index has not been computed"
         assert x.shape[-1] == 3
         return (x * self.scaling_for_flat_index).sum(-1)
@@ -722,7 +722,7 @@ class CellList(BaseNeighborlist):
         # transforms a tensor of shape (... 3) with vector indices
         # in the last dimension into a tensor of shape (..., Eta, 3)
         # where Eta is the number of neighboring buckets, indexed by n
-        assert self.vector_index_displacement is not None,\
+        assert self.vector_index_displacement is not None, \
             "Displacement for neighbors has not been computed"
         assert x.shape[-1] == 3
         x = x.unsqueeze(-2) + self.vector_index_displacement
@@ -746,13 +746,13 @@ class CellList(BaseNeighborlist):
         fractional_coordinates[fractional_coordinates >= 1.0] += -1.0
         fractional_coordinates[fractional_coordinates < 0.0] += 1.0
 
-        assert not torch.isnan(fractional_coordinates).any(),\
+        assert not torch.isnan(fractional_coordinates).any(), \
                 "Some fractional coordinates are NaN."
-        assert not torch.isinf(fractional_coordinates).any(),\
+        assert not torch.isinf(fractional_coordinates).any(), \
                 "Some fractional coordinates are +-Inf."
-        assert (fractional_coordinates < 1.0).all(),\
+        assert (fractional_coordinates < 1.0).all(), \
             f"Some fractional coordinates are too large {fractional_coordinates[fractional_coordinates >= 1.]}"
-        assert (fractional_coordinates >= 0.0).all(),\
+        assert (fractional_coordinates >= 0.0).all(), \
             f"Some coordinates are too small {fractional_coordinates.masked_select(fractional_coordinates < 0.)}"
         return fractional_coordinates
 

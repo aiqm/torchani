@@ -405,3 +405,59 @@ SolvatedProteinFragments:
       archive: SolvatedProteinFragments-revpbe_d3bj-def2tzvp.tar.gz
       files:
       - SolvatedProteinFragments-fragments-revpbe_d3bj-def2tzvp.h5
+Train3BPAMixedT:
+  default-lot: wb97x-631gd
+  lot:
+    wb97x-631gd:
+      archive: Train3BPAMixedT-wb97x-631gd.tar.gz
+      files:
+      - Train3BPAMixedT-train_mixed_temperature-wb97x-631gd.h5
+Train3BPA300K:
+  default-lot: wb97x-631gd
+  lot:
+    wb97x-631gd:
+      archive: Train3BPA300K-wb97x-631gd.tar.gz
+      files:
+      - Train3BPA300K-train_300K-wb97x-631gd.h5
+Test3BPA300K:
+  default-lot: wb97x-631gd
+  lot:
+    wb97x-631gd:
+      archive: Test3BPA300K-wb97x-631gd.tar.gz
+      files:
+      - Test3BPA300K-test_300K-wb97x-631gd.h5
+Test3BPA600K:
+  default-lot: wb97x-631gd
+  lot:
+    wb97x-631gd:
+      archive: Test3BPA600K-wb97x-631gd.tar.gz
+      files:
+      - Test3BPA600K-test_600K-wb97x-631gd.h5
+Test3BPA1200K:
+  default-lot: wb97x-631gd
+  lot:
+    wb97x-631gd:
+      archive: Test3BPA1200K-wb97x-631gd.tar.gz
+      files:
+      - Test3BPA1200K-test_1200K-wb97x-631gd.h5
+Test3BPADihedral180:
+  default-lot: wb97x-631gd
+  lot:
+    wb97x-631gd:
+      archive: Test3BPADihedral180-wb97x-631gd.tar.gz
+      files:
+      - Test3BPADihedral180-test_dih_beta180-wb97x-631gd.h5
+Test3BPADihedral150:
+  default-lot: wb97x-631gd
+  lot:
+    wb97x-631gd:
+      archive: Test3BPADihedral150-wb97x-631gd.tar.gz
+      files:
+      - Test3BPADihedral150-test_dih_beta150-wb97x-631gd.h5
+Test3BPADihedral120:
+  default-lot: wb97x-631gd
+  lot:
+    wb97x-631gd:
+      archive: Test3BPADihedral120-wb97x-631gd.tar.gz
+      files:
+      - Test3BPADihedral120-test_dih_beta120-wb97x-631gd.h5

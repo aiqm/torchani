@@ -66,7 +66,7 @@ def build_network():
 
 
 def init_normal(m):
-    if type(m) == torch.nn.Linear:
+    if isinstance(m, torch.nn.Linear):
         torch.nn.init.kaiming_uniform_(m.weight)
 
 

@@ -205,8 +205,8 @@ class TestFineGrainedShuffle(TestCase):
             else:
                 ranges = [None, None, None]
             rng = np.random.default_rng(12345)
-            with tempfile.NamedTemporaryFile(dir=tmpdir, suffix='.h5') as dummy_h50,\
-                 tempfile.NamedTemporaryFile(dir=tmpdir, suffix='.h5') as dummy_h51,\
+            with tempfile.NamedTemporaryFile(dir=tmpdir, suffix='.h5') as dummy_h50, \
+                 tempfile.NamedTemporaryFile(dir=tmpdir, suffix='.h5') as dummy_h51, \
                  tempfile.NamedTemporaryFile(dir=tmpdir, suffix='.h5') as dummy_h52:
                 create_dummy_file(rng, dummy_h50, num_groups, num_conformers_per_group, 'H', 0.0, properties, ranges[0])
                 create_dummy_file(rng, dummy_h51, num_groups, num_conformers_per_group, 'C', 1.0, properties, ranges[1])
@@ -550,7 +550,7 @@ class TestANIDataset(TestCase):
         self.tmp_store_three_groups = tempfile.NamedTemporaryFile(suffix='.h5')
         self.new_store_name = self.tmp_dir.name / Path('new.h5')
 
-        with h5py.File(self.tmp_store_one_group, 'r+') as f1,\
+        with h5py.File(self.tmp_store_one_group, 'r+') as f1, \
              h5py.File(self.tmp_store_three_groups, 'r+') as f3:
             for j, (k, g) in enumerate(numpy_conformers.items()):
                 f3.create_group(''.join(k))
@@ -921,7 +921,7 @@ class TestANIDatasetZarr(TestANIDataset):
 
         store1 = zarr.DirectoryStore(self.tmp_store_one_group.name)
         store3 = zarr.DirectoryStore(self.tmp_store_three_groups.name)
-        with zarr.hierarchy.open_group(store1, mode='w') as f1,\
+        with zarr.hierarchy.open_group(store1, mode='w') as f1, \
              zarr.hierarchy.open_group(store3, mode='w') as f3:
             f3.attrs['grouping'] = 'by_formula'
             f1.attrs['grouping'] = 'by_formula'

@@ -251,6 +251,25 @@ Iso17 dataset:
     It is unclear what the reference point for the dipoles in the dataset are,
     the units are eA, the reference is most likely the center-of-charge.
 
+- 3BPA dataset, with LoT:
+    - wB97X/6-31G(d)
+    Dataset from the ACE paper (Peter Kovacs et. al.
+    https://doi.org/10.1021/acs.jctc.1c00647)
+
+    This dataset consists on 8 different parts, two meant for training and 6 for
+    testing / validation
+
+    - Train3BPA300K
+    - Train3BPAMixedT
+    - Test3BPA300K
+    - Test3BPA600K
+    - Test3BPA1200K
+    - Test3BPADihedral120
+    - Test3BPADihedral150
+    - Test3BPADihedral180
+
+    For more information consult the corresponding paper
+
 
 Note that the conformations present in datasets with different LoT may be
 different.

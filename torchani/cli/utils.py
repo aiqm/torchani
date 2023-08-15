@@ -166,9 +166,6 @@ def h5pack(
                         raise ValueError(
                             "File names should only use alphanumeric characters or _"
                         )
-                    main_part_name = input(
-                        f"Main part name for file {f.name}?: "
-                    )
                 if force_renaming:
                     main_part_name = input(
                         f"Main part name for file {f.name}?: "

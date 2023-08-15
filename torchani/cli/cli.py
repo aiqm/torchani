@@ -40,6 +40,22 @@ def build_parser():
         action="store_true",
         help='Append the dataset to the internal datasets'
     )
+    parser_h5pack.add_argument(
+        '--interactive',
+        action="store_true",
+    )
+    parser_h5pack.add_argument(
+        '--no-interactive',
+        action="store_false",
+        dest="interactive",
+    )
+    parser_h5pack.add_argument('--functional', type=str, default="")
+    parser_h5pack.add_argument('--basis-set', type=str, default="")
+    parser_h5pack.add_argument('--name', type=str, default="")
+    parser_h5pack.set_defaults(
+        interactive=True,
+        force_renaming=True,
+    )
     # parse args
     args = main_parser.parse_args()
     return args
@@ -55,7 +71,19 @@ def main():
         h5info(args.path)
 
     if args.workflow == "h5pack":
-        h5pack(args.path, args.internal)
+        if not args.interactive:
+            force_renaming = False
+        else:
+            force_renaming = True
+        h5pack(
+            args.path,
+            args.internal,
+            force_renaming=force_renaming,
+            interactive=args.interactive,
+            functional=args.functional,
+            basis_set=args.basis_set,
+            name=args.name
+        )
 
 
 if __name__ == '__main__':
