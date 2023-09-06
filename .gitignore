@@ -48,3 +48,4 @@ htmlcov/
 training_outputs/
 examples/dataset.pkl
 /tools/plots/*
+/tests/.hypothesis
