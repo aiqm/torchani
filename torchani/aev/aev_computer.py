@@ -79,6 +79,7 @@ class AEVComputer(torch.nn.Module):
     aev_length: Final[int]
 
     use_cuda_extension: Final[bool]
+    use_cuaev_interface: Final[bool]
     triu_index: Tensor
 
     def __init__(self,
@@ -92,6 +93,7 @@ class AEVComputer(torch.nn.Module):
                 ShfZ: Optional[Tensor] = None,
                 num_species: Optional[int] = None,
                 use_cuda_extension=False,
+                use_cuaev_interface=False,
                 cutoff_fn='cosine',
                 neighborlist='full_pairwise',
                 radial_terms='standard',
@@ -103,6 +105,7 @@ class AEVComputer(torch.nn.Module):
 
         super().__init__()
         self.use_cuda_extension = use_cuda_extension
+        self.use_cuaev_interface = use_cuaev_interface
         self.num_species = num_species
         self.num_species_pairs = num_species * (num_species + 1) // 2
 
@@ -301,8 +304,12 @@ class AEVComputer(torch.nn.Module):
             if not self.cuaev_is_initialized:
                 self._init_cuaev_computer()
                 self.cuaev_is_initialized = True
-            assert pbc is None or (not pbc.any()), "cuaev currently does not support PBC"
-            aev = self._compute_cuaev(species, coordinates)
+            if self.use_cuaev_interface:
+                atom_index12, distances, diff_vector = self.neighborlist(species, coordinates, cell, pbc)
+                aev = self._compute_cuaev_with_half_nbrlist(species, coordinates, atom_index12, diff_vector, distances)
+            else:
+                assert pbc is None or (not pbc.any()), "cuaev currently does not support PBC"
+                aev = self._compute_cuaev(species, coordinates)
             return SpeciesAEV(species, aev)
 
         # WARNING: The coordinates that are input into the neighborlist are **not** assumed to be
@@ -321,6 +328,76 @@ class AEVComputer(torch.nn.Module):
     def _compute_cuaev(self, species, coordinates):
         species_int = species.to(torch.int32)
         aev = torch.ops.cuaev.run(coordinates, species_int, self.cuaev_computer)
+        return aev
+
+    @jit_unused_if_no_cuaev()
+    @staticmethod
+    def _half_to_full_nbrlist(atom_index12):
+        """
+        Convereting half nbrlist to full nbrlist.
+        """
+        ilist = atom_index12.view(-1)
+        jlist = atom_index12.flip(0).view(-1)
+        ilist_sorted, indices = ilist.sort(stable=True)
+        jlist = jlist[indices]
+        ilist_unique, numneigh = torch.unique_consecutive(ilist_sorted, return_counts=True)
+        return ilist_unique, jlist, numneigh
+
+    @jit_unused_if_no_cuaev()
+    @staticmethod
+    def _full_to_half_nbrlist(ilist_unique, jlist, numneigh, species, fullnbr_diff_vector):
+        """
+        Limitations: only works for lammps-type pbc neighborlists (with local and ghost atoms).
+                     TorchANI neighborlists only have 1 set of atoms and do mapping with local and image
+                     atoms, which will not work here.
+        """
+        ilist_unique = ilist_unique.long()
+        jlist = jlist.long()
+        ilist = torch.repeat_interleave(ilist_unique, numneigh)
+        atom_index12 = torch.cat([ilist.unsqueeze(0), jlist.unsqueeze(0)], 0)  # [2, num_pairs]
+
+        # sort by atom i
+        sort_indices = atom_index12[0].sort().indices
+        atom_index12 = atom_index12[:, sort_indices]
+        diff_vector = fullnbr_diff_vector[sort_indices]
+
+        # select half nbr by choose atom i < atom j
+        half_mask = atom_index12[0] < atom_index12[1]
+        atom_index12 = atom_index12[:, half_mask]
+        diff_vector = diff_vector[half_mask]
+
+        distances = diff_vector.norm(2, -1)
+        return atom_index12, diff_vector, distances
+
+    @jit_unused_if_no_cuaev()
+    def _compute_cuaev_with_half_nbrlist(self, species, coordinates, atom_index12, diff_vector, distances):
+        species = species.to(torch.int32)
+        atom_index12 = atom_index12.to(torch.int32)
+        # The coordinates will not be used in forward calculation, but it's gradient (force) will still be calculated in cuaev kernel,
+        # so it's important to have coordinates passed as an argument.
+        aev = torch.ops.cuaev.run_with_half_nbrlist(coordinates, species, atom_index12, diff_vector, distances, self.cuaev_computer)
+        return aev
+
+    @jit_unused_if_no_cuaev()
+    def _compute_cuaev_with_full_nbrlist(self, species, coordinates, ilist_unique, jlist, numneigh):
+        """
+        Computing aev with full nbrlist that is from
+            1. Lammps interface
+            2. For testting purpose, the full nbrlist converted from half nbrlist
+
+        The full neighbor list format needs the following three tensors:
+            - `ilist_unique`: This is a 1D tensor containing all local atom indices.
+            - `jlist`: A 1D tensor containing all the neighbors for all atoms. The neighbors for atom `i` could
+                       be inferred from the numneigh tensor.
+            - `numneigh`: This is a 1D tensor that specifies the number of neighbors for each atom i.
+        """
+        assert coordinates.shape[0] == 1, "_compute_cuaev_with_full_nbrlist currently only support single molecule"
+        aev = torch.ops.cuaev.run_with_full_nbrlist(coordinates,
+                                                    species.to(torch.int32),
+                                                    ilist_unique.to(torch.int32),
+                                                    jlist.to(torch.int32),
+                                                    numneigh.to(torch.int32),
+                                                    self.cuaev_computer)
         return aev
 
     def _compute_aev(

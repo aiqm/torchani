@@ -33,10 +33,16 @@ ONLY_BUILD_SM80 = '--only-sm80' in sys.argv
 if ONLY_BUILD_SM80:
     sys.argv.remove('--only-sm80')
 
-# DEBUG infomation for cuaev
-DEBUG_EXT = '--debug' in sys.argv
-if DEBUG_EXT:
-    sys.argv.remove('--debug')
+# compile cuaev with DEBUG infomation
+CUAEV_DEBUG = '--cuaev-debug' in sys.argv
+if CUAEV_DEBUG:
+    sys.argv.remove('--cuaev-debug')
+
+# compile cuaev with optimizations: e.g. intrinsics functions and use_fast_math flag
+# CUAEV_OPT = '--cuaev-opt' in sys.argv
+# if CUAEV_OPT:
+#     sys.argv.remove('--cuaev-opt')
+CUAEV_OPT = True
 
 if not BUILD_EXT_ALL_SM and not FAST_BUILD_EXT:
     log.warn("Will not install cuaev")  # type: ignore
@@ -90,7 +96,11 @@ def cuda_extension(build_all=False):
             if sm not in SMs and sm >= 50:
                 SMs.append(sm)
 
-    nvcc_args = ["-Xptxas=-v", '--expt-extended-lambda', '-use_fast_math']
+    nvcc_args = ['--expt-extended-lambda']
+    if CUAEV_OPT:
+        nvcc_args.append('-use_fast_math')
+    # nvcc_args.append('-Xptxas=-v')
+
     # use cub in a safe manner, see:
     # https://github.com/pytorch/pytorch/pull/55292
     # https://github.com/pytorch/pytorch/pull/66219
@@ -112,8 +122,10 @@ def cuda_extension(build_all=False):
             nvcc_args.append("-gencode=arch=compute_80,code=sm_80")
         if cuda_version >= 11.1:
             nvcc_args.append("-gencode=arch=compute_86,code=sm_86")
-    if DEBUG_EXT:
+    if CUAEV_DEBUG:
         nvcc_args.append('-DTORCHANI_DEBUG')
+    if CUAEV_OPT:
+        nvcc_args.append('-DTORCHANI_OPT')
     print("nvcc_args: ", nvcc_args)
     print('-' * 75)
     include_dirs = [*maybe_download_cub(), os.path.abspath("torchani/csrc/")]
@@ -127,7 +139,7 @@ def cuda_extension(build_all=False):
 def mnp_extension():
     from torch.utils.cpp_extension import CUDAExtension
     cxx_args = ['-std=c++14', '-fopenmp']
-    if DEBUG_EXT:
+    if CUAEV_DEBUG:
         cxx_args.append('-DTORCHANI_DEBUG')
     return CUDAExtension(
         name='torchani.mnp',

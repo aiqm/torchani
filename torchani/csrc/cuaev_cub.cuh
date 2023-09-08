@@ -13,6 +13,15 @@
     AT_CUDA_CHECK(cudaGetLastError());                           \
   } while (false)
 
+inline int get_num_bits(uint64_t max_key) {
+  int num_bits = 1;
+  while (max_key > 1) {
+    max_key >>= 1;
+    num_bits++;
+  }
+  return num_bits;
+}
+
 template <typename DataT>
 void cubScan(const DataT* d_in, DataT* d_out, int num_items, cudaStream_t stream) {
   auto allocator = c10::cuda::CUDACachingAllocator::get();
@@ -47,6 +56,44 @@ void cubDeviceSelectFlagged(const DataT* d_in, DataT* d_out, int num_items, char
   auto buffer_count = allocator->allocate(sizeof(int));
   int* d_num_selected_out = (int*)buffer_count.get();
   CUB_WRAPPER(cuaev::cub::DeviceSelect::Flagged, d_in, d_flags, d_out, d_num_selected_out, num_items, stream);
+}
+
+template <typename DataT, typename IndexT>
+int cubEncode(const DataT* d_in, DataT* d_unique_out, IndexT* d_counts_out, int num_items, cudaStream_t stream) {
+  auto allocator = c10::cuda::CUDACachingAllocator::get();
+  auto buffer_count = allocator->allocate(sizeof(int));
+  int* d_num_runs_out = (int*)buffer_count.get();
+
+  CUB_WRAPPER(
+      cuaev::cub::DeviceRunLengthEncode::Encode, d_in, d_unique_out, d_counts_out, d_num_runs_out, num_items, stream);
+
+  int num_unique = 0;
+  cudaMemcpyAsync(&num_unique, d_num_runs_out, sizeof(int), cudaMemcpyDefault, stream);
+  cudaStreamSynchronize(stream);
+  return num_unique;
+}
+
+template <typename KeyT, typename ValueT>
+void cubSortPairs(
+    const KeyT* d_keys_in,
+    KeyT* d_keys_out,
+    const ValueT* d_values_in,
+    ValueT* d_values_out,
+    int num_items,
+    int max_key,
+    cudaStream_t stream) {
+  auto allocator = c10::cuda::CUDACachingAllocator::get();
+  int nbits = get_num_bits(max_key);
+  CUB_WRAPPER(
+      cuaev::cub::DeviceRadixSort::SortPairs,
+      d_keys_in,
+      d_keys_out,
+      d_values_in,
+      d_values_out,
+      num_items,
+      0,
+      nbits,
+      stream);
 }
 
 template <typename DataT>

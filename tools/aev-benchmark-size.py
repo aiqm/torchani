@@ -5,11 +5,10 @@ import argparse
 import textwrap
 
 import torch
+import torchani
 import pynvml
 import numpy as np
 from ase.io import read
-
-from torchani.models import ANI2x
 
 
 summary = '\n'
@@ -24,7 +23,7 @@ def getGpuName(device=None):
     pynvml.nvmlInit()
     h = pynvml.nvmlDeviceGetHandleByIndex(real_i)
     name = pynvml.nvmlDeviceGetName(h)
-    return name.decode("utf-8")
+    return name
 
 
 def synchronize(flag=False):
@@ -43,7 +42,7 @@ def checkgpu(device=None):
     h = pynvml.nvmlDeviceGetHandleByIndex(real_i)
     info = pynvml.nvmlDeviceGetMemoryInfo(h)
     name = pynvml.nvmlDeviceGetName(h)
-    print('   GPU Memory Used (nvidia-smi): {:7.1f}MB / {:.1f}MB ({})'.format(info.used / 1024 / 1024, info.total / 1024 / 1024, name.decode()))
+    print('   GPU Memory Used (nvidia-smi): {:7.1f}MB / {:.1f}MB ({})'.format(info.used / 1024 / 1024, info.total / 1024 / 1024, name))
     return f'{(info.used / 1024 / 1024):.1f}MB'
 
 
@@ -126,7 +125,7 @@ def benchmark(speciesPositions, aev_comp, runbackward=False, mol_info=None, verb
                 if args.run_energy:
                     force = -torch.autograd.grad(energies.sum(), coordinates, create_graph=True, retain_graph=True)[0]
                 else:
-                    force = -torch.autograd.grad(aev.sum(), coordinates, create_graph=True, retain_graph=True)[0]
+                    force = -torch.autograd.grad(aev, coordinates, torch.ones_like(aev), create_graph=True, retain_graph=True)[0]
             except Exception as e:
                 alert(f" Force faild: {str(e)[:50]}...")
                 addSummaryLine(items)
@@ -364,8 +363,11 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--N',
                         help='Number of Repeat',
                         default=200, type=int)
-    parser.add_argument('--no-cell-list',
-                        help='No use of cell list for pyaev',
+    parser.add_argument('--use-cell-list',
+                        help='Use cell list for pyaev',
+                        action='store_true', default=False)
+    parser.add_argument('--use-cuaev-interface',
+                        help='Use cuaev interface with externel neighbor list',
                         action='store_true', default=False)
     parser.set_defaults(backward=0)
     parser.set_defaults(run_energy=0)
@@ -376,15 +378,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     path = os.path.dirname(os.path.realpath(__file__))
     N = args.N
+    print(f"Check args: {args}")
 
     device = torch.device('cuda')
     files = ['small.pdb', '1hz5.pdb', '6W8H.pdb']
-    if args.no_cell_list:
-        use_cell_list = False
-    else:
-        use_cell_list = True
-    nnp_ref = ANI2x(model_index=None, cell_list=use_cell_list).to(device)
-    nnp_cuaev = ANI2x(model_index=None).to(device)
+
+    nnp_ref = torchani.models.ANI2x(periodic_table_index=True, model_index=None, cell_list=args.use_cell_list,
+                                    use_cuaev_interface=args.use_cuaev_interface, use_cuda_extension=args.use_cuaev_interface).to(device)
+    nnp_cuaev = torchani.models.ANI2x(periodic_table_index=True, model_index=None).to(device)
     nnp_cuaev.aev_computer.use_cuda_extension = True
     maxatoms = [6000, 10000]
 

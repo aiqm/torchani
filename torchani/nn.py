@@ -1,3 +1,4 @@
+import warnings
 from typing import Tuple, NamedTuple, Optional, Sequence
 from collections import OrderedDict
 
@@ -79,8 +80,8 @@ class ANIModel(torch.nn.ModuleDict):
         output = output.view_as(species)
         return output
 
-    def to_infer_model(self, use_mnp=True):
-        # infer is not type-checked
+    def to_infer_mnp_model(self, use_mnp=True):
+        """Deprecated because MNP is complex and is not general enough"""
         return infer.ANIInferModel(list(self.items()), use_mnp)  # type: ignore
 
 
@@ -111,9 +112,15 @@ class Ensemble(torch.nn.ModuleList):
         # out shape is (M, C, A)
         return members_atomic_energies
 
-    def to_infer_model(self, use_mnp=True):
-        # infer is not type-checked
-        return infer.BmmEnsemble(self, use_mnp)  # type: ignore
+    def to_infer_model(self, use_mnp=False):
+        if use_mnp:
+            warnings.warn('use_mnp will be deprecated in the future')
+            return self.to_infer_mnp_model()
+        return infer.BmmEnsemble(self)  # type: ignore
+
+    def to_infer_mnp_model(self):
+        """Deprecated because MNP is complex and is not general enough"""
+        return infer.BmmEnsembleMNP(self)  # type: ignore
 
 
 class Sequential(torch.nn.ModuleList):

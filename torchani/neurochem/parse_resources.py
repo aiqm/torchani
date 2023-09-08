@@ -23,12 +23,16 @@ NN = Union[ANIModel, Ensemble]
 def parse_neurochem_resources(info_file_path):
     torchani_dir = Path(__file__).resolve().parent.parent.as_posix()
     resource_path = os.path.join(torchani_dir, 'resources/')
-    print(resource_path)
     local_dir = os.path.expanduser('~/.local/torchani/')
 
     resource_info = os.path.join(resource_path, info_file_path)
 
-    if os.path.isfile(resource_info) and os.stat(resource_info).st_size > 0:
+    if os.path.isfile(info_file_path) and os.stat(info_file_path).st_size > 0:
+        # if the info file is passed as an absolute path, the path is split into the resource_path and filename
+        resource_path = Path(info_file_path).parent.as_posix()
+        info_file_path = Path(info_file_path).name
+
+    elif os.path.isfile(resource_info) and os.stat(resource_info).st_size > 0:
         # No action needed if the info file can be located in the default path
         pass
 

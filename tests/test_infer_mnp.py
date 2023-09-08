@@ -18,10 +18,14 @@ devices = ['cuda', 'cpu']
 ani2x = torchani.models.ANI2x(periodic_table_index=False)
 species_converter = torchani.nn.SpeciesConverter(ani2x.get_chemical_symbols())
 
+# set num threads for multi net parallel
+os.environ['OMP_NUM_THREADS'] = '2'
+
 
 @parameterized_class(('device'), product(devices))
-@unittest.skipIf(not torch.cuda.is_available(), "Infer model needs cuda is available")
-class TestInfer(TestCase):
+@unittest.skipIf(not torch.cuda.is_available(), "InferMNP model needs cuda is available")
+@unittest.skipIf(not torchani.infer.mnp_is_installed, "InferMNP model needs the mnp extension is installed")
+class TestInferMNP(TestCase):
 
     def setUp(self):
         self.ani2x = ani2x.to(self.device)
@@ -50,73 +54,47 @@ class TestInfer(TestCase):
             self.assertEqual(force1, force2, atol=1e-5, rtol=1e-5)
 
     def testANI2xInfer(self):
-        ani2x_infer = torchani.models.ANI2x(periodic_table_index=False).to_infer_model().to(self.device)
+        ani2x_infer = torchani.models.ANI2x(periodic_table_index=False).to(self.device)
+        ani2x_infer.neural_networks = ani2x_infer.neural_networks.to_infer_mnp_model()
         self._test(ani2x, ani2x_infer)
 
-    def testBmmEnsemble(self):
+    def testBmmEnsembleMNP(self):
         model_iterator = self.ani2x.neural_networks
         aev_computer = torchani.AEVComputer.like_2x(use_cuda_extension=(self.device == 'cuda'))
         ensemble = torchani.nn.Sequential(aev_computer, model_iterator).to(self.device)
-        bmm_ensemble = torchani.nn.Sequential(aev_computer, self.ani2x.neural_networks.to_infer_model()).to(self.device)
+        bmm_ensemble = torchani.nn.Sequential(aev_computer, self.ani2x.neural_networks.to_infer_mnp_model()).to(self.device)
         self._test(ensemble, bmm_ensemble)
 
+    def testANIInferMNPModel(self):
+        model_iterator = self.ani2x.neural_networks
+        aev_computer = torchani.AEVComputer.like_2x(use_cuda_extension=(self.device == 'cuda'))
+        model_ref = torchani.nn.Sequential(aev_computer, model_iterator[0]).to(self.device)
+        model_infer = torchani.nn.Sequential(aev_computer, model_iterator[0].to_infer_mnp_model()).to(self.device)
+        self._test(model_ref, model_infer)
+
     def testANI2xInferJIT(self):
-        ani2x_infer_jit = torchani.models.ANI2x(periodic_table_index=False).to_infer_model().to(self.device)
-        ani2x_infer_jit = torch.jit.script(ani2x_infer_jit)
+        ani2x_infer = torchani.models.ANI2x(periodic_table_index=False).to(self.device)
+        ani2x_infer.neural_networks = ani2x_infer.neural_networks.to_infer_mnp_model()
+        ani2x_infer_jit = torch.jit.script(ani2x_infer)
         self._test(ani2x, ani2x_infer_jit)
 
-    def testBmmEnsembleJIT(self):
+    def testBmmEnsembleMNPJIT(self):
         model_iterator = self.ani2x.neural_networks
         aev_computer = torchani.AEVComputer.like_2x(use_cuda_extension=(self.device == 'cuda'))
         ensemble = torchani.nn.Sequential(aev_computer, model_iterator).to(self.device)
         # jit
-        bmm_ensemble = torchani.nn.Sequential(aev_computer, self.ani2x.neural_networks.to_infer_model()).to(self.device)
+        bmm_ensemble = torchani.nn.Sequential(aev_computer, self.ani2x.neural_networks.to_infer_mnp_model()).to(self.device)
         bmm_ensemble_jit = torch.jit.script(bmm_ensemble)
         self._test(ensemble, bmm_ensemble_jit)
 
-    def testBenchmarkJIT(self):
-        """
-        Sample benchmark result on 2080 Ti
-        cuda:
-            run_ani2x                          : 21.739 ms/step
-            run_ani2x_infer                    : 9.630 ms/step
-        cpu:
-            run_ani2x                          : 756.459 ms/step
-            run_ani2x_infer                    : 32.482 ms/step
-        """
-        def run(model, file):
-            filepath = os.path.join(self.path, f'../dataset/pdb/{file}')
-            mol = read(filepath)
-            species = torch.tensor([mol.get_atomic_numbers()], device=self.device)
-            positions = torch.tensor([mol.get_positions()], dtype=torch.float32, requires_grad=False, device=self.device)
-            speciesPositions = self.species_converter((species, positions))
-            species, coordinates = speciesPositions
-            coordinates.requires_grad_(True)
-
-            _, energy1 = model((species, coordinates))
-            _ = torch.autograd.grad(energy1.sum(), coordinates)[0]  # force
-
-        use_cuaev = self.device == "cuda"
-        ani2x_jit = torch.jit.script(torchani.models.ANI2x(use_cuda_extension=use_cuaev, periodic_table_index=False).to(self.device))
-        ani2x_infer_jit = torchani.models.ANI2x(use_cuda_extension=use_cuaev, periodic_table_index=False).to_infer_model().to(self.device)
-        ani2x_infer_jit = torch.jit.script(ani2x_infer_jit)
-
-        file = 'small.pdb'
-
-        def run_ani2x():
-            run(ani2x_jit, file)
-
-        def run_ani2x_infer():
-            run(ani2x_infer_jit, file)
-
-        steps = 10 if self.device == "cpu" else 30
-        print()
-        torchani.utils.timeit(run_ani2x, steps=steps)
-        torchani.utils.timeit(run_ani2x_infer, steps=steps)
-
-    def testNVTX(self):
-        torch.ops.mnp.nvtx_range_push("hello")
-        torch.ops.mnp.nvtx_range_pop()
+    def testANIInferMNPModelJIT(self):
+        model_iterator = self.ani2x.neural_networks
+        aev_computer = torchani.AEVComputer.like_2x(use_cuda_extension=(self.device == 'cuda'))
+        model_ref = torchani.nn.Sequential(aev_computer, model_iterator[0]).to(self.device)
+        # jit
+        model_infer = torchani.nn.Sequential(aev_computer, model_iterator[0].to_infer_mnp_model()).to(self.device)
+        model_infer_jit = torch.jit.script(model_infer)
+        self._test(model_ref, model_infer_jit)
 
 
 if __name__ == '__main__':
