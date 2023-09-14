@@ -6,7 +6,7 @@ from torch.nn import Module
 from torch.jit import Final
 
 from torchani.nn import SpeciesConverter
-from torchani.structs import SpeciesEnergies
+from torchani.tuples import SpeciesEnergies
 from torchani.neighbors import FullPairwise, BaseNeighborlist
 
 

@@ -16,8 +16,8 @@ import torchani
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 ###############################################################################
-# Let's now load the built-in ANI-1ccx models. The builtin ANI-1ccx contains 8
-# models trained with diffrent initialization. Predicting the energy and force
+# Let's now load the built-in ANI-2x model. The builtin ANI-2x contains 8
+# models trained with different initialization. Predicting the energy and force
 # using the average of the 8 models outperform using a single model, so it is
 # always recommended to use an ensemble, unless the speed of computation is an
 # issue in your application.
@@ -45,26 +45,38 @@ species = torch.tensor([[6, 1, 1, 1, 1]], device=device)
 ###############################################################################
 # Now let's compute energy and force:
 energy = model((species, coordinates)).energies
-derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
-force = -derivative
+forces = model.members_forces((species, coordinates), average=True).forces
+
 
 ###############################################################################
 # And print to see the result:
-print('Energy:', energy.item())
-print('Force:', force.squeeze())
+print('Energy:', energy.item(), 'Hartree')
+print('Force (Hartree / Å): \n', forces)
 
 ###############################################################################
-# you can also get the atomic energies (WARNING: these have no physical
-# meaning) by calling:
-_, atomic_energies = model.atomic_energies((species, coordinates))
+# you can get the atomic energies (WARNING: these have no physical meaning)
+# by calling:
+_, atomic_energies = model.atomic_energies((species, coordinates),
+                                           shift_energy=True, average=True)
 
 ###############################################################################
-# this gives you the average (shifted) energies over all models of the ensemble by default,
-# with the same shape as the coordinates. Dummy atoms, if present, will have an
-# energy of zero
-print('Average Atomic energies, for species 6 1 1 1 1', atomic_energies)
+# this gives you the average (shifted) energies over all models of the ensemble
+# by default, with the same shape as the coordinates.
+# (Dummy atoms, if present, will have an energy of zero.)
+print('Average Atomic energies, for species 6 1 1 1 1: \n', atomic_energies)
 
 ###############################################################################
-# you can also access model specific atomic energies
-_, atomic_energies = model.atomic_energies((species, coordinates), average=False)
-print('Atomic energies of first model, for species 6 1 1 1 1', atomic_energies[0, :, :])
+# you can access model specific atomic energies by indexing:
+_, atomic_energies = model.atomic_energies((species, coordinates),
+                                           shift_energy=True, average=False)
+print('Atomic energies of first model, for species 6 1 1 1 1: \n',
+      atomic_energies[0, :, :])
+
+###############################################################################
+# You can also return atomic energy contributions  directly from their atomic
+# NNs before ground state atomic energies are added:
+unshifted_atomic_energies = model.atomic_energies((species, coordinates),
+                                                  shift_energy=False,
+                                                  average=False).energies
+print('Atomic energies, before adding ground state atomic energies: \n',
+      unshifted_atomic_energies[0])

@@ -1,5 +1,5 @@
 import warnings
-from typing import Tuple, NamedTuple, Optional, Sequence
+from typing import Tuple, Optional, Sequence
 from collections import OrderedDict
 
 import torch
@@ -8,12 +8,10 @@ from torch.jit import Final
 
 from torchani import utils
 from torchani import infer
-from torchani.structs import SpeciesEnergies
-
-
-class SpeciesCoordinates(NamedTuple):
-    species: Tensor
-    coordinates: Tensor
+from torchani.tuples import (
+    SpeciesCoordinates,
+    SpeciesEnergies
+)
 
 
 class ANIModel(torch.nn.ModuleDict):

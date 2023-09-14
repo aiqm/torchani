@@ -10,7 +10,6 @@ from ase.md.nptberendsen import NPTBerendsen
 from ase import units
 from ase.io import read
 from ase.calculators.test import numeric_force
-
 from torchani.neighbors import CellList
 from torchani.testing import TestCase
 from torchani.models import _fetch_state_dict, ANI1x, BuiltinModelPairInteractions

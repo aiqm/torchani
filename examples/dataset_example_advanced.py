@@ -86,7 +86,20 @@ print(ds.grouping)
 #    /034/coordinates, shape (5, 34, 3)
 #         /species, shape (5, 34)
 #         /energies, shape (5,)
-#
+
+# Conformer groups can be iterated over in chunks, up to a specified maximum
+# chunk size. This breaks a conformer group into mini-batches containing
+# multiple inputs, allowing the dataset to be iterated over much more
+# efficiently. As we regrouped the dataset by num_atoms in the previous step,
+# this will iterate over conformer groups containing the same number of atoms.
+with ds.keep_open('r') as read_ds:
+    for group, j, conformer in read_ds.chunked_items(max_size=1500):
+        species = conformer['species']
+        coordinates = conformer['coordinates']
+        ani_input = (species, coordinates)
+        print(ani_input)
+        break
+
 # Property creation
 # -----------------
 #

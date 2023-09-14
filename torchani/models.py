@@ -55,7 +55,7 @@ example usage:
 """
 import os
 import warnings
-from typing import Tuple, Optional, NamedTuple, Sequence, Union, Dict, Any, Type, Callable, List, Iterable
+from typing import Tuple, Optional, Sequence, Union, Dict, Any, Type, Callable, List, Iterable
 from copy import deepcopy
 from pathlib import Path
 from collections import OrderedDict
@@ -66,7 +66,15 @@ from torch.nn import Module
 from torch.jit import Final
 
 from torchani import atomics
-from torchani.nn import SpeciesConverter, SpeciesEnergies, Ensemble, ANIModel
+from torchani.tuples import (
+    SpeciesEnergies,
+    SpeciesEnergiesQBC,
+    AtomicStdev,
+    SpeciesForces,
+    ForceStdev,
+    ForceMagnitudes
+)
+from torchani.nn import SpeciesConverter, Ensemble, ANIModel
 from torchani.utils import ChemicalSymbolsToInts, PERIODIC_TABLE, EnergyShifter, path_is_writable
 from torchani.aev import AEVComputer
 from torchani.potentials import (
@@ -80,25 +88,6 @@ from torchani.neighbors import rescreen
 
 
 NN = Union[ANIModel, Ensemble]
-
-
-class SpeciesEnergiesQBC(NamedTuple):
-    species: Tensor
-    energies: Tensor
-    qbcs: Tensor
-
-
-class AtomicQBCs(NamedTuple):
-    species: Tensor
-    energies: Tensor
-    ae_stdev: Tensor
-
-
-class ForceQBCs(NamedTuple):
-    species: Tensor
-    energies: Tensor
-    mean_force: Tensor
-    stdev_force: Tensor
 
 
 class BuiltinModel(Module):
@@ -198,7 +187,9 @@ class BuiltinModel(Module):
     @torch.jit.export
     def atomic_energies(self, species_coordinates: Tuple[Tensor, Tensor],
                         cell: Optional[Tensor] = None,
-                        pbc: Optional[Tensor] = None, average: bool = True) -> SpeciesEnergies:
+                        pbc: Optional[Tensor] = None,
+                        average: bool = True,
+                        shift_energy: bool = True) -> SpeciesEnergies:
         """Calculates predicted atomic energies of all atoms in a molecule
 
         Args:
@@ -206,8 +197,10 @@ class BuiltinModel(Module):
             cell: the cell used in PBC computation, set to None if PBC is not enabled
             pbc: the bool tensor indicating which direction PBC is enabled, set to None if PBC is not enabled
             average: If True (the default) it returns the average over all models
-                in the ensemble, should there be more than one (output shape (C, A)),
-                otherwise it returns one atomic energy per model (output shape (M, C, A)).
+                     in the ensemble, should there be more than one (output shape (C, A)),
+                     otherwise it returns one atomic energy per model (output shape (M, C, A)).
+            shift_energy: returns atomic energies shifted with ground state atomic energies.
+                          Set to True by default
 
         Returns:
             species_energies: tuple of tensors, species and atomic energies
@@ -216,10 +209,13 @@ class BuiltinModel(Module):
         species_coordinates = self._maybe_convert_species(species_coordinates)
         species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
         atomic_energies = self.neural_networks._atomic_energies(species_aevs)
-        atomic_energies += self.energy_shifter._atomic_saes(species_coordinates[0])
 
         if atomic_energies.dim() == 2:
             atomic_energies = atomic_energies.unsqueeze(0)
+
+        if shift_energy:
+            atomic_energies += self.energy_shifter._atomic_saes(species_coordinates[0])
+
         if average:
             atomic_energies = atomic_energies.mean(dim=0)
         return SpeciesEnergies(species_coordinates[0], atomic_energies)
@@ -267,8 +263,37 @@ class BuiltinModel(Module):
                 shape of energies is (M, C), where M is the number of modules in the ensemble.
         """
         assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
-        species, members_energies = self.atomic_energies(species_coordinates, cell=cell, pbc=pbc, average=False)
+        species, members_energies = self.atomic_energies(species_coordinates, cell=cell, pbc=pbc,
+                                                         shift_energy=True, average=False)
         return SpeciesEnergies(species, members_energies.sum(-1))
+
+    def members_forces(self, species_coordinates: Tuple[Tensor, Tensor],
+                       cell: Optional[Tensor] = None,
+                       pbc: Optional[Tensor] = None,
+                       average: bool = False) -> SpeciesForces:
+        """Calculates predicted forces from ensemble members, can return the average prediction
+
+        Args:
+            species_coordinates: minibatch of configurations
+            average: boolean value which determines whether to return the predicted forces from each model or the ensemble average
+            cell: the cell used in PBC computation, set to None if PBC is not enabled
+            pbc: the bool tensor indicating which direction PBC is enabled, set to none if PBC is not enabled
+
+        Returns:
+            SpeciesForces: species, molecular energies, and atomic forces predicted by an ensemble of neural network models
+        """
+        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
+        coordinates = species_coordinates[1].requires_grad_()
+        members_energies = self.members_energies(species_coordinates, cell, pbc).energies
+        forces_list = []
+        for energy in members_energies:
+            derivative = torch.autograd.grad(energy.sum(), coordinates, retain_graph=True)[0]
+            force = -derivative
+            forces_list.append(force)
+        forces = torch.stack(forces_list, dim=0)
+        if average:
+            forces = forces.mean(0)
+        return SpeciesForces(species_coordinates[0], members_energies, forces)
 
     @torch.jit.export
     def energies_qbcs(self, species_coordinates: Tuple[Tensor, Tensor],
@@ -285,8 +310,9 @@ class BuiltinModel(Module):
         Args:
             species_coordinates: minibatch of configurations
             cell: the cell used in PBC computation, set to None if PBC is not enabled
-            pbc: the bool tensor indicating which direction PBC is enabled, set to None if PBC is not enabled
-            unbiased: Whether to take an unbiased standard deviation over the ensemble's members.
+            pbc: the bool tensor indicating which direction PBC is enabled,
+                    set to None if PBC is not enabled
+            unbiased: Whether to unbias the standard deviation over ensemble predictions
 
         Returns:
             species_energies_qbcs: tuple of tensors, species, energies and qbc
@@ -307,15 +333,17 @@ class BuiltinModel(Module):
         assert qbc_factors.shape == energies.shape
         return SpeciesEnergiesQBC(species, energies, qbc_factors)
 
-    def atomic_qbcs(self, species_coordinates: Tuple[Tensor, Tensor],
+    def atomic_stdev(self, species_coordinates: Tuple[Tensor, Tensor],
                     cell: Optional[Tensor] = None,
                     pbc: Optional[Tensor] = None,
                     average: bool = False,
-                    with_SAEs: bool = False,
-                    unbiased: bool = True) -> AtomicQBCs:
+                    shift_energy: bool = False,
+                    unbiased: bool = True) -> AtomicStdev:
         """
         Largely does the same thing as the atomic_energies function, but with a different set of default inputs.
         Returns standard deviation in atomic energy predictions across the ensemble.
+
+        shift_energy returns the shifted atomic energies according to the model used
         """
         assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
         species_coordinates = self._maybe_convert_species(species_coordinates)
@@ -325,37 +353,65 @@ class BuiltinModel(Module):
         if atomic_energies.dim() == 2:
             atomic_energies = atomic_energies.unsqueeze(0)
 
-        ae_stdev = atomic_energies.std(0, unbiased=unbiased)
+        stdev_atomic_energies = atomic_energies.std(0, unbiased=unbiased)
 
         if average:
             atomic_energies = atomic_energies.mean(0)
 
-        # Want to return with GSAEs, but that can wait
-        if with_SAEs:
+        if shift_energy:
             atomic_energies += self.energy_shifter._atomic_saes(species_coordinates[0])
-            # atomic_energies += self.energy_shifter.with_gsaes(species_coordinates[0], 'wb97x', '631gd')
 
-        return AtomicQBCs(species_coordinates[0], atomic_energies, ae_stdev)
+        return AtomicStdev(species_coordinates[0], atomic_energies, stdev_atomic_energies)
 
-    def force_qbcs(self, species_coordinates: Tuple[Tensor, Tensor],
+    def force_magnitudes(self, species_coordinates: Tuple[Tensor, Tensor],
+                         cell: Optional[Tensor] = None,
+                         pbc: Optional[Tensor] = None,
+                         average: bool = True) -> ForceMagnitudes:
+        '''
+        Computes the L2 norm of predicted atomic force vectors, returning magnitudes,
+        averaged by default.
+
+        Args:
+            species_coordinates: minibatch of configurations
+            average: by default, returns the ensemble average magnitude for each atomic force vector
+        '''
+        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
+
+        species, _, members_forces = self.members_forces(species_coordinates, cell, pbc)
+        magnitudes = members_forces.norm(dim=-1)
+        if average:
+            magnitudes = magnitudes.mean(0)
+
+        return ForceMagnitudes(species, magnitudes)
+
+    def force_qbc(self, species_coordinates: Tuple[Tensor, Tensor],
                    cell: Optional[Tensor] = None,
                    pbc: Optional[Tensor] = None,
                    average: bool = False,
-                   unbiased: bool = True) -> ForceQBCs:
+                   unbiased: bool = True) -> ForceStdev:
+        """
+        Returns the mean force magnitudes and relative range and standard deviation
+        of predicted forces across an ensemble of networks.
+
+        Args:
+            species_coordinates: minibatch of configurations
+            average: returns magnitudes predicted by each model by default
+            unbiased: whether or not to use Bessel's correction in computing the standard deviation, True by default
+        """
         assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
-        species_coordinates[1].requires_grad = True
-        members_energies = self.members_energies(species_coordinates, cell, pbc).energies
-        forces_list = []
+        species, magnitudes = self.force_magnitudes(species_coordinates, cell, pbc, average=False)
 
-        for energy in members_energies:
-            derivative = torch.autograd.grad(energy, species_coordinates[1], retain_graph=True)[0]
-            force = -derivative
-            forces_list.append(force)
-        forces = torch.cat(forces_list, dim=0)
-        mean_force = forces.mean(0)
-        stdev_force = forces.std(0, unbiased=unbiased)
+        max_magnitudes = magnitudes.max(dim=0).values
+        min_magnitudes = magnitudes.min(dim=0).values
 
-        return ForceQBCs(species_coordinates[0], members_energies, mean_force, stdev_force)
+        mean_magnitudes = magnitudes.mean(0)
+        relative_stdev = (magnitudes.std(0, unbiased=unbiased) + 1e-8) / (mean_magnitudes + 1e-8)
+        relative_range = ((max_magnitudes - min_magnitudes) + 1e-8) / (mean_magnitudes + 1e-8)
+
+        if average:
+            magnitudes = mean_magnitudes
+
+        return ForceStdev(species, magnitudes, relative_stdev, relative_range)
 
     def __len__(self):
         assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
@@ -412,7 +468,8 @@ class BuiltinModelPairInteractions(BuiltinModel):
         species_coordinates: Tuple[Tensor, Tensor],
         cell: Optional[Tensor] = None,
         pbc: Optional[Tensor] = None,
-        average: bool = True
+        average: bool = True,
+        shift_energy: bool = True
     ) -> SpeciesEnergies:
         assert isinstance(self.neural_networks, (Ensemble, ANIModel))
         element_idxs, coordinates = self._maybe_convert_species(species_coordinates)
@@ -433,7 +490,8 @@ class BuiltinModelPairInteractions(BuiltinModel):
                 previous_cutoff = pot.cutoff
             atomic_energies += pot.atomic_energies(element_idxs, neighbor_data)
 
-        atomic_energies += self.energy_shifter._atomic_saes(element_idxs).unsqueeze(0)
+        if shift_energy:
+            atomic_energies += self.energy_shifter._atomic_saes(element_idxs).unsqueeze(0)
 
         if average:
             atomic_energies = atomic_energies.mean(dim=0)

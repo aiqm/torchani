@@ -24,7 +24,7 @@ class TestALAtomic(TestCase):
 
     def testAverageAtomicEnergies(self):
         _, energies = self.model.atomic_energies(
-            (self.species, self.coordinates))
+            (self.species, self.coordinates), shift_energy=True, average=True)
         self.assertEqual(energies.shape, self.coordinates.shape[:-1])
         # energies of all hydrogens should be equal
         expect = torch.full(energies[:, :-1].shape, -0.54853380570289400620, dtype=torch.double, device=self.device)
@@ -32,7 +32,7 @@ class TestALAtomic(TestCase):
 
     def testAtomicEnergies(self):
         _, energies = self.model.atomic_energies(
-            (self.species, self.coordinates), average=False)
+            (self.species, self.coordinates), shift_energy=True, average=False)
         self.assertTrue(energies.shape[1:] == self.coordinates.shape[:-1])
         self.assertTrue(energies.shape[0] == len(self.model.neural_networks))
         # energies of all hydrogens should be equal
@@ -59,6 +59,63 @@ class TestALQBC(TestALAtomic):
                               dtype=torch.double,
                               device=self.device)
         self.assertEqual(energies[0], expect)
+
+    def testMembersForces(self):
+        # Symmetric methane
+        forces = self.model.members_forces((self.species, self.coordinates)).forces
+        members_energies = self.model.members_energies((self.species, self.coordinates)).energies
+        forces_list = []
+        for energy in members_energies:
+            derivative = torch.autograd.grad(energy.sum(), self.coordinates, retain_graph=True)[0]
+            force = -derivative
+            forces_list.append(force)
+        _forces = torch.stack(forces_list, dim=0)
+        self.assertEqual(forces, _forces)
+
+    def testAverageMembersForces(self):
+        # Symmetric methane
+        avg_forces = self.model.members_forces((self.species, self.coordinates), average=True).forces
+        members_energies = self.model.members_energies((self.species, self.coordinates)).energies
+        forces_list = []
+        for energy in members_energies:
+            derivative = torch.autograd.grad(energy.sum(), self.coordinates, retain_graph=True)[0]
+            force = -derivative
+            forces_list.append(force)
+        _forces = torch.stack(forces_list, dim=0)
+        _forces = _forces.mean(0)
+        self.assertEqual(avg_forces, _forces)
+
+    def testForceMagnitudes(self):
+        # NOTE: This test imperfectly checks that force_magnitudes works as it is intended to;
+        #  however, dividing by the mean magnitude in near-equilibrium geometries can lead to issues
+        ch4_coord = torch.tensor([[[4.9725e-04, -2.3656e-02, -4.6554e-02],
+                            [-9.4934e-01, -4.6713e-01, -2.1225e-01],
+                            [-2.1828e-01, 6.4611e-01, 8.7319e-01],
+                            [3.7291e-01, 6.5190e-01, -6.9571e-01],
+                            [7.9173e-01, -6.8895e-01, 3.1410e-01]]], dtype=torch.double, device=self.device)
+        _, magnitudes = self.model.force_magnitudes((self.species, ch4_coord), average=False)
+        _, _, _members_forces = self.model.members_forces((self.species, ch4_coord))
+        _magnitudes = _members_forces.norm(dim=-1)
+        self.assertEqual(magnitudes, _magnitudes)
+
+    def testForceQBC(self):
+        # NOTE: Same as above test case, checks that this works for asymmetrical geometry
+        #  Also note that average=False for force_qbc and force_magnitudes
+        ch4_coord = torch.tensor([[[4.9725e-04, -2.3656e-02, -4.6554e-02],
+                            [-9.4934e-01, -4.6713e-01, -2.1225e-01],
+                            [-2.1828e-01, 6.4611e-01, 8.7319e-01],
+                            [3.7291e-01, 6.5190e-01, -6.9571e-01],
+                            [7.9173e-01, -6.8895e-01, 3.1410e-01]]], dtype=torch.double, device=self.device)
+        _, magnitudes, relative_stdev, relative_range = self.model.force_qbc((self.species, ch4_coord))
+        _, _magnitudes = self.model.force_magnitudes((self.species, ch4_coord), average=False)
+        _max_mag = _magnitudes.max(dim=0).values
+        _min_mag = _magnitudes.min(dim=0).values
+        _mean_magnitudes = _magnitudes.mean(0)
+        _relative_stdev = (_magnitudes.std(0, unbiased=True) + 1e-8) / (_mean_magnitudes + 1e-8)
+        _relative_range = ((_max_mag - _min_mag) + 1e-8) / (_mean_magnitudes + 1e-8)
+        self.assertEqual(magnitudes, _magnitudes)
+        self.assertEqual(relative_range, _relative_range)
+        self.assertEqual(relative_stdev, _relative_stdev)
 
     def testQBC(self):
         # fully symmetric methane
@@ -89,13 +146,13 @@ class TestALQBC(TestALAtomic):
         std[1] = std[1] / math.sqrt(4)
         self.assertEqual(std, qbc)
 
-    def testAtomicQBC(self):
+    def testAtomicStdev(self):
         torch.set_printoptions(precision=15)
         # Symmetric methane
-        atomic_qbc = self.model.atomic_qbcs((self.species, self.coordinates)).ae_stdev
+        atomic_stdev = self.model.atomic_stdev((self.species, self.coordinates)).stdev_atomic_energies
         _, atomic_energies = self.model.atomic_energies((self.species, self.coordinates), average=False)
         stdev_atomic_energies = atomic_energies.std(0)
-        self.assertEqual(stdev_atomic_energies, atomic_qbc)
+        self.assertEqual(stdev_atomic_energies, atomic_stdev)
 
         # Asymmetric methane
         ch4_coord = torch.tensor([[[4.9725e-04, -2.3656e-02, -4.6554e-02],
@@ -105,47 +162,11 @@ class TestALQBC(TestALAtomic):
                                    [7.9173e-01, -6.8895e-01, 3.1410e-01]]],
                                  dtype=torch.double,
                                  device=self.device)
-        _, _, atomic_qbc = self.model.atomic_qbcs((self.species, ch4_coord))
+        _, _, atomic_qbc = self.model.atomic_stdev((self.species, ch4_coord))
         _, atomic_energies = self.model.atomic_energies((self.species, ch4_coord), average=False)
 
         stdev_atomic_energies = atomic_energies.std(0, unbiased=True)
         self.assertEqual(stdev_atomic_energies, atomic_qbc)
-
-    def testForceQBC(self):
-        # Symmetric methane
-        _, _, mean_force, stdev_force = self.model.force_qbcs((self.species, self.coordinates))
-        _, ani_members_energies = self.model.members_energies((self.species, self.coordinates))
-        forces = []
-        for energy in ani_members_energies:
-            derivative = torch.autograd.grad(energy, (self.species, self.coordinates)[1], retain_graph=True)[0]
-            force = -derivative
-            forces.append(force)
-        forces = torch.cat(forces, dim=0)
-        _mean_force = forces.mean(0)
-        _stdev_force = forces.std(0)
-        self.assertEqual(mean_force, _mean_force)
-        self.assertEqual(stdev_force, _stdev_force)
-
-        # Asymmetric methane
-        ch4_coord = torch.tensor([[[4.9725e-04, -2.3656e-02, -4.6554e-02],
-                                   [-9.4934e-01, -4.6713e-01, -2.1225e-01],
-                                   [-2.1828e-01, 6.4611e-01, 8.7319e-01],
-                                   [3.7291e-01, 6.5190e-01, -6.9571e-01],
-                                   [7.9173e-01, -6.8895e-01, 3.1410e-01]]],
-                                 dtype=torch.double,
-                                 device=self.device)
-        _, members_energies, mean_force, stdev_force = self.model.force_qbcs((self.species, ch4_coord))
-        _, ani_members_energies = self.model.members_energies((self.species, ch4_coord))
-        forces = []
-        for energy in ani_members_energies:
-            derivative = torch.autograd.grad(energy, (self.species, ch4_coord)[1], retain_graph=True)[0]
-            force = -derivative
-            forces.append(force)
-        forces = torch.cat(forces, dim=0)
-        _mean_force = forces.mean(0)
-        _stdev_force = forces.std(0)
-        self.assertEqual(mean_force, _mean_force)
-        self.assertEqual(stdev_force, _stdev_force)
 
 
 if __name__ == '__main__':

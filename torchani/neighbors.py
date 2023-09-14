@@ -162,6 +162,18 @@ class BaseNeighborlist(Module):
     def get_diff_vectors(self):
         return self.diff_vectors
 
+    @staticmethod
+    def _rescreen_with_cutoff(
+        cutoff: float,
+        neighbors: NeighborData,
+    ) -> NeighborData:
+        closer_indices = (neighbors.distances <= cutoff).nonzero().flatten()
+        return NeighborData(
+            indices=neighbors.indices.index_select(1, closer_indices),
+            distances=neighbors.distances.index_select(0, closer_indices),
+            diff_vectors=neighbors.diff_vectors.index_select(0, closer_indices),
+        )
+
     def dummy(self) -> NeighborData:
         # return dummy neighbor data
         device = self.default_cell.device

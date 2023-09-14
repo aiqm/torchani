@@ -15,7 +15,7 @@ from torch import Tensor
 import torch.utils.data
 
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
-from torchani.structs import SpeciesEnergies
+from torchani.tuples import SpeciesEnergies
 from torchani.compat import tqdm
 
 PADDING = {
