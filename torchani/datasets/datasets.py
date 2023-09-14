@@ -447,6 +447,12 @@ class _ANISubdataset(_ANIDatasetBase):
         with ExitStack() as stack:
             self._get_open_store(stack, 'r+', only_meta=True).set_metadata(meta)
 
+    def open(self, mode: str = "r") -> None:
+        self._store.open(mode)
+
+    def close(self) -> None:
+        self._store.close()
+
     @contextmanager
     def keep_open(self, mode: str = 'r') -> Iterator['_ANISubdataset']:
         r"""Context manager to keep dataset open while iterating over it
@@ -1091,6 +1097,14 @@ class ANIDataset(_ANIDatasetBase):
         for k, v in meta.items():
             self._datasets[k]._set_metadata(v)
         return self
+
+    def open(self, mode: str = "r") -> None:
+        for ds in self._datasets.values():
+            ds.open(mode)
+
+    def close(self) -> None:
+        for ds in self._datasets.values():
+            ds.close()
 
     @contextmanager
     def keep_open(self, mode: str = 'r') -> Iterator['ANIDataset']:
