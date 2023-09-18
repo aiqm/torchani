@@ -75,13 +75,16 @@ To install TorchANI from GitHub run:
 ```bash
 git clone https://github.com/aiqm/torchani.git
 cd torchani
-conda env create -f ./environment.yaml
+conda env create -f ./environment-dev.yaml
 pip install -v -e .
 pip install -v -e . --global-option="--ext-all-sms"  # cuda/c++ extensions (optional)
 bash ./download.sh  # download files needed for tests and examples (optional)
 sphix-build docs build  # to build the documentation (optional)
 pytest -v  # manually run unit tests (optional)
 ```
+
+If you only intend to run torchani, and you will not run the tests or build the
+documentation, you can use `environment.yaml` instead
 
 Notes:
 

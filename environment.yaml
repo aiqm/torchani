@@ -9,45 +9,22 @@ dependencies:
   - python=3.8.1
   - pip
 
-  # linters / checkers / tests / CI
-  - black
-  - flake8
-  - mypy
-  - coverage
-  - pytest
-  - parameterized
-  - expecttest
-
-  # docs and tools
-  - sphinx
-  - sphinx_rtd_theme
-  - sphinx-gallery
-  - matplotlib
-  - pillow
-  - pynvml
-
-  # data
-  - pandas  # csv support
-  - pyarrow  # Parquet backend
+  # Data
   - h5py  # HDF5 backend
-  - zarr  # Zarr backend
 
   # DL
   - numpy=1.20
   - pytorch=1.13.1
   - cudatoolkit=11.6
-  - tensorboard
 
-  # progress bars
-  - tqdm  # progress bars
+  # Progress bars
+  - tqdm
   - pkbar
 
-  # legacy neurochem parser
+  # Legacy neurochem parser
   - lark-parser
   - pyyaml
-
-  # downloading models via web
   - requests
 
-  # ase interface
+  # Ase interface
   - ase
