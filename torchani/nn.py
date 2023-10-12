@@ -63,8 +63,8 @@ class ANIModel(torch.nn.ModuleDict):
         atomic_energies = self._atomic_energies((species, aev))
         MoleculeEnergy = torch.sum(atomic_energies, dim=1)
         if self.Max is not None and self.Min is not None:
-            MoleculeEnergy = torch.sigmoid(MoleculeEnergy) * (self.Max-self.Min)+self.Min
-            
+            MoleculeEnergy = (torch.sigmoid(MoleculeEnergy) * (self.Max-self.Min)) + self.Min
+
         # shape of atomic energies is (C, A)
         return SpeciesEnergies(species, MoleculeEnergy)
 
