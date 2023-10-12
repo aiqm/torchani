@@ -161,7 +161,7 @@ class Transformations:
 
         def reenterable_iterable_factory():
             for d in reenterable_iterable:
-                d['species'] = numpy.array([idx[s] for s in d['species']], dtype='i8')
+                d['species'] = numpy.array([idx[s.decode()] for s in d['species']], dtype='i8')
                 yield d
         try:
             return IterableAdapterWithLength(reenterable_iterable_factory, len(reenterable_iterable))
