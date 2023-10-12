@@ -48,18 +48,25 @@ class ANIModel(torch.nn.ModuleDict):
             od[str(i)] = m
         return od
 
-    def __init__(self, modules):
+    def __init__(self, modules, Min=None, Max=None):
         super().__init__(self.ensureOrderedDict(modules))
+        self.Min = Min
+        self.Max = Max
+        assert type(Min) == type(Max)
 
     def forward(self, species_aev: Tuple[Tensor, Tensor],  # type: ignore
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
-
+        
         atomic_energies = self._atomic_energies((species, aev))
+        MoleculeEnergy = torch.sum(atomic_energies, dim=1)
+        if self.Max is not None and self.Min is not None:
+            MoleculeEnergy = torch.sigmoid(MoleculeEnergy) * (self.Max-self.Min)+self.Min
+            
         # shape of atomic energies is (C, A)
-        return SpeciesEnergies(species, torch.sum(atomic_energies, dim=1))
+        return SpeciesEnergies(species, MoleculeEnergy)
 
     @torch.jit.export
     def _atomic_energies(self, species_aev: Tuple[Tensor, Tensor]) -> Tensor:
