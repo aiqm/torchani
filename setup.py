@@ -1,5 +1,4 @@
 import os
-import subprocess
 from setuptools import setup, find_packages
 from distutils import log
 import sys
