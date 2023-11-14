@@ -23,6 +23,7 @@ if not BUILD_CUAEV_ALL_SM and not FAST_BUILD_CUAEV:
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+
 def cuda_extension(build_all=False):
     import torch
     from torch.utils.cpp_extension import CUDAExtension
