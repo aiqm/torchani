@@ -1,4 +1,5 @@
 import os
+from packaging import version
 from setuptools import setup, find_packages
 from distutils import log
 import sys
@@ -69,8 +70,8 @@ def cuda_extension(build_all=False):
     print('-' * 75)
     include_dirs = [os.path.abspath("torchani/cuaev/")]
     # Update C++ standard based on PyTorch version
-    pytorch_version = torch.__version__
-    cxx_args = ['-std=c++17'] if pytorch_version >= "2.1.0" else ['-std=c++14']
+    pytorch_version = version.parse(torch.__version__)
+    cxx_args = ['-std=c++17'] if pytorch_version >= version.parse("2.1.0") else ['-std=c++14']
 
     return CUDAExtension(
         name='torchani.cuaev',
