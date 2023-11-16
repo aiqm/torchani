@@ -1,7 +1,7 @@
 import os
 from packaging import version
 from setuptools import setup, find_packages
-from distutils import log
+import warnings
 import sys
 
 BUILD_CUAEV_ALL_SM = '--cuaev-all-sms' in sys.argv
@@ -18,7 +18,7 @@ if ONLY_BUILD_SM80:
     sys.argv.remove('--only-sm80')
 
 if not BUILD_CUAEV_ALL_SM and not FAST_BUILD_CUAEV:
-    log.warn("Will not install cuaev")  # type: ignore
+    warnings.warn("Will not install cuaev")  # type: ignore
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
