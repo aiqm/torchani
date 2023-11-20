@@ -269,7 +269,7 @@ def triple_by_molecule(atom_index12: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
 
 def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
                 constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
-                sizes: Tuple[int, int, int, int, int], cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
+                sizes: Tuple[int, int, int, int, int], cell_shifts: Optional[Tuple[Tensor, Tensor]], Charge: int) -> Tensor:
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     num_species, radial_sublength, radial_length, angular_sublength, angular_length = sizes
     num_molecules = species.shape[0]
@@ -320,7 +320,12 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     index = central_atom_index * num_species_pairs + triu_index[species12_[0], species12_[1]]
     angular_aev.index_add_(0, index, angular_terms_)
     angular_aev = angular_aev.reshape(num_molecules, num_atoms, angular_length)
-    return torch.cat([radial_aev, angular_aev], dim=-1)
+    
+    #Add on the charge
+    ChargeArray = angular_aev[:,:,0]
+    ChargeArray[:] = Charge
+    ChargeArray = ChargeArray.reshape(1,-1,1)
+    return torch.cat([radial_aev, angular_aev, ChargeArray], dim=-1)
 
 
 def jit_unused_if_no_cuaev(condition=has_cuaev):
