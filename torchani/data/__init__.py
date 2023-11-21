@@ -380,6 +380,9 @@ def load(path, additional_properties=()):
             for i in range(coordinates.shape[0]):
                 ret = {'species': species, 'coordinates': coordinates[i]}
                 for k in properties:
+                    if k.upper() == "CHARGE":
+                        ret[k] = m[k]
+                        continue
                     if k in m:
                         ret[k] = m[k][i]
                 yield ret

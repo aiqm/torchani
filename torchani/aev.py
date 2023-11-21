@@ -321,16 +321,25 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     angular_aev.index_add_(0, index, angular_terms_)
     angular_aev = angular_aev.reshape(num_molecules, num_atoms, angular_length)
     
+    if Charge is None:
+        return torch.cat([radial_aev, angular_aev], dim=-1)
+    
     #Add on the charge
-    #print(angular_aev.size())
+    #print("radial_aev:", radial_aev.size())
+    #print("angular_aev:", angular_aev.size())
+    #print("Charge:", Charge.size())
+    #print("Charge:", Charge)
     # if this is for a single molecule we can just create the tensor we need and populate if
     if Charge.size()==torch.Tensor(1).size(): # Mostly ASE
         ChargeArray = torch.Tensor(1, angular_aev.size()[1], 1).to(angular_aev.device)
         ChargeArray[:] = Charge
     else: # Mostly training
-        ChargeArray = Charge.expand(Charge.size()[0], Charge.size()[0])
-        ChargeArray = ChargeArray[:,:angular_aev.size()[1]].resize(ChargeArray.size()[0], angular_aev.size()[1], 1)
-    #print(ChargeArray.device)
+        #ChargeArray = Charge.expand(Charge.size()[0], Charge.size()[0])
+        #print("Charge:", Charge.size())
+        #ChargeArray = ChargeArray[:,:angular_aev.size()[1]].resize(ChargeArray.size()[0], angular_aev.size()[1], 1)
+        #ChargeArray = Charge.reshape(1,-1,1)
+        ChargeArray = Charge.repeat_interleave(angular_aev.size()[1]).reshape(Charge.size()[0], -1, 1)
+    #print(ChargeArray.size())
     #print(Charge.size())
     return torch.cat([radial_aev, angular_aev, ChargeArray], dim=-1)
 
@@ -523,7 +532,11 @@ class AEVComputer(torch.nn.Module):
             NamedTuple: Species and AEVs. species are the species from the input
             unchanged, and AEVs is a tensor of shape ``(N, A, self.aev_length())``
         """
-        species, coordinates, charges = input_
+        try:
+            species, coordinates, charges = input_
+        except ValueError:
+            species, coordinates = input_
+            charges = None
         assert species.dim() == 2
         assert species.shape == coordinates.shape[:-1]
         assert coordinates.shape[-1] == 3
