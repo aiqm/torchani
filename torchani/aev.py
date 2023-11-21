@@ -537,6 +537,7 @@ class AEVComputer(torch.nn.Module):
         except ValueError:
             species, coordinates = input_
             charges = None
+            
         assert species.dim() == 2
         assert species.shape == coordinates.shape[:-1]
         assert coordinates.shape[-1] == 3
