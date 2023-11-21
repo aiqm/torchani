@@ -322,9 +322,17 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     angular_aev = angular_aev.reshape(num_molecules, num_atoms, angular_length)
     
     #Add on the charge
-    Charge = Charge.expand(Charge.size()[0], Charge.size()[0])
-    Charge = Charge[:,:angular_aev.size()[1]].resize(Charge.size()[0], angular_aev.size()[1], 1)
-    return torch.cat([radial_aev, angular_aev, Charge], dim=-1)
+    #print(angular_aev.size())
+    # if this is for a single molecule we can just create the tensor we need and populate if
+    if Charge.size()==torch.Tensor(1).size(): # Mostly ASE
+        ChargeArray = torch.Tensor(1, angular_aev.size()[1], 1).to(angular_aev.device)
+        ChargeArray[:] = Charge
+    else: # Mostly training
+        ChargeArray = Charge.expand(Charge.size()[0], Charge.size()[0])
+        ChargeArray = ChargeArray[:,:angular_aev.size()[1]].resize(ChargeArray.size()[0], angular_aev.size()[1], 1)
+    #print(ChargeArray.device)
+    #print(Charge.size())
+    return torch.cat([radial_aev, angular_aev, ChargeArray], dim=-1)
 
 
 def jit_unused_if_no_cuaev(condition=has_cuaev):
