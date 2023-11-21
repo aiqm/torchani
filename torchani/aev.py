@@ -515,7 +515,7 @@ class AEVComputer(torch.nn.Module):
             NamedTuple: Species and AEVs. species are the species from the input
             unchanged, and AEVs is a tensor of shape ``(N, A, self.aev_length())``
         """
-        species, coordinates = input_
+        species, coordinates, charges = input_
         assert species.dim() == 2
         assert species.shape == coordinates.shape[:-1]
         assert coordinates.shape[-1] == 3
@@ -529,7 +529,7 @@ class AEVComputer(torch.nn.Module):
             return SpeciesAEV(species, aev)
 
         if cell is None and pbc is None:
-            aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, None)
+            aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, None, charges)
         else:
             assert (cell is not None and pbc is not None)
             cutoff = max(self.Rcr, self.Rca)
