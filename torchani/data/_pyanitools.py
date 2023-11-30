@@ -49,7 +49,6 @@ class anidataloader:
                 for k in keys:
                     if not isinstance(item[k], h5py.Group):
                         dataset = np.array(item[k][()])
-
                         if isinstance(dataset, np.ndarray) and k.upper() != "CHARGE":
                             if dataset.size != 0:
                                 if isinstance(dataset[0], np.bytes_):
