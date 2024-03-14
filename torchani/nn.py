@@ -48,10 +48,11 @@ class ANIModel(torch.nn.ModuleDict):
             od[str(i)] = m
         return od
 
-    def __init__(self, modules, Min=None, Max=None):
+    def __init__(self, modules, Min=None, Max=None, noutputs=1):
         super().__init__(self.ensureOrderedDict(modules))
         self.Min = Min
         self.Max = Max
+        self.noutputs = noutputs 
         assert type(Min) == type(Max)
 
     def forward(self, species_aev: Tuple[Tensor, Tensor],  # type: ignore
@@ -60,32 +61,52 @@ class ANIModel(torch.nn.ModuleDict):
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
         
-        atomic_energies = self._atomic_energies((species, aev))
-        MoleculeEnergy = torch.sum(atomic_energies, dim=1)
-        if self.Max is not None and self.Min is not None:
-            MoleculeEnergy = (torch.sigmoid(MoleculeEnergy) * (self.Max-self.Min)) + self.Min
+        atomic_energies0, atomic_energies1 = self._atomic_energies((species, aev))
+        #print("atomic_energies0.shape:", atomic_energies0.shape)
+        MoleculeEnergy0 = torch.sum(atomic_energies0, dim=1)
+        MoleculeEnergy1 = torch.sum(atomic_energies1, dim=1)
+        #print("MoleculeEnergy1.shape:", MoleculeEnergy1.shape)
+# =============================================================================
+#         if self.Max is not None and self.Min is not None:
+#             MoleculeEnergy = (torch.sigmoid(MoleculeEnergy) * (self.Max-self.Min)) + self.Min
+# =============================================================================
 
         # shape of atomic energies is (C, A)
-        return SpeciesEnergies(species, MoleculeEnergy)
+        return SpeciesEnergies(species, MoleculeEnergy0), SpeciesEnergies(species, MoleculeEnergy1)
 
     @torch.jit.export
     def _atomic_energies(self, species_aev: Tuple[Tensor, Tensor]) -> Tensor:
         # Obtain the atomic energies associated with a given tensor of AEV's
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
+        #print("aev.shape:", aev.shape)
+        #sys.exit()
         species_ = species.flatten()
+        #print("species.shape:", species.shape)
+        #print("species_.shape:", species_.shape)
         aev = aev.flatten(0, 1)
 
-        output = aev.new_zeros(species_.shape)
+        # Fixing it as 2 outputs for now
+        output0 = aev.new_zeros(species_.shape) # energy 0
+        output1 = aev.new_zeros(species_.shape) # energy 1
+        
+        
 
+        # self.values is an odict_values of the networks we defined and passed in as modules
         for i, m in enumerate(self.values()):
             mask = (species_ == i)
             midx = mask.nonzero().flatten()
             if midx.shape[0] > 0:
                 input_ = aev.index_select(0, midx)
-                output.masked_scatter_(mask, m(input_).flatten())
-        output = output.view_as(species)
-        return output
+                # just run the model twice for now, very wasteful
+                output0.masked_scatter_(mask, m(input_)[:,0].flatten())
+                output1.masked_scatter_(mask, m(input_)[:,1].flatten())
+                #print("m(input_):", m(input_).shape)
+        #print("output0.shape:", output0.shape)
+        #print("output0:", output0)
+        output0 = output0.view_as(species)
+        output1 = output1.view_as(species)
+        return output0, output1 
 
 
 class Ensemble(torch.nn.ModuleList):
