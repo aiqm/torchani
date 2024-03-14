@@ -16,8 +16,6 @@ import torchani
 
 # Temp patch, somethings wrong with the way torchany installs
 from torchani import nn as torachani_nn
-
-
 import math, pandas, h5py, pickle, time, json, copy, argparse
 import matplotlib.pyplot as plt
 import numpy as np
@@ -79,7 +77,7 @@ print(args)
 
 
 config = vars(args) # converts it to dictionary
-config["species_order"] = ['C','Cl', 'H', 'Ir', 'N', 'O']
+config["species_order"] = ['C','H','N','O', "F"]
 config["random_seed"] = int(time.time())
 
 print(config)
@@ -206,10 +204,12 @@ for ds in config["ds"]:
         Log.Log('Self atomic energies: '+str(energy_shifter.self_energies))
         with open(os.path.join(config["output"], f"{ds_name}_Self_Energies.csv"), "w") as f:
             selfenergies_tensors = [t for t in energy_shifter.self_energies]
-            if len(selfenergies_tensors) != len(config["species_order"]):
-                Log.Log("len(selfenergies_tensors) != len(config['species_order'])")
-                Log.Log("Exiting...")
-                sys.exit()
+# =============================================================================
+#             if len(selfenergies_tensors) != len(config["species_order"]):
+#                 Log.Log("len(selfenergies_tensors) != len(config['species_order'])")
+#                 Log.Log("Exiting...")
+#                 sys.exit()
+# =============================================================================
             senergies = [x.item() for x in selfenergies_tensors]
             se_dict = {}
             ds = config["output"]
@@ -330,38 +330,38 @@ if reset_lr:
 # Now we can set up our testing loop
 # =============================================================================
 
-def test_set():
+def test_sets():
     # run testing set
     if config["L1"] and L1_started:
         LOSSFN = torch.nn.L1Loss(reduction='sum')
     else:
         LOSSFN = torch.nn.MSELoss(reduction='sum')
 
-    total_loss = 0.0
-    count = 0
     model.eval()
-    for properties in datasets[dataset_key]["testing"]:
-        species = properties['species'].to(device)
-        coordinates = properties['coordinates'].to(device).float().requires_grad_(True)
-        true_energies = properties['energies'].to(device).float()
-        
-        num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
-        SpeciesEnergies = model((species, coordinates))
-        predicted_energies = {}
-        for i,key in enumerate(datasets.keys()):
-            _, predicted_energies[key] = SpeciesEnergies[i]
-        assert not (predicted_energies['dataset/SVP.h5'] == predicted_energies['dataset/TZVPP.h5']).all()
+    test_energy_rmse = {}
+    for i,key in enumerate(datasets.keys()):
+        total_loss = 0.0
+        count = 0
+        for properties in datasets[key]["testing"]:
+            species = properties['species'].to(device)
+            coordinates = properties['coordinates'].to(device).float().requires_grad_(True)
+            true_energies = properties['energies'].to(device).float()
+            
+            num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
+            SpeciesEnergies = model((species, coordinates))
+            _, predicted_energies = SpeciesEnergies[i]
 
-        total_loss += LOSSFN(predicted_energies[dataset_key], true_energies).item()
-        count += predicted_energies[dataset_key].shape[0]
-    #plt.show()
+    
+            total_loss += LOSSFN(predicted_energies, true_energies).item()
+            count += predicted_energies.shape[0]
+            test_energy_rmse[key] = hartree2kcalmol(math.sqrt(total_loss / count))
     model.train()
-    return hartree2kcalmol(math.sqrt(total_loss / count))
+    return test_energy_rmse
 
 
 
 Log.Log("training starting from epoch " + str(AdamW_scheduler.last_epoch + 1))
-max_epochs = 10
+max_epochs = 250
 best_model_checkpoint = config['output']+"/best.pt"
 
 
@@ -383,9 +383,10 @@ dataset_i = 0
 
 for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
     dataset_key = list(datasets.keys())[dataset_i]
-    energy_rmse = test_set()
-    EF_coef = energy_rmse 
-
+    energy_rmse = test_sets()
+    EF_coef = sum(energy_rmse.values())
+    print(energy_rmse)
+    
     Epoch = AdamW_scheduler.last_epoch + 1
     
     if EF_coef < config["early_stop"]:
@@ -442,7 +443,7 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         predicted_energies = {}
         for i,key in enumerate(datasets.keys()):
             _, predicted_energies[key] = SpeciesEnergies[i]
-        assert not (predicted_energies['dataset/SVP.h5'] == predicted_energies['dataset/TZVPP.h5']).all()
+
         
         # Now the total loss has two parts, energy loss and force loss
         loss = (LOSS(predicted_energies[dataset_key], true_energies) / num_atoms.sqrt()).mean()
@@ -456,16 +457,17 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         SGD.step()
     
     Train_E_rmse = hartree2kcalmol(Train_E_rmse/len(datasets[dataset_key]["training"]))
-    training_log.loc[AdamW_scheduler.last_epoch + 1, "Epoch"] = Epoch
-    training_log.loc[AdamW_scheduler.last_epoch + 1, "lr"] = learning_rate
+    training_log.loc[Epoch, "lr"] = learning_rate
     
     # Training metrics (just the ds we have run)
-    training_log.loc[AdamW_scheduler.last_epoch + 1, f"Train ({dataset_key})"] = Train_E_rmse
-    training_log.loc[AdamW_scheduler.last_epoch + 1, f"Test ({dataset_key})"] = energy_rmse
+    training_log.loc[Epoch, f"Train ({dataset_key})"] = Train_E_rmse
+    # We should have the test data for every ds every time
+    for key in list(datasets.keys()):
+        training_log.loc[Epoch, f"Test ({key})"] = energy_rmse[key]
     
-
     
-    Log.Log(f"Epoch: {Epoch} Train: {round(Train_E_rmse, 3)} Test: {round(energy_rmse, 3)} lr: {learning_rate}")
+    
+    Log.Log(f"Epoch: {Epoch} Train: {round(Train_E_rmse, 3)} Test: {round(energy_rmse[dataset_key], 3)} lr: {learning_rate}")
 
 # =============================================================================
 # Need to ensure everything saves nicely and then we can plot some pretty graphs
@@ -489,13 +491,21 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
     dataset_i += 1
     if dataset_i >= len(datasets):
         dataset_i = 0
-    Log.Log("dataset_i switched to:" + str(dataset_i))
+    Log.Log("dataset_i switched to: " + str(dataset_i))
     
-
+    if Epoch > 0 and os.name == "nt":
+        for col in training_log.columns:
+            if col in ["Epoch", "lr"]:
+                continue
+            plt.plot(training_log[col].dropna(), label=col)
+            if "Train" in col:
+                plt.scatter(training_log[col].dropna().index, training_log[col].dropna(), marker=5)    
+        plt.legend()
+        plt.show()
 
 
 t = time.localtime()
-Log.Log("Finished training in:" + str(starttime - time.time()) + "s")
+Log.Log("Finished training in: " + str(starttime - time.time()) + "s")
 
 # =============================================================================
 # Finish the Training and save evrything to the log file
