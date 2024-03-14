@@ -61,18 +61,23 @@ class ANIModel(torch.nn.ModuleDict):
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
         
-        atomic_energies0, atomic_energies1 = self._atomic_energies((species, aev))
+        atomic_energies = self._atomic_energies((species, aev))
+        MoleculeEnergy = [torch.sum(x, dim=1) for x in atomic_energies]
+        return [SpeciesEnergies(species, x) for x in MoleculeEnergy]
+    
+        #atomic_energies0, atomic_energies1 = self._atomic_energies((species, aev))
         #print("atomic_energies0.shape:", atomic_energies0.shape)
-        MoleculeEnergy0 = torch.sum(atomic_energies0, dim=1)
-        MoleculeEnergy1 = torch.sum(atomic_energies1, dim=1)
+        #MoleculeEnergy0 = torch.sum(atomic_energies0, dim=1)
+        #MoleculeEnergy1 = torch.sum(atomic_energies1, dim=1)
         #print("MoleculeEnergy1.shape:", MoleculeEnergy1.shape)
 # =============================================================================
 #         if self.Max is not None and self.Min is not None:
 #             MoleculeEnergy = (torch.sigmoid(MoleculeEnergy) * (self.Max-self.Min)) + self.Min
 # =============================================================================
-
+    
+        
         # shape of atomic energies is (C, A)
-        return SpeciesEnergies(species, MoleculeEnergy0), SpeciesEnergies(species, MoleculeEnergy1)
+        #return SpeciesEnergies(species, MoleculeEnergy0), SpeciesEnergies(species, MoleculeEnergy1)
 
     @torch.jit.export
     def _atomic_energies(self, species_aev: Tuple[Tensor, Tensor]) -> Tensor:

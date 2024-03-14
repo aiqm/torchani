@@ -183,7 +183,10 @@ class Transformations:
             Y = []
             for n, d in enumerate(reenterable_iterable):
                 species = d['species']
-                species = [x.decode("utf-8") for x in species]
+                try:
+                    species = [x.decode("utf-8") for x in species]
+                except:
+                    pass
                 count = Counter()
                 for s in species:
                     count[s] += 1
@@ -223,7 +226,10 @@ class Transformations:
         def reenterable_iterable_factory():
             for d in reenterable_iterable:
                 e = intercept
-                species = [x.decode("utf-8") for x in d['species']]
+                try:
+                    species = [x.decode("utf-8") for x in d['species']]
+                except:
+                    species = d['species']
                 for s in species:
                     e += self_energies[s]
                 d['energies'] -= e
