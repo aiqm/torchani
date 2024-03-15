@@ -92,26 +92,26 @@ class ANIModel(torch.nn.ModuleDict):
         aev = aev.flatten(0, 1)
 
         # Fixing it as 2 outputs for now
-        output0 = aev.new_zeros(species_.shape) # energy 0
-        output1 = aev.new_zeros(species_.shape) # energy 1
+        output = []
+        for i in range(self.noutputs):
+            output.append(aev.new_zeros(species_.shape) )
         
-        
-
         # self.values is an odict_values of the networks we defined and passed in as modules
         for i, m in enumerate(self.values()):
             mask = (species_ == i)
             midx = mask.nonzero().flatten()
             if midx.shape[0] > 0:
                 input_ = aev.index_select(0, midx)
-                # just run the model twice for now, very wasteful
-                output0.masked_scatter_(mask, m(input_)[:,0].flatten())
-                output1.masked_scatter_(mask, m(input_)[:,1].flatten())
+                pred = m(input_)
+                for i in range(self.noutputs):
+                    output[i].masked_scatter_(mask, pred[:,i].flatten())
+
                 #print("m(input_):", m(input_).shape)
         #print("output0.shape:", output0.shape)
         #print("output0:", output0)
-        output0 = output0.view_as(species)
-        output1 = output1.view_as(species)
-        return output0, output1 
+        for i in range(self.noutputs):
+            output[i] = output[i].view_as(species)
+        return output
 
 
 class Ensemble(torch.nn.ModuleList):
