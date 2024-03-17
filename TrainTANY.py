@@ -19,7 +19,7 @@ from torchani import nn as torachani_nn
 import math, pandas, h5py, pickle, time, json, copy, argparse
 import matplotlib.pyplot as plt
 import numpy as np
-
+from itertools import cycle
 ### TorchAni uses the 'random' module to do the .shuffle of the data
 import random, time
 
@@ -77,7 +77,7 @@ print(args)
 
 
 config = vars(args) # converts it to dictionary
-config["species_order"] = ['C','H','N','O', "F"]
+config["species_order"] = ['C','H','N','O', "F", "Cl", "K"]
 config["random_seed"] = int(time.time())
 
 print(config)
@@ -186,8 +186,11 @@ except NameError:
 
 starttime = int(time.time())
 
+colourlist = iter(["blue", "orange", "purple", "red"])
+colours = {}
 datasets = {}
 for ds in config["ds"]:
+    colours[ds] = next(colourlist)
     datasets[ds] = {"training": None, "testing": None}
     datasets[ds]["training"], datasets[ds]["testing"] = torchani.data.load(ds)\
                                         .subtract_self_energies(energy_shifter, config["species_order"])\
@@ -230,12 +233,9 @@ for ds in config["ds"]:
         SE.to_csv(os.path.join(config["output"], "Self_Energies.csv"))
 
 
-config['Max'] = None
-config['Min'] = None
+config['Max'] = config['Min'] = None
 with open(os.path.join(config["output"], "training_config.json"), 'w') as jout:
     json.dump(config, jout, indent=4)
-
-
 
 
 
@@ -351,7 +351,6 @@ def test_sets():
             SpeciesEnergies = model((species, coordinates))
             _, predicted_energies = SpeciesEnergies[i]
 
-    
             total_loss += LOSSFN(predicted_energies, true_energies).item()
             count += predicted_energies.shape[0]
             test_energy_rmse[key] = hartree2kcalmol(math.sqrt(total_loss / count))
@@ -369,7 +368,7 @@ best_model_checkpoint = config['output']+"/best.pt"
 if os.path.exists(TrainingLog):
     training_log = pandas.read_csv(TrainingLog, index_col=0)
 else:
-    training_log = pandas.DataFrame(columns=["Epoch", "lr"])
+    training_log = pandas.DataFrame()
     
 
 
@@ -431,9 +430,22 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
     SGD_scheduler.step(EF_coef)
     
     Train_E_rmse = 0
-    Train_F_rmse = 0
-
-    for i, properties in enumerate(datasets[dataset_key]["training"]): #,desc="epoch {}".format(AdamW_scheduler.last_epoch)
+    keys = list(datasets.keys())
+    ds = 0
+    iterable = [iter(datasets[keys[i]]["training"]) for i in range(len(datasets))]
+    #for dataset_key in list(datasets.keys()):
+    while 1:
+        key = keys[ds]
+        try:
+            properties = next(iterable[ds])
+        except StopIteration:
+            del keys[ds]
+            del iterable[ds]
+            ds = 0
+            if len(keys) == 0:
+                break
+            else:
+                continue
         species = properties['species'].to(device)
         coordinates = properties['coordinates'].to(device).float().requires_grad_(True)
         true_energies = properties['energies'].to(device).float()
@@ -444,7 +456,6 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         for i,key in enumerate(datasets.keys()):
             _, predicted_energies[key] = SpeciesEnergies[i]
 
-        
         # Now the total loss has two parts, energy loss and force loss
         loss = (LOSS(predicted_energies[dataset_key], true_energies) / num_atoms.sqrt()).mean()
 
@@ -455,7 +466,7 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         loss.backward()
         AdamW.step()
         SGD.step()
-    
+
     Train_E_rmse = hartree2kcalmol(Train_E_rmse/len(datasets[dataset_key]["training"]))
     training_log.loc[Epoch, "lr"] = learning_rate
     
@@ -497,9 +508,13 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         for col in training_log.columns:
             if col in ["Epoch", "lr"]:
                 continue
-            plt.plot(training_log[col].dropna(), label=col)
+            ds = col.split("(")[1].split(")")[0]
+            colour = colours[ds]
+            if "Test" in col:
+                plt.plot(training_log[col].dropna(), "--", label=col, c=colour)
             if "Train" in col:
-                plt.scatter(training_log[col].dropna().index, training_log[col].dropna(), marker=5)    
+                plt.plot(training_log[col].dropna(), label=col, c=colour)
+                plt.scatter(training_log[col].dropna().index, training_log[col].dropna(), marker=5, c=colour) 
         plt.legend()
         plt.show()
 
