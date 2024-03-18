@@ -8,7 +8,7 @@ Created on Wed Mar 13 12:50:25 2024
 # =============================================================================
 # Import all the requirements
 # =============================================================================
-import matplotlib, os, sys
+import matplotlib, os, sys, tqdm
 if os.name != "nt":
     matplotlib.use('Agg')
 import torch
@@ -29,11 +29,14 @@ from torchani.units import hartree2kcalmol
 # sub-modules
 from Logger import *
 
+#def dump_json():
+    
 # =============================================================================
 # Configure the basic variables that we need
 # =============================================================================
 parser = argparse.ArgumentParser(description='Optional app description')
 parser.add_argument('--cuda', action='store_true', help='Use CUDA if possible', default=True)
+parser.add_argument('--epochs', type=int, help='max Epochs', default=10000, required=False)
 parser.add_argument('--multigpu', action='store_true', help='Use CUDA if possible', default=False)
 parser.add_argument('--KMP_DUPLICATE_LIB_OK', action='store_true', default=True)
 parser.add_argument('--output', type=str, help='Output folder', required=True)
@@ -77,13 +80,31 @@ print(args)
 
 
 config = vars(args) # converts it to dictionary
-config["species_order"] = ['C','H','N','O', "F", "Cl", "K"]
+config["species_order"] = ['C','H','N','O',"F","Cl","K"]
+config["species_order"].sort()
 config["random_seed"] = int(time.time())
 
 print(config)
 
 for ds in config["ds"]:
     assert os.path.exists(ds), "Dataset not found"
+
+print("Figuring out which datasets contain which atoms")
+species_list = {}
+for ds in tqdm.tqdm(config["ds"]):
+    inputs = h5py.File(ds, 'r')
+    species_list[ds] = []
+    for entry in [x[0] for x in list(inputs.items())]:
+        #print(entry)
+        species = inputs[entry]["species"][()]
+        species = species.astype("<U2")
+        species_list[ds] = np.unique(np.hstack((species_list[ds], species)))
+        #print(species_list)
+    inputs.close()
+    species_list[ds] = species_list[ds].tolist()
+    species_list[ds].sort()
+config["species_list"] = species_list
+
 
 config["cmd"] = " ".join(sys.argv[1:])
 
@@ -147,25 +168,9 @@ Log.Log("Running on device: "+str(device))
 # Now we want to initialise the variables for the aev equations (Eqn 3 from the
 # ANI paper)
 # =============================================================================
-
-
-Rcr = config["Rcr"] #5.2000e+00  # Cut-off
-Rca = config["Rca"] # original 3.5
-EtaR = torch.tensor([1.6000000e+01], device=device)
-ShfR = torch.tensor([9.0000000e-01, 1.1687500e+00, 1.4375000e+00, 1.7062500e+00, 1.9750000e+00, 2.2437500e+00, 2.5125000e+00, 2.7812500e+00, 3.0500000e+00, 3.3187500e+00, 3.5875000e+00, 3.8562500e+00, 4.1250000e+00, 4.3937500e+00, 4.6625000e+00, 4.9312500e+00], device=device)
-Zeta = torch.tensor([3.2000000e+01], device=device)
-ShfZ = torch.tensor([1.9634954e-01, 5.8904862e-01, 9.8174770e-01, 1.3744468e+00, 1.7671459e+00, 2.1598449e+00, 2.5525440e+00, 2.9452431e+00], device=device)
-EtaA = torch.tensor([8.0000000e+00], device=device)
-ShfA = torch.tensor([9.0000000e-01, 1.5500000e+00, 2.8500000e+00, 2.2000000e+00], device=device)
-
-
 num_species = len(config["species_order"])
-try:
-    aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=True)
-    cuaev = True
-except:
-    aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
-    cuaev = False
+aev_computer = get_aev_comp(config["Rcr"], config["Rca"], num_species, device)
+cuaev = False
 Log.Log("cuaev: "+str(cuaev))
     
 #aev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species)
@@ -177,10 +182,6 @@ config["aev_dim"] = aev_dim+1 if config["mixed"] else aev_dim
 with open(os.path.join(config["output"], "training_config.json"), 'w') as jout:
     json.dump(config, jout, indent=4)
 
-try:
-    path = os.path.dirname(os.path.realpath(__file__))
-except NameError:
-    path = os.getcwd()
 
 
 
@@ -215,11 +216,9 @@ for ds in config["ds"]:
 # =============================================================================
             senergies = [x.item() for x in selfenergies_tensors]
             se_dict = {}
-            ds = config["output"]
-            ds = ds.split('/')[-1]
             #f.write("Self Energies for dataset: %s \n" % ds)
             f.write("Atom,SelfEnergy\n")
-            for key in config["species_order"]:
+            for key in species_list[ds]:
                 for value in senergies:
                     se_dict[key] = value
                     senergies.remove(value)
@@ -227,11 +226,13 @@ for ds in config["ds"]:
             for k in se_dict.keys():
                 f.write("%s, %s \n" % (k, se_dict[k]))
             f.close()
+        break
     else:
         SE = pandas.DataFrame(index=config["species_order"], columns=["SelfEnergy"])
         SE[:] = 0
         SE.to_csv(os.path.join(config["output"], "Self_Energies.csv"))
 
+sys.exit()
 
 config['Max'] = config['Min'] = None
 with open(os.path.join(config["output"], "training_config.json"), 'w') as jout:
@@ -360,7 +361,6 @@ def test_sets():
 
 
 Log.Log("training starting from epoch " + str(AdamW_scheduler.last_epoch + 1))
-max_epochs = 250
 best_model_checkpoint = config['output']+"/best.pt"
 
 
@@ -380,7 +380,7 @@ best_i = 0
 
 dataset_i = 0
 
-for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
+for _ in range(AdamW_scheduler.last_epoch + 1, config["epochs"]):
     dataset_key = list(datasets.keys())[dataset_i]
     energy_rmse = test_sets()
     EF_coef = sum(energy_rmse.values())
