@@ -91,7 +91,7 @@ class ANIModel(torch.nn.ModuleDict):
         #print("species_.shape:", species_.shape)
         aev = aev.flatten(0, 1)
 
-        # Fixing it as 2 outputs for now
+        
         output = []
         for i in range(self.noutputs):
             output.append(aev.new_zeros(species_.shape) )
