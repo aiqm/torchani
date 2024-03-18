@@ -29,8 +29,15 @@ from torchani.units import hartree2kcalmol
 # sub-modules
 from Logger import *
 
-#def dump_json():
+def indices2atoms(specie):
+    return [config["species_order"][x] for x in specie if x >= 0]
+
+def dump_json():
+    with open(os.path.join(config["output"], "training_config.json"), 'w') as jout:
+        json.dump(config, jout, indent=4)
     
+
+
 # =============================================================================
 # Configure the basic variables that we need
 # =============================================================================
@@ -83,15 +90,32 @@ config = vars(args) # converts it to dictionary
 config["species_order"] = ['C','H','N','O',"F","Cl","K"]
 config["species_order"].sort()
 config["random_seed"] = int(time.time())
-
+random.seed(config["random_seed"])
+os.makedirs(config["output"], exist_ok=True)
+if os.path.exists(os.path.join(config["output"], "training_config.json")) and not config["hard_reset"]:
+    with open(os.path.join(config["output"], "training_config.json")) as jin:
+        jin = json.load(jin)
+        if "species_list" in jin:
+            config["species_list"] = jin["species_list"]
+    
 print(config)
+dump_json()
+
+# =============================================================================
+# Define the 'Logger' class so that we can save information that we need
+# =============================================================================
+Log = Logger(f"{config['output']}/{config['log']}" if type(config["log"]) == str else None, verbose=True)
 
 for ds in config["ds"]:
     assert os.path.exists(ds), "Dataset not found"
 
-print("Figuring out which datasets contain which atoms")
+Log.Log("Figuring out which datasets contain which atoms")
 species_list = {}
 for ds in tqdm.tqdm(config["ds"]):
+    if "species_list" in config:
+        if ds in config["species_list"]:
+            Log.Log(ds+" already done: " + " ".join(config["species_list"][ds]))
+            continue
     inputs = h5py.File(ds, 'r')
     species_list[ds] = []
     for entry in [x[0] for x in list(inputs.items())]:
@@ -103,21 +127,14 @@ for ds in tqdm.tqdm(config["ds"]):
     inputs.close()
     species_list[ds] = species_list[ds].tolist()
     species_list[ds].sort()
-config["species_list"] = species_list
+    config["species_list"] = species_list
+    dump_json()
 
 
 config["cmd"] = " ".join(sys.argv[1:])
 
-random.seed(config["random_seed"])
-os.makedirs(config["output"], exist_ok=True)
+           
 
-def indices2atoms(specie):
-    return [config["species_order"][x] for x in specie if x >= 0]
-            
-# =============================================================================
-# Define the 'Logger' class so that we can save information that we need
-# =============================================================================
-Log = Logger(f"{config['output']}/{config['log']}" if type(config["log"]) == str else None, verbose=True)
 
 pickled_training = f"{config['output']}/Training_{config['model_n']}.pkl"
 pickled_testing = f"{config['output']}/Testing_{config['model_n']}.pkl"
@@ -179,8 +196,7 @@ energy_shifter = torchani.utils.EnergyShifter(None)
 
 
 config["aev_dim"] = aev_dim+1 if config["mixed"] else aev_dim
-with open(os.path.join(config["output"], "training_config.json"), 'w') as jout:
-    json.dump(config, jout, indent=4)
+
 
 
 
@@ -226,7 +242,6 @@ for ds in config["ds"]:
             for k in se_dict.keys():
                 f.write("%s, %s \n" % (k, se_dict[k]))
             f.close()
-        break
     else:
         SE = pandas.DataFrame(index=config["species_order"], columns=["SelfEnergy"])
         SE[:] = 0
@@ -235,8 +250,7 @@ for ds in config["ds"]:
 sys.exit()
 
 config['Max'] = config['Min'] = None
-with open(os.path.join(config["output"], "training_config.json"), 'w') as jout:
-    json.dump(config, jout, indent=4)
+dump_json()
 
 
 
