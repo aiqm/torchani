@@ -41,8 +41,8 @@ for element in config["species_order"]:
     NNs.append(networks[f"{element}_network"])
 nn = torchani.ANIModel(NNs, config['Min'], config['Max'], noutputs = len(config["ds"]))
 
-checkpoint = torch.load("Training/best.pt", map_location=device)
-nn.load_state_dict(checkpoint)
+master_checkpoint = torch.load("Training/best.pt", map_location=device)
+nn.load_state_dict(master_checkpoint)
 
 species_to_tensor = torchani.utils.ChemicalSymbolsToInts(config["species_order"])
 species = species_to_tensor(test_mol.asemol.get_chemical_symbols()).to(device)
@@ -76,7 +76,7 @@ predictions["err"] = (predictions["DNN"] - predictions["DFT"]) * 627.5
 
 print(predictions)
 
-sys.exit()
+#sys.exit()
 
 #### Add in results for individually training neural networks
 networks = get_networks(config["aev_dim"], config["celu0"], config["celu1"], noutputs = 1)
@@ -90,3 +90,44 @@ nn_output = nn(AEV)
 predictions.at["DataDump/GasZ=0_rmsd=2.h5", "Single"] = float(nn(AEV)[0].energies[0].detach().numpy())
 predictions.at["DataDump/GasZ=0_rmsd=2.h5", "Single"] += predictions.at[index, "SelfE"]
 print(predictions)
+
+
+
+# OGP
+ds = 'DataDump/ANI1x_OGP/ANI+OGP.h5'
+with open("Training/Individual/ANI_OGP/training_config.json") as jin:
+    config = json.load(jin)
+networks = get_networks(config["aev_dim"], config["celu0"], config["celu1"], noutputs = 1)
+NNs = []
+for element in config["species_order"]:
+    NNs.append(networks[f"{element}_network"])
+nn = torchani.ANIModel(NNs, config['Min'], config['Max'], noutputs = 1)
+checkpoint = torch.load("Training/Individual/ANI_OGP/best.pt", map_location=device)
+# =============================================================================
+# for key in list(master_checkpoint.keys()):
+#     print(key, master_checkpoint[key].shape, checkpoint[key].shape)
+# =============================================================================
+nn.load_state_dict(checkpoint)
+nn_output = nn(AEV)
+predictions.at[ds, "Single"] = float(nn(AEV)[0].energies[0].detach().numpy())
+predictions.at[ds, "Single"] += predictions.at[index, "SelfE"]
+print(predictions)
+
+#SZ
+ds = 'DataDump/Surajit_Nandi/SZ.h5'
+with open("Training/Individual/Nandi_SZ/training_config.json") as jin:
+    config = json.load(jin)
+networks = get_networks(config["aev_dim"], config["celu0"], config["celu1"], noutputs = 1)
+networks = get_networks(config["aev_dim"], config["celu0"], config["celu1"], noutputs = 1)
+NNs = []
+for element in config["species_order"]:
+    NNs.append(networks[f"{element}_network"])
+nn = torchani.ANIModel(NNs, config['Min'], config['Max'], noutputs = 1)
+checkpoint = torch.load("Training/Individual/Nandi_SZ/best.pt", map_location=device)
+nn.load_state_dict(checkpoint)
+nn_output = nn(AEV)
+predictions.at[ds, "Single"] = float(nn(AEV)[0].energies[0].detach().numpy())
+predictions.at[ds, "Single"] += predictions.at[index, "SelfE"]
+print(predictions)
+
+
