@@ -115,6 +115,7 @@ for ds in tqdm.tqdm(config["ds"]):
     if "species_list" in config:
         if ds in config["species_list"]:
             Log.Log(ds+" already done: " + " ".join(config["species_list"][ds]))
+            species_list[ds] = config["species_list"][ds]
             continue
     inputs = h5py.File(ds, 'r')
     species_list[ds] = []
@@ -130,11 +131,9 @@ for ds in tqdm.tqdm(config["ds"]):
     config["species_list"] = species_list
     dump_json()
 
+print(species_list)
 
 config["cmd"] = " ".join(sys.argv[1:])
-
-           
-
 
 pickled_training = f"{config['output']}/Training_{config['model_n']}.pkl"
 pickled_testing = f"{config['output']}/Testing_{config['model_n']}.pkl"
@@ -209,12 +208,29 @@ datasets = {}
 for ds in config["ds"]:
     colours[ds] = next(colourlist)
     datasets[ds] = {"training": None, "testing": None}
-    datasets[ds]["training"], datasets[ds]["testing"] = torchani.data.load(ds)\
-                                        .subtract_self_energies(energy_shifter, config["species_order"])\
-                                        .species_to_indices(config["species_order"])\
-                                        .shuffle()\
-                                        .split(config["training_frac"], None)
+    print("os.path.isfile(pickled_training) , config[hard_reset]:", os.path.isfile(pickled_training), config["hard_reset"])
+    if not os.path.isfile(pickled_training) or config["hard_reset"]:
+        datasets[ds]["training"], datasets[ds]["testing"] = torchani.data.load(ds)\
+                                            .subtract_self_energies(energy_shifter, config["species_order"])\
+                                            .species_to_indices(config["species_order"])\
+                                            .shuffle()\
+                                            .split(config["training_frac"], None)
 
+        with open(pickled_training, 'wb') as f:
+            pickle.dump(datasets[ds]["training"], f)
+        with open(pickled_testing, 'wb') as f:
+            pickle.dump(datasets[ds]["testing"], f)
+        with open(pickled_SelfEnergies, 'wb') as f:
+            pickle.dump(energy_shifter.self_energies.cpu(), f)
+    else:
+        Log.Log(f'Unpickling preprocessed dataset found in {pickled_testing}')
+        datasets[ds]["testing"] = pickle.load(open(pickled_testing, 'rb')).collate(config["batch_size"]).cache()
+        Log.Log(f'Unpickling preprocessed dataset found in {pickled_training}')
+        datasets[ds]["training"] = pickle.load(open(pickled_training, 'rb')).collate(config["batch_size"]).cache()  
+        Log.Log(f'Unpickling preprocessed dataset found in {pickled_SelfEnergies}')
+        energy_shifter.self_energies = pickle.load(open(pickled_SelfEnergies, 'rb')).to(device)
+        
+    print("energy_shifter.self_energies.cpu():", energy_shifter.self_energies.cpu())
     datasets[ds]["training"] = datasets[ds]["training"].collate(config["batch_size"]).cache()
     datasets[ds]["testing"]  = datasets[ds]["testing"].collate(config["batch_size"]).cache()
     
@@ -224,16 +240,11 @@ for ds in config["ds"]:
         Log.Log('Self atomic energies: '+str(energy_shifter.self_energies))
         with open(os.path.join(config["output"], f"{ds_name}_Self_Energies.csv"), "w") as f:
             selfenergies_tensors = [t for t in energy_shifter.self_energies]
-# =============================================================================
-#             if len(selfenergies_tensors) != len(config["species_order"]):
-#                 Log.Log("len(selfenergies_tensors) != len(config['species_order'])")
-#                 Log.Log("Exiting...")
-#                 sys.exit()
-# =============================================================================
             senergies = [x.item() for x in selfenergies_tensors]
             se_dict = {}
-            #f.write("Self Energies for dataset: %s \n" % ds)
             f.write("Atom,SelfEnergy\n")
+            print(species_list)
+            print(ds)
             for key in species_list[ds]:
                 for value in senergies:
                     se_dict[key] = value
@@ -247,7 +258,6 @@ for ds in config["ds"]:
         SE[:] = 0
         SE.to_csv(os.path.join(config["output"], "Self_Energies.csv"))
 
-sys.exit()
 
 config['Max'] = config['Min'] = None
 dump_json()
