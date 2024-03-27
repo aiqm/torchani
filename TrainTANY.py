@@ -109,19 +109,31 @@ Log = Logger(f"{config['output']}/{config['log']}" if type(config["log"]) == str
 for ds in config["ds"]:
     assert os.path.exists(ds), "Dataset not found"
 
+def h5py_dataset_iterator(g, prefix=''):
+    for key, item in g.items():
+        path = '{}/{}'.format(prefix, key)
+        if isinstance(item, h5py.Dataset): # test for dataset
+            yield (path, item)
+        elif isinstance(item, h5py.Group): # test for group (go down)
+            yield from h5py_dataset_iterator(item, path)
+            
 Log.Log("Figuring out which datasets contain which atoms")
 species_list = {}
-for ds in tqdm.tqdm(config["ds"]):
+for ds in config["ds"]:
+    print("Loading:", ds)
     if "species_list" in config:
         if ds in config["species_list"]:
+            print("Found:", 'ds in config["species_list"]')
             Log.Log(ds+" already done: " + " ".join(config["species_list"][ds]))
             species_list[ds] = config["species_list"][ds]
             continue
     inputs = h5py.File(ds, 'r')
     species_list[ds] = []
-    for entry in [x[0] for x in list(inputs.items())]:
-        #print(entry)
-        species = inputs[entry]["species"][()]
+    for key, entry in h5py_dataset_iterator(inputs):
+        if "species" not in key:
+            continue
+        group = os.path.dirname(key)
+        species = inputs[group]["species"][()]
         species = species.astype("<U2")
         species_list[ds] = np.unique(np.hstack((species_list[ds], species)))
         #print(species_list)
@@ -130,14 +142,13 @@ for ds in tqdm.tqdm(config["ds"]):
     species_list[ds].sort()
     config["species_list"] = species_list
     dump_json()
+    
 
 print(species_list)
 
 config["cmd"] = " ".join(sys.argv[1:])
 
-pickled_training = f"{config['output']}/Training_{config['model_n']}.pkl"
-pickled_testing = f"{config['output']}/Testing_{config['model_n']}.pkl"
-pickled_SelfEnergies = f"{config['output']}/SelfEnergies_{config['model_n']}.pkl"
+
 
 # =============================================================================
 # Config the operation of a hard reset if needed
@@ -208,6 +219,12 @@ datasets = {}
 for ds in config["ds"]:
     colours[ds] = next(colourlist)
     datasets[ds] = {"training": None, "testing": None}
+    ds_name = ds.replace("\\", "/").replace("/", "_")
+    
+    pickled_training = f"{config['output']}/training_{ds_name}.pkl"
+    pickled_testing = f"{config['output']}/testing_{ds_name}.pkl"
+    pickled_SelfEnergies = f"{config['output']}/SelfEnergies_{ds_name}.pkl"
+    
     print("os.path.isfile(pickled_training) , config[hard_reset]:", os.path.isfile(pickled_training), config["hard_reset"])
     if not os.path.isfile(pickled_training) or config["hard_reset"]:
         datasets[ds]["training"], datasets[ds]["testing"] = torchani.data.load(ds)\
@@ -224,9 +241,9 @@ for ds in config["ds"]:
             pickle.dump(energy_shifter.self_energies.cpu(), f)
     else:
         Log.Log(f'Unpickling preprocessed dataset found in {pickled_testing}')
-        datasets[ds]["testing"] = pickle.load(open(pickled_testing, 'rb')).collate(config["batch_size"]).cache()
+        datasets[ds]["testing"] = pickle.load(open(pickled_testing, 'rb'))
         Log.Log(f'Unpickling preprocessed dataset found in {pickled_training}')
-        datasets[ds]["training"] = pickle.load(open(pickled_training, 'rb')).collate(config["batch_size"]).cache()  
+        datasets[ds]["training"] = pickle.load(open(pickled_training, 'rb'))
         Log.Log(f'Unpickling preprocessed dataset found in {pickled_SelfEnergies}')
         energy_shifter.self_energies = pickle.load(open(pickled_SelfEnergies, 'rb')).to(device)
         
@@ -234,7 +251,7 @@ for ds in config["ds"]:
     datasets[ds]["training"] = datasets[ds]["training"].collate(config["batch_size"]).cache()
     datasets[ds]["testing"]  = datasets[ds]["testing"].collate(config["batch_size"]).cache()
     
-    ds_name = ds.replace("\\", "/").replace("/", "_")
+    
     ###Write self energies
     if config["remove_self_energy"]:
         Log.Log('Self atomic energies: '+str(energy_shifter.self_energies))
@@ -261,6 +278,7 @@ for ds in config["ds"]:
 
 config['Max'] = config['Min'] = None
 dump_json()
+
 
 
 
@@ -291,6 +309,20 @@ if config["preAEV"]:
 else:
     model = torachani_nn.Sequential(aev_computer, nn).to(device)
     
+
+# We want to setup N optimizers, 1 per dataset
+# =============================================================================
+# output_layer_keys = list(nn.state_dict().keys())[-2:] # final layer weights and biases connections
+# dataset_optimizers = {}
+# for i, ds in enumerate(datasets):
+#     dataset_optimizers[ds] = {"optimizer": None, "Tensors": []}
+#     #dataset_optimizers[ds] = torch.optim.AdamW(AdamW_params, lr = config["lr"])
+#     for network in NNs:
+#         dataset_optimizers[ds]["Tensors"].append({'params': [network[6].weight[i], network[6].bias[i]]})
+#     dataset_optimizers[ds]["optimizer"] = torch.optim.AdamW(dataset_optimizers[ds]["Tensors"], lr = config["lr"])
+#     
+# =============================================================================
+
 # =============================================================================
 # Now we set up the optimiser Adam with decoupled weight decay updates the
 # weights and SGD updates the biases
