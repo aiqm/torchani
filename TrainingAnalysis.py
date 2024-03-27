@@ -15,7 +15,7 @@ def moving_average(a, n=3):
     ret[n:] = ret[n:] - ret[:-n]
     return ret[n - 1:] / n
 
-training = pandas.read_csv("dataset/training.log", index_col=0)
+training = pandas.read_csv("Training/training.log", index_col=0)
 print(training.columns)
 columns = training.columns
 for col in columns:
