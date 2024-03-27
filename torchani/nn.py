@@ -48,36 +48,69 @@ class ANIModel(torch.nn.ModuleDict):
             od[str(i)] = m
         return od
 
-    def __init__(self, modules):
+    def __init__(self, modules, Min=None, Max=None, noutputs=1):
         super().__init__(self.ensureOrderedDict(modules))
+        self.Min = Min
+        self.Max = Max
+        self.noutputs = noutputs 
+        assert type(Min) == type(Max)
 
     def forward(self, species_aev: Tuple[Tensor, Tensor],  # type: ignore
                 cell: Optional[Tensor] = None,
                 pbc: Optional[Tensor] = None) -> SpeciesEnergies:
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
-
+        
         atomic_energies = self._atomic_energies((species, aev))
+        MoleculeEnergy = [torch.sum(x, dim=1) for x in atomic_energies]
+        return [SpeciesEnergies(species, x) for x in MoleculeEnergy]
+    
+        #atomic_energies0, atomic_energies1 = self._atomic_energies((species, aev))
+        #print("atomic_energies0.shape:", atomic_energies0.shape)
+        #MoleculeEnergy0 = torch.sum(atomic_energies0, dim=1)
+        #MoleculeEnergy1 = torch.sum(atomic_energies1, dim=1)
+        #print("MoleculeEnergy1.shape:", MoleculeEnergy1.shape)
+# =============================================================================
+#         if self.Max is not None and self.Min is not None:
+#             MoleculeEnergy = (torch.sigmoid(MoleculeEnergy) * (self.Max-self.Min)) + self.Min
+# =============================================================================
+    
+        
         # shape of atomic energies is (C, A)
-        return SpeciesEnergies(species, torch.sum(atomic_energies, dim=1))
+        #return SpeciesEnergies(species, MoleculeEnergy0), SpeciesEnergies(species, MoleculeEnergy1)
 
     @torch.jit.export
     def _atomic_energies(self, species_aev: Tuple[Tensor, Tensor]) -> Tensor:
         # Obtain the atomic energies associated with a given tensor of AEV's
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
+        #print("aev.shape:", aev.shape)
+        #sys.exit()
         species_ = species.flatten()
+        #print("species.shape:", species.shape)
+        #print("species_.shape:", species_.shape)
         aev = aev.flatten(0, 1)
 
-        output = aev.new_zeros(species_.shape)
-
+        
+        output = []
+        for i in range(self.noutputs):
+            output.append(aev.new_zeros(species_.shape) )
+        
+        # self.values is an odict_values of the networks we defined and passed in as modules
         for i, m in enumerate(self.values()):
             mask = (species_ == i)
             midx = mask.nonzero().flatten()
             if midx.shape[0] > 0:
                 input_ = aev.index_select(0, midx)
-                output.masked_scatter_(mask, m(input_).flatten())
-        output = output.view_as(species)
+                pred = m(input_)
+                for i in range(self.noutputs):
+                    output[i].masked_scatter_(mask, pred[:,i].flatten())
+
+                #print("m(input_):", m(input_).shape)
+        #print("output0.shape:", output0.shape)
+        #print("output0:", output0)
+        for i in range(self.noutputs):
+            output[i] = output[i].view_as(species)
         return output
 
 

@@ -161,7 +161,10 @@ class Transformations:
 
         def reenterable_iterable_factory():
             for d in reenterable_iterable:
-                d['species'] = numpy.array([idx[s] for s in d['species']], dtype='i8')
+                try:
+                    d['species'] = numpy.array([idx[s] for s in d['species']], dtype='i8')
+                except:
+                    d['species'] = numpy.array([idx[s.decode()] for s in d['species']], dtype='i8')
                 yield d
         try:
             return IterableAdapterWithLength(reenterable_iterable_factory, len(reenterable_iterable))
@@ -180,6 +183,10 @@ class Transformations:
             Y = []
             for n, d in enumerate(reenterable_iterable):
                 species = d['species']
+                try:
+                    species = [x.decode("utf-8") for x in species]
+                except:
+                    pass
                 count = Counter()
                 for s in species:
                     count[s] += 1
@@ -219,7 +226,11 @@ class Transformations:
         def reenterable_iterable_factory():
             for d in reenterable_iterable:
                 e = intercept
-                for s in d['species']:
+                try:
+                    species = [x.decode("utf-8") for x in d['species']]
+                except:
+                    species = d['species']
+                for s in species:
                     e += self_energies[s]
                 d['energies'] -= e
                 yield d
@@ -375,6 +386,9 @@ def load(path, additional_properties=()):
             for i in range(coordinates.shape[0]):
                 ret = {'species': species, 'coordinates': coordinates[i]}
                 for k in properties:
+                    if k.upper() == "CHARGE":
+                        ret[k] = m[k]
+                        continue
                     if k in m:
                         ret[k] = m[k][i]
                 yield ret

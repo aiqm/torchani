@@ -269,7 +269,7 @@ def triple_by_molecule(atom_index12: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
 
 def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
                 constants: Tuple[float, Tensor, Tensor, float, Tensor, Tensor, Tensor, Tensor],
-                sizes: Tuple[int, int, int, int, int], cell_shifts: Optional[Tuple[Tensor, Tensor]]) -> Tensor:
+                sizes: Tuple[int, int, int, int, int], cell_shifts: Optional[Tuple[Tensor, Tensor]], Charge: int) -> Tensor:
     Rcr, EtaR, ShfR, Rca, ShfZ, EtaA, Zeta, ShfA = constants
     num_species, radial_sublength, radial_length, angular_sublength, angular_length = sizes
     num_molecules = species.shape[0]
@@ -320,7 +320,28 @@ def compute_aev(species: Tensor, coordinates: Tensor, triu_index: Tensor,
     index = central_atom_index * num_species_pairs + triu_index[species12_[0], species12_[1]]
     angular_aev.index_add_(0, index, angular_terms_)
     angular_aev = angular_aev.reshape(num_molecules, num_atoms, angular_length)
-    return torch.cat([radial_aev, angular_aev], dim=-1)
+    
+    if Charge is None:
+        return torch.cat([radial_aev, angular_aev], dim=-1)
+    
+    #Add on the charge
+    #print("radial_aev:", radial_aev.size())
+    #print("angular_aev:", angular_aev.size())
+    #print("Charge:", Charge.size())
+    #print("Charge:", Charge)
+    # if this is for a single molecule we can just create the tensor we need and populate if
+    if Charge.size()==torch.Tensor(1).size(): # Mostly ASE
+        ChargeArray = torch.Tensor(1, angular_aev.size()[1], 1).to(angular_aev.device)
+        ChargeArray[:] = Charge
+    else: # Mostly training
+        #ChargeArray = Charge.expand(Charge.size()[0], Charge.size()[0])
+        #print("Charge:", Charge.size())
+        #ChargeArray = ChargeArray[:,:angular_aev.size()[1]].resize(ChargeArray.size()[0], angular_aev.size()[1], 1)
+        #ChargeArray = Charge.reshape(1,-1,1)
+        ChargeArray = Charge.repeat_interleave(angular_aev.size()[1]).reshape(Charge.size()[0], -1, 1)
+    #print(ChargeArray.size())
+    #print(Charge.size())
+    return torch.cat([radial_aev, angular_aev, ChargeArray], dim=-1)
 
 
 def jit_unused_if_no_cuaev(condition=has_cuaev):
@@ -511,7 +532,11 @@ class AEVComputer(torch.nn.Module):
             NamedTuple: Species and AEVs. species are the species from the input
             unchanged, and AEVs is a tensor of shape ``(N, A, self.aev_length())``
         """
-        species, coordinates = input_
+        try:
+            species, coordinates, charges = input_
+        except ValueError:
+            species, coordinates = input_
+            charges = None
         assert species.dim() == 2
         assert species.shape == coordinates.shape[:-1]
         assert coordinates.shape[-1] == 3
@@ -525,7 +550,7 @@ class AEVComputer(torch.nn.Module):
             return SpeciesAEV(species, aev)
 
         if cell is None and pbc is None:
-            aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, None)
+            aev = compute_aev(species, coordinates, self.triu_index, self.constants(), self.sizes, None, charges)
         else:
             assert (cell is not None and pbc is not None)
             cutoff = max(self.Rcr, self.Rca)

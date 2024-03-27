@@ -1,9 +1,0 @@
-tb-nightly
-tqdm
-ase
-h5py
-pillow
-pkbar
-pyyaml
-pytest
-expecttest
