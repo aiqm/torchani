@@ -96,6 +96,15 @@ def get_networks(aev_dim, celu0, celu1, noutputs):
         torch.nn.CELU(celu1),
         torch.nn.Linear(160, noutputs)
     )
+    networks["S_network"] = torch.nn.Sequential(
+        torch.nn.Linear(aev_dim, 256),
+        torch.nn.CELU(celu0),
+        torch.nn.Linear(256, 192),
+        torch.nn.CELU(celu1),
+        torch.nn.Linear(192, 160),
+        torch.nn.CELU(celu1),
+        torch.nn.Linear(160, noutputs)
+    )
     networks["Ir_network"] = torch.nn.Sequential(
         torch.nn.Linear(aev_dim, 256),
         torch.nn.CELU(celu0),
