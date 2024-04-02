@@ -562,7 +562,7 @@ class TestANIDataset(TestCase):
                         f1[k].create_dataset(p, data=v)
 
     def _make_new_dataset(self):
-        return ANIDataset(self.new_store_name, create=True)
+        return ANIDataset(self.new_store_name)
 
     def tearDown(self):
         self.tmp_dir.cleanup()
@@ -750,7 +750,7 @@ class TestANIDataset(TestCase):
             self.assertEqual(v, new_groups[k])
 
     def testMetadata(self):
-        ds = ANIDataset(locations=self.tmp_dir.name / Path('new.h5'), names="newfile", create=True)
+        ds = ANIDataset(locations=self.tmp_dir.name / Path('new.h5'), names="newfile")
         meta = {'newfile': {'some metadata': 'metadata string', 'other metadata': 'other string'}}
         ds.set_metadata(meta)
         self.assertEqual(ds.metadata, meta)
@@ -794,8 +794,7 @@ class TestANIDataset(TestCase):
             ds.rename_properties({'species': 'renamed_energies'})
 
     def testCreation(self):
-        with self.assertRaisesRegex(FileNotFoundError, "The store in .* could not be found"):
-            ANIDataset(self.new_store_name)
+        ANIDataset(self.new_store_name)
 
     def testSizesOneGroup(self):
         ds = ANIDataset(self.tmp_store_one_group.name)

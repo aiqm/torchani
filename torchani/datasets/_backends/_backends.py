@@ -1,8 +1,8 @@
 from pathlib import Path
-from typing import ContextManager, Dict, Any, Type, cast
+from typing import ContextManager, Dict, Any, Type, cast, Optional
 
 from torchani.datasets._annotations import StrPath
-from .interface import _Store
+from .interface import _StoreWrapper
 from .h5py_impl import _H5PY_AVAILABLE, _H5Store, _H5TemporaryLocation
 from .zarr_impl import _ZARR_AVAILABLE, _ZarrStore, _ZarrTemporaryLocation
 from .pq_impl import _PQ_AVAILABLE, _PqStore, _PqTemporaryLocation
@@ -22,24 +22,25 @@ def _infer_backend(store_location: StrPath) -> str:
     raise RuntimeError("Backend could not be infered from store location")
 
 
-def StoreFactory(store_location: StrPath, backend: str = None, grouping: str = None,
-                 create: bool = False, dummy_properties: Dict[str, Any] = None, use_cudf: bool = False) -> '_Store':
+def StoreFactory(store_location: StrPath, backend: str = None, grouping: Optional[str] = None,
+                 dummy_properties: Dict[str, Any] = None, use_cudf: bool = False, _force_overwrite: bool = False) -> '_StoreWrapper':
     backend = _infer_backend(store_location) if backend is None else backend
     dummy_properties = dict() if dummy_properties is None else dummy_properties
+    kwargs: Dict[str, Any] = {'dummy_properties': dummy_properties}
+    if backend == 'pq':
+        kwargs.update({'use_cudf': use_cudf})
 
     if not _BACKEND_AVAILABLE.get(backend, False):
         raise ValueError(f'{backend} could not be found, please install it if supported.'
                          f' Supported backends are {set(_BACKEND_AVAILABLE.keys())}')
-    cls: Type[_Store] = cast(Type[_Store], _CONCRETE_STORES[backend])
-    if create:
-        grouping = grouping if grouping is not None else "by_formula"
-        store = cls.make_empty(store_location, grouping, dummy_properties=dummy_properties)
+    cls: Type[_StoreWrapper] = cast(Type[_StoreWrapper], _CONCRETE_STORES[backend])
+    if not Path(store_location).exists() or _force_overwrite:
+        if grouping is not None:
+            kwargs.update({"grouping": grouping})
+        store = cls.make_empty(store_location, **kwargs)
     else:
         if grouping is not None:
             raise ValueError("Can't specify a grouping for an already existing dataset")
-        kwargs: Dict[str, Any] = {'dummy_properties': dummy_properties}
-        if backend == 'pq':
-            kwargs.update({'use_cudf': use_cudf})
         store = cls(store_location, **kwargs)
     setattr(store, 'backend', backend)  # Monkey patch
     return store

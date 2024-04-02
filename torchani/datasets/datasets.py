@@ -17,7 +17,7 @@ from torch import Tensor
 import numpy as np
 
 from torchani.utils import species_to_formula, PERIODIC_TABLE, ATOMIC_NUMBERS, tqdm, PADDING
-from torchani.datasets._backends import _H5PY_AVAILABLE, _Store, StoreFactory, TemporaryLocation, _ConformerWrapper, _SUFFIXES
+from torchani.datasets._backends import _H5PY_AVAILABLE, _StoreWrapper, StoreFactory, TemporaryLocation, _ConformerWrapper, _SUFFIXES
 from torchani.datasets._annotations import Transform, Conformers, NumpyConformers, MixedConformers, StrPath, DTypeLike, IdxLike
 
 if _H5PY_AVAILABLE:
@@ -38,6 +38,7 @@ _ALWAYS_STRING_PATTERNS = {r"^_id$", r"^smiles_.*", r"^inchis_.*", r"^lot$", r"^
 # correctly. If grouping is "legacy" and these are found we give up and ask the
 # user to delete them in a warning
 _LEGACY_BROKEN_KEYS = {'coordinatesHE', 'energiesHE', 'smiles'}
+# The second dimension of these keys is the number of atoms in the structure
 _ATOMIC_KEYS = (
     "species",
     "numbers",
@@ -395,45 +396,50 @@ def _delegate_with_return(method):
 # used for directories with npz files, or other backends. It should never ever
 # be used directly by user code.
 class _ANISubdataset(_ANIDatasetBase):
-    def __init__(self,
-                 store_location: StrPath,
-                 create: bool = False,
-                 grouping: str = None,
-                 backend: Optional[str] = None,
-                 verbose: bool = True,
-                 dummy_properties: Dict[str, Any] = None,
-                 use_cudf: bool = False):
+    def __init__(
+        self,
+        store_location: StrPath,
+        create: bool = False,
+        grouping: Optional[str] = None,
+        backend: Optional[str] = None,
+        verbose: bool = True,
+        dummy_properties: Dict[str, Any] = None,
+        use_cudf: bool = False,
+        _force_overwrite: bool = False,
+    ):
         # dummy_properties must be a dict of the form
         # {'name': {'dtype': dtype, 'is_atomic': is_atomic, 'extra_dims': extra_dims, 'fill_value': fill_value}, ...}
         # with one or more dummy properties. These will be created on the fly only if they are not
         # present in the dataset already.
+        if create:
+            warnings.warn(
+                "'create' should not be specified, datasets are automatically created if the underlying file/dir doesn't exist"
+            )
         super().__init__()
-        self._store = StoreFactory(store_location, backend, grouping, create, dummy_properties, use_cudf=use_cudf)
-        # we StoreFactory monkey patches all stores with "backend" attribute
+        self._store = StoreFactory(store_location, backend, grouping, dummy_properties, use_cudf=use_cudf, _force_overwrite=_force_overwrite)
+        # StoreFactory monkey patches all stores with "backend" attribute
         self._backend = self._store.backend  # type: ignore
         self._possible_nonbatch_properties: Set[str]
-        if create:
-            self._possible_nonbatch_properties = set()
+
+        if self.grouping not in ['by_formula', 'by_num_atoms', 'legacy']:
+            raise RuntimeError(f'Read with unsupported grouping {self.grouping}')
+        if self.grouping == 'legacy':
+            self._possible_nonbatch_properties = _LEGACY_NONBATCH_KEYS
         else:
-            if self.grouping not in ['by_formula', 'by_num_atoms', 'legacy']:
-                raise RuntimeError(f'Read with unsupported grouping {self.grouping}')
-            if self.grouping == 'legacy':
-                self._possible_nonbatch_properties = _LEGACY_NONBATCH_KEYS
-            else:
-                self._possible_nonbatch_properties = set()
-            # In general properties of the dataset should be equal for all
-            # groups, this can be an issue for HDF5. We check this in the first
-            # call of _update_cache, if it isn't we raise an exception
-            self._update_cache(check_properties=True, verbose=verbose)
-            if self.grouping == 'legacy':
-                if self.properties & _LEGACY_BROKEN_KEYS:
-                    warnings.warn(f'Unsupported properties {_LEGACY_BROKEN_KEYS & self.properties}'
-                                   ' found in legacy dataset, this will generate'
-                                   ' unpredictable issues.'
-                                   ' Probably .items() and .values() will work but'
-                                   ' not much else. It is highly  recommended that'
-                                   ' you backup these properties if needed and'
-                                   ' delete them using dataset.delete_properties')
+            self._possible_nonbatch_properties = set()
+        # In general properties of the dataset should be equal for all
+        # groups, this can be an issue for HDF5. We check this in the first
+        # call of _update_cache, if it isn't we raise an exception
+        self._update_cache(check_properties=True, verbose=verbose)
+        if self.grouping == 'legacy':
+            if self.properties & _LEGACY_BROKEN_KEYS:
+                warnings.warn(f'Unsupported properties {_LEGACY_BROKEN_KEYS & self.properties}'
+                               ' found in legacy dataset, this will generate'
+                               ' unpredictable issues.'
+                               ' Probably .items() and .values() will work but'
+                               ' not much else. It is highly  recommended that'
+                               ' you backup these properties if needed and'
+                               ' delete them using dataset.delete_properties')
 
     @property
     def metadata(self) -> Mapping[str, str]:
@@ -480,7 +486,7 @@ class _ANISubdataset(_ANIDatasetBase):
 
     # This trick makes methods fetch the open file directly
     # if they are being called from inside a "keep_open" context
-    def _get_open_store(self, stack: ExitStack, mode: str = 'r', only_meta: bool = False) -> '_Store':
+    def _get_open_store(self, stack: ExitStack, mode: str = 'r', only_meta: bool = False) -> '_StoreWrapper':
         if mode not in ['r+', 'r']:
             raise ValueError(f"Unsupported mode {mode}")
 
@@ -711,15 +717,19 @@ class _ANISubdataset(_ANIDatasetBase):
                     f[group_name][dest_key] = np.full(shape + extra_dims_, fill_value, dtype)
         return self
 
-    def _make_empty_copy(self,
-                         location: StrPath,
-                         grouping: Optional[str] = None,
-                         backend: Optional[str] = None) -> '_ANISubdataset':
-        return _ANISubdataset(location,
-                              create=True,
-                              backend=backend if backend is not None else self._backend,
-                              grouping=grouping if grouping is not None else self.grouping,
-                              verbose=False)
+    def _make_empty_copy(
+        self,
+        location: StrPath,
+        grouping: str,
+        backend: str,
+    ) -> '_ANISubdataset':
+        return _ANISubdataset(
+            location,
+            backend=backend,
+            grouping=grouping,
+            verbose=False,
+            _force_overwrite=True,
+        )
 
     def _attach_dummy_properties(self, dummy_properties: Dict[str, Any]) -> None:
         with ExitStack() as stack:
@@ -749,7 +759,7 @@ class _ANISubdataset(_ANIDatasetBase):
         if self._backend == backend and backend != 'h5py':
             return self
         with TemporaryLocation(backend) as location:
-            new_ds = self._make_empty_copy(location, backend=backend)
+            new_ds = self._make_empty_copy(location, grouping=self.grouping, backend=backend)
             with new_ds.keep_open('r+') as rwds:
                 for group_name, conformers in tqdm(self.numpy_items(exclude_dummy=True),
                                                    total=self.num_conformer_groups,
@@ -794,7 +804,7 @@ class _ANISubdataset(_ANIDatasetBase):
         """
         self._check_unique_element_key()
         with TemporaryLocation(self._backend) as location:
-            new_ds = self._make_empty_copy(location, grouping='by_formula')
+            new_ds = self._make_empty_copy(location, grouping='by_formula', backend=self._backend)
             with new_ds.keep_open('r+') as rwds:
                 for group_name, conformers in tqdm(self.numpy_items(exclude_dummy=True),
                                                    total=self.num_conformer_groups,
@@ -831,7 +841,7 @@ class _ANISubdataset(_ANIDatasetBase):
         """
         self._check_unique_element_key()
         with TemporaryLocation(self._backend) as location:
-            new_ds = self._make_empty_copy(location, grouping='by_num_atoms')
+            new_ds = self._make_empty_copy(location, grouping='by_num_atoms', backend=self._backend)
             with new_ds.keep_open('r+') as rwds:
                 for group_name, conformers in tqdm(self.numpy_items(exclude_dummy=True),
                                                    total=self.num_conformer_groups,

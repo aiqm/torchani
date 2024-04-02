@@ -9,7 +9,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from torchani.datasets._annotations import NumpyConformers, StrPath
+from torchani.datasets._annotations import NumpyConformers, StrPath, Self
 
 
 # Keeps track of variables that must be updated each time the datasets get
@@ -29,7 +29,7 @@ class NamedMapping(Mapping):
 
 _MutMapSubtype = TypeVar('_MutMapSubtype', bound=MutableMapping[str, np.ndarray])
 
-# _ConformerGroup and _Store are abstract classes from which all backends
+# _ConformerGroup and _StoreWrapper are abstract classes from which all backends
 # should inherit in order to correctly interact with ANIDataset. Adding
 # support for a new backend can be done just by coding these classes and
 # adding the support for the backend inside interface.py
@@ -178,7 +178,7 @@ class _FileOrDirLocation:
                 shutil.rmtree(self._root_location)
         self._root_location = None
 
-    def transfer_to(self, other_store: '_Store') -> None:
+    def transfer_to(self, other_store: '_StoreWrapper') -> None:
         root = Path(self.root).with_suffix('')
         del self.root
         other_store.location.root = root
@@ -201,7 +201,7 @@ _T = TypeVar('_T', bound=Any)
 # A store that wraps another store class (e.g. Zarr, Exedir, HDF5, DataFrame)
 # Wrapped store must have a "mode" and "attr" attributes, it may implement close()
 # __exit__, __enter__, , __delitem__
-class _StoreWrapper(ContextManager['_Store'], MutableMapping[str, '_ConformerGroup'], ABC, Generic[_T]):
+class _StoreWrapper(ContextManager['_StoreWrapper'], MutableMapping[str, '_ConformerGroup'], ABC, Generic[_T]):
     location: Any
 
     def __init__(self, *args, dummy_properties: Dict[str, Any] = None, **kwargs):
@@ -214,7 +214,7 @@ class _StoreWrapper(ContextManager['_Store'], MutableMapping[str, '_ConformerGro
 
     @classmethod
     @abstractmethod
-    def make_empty(cls, store_location: StrPath, grouping: str, **kwargs) -> '_Store':
+    def make_empty(cls, store_location: StrPath, grouping: str, **kwargs) -> Self:
         pass
 
     @abstractmethod
@@ -230,10 +230,10 @@ class _StoreWrapper(ContextManager['_Store'], MutableMapping[str, '_ConformerGro
         return self._store_obj
 
     @abstractmethod
-    def open(self, mode: str = 'r', only_meta: bool = False) -> '_Store':
+    def open(self, mode: str = 'r', only_meta: bool = False) -> Self:
         pass
 
-    def close(self) -> '_Store':
+    def close(self) -> Self:
         try:
             self._store.close()
         except AttributeError:
@@ -253,7 +253,7 @@ class _StoreWrapper(ContextManager['_Store'], MutableMapping[str, '_ConformerGro
     def mode(self) -> str:
         return cast(str, self._store.mode)
 
-    def __enter__(self) -> '_Store':
+    def __enter__(self) -> Self:
         try:
             self._store.__enter__()
         except AttributeError:
@@ -297,10 +297,6 @@ class _StoreWrapper(ContextManager['_Store'], MutableMapping[str, '_ConformerGro
         except AttributeError:
             pass
         self._store_obj = None
-
-
-# alias for convenience
-_Store = _StoreWrapper
 
 
 # A store that wraps another hierarchical store (e.g. Zarr, Exedir, HDF5)

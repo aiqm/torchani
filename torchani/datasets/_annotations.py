@@ -16,6 +16,12 @@ else:
     from numpy import typing as numpy_typing
     DTypeLike = numpy_typing.DTypeLike
 
+# If typing_extensions is supported we can use Self, which is much better for
+try:
+    from typing_extensions import Self
+except ImportError:
+    from typing import Any
+    Self = Any  # type: ignore
 
 _MutMapSubtype = TypeVar('_MutMapSubtype', bound=MutableMapping[str, Tensor])
 
