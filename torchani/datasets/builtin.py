@@ -356,6 +356,7 @@ def _check_files_integrity(
     root: Path,
     suffix: str = ".h5",
     name: str = "Dataset",
+    skip_hash_check: bool = False,
 ) -> None:
     # Checks that:
     # (1) There are files in the dataset
@@ -373,6 +374,8 @@ def _check_files_integrity(
             f"Wrong files found for dataset {name} in provided path,"
             f" expected {expected_file_names} but found {present_file_names}"
         )
+    if skip_hash_check:
+        return
     for f in tqdm(present_files, desc=f'Checking integrity of dataset {name}'):
         if not _check_integrity(f, files_and_md5s[f.name]):
             raise RuntimeError(
@@ -406,7 +409,8 @@ def _register_dataset_builder(name: str) -> None:
         basis_set: str = default_basis,
         verbose: bool = True,
         download: bool = True,
-        dummy_properties: Optional[Dict[str, Any]] = None
+        dummy_properties: Optional[Dict[str, Any]] = None,
+        skip_check: bool = False,
     ) -> ANIDataset:
         lot = f"{functional}-{basis_set}".lower()
         try:
@@ -432,7 +436,7 @@ def _register_dataset_builder(name: str) -> None:
             )
 
         # Check for corruption
-        _check_files_integrity(_files_and_md5s, _root, suffix, name)
+        _check_files_integrity(_files_and_md5s, _root, suffix, name, skip_hash_check=skip_check)
 
         # Order dataset paths using the order given in "files and md5s"
         filenames_order = {
