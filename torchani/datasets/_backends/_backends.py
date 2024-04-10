@@ -1,5 +1,5 @@
+import typing as tp
 from pathlib import Path
-from typing import ContextManager, Dict, Any, Type, cast, Optional
 
 from torchani.datasets._annotations import StrPath
 from .interface import _StoreWrapper
@@ -22,18 +22,18 @@ def _infer_backend(store_location: StrPath) -> str:
     raise RuntimeError("Backend could not be infered from store location")
 
 
-def StoreFactory(store_location: StrPath, backend: str = None, grouping: Optional[str] = None,
-                 dummy_properties: Dict[str, Any] = None, use_cudf: bool = False, _force_overwrite: bool = False) -> '_StoreWrapper':
+def StoreFactory(store_location: StrPath, backend: str = None, grouping: tp.Optional[str] = None,
+                 dummy_properties: tp.Dict[str, tp.Any] = None, use_cudf: bool = False, _force_overwrite: bool = False) -> '_StoreWrapper':
     backend = _infer_backend(store_location) if backend is None else backend
     dummy_properties = dict() if dummy_properties is None else dummy_properties
-    kwargs: Dict[str, Any] = {'dummy_properties': dummy_properties}
+    kwargs: tp.Dict[str, tp.Any] = {'dummy_properties': dummy_properties}
     if backend == 'pq':
         kwargs.update({'use_cudf': use_cudf})
 
     if not _BACKEND_AVAILABLE.get(backend, False):
         raise ValueError(f'{backend} could not be found, please install it if supported.'
                          f' Supported backends are {set(_BACKEND_AVAILABLE.keys())}')
-    cls: Type[_StoreWrapper] = cast(Type[_StoreWrapper], _CONCRETE_STORES[backend])
+    cls: tp.Type[_StoreWrapper] = tp.cast(tp.Type[_StoreWrapper], _CONCRETE_STORES[backend])
     if not Path(store_location).exists() or _force_overwrite:
         if grouping is not None:
             kwargs.update({"grouping": grouping})
@@ -46,7 +46,7 @@ def StoreFactory(store_location: StrPath, backend: str = None, grouping: Optiona
     return store
 
 
-def TemporaryLocation(backend: str) -> 'ContextManager[StrPath]':
+def TemporaryLocation(backend: str) -> tp.ContextManager[StrPath]:
     if not _BACKEND_AVAILABLE.get(backend, False):
         raise ValueError(f'{backend} could not be found, please install it if supported.'
                          f' Supported backends are {set(_BACKEND_AVAILABLE.keys())}')

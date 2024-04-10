@@ -1,7 +1,7 @@
 r"""Mypy type aliases"""
+import typing as tp
 import sys
 from os import PathLike
-from typing import Union, Callable, Iterable, MutableMapping, TypeVar
 from collections import OrderedDict
 
 from torch import Tensor
@@ -20,21 +20,20 @@ else:
 try:
     from typing_extensions import Self
 except ImportError:
-    from typing import Any
-    Self = Any  # type: ignore
+    Self = tp.Any  # type: ignore
 
-_MutMapSubtype = TypeVar('_MutMapSubtype', bound=MutableMapping[str, Tensor])
+_MutMapSubtype = tp.TypeVar('_MutMapSubtype', bound=tp.MutableMapping[str, Tensor])
 
 # Transform = Callable[[MutableMapping[str, Tensor]], MutableMapping[str, Tensor]]
-Transform = Callable[[_MutMapSubtype], _MutMapSubtype]
+Transform = tp.Callable[[_MutMapSubtype], _MutMapSubtype]
 
 # any of these should be interpretable as a 1D index sequence
-IdxLike = Union[Tensor, ndarray, None, Iterable[int], int]
+IdxLike = tp.Union[Tensor, ndarray, None, tp.Iterable[int], int]
 
-Conformers = MutableMapping[str, Tensor]
-NumpyConformers = MutableMapping[str, ndarray]
-MixedConformers = MutableMapping[str, Union[Tensor, ndarray]]
+Conformers = tp.MutableMapping[str, Tensor]
+NumpyConformers = tp.MutableMapping[str, ndarray]
+MixedConformers = tp.MutableMapping[str, tp.Union[Tensor, ndarray]]
 
 # mimic typeshed
-StrPath = Union[str, 'PathLike[str]']
-StrPathODict = Union['OrderedDict[str, str]', 'OrderedDict[str, PathLike[str]]']
+StrPath = tp.Union[str, 'PathLike[str]']
+StrPathODict = tp.Union['OrderedDict[str, str]', 'OrderedDict[str, PathLike[str]]']

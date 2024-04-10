@@ -1,10 +1,9 @@
 import shutil
+import typing as tp
 from itertools import chain
 from os import fspath
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import (ContextManager, MutableMapping, Set, Tuple, Optional,
-                    Generic, TypeVar, Iterator, cast, Mapping, Any, Dict)
 from collections import OrderedDict
 
 import numpy as np
@@ -16,18 +15,18 @@ from torchani.datasets._annotations import NumpyConformers, StrPath, Self
 # modified or the first time they are read from disk
 class CacheHolder:
     group_sizes: 'OrderedDict[str, int]'
-    properties: Set[str]
+    properties: tp.Set[str]
 
     def __init__(self) -> None:
         self.group_sizes = OrderedDict()
         self.properties = set()
 
 
-class NamedMapping(Mapping):
+class NamedMapping(tp.Mapping):
     name: str
 
 
-_MutMapSubtype = TypeVar('_MutMapSubtype', bound=MutableMapping[str, np.ndarray])
+_MutMapSubtype = tp.TypeVar('_MutMapSubtype', bound=tp.MutableMapping[str, np.ndarray])
 
 # _ConformerGroup and _StoreWrapper are abstract classes from which all backends
 # should inherit in order to correctly interact with ANIDataset. Adding
@@ -38,8 +37,8 @@ _MutMapSubtype = TypeVar('_MutMapSubtype', bound=MutableMapping[str, np.ndarray]
 # This is kind of like a dict, but with the extra functionality that you can
 # directly "append" to it, and rename its keys, it can also create dummy
 # properties on the fly.
-class _ConformerGroup(MutableMapping[str, np.ndarray], ABC):
-    def __init__(self, *args, dummy_properties: Dict[str, Any] = None, **kwargs) -> None:
+class _ConformerGroup(tp.MutableMapping[str, np.ndarray], ABC):
+    def __init__(self, *args, dummy_properties: tp.Dict[str, tp.Any] = None, **kwargs) -> None:
         self._dummy_properties = dict() if dummy_properties is None else dummy_properties
 
     def _is_resizable(self) -> bool:
@@ -70,14 +69,14 @@ class _ConformerGroup(MutableMapping[str, np.ndarray], ABC):
         return array
 
     # creates a dummy property on the fly
-    def _make_dummy_property(self, extra_dims: Tuple[int, ...] = tuple(), is_atomic: bool = False, fill_value: float = 0.0, dtype=np.int64):
+    def _make_dummy_property(self, extra_dims: tp.Tuple[int, ...] = tuple(), is_atomic: bool = False, fill_value: float = 0.0, dtype=np.int64):
         try:
             species = self._getitem_impl('species')
         except KeyError:
             species = self._getitem_impl('numbers')
         if species.ndim != 2:
             raise RuntimeError("Attempted to create dummy properties in a legacy dataset, this is not supported!")
-        shape: Tuple[int, ...] = (species.shape[0],)
+        shape: tp.Tuple[int, ...] = (species.shape[0],)
         if is_atomic:
             shape += (species.shape[1],)
         return np.full(shape + extra_dims, fill_value, dtype)
@@ -109,7 +108,7 @@ class _ConformerGroup(MutableMapping[str, np.ndarray], ABC):
         pass
 
 
-class _ConformerWrapper(_ConformerGroup, Generic[_MutMapSubtype]):
+class _ConformerWrapper(_ConformerGroup, tp.Generic[_MutMapSubtype]):
     def __init__(self, data: _MutMapSubtype, **kwargs) -> None:
         super().__init__(**kwargs)
         self._data = data
@@ -146,7 +145,7 @@ class _FileOrDirLocation:
             raise ValueError("Kind must be one of 'file' or 'dir'")
         self._kind = kind
         self._suffix = suffix
-        self._root_location: Optional[Path] = None
+        self._root_location: tp.Optional[Path] = None
         self.root = root
 
     @property
@@ -195,21 +194,21 @@ class _FileOrDirLocation:
 # support Mapping and ContextManager methods, and also 'close' and 'create_group'
 # and have 'mode' and 'attr' attributes
 # this is similar to C++20 concepts and it is currently very verbose, so we avoid it
-_T = TypeVar('_T', bound=Any)
+_T = tp.TypeVar('_T', bound=tp.Any)
 
 
 # A store that wraps another store class (e.g. Zarr, Exedir, HDF5, DataFrame)
 # Wrapped store must have a "mode" and "attr" attributes, it may implement close()
 # __exit__, __enter__, , __delitem__
-class _StoreWrapper(ContextManager['_StoreWrapper'], MutableMapping[str, '_ConformerGroup'], ABC, Generic[_T]):
-    location: Any
+class _StoreWrapper(tp.ContextManager['_StoreWrapper'], tp.MutableMapping[str, '_ConformerGroup'], ABC, tp.Generic[_T]):
+    location: tp.Any
 
-    def __init__(self, *args, dummy_properties: Dict[str, Any] = None, **kwargs):
+    def __init__(self, *args, dummy_properties: tp.Dict[str, tp.Any] = None, **kwargs):
         self._dummy_properties = dict() if dummy_properties is None else dummy_properties
-        self._store_obj: Any = None
+        self._store_obj: tp.Any = None
 
     @property
-    def dummy_properties(self) -> Dict[str, Any]:
+    def dummy_properties(self) -> tp.Dict[str, tp.Any]:
         return self._dummy_properties.copy()
 
     @classmethod
@@ -220,7 +219,7 @@ class _StoreWrapper(ContextManager['_StoreWrapper'], MutableMapping[str, '_Confo
     @abstractmethod
     def update_cache(self,
                      check_properties: bool = False,
-                     verbose: bool = True) -> Tuple['OrderedDict[str, int]', Set[str]]:
+                     verbose: bool = True) -> tp.Tuple['OrderedDict[str, int]', tp.Set[str]]:
         pass
 
     @property
@@ -251,7 +250,7 @@ class _StoreWrapper(ContextManager['_StoreWrapper'], MutableMapping[str, '_Confo
 
     @property
     def mode(self) -> str:
-        return cast(str, self._store.mode)
+        return tp.cast(str, self._store.mode)
 
     def __enter__(self) -> Self:
         try:
@@ -271,19 +270,19 @@ class _StoreWrapper(ContextManager['_StoreWrapper'], MutableMapping[str, '_Confo
             pass
         try:
             g = self._store.attrs['grouping']
-            return cast(str, g)
+            return tp.cast(str, g)
         except (KeyError, OSError):
             return 'legacy'
 
     @property
-    def metadata(self) -> Mapping[str, str]:
+    def metadata(self) -> tp.Mapping[str, str]:
         try:
             meta = {name: attr for name, attr in self._store.attrs.items() if name not in ['grouping', 'dtypes', 'extra_dims']}
         except Exception:
             meta = dict()
         return meta
 
-    def set_metadata(self, value: Mapping[str, str]) -> None:
+    def set_metadata(self, value: tp.Mapping[str, str]) -> None:
         if 'grouping' in value.keys():
             raise ValueError('Grouping is not a valid metadata key')
         for k, v in value.items():
@@ -304,13 +303,13 @@ class _StoreWrapper(ContextManager['_StoreWrapper'], MutableMapping[str, '_Confo
 # __exit__, __enter__, create_group, __len__, __iter__ -> Iterator[str], __delitem__
 # and have a "mode" and "attr" attributes
 class _HierarchicalStoreWrapper(_StoreWrapper[_T]):
-    def __init__(self, store_location: StrPath, suffix='', kind='', dummy_properties: Dict[str, Any] = None):
+    def __init__(self, store_location: StrPath, suffix='', kind='', dummy_properties: tp.Dict[str, tp.Any] = None):
         super().__init__(dummy_properties=dummy_properties)
         self.location = _FileOrDirLocation(store_location, suffix, kind)
 
     def update_cache(self,
                      check_properties: bool = False,
-                     verbose: bool = True) -> Tuple['OrderedDict[str, int]', Set[str]]:
+                     verbose: bool = True) -> tp.Tuple['OrderedDict[str, int]', tp.Set[str]]:
         cache = CacheHolder()
         for k, g in self._store.items():
             self._update_properties_cache(cache, g, check_properties)
@@ -351,5 +350,5 @@ class _HierarchicalStoreWrapper(_StoreWrapper[_T]):
     def __len__(self) -> int:
         return len(self._store)
 
-    def __iter__(self) -> Iterator[str]:
+    def __iter__(self) -> tp.Iterator[str]:
         return iter(self._store)

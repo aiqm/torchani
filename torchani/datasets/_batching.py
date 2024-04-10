@@ -1,11 +1,11 @@
 r"""Functions for creating batched datasets"""
+import typing as tp
 import warnings
 import math
 import json
 import pickle
 import datetime
 from pathlib import Path
-from typing import Tuple, Dict, Optional, Sequence, List, Union, Collection
 from collections import OrderedDict
 
 import torch
@@ -22,20 +22,20 @@ if _H5PY_AVAILABLE:
 
 
 # TODO a batcher class would make this code much more clear
-def create_batched_dataset(locations: Union[Collection[StrPath], StrPath, ANIDataset],
-                           dest_path: Optional[StrPath] = None,
+def create_batched_dataset(locations: tp.Union[tp.Collection[StrPath], StrPath, ANIDataset],
+                           dest_path: tp.Optional[StrPath] = None,
                            shuffle: bool = True,
-                           shuffle_seed: Optional[int] = None,
+                           shuffle_seed: tp.Optional[int] = None,
                            file_format: str = 'hdf5',
-                           include_properties: Optional[Sequence[str]] = None,
+                           include_properties: tp.Optional[tp.Sequence[str]] = None,
                            batch_size: int = 2560,
                            max_batches_per_packet: int = 350,
-                           padding: Optional[Dict[str, float]] = None,
-                           splits: Optional[Dict[str, float]] = None,
-                           folds: Optional[int] = None,
-                           inplace_transform: Optional[Transform] = None,
+                           padding: tp.Optional[tp.Dict[str, float]] = None,
+                           splits: tp.Optional[tp.Dict[str, float]] = None,
+                           folds: tp.Optional[int] = None,
+                           inplace_transform: tp.Optional[Transform] = None,
                            direct_cache: bool = False,
-                           verbose: bool = True) -> Dict[str, ANIBatchedDataset]:
+                           verbose: bool = True) -> tp.Dict[str, ANIBatchedDataset]:
 
     if file_format != 'hdf5' and include_properties is None:
         include_properties = ('species', 'coordinates', 'energies')
@@ -116,7 +116,7 @@ def create_batched_dataset(locations: Union[Collection[StrPath], StrPath, ANIDat
     return batched_datasets
 
 
-def _get_random_generator(shuffle: bool = False, shuffle_seed: Optional[int] = None) -> Optional[torch.Generator]:
+def _get_random_generator(shuffle: bool = False, shuffle_seed: tp.Optional[int] = None) -> tp.Optional[torch.Generator]:
 
     if shuffle_seed is not None:
         assert shuffle
@@ -130,7 +130,7 @@ def _get_random_generator(shuffle: bool = False, shuffle_seed: Optional[int] = N
 
 
 def _maybe_shuffle_indices(conformer_indices: Tensor,
-                           rng: Optional[torch.Generator] = None) -> Tensor:
+                           rng: tp.Optional[torch.Generator] = None) -> Tensor:
     total_num_conformers = len(conformer_indices)
     if rng is not None:
         shuffle_indices = torch.randperm(total_num_conformers, generator=rng)
@@ -143,14 +143,14 @@ def _maybe_shuffle_indices(conformer_indices: Tensor,
 def _divide_into_folds(conformer_indices: Tensor,
                         dest_path: Path,
                         folds: int,
-                        rng: Optional[torch.Generator] = None,
-                        direct_cache: bool = False) -> Tuple[List[Tensor], 'OrderedDict[str, Path]']:
+                        rng: tp.Optional[torch.Generator] = None,
+                        direct_cache: bool = False) -> tp.Tuple[tp.List[Tensor], 'OrderedDict[str, Path]']:
 
     # the idea here is to work with "blocks" of size num_conformers / folds
     # cast to list for mypy
     conformer_blocks = list(torch.chunk(conformer_indices, folds))
-    conformer_splits: List[Tensor] = []
-    split_paths_list: List[Tuple[str, Path]] = []
+    conformer_splits: tp.List[Tensor] = []
+    split_paths_list: tp.List[tp.Tuple[str, Path]] = []
 
     print(f"Generating {folds} folds for cross validation or ensemble training")
     for f in range(folds):
@@ -175,8 +175,8 @@ def _divide_into_folds(conformer_indices: Tensor,
 
 def _divide_into_splits(conformer_indices: Tensor,
                         dest_path: Path,
-                        splits: Dict[str, float],
-                        direct_cache: bool = False) -> Tuple[List[Tensor], 'OrderedDict[str, Path]']:
+                        splits: tp.Dict[str, float],
+                        direct_cache: bool = False) -> tp.Tuple[tp.List[Tensor], 'OrderedDict[str, Path]']:
     total_num_conformers = len(conformer_indices)
     split_sizes = OrderedDict([(k, int(total_num_conformers * v)) for k, v in splits.items()])
     split_paths = OrderedDict([(k, dest_path.joinpath(k)) for k in split_sizes.keys()])
@@ -213,16 +213,16 @@ def _create_split_paths(split_paths: 'OrderedDict[str, Path]') -> None:
 
 
 def _save_splits_into_batches(split_paths: 'OrderedDict[str, Path]',
-                              conformer_splits: List[Tensor],
-                              inplace_transform: Optional[Transform],
+                              conformer_splits: tp.List[Tensor],
+                              inplace_transform: tp.Optional[Transform],
                               file_format: str,
-                              include_properties: Optional[Sequence[str]],
+                              include_properties: tp.Optional[tp.Sequence[str]],
                               dataset: ANIDataset,
-                              padding: Optional[Dict[str, float]],
+                              padding: tp.Optional[tp.Dict[str, float]],
                               batch_size: int,
                               max_batches_per_packet: int,
                               direct_cache: bool,
-                              verbose: bool) -> Dict[str, ANIBatchedDataset]:
+                              verbose: bool) -> tp.Dict[str, ANIBatchedDataset]:
     # NOTE: Explanation for following logic, please read
     #
     # This sets up a given number of batches (packet) to keep in memory and
@@ -255,7 +255,7 @@ def _save_splits_into_batches(split_paths: 'OrderedDict[str, Path]',
     # Important: to prevent possible bugs / errors, that may happen
     # due to incorrect conversion to indices, species is **always*
     # converted to atomic numbers when saving the batched dataset.
-    batched_datasets: Dict[str, ANIBatchedDataset] = dict()
+    batched_datasets: tp.Dict[str, ANIBatchedDataset] = dict()
     with dataset.keep_open() as ro_dataset:
         for (split_name, split_path), indices_of_split in zip(split_paths.items(), conformer_splits):
             all_batch_indices = torch.split(indices_of_split, batch_size)
@@ -266,7 +266,7 @@ def _save_splits_into_batches(split_paths: 'OrderedDict[str, Path]',
 
             overall_batch_idx = 0
             if direct_cache:
-                in_memory_batches: List[Conformers] = []
+                in_memory_batches: tp.List[Conformers] = []
             for j, batch_indices_packet in enumerate(all_batch_indices_packets):
                 num_batches_in_packet = len(batch_indices_packet)
                 # Now first we cat and sort according to the first index in order to
@@ -285,7 +285,7 @@ def _save_splits_into_batches(split_paths: 'OrderedDict[str, Path]',
                 indices_to_unsort_batch_cat = torch.argsort(indices_to_sort_batch_indices_cat)
                 assert len(batch_sizes) <= max_batches_per_packet
 
-                all_conformers: List[Conformers] = []
+                all_conformers: tp.List[Conformers] = []
                 end_idxs = counts_cat + cumcounts_cat
                 groups_slices = zip(uniqued_idxs_cat, cumcounts_cat, end_idxs)
                 if direct_cache:
