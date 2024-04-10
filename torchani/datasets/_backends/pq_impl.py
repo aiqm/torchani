@@ -1,3 +1,4 @@
+import typing_extensions as tpx
 import typing as tp
 import json
 import shutil
@@ -106,20 +107,29 @@ class _PqLocation(_FileOrDirLocation):
 
 
 class DataFrameAdaptor:
-    def __init__(self, df=None):
+    def __init__(self, df: tp.Optional[tp.Union["pandas.DataFrame", "cudf.DataFrame"]] = None):
         self._df = df
-        self.attrs = dict()
+        self.attrs: tp.Dict[str, tp.Any] = dict()
         self.mode: tp.Optional[str] = None
         self._is_dirty = False
         self._meta_is_dirty = False
 
     def __getattr__(self, k):
+        if self._df is None:
+            raise RuntimeError("Data frame was not opened")
         return getattr(self._df, k)
 
     def __getitem__(self, k):
+        if self._df is None:
+            raise RuntimeError("Data frame was not opened")
         return self._df[k]
 
+    def __enter__(self) -> tpx.Self:
+        return self
+
     def __setitem__(self, k, v):
+        if self._df is None:
+            raise RuntimeError("Data frame was not opened")
         self._df[k] = v
 
 
@@ -129,7 +139,7 @@ class _PqTemporaryLocation(_ZarrTemporaryLocation):
 
 
 class _PqStore(_StoreWrapper[tp.Union["pandas.DataFrame", "cudf.DataFrame"]]):
-    def __init__(self, store_location: StrPath, use_cudf: bool = False, dummy_properties: tp.Dict[str, tp.Any] = None):
+    def __init__(self, store_location: StrPath, use_cudf: bool = False, dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None):
         super().__init__(dummy_properties=dummy_properties)
         self.location = _PqLocation(store_location)
         self._queued_appends: tp.List[tp.Union["pandas.DataFrame", "cudf.DataFrame"]] = []
@@ -162,7 +172,7 @@ class _PqStore(_StoreWrapper[tp.Union["pandas.DataFrame", "cudf.DataFrame"]]):
 
     def update_cache(self,
                      check_properties: bool = False,
-                     verbose: bool = True) -> tp.Tuple['OrderedDict[str, int]', tp.Set[str]]:
+                     verbose: bool = True) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
         cache = CacheHolder()
         try:
             group_sizes_df = self._store['group'].value_counts().sort_index()
@@ -252,8 +262,8 @@ class _PqStore(_StoreWrapper[tp.Union["pandas.DataFrame", "cudf.DataFrame"]]):
         meta = self._store_obj.attrs
         mode = self._store_obj.mode
         self._store_obj = DataFrameAdaptor(self._engine.concat([self._store._df] + self._queued_appends))
-        self._store.attrs = meta
-        self._store.mode = mode
+        self._store_obj.attrs = meta
+        self._store_obj.mode = mode
         self._store._is_dirty = True
         self._store._meta_is_dirty = True
         self._queued_appends = []
@@ -265,9 +275,9 @@ class _PqStore(_StoreWrapper[tp.Union["pandas.DataFrame", "cudf.DataFrame"]]):
         meta = self._store_obj.attrs
         mode = self._store_obj.mode
         meta_is_dirty = self._store_obj._meta_is_dirty
-        self._store_obj = self._store[self._store['group'] != name]
-        self._store.attrs = meta
-        self._store.mode = mode
+        self._store_obj = DataFrameAdaptor(self._store[self._store['group'] != name])
+        self._store_obj.attrs = meta
+        self._store_obj.mode = mode
         self._store._meta_is_dirty = meta_is_dirty
         self._store._is_dirty = True
 

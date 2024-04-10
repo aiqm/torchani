@@ -22,8 +22,8 @@ def _infer_backend(store_location: StrPath) -> str:
     raise RuntimeError("Backend could not be infered from store location")
 
 
-def StoreFactory(store_location: StrPath, backend: str = None, grouping: tp.Optional[str] = None,
-                 dummy_properties: tp.Dict[str, tp.Any] = None, use_cudf: bool = False, _force_overwrite: bool = False) -> '_StoreWrapper':
+def StoreFactory(store_location: StrPath, backend: tp.Optional[str] = None, grouping: tp.Optional[str] = None,
+                 dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None, use_cudf: bool = False, _force_overwrite: bool = False) -> '_StoreWrapper':
     backend = _infer_backend(store_location) if backend is None else backend
     dummy_properties = dict() if dummy_properties is None else dummy_properties
     kwargs: tp.Dict[str, tp.Any] = {'dummy_properties': dummy_properties}

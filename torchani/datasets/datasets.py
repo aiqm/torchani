@@ -248,11 +248,11 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
         # change if a property is renamed or deleted. num_conformers and
         # num_conformer_groups are all calculated on the fly to guarantee
         # synchronization with "group_sizes".
-        self._group_sizes: 'OrderedDict[str, int]' = OrderedDict()
+        self._group_sizes: tp.OrderedDict[str, int] = OrderedDict()
         self._properties: tp.Set[str] = set()
 
     @property
-    def group_sizes(self) -> 'OrderedDict[str, int]':
+    def group_sizes(self) -> tp.OrderedDict[str, int]:
         return self._group_sizes.copy()
 
     @property
@@ -408,7 +408,7 @@ class _ANISubdataset(_ANIDatasetBase):
         grouping: tp.Optional[str] = None,
         backend: tp.Optional[str] = None,
         verbose: bool = True,
-        dummy_properties: tp.Dict[str, tp.Any] = None,
+        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
         use_cudf: bool = False,
         _force_overwrite: bool = False,
     ):
@@ -749,7 +749,7 @@ class _ANISubdataset(_ANIDatasetBase):
 
     @_broadcast
     @_needs_cache_update
-    def to_backend(self, backend: str = None, dest_root: StrPath = None, verbose: bool = True, inplace: bool = False) -> '_ANISubdataset':
+    def to_backend(self, backend: tp.Optional[str] = None, dest_root: tp.Optional[StrPath] = None, verbose: bool = True, inplace: bool = False) -> '_ANISubdataset':
         r"""Transforms underlying store into a different format
         """
         if backend is None:

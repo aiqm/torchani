@@ -4,7 +4,6 @@ from uuid import uuid4
 import tempfile
 from pathlib import Path
 from functools import partial
-from collections import OrderedDict  # noqa F401
 
 import numpy as np
 
@@ -38,7 +37,7 @@ class _H5TemporaryLocation(tp.ContextManager[StrPath]):
 
 
 class _H5Store(_HierarchicalStoreWrapper["h5py.File"]):
-    def __init__(self, store_location: StrPath, dummy_properties: tp.Dict[str, tp.Any]):
+    def __init__(self, store_location: StrPath, dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None):
         super().__init__(store_location, '.h5', 'file', dummy_properties=dummy_properties)
         self._has_standard_format = True
         self._made_quick_check = False
@@ -57,7 +56,7 @@ class _H5Store(_HierarchicalStoreWrapper["h5py.File"]):
 
     def update_cache(self,
                      check_properties: bool = False,
-                     verbose: bool = True) -> tp.Tuple['OrderedDict[str, int]', tp.Set[str]]:
+                     verbose: bool = True) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
         cache = CacheHolder()
         # If the dataset has some semblance of standarization (it is a tree with depth
         # 1, where all groups are directly joined to the root) then it is much faster

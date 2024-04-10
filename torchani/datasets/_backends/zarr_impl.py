@@ -1,7 +1,6 @@
 import typing as tp
 import tempfile
 from pathlib import Path
-from collections import OrderedDict  # noqa F401
 
 import numpy as np
 
@@ -28,7 +27,7 @@ class _ZarrTemporaryLocation(tp.ContextManager[StrPath]):
 
 
 class _ZarrStore(_HierarchicalStoreWrapper["zarr.Group"]):
-    def __init__(self, store_location: StrPath, dummy_properties: tp.Dict[str, tp.Any]):
+    def __init__(self, store_location: StrPath, dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None):
         super().__init__(store_location, '.zarr', 'dir', dummy_properties=dummy_properties)
         self._mode: tp.Optional[str] = None
 

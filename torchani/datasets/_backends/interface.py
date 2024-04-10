@@ -14,7 +14,7 @@ from torchani.datasets._annotations import NumpyConformers, StrPath, Self
 # Keeps track of variables that must be updated each time the datasets get
 # modified or the first time they are read from disk
 class CacheHolder:
-    group_sizes: 'OrderedDict[str, int]'
+    group_sizes: tp.OrderedDict[str, int]
     properties: tp.Set[str]
 
     def __init__(self) -> None:
@@ -38,7 +38,7 @@ _MutMapSubtype = tp.TypeVar('_MutMapSubtype', bound=tp.MutableMapping[str, np.nd
 # directly "append" to it, and rename its keys, it can also create dummy
 # properties on the fly.
 class _ConformerGroup(tp.MutableMapping[str, np.ndarray], ABC):
-    def __init__(self, *args, dummy_properties: tp.Dict[str, tp.Any] = None, **kwargs) -> None:
+    def __init__(self, *args, dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None, **kwargs) -> None:
         self._dummy_properties = dict() if dummy_properties is None else dummy_properties
 
     def _is_resizable(self) -> bool:
@@ -203,7 +203,7 @@ _T = tp.TypeVar('_T', bound=tp.Any)
 class _StoreWrapper(tp.ContextManager['_StoreWrapper'], tp.MutableMapping[str, '_ConformerGroup'], ABC, tp.Generic[_T]):
     location: tp.Any
 
-    def __init__(self, *args, dummy_properties: tp.Dict[str, tp.Any] = None, **kwargs):
+    def __init__(self, *args, dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None, **kwargs):
         self._dummy_properties = dict() if dummy_properties is None else dummy_properties
         self._store_obj: tp.Any = None
 
@@ -219,7 +219,7 @@ class _StoreWrapper(tp.ContextManager['_StoreWrapper'], tp.MutableMapping[str, '
     @abstractmethod
     def update_cache(self,
                      check_properties: bool = False,
-                     verbose: bool = True) -> tp.Tuple['OrderedDict[str, int]', tp.Set[str]]:
+                     verbose: bool = True) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
         pass
 
     @property
@@ -303,13 +303,13 @@ class _StoreWrapper(tp.ContextManager['_StoreWrapper'], tp.MutableMapping[str, '
 # __exit__, __enter__, create_group, __len__, __iter__ -> Iterator[str], __delitem__
 # and have a "mode" and "attr" attributes
 class _HierarchicalStoreWrapper(_StoreWrapper[_T]):
-    def __init__(self, store_location: StrPath, suffix='', kind='', dummy_properties: tp.Dict[str, tp.Any] = None):
+    def __init__(self, store_location: StrPath, suffix='', kind='', dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None):
         super().__init__(dummy_properties=dummy_properties)
         self.location = _FileOrDirLocation(store_location, suffix, kind)
 
     def update_cache(self,
                      check_properties: bool = False,
-                     verbose: bool = True) -> tp.Tuple['OrderedDict[str, int]', tp.Set[str]]:
+                     verbose: bool = True) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
         cache = CacheHolder()
         for k, g in self._store.items():
             self._update_properties_cache(cache, g, check_properties)

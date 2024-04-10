@@ -144,7 +144,7 @@ def _divide_into_folds(conformer_indices: Tensor,
                         dest_path: Path,
                         folds: int,
                         rng: tp.Optional[torch.Generator] = None,
-                        direct_cache: bool = False) -> tp.Tuple[tp.List[Tensor], 'OrderedDict[str, Path]']:
+                        direct_cache: bool = False) -> tp.Tuple[tp.List[Tensor], tp.OrderedDict[str, Path]]:
 
     # the idea here is to work with "blocks" of size num_conformers / folds
     # cast to list for mypy
@@ -176,7 +176,7 @@ def _divide_into_folds(conformer_indices: Tensor,
 def _divide_into_splits(conformer_indices: Tensor,
                         dest_path: Path,
                         splits: tp.Dict[str, float],
-                        direct_cache: bool = False) -> tp.Tuple[tp.List[Tensor], 'OrderedDict[str, Path]']:
+                        direct_cache: bool = False) -> tp.Tuple[tp.List[Tensor], tp.OrderedDict[str, Path]]:
     total_num_conformers = len(conformer_indices)
     split_sizes = OrderedDict([(k, int(total_num_conformers * v)) for k, v in splits.items()])
     split_paths = OrderedDict([(k, dest_path.joinpath(k)) for k in split_sizes.keys()])
@@ -198,7 +198,7 @@ def _divide_into_splits(conformer_indices: Tensor,
     return conformer_splits, split_paths
 
 
-def _create_split_paths(split_paths: 'OrderedDict[str, Path]') -> None:
+def _create_split_paths(split_paths: tp.OrderedDict[str, Path]) -> None:
     for p in split_paths.values():
         if p.is_dir():
             subdirs = [d for d in p.iterdir()]
@@ -212,7 +212,7 @@ def _create_split_paths(split_paths: 'OrderedDict[str, Path]') -> None:
             p.mkdir(parents=True)
 
 
-def _save_splits_into_batches(split_paths: 'OrderedDict[str, Path]',
+def _save_splits_into_batches(split_paths: tp.OrderedDict[str, Path],
                               conformer_splits: tp.List[Tensor],
                               inplace_transform: tp.Optional[Transform],
                               file_format: str,

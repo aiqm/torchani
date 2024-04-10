@@ -77,7 +77,7 @@ def filter_by_high_force(
             desc=desc,
             disable=not verbose,
         ):
-            f = group["forces"].to(device)
+            f = tp.cast(Tensor, group["forces"]).to(device)
             if criteria == 'components':
                 bad_idxs = (f.abs() > threshold).any(dim=-1).any(dim=-1).nonzero().squeeze()
             elif criteria == 'magnitude':
@@ -127,7 +127,9 @@ def filter_by_high_energy_error(
             desc=desc,
             disable=not verbose,
         ):
-            s, c, ta = group["species"].to(device), group["coordinates"].to(device), group["energies"].to(device)
+            s = tp.cast(Tensor, group["species"]).to(device)
+            c = tp.cast(Tensor, group["coordinates"]).to(device)
+            ta = tp.cast(Tensor, group["energies"]).to(device)
 
             if isinstance(model.neural_networks, Ensemble):
                 member_energies = model.members_energies((s, c)).energies

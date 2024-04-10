@@ -352,7 +352,7 @@ def download_builtin_dataset(dataset: str, lot: str, root=None):
 
 
 def _check_files_integrity(
-    files_and_md5s: 'OrderedDict[str, str]',
+    files_and_md5s: tp.OrderedDict[str, str],
     root: Path,
     suffix: str = ".h5",
     name: str = "Dataset",
