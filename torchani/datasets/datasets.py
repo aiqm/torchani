@@ -307,10 +307,14 @@ class _ANIDatasetBase(Mapping[str, Conformers]):
 
         "limit" limits the number of output chunks to that number and then stops iteration
         (iteration is still sequential, not random).
+
+        The second element in the yielded tuple is the cumulative conformer count
+        previous to the yielded tuple.
         """
         getter = kwargs.pop('getter', 'get_conformers')
-        count = 0
+        chunk_count = 0
         for group_name in self.keys():
+            cumulative_conformer_count = 0
             conformers = getattr(self, getter)(group_name, **kwargs)
             any_key = next(iter(conformers.keys()))
             keys_copy = list(conformers.keys())
@@ -323,9 +327,11 @@ class _ANIDatasetBase(Mapping[str, Conformers]):
                 splitted_conformers.update({k: splits})
             num_chunks = len(splitted_conformers[any_key])
             for j in range(num_chunks):
-                count += 1
-                yield group_name, j, {k: v[j] for k, v in splitted_conformers.items()}
-                if count >= limit:
+                chunk_count += 1
+                chunk_to_yield = {k: v[j] for k, v in splitted_conformers.items()}
+                yield group_name, cumulative_conformer_count, chunk_to_yield
+                cumulative_conformer_count += len(chunk_to_yield[any_key])
+                if chunk_count >= limit:
                     return
 
     def chunked_numpy_items(self, **kwargs) -> Iterator[Tuple[str, int, MixedConformers]]:

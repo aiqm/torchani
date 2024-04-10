@@ -69,6 +69,7 @@ class TestDatasetUtils(TestCase):
                               'energies': torch.ones((1,), dtype=torch.double),
                               'forces': torch.full((1, 4, 3), fill_value=3.0, dtype=torch.float)})
         out = torchani.datasets.utils.filter_by_high_force(ds, threshold=0.5, delete_inplace=True)
+        assert out is not None
         self.assertEqual(len(out[0]), 1)
         self.assertEqual(len(out[0][0]['coordinates']), 1)
 
@@ -76,8 +77,9 @@ class TestDatasetUtils(TestCase):
         ds = self.test_ds_single
         model = torchani.models.ANI1x()[0]
         out = torchani.datasets.utils.filter_by_high_energy_error(ds, model, threshold=1.0, delete_inplace=True)
+        assert out is not None
         self.assertEqual(len(out[0]), 3)
-        self.assertEqual(sum(len(c['coordinates']) for c in out[0]), 412)
+        self.assertEqual(sum(len(c['coordinates']) for c in out[0]), 1916)
 
 
 class TestBuiltinDatasets(TestCase):
