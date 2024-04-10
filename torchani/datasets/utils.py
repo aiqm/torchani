@@ -95,7 +95,7 @@ def filter_by_high_force(
     if _bad_keys_and_idxs:
         bad_keys_and_idxs = {k: torch.cat(v) for k, v in _bad_keys_and_idxs.items()}
         return _fetch_and_delete_conformations(dataset, bad_keys_and_idxs, device, delete_inplace, verbose)
-    return None
+    return (list(), dict())
 
 
 def filter_by_high_energy_error(
@@ -106,7 +106,7 @@ def filter_by_high_energy_error(
     device: str = 'cpu',
     delete_inplace: bool = False,
     verbose: bool = True,
-) -> Optional[Tuple[List[Conformers], Dict[str, Tensor]]]:
+) -> Tuple[List[Conformers], Dict[str, Tensor]]:
     r"""
     Filter conformations for which a model has an excessively high absolute
     error w.r.t. a given ANI model
@@ -149,7 +149,7 @@ def filter_by_high_energy_error(
     if _bad_keys_and_idxs:
         bad_keys_and_idxs = {k: torch.cat(v) for k, v in _bad_keys_and_idxs.items()}
         return _fetch_and_delete_conformations(dataset, bad_keys_and_idxs, device, delete_inplace, verbose)
-    return None
+    return (list(), dict())
 
 
 def _fetch_and_delete_conformations(
