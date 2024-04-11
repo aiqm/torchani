@@ -1,3 +1,4 @@
+import typing as tp
 import time
 import tempfile
 import os
@@ -6,11 +7,10 @@ import itertools
 import math
 from pathlib import Path
 from collections import Counter
-from torch.profiler import record_function, ProfilerActivity
-from typing import Tuple, NamedTuple, Optional, Sequence, List, Dict, Union, Mapping
 
-import torch
 import numpy as np
+import torch
+from torch.profiler import record_function, ProfilerActivity
 from torch import Tensor
 import torch.utils.data
 
@@ -123,7 +123,7 @@ GSAES = {
 }
 
 
-def sorted_gsaes(elements: Sequence[str], functional: str, basis_set: str, ):
+def sorted_gsaes(elements: tp.Sequence[str], functional: str, basis_set: str, ):
     r"""Return sorted GSAES by element
 
     Example usage:
@@ -146,7 +146,7 @@ def check_openmp_threads():
         print(f"OMP_NUM_THREADS is set as {num_threads}")
 
 
-def species_to_formula(species: np.ndarray) -> List[str]:
+def species_to_formula(species: np.ndarray) -> tp.List[str]:
     r"""Transforms an array of strings into the corresponding formula.  This
     function expects an array of shape (M, A) and returns a list of
     formulas of len M.
@@ -157,13 +157,13 @@ def species_to_formula(species: np.ndarray) -> List[str]:
         raise ValueError("Species needs to have two dims/axes")
     formulas = []
     for s in species:
-        symbol_counts: List[Tuple[str, int]] = sorted(Counter(s).items())
+        symbol_counts: tp.List[tp.Tuple[str, int]] = sorted(Counter(s).items())
         iterable = (str(i) if str(i) != '1' else '' for i in itertools.chain.from_iterable(symbol_counts))
         formulas.append(''.join(iterable))
     return formulas
 
 
-def path_is_writable(path: Union[str, Path]) -> bool:
+def path_is_writable(path: tp.Union[str, Path]) -> bool:
     # check if a path is writeable, adapted from:
     # https://stackoverflow.com/questions/2113427/determining-whether-a-directory-is-writeable
     try:
@@ -199,8 +199,8 @@ def broadcast_first_dim(properties):
     return properties
 
 
-def pad_atomic_properties(properties: Sequence[Mapping[str, Tensor]],
-                          padding_values: Optional[Dict[str, float]] = None) -> Dict[str, Tensor]:
+def pad_atomic_properties(properties: tp.Sequence[tp.Mapping[str, Tensor]],
+                          padding_values: tp.Optional[tp.Dict[str, float]] = None) -> tp.Dict[str, Tensor]:
     """Put a sequence of atomic properties together into single tensor.
 
     Inputs are `[{'species': ..., ...}, {'species': ..., ...}, ...]` and the outputs
@@ -336,7 +336,7 @@ class EnergyShifter(torch.nn.Module):
         self.register_buffer('self_energies', self_energies)
 
     @classmethod
-    def with_gsaes(cls, elements: Sequence[str], functional: str, basis_set: str):
+    def with_gsaes(cls, elements: tp.Sequence[str], functional: str, basis_set: str):
         r"""Instantiate an EnergyShifter with a given set of precomputed atomic self energies"""
         obj = cls(sorted_gsaes(elements, functional, basis_set), fit_intercept=False)
         return obj
@@ -367,9 +367,9 @@ class EnergyShifter(torch.nn.Module):
             sae += self.self_energies[-1]
         return sae
 
-    def forward(self, species_energies: Tuple[Tensor, Tensor],
-                cell: Optional[Tensor] = None,
-                pbc: Optional[Tensor] = None) -> SpeciesEnergies:
+    def forward(self, species_energies: tp.Tuple[Tensor, Tensor],
+                cell: tp.Optional[Tensor] = None,
+                pbc: tp.Optional[Tensor] = None) -> SpeciesEnergies:
         """(species, molecular energies)->(species, molecular energies + sae)
         """
         species, energies = species_energies
@@ -392,9 +392,9 @@ class ChemicalSymbolsToAtomicNumbers(torch.nn.Module):
        # atomic_numbers is now torch.tensor([1, 6, 1, 1, 6, 17, 26])
     """
     _dummy: Tensor
-    atomics_dict: Dict[str, int]
+    atomics_dict: tp.Dict[str, int]
 
-    def __init__(self, atomic_numbers: Optional[Dict[str, int]] = None):
+    def __init__(self, atomic_numbers: tp.Optional[tp.Dict[str, int]] = None):
         super().__init__()
         if atomic_numbers is None:
             atomic_numbers = ATOMIC_NUMBERS
@@ -402,7 +402,7 @@ class ChemicalSymbolsToAtomicNumbers(torch.nn.Module):
         # dummy tensor to hold output device
         self.register_buffer('_dummy', torch.empty(0), persistent=False)
 
-    def forward(self, symbols: List[str]) -> Tensor:
+    def forward(self, symbols: tp.List[str]) -> Tensor:
         numbers = [self.atomics_dict[s] for s in symbols]
         return torch.tensor(numbers, dtype=torch.long, device=self._dummy.device)
 
@@ -445,15 +445,15 @@ class ChemicalSymbolsToInts(torch.nn.Module):
         according to atomic number).
     """
     _dummy: Tensor
-    rev_species: Dict[str, int]
+    rev_species: tp.Dict[str, int]
 
-    def __init__(self, all_species: Sequence[str]):
+    def __init__(self, all_species: tp.Sequence[str]):
         super().__init__()
         self.rev_species = {s: i for i, s in enumerate(all_species)}
         # dummy tensor to hold output device
         self.register_buffer('_dummy', torch.empty(0), persistent=False)
 
-    def forward(self, species: List[str]) -> Tensor:
+    def forward(self, species: tp.List[str]) -> Tensor:
         r"""Convert species from sequence of strings to 1D tensor"""
         rev = [self.rev_species[s] for s in species]
         return torch.tensor(rev, dtype=torch.long, device=self._dummy.device)
@@ -462,13 +462,13 @@ class ChemicalSymbolsToInts(torch.nn.Module):
         return len(self.rev_species)
 
 
-def _get_derivatives_not_none(x: Tensor, y: Tensor, retain_graph: Optional[bool] = None, create_graph: bool = False) -> Tensor:
+def _get_derivatives_not_none(x: Tensor, y: Tensor, retain_graph: tp.Optional[bool] = None, create_graph: bool = False) -> Tensor:
     ret = torch.autograd.grad([y.sum()], [x], retain_graph=retain_graph, create_graph=create_graph)[0]
     assert ret is not None
     return ret
 
 
-def hessian(coordinates: Tensor, energies: Optional[Tensor] = None, forces: Optional[Tensor] = None) -> Tensor:
+def hessian(coordinates: Tensor, energies: tp.Optional[Tensor] = None, forces: tp.Optional[Tensor] = None) -> Tensor:
     """Compute analytical hessian from the energy graph or force graph.
 
     Arguments:
@@ -499,12 +499,12 @@ def hessian(coordinates: Tensor, energies: Optional[Tensor] = None, forces: Opti
     ], dim=1)
 
 
-class FreqsModes(NamedTuple):
+class FreqsModes(tp.NamedTuple):
     freqs: Tensor
     modes: Tensor
 
 
-class VibAnalysis(NamedTuple):
+class VibAnalysis(tp.NamedTuple):
     freqs: Tensor
     modes: Tensor
     fconstants: Tensor

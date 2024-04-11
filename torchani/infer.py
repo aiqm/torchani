@@ -1,7 +1,7 @@
 # type: ignore
 # This file is too dynamic to type-check correctly
+import typing as tp
 import warnings
-from typing import Tuple, NamedTuple, Optional, List
 import importlib.metadata
 
 import torch
@@ -20,7 +20,7 @@ else:
     warnings.warn("mnp not installed")
 
 
-class SpeciesEnergies(NamedTuple):
+class SpeciesEnergies(tp.NamedTuple):
     species: Tensor
     energies: Tensor
 
@@ -47,9 +47,9 @@ class BmmEnsemble(torch.nn.Module):
             bmm_networks.append(BmmNetwork([model[net_key] for model in models]))
         self.net_list = torch.nn.ModuleList(bmm_networks)
 
-    def forward(self, species_aev: Tuple[Tensor, Tensor],  # type: ignore
-                cell: Optional[Tensor] = None,
-                pbc: Optional[Tensor] = None) -> SpeciesEnergies:
+    def forward(self, species_aev: tp.Tuple[Tensor, Tensor],  # type: ignore
+                cell: tp.Optional[Tensor] = None,
+                pbc: tp.Optional[Tensor] = None) -> SpeciesEnergies:
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
         num_mol = species.shape[0]
@@ -72,7 +72,7 @@ class BmmEnsemble(torch.nn.Module):
         return SpeciesEnergies(species, mol_energies)
 
     @torch.jit.export
-    def _atomic_energies(self, species_aev: Tuple[Tensor, Tensor]) -> Tensor:
+    def _atomic_energies(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
         num_mol = species.shape[0]
@@ -114,7 +114,7 @@ class BmmEnsemble(torch.nn.Module):
             self.last_species = species
 
     @torch.jit.export
-    def select_models(self, use_num_models: Optional[int] = None):
+    def select_models(self, use_num_models: tp.Optional[int] = None):
         if use_num_models is None:
             use_num_models = self.num_models
             return
@@ -304,15 +304,15 @@ class InferModelBase(torch.nn.Module):
         self.stream_list = [torch.cuda.Stream() for i in range(self.num_network)]
 
         # holders for jit when use_mnp == False
-        self.weight_list_: List[Tensor] = [torch.empty(0)]
-        self.bias_list_: List[Tensor] = [torch.empty(0)]
+        self.weight_list_: tp.List[Tensor] = [torch.empty(0)]
+        self.bias_list_: tp.List[Tensor] = [torch.empty(0)]
         self.celu_alpha: float = float('inf')
-        self.num_layers_list: List[int] = [0]
-        self.start_layers_list: List[int] = [0]
+        self.num_layers_list: tp.List[int] = [0]
+        self.start_layers_list: tp.List[int] = [0]
 
-    def forward(self, species_aev: Tuple[Tensor, Tensor],  # type: ignore
-                cell: Optional[Tensor] = None,
-                pbc: Optional[Tensor] = None) -> SpeciesEnergies:
+    def forward(self, species_aev: tp.Tuple[Tensor, Tensor],  # type: ignore
+                cell: tp.Optional[Tensor] = None,
+                pbc: tp.Optional[Tensor] = None) -> SpeciesEnergies:
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
         num_mol = species.shape[0]
@@ -327,7 +327,7 @@ class InferModelBase(torch.nn.Module):
         return SpeciesEnergies(species, mol_energies)
 
     @torch.jit.export
-    def _single_mol_energies_jittable(self, species_aev: Tuple[Tensor, Tensor]) -> Tensor:
+    def _single_mol_energies_jittable(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:
         species, aev = species_aev
         aev = aev.flatten(0, 1)
         self._check_if_idxlist_needs_updates_jittable(species)
@@ -335,7 +335,7 @@ class InferModelBase(torch.nn.Module):
         return output
 
     @torch.jit.unused
-    def _single_mol_energies(self, species_aev: Tuple[Tensor, Tensor]) -> Tensor:
+    def _single_mol_energies(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:
         species, aev = species_aev
         aev = aev.flatten(0, 1)
         self._check_if_idxlist_needs_updates(species)

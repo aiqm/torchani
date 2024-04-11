@@ -1,12 +1,12 @@
 """
 Location of data classes for use in ANI built-in models.
 """
+import typing as tp
 
-from typing import NamedTuple
 from torch import Tensor
 
 
-class SpeciesCoordinates(NamedTuple):
+class SpeciesCoordinates(tp.NamedTuple):
     '''
     Defines the input for built-in ANI models
     '''
@@ -14,7 +14,7 @@ class SpeciesCoordinates(NamedTuple):
     coordinates: Tensor
 
 
-class SpeciesEnergies(NamedTuple):
+class SpeciesEnergies(tp.NamedTuple):
     '''
     Tuple used in output from NNP models, used for total energy and
      atomic energies functions.
@@ -23,7 +23,7 @@ class SpeciesEnergies(NamedTuple):
     energies: Tensor
 
 
-class SpeciesEnergiesQBC(NamedTuple):
+class SpeciesEnergiesQBC(tp.NamedTuple):
     '''
     Tuple used in output from energies_qbcs function.
     '''
@@ -32,7 +32,7 @@ class SpeciesEnergiesQBC(NamedTuple):
     qbcs: Tensor
 
 
-class AtomicStdev(NamedTuple):
+class AtomicStdev(tp.NamedTuple):
     '''
     Tuple used in output from atomic_stdev function.
     '''
@@ -41,7 +41,7 @@ class AtomicStdev(NamedTuple):
     stdev_atomic_energies: Tensor
 
 
-class SpeciesForces(NamedTuple):
+class SpeciesForces(tp.NamedTuple):
     '''
     Tuple used in output from members_forces function.
     '''
@@ -50,7 +50,7 @@ class SpeciesForces(NamedTuple):
     forces: Tensor
 
 
-class ForceStdev(NamedTuple):
+class ForceStdev(tp.NamedTuple):
     '''
     Tuple used in output from force_qbc function.
     '''
@@ -60,7 +60,7 @@ class ForceStdev(NamedTuple):
     relative_range: Tensor
 
 
-class ForceMagnitudes(NamedTuple):
+class ForceMagnitudes(tp.NamedTuple):
     '''
     Tuple used in output from force_magnitudes function.
     '''

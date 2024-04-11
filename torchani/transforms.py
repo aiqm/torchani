@@ -1,20 +1,18 @@
 r"""Transforms to be applied to properties when training. The usage is the same
 as transforms in torchvision.
 
-Example:
 Most TorchANI modules take atomic indices ("species") as input as a
 default, so if you want to convert atomic numbers to indices and then subtract
 the self atomic energies (SAE) when iterating from a batched dataset you can
-call
+call::
 
-from torchani.transforms import AtomicNumbersToIndices, SubtractSAE, Compose
-from torchani.datasets import ANIBatchedDataset
-
-transform = Compose([AtomicNumbersToIndices(('H', 'C', 'N'), SubtractSAE([-0.57, -0.0045, -0.0035])])
-training = ANIBatchedDataset('/path/to/database/', transform=transform, split='training')
-validation = ANIBatchedDataset('/path/to/database/', transform=transform, split='validation')
+    from torchani.transforms import AtomicNumbersToIndices, SubtractSAE, Compose
+    from torchani.datasets import ANIBatchedDataset
+    transform = Compose([AtomicNumbersToIndices(('H', 'C', 'N'), SubtractSAE([-0.57, -0.0045, -0.0035])])
+    training = ANIBatchedDataset('/path/to/database/', transform=transform, split='training')
+    validation = ANIBatchedDataset('/path/to/database/', transform=transform, split='validation')
 """
-from typing import Dict, Sequence, Union, Tuple, Optional, List
+import typing as tp
 import math
 import warnings
 
@@ -29,10 +27,10 @@ from torchani.datasets import ANIBatchedDataset
 
 class SubtractRepulsion(torch.nn.Module):
 
-    def __init__(self, elements: Union[Sequence[str], Sequence[int]]):
+    def __init__(self, elements: tp.Union[tp.Sequence[str], tp.Sequence[int]]):
         super().__init__()
 
-    def forward(self, properties: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
         raise NotImplementedError("Not yet implemented")
         return properties
 
@@ -41,7 +39,7 @@ class SubtractSAE(torch.nn.Module):
 
     atomic_numbers: Tensor
 
-    def __init__(self, elements: Union[Sequence[str], Sequence[int]], self_energies: List[float], intercept: float = 0.0):
+    def __init__(self, elements: tp.Union[tp.Sequence[str], tp.Sequence[int]], self_energies: tp.List[float], intercept: float = 0.0):
         super().__init__()
         symbols, atomic_numbers = _parse_elements(elements)
         if len(self_energies) != len(atomic_numbers):
@@ -55,7 +53,7 @@ class SubtractSAE(torch.nn.Module):
         else:
             self.energy_shifter = EnergyShifter(self_energies).float()
 
-    def forward(self, properties: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
         properties['energies'] -= self.energy_shifter.sae(properties['species'])
         return properties
 
@@ -64,23 +62,23 @@ class AtomicNumbersToIndices(torch.nn.Module):
 
     atomic_numbers: Tensor
 
-    def __init__(self, elements: Union[Sequence[str], Sequence[int]]):
+    def __init__(self, elements: tp.Union[tp.Sequence[str], tp.Sequence[int]]):
         super().__init__()
         symbols, atomic_numbers = _parse_elements(elements)
 
         self.register_buffer('supported_atomic_numbers', torch.tensor(atomic_numbers, dtype=torch.long))
         self.converter = SpeciesConverter(symbols)
 
-    def forward(self, properties: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
         species = self.converter((properties['species'], properties['coordinates'])).species
         properties['species'] = species
         return properties
 
 
-def _parse_elements(elements: Union[Sequence[str], Sequence[int]]) -> Tuple[Sequence[str], Sequence[int]]:
+def _parse_elements(elements: tp.Union[tp.Sequence[str], tp.Sequence[int]]) -> tp.Tuple[tp.Sequence[str], tp.Sequence[int]]:
     assert len(elements) == len(set(elements)), 'Elements should not be duplicated'
-    symbols: List[str] = []
-    atomic_numbers: List[int] = []
+    symbols: tp.List[str] = []
+    atomic_numbers: tp.List[int] = []
     if isinstance(elements[0], int):
         for e in elements:
             assert isinstance(e, int) and e > 0, f"Encountered an atomic number that is <= 0 {elements}"
@@ -102,7 +100,7 @@ class Compose(torch.nn.Module):
     """
     # This code is mostly copied from torchvision, but made JIT scriptable
 
-    def __init__(self, transforms: Sequence[torch.nn.Module]):
+    def __init__(self, transforms: tp.Sequence[torch.nn.Module]):
         super().__init__()
         if not isinstance(transforms[0], AtomicNumbersToIndices):
             warnings.warn("The first transform in your pipeline is not AtomicNumbersToIndices, make sure that this is your intent")
@@ -111,7 +109,7 @@ class Compose(torch.nn.Module):
         if len(transform_names) != len(set(transform_names)):
             warnings.warn("Your transform pipeline seems to have duplicate transforms, make sure that this is your intent")
 
-        all_atomic_numbers: List[Tensor] = []
+        all_atomic_numbers: tp.List[Tensor] = []
         for t in transforms:
             if hasattr(t, 'atomic_numbers') and isinstance(t.atomic_numbers, Tensor):
                 all_atomic_numbers.append(t.atomic_numbers)
@@ -122,7 +120,7 @@ class Compose(torch.nn.Module):
 
         self.transforms = torch.nn.ModuleList(transforms)
 
-    def forward(self, properties: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
         for t in self.transforms:
             properties = t(properties)
         return properties
@@ -136,14 +134,14 @@ class Compose(torch.nn.Module):
         return format_string
 
 
-def calculate_saes(dataset: Union[DataLoader, ANIBatchedDataset],
-                         elements: Sequence[str],
+def calculate_saes(dataset: tp.Union[DataLoader, ANIBatchedDataset],
+                         elements: tp.Sequence[str],
                          mode: str = 'sgd',
                          fraction: float = 1.0,
                          fit_intercept: bool = False,
                          device: str = 'cpu',
                          max_epochs: int = 1,
-                         lr: float = 0.01) -> Tuple[Tensor, Optional[Tensor]]:
+                         lr: float = 0.01) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
     if mode == 'exact':
         if lr != 0.01:
             raise ValueError("lr is only used with mode=sgd")
@@ -188,12 +186,12 @@ def _calculate_saes_sgd(dataset, num_species: int, num_batches_to_use: int,
                         device: str = 'cpu',
                         fit_intercept: bool = False,
                         max_epochs: int = 1,
-                        lr: float = 0.01) -> Tuple[Tensor, Optional[Tensor]]:
+                        lr: float = 0.01) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
 
     class LinearModel(torch.nn.Module):
 
         m: torch.nn.Parameter
-        b: Optional[torch.nn.Parameter]
+        b: tp.Optional[torch.nn.Parameter]
 
         def __init__(self, num_species: int, fit_intercept: bool = False):
             super().__init__()
@@ -228,7 +226,7 @@ def _calculate_saes_sgd(dataset, num_species: int, num_batches_to_use: int,
     model.m.requires_grad_(False)
     m_out = model.m.data.cpu()
 
-    b_out: Union[Tensor, None]
+    b_out: tp.Optional[Tensor]
     if model.b is not None:
         model.b.requires_grad_(False)
         b_out = model.b.data.cpu()
@@ -239,7 +237,7 @@ def _calculate_saes_sgd(dataset, num_species: int, num_batches_to_use: int,
 
 def _calculate_saes_exact(dataset, num_species: int, num_batches_to_use: int,
                           device: str = 'cpu',
-                          fit_intercept: bool = False) -> Tuple[Tensor, Optional[Tensor]]:
+                          fit_intercept: bool = False) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
 
     if num_batches_to_use == len(dataset):
         warnings.warn("Using all batches to estimate SAE, this may take up a lot of memory.")
@@ -267,7 +265,7 @@ def _calculate_saes_exact(dataset, num_species: int, num_batches_to_use: int,
     x = torch.linalg.lstsq(total_species_counts, total_true_energies.unsqueeze(-1), driver='gels').solution
     m_out = x.T.squeeze()
 
-    b_out: Union[Tensor, None]
+    b_out: tp.Optional[Tensor]
     if fit_intercept:
         b_out = x[num_species]
     else:

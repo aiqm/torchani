@@ -14,9 +14,8 @@ There are 4 different kinds of constants needed for D3 dispersion:
     This means for each pair of elements and reference indices there is an
     associated coordination number for the first and second items.
 """
-
+import typing as tp
 import math
-from typing import Dict, Tuple
 import pickle
 from pathlib import Path
 from collections import defaultdict
@@ -44,7 +43,7 @@ def _make_symmetric(x: Tensor) -> Tensor:
     return x_symmetric
 
 
-def _decode_atomic_numbers(a: int, b: int) -> Tuple[int, int, int, int]:
+def _decode_atomic_numbers(a: int, b: int) -> tp.Tuple[int, int, int, int]:
     # Translated from Grimme et. al. Fortran code this is "limit" in Fortran
     # a_ref and b_ref give the conformation's ref (?) if a or b are greater
     # than 100 this means the conformation ref has to be moved by +1 an easier
@@ -54,7 +53,7 @@ def _decode_atomic_numbers(a: int, b: int) -> Tuple[int, int, int, int]:
     return a, b, a_ref, b_ref
 
 
-def get_c6_constants() -> Tuple[Tensor, Tensor, Tensor]:
+def get_c6_constants() -> tp.Tuple[Tensor, Tensor, Tensor]:
     # Hardcoded in Grimme's et. al. D3 Fortran code
     total_records = 161925
     num_lines = 32385
@@ -149,11 +148,11 @@ def get_sqrt_empirical_charge() -> Tensor:
     return sqrt_empirical_charge
 
 
-def get_functional_constants() -> Dict[str, Dict[str, float]]:
+def get_functional_constants() -> tp.Dict[str, tp.Dict[str, float]]:
     # constants for the density functional from psi4 source code, citations:
     #    A. Najib, L. Goerigk, J. Comput. Theory Chem., 14 5725, 2018)
     #    N. Mardirossian, M. Head-Gordon, Phys. Chem. Chem. Phys, 16, 9904, 2014
-    df_constants: Dict[str, Dict[str, float]] = defaultdict(dict)
+    df_constants: tp.Dict[str, tp.Dict[str, float]] = defaultdict(dict)
     # TODO: check where wB97X actually comes from
     df_constants['wb97x'] = {
         's6_bj': 1.000,

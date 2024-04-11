@@ -1,13 +1,13 @@
 r"""Factory methods that create atomic networks of different kinds"""
+import typing as tp
 from copy import deepcopy
-from typing import Sequence, Optional
 
 import torch
 from torch.nn import Module
 
 
-def standard(dims: Sequence[int],
-             activation: Optional[Module] = None,
+def standard(dims: tp.Sequence[int],
+             activation: tp.Optional[Module] = None,
              bias: bool = True,
              classifier_out: int = 1):
     r"""Makes a standard ANI style atomic network"""

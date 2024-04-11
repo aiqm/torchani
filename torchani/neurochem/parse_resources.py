@@ -1,15 +1,17 @@
 r"""Some utilities for extracting information from neurochem files"""
+import typing as tp
 import os
 import io
-import requests
 import zipfile
-from typing import Optional, Sequence, Tuple, Union, Dict, Any
 from distutils import dir_util
 from pathlib import Path
+
+import requests
+
 from ..aev import AEVComputer
 from ..utils import EnergyShifter
 from ..nn import Ensemble, ANIModel
-from .neurochem import Constants, load_model_ensemble, load_model, load_sae
+from .neurochem import Constants, load_model_ensemble, load_model, load_sae  # type: ignore
 
 
 __all__ = ['parse_neurochem_resources']
@@ -17,7 +19,7 @@ __all__ = ['parse_neurochem_resources']
 
 SUPPORTED_INFO_FILES = ['ani-1ccx_8x.info', 'ani-1x_8x.info', 'ani-2x_8x.info']
 
-NN = Union[ANIModel, Ensemble]
+NN = tp.Union[ANIModel, Ensemble]
 
 
 def parse_neurochem_resources(info_file_path):
@@ -84,8 +86,8 @@ def _get_resources(resource_path, info_file):
 
 
 def _get_component_modules(info_file: str,
-                           model_index: Optional[int] = None,
-                           aev_computer_kwargs: Optional[Dict[str, Any]] = None) -> Tuple[AEVComputer, NN, EnergyShifter, Sequence[str]]:
+                           model_index: tp.Optional[int] = None,
+                           aev_computer_kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None) -> tp.Tuple[AEVComputer, NN, EnergyShifter, tp.Sequence[str]]:
     # this creates modules from a neurochem info path,
     # since for neurochem architecture and parameters are kind of mixed up,
     # this doesn't support non pretrained models, it directly outputs a pretrained module

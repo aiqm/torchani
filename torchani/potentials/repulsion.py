@@ -1,4 +1,4 @@
-from typing import Sequence, Union, Optional
+import typing as tp
 
 import torch
 from torch import Tensor
@@ -30,10 +30,10 @@ class RepulsionXTB(PairwisePotential):
 
     def __init__(
         self,
-        alpha: Sequence[float] = None,
-        y_eff: Sequence[float] = None,
-        k_rep_ab: Optional[Tensor] = None,
-        cutoff_fn: Union[str, Cutoff] = "smooth",
+        alpha: tp.Sequence[float] = None,
+        y_eff: tp.Sequence[float] = None,
+        k_rep_ab: tp.Optional[Tensor] = None,
+        cutoff_fn: tp.Union[str, Cutoff] = "smooth",
         **pairwise_kwargs,
     ):
         super().__init__(cutoff_fn=cutoff_fn, **pairwise_kwargs)
@@ -94,11 +94,11 @@ class RepulsionXTB(PairwisePotential):
 
 def StandaloneRepulsionXTB(
     cutoff: float = 5.2,
-    alpha: Sequence[float] = None,
-    y_eff: Sequence[float] = None,
-    k_rep_ab: Optional[Tensor] = None,
-    symbols: Sequence[str] = ('H', 'C', 'N', 'O'),
-    cutoff_fn: Union[str, Cutoff] = 'smooth',
+    alpha: tp.Sequence[float] = None,
+    y_eff: tp.Sequence[float] = None,
+    k_rep_ab: tp.Optional[Tensor] = None,
+    symbols: tp.Sequence[str] = ('H', 'C', 'N', 'O'),
+    cutoff_fn: tp.Union[str, Cutoff] = 'smooth',
     **standalone_kwargs,
 ) -> StandaloneWrapper:
     module = RepulsionXTB(

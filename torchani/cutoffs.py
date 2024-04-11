@@ -1,5 +1,5 @@
+import typing as tp
 import math
-from typing import Union
 
 import torch
 from torch import Tensor
@@ -42,7 +42,7 @@ class CutoffSmooth(Cutoff):
         return torch.exp(e)
 
 
-def _parse_cutoff_fn(cutoff_fn: Union[str, Cutoff]) -> torch.nn.Module:
+def _parse_cutoff_fn(cutoff_fn: tp.Union[str, Cutoff]) -> torch.nn.Module:
     if cutoff_fn == 'dummy':
         cutoff_fn = CutoffDummy()
     elif cutoff_fn == 'cosine':

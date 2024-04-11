@@ -1,8 +1,8 @@
+import typing as tp
 from pathlib import Path
 import time
 import pickle
 import copy
-from typing import Union, List
 import timeit
 
 import torch
@@ -217,7 +217,7 @@ if __name__ == "__main__":
     show = args.no_show
     assert args.box_repeats > 3
 
-    path_to_xyz: Union[Path, str]
+    path_to_xyz: tp.Union[Path, str]
     if args.xyz is not None:
         path_to_xyz = Path(args.xyz).resolve()
     else:
@@ -248,13 +248,13 @@ if __name__ == "__main__":
             plot_many(args.path_to_files, comment, show)
     else:
         device = torch.device(args.device)
-        sizes_list: List[int] = []
+        sizes_list: tp.List[int] = []
         if not path_to_xyz:
             num_atoms = 3  # for water
             sizes_list = (num_atoms * torch.arange(4, args.box_repeats + 1)**3).numpy().tolist()
         else:
             assert isinstance(path_to_xyz, Path)
-            xyz_files: Union[List[Path], np.ndarray]
+            xyz_files: tp.Union[tp.List[Path], np.ndarray]
 
             xyz_files = [
                 p for p in path_to_xyz.iterdir() if '.xyz' == p.suffix

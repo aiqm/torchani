@@ -1,4 +1,4 @@
-from typing import Optional, Union
+import typing as tp
 
 from torch import Tensor
 
@@ -8,7 +8,7 @@ from torchani.utils import PERIODIC_TABLE
 from torchani.aev.aev_computer import AEVComputer
 from torchani.potentials.core import Potential
 
-NN = Union[ANIModel, Ensemble]
+NN = tp.Union[ANIModel, Ensemble]
 
 
 # Adaptor to use the aev computer as a three body potential
@@ -35,7 +35,7 @@ class AEVPotential(Potential):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
-        ghost_flags: Optional[Tensor] = None,
+        ghost_flags: tp.Optional[Tensor] = None,
     ) -> Tensor:
         aevs = self.aev_computer._compute_aev(
             element_idxs=element_idxs,
@@ -50,7 +50,7 @@ class AEVPotential(Potential):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
-        ghost_flags: Optional[Tensor] = None,
+        ghost_flags: tp.Optional[Tensor] = None,
         average: bool = False,
     ) -> Tensor:
         aevs = self.aev_computer._compute_aev(

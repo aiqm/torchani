@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Type
+import typing as tp
 
 import torch
 from torch import Tensor
@@ -21,7 +21,7 @@ class StandaloneWrapper(Module):
         self,
         module: torch.nn.Module,
         periodic_table_index: bool = True,
-        neighborlist: Type[BaseNeighborlist] = FullPairwise,
+        neighborlist: tp.Type[BaseNeighborlist] = FullPairwise,
         neighborlist_cutoff: float = 5.2,
     ):
         super().__init__()
@@ -39,7 +39,7 @@ class StandaloneWrapper(Module):
 
     def _validate_inputs(
         self,
-        input_: Tuple[Tensor, Tensor],
+        input_: tp.Tuple[Tensor, Tensor],
     ) -> None:
         element_idxs, coordinates = input_
         num_molecules = element_idxs.shape[0]
@@ -49,10 +49,10 @@ class StandaloneWrapper(Module):
 
     def forward(
         self,
-        species_coordinates: Tuple[Tensor, Tensor],
-        cell: Optional[Tensor] = None,
-        pbc: Optional[Tensor] = None
-    ) -> Tuple[Tensor, Tensor]:
+        species_coordinates: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None
+    ) -> tp.Tuple[Tensor, Tensor]:
 
         self._validate_inputs(species_coordinates)
         species, coordinates = species_coordinates

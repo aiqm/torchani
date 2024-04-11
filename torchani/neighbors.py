@@ -1,5 +1,5 @@
+import typing as tp
 import math
-from typing import Tuple, Optional, Union, NamedTuple
 
 import torch
 from torch import Tensor
@@ -9,13 +9,13 @@ from torch.jit import Final
 from torchani.utils import map_to_central, cumsum_from_zero
 
 
-class NeighborData(NamedTuple):
+class NeighborData(tp.NamedTuple):
     indices: Tensor
     distances: Tensor
     diff_vectors: Tensor
 
 
-def _parse_neighborlist(neighborlist: Optional[Union[Module, str]], cutoff: float):
+def _parse_neighborlist(neighborlist: tp.Optional[tp.Union[Module, str]], cutoff: float):
     if neighborlist == 'full_pairwise':
         neighborlist = FullPairwise(cutoff)
     elif neighborlist == 'cell_list':
@@ -64,7 +64,7 @@ class BaseNeighborlist(Module):
 
     @torch.jit.export
     def _compute_bounding_cell(self, coordinates: Tensor,
-                               eps: float) -> Tuple[Tensor, Tensor]:
+                               eps: float) -> tp.Tuple[Tensor, Tensor]:
         # this works but its not needed for this naive implementation
         # This should return a bounding cell
         # for the molecule, in all cases, also it displaces coordinates a fixed
@@ -86,8 +86,8 @@ class BaseNeighborlist(Module):
         cutoff: float,
         coordinates: Tensor,
         input_neighbor_indices: Tensor,
-        shift_values: Optional[Tensor] = None,
-        mask: Optional[Tensor] = None
+        shift_values: tp.Optional[Tensor] = None,
+        mask: tp.Optional[Tensor] = None
     ) -> NeighborData:
         # passing an infinite cutoff will only work for non pbc conditions
         # (shift values must be None)
@@ -210,8 +210,8 @@ class FullPairwise(BaseNeighborlist):
         self,
         species: Tensor,
         coordinates: Tensor,
-        cell: Optional[Tensor] = None,
-        pbc: Optional[Tensor] = None
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None
     ) -> NeighborData:
         """Arguments:
             coordinates (:class:`torch.Tensor`): tensor of shape
@@ -260,7 +260,7 @@ class FullPairwise(BaseNeighborlist):
             )
 
     def _full_pairwise_pbc(self, species: Tensor,
-                           cell: Tensor, pbc: Tensor) -> Tuple[Tensor, Tensor]:
+                           cell: Tensor, pbc: Tensor) -> tp.Tuple[Tensor, Tensor]:
         cell = cell.detach()
         shifts = self._compute_shifts(cell, pbc)
         num_atoms = species.shape[1]
@@ -350,7 +350,7 @@ class CellList(BaseNeighborlist):
                  cutoff: float,
                  buckets_per_cutoff: int = 1,
                  verlet: bool = False,
-                 skin: Optional[float] = None,
+                 skin: tp.Optional[float] = None,
                  constant_volume: bool = False):
         super().__init__(cutoff)
 
@@ -472,8 +472,8 @@ class CellList(BaseNeighborlist):
         self,
         species: Tensor,
         coordinates: Tensor,
-        cell: Optional[Tensor] = None,
-        pbc: Optional[Tensor] = None
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None
     ) -> NeighborData:
 
         assert coordinates.shape[0] == 1, "Cell list doesn't support batches"
@@ -502,7 +502,7 @@ class CellList(BaseNeighborlist):
             # IMPORTANT: here cached values should NOT be updated, moving cache
             # to the new step is incorrect
             atom_pairs = self.old_atom_pairs
-            shift_indices: Optional[Tensor] = self.old_shift_indices
+            shift_indices: tp.Optional[Tensor] = self.old_shift_indices
         else:
             # The cell list is calculated with a skin here. Since coordinates are
             # fractionalized before cell calculation, it is not needed for them to
@@ -541,7 +541,7 @@ class CellList(BaseNeighborlist):
                 mask=(species == -1)
             )
 
-    def _calculate_cell_list(self, coordinates: Tensor, pbc: Tensor) -> Tuple[Tensor, Union[Tensor, None]]:
+    def _calculate_cell_list(self, coordinates: Tensor, pbc: Tensor) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
         # 1) Fractionalize coordinates
         fractional_coordinates = self._fractionalize_coordinates(coordinates)
 
@@ -781,7 +781,7 @@ class CellList(BaseNeighborlist):
         return out
 
     @staticmethod
-    def _get_imidx_converters(x: Tensor) -> Tuple[Tensor, Tensor]:
+    def _get_imidx_converters(x: Tensor) -> tp.Tuple[Tensor, Tensor]:
         # this are the "image indices", indices that sort atoms in the order of
         # the flattened bucket index.  Only occupied buckets are considered, so
         # if a bucket is unoccupied the index is not taken into account.  for
@@ -802,7 +802,7 @@ class CellList(BaseNeighborlist):
         return imidx_from_atidx, atidx_from_imidx
 
     def _get_atoms_in_flat_bucket_counts(
-            self, atom_flat_index: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+            self, atom_flat_index: Tensor) -> tp.Tuple[Tensor, Tensor, Tensor]:
         # NOTE: count in flat bucket: 3 0 0 0 ... 2 0 0 0 ... 1 0 1 0 ...,
         # shape is total buckets F cumulative buckets count has the number of
         # atoms BEFORE a given bucket cumulative buckets count: 0 3 3 3 ... 3 5
@@ -861,7 +861,7 @@ class CellList(BaseNeighborlist):
     def _get_lower_between_image_pairs(
             self, neighbor_count: Tensor, neighbor_cumcount: Tensor,
             max_in_bucket: Tensor,
-            neighbor_translation_types: Tensor) -> Tuple[Tensor, Tensor]:
+            neighbor_translation_types: Tensor) -> tp.Tuple[Tensor, Tensor]:
         # neighbor_translation_types has shape 1 x At x Eta
         # 3) now I need the LOWER part
         # this gives, for each atom, for each neighbor bucket, all the
@@ -901,13 +901,13 @@ class CellList(BaseNeighborlist):
                                           .index_select(0, mask.view(-1).nonzero().squeeze())
         return lower, between_pairs_translation_types
 
-    def _get_bucket_indices(self, fractional_coordinates: Tensor) -> Tuple[Tensor, Tensor]:
+    def _get_bucket_indices(self, fractional_coordinates: Tensor) -> tp.Tuple[Tensor, Tensor]:
         atom_vector_index = self._fractional_to_vector_bucket_indices(fractional_coordinates)
         atom_flat_index = self._to_flat_index(atom_vector_index)
         return atom_vector_index, atom_flat_index
 
     def _get_neighbor_indices(
-            self, atom_vector_index: Tensor) -> Tuple[Tensor, Tensor]:
+            self, atom_vector_index: Tensor) -> tp.Tuple[Tensor, Tensor]:
         current_device = atom_vector_index.device
         # This is actually pure neighbors, so it doesn't have
         # "the bucket itself"
@@ -948,7 +948,7 @@ class CellList(BaseNeighborlist):
         return neighbor_translation_types
 
     def _cache_values(self, atom_pairs: Tensor,
-                            shift_indices: Optional[Tensor],
+                            shift_indices: tp.Optional[Tensor],
                             coordinates: Tensor):
 
         self.old_atom_pairs = atom_pairs.detach()

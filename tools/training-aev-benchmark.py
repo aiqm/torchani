@@ -1,9 +1,9 @@
+import typing as tp
 import time
 import argparse
 import gc
 import os
 import pickle
-from typing import Dict
 
 import torch
 import pkbar
@@ -127,7 +127,7 @@ def benchmark(args, dataset, use_cuda_extension, force_train=False):
     mse = torch.nn.MSELoss(reduction='none')
 
     # enable timers
-    timers: Dict[str, int] = dict()
+    timers: tp.Dict[str, int] = dict()
     fn_to_time_aev = ['_compute_radial_aev', '_compute_angular_aev',
                              '_compute_aev', '_triple_by_molecule', 'forward']
     fn_to_time_neighborlist = ['forward']

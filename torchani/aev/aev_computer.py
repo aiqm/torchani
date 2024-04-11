@@ -1,5 +1,5 @@
+import typing as tp
 import math
-from typing import Tuple, Optional, NamedTuple
 import warnings
 import importlib.metadata
 
@@ -30,7 +30,7 @@ else:
     warnings.warn("cuaev not installed")
 
 
-class SpeciesAEV(NamedTuple):
+class SpeciesAEV(tp.NamedTuple):
     species: Tensor
     aevs: Tensor
 
@@ -83,15 +83,15 @@ class AEVComputer(torch.nn.Module):
     triu_index: Tensor
 
     def __init__(self,
-                Rcr: Optional[float] = None,
-                Rca: Optional[float] = None,
-                EtaR: Optional[Tensor] = None,
-                ShfR: Optional[Tensor] = None,
-                EtaA: Optional[Tensor] = None,
-                Zeta: Optional[Tensor] = None,
-                ShfA: Optional[Tensor] = None,
-                ShfZ: Optional[Tensor] = None,
-                num_species: Optional[int] = None,
+                Rcr: tp.Optional[float] = None,
+                Rca: tp.Optional[float] = None,
+                EtaR: tp.Optional[Tensor] = None,
+                ShfR: tp.Optional[Tensor] = None,
+                EtaA: tp.Optional[Tensor] = None,
+                Zeta: tp.Optional[Tensor] = None,
+                ShfA: tp.Optional[Tensor] = None,
+                ShfZ: tp.Optional[Tensor] = None,
+                num_species: tp.Optional[int] = None,
                 use_cuda_extension=False,
                 use_cuaev_interface=False,
                 cutoff_fn='cosine',
@@ -249,9 +249,9 @@ class AEVComputer(torch.nn.Module):
         return cls.like_1x(**kwargs)
 
     def forward(self,
-                input_: Tuple[Tensor, Tensor],
-                cell: Optional[Tensor] = None,
-                pbc: Optional[Tensor] = None) -> SpeciesAEV:
+                input_: tp.Tuple[Tensor, Tensor],
+                cell: tp.Optional[Tensor] = None,
+                pbc: tp.Optional[Tensor] = None) -> SpeciesAEV:
         """Compute AEVs
 
         Arguments:
@@ -470,7 +470,7 @@ class AEVComputer(torch.nn.Module):
         return radial_aev
 
     def _triple_by_molecule(
-            self, atom_index12: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
+            self, atom_index12: Tensor) -> tp.Tuple[Tensor, Tensor, Tensor]:
         """Input: indices for pairs of atoms that are close to each other.
         each pair only appear once, i.e. only one of the pairs (1, 2) and
         (2, 1) exists.

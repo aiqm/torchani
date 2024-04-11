@@ -1,6 +1,6 @@
+import typing as tp
 import time
 import argparse
-from typing import Dict
 
 import torch
 import pkbar
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     mse = torch.nn.MSELoss(reduction='none')
 
     # enable timers
-    timers: Dict[str, int] = dict()
+    timers: tp.Dict[str, int] = dict()
 
     # time these functions
 

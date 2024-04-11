@@ -1,7 +1,7 @@
+import typing as tp
 from pathlib import Path
 import math
 import warnings
-from typing import Tuple, Optional
 
 import torch
 from torch import Tensor
@@ -57,7 +57,7 @@ def tensor_from_xyz(path):
     return species, coordinates, cell
 
 
-def tensor_to_xyz(path, species_coordinates: Tuple[Tensor, Tensor], cell: Optional[Tensor] = None, no_exponent: bool = True):
+def tensor_to_xyz(path, species_coordinates: tp.Tuple[Tensor, Tensor], cell: tp.Optional[Tensor] = None, no_exponent: bool = True):
     path = Path(path).resolve()
     # input species must be atomic numbers
     species, coordinates = species_coordinates

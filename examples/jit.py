@@ -1,4 +1,4 @@
-"""
+r"""
 Using TorchScript to serialize and deploy model
 ===============================================
 
@@ -9,10 +9,12 @@ models from a Python process and loaded in a process where there is no Python de
 
 ###############################################################################
 # To begin with, let's first import the modules we will use:
+import typing as tp
+
 import torch
-import torchani
-from typing import Tuple, Optional
 from torch import Tensor
+
+import torchani
 
 ###############################################################################
 # Scripting builtin model directly
@@ -79,14 +81,14 @@ class CustomModule(torch.nn.Module):
         self.model = torchani.models.ANI1x().double()
 
     def forward(self, species: Tensor, coordinates: Tensor, return_forces: bool = False,
-                return_hessians: bool = False) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+                return_hessians: bool = False) -> tp.Tuple[Tensor, tp.Optional[Tensor], tp.Optional[Tensor]]:
         if return_forces or return_hessians:
             coordinates.requires_grad_(True)
 
         energies = self.model((species, coordinates)).energies
 
-        forces: Optional[Tensor] = None  # noqa: E701
-        hessians: Optional[Tensor] = None
+        forces: tp.Optional[Tensor] = None
+        hessians: tp.Optional[Tensor] = None
         if return_forces or return_hessians:
             grad = torch.autograd.grad([energies.sum()], [coordinates], create_graph=return_hessians)[0]
             assert grad is not None

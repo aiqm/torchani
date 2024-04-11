@@ -1,5 +1,5 @@
 r""" Utilities to generate some specific geometries"""
-from typing import Tuple
+import typing as tp
 
 import torch
 from torch import Tensor
@@ -7,7 +7,7 @@ from torch import Tensor
 from torchani.utils import get_atomic_masses
 
 
-def displace_to_com_frame(species_coordinates: Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tensor]:
+def displace_to_com_frame(species_coordinates: tp.Tuple[Tensor, Tensor]) -> tp.Tuple[Tensor, Tensor]:
     r"""Displace coordinates to the center-of-mass frame, input species must be
     atomic numbers, padding atoms can be included with -1 as padding,
     returns the displaced coordinates and the center-of-mass coordinates"""

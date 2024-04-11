@@ -1,5 +1,6 @@
+import typing as tp
+
 import torch
-from typing import Sequence, Union, Tuple, Optional
 from torch import Tensor
 from torch.jit import Final
 
@@ -21,21 +22,21 @@ class Potential(torch.nn.Module):
     def __init__(self,
                  *args,
                  cutoff: float = 5.2,
-                 symbols: Sequence[str] = ('H', 'C', 'N', 'O'),
+                 symbols: tp.Sequence[str] = ('H', 'C', 'N', 'O'),
                  **kwargs):
         super().__init__()
         self.atomic_numbers = torch.tensor([ATOMIC_NUMBERS[e] for e in symbols], dtype=torch.long)
         self.cutoff = cutoff
 
     @torch.jit.unused
-    def get_chemical_symbols(self) -> Tuple[str, ...]:
+    def get_chemical_symbols(self) -> tp.Tuple[str, ...]:
         return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)
 
     def forward(
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
-        ghost_flags: Optional[Tensor] = None
+        ghost_flags: tp.Optional[Tensor] = None
     ) -> Tensor:
         r"""
         Outputs "energy", with shape (N,)
@@ -48,7 +49,7 @@ class Potential(torch.nn.Module):
     def atomic_energies(self,
                         element_idxs: Tensor,
                         neighbors: NeighborData,
-                        ghost_flags: Optional[Tensor] = None,
+                        ghost_flags: tp.Optional[Tensor] = None,
                         average: bool = False,
                         ) -> Tensor:
         r"""Outputs "atomic_energies"
@@ -76,8 +77,8 @@ class PairwisePotential(Potential):
         self,
         *args,
         cutoff: float = 5.2,
-        symbols: Sequence[str] = ('H', 'C', 'N', 'O'),
-        cutoff_fn: Union[str, Cutoff] = 'dummy',
+        symbols: tp.Sequence[str] = ('H', 'C', 'N', 'O'),
+        cutoff_fn: tp.Union[str, Cutoff] = 'dummy',
         **kwargs
     ):
         super().__init__(cutoff=cutoff, symbols=symbols)
@@ -102,7 +103,7 @@ class PairwisePotential(Potential):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
-        ghost_flags: Optional[Tensor] = None
+        ghost_flags: tp.Optional[Tensor] = None
     ) -> Tensor:
         # Validation
         assert element_idxs.ndim == 2, "species should be 2 dimensional"
@@ -128,7 +129,7 @@ class PairwisePotential(Potential):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
-        ghost_flags: Optional[Tensor] = None
+        ghost_flags: tp.Optional[Tensor] = None
     ) -> Tensor:
 
         pair_energies = self._calculate_pair_energies_wrapper(
@@ -150,7 +151,7 @@ class PairwisePotential(Potential):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
-        ghost_flags: Optional[Tensor] = None,
+        ghost_flags: tp.Optional[Tensor] = None,
         average: bool = False,
     ) -> Tensor:
         pair_energies = self._calculate_pair_energies_wrapper(
