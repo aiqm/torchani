@@ -189,7 +189,9 @@ class BuiltinModel(Module):
                         cell: tp.Optional[Tensor] = None,
                         pbc: tp.Optional[Tensor] = None,
                         average: bool = True,
-                        shift_energy: bool = True) -> SpeciesEnergies:
+                        shift_energy: bool = True,
+                        include_non_aev_potentials: bool = True,
+                        ) -> SpeciesEnergies:
         """Calculates predicted atomic energies of all atoms in a molecule
 
         Args:
@@ -264,7 +266,7 @@ class BuiltinModel(Module):
         """
         assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
         species, members_energies = self.atomic_energies(species_coordinates, cell=cell, pbc=pbc,
-                                                         shift_energy=True, average=False)
+                                                         shift_energy=True, average=False, include_non_aev_potentials=True)
         return SpeciesEnergies(species, members_energies.sum(-1))
 
     def members_forces(self, species_coordinates: tp.Tuple[Tensor, Tensor],
@@ -469,7 +471,8 @@ class BuiltinModelPairInteractions(BuiltinModel):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
         average: bool = True,
-        shift_energy: bool = True
+        shift_energy: bool = True,
+        include_non_aev_potentials: bool = True,
     ) -> SpeciesEnergies:
         assert isinstance(self.neural_networks, (Ensemble, ANIModel))
         element_idxs, coordinates = self._maybe_convert_species(species_coordinates)
@@ -484,11 +487,21 @@ class BuiltinModelPairInteractions(BuiltinModel):
             dtype=coordinates.dtype,
             device=coordinates.device
         )
-        for pot in self.potentials:
-            if pot.cutoff < previous_cutoff:
-                neighbor_data = rescreen(pot.cutoff, neighbor_data)
-                previous_cutoff = pot.cutoff
-            atomic_energies += pot.atomic_energies(element_idxs, neighbor_data)
+        if torch.jit.is_scripting():
+            assert include_non_aev_potentials, "Scripted models must include non aev potentials in atomic energies"
+            for pot in self.potentials:
+                if pot.cutoff < previous_cutoff:
+                    neighbor_data = rescreen(pot.cutoff, neighbor_data)
+                    previous_cutoff = pot.cutoff
+                atomic_energies += pot.atomic_energies(element_idxs, neighbor_data)
+        else:
+            for pot in self.potentials:
+                if not isinstance(pot, AEVPotential) and not include_non_aev_potentials:
+                    continue
+                if pot.cutoff < previous_cutoff:
+                    neighbor_data = rescreen(pot.cutoff, neighbor_data)
+                    previous_cutoff = pot.cutoff
+                atomic_energies += pot.atomic_energies(element_idxs, neighbor_data)
 
         if shift_energy:
             atomic_energies += self.energy_shifter._atomic_saes(element_idxs).unsqueeze(0)
