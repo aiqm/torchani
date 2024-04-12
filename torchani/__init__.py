@@ -31,6 +31,7 @@ formats of NeuroChem at :attr:`torchani.neurochem`, and more at :attr:`torchani.
 from .utils import EnergyShifter
 from .nn import ANIModel, Ensemble, SpeciesConverter
 from .aev import AEVComputer
+from . import assembler
 from . import utils
 from . import neurochem
 from . import models
@@ -70,6 +71,7 @@ __all__ = [
     'cli',
     'geometry',
     'calc',
+    'assembler',
 ]
 
 # disable tf32

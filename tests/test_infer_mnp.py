@@ -55,26 +55,26 @@ class TestInferMNP(TestCase):
 
     def testANI2xInfer(self):
         ani2x_infer = torchani.models.ANI2x(periodic_table_index=False).to(self.device)
-        ani2x_infer.neural_networks = ani2x_infer.neural_networks.to_infer_mnp_model()
+        ani2x_infer.neural_networks = ani2x_infer.neural_networks.to_infer_model(use_mnp=True)
         self._test(ani2x, ani2x_infer)
 
     def testBmmEnsembleMNP(self):
         model_iterator = self.ani2x.neural_networks
         aev_computer = torchani.AEVComputer.like_2x(use_cuda_extension=(self.device == 'cuda'))
         ensemble = torchani.nn.Sequential(aev_computer, model_iterator).to(self.device)
-        bmm_ensemble = torchani.nn.Sequential(aev_computer, self.ani2x.neural_networks.to_infer_mnp_model()).to(self.device)
+        bmm_ensemble = torchani.nn.Sequential(aev_computer, self.ani2x.neural_networks.to_infer_model(use_mnp=True)).to(self.device)
         self._test(ensemble, bmm_ensemble)
 
     def testANIInferMNPModel(self):
         model_iterator = self.ani2x.neural_networks
         aev_computer = torchani.AEVComputer.like_2x(use_cuda_extension=(self.device == 'cuda'))
         model_ref = torchani.nn.Sequential(aev_computer, model_iterator[0]).to(self.device)
-        model_infer = torchani.nn.Sequential(aev_computer, model_iterator[0].to_infer_mnp_model()).to(self.device)
+        model_infer = torchani.nn.Sequential(aev_computer, model_iterator[0].to_infer_model(use_mnp=True)).to(self.device)
         self._test(model_ref, model_infer)
 
     def testANI2xInferJIT(self):
         ani2x_infer = torchani.models.ANI2x(periodic_table_index=False).to(self.device)
-        ani2x_infer.neural_networks = ani2x_infer.neural_networks.to_infer_mnp_model()
+        ani2x_infer.neural_networks = ani2x_infer.neural_networks.to_infer_model(use_mnp=True)
         ani2x_infer_jit = torch.jit.script(ani2x_infer)
         self._test(ani2x, ani2x_infer_jit)
 
@@ -83,7 +83,7 @@ class TestInferMNP(TestCase):
         aev_computer = torchani.AEVComputer.like_2x(use_cuda_extension=(self.device == 'cuda'))
         ensemble = torchani.nn.Sequential(aev_computer, model_iterator).to(self.device)
         # jit
-        bmm_ensemble = torchani.nn.Sequential(aev_computer, self.ani2x.neural_networks.to_infer_mnp_model()).to(self.device)
+        bmm_ensemble = torchani.nn.Sequential(aev_computer, self.ani2x.neural_networks.to_infer_model(use_mnp=True)).to(self.device)
         bmm_ensemble_jit = torch.jit.script(bmm_ensemble)
         self._test(ensemble, bmm_ensemble_jit)
 
@@ -92,7 +92,7 @@ class TestInferMNP(TestCase):
         aev_computer = torchani.AEVComputer.like_2x(use_cuda_extension=(self.device == 'cuda'))
         model_ref = torchani.nn.Sequential(aev_computer, model_iterator[0]).to(self.device)
         # jit
-        model_infer = torchani.nn.Sequential(aev_computer, model_iterator[0].to_infer_mnp_model()).to(self.device)
+        model_infer = torchani.nn.Sequential(aev_computer, model_iterator[0].to_infer_model(use_mnp=True)).to(self.device)
         model_infer_jit = torch.jit.script(model_infer)
         self._test(model_ref, model_infer_jit)
 

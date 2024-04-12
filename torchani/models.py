@@ -443,7 +443,7 @@ class BuiltinModelPairInteractions(BuiltinModel):
         self.potentials = torch.nn.ModuleList(potentials)
 
         # Override the neighborlist cutoff with the largest cutoff in existence
-        self.aev_computer.neighborlist.cutoff = self.potentials[0].cutoff
+        self.aev_computer.neighborlist.cutoff = self.potentials[0].cutoff  # type: ignore
 
     def forward(
         self,

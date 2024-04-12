@@ -78,8 +78,13 @@ class ANIModel(torch.nn.ModuleDict):
         output = output.view_as(species)
         return output
 
-    def to_infer_mnp_model(self, use_mnp=True):
-        """Deprecated because MNP is complex and is not general enough"""
+    def to_infer_model(self, use_mnp: bool = False):
+        if use_mnp:
+            warnings.warn(
+                'use_mnp will be removed in the future. '
+                'It is too complex and not general enough',
+                category=DeprecationWarning,
+            )
         return infer.ANIInferModel(list(self.items()), use_mnp)  # type: ignore
 
 
@@ -110,15 +115,15 @@ class Ensemble(torch.nn.ModuleList):
         # out shape is (M, C, A)
         return members_atomic_energies
 
-    def to_infer_model(self, use_mnp=False):
+    def to_infer_model(self, use_mnp: bool = False):
         if use_mnp:
-            warnings.warn('use_mnp will be deprecated in the future')
-            return self.to_infer_mnp_model()
+            warnings.warn(
+                'use_mnp will be removed in the future. '
+                'It is too complex and not general enough',
+                category=DeprecationWarning,
+            )
+            return infer.BmmEnsembleMNP(self)  # type: ignore
         return infer.BmmEnsemble(self)  # type: ignore
-
-    def to_infer_mnp_model(self):
-        """Deprecated because MNP is complex and is not general enough"""
-        return infer.BmmEnsembleMNP(self)  # type: ignore
 
 
 class Sequential(torch.nn.ModuleList):

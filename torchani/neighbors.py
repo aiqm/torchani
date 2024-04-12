@@ -15,20 +15,6 @@ class NeighborData(tp.NamedTuple):
     diff_vectors: Tensor
 
 
-def _parse_neighborlist(neighborlist: tp.Optional[tp.Union[Module, str]], cutoff: float):
-    if neighborlist == 'full_pairwise':
-        neighborlist = FullPairwise(cutoff)
-    elif neighborlist == 'cell_list':
-        neighborlist = CellList(cutoff=cutoff)
-    elif neighborlist == 'verlet_cell_list':
-        neighborlist = CellList(cutoff=cutoff, verlet=True)
-    elif neighborlist is None:
-        neighborlist = BaseNeighborlist(cutoff)
-    else:
-        assert isinstance(neighborlist, Module)
-    return neighborlist
-
-
 def rescreen(
     cutoff: float,
     neighbors: NeighborData,
@@ -976,3 +962,20 @@ class CellList(BaseNeighborlist):
         dist_squared = delta.pow(2).sum(-1)
         need_new_list = (dist_squared > (self.skin / 2) ** 2).any().item()
         return bool(need_new_list)
+
+
+def _parse_neighborlist(neighborlist: tp.Optional[tp.Union[tp.Type[BaseNeighborlist], str]], cutoff: float) -> BaseNeighborlist:
+    _neighborlist: BaseNeighborlist
+    if neighborlist == 'full_pairwise':
+        _neighborlist = FullPairwise(cutoff)
+    elif neighborlist == 'cell_list':
+        _neighborlist = CellList(cutoff=cutoff)
+    elif neighborlist == 'verlet_cell_list':
+        _neighborlist = CellList(cutoff=cutoff, verlet=True)
+    elif neighborlist is None:
+        _neighborlist = BaseNeighborlist(cutoff)
+    else:
+        assert not isinstance(neighborlist, str)
+        assert issubclass(neighborlist, BaseNeighborlist)
+        _neighborlist = neighborlist(cutoff)
+    return _neighborlist
