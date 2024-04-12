@@ -764,30 +764,16 @@ def ANIdr(
     # TODO: Fix this
     if model_index is not None:
         raise ValueError(
-            "Currently ANIdr only supports model_index=None, to get individual models please index the ensemble"
+            "Currently ANIdr only supports model_index=None, "
+            "to get individual models please index the ensemble"
         )
 
     # An ani model with dispersion
-    def dispersion_atomics(atom: str = 'H'):
-        dims_for_atoms = {
-            'H': (1008, 256, 192, 160),
-            'C': (1008, 256, 192, 160),
-            'N': (1008, 192, 160, 128),
-            'O': (1008, 192, 160, 128),
-            'S': (1008, 160, 128, 96),
-            'F': (1008, 160, 128, 96),
-            'Cl': (1008, 160, 128, 96)
-        }
-        return atomics.standard(
-            dims_for_atoms[atom],
-            activation=torch.nn.GELU(),
-            bias=False,
-        )
     symbols = ('H', 'C', 'N', 'O', 'S', 'F', 'Cl')
     model = ANI2x(
         pretrained=False,
         cutoff_fn='smooth',
-        atomic_maker=dispersion_atomics,
+        atomic_maker=atomics.like_dr,
         ensemble_size=7,
         dispersion=True,
         dispersion_kwargs={
