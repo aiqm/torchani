@@ -5,7 +5,7 @@ import warnings
 import torch
 from torch import Tensor
 
-from torchani.units import hartree2kcalmol
+from torchani.units import hartree2kcalpermol
 from torchani.models import BuiltinModel
 from torchani.utils import tqdm
 from torchani.nn import Ensemble
@@ -135,7 +135,7 @@ def filter_by_high_energy_error(
                 member_energies = model.members_energies((s, c)).energies
             else:
                 member_energies = model((s, c)).energies.unsqueeze(0)
-            errors = hartree2kcalmol((member_energies - ta).abs())
+            errors = hartree2kcalpermol((member_energies - ta).abs())
             # any over individual models of the ensemble
             bad_idxs = (errors > threshold).any(dim=0).nonzero().squeeze()
 

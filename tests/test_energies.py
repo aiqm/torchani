@@ -39,7 +39,7 @@ class TestANI2x(TestCase):
         self.assertEqual(e_pti, e)
 
         # compare against 2x energies calculated directly from neurochem by kdavis
-        e = torchani.units.hartree2kcalmol(e)
+        e = torchani.units.hartree2kcalpermol(e)
         e_expect = torch.tensor([-125100.7729, -499666.2354, -94191.3460, -577504.1792])
         self.assertEqual(e_expect.to(torch.float), e.to(torch.float))
 
@@ -58,7 +58,7 @@ class TestANIdr(TestCase):
         species = torch.tensor([[9, 9], [16, 16], [8, 8], [17, 17]])
         e = self.model((species, coordinates)).energies
 
-        e = torchani.units.hartree2kcalmol(e)
+        e = torchani.units.hartree2kcalpermol(e)
         e_expect = torch.tensor(
             [-125122.7685, -499630.9805, -94078.2276, -577468.0107]
         )

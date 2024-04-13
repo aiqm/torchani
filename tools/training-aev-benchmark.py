@@ -10,7 +10,7 @@ import pkbar
 import pynvml
 
 import torchani
-from torchani.units import hartree2kcalmol
+from torchani.units import hartree2kcalpermol
 from tool_utils import time_functions_in_model
 
 summary = ''
@@ -178,7 +178,7 @@ def benchmark(args, dataset, use_cuda_extension, force_train=False):
                 sync_cuda(synchronize)
             else:
                 loss = energy_loss
-            rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
+            rmse = hartree2kcalpermol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
             progbar.update(i, values=[("rmse", rmse)])
             sync_cuda(synchronize)
             loss_start = time.time()

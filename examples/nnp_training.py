@@ -42,7 +42,7 @@ import tqdm
 import pickle
 
 # helper function to convert energy unit from Hartree to kcal/mol
-from torchani.units import hartree2kcalmol
+from torchani.units import hartree2kcalpermol
 
 # device to run the training
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -294,7 +294,7 @@ def validate():
             total_mse += mse_sum(predicted_energies, true_energies).item()
             count += predicted_energies.shape[0]
     model.train(True)
-    return hartree2kcalmol(math.sqrt(total_mse / count))
+    return hartree2kcalpermol(math.sqrt(total_mse / count))
 
 
 ###############################################################################

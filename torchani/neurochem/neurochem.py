@@ -14,7 +14,7 @@ from ..utils import EnergyShifter, ChemicalSymbolsToInts
 from ..aev import AEVComputer
 from torch.optim import AdamW
 from collections import OrderedDict
-from torchani.units import hartree2kcalmol
+from torchani.units import hartree2kcalpermol
 
 
 class Constants(collections.abc.Mapping):
@@ -567,7 +567,7 @@ class Trainer:
             _, predicted_energies = self.model((species, coordinates))
             total_mse += self.mse_sum(predicted_energies, true_energies).item()
             count += predicted_energies.shape[0]
-        return hartree2kcalmol(math.sqrt(total_mse / count))
+        return hartree2kcalpermol(math.sqrt(total_mse / count))
 
     def run(self):
         """Run the training"""

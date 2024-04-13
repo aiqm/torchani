@@ -4,7 +4,7 @@ import torch
 import pkbar
 
 import torchani
-from torchani.units import hartree2kcalmol
+from torchani.units import hartree2kcalpermol
 from tool_utils import time_functions_in_model
 
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
             with torch.autograd.profiler.emit_nvtx(enabled=PROFILING_STARTED, record_shapes=True):
                 _, predicted_energies = model((species, coordinates))
             loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
-            rmse = hartree2kcalmol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
+            rmse = hartree2kcalpermol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
 
             if PROFILING_STARTED:
                 torch.cuda.nvtx.range_push("backward")
