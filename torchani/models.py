@@ -62,7 +62,6 @@ from collections import OrderedDict
 
 import torch
 from torch import Tensor
-from torch.nn import Module
 from torch.jit import Final
 
 from torchani import atomics
@@ -90,7 +89,7 @@ from torchani.neighbors import rescreen
 NN = tp.Union[ANIModel, Ensemble]
 
 
-class BuiltinModel(Module):
+class BuiltinModel(torch.nn.Module):
     r"""Private template for the builtin ANI models """
 
     atomic_numbers: Tensor

@@ -9,7 +9,7 @@ import numpy as np
 
 from torchani.utils import tqdm
 from torchani.datasets._annotations import StrPath, Self
-from .interface import _ConformerGroup, _ConformerWrapper, CacheHolder, _HierarchicalStoreWrapper
+from torchani.datasets._backends.interface import _ConformerGroup, _ConformerWrapper, CacheHolder, _HierarchicalStoreWrapper
 
 
 try:

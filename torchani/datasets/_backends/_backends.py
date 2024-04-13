@@ -2,10 +2,10 @@ import typing as tp
 from pathlib import Path
 
 from torchani.datasets._annotations import StrPath
-from .interface import _StoreWrapper
-from .h5py_impl import _H5PY_AVAILABLE, _H5Store, _H5TemporaryLocation
-from .zarr_impl import _ZARR_AVAILABLE, _ZarrStore, _ZarrTemporaryLocation
-from .pq_impl import _PQ_AVAILABLE, _PqStore, _PqTemporaryLocation
+from torchani.datasets._backends.interface import _StoreWrapper
+from torchani.datasets._backends.h5py_impl import _H5PY_AVAILABLE, _H5Store, _H5TemporaryLocation
+from torchani.datasets._backends.zarr_impl import _ZARR_AVAILABLE, _ZarrStore, _ZarrTemporaryLocation
+from torchani.datasets._backends.pq_impl import _PQ_AVAILABLE, _PqStore, _PqTemporaryLocation
 
 # This should probably be obtained directly from getattr
 _BACKEND_AVAILABLE = {'h5py': _H5PY_AVAILABLE, 'zarr': _ZARR_AVAILABLE, 'pq': _PQ_AVAILABLE}

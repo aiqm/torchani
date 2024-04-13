@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 
 from torchani.datasets._annotations import StrPath, Self
-from .interface import _ConformerGroup, _ConformerWrapper, _HierarchicalStoreWrapper
+from torchani.datasets._backends.interface import _ConformerGroup, _ConformerWrapper, _HierarchicalStoreWrapper
 
 try:
     import zarr  # noqa

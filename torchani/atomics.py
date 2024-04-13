@@ -3,12 +3,11 @@ import typing as tp
 from copy import deepcopy
 
 import torch
-from torch.nn import Module
 
 
 def standard(
     dims: tp.Sequence[int],
-    activation: tp.Optional[Module] = None,
+    activation: tp.Optional[torch.nn.Module] = None,
     bias: bool = False,
     classifier_out: int = 1
 ):
@@ -30,7 +29,7 @@ def standard(
 def like_1x(
     atom: str = 'H',
     feat_dim: int = 384,
-    activation: tp.Optional[Module] = None,
+    activation: tp.Optional[torch.nn.Module] = None,
     bias: bool = True,
     classifier_out: int = 1
 ):
@@ -54,7 +53,7 @@ def like_1x(
 def like_2x(
     atom: str = 'H',
     feat_dim: int = 1008,
-    activation: tp.Optional[Module] = None,
+    activation: tp.Optional[torch.nn.Module] = None,
     bias: bool = True,
     classifier_out: int = 1
 ):
@@ -81,7 +80,7 @@ def like_2x(
 def like_dr(
     atom: str = 'H',
     feat_dim: int = 1008,
-    activation: tp.Optional[Module] = None,
+    activation: tp.Optional[torch.nn.Module] = None,
     bias: bool = False,
     classifier_out: int = 1
 ):

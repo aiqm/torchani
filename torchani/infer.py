@@ -7,7 +7,8 @@ import importlib.metadata
 import torch
 from torch import Tensor
 
-from torchani import utils
+from torchani.utils import check_openmp_threads
+from torchani.tuples import SpeciesEnergies
 
 
 mnp_is_installed = 'torchani.mnp' in importlib.metadata.metadata(
@@ -18,11 +19,6 @@ if mnp_is_installed:
     from . import mnp  # type: ignore # noqa: F401
 else:
     warnings.warn("mnp not installed")
-
-
-class SpeciesEnergies(tp.NamedTuple):
-    species: Tensor
-    energies: Tensor
 
 
 class BmmEnsemble(torch.nn.Module):
@@ -402,7 +398,7 @@ class InferModelBase(torch.nn.Module):
         self.bias_list_ = [b for b in self.bias_list]
 
         # check OpenMP environment variable
-        utils.check_openmp_threads()
+        check_openmp_threads()
 
         self.use_mnp = True
 

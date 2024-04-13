@@ -10,8 +10,8 @@ from collections import OrderedDict
 import numpy as np
 
 from torchani.datasets._annotations import StrPath, Self
-from .interface import _StoreWrapper, _ConformerGroup, CacheHolder, _FileOrDirLocation
-from .zarr_impl import _ZarrTemporaryLocation
+from torchani.datasets._backends.interface import _StoreWrapper, _ConformerGroup, CacheHolder, _FileOrDirLocation
+from torchani.datasets._backends.zarr_impl import _ZarrTemporaryLocation
 
 
 try:

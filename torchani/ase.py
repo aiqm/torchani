@@ -9,7 +9,7 @@ import torch
 import ase.calculators.calculator
 import ase.units
 
-from torchani import utils
+from torchani.utils import map_to_central
 
 
 class Calculator(ase.calculators.calculator.Calculator):
@@ -69,7 +69,7 @@ class Calculator(ase.calculators.calculator.Calculator):
         if pbc_enabled and self.overwrite and atoms is not None:
             warnings.warn("""If overwrite is set for pbc calculations the cell list will be rebuilt every step,
                     also take into account you are loosing information this way""")
-            coordinates = utils.map_to_central(coordinates, cell, pbc)
+            coordinates = map_to_central(coordinates, cell, pbc)
             atoms.set_positions(coordinates.detach().cpu().reshape(-1, 3).numpy())
 
         if 'stress' in properties and not (self.stress_partial_fdotr or self.stress_numerical):

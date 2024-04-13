@@ -3,7 +3,6 @@ import math
 
 import torch
 from torch import Tensor
-from torch.nn import functional, Module
 from torch.jit import Final
 
 from torchani.utils import map_to_central, cumsum_from_zero
@@ -22,7 +21,7 @@ def rescreen(
     )
 
 
-class BaseNeighborlist(Module):
+class BaseNeighborlist(torch.nn.Module):
 
     cutoff: Final[float]
     default_pbc: Tensor
@@ -681,7 +680,7 @@ class CellList(BaseNeighborlist):
     @staticmethod
     def _pad_circular(x: Tensor) -> Tensor:
         x = x.unsqueeze(0).unsqueeze(0)
-        x = functional.pad(x, (1, 1, 1, 1, 1, 1), mode='circular')
+        x = torch.nn.functional.pad(x, (1, 1, 1, 1, 1, 1), mode='circular')
         return x.squeeze()
 
     def _register_bucket_length_lower_bound(self,

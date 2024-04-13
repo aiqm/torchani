@@ -1,9 +1,9 @@
-from .datasets import ANIDataset, ANIBatchedDataset
-from ._batching import create_batched_dataset
-from . import utils
+from torchani.datasets.datasets import ANIDataset, ANIBatchedDataset
+from torchani.datasets._batching import create_batched_dataset
+from torchani.datasets import utils
 # Some attrs are created programmatically, so a star import is needed
-from .builtin import *  # noqa:F403
-from .builtin import _BUILTIN_DATASETS, _BUILTIN_DATASETS_LOT
+from torchani.datasets.builtin import *  # noqa:F403
+from torchani.datasets.builtin import _BUILTIN_DATASETS, _BUILTIN_DATASETS_LOT
 
 
 __all__ = [

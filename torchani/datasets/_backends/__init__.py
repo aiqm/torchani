@@ -5,7 +5,7 @@ from ._backends import (
     _StoreWrapper,
     _SUFFIXES,
 )
-from .interface import _ConformerWrapper
+from torchani.datasets._backends.interface import _ConformerWrapper
 
 __all__ = [
     "StoreFactory",
