@@ -6,7 +6,7 @@ import torch
 from torch import Tensor
 from torch.jit import Final
 
-from torchani import utils
+from torchani.utils import PERIODIC_TABLE
 from torchani import infer
 from torchani.tuples import (
     SpeciesCoordinates,
@@ -176,7 +176,7 @@ class SpeciesConverter(torch.nn.Module):
 
     def __init__(self, species: tp.Sequence[str]):
         super().__init__()
-        rev_idx = {s: k for k, s in enumerate(utils.PERIODIC_TABLE)}
+        rev_idx = {s: k for k, s in enumerate(PERIODIC_TABLE)}
         maxidx = max(rev_idx.values())
         self.register_buffer('conv_tensor', torch.full((maxidx + 2,), -1, dtype=torch.long))
         for i, s in enumerate(species):

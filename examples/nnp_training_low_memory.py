@@ -153,7 +153,7 @@ elif cache:
 elements = ('H', 'C', 'N', 'O')
 # here we use the GSAEs for self energies
 self_energies = [-0.499321200000, -37.83383340000, -54.57328250000, -75.04245190000]
-transform = torchani.transforms.Compose([AtomicNumbersToIndices(elements), SubtractSAE(elements, self_energies)]).to(device)
+transform = torchani.transforms.Compose([SubtractSAE(elements, self_energies), AtomicNumbersToIndices(elements)]).to(device)
 
 estimate_saes = False
 if estimate_saes:
@@ -173,7 +173,7 @@ if estimate_saes:
     saes, _ = calculate_saes(training, elements, mode='sgd')
     print(saes)
     # now we build the transform using the new self energies
-    transform = torchani.transforms.Compose([AtomicNumbersToIndices(elements), SubtractSAE(elements, saes)]).to(device)
+    transform = torchani.transforms.Compose([SubtractSAE(elements, saes), AtomicNumbersToIndices(elements)]).to(device)
     # If we really want to, we can also calculate the saes exactly by passing
     # mode = exact, but this will take up a lot of memory because it uses the
     # whole dataset We can also pass a fraction of the dataset, for example

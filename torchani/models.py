@@ -75,7 +75,7 @@ from torchani.tuples import (
     ForceMagnitudes
 )
 from torchani.nn import SpeciesConverter, Ensemble, ANIModel
-from torchani.utils import ChemicalSymbolsToInts, PERIODIC_TABLE, EnergyShifter, path_is_writable
+from torchani.utils import ChemicalSymbolsToInts, PERIODIC_TABLE, ATOMIC_NUMBERS, EnergyShifter, path_is_writable
 from torchani.aev import AEVComputer
 from torchani.potentials import (
     AEVPotential,
@@ -119,7 +119,7 @@ class BuiltinModel(Module):
         self.species_converter = SpeciesConverter(elements).to(device)
 
         self.periodic_table_index = periodic_table_index
-        numbers = torch.tensor([PERIODIC_TABLE.index(e) for e in elements], dtype=torch.long)
+        numbers = torch.tensor([ATOMIC_NUMBERS[e] for e in elements], dtype=torch.long)
         self.register_buffer('atomic_numbers', numbers)
         self._register_types_for_jit()
 

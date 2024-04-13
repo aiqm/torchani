@@ -13,7 +13,7 @@ from torchani.neighbors import NeighborData
 class TestRepulsion(TestCase):
     def setUp(self):
         self.rep = RepulsionXTB(cutoff=5.2)
-        self.sa_rep = StandaloneRepulsionXTB(cutoff=5.2, neighborlist_cutoff=5.2)
+        self.sa_rep = StandaloneRepulsionXTB(cutoff=5.2)
 
     def testRepulsionXTB(self):
         element_idxs = torch.tensor([[0, 0]])

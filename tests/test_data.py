@@ -323,42 +323,38 @@ class TestTransforms(TestCase):
         self.input_ = {'species': torch.tensor([[-1, 1, 1, 6, 1, 7, 8], [1, 1, 1, 1, 1, 1, 6]], dtype=torch.long),
                        'energies': torch.tensor([0.0, 1.0], dtype=torch.float),
                        'coordinates': coordinates}
+        self.expect = {k: v.clone() for k, v in self.input_.items()}
         self.tmp_dir_batched = tempfile.TemporaryDirectory()
         self.tmp_dir_batched2 = tempfile.TemporaryDirectory()
 
     def testAtomicNumbersToIndices(self):
         numbers_to_indices = AtomicNumbersToIndices(self.elements)
-        expect = {k: v.clone() for k, v in self.input_.items()}
-        expect['species'] = torch.tensor([[-1, 0, 0, 1, 0, 2, 3], [0, 0, 0, 0, 0, 0, 1]], dtype=torch.long)
+        self.expect['species'] = torch.tensor([[-1, 0, 0, 1, 0, 2, 3], [0, 0, 0, 0, 0, 0, 1]], dtype=torch.long)
         out = numbers_to_indices(self.input_)
         for k, v in out.items():
-            self.assertEqual(v, expect[k])
+            self.assertEqual(v, self.expect[k])
 
     def testSubtractSAE(self):
         subtract_sae = SubtractSAE(self.elements, [0.0, 1.0, 0.0, 1.0])
-        expect = {k: v.clone() for k, v in self.input_.items()}
-        self.input_['species'] = torch.tensor([[-1, 0, 0, 1, 0, 2, 3], [0, 0, 0, 0, 0, 0, 1]], dtype=torch.long)
-        expect['energies'] = torch.tensor([-2.0, 0.0], dtype=torch.float)
-        expect['species'] = torch.tensor([[-1, 0, 0, 1, 0, 2, 3], [0, 0, 0, 0, 0, 0, 1]], dtype=torch.long)
+        self.expect['energies'] = torch.tensor([-2.0, 0.0], dtype=torch.float)
         out = subtract_sae(self.input_)
         for k, v in out.items():
-            self.assertEqual(v, expect[k])
+            self.assertEqual(v, self.expect[k])
 
     def testCompose(self):
         subtract_sae = SubtractSAE(self.elements, [0.0, 1.0, 0.0, 1.0])
         numbers_to_indices = AtomicNumbersToIndices(self.elements)
-        compose = Compose([numbers_to_indices, subtract_sae])
-        expect = {k: v.clone() for k, v in self.input_.items()}
-        expect['energies'] = torch.tensor([-2.0, 0.0], dtype=torch.float)
-        expect['species'] = torch.tensor([[-1, 0, 0, 1, 0, 2, 3], [0, 0, 0, 0, 0, 0, 1]], dtype=torch.long)
+        compose = Compose([subtract_sae, numbers_to_indices])
+        self.expect['energies'] = torch.tensor([-2.0, 0.0], dtype=torch.float)
+        self.expect['species'] = torch.tensor([[-1, 0, 0, 1, 0, 2, 3], [0, 0, 0, 0, 0, 0, 1]], dtype=torch.long)
         out = compose(self.input_)
         for k, v in out.items():
-            self.assertEqual(v, expect[k])
+            self.assertEqual(v, self.expect[k])
 
     def testInplaceTransform(self):
         subtract_sae = SubtractSAE(self.elements, [0.0, 1.0, 0.0, 1.0])
         numbers_to_indices = AtomicNumbersToIndices(self.elements)
-        compose = Compose([numbers_to_indices, subtract_sae])
+        compose = Compose([subtract_sae, numbers_to_indices])
 
         with warnings.catch_warnings():
             ignore_unshuffled_warning()
@@ -366,8 +362,8 @@ class TestTransforms(TestCase):
                     splits={'training': 0.5, 'validation': 0.5}, batch_size=2560, inplace_transform=compose)
             create_batched_dataset(dataset_path, dest_path=self.tmp_dir_batched2.name, shuffle=False,
                     splits={'training': 0.5, 'validation': 0.5}, batch_size=2560)
-        train_inplace = ANIBatchedDataset(self.tmp_dir_batched.name, split='training')
         train = ANIBatchedDataset(self.tmp_dir_batched2.name, transform=compose, split='training')
+        train_inplace = ANIBatchedDataset(self.tmp_dir_batched.name, split='training')
         for b, inplace_b in zip(train, train_inplace):
             for k in b.keys():
                 self.assertEqual(b[k], inplace_b[k])
