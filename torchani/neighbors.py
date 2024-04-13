@@ -338,6 +338,7 @@ class CellList(BaseNeighborlist):
         # right now I will only support this, and the extra neighbors are
         # hardcoded, but full support for arbitrary buckets per cutoff is possible
         assert buckets_per_cutoff == 1, "Cell list currently only supports one bucket per cutoff"
+        assert not verlet, "Verlet cell list has issues and should not be used"
         self.constant_volume = constant_volume
         self.verlet = verlet
         self.register_buffer('spherical_factor', torch.full(size=(3, ), fill_value=1.0), persistent=False)
