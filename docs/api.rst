@@ -37,7 +37,7 @@ Utilities
 .. autofunction:: torchani.utils.pad_atomic_properties
 .. autofunction:: torchani.utils.present_species
 .. autofunction:: torchani.utils.strip_redundant_padding
-.. autofunction:: torchani.utils.map2central
+.. autofunction:: torchani.utils.map_to_central
 .. autoclass:: torchani.utils.ChemicalSymbolsToInts
     :members:
 .. autofunction:: torchani.utils.hessian

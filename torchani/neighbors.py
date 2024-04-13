@@ -7,12 +7,7 @@ from torch.nn import functional, Module
 from torch.jit import Final
 
 from torchani.utils import map_to_central, cumsum_from_zero
-
-
-class NeighborData(tp.NamedTuple):
-    indices: Tensor
-    distances: Tensor
-    diff_vectors: Tensor
+from torchani.tuples import NeighborData
 
 
 def rescreen(
