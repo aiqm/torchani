@@ -1,20 +1,19 @@
+# type: ignore
 """
-.. _neurochem-training:
-
-Train Neural Network Potential From NeuroChem Input File
-========================================================
+Training Neural A Network Potential From NeuroChem Input File
+=============================================================
 
 This example shows how to use TorchANI's NeuroChem trainer to read and run
 NeuroChem's training config file to train a neural network potential.
 """
-
-###############################################################################
 # To begin with, let's first import the modules we will use:
-import torchani
-import torch
 import os
 import sys
-import tqdm
+
+import torch
+
+import torchani
+from torchani.utils import tqdm
 
 ###############################################################################
 # Now let's setup path for the dataset and NeuroChem input file. Note that
@@ -50,7 +49,7 @@ trainer.load_data(training_path, validation_path)
 # capture the output of tqdm, let's do some hacking first to make tqdm to print
 # its progressbar to stdout.
 def my_tqdm(*args, **kwargs):
-    return tqdm.tqdm(*args, **kwargs, file=sys.stdout)
+    return tqdm(*args, **kwargs, file=sys.stdout)
 
 
 trainer.tqdm = my_tqdm

@@ -1,7 +1,5 @@
 # type: ignore
 """
-.. _training-example:
-
 Train Your Own Neural Network Potential
 =======================================
 
@@ -14,7 +12,7 @@ specified in `inputtrain.ipt`_
 
 .. note::
     TorchANI provide tools to run NeuroChem training config file `inputtrain.ipt`.
-    See: :ref:`neurochem-training`.
+    See: `neurochem-training`.
 
 .. warning::
     The training setup used in this file is configured to reproduce the original research
@@ -29,19 +27,16 @@ specified in `inputtrain.ipt`_
 .. _`Less is more: Sampling chemical space with active learning`:
     https://aip.scitation.org/doi/full/10.1063/1.5023802
 """
-
-###############################################################################
 # To begin with, let's first import the modules and setup devices we will use:
-
-import torch
-import torchani
 import os
 import math
-import torch.utils.tensorboard
-import tqdm
 import pickle
 
-# helper function to convert energy unit from Hartree to kcal/mol
+import torch
+import torch.utils.tensorboard
+
+import torchani
+from torchani.utils import tqdm
 from torchani.units import hartree2kcalpermol
 
 # device to run the training
@@ -57,7 +52,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # .. note::
 #
 #   Besides defining these hyperparameters programmatically,
-#   :mod:`torchani.neurochem` provide tools to read them from file.
+#   `torchani.neurochem` provide tools to read them from file.
 #
 # .. _rHCNO-5.2R_16-3.5A_a4-8.params:
 #   https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params
@@ -334,7 +329,7 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
     tensorboard.add_scalar('best_validation_rmse', AdamW_scheduler.best, AdamW_scheduler.last_epoch)
     tensorboard.add_scalar('learning_rate', learning_rate, AdamW_scheduler.last_epoch)
 
-    for i, properties in tqdm.tqdm(
+    for i, properties in tqdm(
         enumerate(training),
         total=len(training),
         desc="epoch {}".format(AdamW_scheduler.last_epoch)

@@ -9,6 +9,7 @@ numerically, which is slow and less accurate.
 TorchANI therefore provide an interface to compute the Hessian matrix and do
 vibration analysis analytically, thanks to the super power of `torch.autograd`.
 """
+# To begin with, let's first import the modules and setup devices we will use:
 import ase
 from ase.optimize import LBFGS
 

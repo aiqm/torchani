@@ -1,6 +1,6 @@
 """
-Construct Model From NeuroChem Files
-====================================
+Constructing a Model From NeuroChem Files
+=========================================
 
 This tutorial illustrates how to manually load model from `NeuroChem files`_.
 
@@ -8,13 +8,12 @@ This tutorial illustrates how to manually load model from `NeuroChem files`_.
     https://github.com/isayev/ASE_ANI/tree/master/ani_models
 
 """
-
-###############################################################################
 # To begin with, let's first import the modules we will use:
 import os
-import torch
-import torchani
 
+import torch
+
+import torchani
 
 ###############################################################################
 # Now let's read constants from constant file and construct AEV computer.

@@ -1,28 +1,25 @@
 # type: ignore
 """
-.. _force-training-example:
-
-Train Neural Network Potential To Both Energies and Forces
-==========================================================
+Training A Neural Network Potential To Both Energies and Forces (Legacy)
+========================================================================
 
 We have seen how to train a neural network potential by manually writing
-training loop in :ref:`training-example`. This tutorial shows how to modify
+training loop in `training-example`. This tutorial shows how to modify
 that script to train to force.
 """
 
 ###############################################################################
-# Most part of the script are the same as :ref:`training-example`, we will omit
-# the comments for these parts. Please refer to :ref:`training-example` for more
+# Most part of the script are the same as `training-example`, we will omit
+# the comments for these parts. Please refer to `training-example` for more
 # information
-
-import torch
-import torchani
 import os
 import math
-import torch.utils.tensorboard
-import tqdm
 
-# helper function to convert energy unit from Hartree to kcal/mol
+import torch
+import torch.utils.tensorboard
+
+import torchani
+from torchani.utils import tqdm
 from torchani.units import hartree2kcalpermol
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -248,7 +245,7 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
 
     # Besides being stored in x, species and coordinates are also stored in y.
     # So here, for simplicity, we just ignore the x and use y for everything.
-    for i, properties in tqdm.tqdm(
+    for i, properties in tqdm(
         enumerate(training),
         total=len(training),
         desc="epoch {}".format(AdamW_scheduler.last_epoch)

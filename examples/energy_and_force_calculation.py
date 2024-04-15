@@ -1,14 +1,13 @@
 """
-Computing Energy and Force Using Models Inside Model Zoo
-========================================================
+Computing Energy and Force Using Built-in Models
+================================================
 
 TorchANI has a model zoo trained by NeuroChem. These models are shipped with
 TorchANI and can be used directly.
 """
-
-###############################################################################
 # To begin with, let's first import the modules we will use:
 import torch
+
 import torchani
 
 ###############################################################################

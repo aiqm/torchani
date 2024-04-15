@@ -2,7 +2,7 @@ import torchani  # noqa: F401
 import sphinx_rtd_theme
 
 project = 'TorchANI'
-copyright = '2018, Roitberg Group'
+copyright = '2024, Roitberg Group'
 author = 'Xiang Gao'
 
 version = torchani.__version__
@@ -25,20 +25,18 @@ pygments_style = 'sphinx'
 html_theme = 'sphinx_rtd_theme'
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 htmlhelp_basename = 'TorchANIdoc'
-# Temporary fix for bug in HTML5 support in the RTD theme
-html4_writer = True
 
 sphinx_gallery_conf = {
     'examples_dirs': '../examples',
     'gallery_dirs': 'examples',
-    'filename_pattern': r'.*\.py'
+    'filename_pattern': r'.*\.py',
+    'ignore_pattern': r'legacy_.*\.py',
 }
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/', None),
-    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'python': ('https://docs.python.org/3/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
     'torch': ('https://pytorch.org/docs/master/', None),
-    'ignite': ('https://pytorch.org/ignite/', None),
     'ase': ('https://wiki.fysik.dtu.dk/ase/', None),
 }
 

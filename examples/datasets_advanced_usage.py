@@ -4,10 +4,13 @@ More advanced usage of the ANIDataset class
 
 Example showing more involved conformer and property manipulation.
 """
+# To begin with, let's import the modules we will use:
 import shutil
+from pathlib import Path
+
 import torch
 import numpy as np
-from pathlib import Path
+
 from torchani.datasets import ANIDataset
 
 ###############################################################################
@@ -69,6 +72,7 @@ print(ds.grouping)
 # In these formats all of the first dimensions of all properties are the same
 # in all groups, and groups can only have depth one. In other words the tree
 # structure is for "by_formula"::
+#
 #    /C10H22/coordinates, shape (10, 32, 3)
 #           /species, shape (10, 32)
 #           /energies, shape (10,)
@@ -158,6 +162,7 @@ print(len(ds))
 
 ###############################################################################
 # Currently, when appending the class checks:
+#
 # - That the first dimension of all your properties is the same
 # - That you are appending a set of conformers with correct properties
 # - That all your formulas are correct when the grouping type is "by_formula",
@@ -165,6 +170,7 @@ print(len(ds))
 # - That you are only appending one of "species" or "numbers"
 #
 # It does NOT check:
+#
 # - That the number of atoms is the same in all properties that are atomic
 # - That the name of the group is consistent with the formula / num atoms
 #

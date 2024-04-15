@@ -11,9 +11,6 @@ calculator.
 .. _Constant temperature MD:
     https://wiki.fysik.dtu.dk/ase/tutorials/md/md.html#constant-temperature-md
 """
-
-
-###############################################################################
 # To begin with, let's import the modules we will use:
 import ase
 from ase.lattice.cubic import Diamond
@@ -21,7 +18,6 @@ from ase.md.langevin import Langevin
 from ase.optimize import LBFGS
 
 import torchani
-
 
 ###############################################################################
 # First we set up our system (in this case a diamond crystal, with PBC enabled)
@@ -69,10 +65,10 @@ dyn = Langevin(
     temperature_K=300,
     friction=0.2,
 )
-dyn.attach(print_energy, interval=50, atoms=atoms)
+dyn.attach(print_energy, interval=5, atoms=atoms)
 
 ###############################################################################
 # Finally we run the dynamics
 print("Running dynamics...")
 print_energy(atoms)
-dyn.run(1000)
+dyn.run(50)

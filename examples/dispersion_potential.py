@@ -1,12 +1,14 @@
 """
 Using the Dispersion D3 module
-==========================================================
+==============================
 
 TorchANI can use a built-in implementation of D3 dispersion for dispersion
 interactions. This is meant for using with functionals that are parametrized
 with dispersion in the first place.
 """
+# To begin with, let's import the modules we will use:
 import torch
+
 from torchani.potentials import StandaloneTwoBodyDispersionD3
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

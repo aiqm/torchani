@@ -1,4 +1,10 @@
-"""Modular AEV usage Example"""
+r"""
+Modifying and Customizing the AEV
+=================================
+
+TorchANI allows for modification and customization of the AEV features
+"""
+# To begin with, let's first import the modules and setup devices we will use:
 import math
 
 import torch

@@ -1,14 +1,12 @@
 r"""
-Using TorchScript to serialize and deploy model
-===============================================
+Using TorchScript to serialize and deploy a model
+=================================================
 
 Models in TorchANI's model zoo support TorchScript. TorchScript is a way to
 create serializable optimized models from PyTorch code. It allows users to save
 their models from a Python process and load them in a process where there is no
 Python dependency.
 """
-
-###############################################################################
 # To begin with, let's first import the modules we will use:
 from pathlib import Path
 import typing as tp

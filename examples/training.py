@@ -1,17 +1,23 @@
+r"""
+Train An ANI-Style Neural Network Potential
+===========================================
+
+This example shows how to use TorchANI to train a neural network potential.
+"""
+# To begin with, let's first import the modules and setup devices we will use:
 import typing as tp
 import math
 from pathlib import Path
 
-import tqdm
 import torch
 import torch.utils.tensorboard
 
 import torchani
+from torchani.utils import tqdm
 from torchani.models import BuiltinModel
 from torchani.datasets import ANIDataset, ANIBatchedDataset
 from torchani.units import hartree2kcalpermol
 from torchani.assembler import FlexibleANI
-
 
 # Explanation of how to train an ANI model
 # Device and dataset to run the training
@@ -88,7 +94,7 @@ model = FlexibleANI(
     symbols=("H", "C", "N", "O"),
     dispersion=False,
     repulsion=True,
-    cuda_ops=True,  # Train with cuAEV
+    cuda_ops=False,  # Train without cuAEV
 )
 
 # Set up of optimizer, lr-scheduler and loss-function
@@ -152,7 +158,7 @@ tensorboard = torch.utils.tensorboard.SummaryWriter()
 mse = torch.nn.MSELoss(reduction='none')
 
 # Criteria for stopping training
-max_epochs = 10
+max_epochs = 5
 min_learning_rate = 1.0e-10
 
 # Epoch 0 is right before training starts
@@ -172,7 +178,7 @@ for epoch in range(scheduler.last_epoch, max_epochs + 1):
         break
 
     # Loop over batches
-    for batch in tqdm.tqdm(
+    for batch in tqdm(
         training,
         total=len(training),
         desc=f"Epoch {epoch}",

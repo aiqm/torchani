@@ -1,10 +1,11 @@
 """
 Basic usage of the ANIDataset class
-========================================================
+===================================
 
 This supersedes the obsolete anidataloader. There are also builtin datasets
 that live in moria, and they can be directly downloaded through torchani.
 """
+# To begin with, let's import the modules we will use:
 import shutil
 from pathlib import Path
 
