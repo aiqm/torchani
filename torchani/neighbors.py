@@ -193,7 +193,8 @@ class FullPairwise(BaseNeighborlist):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None
     ) -> NeighborData:
-        """Arguments:
+        """
+        Arguments:
             coordinates (:class:`torch.Tensor`): tensor of shape
                 (molecules, atoms, 3) for atom coordinates.
             cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three vectors

@@ -242,31 +242,25 @@ def pad_atomic_properties(properties: tp.Sequence[tp.Mapping[str, Tensor]],
     return output
 
 
+# Given a vector of species of atoms, compute the unique species present.
+# Arguments:
+# species (:class:`torch.Tensor`): 1D vector of shape ``(atoms,)``
+# Returns:
+# :class:`torch.Tensor`: 1D vector storing present atom types sorted.
+# present_species, _ = species.flatten()._unique(sorted=True)
 def present_species(species):
-    """Given a vector of species of atoms, compute the unique species present.
-
-    Arguments:
-        species (:class:`torch.Tensor`): 1D vector of shape ``(atoms,)``
-
-    Returns:
-        :class:`torch.Tensor`: 1D vector storing present atom types sorted.
-    """
-    # present_species, _ = species.flatten()._unique(sorted=True)
     present_species = species.flatten().unique(sorted=True)
     if present_species[0].item() == -1:
         present_species = present_species[1:]
     return present_species
 
 
+# Strip trailing padding atoms.
+# Arguments:
+# atomic_properties (dict): properties to strip
+# Returns:
+# dict: same set of properties with redundant padding atoms stripped.
 def strip_redundant_padding(atomic_properties):
-    """Strip trailing padding atoms.
-
-    Arguments:
-        atomic_properties (dict): properties to strip
-
-    Returns:
-        dict: same set of properties with redundant padding atoms stripped.
-    """
     species = atomic_properties['species']
     non_padding = (species >= 0).any(dim=0).nonzero().squeeze()
     for k in atomic_properties:

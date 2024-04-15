@@ -4,7 +4,7 @@ Installation
 TorchANI requires PyTorch. Please see `PyTorch's official site`_ for
 instructions of installing PyTorch. Note that if you updated TorchANI, you may
 also need to update PyTorch. After installing the correct PyTorch, you can
-install TorchANI using `pip` or `conda`:
+install TorchANI using ``pip`` or ``conda``:
 
 .. code-block:: bash
 

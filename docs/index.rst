@@ -28,7 +28,7 @@ Welcome to TorchANI's documentation!
 
 .. toctree::
     :maxdepth: 2
-    :caption: TorchANI's API
+    :caption: API
 
     api
 

@@ -8,9 +8,11 @@ from torchani.utils import get_atomic_masses
 
 
 def displace_to_com_frame(species_coordinates: tp.Tuple[Tensor, Tensor]) -> tp.Tuple[Tensor, Tensor]:
-    r"""Displace coordinates to the center-of-mass frame, input species must be
-    atomic numbers, padding atoms can be included with -1 as padding,
-    returns the displaced coordinates and the center-of-mass coordinates"""
+    r"""
+    Displace coordinates to the center-of-mass frame, input species must be
+    atomic numbers, padding atoms can be included with -1 as padding, returns
+    the displaced coordinates and the center-of-mass coordinates
+    """
     species, coordinates = species_coordinates
     mask = (species == -1)
     masses = get_atomic_masses(species, dtype=coordinates.dtype)
@@ -25,16 +27,22 @@ def displace_to_com_frame(species_coordinates: tp.Tuple[Tensor, Tensor]) -> tp.T
 
 def tile_into_tight_cell(species_coordinates, repeats=(3, 3, 3), noise=None, delta=1.0,
                          density=None, fixed_displacement_size=None, make_coordinates_positive: bool = True):
-    r""" Tile
+    r"""
+    Tile to generate a tight cell
+
+    If density is given (units of molecule / A^3), the box length is scaled to
+    produce the desired molecular density. For water, density = 0.0923 at 300 K
+    approximately.
+
     Arguments:
         repeats: Integer or tuple of integers (larger than zero), how many
             repeats in each direction, to expand the given species_coordinates.
             tiling can be into a square or rectangular cell.
-        noise: uniform noise in the range -noise, +noise is added to the
+        noise: Uniform noise in the range -noise, +noise is added to the
             coordinates to prevent exact repetition if given.
-        If density is given (units of molecule / A^3), the box length is scaled
-        to produce the desired molecular density. For water, density = 0.0923
-        at 300 K approximately.
+
+    Returns:
+        Tensor: Tiled structure
     """
     species, coordinates = species_coordinates
     device = coordinates.device

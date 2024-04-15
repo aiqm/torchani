@@ -1,19 +1,18 @@
-TorchANI
-========
+Atomic Environment Vectors (AEV)
+================================
 
-Atomic Environment Vectors
-==========================
-
+.. automodule:: torchani.aev
 .. autoclass:: torchani.aev.AEVComputer
     :members:
-.. autoclass:: torchani.aev.aev_terms.StandardRadial
+.. autoclass:: torchani.aev.StandardRadial
     :members:
-.. autoclass:: torchani.aev.aev_terms.StandardAngular
+.. autoclass:: torchani.aev.StandardAngular
     :members:
 
-Cutoff functions
+Cutoff Functions
 ================
 
+.. automodule:: torchani.cutoffs
 .. autoclass:: torchani.cutoffs.Cutoff
     :members:
 .. autoclass:: torchani.cutoffs.CutoffSmooth
@@ -26,17 +25,25 @@ Neighborlists
 
 .. automodule:: torchani.neighbors
 .. autoclass:: torchani.neighbors.FullPairwise
+    :members:
 .. autoclass:: torchani.neighbors.CellList
+    :members:
 
-Atomic Networks and containers
-==============================
+Atomic Networks and Containers
+====================================
 
-.. autoclass:: torchani.ANIModel
-.. autoclass:: torchani.Ensemble
+.. autoclass:: torchani.nn.ANIModel
+    :members:
+.. autoclass:: torchani.nn.Ensemble
+    :members:
 .. automodule:: torchani.atomics
+.. autofunction:: torchani.atomics.like_1x
+.. autofunction:: torchani.atomics.like_1ccx
+.. autofunction:: torchani.atomics.like_2x
+.. autofunction:: torchani.atomics.like_dr
 
-Builtin Models
-==============
+Built-in Models
+===============
 
 .. automodule:: torchani.models
 .. autoclass:: torchani.models.ANI1x
@@ -44,6 +51,8 @@ Builtin Models
 .. autoclass:: torchani.models.ANI1ccx
     :members:
 .. autoclass:: torchani.models.ANI2x
+    :members:
+.. autoclass:: torchani.models.ANIdr
     :members:
 
 Datasets
@@ -56,22 +65,95 @@ Datasets
     :members:
 .. autofunction:: torchani.datasets.create_batched_dataset
 
-Utilities
-=========
+Dataset Transforms
+==================
+
+.. automodule:: torchani.transforms
+.. autoclass:: torchani.transforms.Transform
+    :members:
+.. autoclass:: torchani.transforms.SubtractEnergy
+    :members:
+.. autoclass:: torchani.transforms.SubtractForce
+    :members:
+.. autoclass:: torchani.transforms.SubtractRepulsionXTB
+    :members:
+.. autoclass:: torchani.transforms.SubtractTwoBodyDispersionD3
+    :members:
+.. autoclass:: torchani.transforms.SubtractSAE
+    :members:
+.. autoclass:: torchani.transforms.AtomicNumbersToIndices
+    :members:
+.. autoclass:: torchani.transforms.Compose
+    :members:
+
+Potentials
+==========
+
+.. automodule:: torchani.potentials
+.. autoclass:: torchani.potentials.RepulsionXTB
+    :members:
+.. autoclass:: torchani.potentials.StandaloneRepulsionXTB
+    :members:
+.. autoclass:: torchani.potentials.TwoBodyDispersionD3
+    :members:
+.. autoclass:: torchani.potentials.StandaloneTwoBodyDispersionD3
+    :members:
+
+Utilities for Wrapping Modules
+==============================
+
+.. automodule:: torchani.wrappers
+.. autoclass:: torchani.wrappers.Wrapper
+    :members:
+.. autoclass:: torchani.wrappers.StandaloneWrapper
+    :members:
+.. autoclass:: torchani.wrappers.StandaloneElementWrapper
+    :members:
+
+Creation of 3D Geometries
+=========================
+
+.. automodule:: torchani.geometry
+.. autofunction:: torchani.geometry.tile_into_tight_cell
+.. autofunction:: torchani.geometry.displace_to_com_frame
+
+General Utilities
+=================
 
 .. automodule:: torchani.utils
+.. autofunction:: torchani.utils.get_atomic_masses
 .. autofunction:: torchani.utils.pad_atomic_properties
-.. autofunction:: torchani.utils.present_species
-.. autofunction:: torchani.utils.strip_redundant_padding
 .. autofunction:: torchani.utils.map_to_central
 .. autoclass:: torchani.utils.ChemicalSymbolsToInts
     :members:
-.. autofunction:: torchani.utils.hessian
-.. autofunction:: torchani.utils.vibrational_analysis
-.. autofunction:: torchani.utils.get_atomic_masses
 .. autoclass:: torchani.SpeciesConverter
     :members:
 .. autoclass:: torchani.EnergyShifter
+    :members:
+
+Hessian, Normal Modes, Vibrations
+=================================
+
+.. autofunction:: torchani.utils.hessian
+.. autofunction:: torchani.utils.vibrational_analysis
+
+Optimizing Models for Inference
+===============================
+
+.. automodule:: torchani.infer
+.. autoclass:: torchani.infer.ANIInferModel
+    :members:
+.. autoclass:: torchani.infer.BmmEnsemble
+    :members:
+.. autoclass:: torchani.infer.BmmEnsembleMNP
+    :members:
+.. autoclass:: torchani.infer.BmmLinear
+    :members:
+.. autoclass:: torchani.infer.BmmNetwork
+    :members:
+.. autoclass:: torchani.infer.InferModelBase
+    :members:
+.. autoclass:: torchani.infer.MultiNetFunction
     :members:
 
 ASE Interface
@@ -79,6 +161,7 @@ ASE Interface
 
 .. automodule:: torchani.ase
 .. autoclass:: torchani.ase.Calculator
+    :members:
 
 Units
 =====
