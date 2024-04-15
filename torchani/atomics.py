@@ -50,6 +50,33 @@ def like_1x(
     )
 
 
+def like_ala(
+    atom: str = 'H',
+    feat_dim: int = 1008,
+    activation: tp.Optional[torch.nn.Module] = None,
+    bias: bool = True,
+    classifier_out: int = 1
+):
+    r"""Makes an atomic network. The defaults are the ones used in the ANI-2x model"""
+    if activation is None:
+        activation = torch.nn.CELU(0.1)
+    dims_for_atoms = {
+        'H': (feat_dim, 256, 192, 160),
+        'C': (feat_dim, 224, 196, 160),
+        'N': (feat_dim, 192, 160, 128),
+        'O': (feat_dim, 192, 160, 128),
+        'S': (feat_dim, 160, 128, 96),
+        'F': (feat_dim, 160, 128, 96),
+        'Cl': (feat_dim, 160, 128, 96),
+    }
+    return standard(
+        dims_for_atoms[atom],
+        activation=activation,
+        bias=bias,
+        classifier_out=classifier_out,
+    )
+
+
 def like_2x(
     atom: str = 'H',
     feat_dim: int = 1008,

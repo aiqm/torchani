@@ -450,6 +450,30 @@ def ANI2x(
     return model
 
 
+def ANIala(
+    pretrained: bool = True,
+    neighborlist: str = "full_pairwise",
+    cuda_ops: bool = False,
+) -> BuiltinModel:
+    r"""Experimental Model fine tuned to solvated frames of Ala dipeptide"""
+    asm = Assembler(ensemble_size=1)
+    asm.symbols = ELEMENTS_2x
+    asm.set_global_cutoff_fn("cosine")
+    asm.set_featurizer(
+        AEVComputer,
+        radial_terms=StandardRadial.like_2x(),
+        angular_terms=StandardAngular.like_2x(),
+        cuda_ops=cuda_ops,
+    )
+    asm.set_atomic_maker(atomics.like_ala)
+    asm.set_neighborlist(neighborlist)
+    asm.set_gsaes_as_self_energies("wb97x-631gd")
+    model = asm.assemble()
+    if pretrained:
+        model.load_state_dict(fetch_state_dict("aniala_state_dict.pt", private=True))
+    return model
+
+
 def ANIdr(
     pretrained: bool = True,
     neighborlist: str = "full_pairwise",
