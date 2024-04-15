@@ -7,6 +7,7 @@ that live in moria, and they can be directly downloaded through torchani.
 """
 import shutil
 from pathlib import Path
+
 from torchani.datasets import ANIDataset
 
 ###############################################################################
@@ -24,15 +25,15 @@ from torchani.datasets import ANIDataset
 ###############################################################################
 # For the purposes of this example we will copy and modify two files inside
 # torchani/dataset, which can be downloaded by running the download.sh script
-file1_path = Path.cwd() / 'file1.h5'
-file2_path = Path.cwd() / 'file2.h5'
-shutil.copy(Path.cwd() / '../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5', file1_path)
-shutil.copy(Path.cwd() / '../dataset/ani1-up_to_gdb4/ani_gdb_s02.h5', file2_path)
+file1_path = Path.cwd() / "file1.h5"
+file2_path = Path.cwd() / "file2.h5"
+shutil.copy(Path.cwd() / "../dataset/ani1-up_to_gdb4/ani_gdb_s01.h5", file1_path)
+shutil.copy(Path.cwd() / "../dataset/ani1-up_to_gdb4/ani_gdb_s02.h5", file2_path)
 
 ###############################################################################
 # ANIDataset accepts a path to an h5 file or a list of paths to many files
 # (optionally with names)
-ds = ANIDataset(locations=(file1_path, file2_path), names=('file1', 'file2'))
+ds = ANIDataset(locations=(file1_path, file2_path), names=("file1", "file2"))
 
 ###############################################################################
 # ANIDatasets have properties they can access. All conformers in the dataset
@@ -43,7 +44,7 @@ print(ds.properties)
 ###############################################################################
 # When opening these files we see that we get a warning because they have some
 # unsupported legacy properties, so the first thing we will do is delete them
-ds.delete_properties(('coordinatesHE', 'energiesHE', 'smiles'))
+ds.delete_properties(("coordinatesHE", "energiesHE", "smiles"))
 print(ds.properties)
 
 ###############################################################################
@@ -52,13 +53,13 @@ print(ds.properties)
 #
 # To access groups of conformers we can just use the dataset as an ordered
 # dictionary
-group = ds['file2/gdb11_s02/gdb11_s02-8']
+group = ds["file2/gdb11_s02/gdb11_s02-8"]
 print(group)
 
 ###############################################################################
-# We see that we get some tensors with properties,
-# but this access is not very convenient, the keys seem to have weird
-# mangled names which don't say very much about what is in them.
+# We see that we get some tensors with properties, but this access is not very
+# convenient, the keys seem to have weird mangled names which don't say very
+# much about what is in them.
 print(list(ds.keys()))
 
 ###############################################################################
@@ -75,7 +76,7 @@ print(list(ds.keys()))
 ###############################################################################
 # Now the dataset is organized by formulas, which makes access much easier
 # (If we only had one file ds['CH4'] would have been enough)
-group = ds['file1/CH4']
+group = ds["file1/CH4"]
 
 ###############################################################################
 # items(), values() and keys() work as expected for groups of conformers,
@@ -112,9 +113,9 @@ print(num_conformers)
 #
 # To access individual conformers or subsets of conformers we use "conformer"
 # methods, get_conformers and iter_conformers
-conformer = ds.get_conformers('file1/CH4', 0)
+conformer = ds.get_conformers("file1/CH4", 0)
 print(conformer)
-conformer = ds.get_conformers('file1/CH4', 1)
+conformer = ds.get_conformers("file1/CH4", 1)
 print(conformer)
 
 ###############################################################################
@@ -122,34 +123,32 @@ print(conformer)
 # conformers from the same group, which is faster. Since we copy the data forh
 # simplicity, this allows all fancy indexing operations (directly indexing
 # using h5py for example does not).
-conformers = ds.get_conformers('file1/CH4', [0, 1])
+conformers = ds.get_conformers("file1/CH4", [0, 1])
 print(conformers)
 
 ###############################################################################
 # We can also access all the group if we don't pass an index, same as normal indexing
-conformer = ds.get_conformers('file1/CH4')
+conformer = ds.get_conformers("file1/CH4")
 print(conformer)
 
 ###############################################################################
 # Finally, it is possible to also specify which properties we want using 'properties'
-conformer = ds.get_conformers('file1/CH4', [0, 3], properties=('species', 'energies'))
+conformer = ds.get_conformers("file1/CH4", [0, 3], properties=("species", "energies"))
 print(conformer)
 
 ###############################################################################
 # If you want you can also get the conformers as numpy arrays by calling
 # get_numpy_conformers.  this has an optional flag "chem_symbols" which if
 # specified "True" will output the elements as strings ('C', 'H', 'H', ... etc)
-conformer = ds.get_numpy_conformers('file1/CH4', [0, 1], chem_symbols=True)
+conformer = ds.get_numpy_conformers("file1/CH4", [0, 1], chem_symbols=True)
 print(conformer)
 
 ###############################################################################
 # We can iterate over all conformers sequentially by calling iter_conformer,
 # (this is faster than doing it manually since it caches each conformer group
 # previous to starting the iteration), here we print the first 100 as a sample
-for j, c in enumerate(ds.iter_conformers()):
+for c in ds.iter_conformers(limit=100):
     print(c)
-    if j == 100:
-        break
 
 ###############################################################################
 # We will now delete the files we copied for cleanup purposes

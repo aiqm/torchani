@@ -32,7 +32,7 @@ class _ZarrStore(_HierarchicalStoreWrapper["zarr.Group"]):
         self._mode: tp.Optional[str] = None
 
     @classmethod
-    def make_empty(cls, store_location: StrPath, grouping: str = "by_formula", **kwargs) -> Self:
+    def make_empty(cls, store_location: StrPath, grouping: str = "by_num_atoms", **kwargs) -> Self:
         store = zarr.storage.DirectoryStore(store_location)
         with zarr.hierarchy.group(store=store, overwrite=True) as g:
             g.attrs['grouping'] = grouping

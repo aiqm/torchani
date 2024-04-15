@@ -558,7 +558,7 @@ class TestANIDataset(TestCase):
                         f1[k].create_dataset(p, data=v)
 
     def _make_new_dataset(self):
-        return ANIDataset(self.new_store_name)
+        return ANIDataset(self.new_store_name, grouping="by_formula")
 
     def tearDown(self):
         self.tmp_dir.cleanup()

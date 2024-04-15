@@ -213,7 +213,7 @@ class _StoreWrapper(tp.ContextManager['_StoreWrapper'], tp.MutableMapping[str, '
 
     @classmethod
     @abstractmethod
-    def make_empty(cls, store_location: StrPath, grouping: str, **kwargs) -> Self:
+    def make_empty(cls, store_location: StrPath, grouping: str = "by_num_atoms", **kwargs) -> Self:
         pass
 
     @abstractmethod

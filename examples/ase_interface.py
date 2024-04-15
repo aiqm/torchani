@@ -14,66 +14,65 @@ calculator.
 
 
 ###############################################################################
-# To begin with, let's first import the modules we will use:
+# To begin with, let's import the modules we will use:
+import ase
 from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
-from ase.optimize import BFGS
-from ase import units
+from ase.optimize import LBFGS
+
 import torchani
 
 
 ###############################################################################
-# Now let's set up a crystal
+# First we set up our system (in this case a diamond crystal, with PBC enabled)
 atoms = Diamond(symbol="C", pbc=True)
-print(len(atoms), "atoms in the cell")
+print(f"Num atoms in cell: {len(atoms)}")
 
 ###############################################################################
-# Now let's create a calculator from builtin models:
-calculator = torchani.models.ANI1ccx().ase()
+# Afterwards we create a calculator from builtin models and attach it to our atoms
+atoms.calc = torchani.models.ANI2x().ase()
 
 ###############################################################################
-# .. note::
-#     Regardless of the dtype you use in your model, when converting it to ASE
-#     calculator, it always automatically the dtype to ``torch.float64``. The
-#     reason for this behavior is, at many cases, the rounding error is too
-#     large for structure minimization. If you insist on using
-#     ``torch.float32``, do the following instead:
-#
-#     .. code-block:: python
-#
-#         calculator = torchani.models.ANI1ccx().ase(dtype=torch.float32)
-
-###############################################################################
-# Now let's set the calculator for ``atoms``:
-atoms.calc = calculator
-
-###############################################################################
-# Now let's minimize the structure:
-print("Begin minimizing...")
-opt = BFGS(atoms)
-opt.run(fmax=0.001)
+# Now we minimize our system
+print("Starting minimization...")
+opt = LBFGS(atoms)
+opt.run(fmax=0.0002)
 print()
 
+###############################################################################
+# We want to run constant temperature MD, and print some quantities throughout
+# the MD. For this we need to create a callback function that prints
+# the quantities we are interested in
+
+
+def print_energy(atoms: ase.Atoms):
+    r"""Function to print the potential, kinetic and total energies"""
+    epot = atoms.get_potential_energy() / len(atoms)
+    ekin = atoms.get_kinetic_energy() / len(atoms)
+    temperature = ekin / (1.5 * ase.units.kB)
+    etot = epot + ekin
+    print(
+        "Energy per atom: \n"
+        f"    E_pot = {epot:.3f} eV\n"
+        f"    E_kin = {ekin:.3f} eV (T = {temperature:.1f} K)\n"
+        f"    E_tot = {etot:.3f} eV\n"
+    )
 
 ###############################################################################
-# Now create a callback function that print interesting physical quantities:
-def printenergy(a=atoms):
-    """Function to print the potential, kinetic and total energy."""
-    epot = a.get_potential_energy() / len(a)
-    ekin = a.get_kinetic_energy() / len(a)
-    print('Energy per atom: Epot = %.3feV  Ekin = %.3feV (T=%3.0fK)  '
-          'Etot = %.3feV' % (epot, ekin, ekin / (1.5 * units.kB), epot + ekin))
+# We then set up the Langevin thermostat with a time step of 1 fs, a
+# temperature of 300 K and a friction coefficient of 0.2
 
 
-###############################################################################
-# We want to run MD with constant energy using the Langevin algorithm
-# with a time step of 1 fs, the temperature 300K and the friction
-# coefficient to 0.02 atomic units.
-dyn = Langevin(atoms, 1 * units.fs, 300 * units.kB, 0.2)
-dyn.attach(printenergy, interval=50)
+dyn = Langevin(
+    atoms,
+    timestep=1 * ase.units.fs,
+    temperature_K=300,
+    friction=0.2,
+)
+dyn.attach(print_energy, interval=50, atoms=atoms)
 
 ###############################################################################
-# Now run the dynamics:
-print("Beginning dynamics...")
-printenergy()
-dyn.run(500)
+# Finally we run the dynamics
+print("Running dynamics...")
+print_energy(atoms)
+dyn.run(1000)

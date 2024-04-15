@@ -184,7 +184,7 @@ class _PqStore(_StoreWrapper[tp.Union["pandas.DataFrame", "cudf.DataFrame"]]):
         return cache.group_sizes, cache.properties.union(self._dummy_properties)
 
     @classmethod
-    def make_empty(cls, store_location: StrPath, grouping: str = "by_formula", **kwargs) -> Self:
+    def make_empty(cls, store_location: StrPath, grouping: str = "by_num_atoms", **kwargs) -> Self:
         root = Path(store_location).resolve()
         root.mkdir(exist_ok=True)
         assert not list(root.iterdir()), "location is not empty"

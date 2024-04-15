@@ -47,5 +47,6 @@ htmlcov/
 /include
 training_outputs/
 examples/dataset.pkl
+examples/batched_dataset_1x/*
 /tools/plots/*
 /tests/.hypothesis
