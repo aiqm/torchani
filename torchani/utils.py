@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import typing as tp
 import time
 import tempfile
@@ -637,6 +638,33 @@ PERIODIC_TABLE = ['Dummy'] + """
     """.strip().split()
 
 ATOMIC_NUMBERS = {symbol: z for z, symbol in enumerate(PERIODIC_TABLE)}
+
+
+def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
+    r"""
+    Merge multiple single-model state dicts into a state dict for an ensemble of models
+    """
+    if any(not path.is_file() for path in paths):
+        raise ValueError("All passed paths must be existing files with state dicts")
+    merged_dict: tp.Dict[str, Tensor] = {}
+    for j, path in enumerate(sorted(paths)):
+        state_dict = torch.load(path, map_location=torch.device("cpu"))
+        keys = tuple(state_dict.keys())
+        for k in keys:
+            if "neural_networks" not in k:
+                continue
+            new_key = k.replace("neural_networks", "neural_networks.{j}")
+            value = state_dict.pop(k)
+            state_dict[new_key] = value
+
+        for k, v in merged_dict.items():
+            if "neural_networks" not in k:
+                if k not in state_dict:
+                    raise ValueError(f"Missing key in state dict: {k}")
+                if v != state_dict[k]:
+                    raise ValueError(f"Incompatible values for key {k}")
+        merged_dict.update(state_dict)
+    return OrderedDict(merged_dict)
 
 
 def timeit(
