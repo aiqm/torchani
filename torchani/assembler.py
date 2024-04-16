@@ -26,6 +26,7 @@ These pieces are assembled into a Model, which is a subclass of BuiltinModel
 
 Some of the Featurizers support custom made cuda operators that accelerate them
 """
+from copy import deepcopy
 from pathlib import Path
 import warnings
 import math
@@ -47,7 +48,7 @@ from torchani.potentials import (
 )
 from torchani.aev import AEVComputer, StandardAngular, StandardRadial
 from torchani.nn import ANIModel, Ensemble
-from torchani.utils import EnergyShifter, GSAES
+from torchani.utils import EnergyShifter, GSAES, ATOMIC_NUMBERS
 
 ModelType = tp.Type[BuiltinModel]
 NeighborlistType = tp.Type[BaseNeighborlist]
@@ -56,10 +57,13 @@ PairwisePotentialType = tp.Type[PairwisePotential]
 AtomicContainerType = tp.Type[ANIModel]
 ShifterType = tp.Type[EnergyShifter]
 
-LIGHT = ("H", "C", "N", "O")
 SFCl = ("S", "F", "Cl")
-ELEMENTS_1x = LIGHT
-ELEMENTS_2x = LIGHT + SFCl
+ELEMENTS_1X = ("H", "C", "N", "O")
+ELEMENTS_2X = ELEMENTS_1X + SFCl
+
+
+def sort_by_element(it: tp.Iterable[str]) -> tp.Tuple[str, ...]:
+    return tuple(sorted(it, key=lambda x: ATOMIC_NUMBERS[x]))
 
 
 # "global" cutoff means the global cutoff_fn will be used
@@ -158,13 +162,13 @@ class Assembler:
 
     @symbols.setter
     def symbols(self, symbols: tp.Sequence[str]) -> None:
-        self._symbols = tuple(sorted(symbols))
+        self._symbols = sort_by_element(symbols)
 
     @property
     def atomic_networks(self) -> tp.OrderedDict[str, torch.nn.Module]:
         odict = OrderedDict()
         for k in self.symbols:
-            odict[k] = self._atomic_networks[k]
+            odict[k] = deepcopy(self._atomic_networks[k])
         return odict
 
     def set_atomic_maker(
@@ -173,7 +177,7 @@ class Assembler:
         symbols: tp.Sequence[str] = (),
     ) -> None:
         if not self.symbols:
-            self.symbols = tuple(sorted(symbols))
+            self.symbols = sort_by_element(symbols)
         elif symbols:
             if set(self.symbols) != set(symbols):
                 raise ValueError(
@@ -191,7 +195,7 @@ class Assembler:
     @self_energies.setter
     def self_energies(self, value: tp.Mapping[str, float]) -> None:
         if not self.symbols:
-            self.symbols = tuple(sorted(value.keys()))
+            self.symbols = sort_by_element(value.keys())
         elif set(self.symbols) != set(value.keys()):
             raise ValueError(
                 f"Self energies don't match supported elements {self._symbols}"
@@ -387,7 +391,7 @@ def ANI1x(
     cuda_ops: bool = False,
 ) -> BuiltinModel:
     asm = Assembler(ensemble_size=8)
-    asm.symbols = ELEMENTS_1x
+    asm.symbols = ELEMENTS_1X
     asm.set_atomic_maker(atomics.like_1x)
     asm.set_global_cutoff_fn("cosine")
     asm.set_featurizer(
@@ -410,7 +414,7 @@ def ANI1ccx(
     cuda_ops: bool = False,
 ) -> BuiltinModel:
     asm = Assembler(ensemble_size=8)
-    asm.symbols = ELEMENTS_1x
+    asm.symbols = ELEMENTS_1X
     asm.set_global_cutoff_fn("cosine")
     asm.set_featurizer(
         AEVComputer,
@@ -433,7 +437,7 @@ def ANI2x(
     cuda_ops: bool = False,
 ) -> BuiltinModel:
     asm = Assembler(ensemble_size=8)
-    asm.symbols = ELEMENTS_2x
+    asm.symbols = ELEMENTS_2X
     asm.set_global_cutoff_fn("cosine")
     asm.set_featurizer(
         AEVComputer,
@@ -457,7 +461,7 @@ def ANIala(
 ) -> BuiltinModel:
     r"""Experimental Model fine tuned to solvated frames of Ala dipeptide"""
     asm = Assembler(ensemble_size=1)
-    asm.symbols = ELEMENTS_2x
+    asm.symbols = ELEMENTS_2X
     asm.set_global_cutoff_fn("cosine")
     asm.set_featurizer(
         AEVComputer,
@@ -480,7 +484,7 @@ def ANIdr(
     cuda_ops: bool = False,
 ) -> BuiltinModel:
     asm = Assembler(ensemble_size=7)
-    asm.symbols = ELEMENTS_2x
+    asm.symbols = ELEMENTS_2X
     asm.set_global_cutoff_fn("smooth2")
     asm.set_featurizer(
         AEVComputer,
