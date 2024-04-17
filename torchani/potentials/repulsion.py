@@ -9,18 +9,18 @@ from torchani.utils import ATOMIC_NUMBERS
 from torchani.wrappers import StandaloneWrapper
 from torchani.neighbors import NeighborData, BaseNeighborlist, FullPairwise
 from torchani.cutoffs import Cutoff
-from torchani.potentials.core import PairwisePotential
+from torchani.potentials.core import PairPotential
 from torchani.potentials._repulsion_constants import alpha_constants, y_eff_constants
 
 _ELEMENTS_NUM = len(ATOMIC_NUMBERS)
 
 
-class RepulsionXTB(PairwisePotential):
+class RepulsionXTB(PairPotential):
     r"""Calculates the xTB repulsion energy terms for a given molecule
 
     Potential used is as in work by Grimme: https://pubs.acs.org/doi/10.1021/acs.jctc.8b01176
     By default alpha, y_eff and krep parameters are taken from Grimme et. al.
-    pairwise_kwargs are passed to PairwisePotential
+    pairwise_kwargs are passed to PairPotential
     """
 
     ANGSTROM_TO_BOHR: Final[float]

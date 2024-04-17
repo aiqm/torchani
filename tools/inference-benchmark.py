@@ -5,6 +5,7 @@ import tqdm
 import torch
 
 from torchani.models import ANI1x
+from torchani.utils import EnergyShifter
 
 # parse command line arguments
 parser = argparse.ArgumentParser()
@@ -23,7 +24,7 @@ ani1x = ANI1x()
 nnp = torch.nn.Sequential(
     ani1x.aev_computer,
     ani1x.neural_networks[0],
-    ani1x.energy_shifter
+    EnergyShifter(ani1x.energy_shifter.self_energies.tolist()),
 ).to(device)
 
 

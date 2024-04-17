@@ -94,7 +94,7 @@ model = FlexibleANI(
     symbols=("H", "C", "N", "O"),
     dispersion=False,
     repulsion=True,
-    cuda_ops=False,  # Train without cuAEV
+    use_cuda_ops=False,  # Train without cuAEV
 )
 
 # Set up of optimizer, lr-scheduler and loss-function

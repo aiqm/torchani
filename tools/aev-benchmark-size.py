@@ -109,7 +109,7 @@ def benchmark(speciesPositions, aev_comp, runbackward=False, mol_info=None, verb
                 else:
                     species_energies = neural_networks((species, aev))
                 torch.cuda.nvtx.range_pop()
-                # _, energies = energy_shifter(species_energies)
+                # energies = energy_shifter(species_energies[0])
                 energies = species_energies[1]
         except Exception as e:
             alert(f"  AEV faild: {str(e)[:50]}...")
@@ -383,8 +383,13 @@ if __name__ == "__main__":
     device = torch.device('cuda')
     files = ['small.pdb', '1hz5.pdb', '6W8H.pdb']
 
-    nnp_ref = torchani.models.ANI2x(periodic_table_index=True, model_index=None, cell_list=args.use_cell_list,
-                                    use_cuaev_interface=args.use_cuaev_interface, use_cuda_extension=args.use_cuaev_interface).to(device)
+    nnp_ref = torchani.models.ANI2x(
+        periodic_table_index=True,
+        model_index=None,
+        neighborlist="cell_list" if args.use_cell_list else "full_pairwise",
+        use_cuaev_interface=args.use_cuaev_interface,
+        use_cuda_extension=args.use_cuaev_interface,
+    ).to(device)
     nnp_cuaev = torchani.models.ANI2x(periodic_table_index=True, model_index=None).to(device)
     nnp_cuaev.aev_computer.use_cuda_extension = True
     maxatoms = [6000, 10000]

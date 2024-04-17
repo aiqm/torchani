@@ -68,7 +68,7 @@ class Potential(torch.nn.Module):
         raise NotImplementedError
 
 
-class PairwisePotential(Potential):
+class PairPotential(Potential):
     r"""Base class for all pairwise potentials
 
     Subclasses must override pair_energies
@@ -175,7 +175,7 @@ class PairwisePotential(Potential):
         return atomic_energies
 
 
-class DummyPairwisePotential(PairwisePotential):
+class DummyPairPotential(PairPotential):
     def pair_energies(
         self,
         element_idxs: Tensor,

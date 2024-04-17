@@ -1,7 +1,7 @@
 from torchani.potentials.core import (
     Potential,
-    PairwisePotential,
-    DummyPairwisePotential,
+    PairPotential,
+    DummyPairPotential,
 )
 from torchani.potentials.aev_potential import AEVPotential
 from torchani.potentials.repulsion import (
@@ -27,6 +27,6 @@ __all__ = [
     "StandaloneTwoBodyDispersionD3",
     "AEVPotential",
     "Potential",
-    "PairwisePotential",
-    "DummyPairwisePotential",
+    "PairPotential",
+    "DummyPairPotential",
 ]

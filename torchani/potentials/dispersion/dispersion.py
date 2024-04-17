@@ -9,7 +9,7 @@ from torchani.wrappers import StandaloneWrapper
 from torchani.units import ANGSTROM_TO_BOHR
 from torchani.cutoffs import Cutoff
 from torchani.neighbors import NeighborData, BaseNeighborlist, FullPairwise
-from torchani.potentials.core import PairwisePotential
+from torchani.potentials.core import PairPotential
 from torchani.potentials.dispersion import constants
 from torchani.potentials.dispersion.damping import (
     Damp,
@@ -17,7 +17,7 @@ from torchani.potentials.dispersion.damping import (
 )
 
 
-class TwoBodyDispersionD3(PairwisePotential):
+class TwoBodyDispersionD3(PairPotential):
     r"""Calculates the DFT-D3 dispersion corrections
 
     Only calculates the 2-body part of the dispersion corrections. Requires a

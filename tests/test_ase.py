@@ -12,8 +12,8 @@ from ase.io import read
 from ase.calculators.test import numeric_force
 from torchani.neighbors import CellList
 from torchani.testing import TestCase
-from torchani.models import _fetch_state_dict, ANI1x, BuiltinModelPairInteractions
-from torchani.potentials import DummyPairwisePotential
+from torchani.models import ANI1x, ANIdr, PairPotentialsModel
+from torchani.potentials import DummyPairPotential
 
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -28,7 +28,7 @@ class TestASE(TestCase):
         # Run a Langevin thermostat dynamic for 100 steps and after the dynamic
         # check once that the numerical and analytical force agree to a given
         # relative tolerance
-        model_cell = ANI1x(model_index=0, cell_list=True)
+        model_cell = ANI1x(model_index=0, neighborlist="cell_list")
         model_cell = model_cell.to(dtype=torch.double, device=self.device)
         model = ANI1x(model_index=0)
         model = model.to(dtype=torch.double, device=self.device)
@@ -41,19 +41,19 @@ class TestASE(TestCase):
         # Run a Langevin thermostat dynamic for 100 steps and after the dynamic
         # check once that the numerical and analytical force agree to a given
         # relative tolerance
-        model_cell = ANI1x(model_index=0, cell_list=True)
+        model_cell = ANI1x(model_index=0, neighborlist="cell_list")
         model_cell = model_cell.to(dtype=torch.double, device=self.device)
         model = ANI1x(model_index=0)
         model = model.to(dtype=torch.double, device=self.device)
-        model_pair = BuiltinModelPairInteractions(
+        model_pair = PairPotentialsModel(
             aev_computer=model_cell.aev_computer,
             neural_networks=model_cell.neural_networks,
             energy_shifter=model_cell.energy_shifter,
             elements=model_cell.get_chemical_symbols(),
             pairwise_potentials=[
-                DummyPairwisePotential(cutoff=6.4),
-                DummyPairwisePotential(cutoff=5.2),
-                DummyPairwisePotential(cutoff=3.0),
+                DummyPairPotential(cutoff=6.4),
+                DummyPairPotential(cutoff=5.2),
+                DummyPairPotential(cutoff=3.0),
             ]
         )
         model_pair = model_pair.to(dtype=torch.double, device=self.device)
@@ -69,9 +69,9 @@ class TestASE(TestCase):
         # Run a Langevin thermostat dynamic for 100 steps and after the dynamic
         # check once that the numerical and analytical force agree to a given
         # relative tolerance
-        model_cell = ANI1x(model_index=0, cell_list=True)
+        model_cell = ANI1x(model_index=0, neighborlist="cell_list")
         model_cell = model_cell.to(dtype=torch.double, device=self.device)
-        model_dyn = ANI1x(model_index=0, cell_list=True)
+        model_dyn = ANI1x(model_index=0, neighborlist="cell_list")
         model_dyn.aev_computer.neighborlist = CellList(model_dyn.aev_computer.radial_terms.cutoff, verlet=True)
         model_dyn = model_cell.to(dtype=torch.double, device=self.device)
 
@@ -85,19 +85,19 @@ class TestASE(TestCase):
         self._testForcesPBC(model, repeats=1)
 
     def testNumericalForcesCellList(self):
-        model = ANI1x(model_index=0, cell_list=True)
+        model = ANI1x(model_index=0, neighborlist="cell_list")
         model = model.to(dtype=torch.double, device=self.device)
         self._testForcesPBC(model)
 
     @unittest.skipIf(True, "Verlet Cell list is not implemented correctly")
     def testNumericalForcesCellListVerlet(self):
-        model = ANI1x(model_index=0, cell_list=True)
+        model = ANI1x(model_index=0, neighborlist="cell_list")
         model.aev_computer.neighborlist = CellList(model.aev_computer.radial_terms.cutoff, verlet=True)
         model = model.to(dtype=torch.double, device=self.device)
         self._testForcesPBC(model, steps=100)
 
     def testNumericalForcesCellListConstantV(self):
-        model = ANI1x(model_index=0, cell_list=True)
+        model = ANI1x(model_index=0, neighborlist="cell_list")
         model.aev_computer.neighborlist = CellList(model.aev_computer.radial_terms.cutoff, constant_volume=True)
         model = model.to(dtype=torch.double, device=self.device)
         self._testForcesPBC(model)
@@ -140,7 +140,7 @@ class TestASE(TestCase):
                               f"{func.__name__}_{index}_stress_partial_fdotr_{param.args[0]}_repulsion_{param.args[1]}")
     def testWithNumericalStressFullPairwise(self, stress_partial_fdotr, repulsion):
         if repulsion:
-            model = self._makeRepulsionModel()
+            model = ANIdr(model_index=0)
         else:
             model = ANI1x(model_index=0)
         model = model.to(dtype=torch.double, device=self.device)
@@ -149,7 +149,7 @@ class TestASE(TestCase):
     @parameterized.expand([(False,), (True,)],
                           name_func=lambda func, index, param: f"{func.__name__}_{index}_{param.args[0]}")
     def testWithNumericalStressCellList(self, stress_partial_fdotr):
-        model = ANI1x(model_index=0, cell_list=True)
+        model = ANI1x(model_index=0, neighborlist="cell_list")
         model = model.to(dtype=torch.double, device=self.device)
         self._testWithNumericalStressPBC(model, stress_partial_fdotr=stress_partial_fdotr)
 
@@ -179,16 +179,6 @@ class TestASE(TestCase):
 
         dyn.attach(test_stress, interval=2)
         dyn.run(10)
-
-    def _makeRepulsionModel(self):
-        model = ANI1x(
-            repulsion=True,
-            pretrained=False,
-            model_index=0,
-            cutoff_fn='smooth'
-        )
-        model.load_state_dict(_fetch_state_dict('ani1x_state_dict.pt', 0), strict=False)
-        return model
 
 
 if __name__ == '__main__':

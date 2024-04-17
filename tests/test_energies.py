@@ -4,6 +4,7 @@ import unittest
 import os
 import pickle
 from torchani.testing import TestCase
+from torchani.utils import EnergyShifter
 
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -96,7 +97,7 @@ class TestEnergies(TestCase):
         model = torchani.models.ANI1x(model_index=0, periodic_table_index=False)
         self.aev_computer = model.aev_computer
         self.nnp = model.neural_networks
-        self.energy_shifter = model.energy_shifter
+        self.energy_shifter = EnergyShifter(model.energy_shifter.self_energies.tolist())
         self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
 
     def testIsomers(self):

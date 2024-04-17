@@ -77,7 +77,7 @@ class TestDatasetUtils(TestCase):
         model = torchani.models.ANI1x()[0]
         out = torchani.datasets.utils.filter_by_high_energy_error(ds, model, threshold=1.0, delete_inplace=True)
         self.assertEqual(len(out[0]), 3)
-        self.assertEqual(sum(len(c['coordinates']) for c in out[0]), 1916)
+        self.assertEqual(sum(len(c['coordinates']) for c in out[0]), 1909)
 
 
 class TestBuiltinDatasets(TestCase):

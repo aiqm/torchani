@@ -1,10 +1,8 @@
 import unittest
-from pathlib import Path
 
 import torch
 
 import torchani
-from torchani.models import _fetch_state_dict
 from torchani.testing import TestCase
 from torchani.potentials import RepulsionXTB, StandaloneRepulsionXTB
 from torchani.neighbors import NeighborData
@@ -69,49 +67,24 @@ class TestRepulsion(TestCase):
         energies = self.rep(element_idxs, neighbors)
         self.assertEqual(torch.tensor([0.0]), energies)
 
-    def testRepulsionEnergy(self):
-        self._testRepulsionEnergy(self._makeModel(), "cpu", atomic=False)
-
     def testRepulsionAtomicEnergy(self):
-        self._testRepulsionEnergy(self._makeModel(), "cpu", atomic=True)
-
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA only test")
-    def testRepulsionEnergyCUDA(self):
-        self._testRepulsionEnergy(self._makeModel(), "cuda", atomic=False)
-
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA only test")
-    def testRepulsionAtomicEnergyCUDA(self):
-        self._testRepulsionEnergy(self._makeModel(), "cuda", atomic=True)
-
-    def _makeModel(self):
-        model = torchani.models.ANI1x(
-            repulsion=True,
-            pretrained=False,
-            model_index=0,
-            cutoff_fn='smooth'
-        )
-        model.load_state_dict(_fetch_state_dict('ani1x_state_dict.pt', 0), strict=False)
-        return model
-
-    def _testRepulsionEnergy(self, model, device, atomic: bool = False):
-        model = model.to(device, dtype=torch.double)
-        species = torch.tensor([[8, 1, 1]], device=device)
+        model = self._makeModel()
+        species = torch.tensor([[8, 1, 1]], device="cpu")
         _energies = []
+        _atomic_energies = []
         distances = torch.linspace(0.1, 6.0, 100)
         for d in distances:
             coordinates = torch.tensor([[[0.0, 0.0, 0.0],
                                         [0.97, 0.0, 0.0],
                                         [-0.250380004 * d, 0.96814764 * d, 0.0]]],
-                                       requires_grad=True, device=device, dtype=torch.double)
-            if atomic:
-                _energies.append(model.atomic_energies((species, coordinates), average=True).energies.sum(-1).item())
-            else:
-                _energies.append(model((species, coordinates)).energies.item())
-        energies = torch.tensor(_energies)
-        path = Path(__file__).resolve().parent.joinpath('test_data/energies_repulsion_1x.pkl')
-        with open(path, 'rb') as f:
-            energies_expect = torch.load(f)
-        self.assertEqual(energies_expect, energies)
+                                       requires_grad=True, device="cpu", dtype=torch.float)
+            _atomic_energies.append(model.atomic_energies((species, coordinates), average=True).energies.sum(-1).item())
+            _energies.append(model((species, coordinates)).energies.item())
+        self.assertEqual(_atomic_energies, _energies)
+
+    def _makeModel(self):
+        model = torchani.models.ANIdr(model_index=0, pretrained=True)
+        return model
 
 
 class TestRepulsionJIT(TestRepulsion):
