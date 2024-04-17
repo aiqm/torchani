@@ -461,3 +461,10 @@ Test3BPADihedral120:
       archive: Test3BPADihedral120-wb97x-631gd.tar.gz
       files:
       - Test3BPADihedral120-test_dih_beta120-wb97x-631gd.h5
+ANIExCorr:
+  default-lot: pbe-dzvp
+  lot:
+    pbe-dzvp:
+      archive: ANIExCorr-pbe-dzvp.tar.gz
+      files:
+      - ANIExCorr-AminoacidLike-pbe-dzvp.h5

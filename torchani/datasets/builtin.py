@@ -270,6 +270,13 @@ Iso17 dataset:
 
     For more information consult the corresponding paper
 
+- ANI-ExCorr, with LoT:
+    - PBE/DZVP
+
+    This dataset has "coefficients" which correspond to atomic
+    coefficients for the fitting density, and "energies-xc", the
+    exchange-correlation energies.
+
 
 Note that the conformations present in datasets with different LoT may be
 different.
