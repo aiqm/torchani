@@ -307,6 +307,8 @@ from torchani.datasets._annotations import StrPath
 
 _BASE_URL = 'http://moria.chem.ufl.edu/animodel/ground_truth_data/'
 _DEFAULT_DATA_PATH = Path.home().joinpath('.local/torchani/Datasets')
+_DEFAULT_DATA_PATH.mkdir(exist_ok=True, parents=True)
+
 _DATASETS_YAML_PATH = Path(__file__).parent / "builtin-datasets.yaml"
 
 with open(_DATASETS_YAML_PATH, mode="rt", encoding="utf-8") as f:
