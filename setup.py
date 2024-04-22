@@ -182,6 +182,7 @@ setup(
     include_package_data=True,
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
+    fallback_version="2.3",
     install_requires=[
         'torch',
         'lark-parser',
