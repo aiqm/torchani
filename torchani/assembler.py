@@ -60,6 +60,8 @@ SFCl: tp.Tuple[str, ...] = ("S", "F", "Cl")
 ELEMENTS_1X: tp.Tuple[str, ...] = ("H", "C", "N", "O")
 ELEMENTS_2X: tp.Tuple[str, ...] = ELEMENTS_1X + SFCl
 
+STATE_DICTS_PATH = (Path.home() / ".local") / "torchani"
+
 
 def _parse_cuda_ops(
     use_cuda_ops: bool = False,
@@ -708,15 +710,13 @@ def fetch_state_dict(
         dict_ = torch.load(state_dict_file, map_location=torch.device("cpu"))
         return OrderedDict(dict_)
 
-    model_dir = (Path.home() / ".local") / "torchani"
-
     if private:
         url = "http://moria.chem.ufl.edu/animodel/private/"
     else:
         url = "https://github.com/roitberg-group/torchani_model_zoo/releases/download/v0.1/"
     dict_ = torch.hub.load_state_dict_from_url(
         f"{url}/{state_dict_file}",
-        model_dir=str(model_dir),
+        model_dir=str(STATE_DICTS_PATH),
         map_location=torch.device("cpu"),
     )
     if "energy_shifter.atomic_numbers" not in dict_:
