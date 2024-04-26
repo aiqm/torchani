@@ -1153,13 +1153,7 @@ class ANIDataset(_ANIDatasetBase):
         elements = numpy_conformers[element_key]
         groups: tp.Dict[str, tp.Any] = {}
         for j, znumbers in enumerate(elements):
-            idxs = np.argsort(znumbers)
-            znumbers = znumbers[idxs]
             mask = (znumbers != padding)
-            # sort atomic properties along second axis
-            for property_ in numpy_conformers:
-                if property_ in atomic_properties:
-                    numpy_conformers[property_][j] = numpy_conformers[property_][j, idxs]
             if self.grouping == "by_formula":
                 group_key = species_to_formula(_numbers_to_symbols(znumbers[mask]))[0]
             elif self.grouping == "by_num_atoms":
