@@ -5,6 +5,30 @@ from copy import deepcopy
 import torch
 
 
+def _parse_activation(module: tp.Union[str, torch.nn.Module]) -> torch.nn.Module:
+    if module == "gelu":
+        return torch.nn.GELU()
+    if module == "celu":
+        return torch.nn.CELU(0.1)
+    assert not isinstance(module, str)  # mypy
+    return module
+
+
+def _parse_atomics(module: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]]) -> tp.Callable[[str, int], torch.nn.Module]:
+    if module == "ani1x":
+        return like_1x
+    elif module == "ani2x":
+        return like_2x
+    elif module == "anidr":
+        return like_dr
+    elif module == "aniala":
+        return like_ala
+    elif module == "ani1ccx":
+        return like_1ccx
+    assert not isinstance(module, str)  # mypy
+    return module
+
+
 def standard(
     dims: tp.Sequence[int],
     activation: tp.Optional[torch.nn.Module] = None,

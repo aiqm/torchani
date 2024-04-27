@@ -24,6 +24,7 @@ These pieces are assembled into a Model, which is a subclass of BuiltinModel
 
 Some of the Featurizers support custom made cuda operators that accelerate them
 """
+import functools
 from copy import deepcopy
 from pathlib import Path
 import warnings
@@ -652,11 +653,16 @@ def FlexibleANI(
     radial_shifts: int = 16,
     angular_shifts: int = 8,
     angle_sections: int = 4,
+    angular_precision: float = 12.5,
+    radial_precision: float = 19.7,
+    angular_zeta: float = 14.1,
     cutoff_fn: tp.Union[Cutoff, str] = "smooth2",
     neighborlist: str = "full_pairwise",
     dispersion: bool = True,
     repulsion: bool = True,
-    atomic_maker: tp.Callable[[str, int], torch.nn.Module] = atomics.like_dr,
+    atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]] = "anidr",
+    activation: tp.Union[str, torch.nn.Module] = "gelu",
+    bias: bool = False,
     use_cuda_ops: bool = False,
     periodic_table_index: bool = True,
 ) -> BuiltinModel:
@@ -668,20 +674,25 @@ def FlexibleANI(
         radial_terms=StandardRadial.cover_linearly(
             start=0.9,
             cutoff=radial_cutoff,
-            eta=19.7,
+            eta=radial_precision,
             num_shifts=radial_shifts,
         ),
         angular_terms=StandardAngular.cover_linearly(
             start=0.9,
-            eta=12.5,
-            zeta=14.1,
+            eta=angular_precision,
+            zeta=angular_zeta,
             num_shifts=angular_shifts,
             num_angle_sections=angle_sections,
             cutoff=angular_cutoff,
         ),
         extra=_parse_cuda_ops(use_cuda_ops),
     )
-    asm.set_atomic_maker(atomic_maker)
+    _atomic_maker = functools.partial(
+        atomics._parse_atomics(atomic_maker),
+        activation=atomics._parse_activation(activation),
+        bias=bias,
+    )
+    asm.set_atomic_maker(_atomic_maker)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies(lot)
     if repulsion:
