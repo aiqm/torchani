@@ -92,8 +92,8 @@ validation = torch.utils.data.DataLoader(
 model = FlexibleANI(
     lot="wb97x-631gd",
     symbols=("H", "C", "N", "O"),
-    dispersion=False,
-    repulsion=True,
+    dispersion_2body_d3=False,
+    repulsion_xtb=True,
     use_cuda_ops=False,  # Train without cuAEV
 )
 

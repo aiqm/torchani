@@ -658,8 +658,8 @@ def FlexibleANI(
     angular_zeta: float = 14.1,
     cutoff_fn: tp.Union[Cutoff, str] = "smooth2",
     neighborlist: str = "full_pairwise",
-    dispersion: bool = True,
-    repulsion: bool = True,
+    dispersion_2body_d3: bool = True,
+    repulsion_xtb: bool = True,
     atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]] = "anidr",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
@@ -695,15 +695,15 @@ def FlexibleANI(
     asm.set_atomic_maker(_atomic_maker)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies(lot)
-    if repulsion:
+    if repulsion_xtb:
         asm.add_pairwise_potential(
             RepulsionXTB,
             cutoff=radial_cutoff,
         )
-    if dispersion:
+    if dispersion_2body_d3:
         asm.add_pairwise_potential(
             TwoBodyDispersionD3,
-            cutoff=9.0,
+            cutoff=8.0,
             extra={"functional": lot.split("-")[0]},
         )
     return asm.assemble()
