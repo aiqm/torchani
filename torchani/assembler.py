@@ -644,28 +644,31 @@ def ANIdr(
     return model if model_index is None else model[model_index]
 
 
-def FlexibleANI(
+def FlexANI(
     lot: str,  # functional-basis
     symbols: tp.Sequence[str],
-    ensemble_size: int = 1,
-    radial_cutoff: float = 5.2,
-    angular_cutoff: float = 3.5,
-    radial_shifts: int = 16,
-    angular_shifts: int = 8,
-    angle_sections: int = 4,
-    angular_precision: float = 12.5,
-    radial_precision: float = 19.7,
-    angular_zeta: float = 14.1,
-    cutoff_fn: tp.Union[Cutoff, str] = "smooth2",
-    neighborlist: str = "full_pairwise",
-    dispersion_2body_d3: bool = True,
-    repulsion_xtb: bool = True,
-    atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]] = "anidr",
-    activation: tp.Union[str, torch.nn.Module] = "gelu",
-    bias: bool = False,
-    use_cuda_ops: bool = False,
-    periodic_table_index: bool = True,
+    ensemble_size: int,
+    radial_cutoff: float,
+    angular_cutoff: float,
+    radial_shifts: int,
+    angular_shifts: int,
+    angle_sections: int,
+    angular_precision: float,
+    radial_precision: float,
+    angular_zeta: float,
+    cutoff_fn: tp.Union[Cutoff, str],
+    neighborlist: str,
+    dispersion_2body_d3: bool,
+    repulsion_xtb: bool,
+    atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]],
+    activation: tp.Union[str, torch.nn.Module],
+    bias: bool,
+    use_cuda_ops: bool,
+    periodic_table_index: bool,
 ) -> BuiltinModel:
+    r"""
+    Flexible builder to create ANI-style models
+    """
     asm = Assembler(ensemble_size=ensemble_size, periodic_table_index=periodic_table_index)
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
@@ -707,6 +710,104 @@ def FlexibleANI(
             extra={"functional": lot.split("-")[0]},
         )
     return asm.assemble()
+
+
+def FlexANI1(
+    lot: str,  # functional-basis
+    symbols: tp.Sequence[str],
+    ensemble_size: int = 1,
+    radial_cutoff: float = 5.2,
+    angular_cutoff: float = 3.5,
+    radial_shifts: int = 16,
+    angular_shifts: int = 4,
+    angle_sections: int = 8,
+    radial_precision: float = 16.0,
+    angular_precision: float = 8.0,
+    angular_zeta: float = 32.0,
+    cutoff_fn: tp.Union[Cutoff, str] = "smooth2",
+    neighborlist: str = "full_pairwise",
+    dispersion_2body_d3: bool = False,
+    repulsion_xtb: bool = True,
+    atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]] = "ani2x",
+    activation: tp.Union[str, torch.nn.Module] = "gelu",
+    bias: bool = False,
+    use_cuda_ops: bool = False,
+    periodic_table_index: bool = True,
+) -> BuiltinModel:
+    r"""
+    Builder that uses defaults similar to ANI1x
+    """
+    return FlexANI(
+        lot=lot,
+        symbols=symbols,
+        ensemble_size=ensemble_size,
+        radial_cutoff=radial_cutoff,
+        angular_cutoff=angular_cutoff,
+        radial_shifts=radial_shifts,
+        angular_shifts=angular_shifts,
+        angle_sections=angle_sections,
+        radial_precision=radial_precision,
+        angular_precision=angular_precision,
+        angular_zeta=angular_zeta,
+        cutoff_fn=cutoff_fn,
+        neighborlist=neighborlist,
+        dispersion_2body_d3=dispersion_2body_d3,
+        repulsion_xtb=repulsion_xtb,
+        atomic_maker=atomic_maker,
+        activation=activation,
+        bias=bias,
+        use_cuda_ops=use_cuda_ops,
+        periodic_table_index=periodic_table_index,
+    )
+
+
+def FlexANI2(
+    lot: str,  # functional-basis
+    symbols: tp.Sequence[str],
+    ensemble_size: int = 1,
+    radial_cutoff: float = 5.2,
+    angular_cutoff: float = 3.5,
+    radial_shifts: int = 16,
+    angular_shifts: int = 8,
+    angle_sections: int = 4,
+    angular_precision: float = 12.5,
+    radial_precision: float = 19.7,
+    angular_zeta: float = 14.1,
+    cutoff_fn: tp.Union[Cutoff, str] = "smooth2",
+    neighborlist: str = "full_pairwise",
+    dispersion_2body_d3: bool = False,
+    repulsion_xtb: bool = True,
+    atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]] = "ani2x",
+    activation: tp.Union[str, torch.nn.Module] = "gelu",
+    bias: bool = False,
+    use_cuda_ops: bool = False,
+    periodic_table_index: bool = True,
+) -> BuiltinModel:
+    r"""
+    Builder that uses defaults similar to ANI2x
+    """
+    return FlexANI(
+        lot=lot,
+        symbols=symbols,
+        ensemble_size=ensemble_size,
+        radial_cutoff=radial_cutoff,
+        angular_cutoff=angular_cutoff,
+        radial_shifts=radial_shifts,
+        angular_shifts=angular_shifts,
+        angle_sections=angle_sections,
+        radial_precision=radial_precision,
+        angular_precision=angular_precision,
+        angular_zeta=angular_zeta,
+        cutoff_fn=cutoff_fn,
+        neighborlist=neighborlist,
+        dispersion_2body_d3=dispersion_2body_d3,
+        repulsion_xtb=repulsion_xtb,
+        atomic_maker=atomic_maker,
+        activation=activation,
+        bias=bias,
+        use_cuda_ops=use_cuda_ops,
+        periodic_table_index=periodic_table_index,
+    )
 
 
 def fetch_state_dict(

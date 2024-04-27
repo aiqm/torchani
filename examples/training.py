@@ -17,7 +17,7 @@ from torchani.utils import tqdm
 from torchani.models import BuiltinModel
 from torchani.datasets import ANIDataset, ANIBatchedDataset
 from torchani.units import hartree2kcalpermol
-from torchani.assembler import FlexibleANI
+from torchani.assembler import FlexANI2
 
 # Explanation of how to train an ANI model
 # Device and dataset to run the training
@@ -89,10 +89,9 @@ validation = torch.utils.data.DataLoader(
 # Lets generate a non-pretrained model that we will train afterwards
 # Optionally we could initialize the weights with a custom initialization,
 # But for simplicity we use PyTorch default initialization
-model = FlexibleANI(
+model = FlexANI2(
     lot="wb97x-631gd",
     symbols=("H", "C", "N", "O"),
-    dispersion_2body_d3=False,
     repulsion_xtb=True,
     use_cuda_ops=False,  # Train without cuAEV
 )
