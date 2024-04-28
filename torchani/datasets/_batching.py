@@ -3,14 +3,12 @@ import typing as tp
 import warnings
 import math
 import json
-import pickle
 import datetime
 from pathlib import Path
 from collections import OrderedDict
 
 import torch
 from torch import Tensor
-import numpy as np
 
 from torchani.utils import pad_atomic_properties, cumsum_from_zero, PADDING, tqdm
 from torchani.datasets.datasets import ANIDataset, ANIBatchedDataset
@@ -27,8 +25,7 @@ def create_batched_dataset(
     dest_path: tp.Optional[StrPath] = None,
     shuffle: bool = True,
     shuffle_seed: tp.Optional[int] = None,
-    file_format: str = "hdf5",
-    include_properties: tp.Optional[tp.Sequence[str]] = None,
+    properties: tp.Iterable[str] = (),
     batch_size: int = 2560,
     max_batches_per_packet: int = 350,
     padding: tp.Optional[tp.Dict[str, float]] = None,
@@ -38,11 +35,6 @@ def create_batched_dataset(
     direct_cache: bool = False,
     verbose: bool = True,
 ) -> tp.Dict[str, ANIBatchedDataset]:
-    if file_format != "hdf5" and include_properties is None:
-        include_properties = ("species", "coordinates", "energies")
-        warnings.warn(
-            "Only species, coordinates and energies are included by default if format is not hdf5"
-        )
 
     if folds is not None and splits is not None:
         raise ValueError('Only one of ["folds", "splits"] should be specified')
@@ -52,7 +44,7 @@ def create_batched_dataset(
 
     # NOTE: All the tensor manipulation in this function is handled in CPU
     if dest_path is None:
-        dest_path = Path.cwd() / f"batched_dataset_{file_format}"
+        dest_path = Path.cwd() / "batched_dataset_hdf5"
     else:
         dest_path = Path(dest_path).resolve()
 
@@ -60,6 +52,14 @@ def create_batched_dataset(
         dataset = locations
     else:
         dataset = ANIDataset(locations)
+
+    if isinstance(properties, str):
+        properties = (properties,)
+    if not properties:
+        properties = tuple(dataset.tensor_properties)
+    properties = tuple(sorted(properties))
+    padding = PADDING if padding is None else padding
+    assert padding is not None  # mypy
 
     # (1) Get all indices and shuffle them if needed
     #
@@ -109,8 +109,7 @@ def create_batched_dataset(
         split_paths,
         conformer_splits,
         inplace_transform,
-        file_format,
-        include_properties,
+        properties,
         dataset,
         padding,
         batch_size,
@@ -120,20 +119,22 @@ def create_batched_dataset(
     )
     # log creation data
     if not direct_cache:
+        try:
+            symbols = dataset.symbols
+        except ValueError:
+            symbols = ("?",)  # legacy grouping, symbols can't be determined
         creation_log = {
             "datetime_created": str(datetime.datetime.now()),
-            "source_store_locations": dataset.store_locations,
             "splits": splits,
             "folds": folds,
-            "padding": PADDING if padding is None else padding,
+            "padding": padding,
             "shuffle": shuffle,
             "shuffle_seed": shuffle_seed,
-            "include_properties": sorted(include_properties)
-            if include_properties is not None
-            else "all",
+            "properties": properties,
             "batch_size": batch_size,
-            "total_num_conformers": dataset.num_conformers,
-            "total_conformer_groups": dataset.num_conformer_groups,
+            "store_locations": dataset.store_locations,
+            "symbols": symbols,
+            "num_conformers": dataset.num_conformers,
         }
         with open(dest_path.joinpath("creation_log.json"), "w") as logfile:
             json.dump(creation_log, logfile, indent=1)
@@ -186,7 +187,7 @@ def _divide_into_folds(
         # the first shuffle is necessary so that validation splits are shuffled
         validation_split = conformer_blocks[f]
 
-        training_split = torch.cat(conformer_blocks[:f] + conformer_blocks[f + 1 :])
+        training_split = torch.cat(conformer_blocks[:f] + conformer_blocks[f + 1:])
         # afterwards all training folds are reshuffled to get different
         # batching for different models in the ensemble / cross validation
         # process (it is technically redundant to reshuffle the first one but
@@ -257,10 +258,9 @@ def _save_splits_into_batches(
     split_paths: tp.OrderedDict[str, Path],
     conformer_splits: tp.List[Tensor],
     inplace_transform: tp.Optional[Transform],
-    file_format: str,
-    include_properties: tp.Optional[tp.Sequence[str]],
+    properties: tp.Sequence[str],
     dataset: ANIDataset,
-    padding: tp.Optional[tp.Dict[str, float]],
+    padding: tp.Dict[str, float],
     batch_size: int,
     max_batches_per_packet: int,
     direct_cache: bool,
@@ -306,7 +306,7 @@ def _save_splits_into_batches(
             all_batch_indices = torch.split(indices_of_split, batch_size)
 
             all_batch_indices_packets = [
-                all_batch_indices[j : j + max_batches_per_packet]
+                all_batch_indices[j: j + max_batches_per_packet]
                 for j in range(0, len(all_batch_indices), max_batches_per_packet)
             ]
             num_batch_indices_packets = len(all_batch_indices_packets)
@@ -352,7 +352,7 @@ def _save_splits_into_batches(
                 else:
                     desc = (
                         f"Saving batch packet {j + 1} of {num_batch_indices_packets} "
-                        f"of split {split_path.name} in format {file_format}"
+                        f"of split {split_path.name}"
                     )
                 for step, group_slice in tqdm(
                     enumerate(groups_slices),
@@ -369,7 +369,7 @@ def _save_splits_into_batches(
                     conformers = ro_dataset.get_conformers(
                         key_list[group_idx.item()],
                         selected_indices,
-                        properties=include_properties,
+                        properties=properties,
                     )
                     all_conformers.append(conformers)
                 batches_cat = pad_atomic_properties(all_conformers, padding)
@@ -393,7 +393,6 @@ def _save_splits_into_batches(
                             split_path,
                             overall_batch_idx,
                             batch,
-                            file_format,
                             len(all_batch_indices),
                         )
                     overall_batch_idx += 1
@@ -412,22 +411,12 @@ def _save_splits_into_batches(
     return batched_datasets
 
 
-# Saves the batch to disk; we use pickle, numpy or hdf5 since saving in pytorch
-# format is extremely slow
 def _save_batch(
-    path: Path, idx: int, batch: Conformers, file_format: str, total_batches: int
+    path: Path, idx: int, batch: Conformers, total_batches: int
 ) -> None:
     batch = {k: v.numpy() for k, v in batch.items()}
     # The batch names are e.g. 00034_batch.h5
     batch_path = path / f"{str(idx).zfill(len(str(total_batches)))}_batch"
-    if file_format == "pickle":
-        with open(batch_path.with_suffix(".pkl"), "wb") as batch_file:
-            pickle.dump(batch, batch_file)
-    elif file_format == "numpy":
-        np.savez(batch_path, **batch)
-    elif file_format == "hdf5":
-        with h5py.File(batch_path.with_suffix(".h5"), "w-") as f:
-            for k, v in batch.items():
-                f.create_dataset(k, data=v)
-    else:
-        raise ValueError("Unknown file format")
+    with h5py.File(batch_path.with_suffix(".h5"), "w-") as f:
+        for k, v in batch.items():
+            f.create_dataset(k, data=v)

@@ -47,7 +47,7 @@ from torchani.potentials import (
 )
 from torchani.aev import AEVComputer, StandardAngular, StandardRadial
 from torchani.nn import ANIModel, Ensemble
-from torchani.utils import GSAES, ATOMIC_NUMBERS
+from torchani.utils import GSAES, sort_by_element
 from torchani.potentials import EnergyAdder
 
 ModelType = tp.Type[BuiltinModel]
@@ -80,10 +80,6 @@ def _parse_cuda_ops(
         raise ValueError(
             "cuda extension and cuaev interface cant be specified if cuda_ops is specified"
         )
-
-
-def sort_by_element(it: tp.Iterable[str]) -> tp.Tuple[str, ...]:
-    return tuple(sorted(it, key=lambda x: ATOMIC_NUMBERS[x]))
 
 
 # "global" cutoff means the global cutoff_fn will be used

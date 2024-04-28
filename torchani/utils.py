@@ -634,6 +634,15 @@ PERIODIC_TABLE = ['Dummy'] + """
 ATOMIC_NUMBERS = {symbol: z for z, symbol in enumerate(PERIODIC_TABLE)}
 
 
+def sort_by_element(it: tp.Iterable[str]) -> tp.Tuple[str, ...]:
+    r"""
+    Sort an iterable of chemical symbols by element
+    """
+    if isinstance(it, str):
+        it = (it,)
+    return tuple(sorted(it, key=lambda x: ATOMIC_NUMBERS[x]))
+
+
 def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
     r"""
     Merge multiple single-model state dicts into a state dict for an ensemble of models
