@@ -44,6 +44,7 @@ _ATOMIC_KEYS = (
     "atomic_numbers",
     "coordinates",
     "forces",
+    "coefficients",  # atomic density coefficients
     "atomic_charges",
     "atomic_dipoles",
     "atomic_polarizabilities",
