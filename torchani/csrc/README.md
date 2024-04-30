@@ -122,7 +122,7 @@ pip install -e . && pip install -v -e . --global-option="--ext-all-sms"
 ## Test
 ```bash
 cd torchani
-pip install pytest pynvml pkbar ase parameterized h5py expecttest
+pip install pytest pynvml ase parameterized h5py expecttest
 ./download.sh
 # cuaev
 python tests/test_cuaev.py
@@ -170,7 +170,7 @@ RUN                Total AEV    Forward      Backward     Force        Optimizer
 
 benchmark
 ```
-pip install pynvml pkbar
+pip install pynvml
 python tools/training-aev-benchmark.py download/dataset/ani-1x/sample.h5
 python tools/aev-benchmark-size.py -p
 ```

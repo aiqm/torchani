@@ -216,7 +216,7 @@ class BuiltinModel(torch.nn.Module):
             atomic_energies = atomic_energies.unsqueeze(0)
 
         if shift_energy:
-            atomic_energies += self.energy_shifter._atomic_saes(species_coordinates[0])
+            atomic_energies += self.energy_shifter.atomic_energies(species_coordinates[0])
 
         if average:
             atomic_energies = atomic_energies.mean(dim=0)
@@ -355,13 +355,13 @@ class BuiltinModel(torch.nn.Module):
         if atomic_energies.dim() == 2:
             atomic_energies = atomic_energies.unsqueeze(0)
 
+        if shift_energy:
+            atomic_energies += self.energy_shifter.atomic_energies(species_coordinates[0])
+
         stdev_atomic_energies = atomic_energies.std(0, unbiased=unbiased)
 
         if average:
             atomic_energies = atomic_energies.mean(0)
-
-        if shift_energy:
-            atomic_energies += self.energy_shifter._atomic_saes(species_coordinates[0])
 
         return AtomicStdev(species_coordinates[0], atomic_energies, stdev_atomic_energies)
 
@@ -437,15 +437,8 @@ class PairPotentialsModel(BuiltinModel):
         # in order of decreasing cutoffs. this way the potential with the LARGEST
         # cutoff is computed first, then sequentially things that need smaller
         # cutoffs are computed.
-        # e.g. if the aev-potential has cutoff 10, and we have SRB with cutoff
-        # 5 and repulsion with cutoff 3, we want to calculate:
-        #
-        # coords -> screen r<10 -> aev-energy -> screen r<5 -> SRB -> screen r<3 -> rep
         potentials = sorted(potentials, key=lambda x: x.cutoff, reverse=True)
         self.potentials = torch.nn.ModuleList(potentials)
-
-        # Override the neighborlist cutoff with the largest cutoff in existence
-        self.aev_computer.neighborlist.cutoff = self.potentials[0].cutoff  # type: ignore
 
     def forward(
         self,
@@ -454,13 +447,14 @@ class PairPotentialsModel(BuiltinModel):
         pbc: tp.Optional[Tensor] = None
     ) -> SpeciesEnergies:
         element_idxs, coordinates = self._maybe_convert_species(species_coordinates)
-        neighbor_data = self.aev_computer.neighborlist(element_idxs, coordinates, cell, pbc)
+        previous_cutoff = self.potentials[0].cutoff
+        neighbor_data = self.aev_computer.neighborlist(element_idxs, coordinates, previous_cutoff, cell, pbc)
         energies = torch.zeros(element_idxs.shape[0], device=element_idxs.device, dtype=coordinates.dtype)
-        previous_cutoff = self.aev_computer.neighborlist.cutoff
         for pot in self.potentials:
-            if pot.cutoff < previous_cutoff:
-                neighbor_data = rescreen(pot.cutoff, neighbor_data)
-                previous_cutoff = pot.cutoff
+            cutoff = pot.cutoff
+            if cutoff < previous_cutoff:
+                neighbor_data = rescreen(cutoff, neighbor_data)
+                previous_cutoff = cutoff
             energies += pot(element_idxs, neighbor_data)
         energies += self.energy_shifter(element_idxs)
         return SpeciesEnergies(element_idxs, energies)
@@ -476,8 +470,8 @@ class PairPotentialsModel(BuiltinModel):
         include_non_aev_potentials: bool = True,
     ) -> SpeciesEnergies:
         element_idxs, coordinates = self._maybe_convert_species(species_coordinates)
-        neighbor_data = self.aev_computer.neighborlist(element_idxs, coordinates, cell, pbc)
-        previous_cutoff = self.aev_computer.neighborlist.cutoff
+        previous_cutoff = self.potentials[0].cutoff
+        neighbor_data = self.aev_computer.neighborlist(element_idxs, coordinates, previous_cutoff, cell, pbc)
 
         # Here we add an extra axis to account for different models,
         # some potentials output atomic energies with shape (M, N, A), where
@@ -490,21 +484,24 @@ class PairPotentialsModel(BuiltinModel):
         if torch.jit.is_scripting():
             assert include_non_aev_potentials, "Scripted models must include non aev potentials in atomic energies"
             for pot in self.potentials:
-                if pot.cutoff < previous_cutoff:
-                    neighbor_data = rescreen(pot.cutoff, neighbor_data)
-                    previous_cutoff = pot.cutoff
+                cutoff = pot.cutoff
+                if cutoff < previous_cutoff:
+                    neighbor_data = rescreen(cutoff, neighbor_data)
+                    previous_cutoff = cutoff
                 atomic_energies += pot.atomic_energies(element_idxs, neighbor_data)
         else:
             for pot in self.potentials:
                 if not isinstance(pot, AEVPotential) and not include_non_aev_potentials:
                     continue
+                cutoff = pot.cutoff
                 if pot.cutoff < previous_cutoff:
-                    neighbor_data = rescreen(pot.cutoff, neighbor_data)
-                    previous_cutoff = pot.cutoff
+                    cutoff
+                    neighbor_data = rescreen(cutoff, neighbor_data)
+                    previous_cutoff = cutoff
                 atomic_energies += pot.atomic_energies(element_idxs, neighbor_data)
 
         if shift_energy:
-            atomic_energies += self.energy_shifter._atomic_saes(element_idxs).unsqueeze(0)
+            atomic_energies += self.energy_shifter.atomic_energies(element_idxs)
 
         if average:
             atomic_energies = atomic_energies.mean(dim=0)

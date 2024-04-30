@@ -2,10 +2,9 @@ import typing as tp
 
 import torch
 from torch import Tensor
-from torch.jit import Final
 
 from torchani.utils import ATOMIC_NUMBERS, PERIODIC_TABLE
-from torchani.cutoffs import _parse_cutoff_fn, Cutoff
+from torchani.cutoffs import _parse_cutoff_fn, CutoffArg
 from torchani.neighbors import NeighborData
 
 
@@ -16,7 +15,7 @@ class Potential(torch.nn.Module):
     Subclasses must override 'forward' and 'atomic_energies'
     """
 
-    cutoff: Final[float]
+    cutoff: float
     atomic_numbers: Tensor
 
     def __init__(self,
@@ -78,7 +77,7 @@ class PairPotential(Potential):
         *args,
         cutoff: float = 5.2,
         symbols: tp.Sequence[str] = ('H', 'C', 'N', 'O'),
-        cutoff_fn: tp.Union[str, Cutoff] = 'dummy',
+        cutoff_fn: CutoffArg = 'dummy',
         **kwargs
     ):
         super().__init__(cutoff=cutoff, symbols=symbols)

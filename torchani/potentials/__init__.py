@@ -16,6 +16,7 @@ from torchani.potentials.elemental import (
     EnergyAdder,
     StandaloneEnergyAdder,
 )
+from torchani.potentials.wrapper import PotentialWrapper
 
 
 __all__ = [
@@ -25,6 +26,7 @@ __all__ = [
     "StandaloneEnergyAdder",
     "StandaloneRepulsionXTB",
     "StandaloneTwoBodyDispersionD3",
+    "PotentialWrapper",
     "AEVPotential",
     "Potential",
     "PairPotential",

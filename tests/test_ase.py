@@ -72,7 +72,7 @@ class TestASE(TestCase):
         model_cell = ANI1x(model_index=0, neighborlist="cell_list")
         model_cell = model_cell.to(dtype=torch.double, device=self.device)
         model_dyn = ANI1x(model_index=0, neighborlist="cell_list")
-        model_dyn.aev_computer.neighborlist = CellList(model_dyn.aev_computer.radial_terms.cutoff, verlet=True)
+        model_dyn.aev_computer.neighborlist = CellList(verlet=True)
         model_dyn = model_cell.to(dtype=torch.double, device=self.device)
 
         f_cell = self._testForcesPBC(model_cell, only_get_forces=True)
@@ -92,13 +92,13 @@ class TestASE(TestCase):
     @unittest.skipIf(True, "Verlet Cell list is not implemented correctly")
     def testNumericalForcesCellListVerlet(self):
         model = ANI1x(model_index=0, neighborlist="cell_list")
-        model.aev_computer.neighborlist = CellList(model.aev_computer.radial_terms.cutoff, verlet=True)
+        model.aev_computer.neighborlist = CellList(verlet=True)
         model = model.to(dtype=torch.double, device=self.device)
         self._testForcesPBC(model, steps=100)
 
     def testNumericalForcesCellListConstantV(self):
         model = ANI1x(model_index=0, neighborlist="cell_list")
-        model.aev_computer.neighborlist = CellList(model.aev_computer.radial_terms.cutoff, constant_volume=True)
+        model.aev_computer.neighborlist = CellList(constant_volume=True)
         model = model.to(dtype=torch.double, device=self.device)
         self._testForcesPBC(model)
 

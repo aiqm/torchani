@@ -36,18 +36,15 @@ class TestCellList(TestCase):
         # are on top of that
         self.pbc = torch.tensor([True, True, True], dtype=torch.bool)
         self.cell = torch.diag(torch.tensor([cell_size, cell_size, cell_size])).float()
-        self.clist = CellList(cut)
+        self.clist = CellList()
 
     def testInitDefault(self):
-        clist = CellList(self.cut, buckets_per_cutoff=1)
-        self.assertTrue(clist.buckets_per_cutoff == 1)
-        self.assertTrue(clist.cutoff == self.cut)
-        self.assertTrue(clist.num_neighbors == 13)
-        self.assertEqual(clist.bucket_length_lower_bound, torch.full(size=(3,), fill_value=self.cut + 0.00001, device=self.device))
+        self.assertTrue(self.clist.buckets_per_cutoff == 1)
+        self.assertTrue(self.clist.num_neighbors == 13)
 
     def testSetupCell(self):
         clist = self.clist
-        clist._setup_variables(self.cell)
+        clist._setup_variables(self.cell, self.cut)
         # this creates a unit cell with 27 buckets
         # and a grid of 3 x 3 x 3 buckets (3 in each direction, Gx = Gy = Gz = 3)
         self.assertTrue(clist.total_buckets == 27)
@@ -60,7 +57,7 @@ class TestCellList(TestCase):
 
     def testVectorIndexToFlat(self):
         clist = self.clist
-        clist._setup_variables(self.cell)
+        clist._setup_variables(self.cell, self.cut)
         # check some specific values of the tensor, it should be in row major
         # order so for instance the values in the z axis are 0 1 2 in the y
         # axis 0 3 6 and in the x axis 0 9 18
@@ -74,14 +71,14 @@ class TestCellList(TestCase):
 
     def testFractionalize(self):
         clist = self.clist
-        clist._setup_variables(self.cell)
+        clist._setup_variables(self.cell, self.cut)
         # test coordinate fractionalization
         frac = clist._fractionalize_coordinates(self.coordinates)
         self.assertTrue((frac < 1.0).all())
 
     def testVectorBucketIndex(self):
         clist = self.clist
-        clist._setup_variables(self.cell)
+        clist._setup_variables(self.cell, self.cut)
 
         frac = clist._fractionalize_coordinates(self.coordinates)
         main_vector_bucket_index = clist._fractional_to_vector_bucket_indices(
@@ -93,7 +90,7 @@ class TestCellList(TestCase):
 
     def testFlatBucketIndex(self):
         clist = self.clist
-        clist._setup_variables(self.cell)
+        clist._setup_variables(self.cell, self.cut)
         flat = clist._to_flat_index(vector_bucket_index_compare)
         # all flat bucket indices are present
         flat_compare = torch.repeat_interleave(
@@ -102,7 +99,7 @@ class TestCellList(TestCase):
 
     def testFlatBucketIndexAlternative(self):
         clist = self.clist
-        clist._setup_variables(self.cell)
+        clist._setup_variables(self.cell, self.cut)
         atoms = vector_bucket_index_compare.shape[1]
         flat = clist.vector_idx_to_flat[(vector_bucket_index_compare
             + torch.ones(1, dtype=torch.long)).reshape(-1,
@@ -115,7 +112,7 @@ class TestCellList(TestCase):
     def testCounts(self):
         num_flat = 27
         clist = self.clist
-        clist._setup_variables(self.cell)
+        clist._setup_variables(self.cell, self.cut)
         flat = clist._to_flat_index(vector_bucket_index_compare)
         self.assertTrue(clist.total_buckets == num_flat)
         count_in_flat, cumcount_in_flat, max_ = clist._get_atoms_in_flat_bucket_counts(
@@ -131,7 +128,7 @@ class TestCellList(TestCase):
 
     def testWithinBetween(self):
         clist = self.clist
-        clist._setup_variables(self.cell)
+        clist._setup_variables(self.cell, self.cut)
         frac = clist._fractionalize_coordinates(self.coordinates)
         _, f_a = clist._get_bucket_indices(frac)
         A_f, Ac_f, A_star = clist._get_atoms_in_flat_bucket_counts(f_a)

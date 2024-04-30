@@ -188,6 +188,7 @@ setup(
         'lark-parser',
         'requests',
         'h5py',
+        'pyyaml',
         'tqdm',
     ],
     entry_points={

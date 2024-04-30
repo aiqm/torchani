@@ -112,8 +112,11 @@ class AEVComputer(torch.nn.Module):
         cutoff_fn = _parse_cutoff_fn(cutoff_fn)
         self.angular_terms = _parse_angular_terms(angular_terms, cutoff_fn, EtaA, Zeta, ShfA, ShfZ, Rca)
         self.radial_terms = _parse_radial_terms(radial_terms, cutoff_fn, EtaR, ShfR, Rcr)
-        self.neighborlist = _parse_neighborlist(neighborlist, self.radial_terms.cutoff)
-        self._validate_cutoffs_init()
+        self.neighborlist = _parse_neighborlist(neighborlist)
+        if self.angular_terms.cutoff > self.radial_terms.cutoff:
+            raise ValueError(
+                f"Angular cutoff {self.angular_terms.cutoff} should be smaller than radial cutoff {self.radial_terms.cutoff}"
+            )
         if isinstance(cutoff_fn, CutoffCosine):
             self.cutoff_fn_type = 'cosine'
         elif isinstance(cutoff_fn, CutoffSmooth):
@@ -147,24 +150,6 @@ class AEVComputer(torch.nn.Module):
         # We defer true cuaev initialization to forward so that we ensure that
         # all tensors are in GPU once it is initialized.
         self.cuaev_is_initialized = False
-
-    def _validate_cutoffs_init(self):
-        # validate cutoffs and emit warnings for strange configurations
-        if self.neighborlist.cutoff > self.radial_terms.cutoff:
-            raise ValueError(f"""The neighborlist cutoff {self.neighborlist.cutoff}
-                    is larger than the radial cutoff,
-                    {self.radial_terms.cutoff}.  please fix this since
-                    AEVComputer can't possibly reuse the neighborlist for other
-                    interactions, so this configuration would not use the extra
-                    atom pairs""")
-        elif self.neighborlist.cutoff < self.radial_terms.cutoff:
-            raise ValueError(f"""The neighborlist cutoff,
-                             {self.neighborlist.cutoff} should be at least as
-                             large as the radial cutoff, {self.radial_terms.cutoff}""")
-        if self.angular_terms.cutoff > self.radial_terms.cutoff:
-            raise ValueError(f"""Current implementation assumes angular cutoff
-                             {self.angular_terms.cutoff} < radial cutoff
-                             {self.radial_terms.cutoff}""")
 
     @jit_unused_if_no_cuaev()
     def _register_cuaev_computer(self):
@@ -265,7 +250,6 @@ class AEVComputer(torch.nn.Module):
         assert (species.shape == coordinates.shape[:2]) and (coordinates.shape[2] == 3)
 
         # validate cutoffs
-        assert self.neighborlist.cutoff >= self.radial_terms.cutoff
         assert self.angular_terms.cutoff < self.radial_terms.cutoff
 
         if self.use_cuda_extension:
@@ -273,7 +257,7 @@ class AEVComputer(torch.nn.Module):
                 self._init_cuaev_computer()
                 self.cuaev_is_initialized = True
             if self.use_cuaev_interface:
-                atom_index12, distances, diff_vector = self.neighborlist(species, coordinates, cell, pbc)
+                atom_index12, distances, diff_vector = self.neighborlist(species, coordinates, self.radial_terms.cutoff, cell, pbc)
                 aev = self._compute_cuaev_with_half_nbrlist(species, coordinates, atom_index12, diff_vector, distances)
             else:
                 assert pbc is None or (not pbc.any()), "cuaev currently does not support PBC"
@@ -283,7 +267,7 @@ class AEVComputer(torch.nn.Module):
         # WARNING: The coordinates that are input into the neighborlist are **not** assumed to be
         # mapped into the central cell for pbc calculations,
         # and **in general are not**
-        neighbor_data = self.neighborlist(species, coordinates, cell, pbc)
+        neighbor_data = self.neighborlist(species, coordinates, self.radial_terms.cutoff, cell, pbc)
         aev = self._compute_aev(
             element_idxs=species,
             neighbor_idxs=neighbor_data.indices,

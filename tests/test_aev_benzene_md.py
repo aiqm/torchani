@@ -30,7 +30,7 @@ class TestAEVBenzeneMD(_TestAEVBase):
     def testBenzeneMDCellList(self):
         for i in [2, 8]:
             datafile = os.path.join(path, 'test_data/benzene-md/{}.dat'.format(i))
-            self.aev_computer.neighborlist = CellList(cutoff=self.aev_computer.radial_terms.cutoff)
+            self.aev_computer.neighborlist = CellList()
             with open(datafile, 'rb') as f:
                 coordinates, species, expected_radial, expected_angular, _, _, cell, pbc \
                     = pickle.load(f)

@@ -22,14 +22,14 @@ dependencies:
   # Utils
   - tqdm  # progress bar
 
-  # Ase interface
+  # Ase interface (optional)
   - ase
 
   # Neurochem files (legacy)
   - lark-parser
   - requests
 
-  # Linters / checkers / tests / CI
+  # Linters / checkers / tests-runners / CI
   - black
   - flake8
   - mypy
@@ -38,15 +38,17 @@ dependencies:
   - parameterized
   - expecttest
 
-  # Docs and tools
-  - sphinx
-  - sphinx_rtd_theme
-  - sphinx-gallery
-  - matplotlib
-  - pillow
-  - pynvml
-
-  # Extra data backends
+  # Extra data backends for tests
   - pandas  # csv support
   - pyarrow  # Parquet backend
   - zarr  # Zarr backend
+
+  # Tools
+  - matplotlib
+  - pynvml
+
+  # Docs
+  - sphinx
+  - sphinx_rtd_theme
+  - sphinx-gallery
+  - tensorboard

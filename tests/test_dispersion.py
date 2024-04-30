@@ -42,14 +42,15 @@ class TestDispersion(TestCase):
         self.assertTrue(disp._s6 == torch.tensor(1.0))
 
     def testMethaneCoordinationNums(self):
+        disp = TwoBodyDispersionD3.from_functional().to(self.device)
         neighbors = self.aev_computer.neighborlist(
-            self.species, self.coordinates
+            self.species, self.coordinates,
+            disp.cutoff,
         )
 
         distances = neighbors.distances
         atom_index12 = neighbors.indices
 
-        disp = TwoBodyDispersionD3.from_functional().to(self.device)
         distances = units.angstrom2bohr(distances)
         coordnums = disp._coordnums(
             self.coordinates.shape[0],
@@ -130,14 +131,15 @@ class TestDispersion(TestCase):
         self.assertEqual(expect_c6_carbon, c6_constants[6, 6])
 
     def testMethaneC6(self):
+        disp = TwoBodyDispersionD3.from_functional().to(self.device)
         neighbors = self.aev_computer.neighborlist(
-            self.species, self.coordinates
+            self.species, self.coordinates,
+            disp.cutoff,
         )
 
         distances = neighbors.distances
         atom_index12 = neighbors.indices
 
-        disp = TwoBodyDispersionD3.from_functional().to(self.device)
         distances = units.angstrom2bohr(distances)
         species12 = self.species.flatten()[atom_index12]
         coordnums = disp._coordnums(
@@ -168,10 +170,11 @@ class TestDispersion(TestCase):
         self.assertEqual(order6_coeffs.cpu(), expect_order6)
 
     def testMethaneEnergy(self):
-        neighbors = self.aev_computer.neighborlist(
-            self.species, self.coordinates
-        )
         disp = TwoBodyDispersionD3.from_functional().to(self.device)
+        neighbors = self.aev_computer.neighborlist(
+            self.species, self.coordinates,
+            disp.cutoff,
+        )
         energy = disp(self.species, neighbors)
         energy = units.hartree2kcalpermol(energy)
         self.assertEqual(
@@ -233,10 +236,11 @@ class TestDispersion(TestCase):
 
     def testForce(self):
         self.coordinates.requires_grad_(True)
-        neighbors = self.aev_computer.neighborlist(
-            self.species, self.coordinates
-        )
         disp = TwoBodyDispersionD3.from_functional().to(self.device)
+        neighbors = self.aev_computer.neighborlist(
+            self.species, self.coordinates,
+            disp.cutoff,
+        )
         energy = disp(self.species, neighbors)
         gradient = torch.autograd.grad(energy, self.coordinates)[0]
         gradient /= units.ANGSTROM_TO_BOHR

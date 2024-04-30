@@ -98,16 +98,7 @@ Potentials
     :members:
 .. autoclass:: torchani.potentials.StandaloneTwoBodyDispersionD3
     :members:
-
-Utilities for Wrapping Modules
-==============================
-
-.. automodule:: torchani.wrappers
-.. autoclass:: torchani.wrappers.Wrapper
-    :members:
-.. autoclass:: torchani.wrappers.StandaloneWrapper
-    :members:
-.. autoclass:: torchani.wrappers.StandaloneElementWrapper
+.. autoclass:: torchani.potentials.wrapper.PotentialWrapper
     :members:
 
 Creation of 3D Geometries

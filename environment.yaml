@@ -22,9 +22,9 @@ dependencies:
   # Utils
   - tqdm  # progress bar
 
-  # Ase interface
+  # Ase interface (optional)
   - ase
 
-  # (legacy) neurochem files
+  # Neurochem files (legacy)
   - lark-parser
   - requests

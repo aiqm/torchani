@@ -1,12 +1,9 @@
-tqdm
 ase
-h5py
+pytest
+parameterized
+expecttest
 zarr
 pandas
 pyarrow
-pillow
-pyyaml
-pytest
 pynvml
-parameterized
-expecttest
+matplotlib

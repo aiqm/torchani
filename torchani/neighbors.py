@@ -21,23 +21,20 @@ def rescreen(
     )
 
 
-class BaseNeighborlist(torch.nn.Module):
+class Neighborlist(torch.nn.Module):
 
-    cutoff: Final[float]
     default_pbc: Tensor
     default_cell: Tensor
 
-    def __init__(self, cutoff: float):
+    def __init__(self):
         """Compute pairs of atoms that are neighbors, uses pbc depending on
         weather pbc.any() is True or not
 
         Arguments:
             coordinates (:class:`torch.Tensor`): tensor of shape
                 (molecules, atoms, 3) for atom coordinates.
-            cutoff (float): the cutoff inside which atoms are considered pairs
         """
         super().__init__()
-        self.cutoff = cutoff
         self.register_buffer('default_cell', torch.eye(3, dtype=torch.float), persistent=False)
         self.register_buffer('default_pbc', torch.zeros(3, dtype=torch.bool), persistent=False)
         self.diff_vectors = torch.empty(0)
@@ -142,18 +139,6 @@ class BaseNeighborlist(torch.nn.Module):
     def get_diff_vectors(self):
         return self.diff_vectors
 
-    @staticmethod
-    def _rescreen_with_cutoff(
-        cutoff: float,
-        neighbors: NeighborData,
-    ) -> NeighborData:
-        closer_indices = (neighbors.distances <= cutoff).nonzero().flatten()
-        return NeighborData(
-            indices=neighbors.indices.index_select(1, closer_indices),
-            distances=neighbors.distances.index_select(0, closer_indices),
-            diff_vectors=neighbors.diff_vectors.index_select(0, closer_indices),
-        )
-
     def dummy(self) -> NeighborData:
         # return dummy neighbor data
         device = self.default_cell.device
@@ -172,24 +157,22 @@ class BaseNeighborlist(torch.nn.Module):
         pass
 
 
-class FullPairwise(BaseNeighborlist):
+class FullPairwise(Neighborlist):
 
     default_shift_values: Tensor
 
-    def __init__(self, cutoff: float):
+    def __init__(self):
         """Compute pairs of atoms that are neighbors, uses pbc depending on
         weather pbc.any() is True or not
-
-        Arguments:
-            cutoff (float): the cutoff inside which atoms are considered pairs
         """
-        super().__init__(cutoff)
+        super().__init__()
         self.register_buffer('default_shift_values', torch.tensor(0.0), persistent=False)
 
     def forward(
         self,
         species: Tensor,
         coordinates: Tensor,
+        cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None
     ) -> NeighborData:
@@ -208,14 +191,14 @@ class FullPairwise(BaseNeighborlist):
 
         mask = (species == -1)
         if pbc.any():
-            atom_index12, shift_indices = self._full_pairwise_pbc(species, cell, pbc)
+            atom_index12, shift_indices = self._full_pairwise_pbc(species, cutoff, cell, pbc)
             shift_values = shift_indices.to(cell.dtype) @ cell
             # before being screened the coordinates have to be mapped to the
             # central cell in case they are not inside it, this is not necessary
             # if there is no pbc
             coordinates = map_to_central(coordinates, cell, pbc)
             return self._screen_with_cutoff(
-                self.cutoff,
+                cutoff,
                 coordinates,
                 atom_index12,
                 shift_values,
@@ -233,7 +216,7 @@ class FullPairwise(BaseNeighborlist):
                 atom_index12 += num_atoms * torch.arange(num_molecules, device=mask.device).view(1, -1, 1)
                 atom_index12 = atom_index12.view(-1).view(2, -1)
             return self._screen_with_cutoff(
-                self.cutoff,
+                cutoff,
                 coordinates,
                 atom_index12,
                 shift_values=None,
@@ -241,9 +224,10 @@ class FullPairwise(BaseNeighborlist):
             )
 
     def _full_pairwise_pbc(self, species: Tensor,
-                           cell: Tensor, pbc: Tensor) -> tp.Tuple[Tensor, Tensor]:
+                            cutoff: float,
+                           cell: Tensor, pbc: Tensor,) -> tp.Tuple[Tensor, Tensor]:
         cell = cell.detach()
-        shifts = self._compute_shifts(cell, pbc)
+        shifts = self._compute_shifts(cutoff, cell, pbc)
         num_atoms = species.shape[1]
         all_atoms = torch.arange(num_atoms, device=cell.device)
 
@@ -268,7 +252,7 @@ class FullPairwise(BaseNeighborlist):
         all_atom_pairs = torch.cat([p12_center, p12], dim=1)
         return all_atom_pairs, shifts_all
 
-    def _compute_shifts(self, cell: Tensor, pbc: Tensor) -> Tensor:
+    def _compute_shifts(self, cutoff: float, cell: Tensor, pbc: Tensor) -> Tensor:
         """Compute the shifts of unit cell along the given cell vectors to make it
         large enough to contain all pairs of neighbor atoms with PBC under
         consideration
@@ -286,7 +270,7 @@ class FullPairwise(BaseNeighborlist):
         """
         reciprocal_cell = cell.inverse().t()
         inv_distances = reciprocal_cell.norm(2, -1)
-        num_repeats = torch.ceil(self.cutoff * inv_distances).to(torch.long)
+        num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
         num_repeats = torch.where(pbc, num_repeats, num_repeats.new_zeros(()))
         r1 = torch.arange(1, num_repeats[0].item() + 1, device=cell.device)
         r2 = torch.arange(1, num_repeats[1].item() + 1, device=cell.device)
@@ -309,7 +293,7 @@ class FullPairwise(BaseNeighborlist):
         ])
 
 
-class CellList(BaseNeighborlist):
+class CellList(Neighborlist):
 
     verlet: Final[bool]
     constant_volume: Final[bool]
@@ -328,12 +312,11 @@ class CellList(BaseNeighborlist):
     spherical_factor: Tensor
 
     def __init__(self,
-                 cutoff: float,
                  buckets_per_cutoff: int = 1,
                  verlet: bool = False,
                  skin: tp.Optional[float] = None,
                  constant_volume: bool = False):
-        super().__init__(cutoff)
+        super().__init__()
 
         # right now I will only support this, and the extra neighbors are
         # hardcoded, but full support for arbitrary buckets per cutoff is possible
@@ -430,12 +413,9 @@ class CellList(BaseNeighborlist):
         # This is 26 for 2 buckets and 17 for 1 bucket
         # This is necessary for the image - atom map and atom - image map
         self.num_neighbors = len(self.vector_index_displacement)
-        # Get the lower bound of the length of a bucket in the bucket grid
-        # shape 3, (Bx, By, Bz) The length is cutoff/buckets_per_cutoff +
-        # epsilon
-        self._register_bucket_length_lower_bound()
 
         # variables are not set until we have received a cell at least once
+        self.last_cutoff = -1.0
         self.cell_variables_are_set = False
         self.old_values_are_cached = False
 
@@ -454,10 +434,11 @@ class CellList(BaseNeighborlist):
         self,
         species: Tensor,
         coordinates: Tensor,
+        cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None
     ) -> NeighborData:
-
+        assert cutoff >= 0.0, "Cutoff must be a positive float"
         assert coordinates.shape[0] == 1, "Cell list doesn't support batches"
         if cell is None:
             assert (pbc is None or not pbc.any())
@@ -474,10 +455,12 @@ class CellList(BaseNeighborlist):
         else:
             coordinates_displaced = coordinates.detach()
 
-        if (not self.constant_volume) or (not self.cell_variables_are_set):
+        if (not self.constant_volume) or (not self.cell_variables_are_set) or (cutoff != self.last_cutoff):
             # Cell parameters need to be set only once for constant V simulations,
             # and every time for variable V, (constant P, NPT) simulations
-            self._setup_variables(cell.detach())
+            # If the neighborlist cutoff is changed, the variables have to be
+            # reset too
+            self._setup_variables(cell.detach(), cutoff)
 
         if self.verlet and self.old_values_are_cached and (not self._need_new_list(coordinates_displaced.detach())):
             # If a new cell list is not needed use the old cached values
@@ -508,7 +491,7 @@ class CellList(BaseNeighborlist):
             # happen only if it can't be guaranteed that the cached
             # neighborlist holds at least all atom pairs, but it may hold more.
             return self._screen_with_cutoff(
-                self.cutoff,
+                cutoff,
                 coordinates,
                 atom_pairs,
                 shift_values,
@@ -516,7 +499,7 @@ class CellList(BaseNeighborlist):
             )
         else:
             return self._screen_with_cutoff(
-                self.cutoff,
+                cutoff,
                 coordinates,
                 atom_pairs,
                 shift_values=None,
@@ -603,7 +586,20 @@ class CellList(BaseNeighborlist):
 
         return atom_pairs, shift_indices
 
-    def _setup_variables(self, cell: Tensor):
+    def _setup_variables(self, cell: Tensor, cutoff: float, extra_space: float = 1e-5):
+        # Get the size (Bx, By, Bz) of the buckets in the grid.
+        # extra space by default is consistent with Amber
+        #
+        # The spherical factor is different from 1 in the case of nonorthogonal
+        # boxes and accounts for the "spherical protrusion", which is related
+        # to the fact that the sphere of radius "cutoff" around an atom needs
+        # some extra space in nonorthogonal boxes.
+        #
+        # note that this is not actually the bucket length used in the grid,
+        # it is only a lower bound used to calculate the grid size
+        spherical_factor = self.spherical_factor
+        bucket_length_lower_bound = (spherical_factor * cutoff / self.buckets_per_cutoff) + extra_space
+
         current_device = cell.device
         # 1) Update the cell diagonal and translation displacements
         # sizes of each side are given by norm of each basis vector of the unit cell
@@ -623,8 +619,9 @@ class CellList(BaseNeighborlist):
         # means I can cover it with 3 buckets plus some extra space that is
         # less than a bucket, so I just stretch the buckets a little bit. In
         # this particular case shape_buckets_grid = [3, 3, 3]
+
         self.shape_buckets_grid = torch.div(
-            self.cell_diagonal, self.bucket_length_lower_bound, rounding_mode='floor').to(torch.long)
+            self.cell_diagonal, bucket_length_lower_bound, rounding_mode='floor').to(torch.long)
 
         self.total_buckets = self.shape_buckets_grid.prod()
         if self.total_buckets == 0:
@@ -683,21 +680,6 @@ class CellList(BaseNeighborlist):
         x = x.unsqueeze(0).unsqueeze(0)
         x = torch.nn.functional.pad(x, (1, 1, 1, 1, 1, 1), mode='circular')
         return x.squeeze()
-
-    def _register_bucket_length_lower_bound(self,
-                                            extra_space: float = 1e-5):
-        # Get the size (Bx, By, Bz) of the buckets in the grid.
-        # extra space by default is consistent with Amber
-        #
-        # The spherical factor is different from 1 in the case of nonorthogonal
-        # boxes and accounts for the "spherical protrusion", which is related
-        # to the fact that the sphere of radius "cutoff" around an atom needs
-        # some extra space in nonorthogonal boxes.
-        #
-        # note that this is not actually the bucket length used in the grid,
-        # it is only a lower bound used to calculate the grid size
-        spherical_factor = self.spherical_factor
-        self.bucket_length_lower_bound = (spherical_factor * self.cutoff / self.buckets_per_cutoff) + extra_space
 
     def _to_flat_index(self, x: Tensor) -> Tensor:
         # Converts a tensor with bucket indices in the last dimension to a
@@ -960,18 +942,20 @@ class CellList(BaseNeighborlist):
         return bool(need_new_list)
 
 
-def _parse_neighborlist(neighborlist: tp.Optional[tp.Union[tp.Type[BaseNeighborlist], str]], cutoff: float) -> BaseNeighborlist:
-    _neighborlist: BaseNeighborlist
+NeighborlistArg = tp.Union[Neighborlist, str]
+
+
+def _parse_neighborlist(neighborlist: NeighborlistArg = "base") -> Neighborlist:
+    _neighborlist: Neighborlist
     if neighborlist == 'full_pairwise':
-        _neighborlist = FullPairwise(cutoff)
+        _neighborlist = FullPairwise()
     elif neighborlist == 'cell_list':
-        _neighborlist = CellList(cutoff=cutoff)
+        _neighborlist = CellList()
     elif neighborlist == 'verlet_cell_list':
-        _neighborlist = CellList(cutoff=cutoff, verlet=True)
-    elif neighborlist is None:
-        _neighborlist = BaseNeighborlist(cutoff)
+        _neighborlist = CellList(verlet=True)
+    elif neighborlist == "base":
+        _neighborlist = Neighborlist()
     else:
-        assert not isinstance(neighborlist, str)
-        assert issubclass(neighborlist, BaseNeighborlist)
-        _neighborlist = neighborlist(cutoff)
+        assert isinstance(neighborlist, Neighborlist)
+        _neighborlist = neighborlist
     return _neighborlist

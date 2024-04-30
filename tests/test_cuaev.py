@@ -63,6 +63,8 @@ class TestCUAEV(TestCase):
         self.cuaev_computer_2x = torchani.AEVComputer.like_2x(cutoff_fn=self.cutoff_fn, use_cuda_extension=True).to(self.dtype).to(self.device)
         self.cuaev_computer_2x_use_interface = torchani.AEVComputer.like_2x(cutoff_fn=self.cutoff_fn, use_cuda_extension=True, use_cuaev_interface=True).to(self.dtype).to(self.device)
         self.ani2x = self.__class__.ani2x.to(self.dtype).to(self.device)
+        self.cutoff_2x = self.cuaev_computer_2x.radial_terms.cutoff
+        self.cutoff_1x = self.cuaev_computer_1x.radial_terms.cutoff
 
     def _skip_if_not_cosine(self):
         if self.cutoff_fn != "cosine":
@@ -489,7 +491,7 @@ class TestCUAEV(TestCase):
 
             coordinates = coordinates.clone().detach()
             coordinates.requires_grad_()
-            atom_index12, _, _ = self.cuaev_computer_2x_use_interface.neighborlist(species, coordinates)
+            atom_index12, _, _ = self.cuaev_computer_2x_use_interface.neighborlist(species, coordinates, self.cutoff_2x)
             if not self.cuaev_computer_2x_use_interface.cuaev_is_initialized:
                 self.cuaev_computer_2x_use_interface._init_cuaev_computer()
                 self.cuaev_computer_2x_use_interface.cuaev_is_initialized = True
@@ -522,7 +524,7 @@ class TestCUAEV(TestCase):
             coordinates = coordinates.clone().detach()
             coordinates.requires_grad_()
 
-            atom_index12, _, _ = self.cuaev_computer_2x_use_interface.neighborlist(species, coordinates)
+            atom_index12, _, _ = self.cuaev_computer_2x_use_interface.neighborlist(species, coordinates, self.cutoff_2x)
             if not self.cuaev_computer_2x_use_interface.cuaev_is_initialized:
                 self.cuaev_computer_2x_use_interface._init_cuaev_computer()
                 self.cuaev_computer_2x_use_interface.cuaev_is_initialized = True
