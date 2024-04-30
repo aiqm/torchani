@@ -48,6 +48,7 @@ from torchani import (
     calc,
     neighbors,
     cutoffs,
+    sae,
 )
 
 try:
@@ -75,6 +76,7 @@ __all__ = [
     'geometry',
     'calc',
     'assembler',
+    "sae",
 ]
 
 # disable tf32

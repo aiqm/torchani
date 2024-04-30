@@ -11,12 +11,143 @@ import torch
 from torch import Tensor
 
 from torchani.utils import pad_atomic_properties, cumsum_from_zero, PADDING, tqdm
-from torchani.datasets.datasets import ANIDataset, ANIBatchedDataset
-from torchani.datasets._annotations import Conformers, StrPath, Transform
+from torchani.datasets.datasets import ANIDataset
+from torchani.transforms import Transform, Identity
+from torchani.datasets._annotations import Conformers, StrPath
 from torchani.datasets._backends import _H5PY_AVAILABLE
 
 if _H5PY_AVAILABLE:
     import h5py
+
+
+class ANIBatchedDataset(torch.utils.data.Dataset[Conformers]):
+    _batch_paths: tp.Optional[tp.List[Path]]
+
+    def __init__(
+        self,
+        store_dir: tp.Optional[StrPath] = None,
+        batches: tp.Optional[tp.List[Conformers]] = None,
+        file_format: tp.Optional[str] = None,
+        split: str = "training",
+        transform: tp.Optional[Transform] = None,
+        properties: tp.Optional[tp.Sequence[str]] = None,
+        drop_last: bool = False,
+    ):
+        # (store_dir or file_format or transform) and batches are mutually
+        # exclusive options, batches is passed if the dataset directly lives in
+        # memory and has no backing store, otherwise there should be a backing
+        # store in store_dir/split
+        if batches is not None and any(
+            v is not None for v in (file_format, store_dir, transform)
+        ):
+            raise ValueError(
+                "Batches is mutually exclusive with file_format/store_dir/transform"
+            )
+        self.split = split
+        self.properties = properties
+        self.transform = Identity() if transform is None else transform
+        container: tp.Union[tp.List[Path], tp.List[Conformers]]
+        if not batches:
+            if store_dir is None:
+                raise ValueError("One of batches or store_dir must be specified")
+            store_dir = Path(store_dir).resolve()
+            self._batch_paths = self._get_batch_paths(store_dir / split)
+            self._extractor = self._hdf5_extractor
+            container = self._batch_paths
+        else:
+            self._data = batches
+            self._batch_paths = None
+            self._extractor = self._memory_extractor
+            container = self._data
+        # Drops last batch only if requested and if its smaller than the rest
+        if drop_last and self.batch_size(-1) < self.batch_size(0):
+            container.pop()
+        self._len = len(container)
+
+    def _memory_extractor(self, idx: int) -> Conformers:
+        return self._data[idx]
+
+    def batch_size(self, idx: int) -> int:
+        batch = self[idx]
+        return batch[next(iter(batch.keys()))].shape[0]
+
+    def _get_batch_paths(self, batches_dir: Path) -> tp.List[Path]:
+        # We assume batch names are prefixed by a zero-filled number so that
+        # sorting alphabetically sorts batch numbers
+        try:
+            batch_paths = sorted(batches_dir.iterdir())
+            first_batch = batch_paths[0]
+            # notadirectory error is handled
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"The dir {batches_dir.parent.as_posix()} exists,"
+                f" but the split {batches_dir.as_posix()} does not"
+            ) from None
+        except IndexError:
+            raise FileNotFoundError(
+                f"The dir {batches_dir.as_posix()} has no files"
+            ) from None
+
+        if any(f.suffix != first_batch.suffix for f in batch_paths):
+            raise RuntimeError(
+                f"Files with different extensions found in {batches_dir.as_posix()}"
+            )
+
+        if any(f.is_dir() for f in batch_paths):
+            raise RuntimeError(f"Subdirectories found in {batches_dir.as_posix()}")
+        return batch_paths
+
+    def _hdf5_extractor(self, idx: int) -> Conformers:
+        with h5py.File(self._batch_paths[idx], "r") as f:  # type: ignore
+            return {
+                k: torch.as_tensor(v[()])
+                for k, v in f["/"].items()
+                if self.properties is None or k in self.properties
+            }
+
+    def cache(
+        self,
+        pin_memory: bool = True,
+        verbose: bool = True,
+    ) -> "ANIBatchedDataset":
+        r"""Saves the full dataset into RAM"""
+        desc = f"Cacheing {self.split}, Warning: this may use a lot of RAM!"
+        self._data = [
+            self._extractor(idx)
+            for idx in tqdm(
+                range(len(self)), total=len(self), disable=not verbose, desc=desc
+            )
+        ]
+        desc = "Applying transforms once and discarding"
+        with torch.no_grad():
+            self._data = [
+                self.transform(p)
+                for p in tqdm(
+                    self._data, total=len(self), disable=not verbose, desc=desc
+                )
+            ]
+            self.transform = Identity()
+        if pin_memory:
+            desc = "Pinning memory; don't pin memory in torch DataLoader!"
+            self._data = [
+                {k: v.pin_memory() for k, v in batch.items()}
+                for batch in tqdm(
+                    self._data, total=len(self), disable=not verbose, desc=desc
+                )
+            ]
+        self._extractor = self._memory_extractor
+        return self
+
+    def __getitem__(self, idx: int) -> Conformers:
+        # integral indices must be provided for compatibility with pytorch
+        # DataLoader API
+        batch = self._extractor(idx)
+        with torch.no_grad():
+            batch = self.transform(batch)
+        return batch
+
+    def __len__(self) -> int:
+        return self._len
 
 
 # TODO a batcher class would make this code much more clear
@@ -31,16 +162,16 @@ def create_batched_dataset(
     padding: tp.Optional[tp.Dict[str, float]] = None,
     splits: tp.Optional[tp.Dict[str, float]] = None,
     folds: tp.Optional[int] = None,
-    inplace_transform: tp.Optional[Transform] = None,
+    transform: tp.Optional[Transform] = None,
     direct_cache: bool = False,
     verbose: bool = True,
 ) -> tp.Dict[str, ANIBatchedDataset]:
-
     if folds is not None and splits is not None:
         raise ValueError('Only one of ["folds", "splits"] should be specified')
 
     if direct_cache and dest_path is not None:
         raise ValueError("Destination path not needed for direct cache")
+    transform = Identity() if transform is None else transform
 
     # NOTE: All the tensor manipulation in this function is handled in CPU
     if dest_path is None:
@@ -108,7 +239,7 @@ def create_batched_dataset(
     batched_datasets = _save_splits_into_batches(
         split_paths,
         conformer_splits,
-        inplace_transform,
+        transform,
         properties,
         dataset,
         padding,
@@ -257,7 +388,7 @@ def _create_split_paths(split_paths: tp.OrderedDict[str, Path]) -> None:
 def _save_splits_into_batches(
     split_paths: tp.OrderedDict[str, Path],
     conformer_splits: tp.List[Tensor],
-    inplace_transform: tp.Optional[Transform],
+    transform: Transform,
     properties: tp.Sequence[str],
     dataset: ANIDataset,
     padding: tp.Dict[str, float],
@@ -289,8 +420,6 @@ def _save_splits_into_batches(
     # reads, but in this case it means we will have to put all, or almost all
     # the dataset into memory at some point, which is not feasible for larger
     # datasets.
-    if inplace_transform is None:
-        inplace_transform = lambda x: x  # noqa: E731
 
     # get all group keys concatenated in a list, with the associated file indexes
     key_list = list(dataset.keys())
@@ -385,7 +514,7 @@ def _save_splits_into_batches(
                     batch = {
                         k: v[packet_batch_idx] for k, v in batch_packet_dict.items()
                     }
-                    batch = inplace_transform(batch)
+                    batch = transform(batch)
                     if direct_cache:
                         in_memory_batches.append(batch)
                     else:
@@ -411,9 +540,7 @@ def _save_splits_into_batches(
     return batched_datasets
 
 
-def _save_batch(
-    path: Path, idx: int, batch: Conformers, total_batches: int
-) -> None:
+def _save_batch(path: Path, idx: int, batch: Conformers, total_batches: int) -> None:
     batch = {k: v.numpy() for k, v in batch.items()}
     # The batch names are e.g. 00034_batch.h5
     batch_path = path / f"{str(idx).zfill(len(str(total_batches)))}_batch"

@@ -24,7 +24,7 @@ except ImportError:
 _MutMapSubtype = tp.TypeVar('_MutMapSubtype', bound=tp.MutableMapping[str, Tensor])
 
 # Transform = Callable[[MutableMapping[str, Tensor]], MutableMapping[str, Tensor]]
-Transform = tp.Callable[[_MutMapSubtype], _MutMapSubtype]
+# Transform = tp.Callable[[_MutMapSubtype], _MutMapSubtype]
 
 # any of these should be interpretable as a 1D index sequence
 IdxLike = tp.Union[Tensor, ndarray, None, tp.Iterable[int], int]

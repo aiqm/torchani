@@ -1,6 +1,5 @@
 import typing as tp
 import inspect
-import pickle
 import warnings
 import math
 import re
@@ -16,11 +15,8 @@ from torch import Tensor
 import numpy as np
 
 from torchani.utils import species_to_formula, PERIODIC_TABLE, ATOMIC_NUMBERS, tqdm, PADDING, sort_by_element
-from torchani.datasets._backends import _H5PY_AVAILABLE, _StoreWrapper, StoreFactory, TemporaryLocation, _ConformerWrapper, _SUFFIXES
-from torchani.datasets._annotations import Transform, Conformers, NumpyConformers, MixedConformers, StrPath, DTypeLike, IdxLike
-
-if _H5PY_AVAILABLE:
-    import h5py
+from torchani.datasets._backends import _StoreWrapper, StoreFactory, TemporaryLocation, _ConformerWrapper, _SUFFIXES
+from torchani.datasets._annotations import Conformers, NumpyConformers, MixedConformers, StrPath, DTypeLike, IdxLike
 
 # About _ELEMENT_KEYS:
 # Datasets are assumed to have a "numbers" or "species" property, which has
@@ -98,148 +94,6 @@ def _to_strpath_list(obj: tp.Union[tp.Iterable[StrPath], StrPath]) -> tp.List[St
 # convert to / from symbols and atomic numbers properties
 _symbols_to_numbers = np.vectorize(lambda x: ATOMIC_NUMBERS[x])
 _numbers_to_symbols = np.vectorize(lambda x: PERIODIC_TABLE[x])
-
-
-class ANIBatchedDataset(torch.utils.data.Dataset[Conformers]):
-
-    _SUFFIXES_AND_FORMATS = {'.npz': 'numpy', '.h5': 'hdf5', '.pkl': 'pickle'}
-    _batch_paths: tp.Optional[tp.List[Path]]
-
-    def __init__(self, store_dir: tp.Optional[StrPath] = None,
-                       batches: tp.Optional[tp.List[Conformers]] = None,
-                       file_format: tp.Optional[str] = None,
-                       split: str = 'training',
-                       transform: tp.Optional[Transform] = None,
-                       properties: tp.Optional[tp.Sequence[str]] = None,
-                       drop_last: bool = False):
-        # (store_dir or file_format or transform) and batches are mutually
-        # exclusive options, batches is passed if the dataset directly lives in
-        # memory and has no backing store, otherwise there should be a backing
-        # store in store_dir/split
-        if batches is not None and any(v is not None for v in (file_format, store_dir, transform)):
-            raise ValueError('Batches is mutually exclusive with file_format/store_dir/transform')
-        self.split = split
-        self.properties = properties
-        self.transform = self._identity if transform is None else transform
-        container: tp.Union[tp.List[Path], tp.List[Conformers]]
-        if not batches:
-            if store_dir is None:
-                raise ValueError("One of batches or store_dir must be specified")
-            store_dir = Path(store_dir).resolve()
-            self._batch_paths = self._get_batch_paths(store_dir / split)
-            self._extractor = self._get_batch_extractor(self._batch_paths[0].suffix, file_format)
-            container = self._batch_paths
-        else:
-            self._data = batches
-            self._batch_paths = None
-            self._extractor = self._memory_extractor
-            container = self._data
-        # Drops last batch only if requested and if its smaller than the rest
-        if drop_last and self.batch_size(-1) < self.batch_size(0):
-            container.pop()
-        self._len = len(container)
-
-    @staticmethod
-    def _identity(x: Conformers) -> Conformers:
-        return x
-
-    def _memory_extractor(self, idx: int) -> Conformers:
-        return self._data[idx]
-
-    def batch_size(self, idx: int) -> int:
-        batch = self[idx]
-        return batch[next(iter(batch.keys()))].shape[0]
-
-    def _get_batch_paths(self, batches_dir: Path) -> tp.List[Path]:
-        # We assume batch names are prefixed by a zero-filled number so that
-        # sorting alphabetically sorts batch numbers
-        try:
-            batch_paths = sorted(batches_dir.iterdir())
-            first_batch = batch_paths[0]
-            # notadirectory error is handled
-        except FileNotFoundError:
-            raise FileNotFoundError(f'The dir {batches_dir.parent.as_posix()} exists,'
-                                    f' but the split {batches_dir.as_posix()} does not') from None
-        except IndexError:
-            raise FileNotFoundError(f'The dir {batches_dir.as_posix()} has no files') from None
-
-        if any(f.suffix != first_batch.suffix for f in batch_paths):
-            raise RuntimeError(f'Files with different extensions found in {batches_dir.as_posix()}')
-
-        if any(f.is_dir() for f in batch_paths):
-            raise RuntimeError(f'Subdirectories found in {batches_dir.as_posix()}')
-        return batch_paths
-
-    # We use pickle or numpy or hdf5 since saving in
-    # pytorch format is extremely slow
-    def _get_batch_extractor(self, suffix: str, file_format: tp.Optional[str] = None) -> tp.Callable[[int], Conformers]:
-        if file_format is None:
-            try:
-                file_format = self._SUFFIXES_AND_FORMATS[suffix]
-            except KeyError:
-                raise ValueError(f"The file format {file_format} is not one of the"
-                                 f"supported formats {self._SUFFIXES_AND_FORMATS.values()}")
-        if file_format == 'hdf5' and not _H5PY_AVAILABLE:
-            raise ValueError("File format hdf5 was specified but h5py could not"
-                             " be found, please install h5py or specify a "
-                             " different file format")
-        return {'numpy': self._numpy_extractor,
-                'pickle': self._pickle_extractor,
-                'hdf5': self._hdf5_extractor}[file_format]
-
-    def _numpy_extractor(self, idx: int) -> Conformers:
-        return {k: torch.as_tensor(v)
-                for k, v in np.load(self._batch_paths[idx]).items()  # type: ignore
-                if self.properties is None or k in self.properties}
-
-    def _pickle_extractor(self, idx: int) -> Conformers:
-        with open(self._batch_paths[idx], 'rb') as f:  # type: ignore
-            return {k: torch.as_tensor(v)
-                    for k, v in pickle.load(f).items()
-                    if self.properties is None or k in self.properties}
-
-    def _hdf5_extractor(self, idx: int) -> Conformers:
-        with h5py.File(self._batch_paths[idx], 'r') as f:  # type: ignore
-            return {k: torch.as_tensor(v[()])
-                    for k, v in f['/'].items()
-                    if self.properties is None or k in self.properties}
-
-    def cache(self, pin_memory: bool = True,
-              verbose: bool = True) -> 'ANIBatchedDataset':
-        r"""Saves the full dataset into RAM"""
-        desc = f'Cacheing {self.split}, Warning: this may use a lot of RAM!'
-        self._data = [self._extractor(idx) for idx in tqdm(range(len(self)),
-                                                          total=len(self),
-                                                          disable=not verbose,
-                                                          desc=desc)]
-        desc = "Applying transforms once and discarding"
-        with torch.no_grad():
-            self._data = [self.transform(p) for p in tqdm(self._data,
-                                                          total=len(self),
-                                                          disable=not verbose,
-                                                          desc=desc)]
-            self.transform = self._identity
-        if pin_memory:
-            desc = 'Pinning memory; dont pin memory in torch DataLoader!'
-            self._data = [{k: v.pin_memory()
-                           for k, v in batch.items()}
-                           for batch in tqdm(self._data,
-                                             total=len(self),
-                                             disable=not verbose,
-                                             desc=desc)]
-        self._extractor = self._memory_extractor
-        return self
-
-    def __getitem__(self, idx: int) -> Conformers:
-        # integral indices must be provided for compatibility with pytorch
-        # DataLoader API
-        batch = self._extractor(idx)
-        with torch.no_grad():
-            batch = self.transform(batch)
-        return batch
-
-    def __len__(self) -> int:
-        return self._len
 
 
 # Base class for ANIDataset and _ANISubdataset

@@ -13,8 +13,8 @@ from torchani.transforms import (
     AtomicNumbersToIndices,
     SubtractSAE,
     Compose,
-    calculate_saes,
 )
+from torchani.sae import calculate_saes
 from torchani.utils import PERIODIC_TABLE, ATOMIC_NUMBERS
 from torchani.testing import TestCase
 from torchani.datasets import (
@@ -513,7 +513,7 @@ class TestTransforms(TestCase):
                 shuffle=False,
                 splits={"training": 0.5, "validation": 0.5},
                 batch_size=2560,
-                inplace_transform=compose,
+                transform=compose,
             )
             create_batched_dataset(
                 dataset_path,
@@ -676,27 +676,26 @@ class TestANIBatchedDataset(TestCase):
 
     def testFileFormats(self):
         # check that batches created with all file formats are equal
-        for ff in ANIBatchedDataset._SUFFIXES_AND_FORMATS.values():
-            self.tmp_dir_batched2 = tempfile.TemporaryDirectory()
-            with warnings.catch_warnings():
-                ignore_unshuffled_warning()
-                create_batched_dataset(
-                    dataset_path,
-                    dest_path=self.tmp_dir_batched2.name,
-                    shuffle=False,
-                    splits={"training": 0.5, "validation": 0.5},
-                    batch_size=self.batch_size,
-                )
-            train = ANIBatchedDataset(self.tmp_dir_batched2.name, split="training")
-            valid = ANIBatchedDataset(self.tmp_dir_batched2.name, split="validation")
-            for batch_ref, batch in zip(self.train, train):
-                for k_ref in batch_ref:
-                    self.assertEqual(batch_ref[k_ref], batch[k_ref])
+        self.tmp_dir_batched2 = tempfile.TemporaryDirectory()
+        with warnings.catch_warnings():
+            ignore_unshuffled_warning()
+            create_batched_dataset(
+                dataset_path,
+                dest_path=self.tmp_dir_batched2.name,
+                shuffle=False,
+                splits={"training": 0.5, "validation": 0.5},
+                batch_size=self.batch_size,
+            )
+        train = ANIBatchedDataset(self.tmp_dir_batched2.name, split="training")
+        valid = ANIBatchedDataset(self.tmp_dir_batched2.name, split="validation")
+        for batch_ref, batch in zip(self.train, train):
+            for k_ref in batch_ref:
+                self.assertEqual(batch_ref[k_ref], batch[k_ref])
 
-            for batch_ref, batch in zip(self.valid, valid):
-                for k_ref in batch_ref:
-                    self.assertEqual(batch_ref[k_ref], batch[k_ref])
-            self.tmp_dir_batched2.cleanup()
+        for batch_ref, batch in zip(self.valid, valid):
+            for k_ref in batch_ref:
+                self.assertEqual(batch_ref[k_ref], batch[k_ref])
+        self.tmp_dir_batched2.cleanup()
 
     def tearDown(self):
         self.tmp_dir_batched.cleanup()
