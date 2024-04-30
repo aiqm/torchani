@@ -5,11 +5,31 @@ channels:
   - https://conda.anaconda.org/conda-forge
   - https://conda.anaconda.org/nvidia
 dependencies:
-  # general
+  # General
   - python=3.8.1
   - pip
 
-  # linters / checkers / tests / CI
+  # Core
+  - numpy=1.20
+  - mkl=2024.0.0
+  - pytorch=1.13.1
+  - cudatoolkit=11.6
+
+  # Data
+  - h5py  # HDF5 backend
+  - pyyaml  # builtin datasets specification
+
+  # Utils
+  - tqdm  # progress bar
+
+  # Ase interface
+  - ase
+
+  # Neurochem files (legacy)
+  - lark-parser
+  - requests
+
+  # Linters / checkers / tests / CI
   - black
   - flake8
   - mypy
@@ -18,7 +38,7 @@ dependencies:
   - parameterized
   - expecttest
 
-  # docs and tools
+  # Docs and tools
   - sphinx
   - sphinx_rtd_theme
   - sphinx-gallery
@@ -26,28 +46,7 @@ dependencies:
   - pillow
   - pynvml
 
-  # data
+  # Extra data backends
   - pandas  # csv support
   - pyarrow  # Parquet backend
-  - h5py  # HDF5 backend
   - zarr  # Zarr backend
-
-  # DL
-  - numpy=1.20
-  - mkl=2024.0.0
-  - pytorch=1.13.1
-  - cudatoolkit=11.6
-  - tensorboard
-
-  # progress bars
-  - tqdm  # progress bars
-
-  # legacy neurochem parser
-  - lark-parser
-  - pyyaml
-
-  # downloading models via web
-  - requests
-
-  # ase interface
-  - ase

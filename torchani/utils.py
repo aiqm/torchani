@@ -14,7 +14,6 @@ import torch
 from torch.profiler import record_function, ProfilerActivity
 from torch import Tensor
 import torch.utils.data
-from tqdm import tqdm
 
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
 from torchani.tuples import SpeciesEnergies, VibAnalysis
@@ -753,4 +752,4 @@ def timeit(
 
 __all__ = ['pad_atomic_properties', 'present_species', 'hessian',
            'vibrational_analysis', 'strip_redundant_padding',
-           'ChemicalSymbolsToInts', 'get_atomic_masses', 'tqdm', 'GSAES', 'PERIODIC_TABLE', 'ATOMIC_NUMBERS', 'timeit']
+           'ChemicalSymbolsToInts', 'get_atomic_masses', 'GSAES', 'PERIODIC_TABLE', 'ATOMIC_NUMBERS', 'timeit']

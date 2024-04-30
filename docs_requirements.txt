@@ -1,7 +1,7 @@
 h5py
 sphinx
 sphinx_rtd_theme
-matplotlib
-pillow
 sphinx-gallery
 tensorboard
+matplotlib
+pillow

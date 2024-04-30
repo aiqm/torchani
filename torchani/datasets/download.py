@@ -4,7 +4,7 @@ import tarfile
 import hashlib
 from pathlib import Path
 
-from torchani.utils import tqdm
+from tqdm import tqdm
 
 
 _USER_AGENT = "torchani"

@@ -3,12 +3,12 @@ from pathlib import Path
 
 from torchani.datasets._annotations import StrPath
 from torchani.datasets._backends.interface import _StoreWrapper
-from torchani.datasets._backends.h5py_impl import _H5PY_AVAILABLE, _H5Store, _H5TemporaryLocation
+from torchani.datasets._backends.h5py_impl import _H5Store, _H5TemporaryLocation
 from torchani.datasets._backends.zarr_impl import _ZARR_AVAILABLE, _ZarrStore, _ZarrTemporaryLocation
 from torchani.datasets._backends.pq_impl import _PQ_AVAILABLE, _PqStore, _PqTemporaryLocation
 
 # This should probably be obtained directly from getattr
-_BACKEND_AVAILABLE = {'h5py': _H5PY_AVAILABLE, 'zarr': _ZARR_AVAILABLE, 'pq': _PQ_AVAILABLE}
+_BACKEND_AVAILABLE = {'h5py': True, 'zarr': _ZARR_AVAILABLE, 'pq': _PQ_AVAILABLE}
 _CONCRETE_STORES = {'h5py': _H5Store, 'zarr': _ZarrStore, 'pq': _PqStore}
 _CONCRETE_LOCATIONS = {'h5py': _H5TemporaryLocation, 'zarr': _ZarrTemporaryLocation, 'pq': _PqTemporaryLocation}
 _SUFFIXES = {'h5py': '.h5', 'zarr': '.zarr', 'pq': '.pqdir'}

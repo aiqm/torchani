@@ -1,27 +1,15 @@
 import typing as tp
-import warnings
 from uuid import uuid4
 import tempfile
 from pathlib import Path
 from functools import partial
 
+import h5py
 import numpy as np
 from tqdm import tqdm
 
 from torchani.datasets._annotations import StrPath, Self
 from torchani.datasets._backends.interface import _ConformerGroup, _ConformerWrapper, CacheHolder, _HierarchicalStoreWrapper
-
-
-try:
-    import h5py
-    _H5PY_AVAILABLE = True
-except ImportError:
-    warnings.warn('Currently the only supported backend for ANIDataset is h5py,'
-                  ' very limited options are available otherwise. Installing'
-                  ' h5py (pip install h5py or conda install h5py) is'
-                  ' recommended if you want to use the torchani.datasets'
-                  ' module')
-    _H5PY_AVAILABLE = False
 
 
 class _H5TemporaryLocation(tp.ContextManager[StrPath]):
@@ -36,7 +24,7 @@ class _H5TemporaryLocation(tp.ContextManager[StrPath]):
         self._tmp_location.cleanup()
 
 
-class _H5Store(_HierarchicalStoreWrapper["h5py.File"]):
+class _H5Store(_HierarchicalStoreWrapper[h5py.File]):
     def __init__(self, store_location: StrPath, dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None):
         super().__init__(store_location, '.h5', 'file', dummy_properties=dummy_properties)
         self._has_standard_format = True
@@ -87,7 +75,7 @@ class _H5Store(_HierarchicalStoreWrapper["h5py.File"]):
 
     def _update_cache_nonstandard(self, cache: CacheHolder, check_properties: bool, verbose: bool) -> bool:
         def visitor_fn(name: str,
-                       object_: tp.Union["h5py.Dataset", "h5py.Group"],
+                       object_: tp.Union[h5py.Dataset, h5py.Group],
                        store: '_H5Store',
                        cache: CacheHolder,
                        check_properties: bool,
@@ -145,8 +133,8 @@ class _H5Store(_HierarchicalStoreWrapper["h5py.File"]):
         return _H5ConformerGroup(self._store[name], dummy_properties=self._dummy_properties)
 
 
-class _H5ConformerGroup(_ConformerWrapper["h5py.Group"]):
-    def __init__(self, data: "h5py.Group", **kwargs):
+class _H5ConformerGroup(_ConformerWrapper[h5py.Group]):
+    def __init__(self, data: h5py.Group, **kwargs):
         super().__init__(data=data, **kwargs)
 
     def _is_resizable(self) -> bool:

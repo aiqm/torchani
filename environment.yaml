@@ -5,26 +5,26 @@ channels:
   - https://conda.anaconda.org/conda-forge
   - https://conda.anaconda.org/nvidia
 dependencies:
-  # general
+  # General
   - python=3.8.1
   - pip
 
-  # Data
-  - h5py  # HDF5 backend
-
-  # DL
+  # Core
   - numpy=1.20
   - mkl=2024.0.0
   - pytorch=1.13.1
   - cudatoolkit=11.6
 
-  # Progress bars
-  - tqdm
+  # Data
+  - h5py  # HDF5 backend
+  - pyyaml  # builtin datasets specification
 
-  # Legacy neurochem parser
-  - lark-parser
-  - pyyaml
-  - requests
+  # Utils
+  - tqdm  # progress bar
 
   # Ase interface
   - ase
+
+  # (legacy) neurochem files
+  - lark-parser
+  - requests

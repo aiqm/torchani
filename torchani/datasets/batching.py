@@ -7,6 +7,7 @@ import datetime
 from pathlib import Path
 from collections import OrderedDict
 
+import h5py
 import torch
 from torch import Tensor
 from tqdm import tqdm
@@ -15,10 +16,6 @@ from torchani.utils import pad_atomic_properties, cumsum_from_zero, PADDING
 from torchani.datasets.datasets import ANIDataset
 from torchani.transforms import Transform, Identity
 from torchani.datasets._annotations import Conformers, StrPath
-from torchani.datasets._backends import _H5PY_AVAILABLE
-
-if _H5PY_AVAILABLE:
-    import h5py
 
 
 class ANIBatchedDataset(torch.utils.data.Dataset[Conformers]):

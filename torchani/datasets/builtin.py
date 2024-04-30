@@ -299,8 +299,8 @@ from pathlib import Path
 from collections import OrderedDict
 
 import yaml
+from tqdm import tqdm
 
-from torchani.utils import tqdm
 from torchani.datasets.download import _download_and_extract_archive, _check_integrity
 from torchani.datasets.datasets import ANIDataset
 from torchani.datasets._annotations import StrPath
