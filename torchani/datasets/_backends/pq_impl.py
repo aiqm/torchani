@@ -50,14 +50,14 @@ def _to_dict_cudf(df, **kwargs):
 
 class _PqLocation(_FileOrDirLocation):
     def __init__(self, root: StrPath):
-        self._meta_location: tp.Optional[Path] = None
+        self._attrs_location: tp.Optional[Path] = None
         self._pq_location: tp.Optional[Path] = None
         super().__init__(root, '.pqdir', 'dir')
 
     @property
-    def meta(self) -> StrPath:
-        if self._meta_location is not None:
-            return self._meta_location
+    def attrs(self) -> StrPath:
+        if self._attrs_location is not None:
+            return self._attrs_location
         else:
             raise RuntimeError("Location is not set")
 
@@ -80,10 +80,10 @@ class _PqLocation(_FileOrDirLocation):
             value = value.with_suffix(self._suffix)
         if value.suffix != self._suffix:
             raise ValueError(f"Incorrect location {value}")
-        meta = self._meta_location
+        attrs = self._attrs_location
         pq = self._pq_location
-        if meta is not None:
-            meta.rename(meta.with_name(value.with_suffix('.json').name))
+        if attrs is not None:
+            attrs.rename(attrs.with_name(value.with_suffix('.json').name))
         if pq is not None:
             pq.rename(pq.with_name(value.with_suffix('.pq').name))
 
@@ -92,9 +92,9 @@ class _PqLocation(_FileOrDirLocation):
             shutil.move(fspath(self._root_location), fspath(value))
         self._root_location = Path(value).resolve()
         root = self._root_location
-        self._meta_location = root / root.with_suffix('.json').name
+        self._attrs_location = root / root.with_suffix('.json').name
         self._pq_location = root / root.with_suffix('.pq').name
-        if not (self._pq_location.is_file() or self._meta_location.is_file()):
+        if not (self._pq_location.is_file() or self._attrs_location.is_file()):
             raise FileNotFoundError(f"The store in {self._root_location} could not be found or is invalid")
         self._validate
 
@@ -102,7 +102,7 @@ class _PqLocation(_FileOrDirLocation):
     def root(self) -> None:
         # mypy can not understand this, we are calling the deleter from the superclass
         super(__class__, __class__).root.fdel(self)  # type: ignore
-        self._meta_location = None
+        self._attrs_location = None
         self._pq_location = None
 
 
@@ -112,7 +112,7 @@ class DataFrameAdaptor:
         self.attrs: tp.Dict[str, tp.Any] = dict()
         self.mode: tp.Optional[str] = None
         self._is_dirty = False
-        self._meta_is_dirty = False
+        self._attrs_is_dirty = False
 
     def __getattr__(self, k):
         if self._df is None:
@@ -188,26 +188,26 @@ class _PqStore(_StoreWrapper[tp.Union["pandas.DataFrame", "cudf.DataFrame"]]):
         root = Path(store_location).resolve()
         root.mkdir(exist_ok=True)
         assert not list(root.iterdir()), "location is not empty"
-        meta_location = root / root.with_suffix('.json').name
+        attrs_location = root / root.with_suffix('.json').name
         pq_location = root / root.with_suffix('.pq').name
         default_engine.DataFrame().to_parquet(pq_location)
-        with open(meta_location, 'x') as f:
+        with open(attrs_location, 'x') as f:
             json.dump({'grouping': grouping}, f)
         return cls(store_location, **kwargs)
 
     # File-like
-    def open(self, mode: str = 'r', only_meta: bool = False) -> Self:
-        if not only_meta:
+    def open(self, mode: str = 'r', only_attrs: bool = False) -> Self:
+        if not only_attrs:
             self._store_obj = DataFrameAdaptor(self._engine.read_parquet(self.location.pq))
         else:
             self._store_obj = DataFrameAdaptor()
-        with open(self.location.meta, mode) as f:
-            meta = json.load(f)
-        if 'extra_dims' not in meta.keys():
-            meta['extra_dims'] = dict()
-        if 'dtypes' not in meta.keys():
-            meta['dtypes'] = dict()
-        self._store_obj.attrs = meta
+        with open(self.location.attrs, mode) as f:
+            attrs = json.load(f)
+        if 'extra_dims' not in attrs.keys():
+            attrs['extra_dims'] = dict()
+        if 'dtypes' not in attrs.keys():
+            attrs['dtypes'] = dict()
+        self._store_obj.attrs = attrs
         # monkey patch
         self._store_obj.mode = mode
         return self
@@ -217,8 +217,8 @@ class _PqStore(_StoreWrapper[tp.Union["pandas.DataFrame", "cudf.DataFrame"]]):
             self.execute_queued_appends()
         if self._store._is_dirty:
             self._store.to_parquet(self.location.pq)
-        if self._store._meta_is_dirty:
-            with open(self.location.meta, 'w') as f:
+        if self._store._attrs_is_dirty:
+            with open(self.location.attrs, 'w') as f:
                 json.dump(self._store.attrs, f)
         self._store_obj = None
         return self
@@ -259,26 +259,26 @@ class _PqStore(_StoreWrapper[tp.Union["pandas.DataFrame", "cudf.DataFrame"]]):
         self._queued_appends.append(tmp_df)
 
     def execute_queued_appends(self):
-        meta = self._store_obj.attrs
+        attrs = self._store_obj.attrs
         mode = self._store_obj.mode
         self._store_obj = DataFrameAdaptor(self._engine.concat([self._store._df] + self._queued_appends))
-        self._store_obj.attrs = meta
+        self._store_obj.attrs = attrs
         self._store_obj.mode = mode
         self._store._is_dirty = True
-        self._store._meta_is_dirty = True
+        self._store._attrs_is_dirty = True
         self._queued_appends = []
 
     def __delitem__(self, name: str) -> None:
         # Instead of deleting we just reassign the store to everything that is
         # not the requested name here, since this dirties the dataset,
         # only this part will be written to disk on closing
-        meta = self._store_obj.attrs
+        attrs = self._store_obj.attrs
         mode = self._store_obj.mode
-        meta_is_dirty = self._store_obj._meta_is_dirty
+        attrs_is_dirty = self._store_obj._attrs_is_dirty
         self._store_obj = DataFrameAdaptor(self._store[self._store['group'] != name])
-        self._store_obj.attrs = meta
+        self._store_obj.attrs = attrs
         self._store_obj.mode = mode
-        self._store._meta_is_dirty = meta_is_dirty
+        self._store._attrs_is_dirty = attrs_is_dirty
         self._store._is_dirty = True
 
     def __len__(self) -> int:
@@ -299,7 +299,7 @@ class _PqStore(_StoreWrapper[tp.Union["pandas.DataFrame", "cudf.DataFrame"]]):
         if len(extra_dims) > 1:
             self._store.attrs['extra_dims'][dest_key] = extra_dims[1:]
         self._store[dest_key] = self._engine.Series(new_property)
-        self._store._meta_is_dirty = True
+        self._store._attrs_is_dirty = True
         self._store._is_dirty = True
 
     def rename_direct(self, old_new_dict: tp.Dict[str, str]) -> None:

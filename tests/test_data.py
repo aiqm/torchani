@@ -993,17 +993,6 @@ class TestANIDataset(TestCase):
         for k, v in ds.items():
             self.assertEqual(v, new_groups[k])
 
-    def testMetadata(self):
-        ds = ANIDataset(locations=self.tmp_dir.name / Path("new.h5"), names="newfile")
-        meta = {
-            "newfile": {
-                "some metadata": "metadata string",
-                "other metadata": "other string",
-            }
-        }
-        ds.set_metadata(meta)
-        self.assertEqual(ds.metadata, meta)
-
     def testRegroupNumAtoms(self):
         ds = self._make_new_dataset()
         new_groups = deepcopy(self.torch_conformers)
@@ -1296,7 +1285,7 @@ class TestANIDatasetPandas(TestANIDatasetZarr):
 
         f1 = pandas.DataFrame()
         f3 = pandas.DataFrame()
-        meta = {
+        attrs = {
             "grouping": "by_formula",
             "extra_dims": {"coordinates": (3,)},
             "dtypes": {
@@ -1310,14 +1299,14 @@ class TestANIDatasetPandas(TestANIDatasetZarr):
             / Path(self.tmp_store_one_group.name).with_suffix(".json").name,
             "x",
         ) as f:
-            json.dump(meta, f)
+            json.dump(attrs, f)
 
         with open(
             Path(self.tmp_store_three_groups.name)
             / Path(self.tmp_store_three_groups.name).with_suffix(".json").name,
             "x",
         ) as f:
-            json.dump(meta, f)
+            json.dump(attrs, f)
 
         frames = []
         for j, (k, g) in enumerate(numpy_conformers.items()):

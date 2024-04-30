@@ -451,18 +451,6 @@ class _ANISubdataset(_ANIDatasetBase):
                                ' you backup these properties if needed and'
                                ' delete them using dataset.delete_properties')
 
-    @property
-    def metadata(self) -> tp.Mapping[str, str]:
-        r"""Get the dataset metadata
-        """
-        with ExitStack() as stack:
-            metadata = self._get_open_store(stack, 'r', only_meta=True).metadata
-        return metadata
-
-    def _set_metadata(self, meta: tp.Mapping[str, str]) -> None:
-        with ExitStack() as stack:
-            self._get_open_store(stack, 'r+', only_meta=True).set_metadata(meta)
-
     def open(self, mode: str = "r") -> None:
         self._store.open(mode)
 
@@ -496,7 +484,7 @@ class _ANISubdataset(_ANIDatasetBase):
 
     # This trick makes methods fetch the open file directly
     # if they are being called from inside a "keep_open" context
-    def _get_open_store(self, stack: ExitStack, mode: str = 'r', only_meta: bool = False) -> '_StoreWrapper':
+    def _get_open_store(self, stack: ExitStack, mode: str = 'r', only_attrs: bool = False) -> '_StoreWrapper':
         if mode not in ['r+', 'r']:
             raise ValueError(f"Unsupported mode {mode}")
 
@@ -505,7 +493,7 @@ class _ANISubdataset(_ANIDatasetBase):
                 raise RuntimeError('Tried to open a store with mode "r+" but'
                                    ' the store open with mode "r"')
             return self._store
-        return stack.enter_context(self._store.open(mode, only_meta))
+        return stack.enter_context(self._store.open(mode, only_attrs))
 
     def _update_cache(self, check_properties: bool = False, verbose: bool = True) -> None:
         with ExitStack() as stack:
@@ -517,7 +505,6 @@ class _ANISubdataset(_ANIDatasetBase):
         d: tp.Dict[str, tp.Any] = {'Conformers': f'{self.num_conformers:,}'}
         d.update({'Conformer groups': self.num_conformer_groups})
         d.update({'Properties': sorted(self.properties)})
-        d.update({'Store Metadata': self.metadata})
         return str_ + pformat(d)
 
     @property
@@ -755,13 +742,13 @@ class _ANISubdataset(_ANIDatasetBase):
 
     def _attach_dummy_properties(self, dummy_properties: tp.Dict[str, tp.Any]) -> None:
         with ExitStack() as stack:
-            f = self._get_open_store(stack, 'r+', only_meta=True)
+            f = self._get_open_store(stack, 'r+', only_attrs=True)
             f._dummy_properties = dummy_properties
 
     @property
     def _dummy_properties(self) -> tp.Dict[str, tp.Any]:
         with ExitStack() as stack:
-            dummy = self._get_open_store(stack, 'r+', only_meta=True)._dummy_properties
+            dummy = self._get_open_store(stack, 'r+', only_attrs=True)._dummy_properties
         return dummy
 
     @_broadcast
@@ -790,16 +777,13 @@ class _ANISubdataset(_ANIDatasetBase):
                     # mypy doesn't know that @wrap'ed functions have __wrapped__
                     # attribute, and fixing this is ugly
                     rwds.append_conformers.__wrapped__(rwds, group_name, conformers)  # type: ignore
-            meta = self.metadata
             new_ds._attach_dummy_properties(self._dummy_properties)
             if inplace:
                 self._store.location.transfer_to(new_ds._store)
-                new_ds._set_metadata(meta)
                 return new_ds
             else:
                 new_parent = Path(tp.cast(StrPath, dest_root)).resolve()
                 new_ds._store.location.root = new_parent / self._store.location.root.with_suffix('').name
-                new_ds._set_metadata(meta)
                 return self
 
     @_broadcast
@@ -842,10 +826,8 @@ class _ANISubdataset(_ANIDatasetBase):
                     for formula, idx in zip(unique_formulas, formula_idxs):
                         selected_conformers = {k: v[idx] for k, v in conformers.items()}
                         rwds.append_conformers.__wrapped__(rwds, formula, selected_conformers)  # type: ignore
-            meta = self.metadata
             new_ds._attach_dummy_properties(self._dummy_properties)
             self._store.location.transfer_to(new_ds._store)
-            new_ds._set_metadata(meta)
         if repack:
             new_ds._update_cache()
             return new_ds.repack.__wrapped__(new_ds, verbose=verbose)  # type: ignore
@@ -872,10 +854,8 @@ class _ANISubdataset(_ANIDatasetBase):
                     # This is done to accomodate the current group convention
                     new_name = str(_get_num_atoms(conformers)).zfill(3)
                     rwds.append_conformers.__wrapped__(rwds, new_name, conformers)  # type: ignore
-            meta = self.metadata
             new_ds._attach_dummy_properties(self._dummy_properties)
             self._store.location.transfer_to(new_ds._store)
-            new_ds._set_metadata(meta)
         if repack:
             new_ds._update_cache()
             return new_ds.repack.__wrapped__(new_ds, verbose=verbose)  # type: ignore
@@ -942,7 +922,7 @@ class _ANISubdataset(_ANIDatasetBase):
         hierarchical datasets. Can be one of 'by_formula', 'by_num_atoms', 'legacy'.
         """
         with ExitStack() as stack:
-            grouping = self._get_open_store(stack, 'r', only_meta=True).grouping
+            grouping = self._get_open_store(stack, 'r', only_attrs=True).grouping
         return grouping
 
     def _check_unique_element_key(self, properties: tp.Optional[tp.Iterable[str]] = None) -> None:
@@ -1105,30 +1085,6 @@ class ANIDataset(_ANIDatasetBase):
     @property
     def grouping(self) -> str:
         return self._first_subds.grouping
-
-    @property
-    def metadata(self) -> tp.Mapping[str, tp.Mapping[str, str]]:
-        """ Get a dataset metadata
-
-        returns a mapping of the form
-        {subdataset_name: {'key': 'value'}}
-        with an arbitrary number of string key-value pairs
-        """
-        meta = dict()
-        for name, ds in self._datasets.items():
-            meta[name] = ds.metadata
-        return meta
-
-    def set_metadata(self, meta: tp.Mapping[str, tp.Mapping[str, str]]):
-        """ Set dataset metadata
-
-        Accepts a mapping of the form
-        {subdataset_name: {'key': 'value'}}
-        with an arbitrary number of string key-value pairs
-        """
-        for k, v in meta.items():
-            self._datasets[k]._set_metadata(v)
-        return self
 
     def open(self, mode: str = "r") -> None:
         for ds in self._datasets.values():

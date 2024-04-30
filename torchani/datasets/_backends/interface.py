@@ -229,7 +229,7 @@ class _StoreWrapper(tp.ContextManager['_StoreWrapper'], tp.MutableMapping[str, '
         return self._store_obj
 
     @abstractmethod
-    def open(self, mode: str = 'r', only_meta: bool = False) -> Self:
+    def open(self, mode: str = 'r', only_attrs: bool = False) -> Self:
         pass
 
     def close(self) -> Self:
@@ -273,22 +273,6 @@ class _StoreWrapper(tp.ContextManager['_StoreWrapper'], tp.MutableMapping[str, '
             return tp.cast(str, g)
         except (KeyError, OSError):
             return 'legacy'
-
-    @property
-    def metadata(self) -> tp.Mapping[str, str]:
-        try:
-            meta = {name: attr for name, attr in self._store.attrs.items() if name not in ['grouping', 'dtypes', 'extra_dims']}
-        except Exception:
-            meta = dict()
-        return meta
-
-    def set_metadata(self, value: tp.Mapping[str, str]) -> None:
-        if 'grouping' in value.keys():
-            raise ValueError('Grouping is not a valid metadata key')
-        for k, v in value.items():
-            self._store.attrs[k] = v
-        if hasattr(self._store, "_meta_is_dirty"):
-            self._store._meta_is_dirty = True
 
     def __exit__(self, *args) -> None:
         try:

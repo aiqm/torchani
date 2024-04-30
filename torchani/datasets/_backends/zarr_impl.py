@@ -38,7 +38,7 @@ class _ZarrStore(_HierarchicalStoreWrapper["zarr.Group"]):
             g.attrs['grouping'] = grouping
         return cls(store_location, **kwargs)
 
-    def open(self, mode: str = 'r', only_meta: bool = False) -> Self:
+    def open(self, mode: str = 'r', only_attrs: bool = False) -> Self:
         store = zarr.storage.DirectoryStore(self.location.root)
         self._store_obj = zarr.hierarchy.open_group(store, mode)
         setattr(self._store_obj, 'mode', mode)

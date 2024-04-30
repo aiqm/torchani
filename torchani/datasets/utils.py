@@ -1,6 +1,5 @@
 r"""Utilities for working with ANI Datasets"""
 import typing as tp
-import warnings
 
 import torch
 from torch import Tensor
@@ -24,9 +23,6 @@ def concatenate(source: ANIDataset,
     r"""Combine all the backing stores in a given ANIDataset into one"""
     if source.grouping not in ['by_formula', 'by_num_atoms']:
         raise ValueError("Please regroup your dataset before concatenating")
-
-    if source.metadata:
-        warnings.warn("Source dataset has metadata which will not be copied.")
 
     with TemporaryLocation(source._first_subds._backend) as tmp_location:
         dest = ANIDataset(tmp_location,
