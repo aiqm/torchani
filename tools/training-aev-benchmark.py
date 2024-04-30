@@ -6,8 +6,8 @@ import os
 import pickle
 
 import torch
-import pkbar
 import pynvml
+from tqdm import tqdm
 
 import torchani
 from torchani.units import hartree2kcalpermol
@@ -149,7 +149,7 @@ def benchmark(args, dataset, use_cuda_extension, force_train=False):
     for epoch in range(0, args.num_epochs):
 
         print('Epoch: %d/%d' % (epoch + 1, args.num_epochs))
-        progbar = pkbar.Kbar(target=len(dataset) - 1, width=8)
+        pbar = tqdm(desc="rmse: ?", total=len(dataset))
 
         for i, properties in enumerate(dataset):
             species = properties['species'].to(args.device)
@@ -179,7 +179,8 @@ def benchmark(args, dataset, use_cuda_extension, force_train=False):
             else:
                 loss = energy_loss
             rmse = hartree2kcalpermol((mse(predicted_energies, true_energies)).mean()).detach().cpu().numpy()
-            progbar.update(i, values=[("rmse", rmse)])
+            pbar.update()
+            pbar.set_description(f"rmse: {rmse}")
             sync_cuda(synchronize)
             loss_start = time.time()
             loss.backward()

@@ -3,7 +3,7 @@ import math
 import argparse
 
 import torch
-import tqdm
+from tqdm import tqdm
 
 from torchani.models import ANI1x
 from torchani.data._pyanitools import anidataloader
@@ -78,7 +78,7 @@ def do_benchmark(model):
     rmse_averager_energy = Averager()
     rmse_averager_relative_energy = Averager()
     rmse_averager_force = Averager()
-    for i in tqdm.tqdm(dataset, position=0, desc="dataset"):
+    for i in tqdm(dataset, position=0, desc="dataset"):
         # read
         coordinates = torch.tensor(i['coordinates'], device=args.device)
         species = model.species_to_tensor(i['species']) \

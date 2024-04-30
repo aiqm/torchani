@@ -9,8 +9,9 @@ from collections import OrderedDict
 
 import torch
 from torch import Tensor
+from tqdm import tqdm
 
-from torchani.utils import pad_atomic_properties, cumsum_from_zero, PADDING, tqdm
+from torchani.utils import pad_atomic_properties, cumsum_from_zero, PADDING
 from torchani.datasets.datasets import ANIDataset
 from torchani.transforms import Transform, Identity
 from torchani.datasets._annotations import Conformers, StrPath

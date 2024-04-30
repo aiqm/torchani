@@ -6,8 +6,8 @@ from pathlib import Path
 from functools import partial
 
 import numpy as np
+from tqdm import tqdm
 
-from torchani.utils import tqdm
 from torchani.datasets._annotations import StrPath, Self
 from torchani.datasets._backends.interface import _ConformerGroup, _ConformerWrapper, CacheHolder, _HierarchicalStoreWrapper
 

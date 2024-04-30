@@ -11,9 +11,9 @@ from pathlib import Path
 
 import torch
 import torch.utils.tensorboard
+from tqdm import tqdm
 
 import torchani
-from torchani.utils import tqdm
 from torchani.models import BuiltinModel
 from torchani.datasets import ANIDataset, ANIBatchedDataset
 from torchani.units import hartree2kcalpermol

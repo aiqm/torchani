@@ -3,7 +3,7 @@ import time
 import argparse
 
 import torch
-import pkbar
+from tqdm import tqdm
 
 import torchani
 from torchani.units import hartree2kcalpermol
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     for epoch in range(0, args.num_epochs):
 
         print('Epoch: %d/%d' % (epoch + 1, args.num_epochs))
-        progbar = pkbar.Kbar(target=len(dataset) - 1, width=8)
+        pbar = tqdm(desc="rmse: ?", total=len(dataset))
 
         for i, properties in enumerate(dataset):
             species = properties['species'].to(args.device)
@@ -128,7 +128,8 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
 
-            progbar.update(i, values=[("rmse", rmse)])
+            pbar.update()
+            pbar.set_description(f"rmse: {rmse}")
     if synchronize:
         torch.cuda.synchronize()
     stop = time.time()

@@ -97,7 +97,6 @@ with multiprocessing to achieve comparable performance with less memory usage:
 """
 from os.path import join, isfile, isdir
 import os
-import importlib
 import functools
 import math
 import random
@@ -106,13 +105,10 @@ import gc
 
 import numpy
 import torch
+from tqdm import tqdm
 
 from torchani.data._pyanitools import anidataloader
 from torchani import utils
-
-PKBAR_INSTALLED = importlib.util.find_spec('pkbar') is not None  # type: ignore
-if PKBAR_INSTALLED:
-    import pkbar
 
 verbose = True
 
@@ -376,13 +372,12 @@ def load(path, additional_properties=()):
         for f in h5_files(path):
             anidata = anidataloader(f)
             anidata_size = anidata.group_size()
-            use_pbar = PKBAR_INSTALLED and verbose
-            if use_pbar:
-                pbar = pkbar.Pbar('=> loading {}, total molecules: {}'.format(f, anidata_size), anidata_size)
+            if verbose:
+                pbar = tqdm(desc="=> loading {f}, total_molecules: {anidata_size}", total=anidata_size)
             for i, m in enumerate(anidata):
                 yield m
-                if use_pbar:
-                    pbar.update(i)
+                if verbose:
+                    pbar.update()
 
     def conformations():
         for m in molecules():

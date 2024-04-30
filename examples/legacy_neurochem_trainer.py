@@ -11,9 +11,9 @@ import os
 import sys
 
 import torch
+from tqdm import tqdm
 
 import torchani
-from torchani.utils import tqdm
 
 ###############################################################################
 # Now let's setup path for the dataset and NeuroChem input file. Note that

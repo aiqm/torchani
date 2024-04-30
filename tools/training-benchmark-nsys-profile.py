@@ -1,7 +1,7 @@
 import argparse
 
 import torch
-import pkbar
+from tqdm import tqdm
 
 import torchani
 from torchani.units import hartree2kcalpermol
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     for epoch in range(0, WARM_UP_BATCHES + 1):
 
         print('Epoch: %d/inf' % (epoch + 1,))
-        progbar = pkbar.Kbar(target=len(dataset) - 1, width=8)
+        pbar = tqdm(desc="rmse: ?", total=len(dataset))
 
         for i, properties in enumerate(dataset):
 
@@ -109,7 +109,8 @@ if __name__ == "__main__":
             if PROFILING_STARTED:
                 torch.cuda.nvtx.range_pop()
 
-            progbar.update(i, values=[("rmse", rmse)])
+            pbar.update()
+            pbar.set_description(f"rmse: {rmse}")
 
             if PROFILING_STARTED:
                 torch.cuda.nvtx.range_pop()

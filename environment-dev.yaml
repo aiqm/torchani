@@ -41,7 +41,6 @@ dependencies:
 
   # progress bars
   - tqdm  # progress bars
-  - pkbar
 
   # legacy neurochem parser
   - lark-parser

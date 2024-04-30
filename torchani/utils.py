@@ -14,10 +14,10 @@ import torch
 from torch.profiler import record_function, ProfilerActivity
 from torch import Tensor
 import torch.utils.data
+from tqdm import tqdm
 
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
 from torchani.tuples import SpeciesEnergies, VibAnalysis
-from torchani.compat import tqdm
 
 
 PADDING = {

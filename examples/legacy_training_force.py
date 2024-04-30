@@ -17,9 +17,9 @@ import math
 
 import torch
 import torch.utils.tensorboard
+from tqdm import tqdm
 
 import torchani
-from torchani.utils import tqdm
 from torchani.units import hartree2kcalpermol
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
