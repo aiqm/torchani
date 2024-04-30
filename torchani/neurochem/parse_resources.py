@@ -8,10 +8,10 @@ from pathlib import Path
 
 import requests
 
-from ..aev import AEVComputer
-from ..utils import EnergyShifter
-from ..nn import Ensemble, ANIModel
-from .neurochem import Constants, load_model_ensemble, load_model, load_sae  # type: ignore
+from torchani.aev import AEVComputer
+from torchani.utils import EnergyShifter
+from torchani.nn import Ensemble, ANIModel
+from torchani.neurochem.neurochem import Constants, load_model_ensemble, load_model, load_sae
 
 
 __all__ = ['parse_neurochem_resources']

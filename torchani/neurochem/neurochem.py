@@ -1,5 +1,3 @@
-# type: ignore
-# This file is legacy, it should not be type-checked
 import struct
 import bz2
 import math
@@ -35,13 +33,13 @@ class Constants(collections.abc.Mapping):
                         setattr(self, name, float(value))
                     elif name in ['EtaR', 'ShfR', 'Zeta',
                                   'ShfZ', 'EtaA', 'ShfA']:
-                        value = [float(x.strip()) for x in value.replace(
+                        float_values = [float(x.strip()) for x in value.replace(
                             '[', '').replace(']', '').split(',')]
-                        setattr(self, name, torch.tensor(value))
+                        setattr(self, name, torch.tensor(float_values))
                     elif name == 'Atyp':
-                        value = [x.strip() for x in value.replace(
+                        str_values = [x.strip() for x in value.replace(
                             '[', '').replace(']', '').split(',')]
-                        self.species = value
+                        self.species = str_values
                 except Exception:
                     raise ValueError('unable to parse const file')
         self.num_species = len(self.species)
@@ -68,7 +66,7 @@ class Constants(collections.abc.Mapping):
 def load_sae(filename, return_dict=False):
     """Returns an object of :class:`EnergyShifter` with self energies from
     NeuroChem sae file"""
-    self_energies = []
+    _self_energies = []
     d = {}
     with open(filename) as f:
         for i in f:
@@ -77,8 +75,8 @@ def load_sae(filename, return_dict=False):
             index = int(line[0].split(',')[1].strip())
             value = float(line[1])
             d[species] = value
-            self_energies.append((index, value))
-    self_energies = [i for _, i in sorted(self_energies)]
+            _self_energies.append((index, value))
+    self_energies = [i for _, i in sorted(_self_energies)]
     if return_dict:
         return EnergyShifter(self_energies), d
     return EnergyShifter(self_energies)
@@ -195,13 +193,13 @@ def load_atomic_network(filename):
         """Load `.wparam` and `.bparam` files"""
         wsize = in_size * out_size
         fw = open(wfn, 'rb')
-        w = struct.unpack('{}f'.format(wsize), fw.read())
-        w = torch.tensor(w).view(out_size, in_size)
+        _w = struct.unpack('{}f'.format(wsize), fw.read())
+        w = torch.tensor(_w).view(out_size, in_size)
         linear.weight.data = w
         fw.close()
         fb = open(bfn, 'rb')
-        b = struct.unpack('{}f'.format(out_size), fb.read())
-        b = torch.tensor(b).view(out_size)
+        _b = struct.unpack('{}f'.format(out_size), fb.read())
+        b = torch.tensor(_b).view(out_size)
         linear.bias.data = b
         fb.close()
 
