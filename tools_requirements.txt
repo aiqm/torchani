@@ -1,0 +1,6 @@
+# Ase interface
+ase
+
+# Utils for running tools
+pynvml
+matplotlib

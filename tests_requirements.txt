@@ -1,0 +1,12 @@
+# Ase interface
+ase
+
+# Linters / checkers / tests-runners / CI
+pytest
+parameterized
+expecttest
+
+# Extra data backends for tests
+pandas
+pyarrow
+zarr

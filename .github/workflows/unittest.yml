@@ -18,7 +18,7 @@ jobs:
           submodules: recursive
 
       - name: Install and Run tests
-        run: docker run --rm --gpus '"device=none"' -v $PWD:/examples nvcr.io/nvidia/pytorch:22.08-py3 bash -c "mkdir -p /torchani_sandbox && cd /torchani_sandbox && cp -r /examples/. /torchani_sandbox/ && pip install -r test_requirements.txt && pip uninstall cudf -y && ./download.sh && python setup.py develop && cd tests/ && pytest -s -v ."
+        run: docker run --rm --gpus '"device=none"' -v $PWD:/examples nvcr.io/nvidia/pytorch:22.08-py3 bash -c "mkdir -p /torchani_sandbox && cd /torchani_sandbox && cp -r /examples/. /torchani_sandbox/ && pip install -r tests_requirements.txt && pip uninstall cudf -y && ./download.sh && python setup.py develop && cd tests/ && pytest -s -v ."
 
 concurrency:
   group: unittests_cpu-${{ github.event.pull_request.number || github.sha }}

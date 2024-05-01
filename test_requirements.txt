@@ -1,9 +1,0 @@
-ase
-pytest
-parameterized
-expecttest
-zarr
-pandas
-pyarrow
-pynvml
-matplotlib

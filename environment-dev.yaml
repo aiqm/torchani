@@ -22,12 +22,12 @@ dependencies:
   # Utils
   - tqdm  # progress bar
 
-  # Ase interface (optional)
-  - ase
-
   # Neurochem files (legacy)
   - lark-parser
   - requests
+
+  # Ase interface
+  - ase
 
   # Linters / checkers / tests-runners / CI
   - black
@@ -43,7 +43,7 @@ dependencies:
   - pyarrow  # Parquet backend
   - zarr  # Zarr backend
 
-  # Tools
+  # Utils for running tools
   - matplotlib
   - pynvml
 

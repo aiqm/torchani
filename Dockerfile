@@ -25,7 +25,8 @@ ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 # Install torchani and dependencies
 RUN cd /torchani_sandbox \
     && pip install twine wheel \
-    && pip install -r test_requirements.txt \
+    && pip install -r tests_requirements.txt \
+    && pip install -r tools_requirements.txt \
     && pip install -r docs_requirements.txt \
     && pip install pytest \
     && ./download.sh \
