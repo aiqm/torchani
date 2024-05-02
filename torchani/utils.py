@@ -651,6 +651,9 @@ def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
     merged_dict: tp.Dict[str, Tensor] = {}
     for j, path in enumerate(sorted(paths)):
         state_dict = torch.load(path, map_location=torch.device("cpu"))
+        # Compatibility with lightning state dicts
+        if "state_dict" in state_dict:
+            state_dict = {k.replace("model.", ""): v for k, v in state_dict["state_dict"].items() if k.startswith("model")}
         keys = tuple(state_dict.keys())
         for k in keys:
             if "neural_networks" not in k:
