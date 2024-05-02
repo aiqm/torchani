@@ -712,7 +712,7 @@ def FlexANI1(
     neighborlist: NeighborlistArg = "full_pairwise",
     dispersion_2body_d3: bool = False,
     repulsion_xtb: bool = True,
-    atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]] = "ani2x",
+    atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]] = "ani1x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
     use_cuda_ops: bool = False,
