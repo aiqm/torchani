@@ -666,7 +666,7 @@ def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
             if "neural_networks" not in k:
                 if k not in state_dict:
                     raise ValueError(f"Missing key in state dict: {k}")
-                if v != state_dict[k]:
+                if (v != state_dict[k]).any():
                     raise ValueError(f"Incompatible values for key {k}")
         merged_dict.update(state_dict)
     return OrderedDict(merged_dict)
