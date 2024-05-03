@@ -63,24 +63,6 @@ ELEMENTS_2X: tp.Tuple[str, ...] = ELEMENTS_1X + SFCl
 STATE_DICTS_PATH = (Path.home() / ".local") / "torchani"
 
 
-def _parse_cuda_ops(
-    use_cuda_ops: bool = False,
-    use_cuda_extension: bool = False,
-    use_cuaev_interface: bool = False,
-) -> tp.Dict[str, bool]:
-    if use_cuda_ops and not (use_cuda_extension or use_cuaev_interface):
-        return {"use_cuda_extension": True, "use_cuaev_interface": True}
-    elif not use_cuda_ops:
-        return {
-            "use_cuda_extension": use_cuaev_interface,
-            "use_cuaev_interface": use_cuaev_interface,
-        }
-    else:
-        raise ValueError(
-            "cuda extension and cuaev interface cant be specified if cuda_ops is specified"
-        )
-
-
 # "global" cutoff means the global cutoff_fn will be used
 # Otherwise, a specific cutoff fn can be specified
 class FeaturizerWrapper:
@@ -410,7 +392,6 @@ def ANI1x(
     model_index: tp.Optional[int] = None,
     pretrained: bool = True,
     neighborlist: str = "full_pairwise",
-    use_cuda_ops: bool = False,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
@@ -446,7 +427,7 @@ def ANI1x(
         AEVComputer,
         angular_terms=StandardAngular.like_1x(),
         radial_terms=StandardRadial.like_1x(),
-        extra=_parse_cuda_ops(use_cuda_ops, use_cuda_extension, use_cuaev_interface),
+        extra={"use_cuda_extension": use_cuda_extension, "use_cuaev_interface": use_cuaev_interface},
     )
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
@@ -460,7 +441,6 @@ def ANI1ccx(
     model_index: tp.Optional[int] = None,
     pretrained: bool = True,
     neighborlist: str = "full_pairwise",
-    use_cuda_ops: bool = False,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
@@ -496,7 +476,7 @@ def ANI1ccx(
         AEVComputer,
         radial_terms=StandardRadial.like_1ccx(),
         angular_terms=StandardAngular.like_1ccx(),
-        extra=_parse_cuda_ops(use_cuda_ops, use_cuda_extension, use_cuaev_interface),
+        extra={"use_cuda_extension": use_cuda_extension, "use_cuaev_interface": use_cuaev_interface},
     )
     asm.set_atomic_maker(atomics.like_1ccx)
     asm.set_neighborlist(neighborlist)
@@ -511,7 +491,6 @@ def ANI2x(
     model_index: tp.Optional[int] = None,
     pretrained: bool = True,
     neighborlist: str = "full_pairwise",
-    use_cuda_ops: bool = False,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
@@ -546,7 +525,7 @@ def ANI2x(
         AEVComputer,
         radial_terms=StandardRadial.like_2x(),
         angular_terms=StandardAngular.like_2x(),
-        extra=_parse_cuda_ops(use_cuda_ops, use_cuda_extension, use_cuaev_interface),
+        extra={"use_cuda_extension": use_cuda_extension, "use_cuaev_interface": use_cuaev_interface},
     )
     asm.set_atomic_maker(atomics.like_2x)
     asm.set_neighborlist(neighborlist)
@@ -561,7 +540,6 @@ def ANIala(
     model_index: tp.Optional[int] = None,
     pretrained: bool = True,
     neighborlist: str = "full_pairwise",
-    use_cuda_ops: bool = False,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
@@ -576,7 +554,7 @@ def ANIala(
         AEVComputer,
         radial_terms=StandardRadial.like_2x(),
         angular_terms=StandardAngular.like_2x(),
-        extra=_parse_cuda_ops(use_cuda_ops, use_cuda_extension, use_cuaev_interface),
+        extra={"use_cuda_extension": use_cuda_extension, "use_cuaev_interface": use_cuaev_interface},
     )
     asm.set_atomic_maker(atomics.like_ala)
     asm.set_neighborlist(neighborlist)
@@ -607,7 +585,7 @@ def ANIdr(
         AEVComputer,
         angular_terms=StandardAngular.like_2x(),
         radial_terms=StandardRadial.like_2x(),
-        extra=_parse_cuda_ops(use_cuda_ops),
+        extra={"use_cuda_extension": use_cuda_ops, "use_cuaev_interface": use_cuda_ops},
     )
     asm.set_atomic_maker(atomics.like_dr)
     asm.add_pairwise_potential(
@@ -642,8 +620,8 @@ def FlexANI(
     angular_zeta: float,
     cutoff_fn: CutoffArg,
     neighborlist: NeighborlistArg,
-    dispersion_2body_d3: bool,
-    repulsion_xtb: bool,
+    dispersion: bool,
+    repulsion: bool,
     atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]],
     activation: tp.Union[str, torch.nn.Module],
     bias: bool,
@@ -672,7 +650,7 @@ def FlexANI(
             num_angle_sections=angle_sections,
             cutoff=angular_cutoff,
         ),
-        extra=_parse_cuda_ops(use_cuda_ops),
+        extra={"use_cuda_extension": use_cuda_ops, "use_cuaev_interface": use_cuda_ops},
     )
     _atomic_maker = functools.partial(
         atomics._parse_atomics(atomic_maker),
@@ -682,12 +660,12 @@ def FlexANI(
     asm.set_atomic_maker(_atomic_maker)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies(lot)
-    if repulsion_xtb:
+    if repulsion:
         asm.add_pairwise_potential(
             RepulsionXTB,
             cutoff=radial_cutoff,
         )
-    if dispersion_2body_d3:
+    if dispersion:
         asm.add_pairwise_potential(
             TwoBodyDispersionD3,
             cutoff=8.0,
@@ -710,8 +688,8 @@ def FlexANI1(
     angular_zeta: float = 32.0,
     cutoff_fn: CutoffArg = "smooth2",
     neighborlist: NeighborlistArg = "full_pairwise",
-    dispersion_2body_d3: bool = False,
-    repulsion_xtb: bool = True,
+    dispersion: bool = False,
+    repulsion: bool = True,
     atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]] = "ani1x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
@@ -735,8 +713,8 @@ def FlexANI1(
         angular_zeta=angular_zeta,
         cutoff_fn=cutoff_fn,
         neighborlist=neighborlist,
-        dispersion_2body_d3=dispersion_2body_d3,
-        repulsion_xtb=repulsion_xtb,
+        dispersion=dispersion,
+        repulsion=repulsion,
         atomic_maker=atomic_maker,
         activation=activation,
         bias=bias,
@@ -759,8 +737,8 @@ def FlexANI2(
     angular_zeta: float = 14.1,
     cutoff_fn: CutoffArg = "smooth2",
     neighborlist: NeighborlistArg = "full_pairwise",
-    dispersion_2body_d3: bool = False,
-    repulsion_xtb: bool = True,
+    dispersion: bool = False,
+    repulsion: bool = True,
     atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]] = "ani2x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
@@ -784,8 +762,8 @@ def FlexANI2(
         angular_zeta=angular_zeta,
         cutoff_fn=cutoff_fn,
         neighborlist=neighborlist,
-        dispersion_2body_d3=dispersion_2body_d3,
-        repulsion_xtb=repulsion_xtb,
+        dispersion=dispersion,
+        repulsion=repulsion,
         atomic_maker=atomic_maker,
         activation=activation,
         bias=bias,

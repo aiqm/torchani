@@ -92,8 +92,7 @@ validation = torch.utils.data.DataLoader(
 model = FlexANI2(
     lot="wb97x-631gd",
     symbols=("H", "C", "N", "O"),
-    repulsion_xtb=True,
-    use_cuda_ops=False,  # Train without cuAEV
+    repulsion=True,
 )
 
 # Set up of optimizer, lr-scheduler and loss-function
