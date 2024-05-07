@@ -26,10 +26,6 @@ class AEVPotential(Potential):
         super().__init__(cutoff=aev_computer.radial_terms.cutoff, symbols=symbols)
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
-        if isinstance(neural_networks, Ensemble):
-            self.size = neural_networks.size
-        else:
-            self.size = 1
 
     def forward(
         self,

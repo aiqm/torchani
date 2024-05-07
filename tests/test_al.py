@@ -49,7 +49,6 @@ class TestALQBC(TestALAtomic):
             (self.species, self.coordinates))
 
         # correctness of shape
-        torch.set_printoptions(precision=15)
         self.assertEqual(energies.shape[-1], self.coordinates.shape[0])
         self.assertEqual(energies.shape[0], len(self.model.neural_networks))
         self.assertEqual(
@@ -121,7 +120,6 @@ class TestALQBC(TestALAtomic):
         # fully symmetric methane
         _, _, qbc = self.model.energies_qbcs((self.species, self.coordinates))
 
-        torch.set_printoptions(precision=15)
         std = self.model.members_energies(
             (self.species, self.coordinates)).energies.std(dim=0,
                                                            unbiased=True)
@@ -147,7 +145,6 @@ class TestALQBC(TestALAtomic):
         self.assertEqual(std, qbc)
 
     def testAtomicStdev(self):
-        torch.set_printoptions(precision=15)
         # Symmetric methane
         atomic_stdev = self.model.atomic_stdev((self.species, self.coordinates)).stdev_atomic_energies
         _, atomic_energies = self.model.atomic_energies((self.species, self.coordinates), average=False)

@@ -123,25 +123,12 @@ class BuiltinModel(torch.nn.Module):
         self.periodic_table_index = periodic_table_index
         numbers = torch.tensor([ATOMIC_NUMBERS[e] for e in elements], dtype=torch.long)
         self.register_buffer('atomic_numbers', numbers)
-        self._register_types_for_jit()
 
         # checks are performed to make sure all modules passed support the
         # correct number of species
-
         assert len(self.energy_shifter.self_energies) == len(self.atomic_numbers)
         assert len(self.atomic_numbers) == self.aev_computer.num_species
-
-        if isinstance(self.neural_networks, Ensemble):
-            for nnp in self.neural_networks:
-                assert len(nnp) == len(self.atomic_numbers)
-        else:
-            assert len(self.neural_networks) == len(self.atomic_numbers)
-
-    def _register_types_for_jit(self):
-        # Register dummy modules so that JIT knows their types and can
-        # perform isinstance checks correctly
-        self._dummy_model = ANIModel([torch.nn.Sequential(torch.nn.Identity())])
-        self._dummy_ensemble = Ensemble([self._dummy_model])
+        assert self.neural_networks.num_species == len(self.atomic_numbers)
 
     def to_infer_model(self, *args, **kwargs) -> 'BuiltinModel':
         """ Convert the neural networks module of the model into a module
@@ -207,13 +194,9 @@ class BuiltinModel(torch.nn.Module):
         Returns:
             species_energies: tuple of tensors, species and atomic energies
         """
-        assert isinstance(self.neural_networks, (Ensemble, ANIModel))
         species_coordinates = self._maybe_convert_species(species_coordinates)
         species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
         atomic_energies = self.neural_networks._atomic_energies(species_aevs)
-
-        if atomic_energies.dim() == 2:
-            atomic_energies = atomic_energies.unsqueeze(0)
 
         if shift_energy:
             atomic_energies += self.energy_shifter.atomic_energies(species_coordinates[0])
@@ -242,9 +225,8 @@ class BuiltinModel(torch.nn.Module):
         return ase.Calculator(self, **kwargs)
 
     def __getitem__(self, index: int) -> 'BuiltinModel':
-        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
         return BuiltinModel(self.aev_computer,
-                           self.neural_networks[index],
+                           self.neural_networks.member(index),
                            self.energy_shifter,
                            self.get_chemical_symbols(),
                            self.periodic_table_index)
@@ -264,7 +246,6 @@ class BuiltinModel(torch.nn.Module):
             species_energies: species and members energies for the given configurations
                 shape of energies is (M, C), where M is the number of modules in the ensemble.
         """
-        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
         species, members_energies = self.atomic_energies(species_coordinates, cell=cell, pbc=pbc,
                                                          shift_energy=True, average=False, include_non_aev_potentials=True)
         return SpeciesEnergies(species, members_energies.sum(-1))
@@ -284,7 +265,6 @@ class BuiltinModel(torch.nn.Module):
         Returns:
             SpeciesForces: species, molecular energies, and atomic forces predicted by an ensemble of neural network models
         """
-        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
         coordinates = species_coordinates[1].requires_grad_()
         members_energies = self.members_energies(species_coordinates, cell, pbc).energies
         forces_list = []
@@ -306,6 +286,8 @@ class BuiltinModel(torch.nn.Module):
         QBC factors are used for query-by-committee (QBC) based active learning
         (as described in the ANI-1x paper `less-is-more`_ ).
 
+        If the model has only 1 network, then qbc factors are all 0.0
+
         .. _less-is-more:
             https://aip.scitation.org/doi/10.1063/1.5023802
 
@@ -321,11 +303,13 @@ class BuiltinModel(torch.nn.Module):
                 factors for the given configurations. The shapes of qbcs and
                 energies are equal.
         """
-        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
         species, energies = self.members_energies(species_coordinates, cell, pbc)
 
-        # standard deviation is taken across ensemble members
-        qbc_factors = energies.std(0, unbiased=unbiased)
+        if self.neural_networks.size == 1:
+            qbc_factors = torch.zeros_like(energies).squeeze(0)
+        else:
+            # standard deviation is taken across ensemble members
+            qbc_factors = energies.std(0, unbiased=unbiased)
 
         # rho's (qbc factors) are weighted by dividing by the square root of
         # the number of atoms in each molecule
@@ -346,19 +330,20 @@ class BuiltinModel(torch.nn.Module):
         Returns standard deviation in atomic energy predictions across the ensemble.
 
         shift_energy returns the shifted atomic energies according to the model used
+
+        If the model has only 1 network, a value of 0.0 is output for the stdev
         """
-        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
         species_coordinates = self._maybe_convert_species(species_coordinates)
         species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
         atomic_energies = self.neural_networks._atomic_energies(species_aevs)
 
-        if atomic_energies.dim() == 2:
-            atomic_energies = atomic_energies.unsqueeze(0)
-
         if shift_energy:
             atomic_energies += self.energy_shifter.atomic_energies(species_coordinates[0])
 
-        stdev_atomic_energies = atomic_energies.std(0, unbiased=unbiased)
+        if self.neural_networks.size == 1:
+            stdev_atomic_energies = torch.zeros_like(atomic_energies).squeeze(0)
+        else:
+            stdev_atomic_energies = atomic_energies.std(0, unbiased=unbiased)
 
         if average:
             atomic_energies = atomic_energies.mean(0)
@@ -377,8 +362,6 @@ class BuiltinModel(torch.nn.Module):
             species_coordinates: minibatch of configurations
             average: by default, returns the ensemble average magnitude for each atomic force vector
         '''
-        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
-
         species, _, members_forces = self.members_forces(species_coordinates, cell, pbc)
         magnitudes = members_forces.norm(dim=-1)
         if average:
@@ -400,15 +383,18 @@ class BuiltinModel(torch.nn.Module):
             average: returns magnitudes predicted by each model by default
             unbiased: whether or not to use Bessel's correction in computing the standard deviation, True by default
         """
-        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
         species, magnitudes = self.force_magnitudes(species_coordinates, cell, pbc, average=False)
 
         max_magnitudes = magnitudes.max(dim=0).values
         min_magnitudes = magnitudes.min(dim=0).values
 
-        mean_magnitudes = magnitudes.mean(0)
-        relative_stdev = (magnitudes.std(0, unbiased=unbiased) + 1e-8) / (mean_magnitudes + 1e-8)
-        relative_range = ((max_magnitudes - min_magnitudes) + 1e-8) / (mean_magnitudes + 1e-8)
+        if self.neural_networks.size == 1:
+            relative_stdev = torch.zeros_like(magnitudes).squeeze(0)
+            relative_range = torch.ones_like(magnitudes).squeeze(0)
+        else:
+            mean_magnitudes = magnitudes.mean(0)
+            relative_stdev = (magnitudes.std(0, unbiased=unbiased) + 1e-8) / (mean_magnitudes + 1e-8)
+            relative_range = ((max_magnitudes - min_magnitudes) + 1e-8) / (mean_magnitudes + 1e-8)
 
         if average:
             magnitudes = mean_magnitudes
@@ -416,7 +402,6 @@ class BuiltinModel(torch.nn.Module):
         return ForceStdev(species, magnitudes, relative_stdev, relative_range)
 
     def __len__(self):
-        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
         return self.neural_networks.size
 
 
@@ -430,7 +415,6 @@ class PairPotentialsModel(BuiltinModel):
         super().__init__(*args, **kwargs)
         potentials: tp.List[Potential] = list(pairwise_potentials)
         aev_potential = AEVPotential(self.aev_computer, self.neural_networks)
-        self.size = aev_potential.size
         potentials.append(aev_potential)
 
         # We want to check the cutoffs of the potentials, and sort them
@@ -477,7 +461,7 @@ class PairPotentialsModel(BuiltinModel):
         # some potentials output atomic energies with shape (M, N, A), where
         # M is all models in the ensemble
         atomic_energies = torch.zeros(
-            (self.size, element_idxs.shape[0], element_idxs.shape[1]),
+            (self.neural_networks.size, element_idxs.shape[0], element_idxs.shape[1]),
             dtype=coordinates.dtype,
             device=coordinates.device
         )
@@ -508,13 +492,11 @@ class PairPotentialsModel(BuiltinModel):
         return SpeciesEnergies(species_coordinates[0], atomic_energies)
 
     # NOTE: members_energies does not need to be overriden, it works correctly as is
-
-    def __getitem__(self, index: int) -> 'BuiltinModel':
-        assert isinstance(self.neural_networks, Ensemble), "Your model doesn't have an ensemble of networks"
+    def __getitem__(self, index: int) -> 'PairPotentialsModel':
         non_aev_potentials = [p for p in self.potentials if not isinstance(p, AEVPotential)]
         return PairPotentialsModel(
             aev_computer=self.aev_computer,
-            neural_networks=self.neural_networks[index],
+            neural_networks=self.neural_networks.member(index),
             energy_shifter=self.energy_shifter,
             elements=self.get_chemical_symbols(),
             periodic_table_index=self.periodic_table_index,

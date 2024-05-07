@@ -38,6 +38,9 @@ class ANIModel(torch.nn.ModuleDict):
             module by putting the same reference in :attr:`modules`.
     """
 
+    size: Final[int]
+    num_species: Final[int]
+
     @staticmethod
     def ensureOrderedDict(modules):
         if isinstance(modules, OrderedDict):
@@ -49,6 +52,8 @@ class ANIModel(torch.nn.ModuleDict):
 
     def __init__(self, modules):
         super().__init__(self.ensureOrderedDict(modules))
+        self.size = 1
+        self.num_species = len(self)
 
     def forward(self, species_aev: tp.Tuple[Tensor, Tensor],  # type: ignore
                 cell: tp.Optional[Tensor] = None,
@@ -56,13 +61,19 @@ class ANIModel(torch.nn.ModuleDict):
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
 
-        atomic_energies = self._atomic_energies((species, aev))
+        atomic_energies = self._atomic_energies((species, aev)).squeeze(0)
         # shape of atomic energies is (C, A)
         return SpeciesEnergies(species, torch.sum(atomic_energies, dim=1))
+
+    def member(self, idx: int) -> 'ANIModel':
+        if idx == 0:
+            return self
+        raise IndexError("Only idx=0 supported for ANIModel")
 
     @torch.jit.export
     def _atomic_energies(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:
         # Obtain the atomic energies associated with a given tensor of AEV's
+        #  Note that the output is of shape (1, C, A)
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
         species_ = species.flatten()
@@ -76,7 +87,7 @@ class ANIModel(torch.nn.ModuleDict):
                 input_ = aev.index_select(0, midx)
                 output.index_add_(0, midx, m(input_).view(-1))
         output = output.view_as(species)
-        return output
+        return output.unsqueeze(0)
 
     def to_infer_model(self, use_mnp: bool = False):
         if use_mnp:
@@ -92,10 +103,14 @@ class Ensemble(torch.nn.ModuleList):
     """Compute the average output of an ensemble of modules."""
 
     size: Final[int]
+    num_species: Final[int]
 
-    def __init__(self, modules):
+    def __init__(self, modules: tp.Sequence[ANIModel]):
         super().__init__(modules)
         self.size = len(modules)
+        if any(m.num_species != modules[0].num_species for m in modules):
+            raise ValueError("All modules in the ensemble must support the same number of species")
+        self.num_species = modules[0].num_species
 
     def forward(self, species_input: tp.Tuple[Tensor, Tensor],  # type: ignore
                 cell: tp.Optional[Tensor] = None,
@@ -106,11 +121,15 @@ class Ensemble(torch.nn.ModuleList):
         species, _ = species_input
         return SpeciesEnergies(species, sum_ / self.size)  # type: ignore
 
+    def member(self, idx: int) -> 'ANIModel':
+        return self[idx]
+
     @torch.jit.export
     def _atomic_energies(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:
+        #  Note that the output is of shape (M, C, A)
         members_list = []
         for nnp in self:
-            members_list.append(nnp._atomic_energies((species_aev)).unsqueeze(0))
+            members_list.append(nnp._atomic_energies((species_aev)))
         members_atomic_energies = torch.cat(members_list, dim=0)
         # out shape is (M, C, A)
         return members_atomic_energies
