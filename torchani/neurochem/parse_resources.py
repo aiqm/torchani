@@ -3,7 +3,7 @@ import typing as tp
 import os
 import io
 import zipfile
-from distutils import dir_util
+import shutil
 from pathlib import Path
 
 import requests
@@ -61,8 +61,8 @@ def parse_neurochem_resources(info_file_path):
                 resource_zip.extractall(local_dir)
                 resource_path = local_dir
             source = os.path.join(resource_path, extracted_name, "resources")
-            dir_util.copy_tree(source, resource_path)
-            dir_util.remove_tree(os.path.join(resource_path, extracted_name))
+            shutil.copytree(source, resource_path, dirs_exist_ok=True)
+            shutil.rmtree(os.path.join(resource_path, extracted_name))
 
         else:
             raise ValueError(f'File {info_file_path} could not be found either in {resource_path} or {local_dir}\n'

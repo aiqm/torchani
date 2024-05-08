@@ -1,9 +1,13 @@
 import os
 import subprocess
-from setuptools import setup, find_packages
-from distutils import log
 import sys
 import warnings
+import logging
+
+from setuptools import setup, find_packages
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("setup")
 
 
 def alert(text):
@@ -45,7 +49,7 @@ if CUAEV_DEBUG:
 CUAEV_OPT = True
 
 if not BUILD_EXT_ALL_SM and not FAST_BUILD_EXT:
-    log.warn("Will not install cuaev")  # type: ignore
+    log.warning("Will not install cuaev")
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
