@@ -26,7 +26,6 @@ Some of the Featurizers support custom made cuda operators that accelerate them
 """
 import functools
 from copy import deepcopy
-from pathlib import Path
 import warnings
 import math
 from dataclasses import dataclass
@@ -49,6 +48,7 @@ from torchani.potentials import (
 from torchani.aev import AEVComputer, StandardAngular, StandardRadial
 from torchani.nn import ANIModel, Ensemble
 from torchani.utils import GSAES, sort_by_element
+from torchani.storage import STATE_DICTS_DIR
 
 ModelType = tp.Type[BuiltinModel]
 FeaturizerType = tp.Type[AEVComputer]
@@ -59,8 +59,6 @@ ShifterType = tp.Type[EnergyAdder]
 SFCl: tp.Tuple[str, ...] = ("S", "F", "Cl")
 ELEMENTS_1X: tp.Tuple[str, ...] = ("H", "C", "N", "O")
 ELEMENTS_2X: tp.Tuple[str, ...] = ELEMENTS_1X + SFCl
-
-STATE_DICTS_PATH = (Path.home() / ".local") / "torchani"
 
 
 # "global" cutoff means the global cutoff_fn will be used
@@ -359,7 +357,7 @@ class Assembler:
 
 
 def load_from_neurochem(
-    info_file: str,
+    model_name: str,
     model_index: tp.Optional[int],
     use_cuda_extension: bool,
     use_cuaev_interface: bool,
@@ -368,16 +366,13 @@ def load_from_neurochem(
 ) -> BuiltinModel:
     if not pretrained:
         raise ValueError("Non pretrained models are not available from neurochem")
-    # neurochem is legacy and not type-checked
-    from . import neurochem  # noqa
-    components = neurochem.parse_resources._get_component_modules(  # type: ignore
-        info_file,
+    from torchani.neurochem import modules_from_builtin_name
+    components = modules_from_builtin_name(
+        model_name,
         model_index,
-        {
-            "use_cuda_extension": use_cuda_extension,
-            "use_cuaev_interface": use_cuaev_interface,
-        }
-    )  # type: ignore
+        use_cuda_extension,
+        use_cuaev_interface,
+    )
     aev_computer, neural_networks, energy_shifter, elements = components
     return BuiltinModel(
         aev_computer,
@@ -412,7 +407,7 @@ def ANI1x(
     """
     if use_neurochem_source:
         return load_from_neurochem(
-            info_file="ani-1x_8x.info",
+            model_name="ani1x",
             model_index=model_index,
             use_cuda_extension=use_cuda_extension,
             use_cuaev_interface=use_cuaev_interface,
@@ -462,7 +457,7 @@ def ANI1ccx(
     """
     if use_neurochem_source:
         return load_from_neurochem(
-            info_file="ani-1ccx_8x.info",
+            model_name="ani1ccx",
             model_index=model_index,
             use_cuda_extension=use_cuda_extension,
             use_cuaev_interface=use_cuaev_interface,
@@ -511,7 +506,7 @@ def ANI2x(
     """
     if use_neurochem_source:
         return load_from_neurochem(
-            info_file="ani-2x_8x.info",
+            model_name="ani2x",
             model_index=model_index,
             use_cuda_extension=use_cuda_extension,
             use_cuaev_interface=use_cuaev_interface,
@@ -790,7 +785,7 @@ def fetch_state_dict(
         url = "https://github.com/roitberg-group/torchani_model_zoo/releases/download/v0.1/"
     dict_ = torch.hub.load_state_dict_from_url(
         f"{url}/{state_dict_file}",
-        model_dir=str(STATE_DICTS_PATH),
+        model_dir=str(STATE_DICTS_DIR),
         map_location=torch.device("cpu"),
     )
     # if "energy_shifter.atomic_numbers" not in dict_:

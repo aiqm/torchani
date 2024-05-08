@@ -1,4 +1,4 @@
-r"""Tools for loading/running NeuroChem input files."""
+r"""Tools for interfacing with legacy NeuroChem files"""
 from torchani.neurochem.neurochem import (
     Constants,
     load_sae,
@@ -6,13 +6,14 @@ from torchani.neurochem.neurochem import (
     load_model,
     load_model_ensemble,
 )
-from torchani.neurochem.parse_resources import parse_neurochem_resources
+from torchani.neurochem.files import modules_from_builtin_name, modules_from_info_file
 
 __all__ = [
     "Constants",
     "load_sae",
     "load_model",
     "load_model_ensemble",
-    "parse_neurochem_resources",
     "load_atomic_network",
+    "modules_from_builtin_name",
+    "modules_from_info_file",
 ]

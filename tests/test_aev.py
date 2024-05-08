@@ -15,9 +15,9 @@ from torchani.utils import ChemicalSymbolsToInts
 
 
 path = os.path.dirname(os.path.realpath(__file__))
-const_file_1x = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')
-const_file_1ccx = os.path.join(path, '../torchani/resources/ani-1ccx_8x/rHCNO-5.2R_16-3.5A_a4-8.params')
-const_file_2x = os.path.join(path, '../torchani/resources/ani-2x_8x/rHCNOSFCl-5.1R_16-3.5A_a8-4.params')
+const_file_1x = os.path.join(path, 'test_data/rHCNO-5.2R_16-3.5A_a4-8.params')
+const_file_1ccx = os.path.join(path, 'test_data/rHCNO-5.2R_16-3.5A_a4-8.params')
+const_file_2x = os.path.join(path, 'test_data/rHCNOSFCl-5.1R_16-3.5A_a8-4.params')
 N = 97
 
 

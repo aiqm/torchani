@@ -304,11 +304,9 @@ from tqdm import tqdm
 from torchani.datasets.download import _download_and_extract_archive, _check_integrity
 from torchani.datasets.datasets import ANIDataset
 from torchani.datasets._annotations import StrPath
+from torchani.storage import DATASETS_DIR
 
 _BASE_URL = 'http://moria.chem.ufl.edu/animodel/ground_truth_data/'
-_DEFAULT_DATA_PATH = Path.home().joinpath('.local/torchani/Datasets')
-_DEFAULT_DATA_PATH.mkdir(exist_ok=True, parents=True)
-
 _DATASETS_YAML_PATH = Path(__file__).parent / "builtin-datasets.yaml"
 
 with open(_DATASETS_YAML_PATH, mode="rt", encoding="utf-8") as f:
@@ -431,7 +429,7 @@ def _register_dataset_builder(name: str) -> None:
             ) from None
         suffix = ".h5"
 
-        _root = root or _DEFAULT_DATA_PATH / archive.replace(".tar.gz", "")
+        _root = root or DATASETS_DIR / archive.replace(".tar.gz", "")
         _root = Path(_root).resolve()
 
         _files_and_md5s = OrderedDict([(k, _MD5S[k]) for k in data[lot]["files"]])

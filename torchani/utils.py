@@ -18,7 +18,6 @@ import torch.utils.data
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
 from torchani.tuples import SpeciesEnergies, VibAnalysis
 
-
 PADDING = {
     'species': -1,
     'numbers': -1,
