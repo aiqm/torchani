@@ -1,12 +1,13 @@
 import torch
-import torchani
+
 from torchani.testing import TestCase
+from torchani.aev import AEVComputer
 
 
 class _TestAEVBase(TestCase):
 
     def setUp(self):
-        self.aev_computer = torchani.AEVComputer.like_1x()
+        self.aev_computer = AEVComputer.like_1x()
         self.radial_length = self.aev_computer.radial_length
         self.debug = False
 

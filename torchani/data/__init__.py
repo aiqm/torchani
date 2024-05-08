@@ -13,17 +13,17 @@ transformation.
 Available transformations are listed below:
 
 - `species_to_indices` accepts two different kinds of arguments. It converts
-    species from elements (e. g. "H", "C", "Cl", etc) into internal torchani
-    indices (as returned by :class:`torchani.utils.ChemicalSymbolsToInts` or
-    the ``species_to_tensor`` method of a :class:`torchani.models.BuiltinModel`
-    and :class:`torchani.neurochem.Constants`), if its argument is an iterable
-    of species. By default species_to_indices behaves this way, with an
-    argument of ``('H', 'C', 'N', 'O', 'F', 'S', 'Cl')``  However, if its
-    argument is the string "periodic_table", then elements are converted into
-    atomic numbers ("periodic table indices") instead. This last option is
-    meant to be used when training networks that already perform a forward pass
-    of :class:`torchani.nn.SpeciesConverter` on their inputs in order to
-    convert elements to internal indices, before processing the coordinates.
+  species from elements (e. g. "H", "C", "Cl", etc) into internal torchani
+  indices (as returned by :class:`torchani.utils.ChemicalSymbolsToInts` or the
+  ``species_to_tensor`` method of a :class:`torchani.models.BuiltinModel`), if
+  its argument is an iterable of species. By default species_to_indices behaves
+  this way, with an argument of ``('H', 'C', 'N', 'O', 'F', 'S', 'Cl')``
+  However, if its argument is the string "periodic_table", then elements are
+  converted into atomic numbers ("periodic table indices") instead. This last
+  option is meant to be used when training networks that already perform a
+  forward pass of :class:`torchani.nn.SpeciesConverter` on their inputs in
+  order to convert elements to internal indices, before processing the
+  coordinates.
 
 - `subtract_self_energies` subtracts self energies from all molecules of the
     dataset. It accepts two different kinds of arguments: You can pass a dict

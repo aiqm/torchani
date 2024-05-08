@@ -26,10 +26,10 @@ jobs:
         pip install --upgrade mypy
         pip install types-PyYAML types-pkg_resources types-requests  # mypy library stubs
     - name: Type checking with mypy
-      # infer.py is too dynamic to check. data/ and neurochem/ are legacy.
-      # examples/ and tests/ could be checked,
+      # infer.py is too dynamic to check. data/ is legacy.
+      # tests/ could be checked,
       # but to type them correctly is time consuming
-      run: mypy --ignore-missing-imports --check-untyped-defs --implicit-optional --exclude examples/ --exclude tests/ .
+      run: mypy --ignore-missing-imports --check-untyped-defs --implicit-optional --exclude tests/ --exclude examples/ .
 
 concurrency:
   group: mypy-${{ github.event.pull_request.number || github.sha }}

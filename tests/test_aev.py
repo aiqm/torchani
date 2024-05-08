@@ -1,6 +1,5 @@
 import torch
 import warnings
-import torchani
 import unittest
 import os
 import pickle
@@ -11,7 +10,10 @@ import math
 import traceback
 from common_aev_test import _TestAEVBase
 from torchani.testing import TestCase
-from torchani.utils import ChemicalSymbolsToInts
+from torchani.neighbors import FullPairwise
+from torchani.utils import ChemicalSymbolsToInts, broadcast_first_dim, pad_atomic_properties, map_to_central
+from torchani.neurochem import load_aev_computer_and_symbols
+from torchani.aev import AEVComputer, StandardAngular, StandardRadial
 
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -25,30 +27,27 @@ class TestAEVConstructor(TestCase):
     # Test that checks that inexact friendly constructor
     # reproduces the values from ANI1x with the correct parameters
     def testEqualNeurochem1x(self):
-        consts_1x = torchani.neurochem.Constants(const_file_1x)
-        aev_1x_nc = torchani.AEVComputer(**consts_1x)
-        aev_1x = torchani.AEVComputer.like_1x()
+        aev_1x_nc, _ = load_aev_computer_and_symbols(const_file_1x)
+        aev_1x = AEVComputer.like_1x()
         self._compare_constants(aev_1x_nc, aev_1x, rtol=1e-17, atol=1e-17)
 
     def testEqualNeurochem2x(self):
-        consts_2x = torchani.neurochem.Constants(const_file_2x)
-        aev_2x_nc = torchani.AEVComputer(**consts_2x)
-        aev_2x = torchani.AEVComputer.like_2x()
+        aev_2x_nc, _ = load_aev_computer_and_symbols(const_file_2x)
+        aev_2x = AEVComputer.like_2x()
         self._compare_constants(aev_2x_nc, aev_2x, rtol=1e-17, atol=1e-17)
 
     def testEqualNeurochem1ccx(self):
-        consts_1ccx = torchani.neurochem.Constants(const_file_1ccx)
-        aev_1ccx_nc = torchani.AEVComputer(**consts_1ccx)
-        aev_1ccx = torchani.AEVComputer.like_1ccx()
+        aev_1ccx_nc, _ = load_aev_computer_and_symbols(const_file_1ccx)
+        aev_1ccx = AEVComputer.like_1ccx()
         self._compare_constants(aev_1ccx_nc, aev_1ccx, rtol=1e-17, atol=1e-17)
 
     def testANI1x(self):
         with warnings.catch_warnings():
             warnings.filterwarnings(action="ignore", message='Generated parameters may differ from published model to 1e-7')
-            approx_angular = torchani.aev.StandardAngular.like_1x(exact=False)
-            approx_radial = torchani.aev.StandardRadial.like_1x(exact=False)
-        exact_angular = torchani.aev.StandardAngular.like_1x(exact=True)
-        exact_radial = torchani.aev.StandardRadial.like_1x(exact=True)
+            approx_angular = StandardAngular.like_1x(exact=False)
+            approx_radial = StandardRadial.like_1x(exact=False)
+        exact_angular = StandardAngular.like_1x(exact=True)
+        exact_radial = StandardRadial.like_1x(exact=True)
 
         self._compare_constants(exact_angular, approx_angular)
         self._compare_constants(exact_radial, approx_radial)
@@ -56,10 +55,10 @@ class TestAEVConstructor(TestCase):
     def testANI2x(self):
         with warnings.catch_warnings():
             warnings.filterwarnings(action="ignore", message='Generated parameters may differ from published model to 1e-7')
-            approx_angular = torchani.aev.StandardAngular.like_2x(exact=False)
-            approx_radial = torchani.aev.StandardRadial.like_2x(exact=False)
-        exact_angular = torchani.aev.StandardAngular.like_2x(exact=True)
-        exact_radial = torchani.aev.StandardRadial.like_2x(exact=True)
+            approx_angular = StandardAngular.like_2x(exact=False)
+            approx_radial = StandardRadial.like_2x(exact=False)
+        exact_angular = StandardAngular.like_2x(exact=True)
+        exact_radial = StandardRadial.like_2x(exact=True)
 
         self._compare_constants(exact_angular, approx_angular)
         self._compare_constants(exact_radial, approx_radial)
@@ -67,10 +66,10 @@ class TestAEVConstructor(TestCase):
     def testANI1ccx(self):
         with warnings.catch_warnings():
             warnings.filterwarnings(action="ignore", message='Generated parameters may differ from published model to 1e-7')
-            approx_angular = torchani.aev.StandardAngular.like_1ccx(exact=False)
-            approx_radial = torchani.aev.StandardRadial.like_1ccx(exact=False)
-        exact_angular = torchani.aev.StandardAngular.like_1ccx(exact=True)
-        exact_radial = torchani.aev.StandardRadial.like_1ccx(exact=True)
+            approx_angular = StandardAngular.like_1ccx(exact=False)
+            approx_radial = StandardRadial.like_1ccx(exact=False)
+        exact_angular = StandardAngular.like_1ccx(exact=True)
+        exact_radial = StandardRadial.like_1ccx(exact=True)
 
         self._compare_constants(exact_angular, approx_angular)
         self._compare_constants(exact_radial, approx_radial)
@@ -87,7 +86,7 @@ class TestIsolated(TestCase):
     # this can throw an IndexError for large distances or lone atoms
     def setUp(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.aev_computer = torchani.AEVComputer.like_1x().to(self.device)
+        self.aev_computer = AEVComputer.like_1x().to(self.device)
         self.species_to_tensor = ChemicalSymbolsToInts(['H', 'C', 'N', 'O'])
         self.rcr = self.aev_computer.radial_terms.cutoff
         self.rca = self.aev_computer.angular_terms.cutoff
@@ -219,10 +218,10 @@ class TestAEV(_TestAEVBase):
                 species = torch.from_numpy(species)
                 radial = torch.from_numpy(radial)
                 angular = torch.from_numpy(angular)
-                species_coordinates.append(torchani.utils.broadcast_first_dim(
+                species_coordinates.append(broadcast_first_dim(
                     {'species': species, 'coordinates': coordinates}))
                 radial_angular.append((radial, angular))
-        species_coordinates = torchani.utils.pad_atomic_properties(
+        species_coordinates = pad_atomic_properties(
             species_coordinates)
         _, aev = self.aev_computer((species_coordinates['species'], species_coordinates['coordinates']))
         start = 0
@@ -242,8 +241,8 @@ class TestAEVJIT(TestAEV):
 
 class TestPBCSeeEachOther(TestCase):
     def setUp(self):
-        self.aev_computer = torchani.AEVComputer.like_1x().to(torch.double)
-        self.neighborlist = torchani.neighbors.FullPairwise()
+        self.aev_computer = AEVComputer.like_1x().to(torch.double)
+        self.neighborlist = FullPairwise()
 
     def testTranslationalInvariancePBC(self):
         coordinates = torch.tensor(
@@ -356,7 +355,7 @@ class TestAEVOnBoundary(TestCase):
         self.pbc = torch.ones(3, dtype=torch.bool)
         self.v1, self.v2, self.v3 = self.cell
         self.center_coordinates = self.coordinates + 0.5 * (self.v1 + self.v2 + self.v3)
-        self.aev_computer = torchani.AEVComputer.like_1x().to(torch.double)
+        self.aev_computer = AEVComputer.like_1x().to(torch.double)
 
         _, self.aev = self.aev_computer((self.species, self.center_coordinates), cell=self.cell, pbc=self.pbc)
 
@@ -378,7 +377,7 @@ class TestAEVOnBoundary(TestCase):
                 continue
             coordinates = self.coordinates + i * self.v1 + j * self.v2 + k * self.v3
             self.assertNotInCell(coordinates)
-            coordinates = torchani.utils.map_to_central(coordinates, self.cell, self.pbc)
+            coordinates = map_to_central(coordinates, self.cell, self.pbc)
             self.assertInCell(coordinates)
             _, aev = self.aev_computer((self.species, coordinates), cell=self.cell, pbc=self.pbc)
             self.assertGreater(aev.abs().max().item(), 0)
@@ -388,12 +387,12 @@ class TestAEVOnBoundary(TestCase):
 class TestAEVOnBenzenePBC(TestCase):
 
     def setUp(self):
-        self.aev_computer = torchani.AEVComputer.like_1x()
+        self.aev_computer = AEVComputer.like_1x()
         filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.json')
         benzene = ase.io.read(filename)
         self.cell = torch.tensor(benzene.get_cell(complete=True)[:], dtype=torch.float)
         self.pbc = torch.tensor(benzene.get_pbc(), dtype=torch.bool)
-        species_to_tensor = torchani.utils.ChemicalSymbolsToInts(['H', 'C', 'N', 'O'])
+        species_to_tensor = ChemicalSymbolsToInts(['H', 'C', 'N', 'O'])
         self.species = species_to_tensor(benzene.get_chemical_symbols()).unsqueeze(0)
         self.coordinates = torch.tensor(benzene.get_positions()).unsqueeze(0).float()
         _, self.aev = self.aev_computer((self.species, self.coordinates), cell=self.cell, pbc=self.pbc)

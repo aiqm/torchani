@@ -37,8 +37,8 @@ from torch import Tensor
 
 from torchani import atomics
 from torchani.models import BuiltinModel, PairPotentialsModel
-from torchani.neighbors import _parse_neighborlist, NeighborlistArg
-from torchani.cutoffs import _parse_cutoff_fn, Cutoff, CutoffArg
+from torchani.neighbors import parse_neighborlist, NeighborlistArg
+from torchani.cutoffs import parse_cutoff_fn, Cutoff, CutoffArg
 from torchani.potentials import (
     PairPotential,
     RepulsionXTB,
@@ -113,7 +113,7 @@ class Assembler:
     ) -> None:
         self._global_cutoff_fn: tp.Optional[Cutoff] = None
 
-        self._neighborlist = _parse_neighborlist(neighborlist)
+        self._neighborlist = parse_neighborlist(neighborlist)
         self._featurizer = featurizer
         self._pairwise_potentials: tp.List[PairPotentialWrapper] = []
 
@@ -239,13 +239,13 @@ class Assembler:
         self,
         neighborlist: NeighborlistArg,
     ) -> None:
-        self._neighborlist = _parse_neighborlist(neighborlist)
+        self._neighborlist = parse_neighborlist(neighborlist)
 
     def set_global_cutoff_fn(
         self,
         cutoff_fn: CutoffArg,
     ) -> None:
-        self._global_cutoff_fn = _parse_cutoff_fn(cutoff_fn)
+        self._global_cutoff_fn = parse_cutoff_fn(cutoff_fn)
 
     def add_pairwise_potential(
         self,
@@ -284,7 +284,7 @@ class Assembler:
         if all(e == 0.0 for e in self.self_energies.values()):
             warnings.warn("Assembling model with ZERO self energies!")
 
-        feat_cutoff_fn = _parse_cutoff_fn(
+        feat_cutoff_fn = parse_cutoff_fn(
             self._featurizer.cutoff_fn, self._global_cutoff_fn
         )
 
@@ -337,7 +337,7 @@ class Assembler:
                     builder(
                         symbols=self.symbols,
                         cutoff=pot.cutoff,
-                        cutoff_fn=_parse_cutoff_fn(
+                        cutoff_fn=parse_cutoff_fn(
                             pot.cutoff_fn, self._global_cutoff_fn
                         ),
                         **pot_kwargs,

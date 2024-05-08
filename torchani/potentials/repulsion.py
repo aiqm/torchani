@@ -30,19 +30,19 @@ class RepulsionXTB(PairPotential):
 
     def __init__(
         self,
-        alpha: tp.Sequence[float] = None,
-        y_eff: tp.Sequence[float] = None,
+        alpha: tp.Sequence[float] = (),
+        y_eff: tp.Sequence[float] = (),
         k_rep_ab: tp.Optional[Tensor] = None,
         cutoff_fn: CutoffArg = "smooth",
         **pairwise_kwargs,
     ):
         super().__init__(cutoff_fn=cutoff_fn, **pairwise_kwargs)
 
-        if alpha is None:
+        if not alpha:
             _alpha = torch.tensor(alpha_constants)[self.atomic_numbers]
         else:
             _alpha = torch.tensor(alpha)
-        if y_eff is None:
+        if not y_eff:
             _y_eff = torch.tensor(y_eff_constants)[self.atomic_numbers]
         else:
             _y_eff = torch.tensor(y_eff)
@@ -94,8 +94,8 @@ class RepulsionXTB(PairPotential):
 
 def StandaloneRepulsionXTB(
     cutoff: float = 5.2,
-    alpha: tp.Sequence[float] = None,
-    y_eff: tp.Sequence[float] = None,
+    alpha: tp.Sequence[float] = (),
+    y_eff: tp.Sequence[float] = (),
     k_rep_ab: tp.Optional[Tensor] = None,
     symbols: tp.Sequence[str] = ('H', 'C', 'N', 'O'),
     cutoff_fn: CutoffArg = 'smooth',

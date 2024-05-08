@@ -13,8 +13,9 @@ from torchani.aev import AEVComputer
 from torchani.utils import EnergyShifter
 from torchani.nn import Ensemble, ANIModel
 from torchani.storage import NEUROCHEM_DIR
+from torchani.neurochem.utils import model_dir_from_prefix
 from torchani.neurochem.neurochem import (
-    Constants,
+    load_aev_computer_and_symbols,
     load_model_ensemble,
     load_model,
     load_sae,
@@ -89,17 +90,14 @@ def modules_from_info(
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
 ) -> tp.Tuple[AEVComputer, NN, EnergyShifter, tp.Sequence[str]]:
-    # C,reates the necessary modules to generate a pretrained model from a legacy
-    # NeurochemInfo object and optional arguments to modify some modules
-    consts = Constants(info.const)
-    symbols = consts.species
-    aev_computer = AEVComputer(
-        **consts,
+    aev_computer, symbols = load_aev_computer_and_symbols(
+        info.const,
         use_cuda_extension=use_cuda_extension,
         use_cuaev_interface=use_cuaev_interface,
     )
     shifter = load_sae(info.sae)
 
+    neural_networks: NN
     if model_index is None:
         neural_networks = load_model_ensemble(
             symbols, info.ensemble_prefix, info.ensemble_size
@@ -109,8 +107,7 @@ def modules_from_info(
             raise ValueError(
                 f"The ensemble size is only {info.ensemble_size}, model {model_index} can't be loaded"
             )
-        network_path = (info.ensemble_prefix.parent / f"{info.ensemble_prefix.name}{model_index}") / "networks"
-        neural_networks = load_model(symbols, str(network_path))
+        neural_networks = load_model(symbols, model_dir_from_prefix(info.ensemble_prefix, model_index))
     return aev_computer, neural_networks, shifter, symbols
 
 

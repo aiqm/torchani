@@ -14,6 +14,7 @@ import os
 import torch
 
 import torchani
+from torchani.utils import ChemicalSymbolsToInts
 
 ###############################################################################
 # Now let's read constants from constant file and construct AEV computer.
@@ -22,8 +23,7 @@ try:
 except NameError:
     path = os.getcwd()
 const_file = os.path.join(path, '../torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params')  # noqa: E501
-consts = torchani.neurochem.Constants(const_file)
-aev_computer = torchani.AEVComputer(**consts)
+aev_computer, symbols = torchani.neurochem.load_aev_computer_and_symbols(const_file)
 
 ###############################################################################
 # Now let's read self energies and construct energy shifter.
@@ -33,12 +33,12 @@ energy_shifter = torchani.neurochem.load_sae(sae_file)
 ###############################################################################
 # Now let's read a whole ensemble of models.
 model_prefix = os.path.join(path, '../torchani/resources/ani-1x_8x/train')  # noqa: E501
-ensemble = torchani.neurochem.load_model_ensemble(consts.species, model_prefix, 8)  # noqa: E501
+ensemble = torchani.neurochem.load_model_ensemble(symbols, model_prefix, 8)  # noqa: E501
 
 ###############################################################################
 # Or alternatively a single model.
 model_dir = os.path.join(path, '../torchani/resources/ani-1x_8x/train0/networks')  # noqa: E501
-model = torchani.neurochem.load_model(consts.species, model_dir)
+model = torchani.neurochem.load_model(symbols, model_dir)
 
 ###############################################################################
 # You can create the pipeline of computing energies:
@@ -58,7 +58,8 @@ coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
                              [0.45554739, 0.54289633, 0.81170881],
                              [0.66091919, -0.16799635, -0.91037834]]],
                            requires_grad=True)
-species = consts.species_to_tensor(['C', 'H', 'H', 'H', 'H']).unsqueeze(0)
+species_to_tensor = ChemicalSymbolsToInts(symbols)
+species = species_to_tensor(['C', 'H', 'H', 'H', 'H']).unsqueeze(0)
 
 ###############################################################################
 # Now let's compute energies using the ensemble directly:

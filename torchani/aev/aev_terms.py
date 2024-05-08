@@ -5,7 +5,7 @@ from pathlib import Path
 from torch import Tensor
 from torch.jit import Final
 
-from torchani.cutoffs import _parse_cutoff_fn
+from torchani.cutoffs import parse_cutoff_fn
 
 state_dicts_path = Path(__file__).parent.parent.joinpath('resources/state_dicts/')
 
@@ -38,7 +38,7 @@ class StandardRadial(torch.nn.Module):
                  cutoff_fn='cosine'):
         super().__init__()
         # initialize the cutoff function
-        self.cutoff_fn = _parse_cutoff_fn(cutoff_fn)
+        self.cutoff_fn = parse_cutoff_fn(cutoff_fn)
 
         # convert constant tensors to a ready-to-broadcast shape
         # shape convension (..., EtaR, ShfR)
@@ -131,7 +131,7 @@ class StandardAngular(torch.nn.Module):
                  cutoff_fn='cosine'):
         super().__init__()
         # initialize the cutoff function
-        self.cutoff_fn = _parse_cutoff_fn(cutoff_fn)
+        self.cutoff_fn = parse_cutoff_fn(cutoff_fn)
 
         # convert constant tensors to a ready-to-broadcast shape
         # shape convension (..., EtaA, Zeta, ShfA, ShfZ)
@@ -212,7 +212,7 @@ class StandardAngular(torch.nn.Module):
 # radial terms are passed directly to the aev computer and we forward them
 # here, otherwise the fully built module is passed, so we just return it,
 # and we make sure that the paramters passed are None to prevent confusion
-def _parse_angular_terms(angular_terms, cutoff_fn, EtaA, Zeta, ShfA, ShfZ, Rca):
+def parse_angular_terms(angular_terms, cutoff_fn, EtaA, Zeta, ShfA, ShfZ, Rca):
 
     # legacy input
     if angular_terms == 'standard':
@@ -238,7 +238,7 @@ def _parse_angular_terms(angular_terms, cutoff_fn, EtaA, Zeta, ShfA, ShfZ, Rca):
     return angular_terms
 
 
-def _parse_radial_terms(radial_terms, cutoff_fn, EtaR, ShfR, Rcr):
+def parse_radial_terms(radial_terms, cutoff_fn, EtaR, ShfR, Rcr):
 
     # legacy input
     if radial_terms == 'standard':

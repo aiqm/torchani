@@ -8,11 +8,11 @@ from torch.jit import Final
 
 from torchani.tuples import SpeciesAEV
 from torchani.utils import cumsum_from_zero
-from torchani.neighbors import _parse_neighborlist
-from torchani.cutoffs import _parse_cutoff_fn, CutoffCosine, CutoffSmooth
+from torchani.neighbors import parse_neighborlist, NeighborlistArg
+from torchani.cutoffs import parse_cutoff_fn, CutoffArg, CutoffCosine, CutoffSmooth
 from torchani.aev.aev_terms import (
-    _parse_angular_terms,
-    _parse_radial_terms,
+    parse_angular_terms,
+    parse_radial_terms,
     StandardAngular,
     StandardRadial,
 )
@@ -87,10 +87,10 @@ class AEVComputer(torch.nn.Module):
                 ShfA: tp.Optional[Tensor] = None,
                 ShfZ: tp.Optional[Tensor] = None,
                 num_species: tp.Optional[int] = None,
-                use_cuda_extension=False,
-                use_cuaev_interface=False,
-                cutoff_fn='cosine',
-                neighborlist='full_pairwise',
+                use_cuda_extension: bool = False,
+                use_cuaev_interface: bool = False,
+                cutoff_fn: CutoffArg = 'cosine',
+                neighborlist: NeighborlistArg = 'full_pairwise',
                 radial_terms='standard',
                 angular_terms='standard'):
 
@@ -109,10 +109,10 @@ class AEVComputer(torch.nn.Module):
         # and only full pairwise neighborlist
         # if a cutoff function is passed, it is used for both radial and
         # angular terms.
-        cutoff_fn = _parse_cutoff_fn(cutoff_fn)
-        self.angular_terms = _parse_angular_terms(angular_terms, cutoff_fn, EtaA, Zeta, ShfA, ShfZ, Rca)
-        self.radial_terms = _parse_radial_terms(radial_terms, cutoff_fn, EtaR, ShfR, Rcr)
-        self.neighborlist = _parse_neighborlist(neighborlist)
+        cutoff_fn = parse_cutoff_fn(cutoff_fn)
+        self.angular_terms = parse_angular_terms(angular_terms, cutoff_fn, EtaA, Zeta, ShfA, ShfZ, Rca)
+        self.radial_terms = parse_radial_terms(radial_terms, cutoff_fn, EtaR, ShfR, Rcr)
+        self.neighborlist = parse_neighborlist(neighborlist)
         if self.angular_terms.cutoff > self.radial_terms.cutoff:
             raise ValueError(
                 f"Angular cutoff {self.angular_terms.cutoff} should be smaller than radial cutoff {self.radial_terms.cutoff}"

@@ -112,7 +112,7 @@ class AngularCosDiff(torch.nn.Module):
         self.register_buffer("EtaA", EtaA.view(-1, 1, 1))
         self.register_buffer("ShfA", ShfA.view(1, -1, 1))
         self.register_buffer("ShfZ", ShfZ.view(1, 1, -1))
-        self.cutoff_fn = torchani.cutoffs._parse_cutoff_fn(cutoff_fn)
+        self.cutoff_fn = torchani.cutoffs.parse_cutoff_fn(cutoff_fn)
         self.cutoff = cutoff
 
         assert self.ShfZ.numel() == self.Gamma.numel()

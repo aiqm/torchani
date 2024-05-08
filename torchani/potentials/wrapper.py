@@ -11,7 +11,7 @@ from torch import Tensor
 
 from torchani.nn import SpeciesConverter
 from torchani.tuples import SpeciesEnergies
-from torchani.neighbors import _parse_neighborlist, NeighborlistArg, NeighborData
+from torchani.neighbors import parse_neighborlist, NeighborlistArg, NeighborData
 from torchani.potentials.core import Potential
 
 
@@ -25,7 +25,7 @@ class PotentialWrapper(torch.nn.Module):
         super().__init__()
         self.periodic_table_index = periodic_table_index
         self.potential = potential
-        self.neighborlist = _parse_neighborlist(neighborlist)
+        self.neighborlist = parse_neighborlist(neighborlist)
         self.znumbers_to_idxs = SpeciesConverter(self.potential.get_chemical_symbols())
 
     def _validate_inputs(
