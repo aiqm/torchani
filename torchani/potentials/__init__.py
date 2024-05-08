@@ -1,7 +1,6 @@
 from torchani.potentials.core import (
     Potential,
     PairPotential,
-    DummyPairPotential,
 )
 from torchani.potentials.aev_potential import AEVPotential
 from torchani.potentials.repulsion import (
@@ -30,5 +29,4 @@ __all__ = [
     "AEVPotential",
     "Potential",
     "PairPotential",
-    "DummyPairPotential",
 ]

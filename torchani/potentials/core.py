@@ -93,7 +93,7 @@ class PairPotential(Potential):
         This function must be overriden by subclasses
         If there are P pairs of neighbors, then
         this must return a tensor of shape (P,)"""
-        raise NotImplementedError
+        return torch.zeros_like(neighbors.distances)
 
     # This function wraps calculate_pair_energies
     # It potentially smooths out the energies using a cutoff function,
@@ -172,12 +172,3 @@ class PairPotential(Potential):
         if not average:
             return atomic_energies.unsqueeze(0)
         return atomic_energies
-
-
-class DummyPairPotential(PairPotential):
-    def pair_energies(
-        self,
-        element_idxs: Tensor,
-        neighbors: NeighborData,
-    ) -> Tensor:
-        return torch.zeros_like(neighbors.distances)

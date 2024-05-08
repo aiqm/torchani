@@ -13,7 +13,7 @@ from ase.calculators.test import numeric_force
 from torchani.neighbors import CellList
 from torchani.testing import TestCase
 from torchani.models import ANI1x, ANIdr, PairPotentialsModel
-from torchani.potentials import DummyPairPotential
+from torchani.potentials import PairPotential
 
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -51,9 +51,9 @@ class TestASE(TestCase):
             energy_shifter=model_cell.energy_shifter,
             elements=model_cell.get_chemical_symbols(),
             pairwise_potentials=[
-                DummyPairPotential(cutoff=6.4),
-                DummyPairPotential(cutoff=5.2),
-                DummyPairPotential(cutoff=3.0),
+                PairPotential(cutoff=6.4),
+                PairPotential(cutoff=5.2),
+                PairPotential(cutoff=3.0),
             ]
         )
         model_pair = model_pair.to(dtype=torch.double, device=self.device)
