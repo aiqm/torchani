@@ -28,7 +28,7 @@ jobs:
     - name: Pytorch info
       run: python -c 'from torch.utils.collect_env import get_pretty_env_info; print(get_pretty_env_info())'
     - name: Install TorchANI
-      run: python setup.py install
+      run: pip install .
     - name: Download data files
       run: ./download.sh
     - name: Inference benchmark

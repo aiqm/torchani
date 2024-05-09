@@ -185,8 +185,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     use_scm_version=True,
-    setup_requires=['setuptools_scm'],
-    fallback_version="2.3",
+    setup_requires=["setuptools>=61", 'setuptools_scm>=8'],
     install_requires=[
         'torch',
         'lark-parser',

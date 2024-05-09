@@ -1,4 +1,4 @@
-name: unittests_cpu
+name: unittests-cpu
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  unittests_cpu:
+  unittests-cpu:
     runs-on: self-hosted
 
     steps:
@@ -18,8 +18,24 @@ jobs:
           submodules: recursive
 
       - name: Install and Run tests
-        run: docker run --rm --gpus '"device=none"' -v $PWD:/examples nvcr.io/nvidia/pytorch:22.08-py3 bash -c "mkdir -p /torchani_sandbox && cd /torchani_sandbox && cp -r /examples/. /torchani_sandbox/ && pip install -r tests_requirements.txt && pip uninstall cudf -y && ./download.sh && python setup.py develop && cd tests/ && pytest -s -v ."
+        run: >-
+            docker run
+            --rm
+            --gpus '"device=none"'
+            -v $PWD:/examples nvcr.io/nvidia/pytorch:22.08-py3
+            bash
+            -c
+            "mkdir -p /torchani_sandbox
+            && cd /torchani_sandbox
+            && cp -r /examples/. /torchani_sandbox/
+            && pip install 'setuptools>=61' 'setuptools_scm>=8'
+            && pip install -r tests_requirements.txt
+            && pip uninstall cudf -y
+            && ./download.sh
+            && pip install -e .
+            && cd tests/
+            && pytest -s -v ."
 
 concurrency:
-  group: unittests_cpu-${{ github.event.pull_request.number || github.sha }}
+  group: unittests-cpu-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

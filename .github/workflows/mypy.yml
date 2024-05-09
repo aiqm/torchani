@@ -24,7 +24,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade mypy
-        pip install types-PyYAML types-pkg_resources types-requests  # mypy library stubs
+        pip install types-PyYAML types-requests  # mypy library stubs
     - name: Type checking with mypy
       # infer.py is too dynamic to check. data/ is legacy.
       # tests/ could be checked,

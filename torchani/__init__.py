@@ -28,7 +28,7 @@ formats of NeuroChem at :attr:`torchani.neurochem`, and more at :attr:`torchani.
     https://doi.org/10.26434/chemrxiv.11819268.v1
 """
 import warnings
-from pkg_resources import get_distribution, DistributionNotFound
+from importlib.metadata import version, PackageNotFoundError
 
 import torch
 
@@ -53,8 +53,8 @@ from torchani import (
 )
 
 try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
+    __version__ = version("torchani")
+except PackageNotFoundError:
     # package is not installed
     pass
 
