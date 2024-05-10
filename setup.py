@@ -187,6 +187,7 @@ setup(
     use_scm_version=True,
     setup_requires=["setuptools>=61", 'setuptools_scm>=8'],
     install_requires=[
+        'typing_extensions>=4.0.0',
         'torch',
         'lark-parser',
         'requests',

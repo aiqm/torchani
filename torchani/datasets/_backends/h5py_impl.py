@@ -7,8 +7,9 @@ from functools import partial
 import h5py
 import numpy as np
 from tqdm import tqdm
+import typing_extensions as tpx
 
-from torchani.datasets._annotations import StrPath, Self
+from torchani.datasets._annotations import StrPath
 from torchani.datasets._backends.interface import _ConformerGroup, _ConformerWrapper, CacheHolder, _HierarchicalStoreWrapper
 
 
@@ -31,14 +32,14 @@ class _H5Store(_HierarchicalStoreWrapper[h5py.File]):
         self._made_quick_check = False
 
     @classmethod
-    def make_empty(cls, store_location: StrPath, grouping: str = "by_num_atoms", **kwargs) -> Self:
+    def make_empty(cls, store_location: StrPath, grouping: str = "by_num_atoms", **kwargs) -> tpx.Self:
         with h5py.File(store_location, 'x') as f:
             f.attrs['grouping'] = grouping
         obj = cls(store_location, **kwargs)
         obj._has_standard_format = True
         return obj
 
-    def open(self, mode: str = 'r', only_attrs: bool = False) -> Self:
+    def open(self, mode: str = 'r', only_attrs: bool = False) -> tpx.Self:
         self._store_obj = h5py.File(self.location.root, mode)
         return self
 

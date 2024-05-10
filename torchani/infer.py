@@ -396,7 +396,7 @@ class InferModel(torch.nn.Module):
             self.idx_list = _build_new_idx_list(species, self.num_species)
         self.last_species = species
 
-        if self.use_mnp:
+        if self._use_mnp:
             energies = torch.ops.mnp.run(
                 aev,
                 self.num_species,

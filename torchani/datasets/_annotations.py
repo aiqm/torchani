@@ -15,12 +15,6 @@ else:
     from numpy import typing as numpy_typing
     DTypeLike = numpy_typing.DTypeLike
 
-# If typing_extensions is supported we can use Self, which is much better for
-try:
-    from typing_extensions import Self
-except ImportError:
-    Self = tp.Any  # type: ignore
-
 _MutMapSubtype = tp.TypeVar('_MutMapSubtype', bound=tp.MutableMapping[str, Tensor])
 
 # Transform = Callable[[MutableMapping[str, Tensor]], MutableMapping[str, Tensor]]

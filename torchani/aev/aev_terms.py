@@ -1,11 +1,13 @@
-import torch
-import warnings
 import math
+import warnings
 from pathlib import Path
+
+import torch
 from torch import Tensor
 from torch.jit import Final
+import typing_extensions as tpx
 
-from torchani.cutoffs import parse_cutoff_fn
+from torchani.cutoffs import parse_cutoff_fn, CutoffArg
 
 state_dicts_path = Path(__file__).parent.parent.joinpath('resources/state_dicts/')
 
@@ -35,7 +37,7 @@ class StandardRadial(torch.nn.Module):
                  EtaR: Tensor,
                  ShfR: Tensor,
                  cutoff: float,
-                 cutoff_fn='cosine'):
+                 cutoff_fn: CutoffArg = 'cosine'):
         super().__init__()
         # initialize the cutoff function
         self.cutoff_fn = parse_cutoff_fn(cutoff_fn)
@@ -61,7 +63,7 @@ class StandardRadial(torch.nn.Module):
         return ret.flatten(start_dim=1)
 
     @classmethod
-    def cover_linearly(cls, eta: float, num_shifts: int, start: float = 0.9, cutoff: float = 5.2, cutoff_fn='cosine'):
+    def cover_linearly(cls, eta: float, num_shifts: int, start: float = 0.9, cutoff: float = 5.2, cutoff_fn: CutoffArg = 'cosine') -> tpx.Self:
         r""" Builds angular terms by linearly subdividing space radially up to a cutoff
 
         "num_shifts" are created, starting from "start" until "cutoff",
@@ -73,7 +75,7 @@ class StandardRadial(torch.nn.Module):
         return cls(EtaR, ShfR, cutoff, cutoff_fn)
 
     @classmethod
-    def like_1x(cls, **kwargs):
+    def like_1x(cls, **kwargs) -> tpx.Self:
         exact = kwargs.pop('exact', True)
         m = cls.cover_linearly(cutoff=5.2, eta=16.0, num_shifts=16, **kwargs)
         if exact:
@@ -84,7 +86,7 @@ class StandardRadial(torch.nn.Module):
         return m
 
     @classmethod
-    def like_2x(cls, **kwargs):
+    def like_2x(cls, **kwargs) -> tpx.Self:
         exact = kwargs.pop('exact', True)
         m = cls.cover_linearly(cutoff=5.1, eta=19.7, num_shifts=16, start=0.8, **kwargs)
         # note that this term is different in the last decimal in 2x,
@@ -99,7 +101,7 @@ class StandardRadial(torch.nn.Module):
         return m
 
     @classmethod
-    def like_1ccx(cls, **kwargs):
+    def like_1ccx(cls, **kwargs) -> tpx.Self:
         return cls.like_1x(**kwargs)
 
 
@@ -128,7 +130,7 @@ class StandardAngular(torch.nn.Module):
                  ShfA: Tensor,
                  ShfZ: Tensor,
                  cutoff: float,
-                 cutoff_fn='cosine'):
+                 cutoff_fn: CutoffArg = 'cosine'):
         super().__init__()
         # initialize the cutoff function
         self.cutoff_fn = parse_cutoff_fn(cutoff_fn)
@@ -165,7 +167,7 @@ class StandardAngular(torch.nn.Module):
 
     @classmethod
     def cover_linearly(cls, eta: float, num_shifts: int, zeta: float,
-            num_angle_sections: int, start: float = 0.9, cutoff: float = 5.2, cutoff_fn='cosine'):
+            num_angle_sections: int, start: float = 0.9, cutoff: float = 5.2, cutoff_fn: CutoffArg = 'cosine') -> tpx.Self:
         r""" Builds angular terms by linearly subdividing space in the angular
         dimension and in the radial one up to a cutoff
 
@@ -182,7 +184,7 @@ class StandardAngular(torch.nn.Module):
         return cls(EtaA, Zeta, ShfA, ShfZ, cutoff, cutoff_fn)
 
     @classmethod
-    def like_1x(cls, **kwargs):
+    def like_1x(cls, **kwargs) -> tpx.Self:
         exact = kwargs.pop('exact', True)
         m = cls.cover_linearly(cutoff=3.5, eta=8.0, zeta=32.0, num_shifts=4, num_angle_sections=8, **kwargs)
         if exact:
@@ -193,7 +195,7 @@ class StandardAngular(torch.nn.Module):
         return m
 
     @classmethod
-    def like_2x(cls, **kwargs):
+    def like_2x(cls, **kwargs) -> tpx.Self:
         exact = kwargs.pop('exact', True)
         m = cls.cover_linearly(cutoff=3.5, eta=12.5, num_shifts=8, start=0.8, zeta=14.1, num_angle_sections=4, **kwargs)
         if exact:
@@ -204,7 +206,7 @@ class StandardAngular(torch.nn.Module):
         return m
 
     @classmethod
-    def like_1ccx(cls, **kwargs):
+    def like_1ccx(cls, **kwargs) -> tpx.Self:
         return cls.like_1x(**kwargs)
 
 

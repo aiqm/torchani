@@ -3,8 +3,9 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
+import typing_extensions as tpx
 
-from torchani.datasets._annotations import StrPath, Self
+from torchani.datasets._annotations import StrPath
 from torchani.datasets._backends.interface import _ConformerGroup, _ConformerWrapper, _HierarchicalStoreWrapper
 
 try:
@@ -32,13 +33,13 @@ class _ZarrStore(_HierarchicalStoreWrapper["zarr.Group"]):
         self._mode: tp.Optional[str] = None
 
     @classmethod
-    def make_empty(cls, store_location: StrPath, grouping: str = "by_num_atoms", **kwargs) -> Self:
+    def make_empty(cls, store_location: StrPath, grouping: str = "by_num_atoms", **kwargs) -> tpx.Self:
         store = zarr.storage.DirectoryStore(store_location)
         with zarr.hierarchy.group(store=store, overwrite=True) as g:
             g.attrs['grouping'] = grouping
         return cls(store_location, **kwargs)
 
-    def open(self, mode: str = 'r', only_attrs: bool = False) -> Self:
+    def open(self, mode: str = 'r', only_attrs: bool = False) -> tpx.Self:
         store = zarr.storage.DirectoryStore(self.location.root)
         self._store_obj = zarr.hierarchy.open_group(store, mode)
         setattr(self._store_obj, 'mode', mode)

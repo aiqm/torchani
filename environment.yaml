@@ -8,6 +8,7 @@ dependencies:
   # General
   - python=3.8.1
   - pip
+  - typing_extensions>=4.0.0
 
   # Core
   - numpy=1.20

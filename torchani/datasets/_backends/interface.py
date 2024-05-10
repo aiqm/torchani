@@ -7,8 +7,9 @@ from pathlib import Path
 from collections import OrderedDict
 
 import numpy as np
+import typing_extensions as tpx
 
-from torchani.datasets._annotations import NumpyConformers, StrPath, Self
+from torchani.datasets._annotations import NumpyConformers, StrPath
 
 
 # Keeps track of variables that must be updated each time the datasets get
@@ -213,7 +214,7 @@ class _StoreWrapper(tp.ContextManager['_StoreWrapper'], tp.MutableMapping[str, '
 
     @classmethod
     @abstractmethod
-    def make_empty(cls, store_location: StrPath, grouping: str = "by_num_atoms", **kwargs) -> Self:
+    def make_empty(cls, store_location: StrPath, grouping: str = "by_num_atoms", **kwargs) -> tpx.Self:
         pass
 
     @abstractmethod
@@ -229,10 +230,10 @@ class _StoreWrapper(tp.ContextManager['_StoreWrapper'], tp.MutableMapping[str, '
         return self._store_obj
 
     @abstractmethod
-    def open(self, mode: str = 'r', only_attrs: bool = False) -> Self:
+    def open(self, mode: str = 'r', only_attrs: bool = False) -> tpx.Self:
         pass
 
-    def close(self) -> Self:
+    def close(self) -> tpx.Self:
         try:
             self._store.close()
         except AttributeError:
@@ -252,7 +253,7 @@ class _StoreWrapper(tp.ContextManager['_StoreWrapper'], tp.MutableMapping[str, '
     def mode(self) -> str:
         return tp.cast(str, self._store.mode)
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> tpx.Self:
         try:
             self._store.__enter__()
         except AttributeError:
