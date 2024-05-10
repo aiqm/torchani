@@ -4,7 +4,6 @@ from collections import OrderedDict
 
 import torch
 from torch import Tensor
-from torch.jit import Final
 
 from torchani.utils import PERIODIC_TABLE
 from torchani import infer
@@ -38,8 +37,8 @@ class ANIModel(torch.nn.ModuleDict):
             module by putting the same reference in :attr:`modules`.
     """
 
-    size: Final[int]
-    num_species: Final[int]
+    num_networks: int
+    num_species: int
 
     @staticmethod
     def ensureOrderedDict(modules):
@@ -52,12 +51,15 @@ class ANIModel(torch.nn.ModuleDict):
 
     def __init__(self, modules):
         super().__init__(self.ensureOrderedDict(modules))
-        self.size = 1
+        self.num_networks = 1
         self.num_species = len(self)
 
-    def forward(self, species_aev: tp.Tuple[Tensor, Tensor],  # type: ignore
-                cell: tp.Optional[Tensor] = None,
-                pbc: tp.Optional[Tensor] = None) -> SpeciesEnergies:
+    def forward(  # type: ignore
+        self,
+        species_aev: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> SpeciesEnergies:
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
 
@@ -71,7 +73,10 @@ class ANIModel(torch.nn.ModuleDict):
         raise IndexError("Only idx=0 supported for ANIModel")
 
     @torch.jit.export
-    def _atomic_energies(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:
+    def _atomic_energies(
+        self,
+        species_aev: tp.Tuple[Tensor, Tensor],
+    ) -> Tensor:
         # Obtain the atomic energies associated with a given tensor of AEV's
         #  Note that the output is of shape (1, C, A)
         species, aev = species_aev
@@ -102,12 +107,12 @@ class ANIModel(torch.nn.ModuleDict):
 class Ensemble(torch.nn.ModuleList):
     """Compute the average output of an ensemble of modules."""
 
-    size: Final[int]
-    num_species: Final[int]
+    num_networks: int
+    num_species: int
 
     def __init__(self, modules: tp.Sequence[ANIModel]):
         super().__init__(modules)
-        self.size = len(modules)
+        self.num_networks = len(modules)
         if any(m.num_species != modules[0].num_species for m in modules):
             raise ValueError("All modules in the ensemble must support the same number of species")
         self.num_species = modules[0].num_species
@@ -119,7 +124,7 @@ class Ensemble(torch.nn.ModuleList):
         for x in self:
             sum_ += x(species_input)[1]
         species, _ = species_input
-        return SpeciesEnergies(species, sum_ / self.size)  # type: ignore
+        return SpeciesEnergies(species, sum_ / self.num_networks)  # type: ignore
 
     def member(self, idx: int) -> 'ANIModel':
         return self[idx]
@@ -167,8 +172,8 @@ class FittedSoftplus(torch.nn.Module):
     It is highly recommended to leave alpha and beta as their defaults,
     which match closely CELU with alpha = 0.1"""
 
-    alpha: Final[float]
-    beta: Final[float]
+    alpha: float
+    beta: float
 
     def __init__(self, alpha=0.1, beta=20):
         super().__init__()

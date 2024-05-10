@@ -27,13 +27,16 @@ class BmmEnsemble(torch.nn.Module):
     BmmNetwork is composed of BmmLinear layers, which will perform Batch Matmul (bmm) instead of normal matmul
     to reduce the number of kernel calls.
     """
+    num_networks: int
+    num_species: int
+
     def __init__(self, models):
         super().__init__()
-        self.num_network = len(models[0])
-        self.num_models = len(models)
-        self.use_num_models = self.num_models
+        self.num_networks = len(models)
+        self.num_species = len(models[0])
+        self.use_num_models = self.num_networks
         self.last_species = torch.empty(1)
-        self.idx_list = [torch.empty(0) for i in range(self.num_network)]
+        self.idx_list = [torch.empty(0) for i in range(self.num_networks)]
         # assert all models have the same networks as model[0]
         # and each network should have same architecture
 
@@ -54,7 +57,7 @@ class BmmEnsemble(torch.nn.Module):
         self._check_if_idxlist_needs_updates_jittable(species)
         idx_list = self.idx_list
         aev = aev.flatten(0, 1)
-        energy_list = torch.zeros(self.num_network, dtype=aev.dtype, device=aev.device)
+        energy_list = torch.zeros(self.num_networks, dtype=aev.dtype, device=aev.device)
         for i, net in enumerate(self.net_list):
             if idx_list[i].shape[0] > 0:
                 # torch.cuda.nvtx.mark(f'species = {i}')
@@ -94,8 +97,8 @@ class BmmEnsemble(torch.nn.Module):
     def set_species(self, species):
         species_ = species.flatten()
         with torch.no_grad():
-            self.idx_list = [torch.empty(0) for i in range(self.num_network)]
-            for i in range(self.num_network):
+            self.idx_list = [torch.empty(0) for i in range(self.num_networks)]
+            for i in range(self.num_networks):
                 mask = (species_ == i)
                 midx = mask.nonzero().flatten()
                 if midx.shape[0] > 0:
@@ -112,9 +115,9 @@ class BmmEnsemble(torch.nn.Module):
     @torch.jit.export
     def select_models(self, use_num_models: tp.Optional[int] = None):
         if use_num_models is None:
-            use_num_models = self.num_models
+            use_num_models = self.num_networks
             return
-        assert use_num_models <= self.num_models, f"use_num_models {use_num_models} cannot be larger than size {self.num_models}"
+        assert use_num_models <= self.num_networks, f"use_num_models {use_num_models} cannot be larger than size {self.num_networks}"
         for net in self.net_list:
             net.select_models(use_num_models)
         self.use_num_models = use_num_models
@@ -206,18 +209,18 @@ class MultiNetFunction(torch.autograd.Function):
     There is no multiprocessing used here, whereas cpp version is implemented with OpenMP.
     """
     @staticmethod
-    def forward(ctx, aev, num_network, idx_list, net_list, stream_list):
-        assert num_network == len(idx_list)
-        assert num_network == len(net_list)
-        assert num_network == len(stream_list)
-        energy_list = torch.zeros(num_network, dtype=aev.dtype, device=aev.device)
-        event_list = [torch.cuda.Event() for i in range(num_network)]
+    def forward(ctx, aev, num_networks, idx_list, net_list, stream_list):
+        assert num_networks == len(idx_list)
+        assert num_networks == len(net_list)
+        assert num_networks == len(stream_list)
+        energy_list = torch.zeros(num_networks, dtype=aev.dtype, device=aev.device)
+        event_list = [torch.cuda.Event() for i in range(num_networks)]
         current_stream = torch.cuda.current_stream()
         start_event = torch.cuda.Event()
         start_event.record(current_stream)
 
-        input_list = [None] * num_network
-        output_list = [None] * num_network
+        input_list = [None] * num_networks
+        output_list = [None] * num_networks
         for i, net in enumerate(net_list):
             if idx_list[i].shape[0] > 0:
                 torch.cuda.nvtx.mark(f'species = {i}')
@@ -238,7 +241,7 @@ class MultiNetFunction(torch.autograd.Function):
             if event is not None:
                 current_stream.wait_event(event)
 
-        ctx.num_network = num_network
+        ctx.num_networks = num_networks
         ctx.energy_list = energy_list
         ctx.stream_list = stream_list
         ctx.output_list = output_list
@@ -250,7 +253,7 @@ class MultiNetFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_o):
-        num_network = ctx.num_network
+        num_networks = ctx.num_networks
         stream_list = ctx.stream_list
         output_list = ctx.output_list
         input_list = ctx.input_list
@@ -261,7 +264,7 @@ class MultiNetFunction(torch.autograd.Function):
         current_stream = torch.cuda.current_stream()
         start_event = torch.cuda.Event()
         start_event.record(current_stream)
-        event_list = [torch.cuda.Event() for i in range(num_network)]
+        event_list = [torch.cuda.Event() for i in range(num_networks)]
 
         for i, output in enumerate(output_list):
             if output is not None:
@@ -289,15 +292,15 @@ class InferModelBase(torch.nn.Module):
 
     TODO: set_species() could be ommited once jit support tensor.data_ptr()
     """
-    def __init__(self, num_network):
+    def __init__(self, num_networks):
         super().__init__()
 
         self.last_species = torch.empty(1)
         assert torch.cuda.is_available(), "Infer model needs cuda is available"
 
-        self.num_network = num_network
-        self.idx_list = [torch.empty(0) for i in range(self.num_network)]
-        self.stream_list = [torch.cuda.Stream() for i in range(self.num_network)]
+        self.num_networks = num_networks
+        self.idx_list = [torch.empty(0) for i in range(self.num_networks)]
+        self.stream_list = [torch.cuda.Stream() for i in range(self.num_networks)]
 
         # holders for jit when use_mnp == False
         self.weight_list_: tp.List[Tensor] = [torch.empty(0)]
@@ -327,7 +330,7 @@ class InferModelBase(torch.nn.Module):
         species, aev = species_aev
         aev = aev.flatten(0, 1)
         self._check_if_idxlist_needs_updates_jittable(species)
-        output = torch.ops.mnp.run(aev, self.num_network, self.num_layers_list, self.start_layers_list, self.idx_list, self.weight_list_, self.bias_list_, self.stream_list, self.is_bmm, self.celu_alpha)
+        output = torch.ops.mnp.run(aev, self.num_networks, self.num_layers_list, self.start_layers_list, self.idx_list, self.weight_list_, self.bias_list_, self.stream_list, self.is_bmm, self.celu_alpha)
         return output
 
     @torch.jit.unused
@@ -338,9 +341,9 @@ class InferModelBase(torch.nn.Module):
 
         # torch.cuda.nvtx.range_push('Network')
         if not self.use_mnp:
-            output = MultiNetFunction.apply(aev, self.num_network, self.idx_list, self.net_list, self.stream_list)
+            output = MultiNetFunction.apply(aev, self.num_networks, self.idx_list, self.net_list, self.stream_list)
         else:
-            output = torch.ops.mnp.run(aev, self.num_network, self.num_layers_list, self.start_layers_list, self.idx_list, self.weight_list_, self.bias_list_, self.stream_list, self.is_bmm, self.celu_alpha)
+            output = torch.ops.mnp.run(aev, self.num_networks, self.num_layers_list, self.start_layers_list, self.idx_list, self.weight_list_, self.bias_list_, self.stream_list, self.is_bmm, self.celu_alpha)
         # torch.cuda.nvtx.range_pop()
         return output
 
@@ -364,8 +367,8 @@ class InferModelBase(torch.nn.Module):
     def set_species(self, species):
         species_ = species.flatten()
         with torch.no_grad():
-            self.idx_list = [torch.empty(0) for i in range(self.num_network)]
-            for i in range(self.num_network):
+            self.idx_list = [torch.empty(0) for i in range(self.num_networks)]
+            for i in range(self.num_networks):
                 mask = (species_ == i)
                 midx = mask.nonzero().flatten()
                 if midx.shape[0] > 0:
@@ -374,7 +377,7 @@ class InferModelBase(torch.nn.Module):
     @torch.jit.unused
     def init_mnp(self):
         assert mnp_is_installed, "MNP extension is not installed"
-        self.weight_list = []  # shape: [num_networks, num_layers]
+        self.weight_list = []  # shape: (num_networks, num_layers)
         self.bias_list = []
         self.celu_alpha = None
 
@@ -382,8 +385,8 @@ class InferModelBase(torch.nn.Module):
         self.copy_weight_bias()
 
         self.num_layers_list = [len(weights) for weights in self.weight_list]
-        self.start_layers_list = [0] * self.num_network
-        for i in range(self.num_network - 1):
+        self.start_layers_list = [0] * self.num_networks
+        for i in range(self.num_networks - 1):
             self.start_layers_list[i + 1] = self.start_layers_list[i] + self.num_layers_list[i]
 
         # flatten weight and bias list
@@ -420,8 +423,8 @@ class ANIInferModel(InferModelBase):
     InferModel for a single ANI model, instead of an ensemble.
     """
     def __init__(self, modules, use_mnp=True):
-        num_network = len(modules)
-        super().__init__(num_network)
+        num_networks = len(modules)
+        super().__init__(num_networks)
 
         self.is_bmm = False
         self.net_list = [m for (key, m) in modules]
@@ -457,8 +460,8 @@ class BmmEnsembleMNP(InferModelBase):
     to reduce the number of kernel calls.
     """
     def __init__(self, models, use_mnp=True):
-        num_network = len(models[0])
-        super().__init__(num_network)
+        num_networks = len(models[0])
+        super().__init__(num_networks)
         # assert all models have the same networks as model[0]
         # and each network should have same architecture
 

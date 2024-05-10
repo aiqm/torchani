@@ -305,7 +305,7 @@ class BuiltinModel(torch.nn.Module):
         """
         species, energies = self.members_energies(species_coordinates, cell, pbc)
 
-        if self.neural_networks.size == 1:
+        if self.neural_networks.num_networks == 1:
             qbc_factors = torch.zeros_like(energies).squeeze(0)
         else:
             # standard deviation is taken across ensemble members
@@ -340,7 +340,7 @@ class BuiltinModel(torch.nn.Module):
         if shift_energy:
             atomic_energies += self.energy_shifter.atomic_energies(species_coordinates[0])
 
-        if self.neural_networks.size == 1:
+        if self.neural_networks.num_networks == 1:
             stdev_atomic_energies = torch.zeros_like(atomic_energies).squeeze(0)
         else:
             stdev_atomic_energies = atomic_energies.std(0, unbiased=unbiased)
@@ -388,7 +388,7 @@ class BuiltinModel(torch.nn.Module):
         max_magnitudes = magnitudes.max(dim=0).values
         min_magnitudes = magnitudes.min(dim=0).values
 
-        if self.neural_networks.size == 1:
+        if self.neural_networks.num_networks == 1:
             relative_stdev = torch.zeros_like(magnitudes).squeeze(0)
             relative_range = torch.ones_like(magnitudes).squeeze(0)
         else:
@@ -402,7 +402,7 @@ class BuiltinModel(torch.nn.Module):
         return ForceStdev(species, magnitudes, relative_stdev, relative_range)
 
     def __len__(self):
-        return self.neural_networks.size
+        return self.neural_networks.num_networks
 
 
 class PairPotentialsModel(BuiltinModel):
@@ -461,7 +461,7 @@ class PairPotentialsModel(BuiltinModel):
         # some potentials output atomic energies with shape (M, N, A), where
         # M is all models in the ensemble
         atomic_energies = torch.zeros(
-            (self.neural_networks.size, element_idxs.shape[0], element_idxs.shape[1]),
+            (self.neural_networks.num_networks, element_idxs.shape[0], element_idxs.shape[1]),
             dtype=coordinates.dtype,
             device=coordinates.device
         )
