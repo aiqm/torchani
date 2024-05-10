@@ -48,6 +48,7 @@ from torchani import (
     neighbors,
     cutoffs,
     sae,
+    infer,
     neurochem,  # TODO: Get rid of this
     data,  # TODO: Get rid of this
 )
@@ -77,6 +78,7 @@ __all__ = [
     'calc',
     'assembler',
     "sae",
+    "infer",
     'neurochem',  # TODO: Get rid of this
     'data',  # TODO: Get rid of this
 ]

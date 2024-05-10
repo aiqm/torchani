@@ -15,8 +15,7 @@ torch.backends.cuda.matmul.allow_tf32 = False
 torch._C._jit_set_nvfuser_enabled(False)
 
 devices = ['cuda', 'cpu']
-ani2x = torchani.models.ANI2x(periodic_table_index=False)
-species_converter = torchani.nn.SpeciesConverter(ani2x.get_chemical_symbols())
+ani2x = torchani.models.ANI2x()
 
 
 @parameterized_class(('device'), product(devices))
@@ -25,7 +24,6 @@ class TestInfer(TestCase):
 
     def setUp(self):
         self.ani2x = ani2x.to(self.device)
-        self.species_converter = species_converter.to(self.device)
         self.path = os.path.dirname(os.path.realpath(__file__))
 
     def _test(self, model_ref, model_infer):
@@ -35,11 +33,8 @@ class TestInfer(TestCase):
         for file in files:
             filepath = os.path.join(self.path, f'../dataset/pdb/{file}')
             mol = read(filepath)
-            species = torch.tensor([mol.get_atomic_numbers()], device=self.device)
-            positions = torch.tensor([mol.get_positions()], dtype=torch.float32, requires_grad=False, device=self.device)
-            speciesPositions = self.species_converter((species, positions))
-            species, coordinates = speciesPositions
-            coordinates.requires_grad_(True)
+            species = torch.tensor(mol.get_atomic_numbers(), device=self.device).unsqueeze(0)
+            coordinates = torch.tensor(mol.get_positions(), dtype=torch.float32, requires_grad=True, device=self.device).unsqueeze(0)
 
             _, energy1 = model_ref((species, coordinates))
             force1 = torch.autograd.grad(energy1.sum(), coordinates)[0]
@@ -49,30 +44,14 @@ class TestInfer(TestCase):
             self.assertEqual(energy1, energy2, atol=1e-5, rtol=1e-5)
             self.assertEqual(force1, force2, atol=1e-5, rtol=1e-5)
 
-    def testANI2xInfer(self):
-        ani2x_infer = torchani.models.ANI2x(periodic_table_index=False).to_infer_model().to(self.device)
+    def testBmmEnsemble(self):
+        ani2x_infer = torchani.models.ANI2x().to_infer_model().to(self.device)
         self._test(ani2x, ani2x_infer)
 
-    def testBmmEnsemble(self):
-        model_iterator = self.ani2x.neural_networks
-        aev_computer = torchani.AEVComputer.like_2x(use_cuda_extension=(self.device == 'cuda'))
-        ensemble = torchani.nn.Sequential(aev_computer, model_iterator).to(self.device)
-        bmm_ensemble = torchani.nn.Sequential(aev_computer, self.ani2x.neural_networks.to_infer_model()).to(self.device)
-        self._test(ensemble, bmm_ensemble)
-
-    def testANI2xInferJIT(self):
-        ani2x_infer_jit = torchani.models.ANI2x(periodic_table_index=False).to_infer_model().to(self.device)
+    def testBmmEnsembleJIT(self):
+        ani2x_infer_jit = torchani.models.ANI2x().to_infer_model().to(self.device)
         ani2x_infer_jit = torch.jit.script(ani2x_infer_jit)
         self._test(ani2x, ani2x_infer_jit)
-
-    def testBmmEnsembleJIT(self):
-        model_iterator = self.ani2x.neural_networks
-        aev_computer = torchani.AEVComputer.like_2x(use_cuda_extension=(self.device == 'cuda'))
-        ensemble = torchani.nn.Sequential(aev_computer, model_iterator).to(self.device)
-        # jit
-        bmm_ensemble = torchani.nn.Sequential(aev_computer, self.ani2x.neural_networks.to_infer_model()).to(self.device)
-        bmm_ensemble_jit = torch.jit.script(bmm_ensemble)
-        self._test(ensemble, bmm_ensemble_jit)
 
     def testBenchmarkJIT(self):
         """
@@ -87,18 +66,15 @@ class TestInfer(TestCase):
         def run(model, file):
             filepath = os.path.join(self.path, f'../dataset/pdb/{file}')
             mol = read(filepath)
-            species = torch.tensor([mol.get_atomic_numbers()], device=self.device)
-            positions = torch.tensor([mol.get_positions()], dtype=torch.float32, requires_grad=False, device=self.device)
-            speciesPositions = self.species_converter((species, positions))
-            species, coordinates = speciesPositions
-            coordinates.requires_grad_(True)
+            species = torch.tensor(mol.get_atomic_numbers(), device=self.device).unsqueeze(0)
+            coordinates = torch.tensor(mol.get_positions(), dtype=torch.float32, requires_grad=True, device=self.device).unsqueeze(0)
 
             _, energy1 = model((species, coordinates))
             _ = torch.autograd.grad(energy1.sum(), coordinates)[0]  # force
 
         use_cuaev = self.device == "cuda"
-        ani2x_jit = torch.jit.script(torchani.models.ANI2x(use_cuda_extension=use_cuaev, periodic_table_index=False).to(self.device))
-        ani2x_infer_jit = torchani.models.ANI2x(use_cuda_extension=use_cuaev, periodic_table_index=False).to_infer_model().to(self.device)
+        ani2x_jit = torch.jit.script(torchani.models.ANI2x(use_cuda_extension=use_cuaev).to(self.device))
+        ani2x_infer_jit = torchani.models.ANI2x(use_cuda_extension=use_cuaev).to_infer_model().to(self.device)
         ani2x_infer_jit = torch.jit.script(ani2x_infer_jit)
 
         file = 'small.pdb'
@@ -113,10 +89,6 @@ class TestInfer(TestCase):
         print()
         torchani.utils.timeit(run_ani2x, steps=steps)
         torchani.utils.timeit(run_ani2x_infer, steps=steps)
-
-    def testNVTX(self):
-        torch.ops.mnp.nvtx_range_push("hello")
-        torch.ops.mnp.nvtx_range_pop()
 
 
 if __name__ == '__main__':

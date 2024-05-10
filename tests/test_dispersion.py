@@ -183,7 +183,7 @@ class TestDispersion(TestCase):
 
     def testMethaneStandalone(self):
         disp = StandaloneTwoBodyDispersionD3(
-            cutoff=8.0, periodic_table_index=True
+            cutoff=8.0,
         ).to(self.device)
         energy = disp((self.atomic_numbers, self.coordinates)).energies
         energy = units.hartree2kcalpermol(energy)
@@ -193,7 +193,7 @@ class TestDispersion(TestCase):
 
     def testMethaneStandaloneBatch(self):
         disp = StandaloneTwoBodyDispersionD3(
-            cutoff=8.0, periodic_table_index=True
+            cutoff=8.0,
         ).to(self.device)
         r = 2
         coordinates = self.coordinates.repeat(r, 1, 1)
@@ -209,7 +209,7 @@ class TestDispersion(TestCase):
 
     def testDispersionBatches(self):
         rep = StandaloneTwoBodyDispersionD3(
-            cutoff=8.0, periodic_table_index=True
+            cutoff=8.0,
         )
         coordinates1 = torch.tensor(
             [[0.0, 0.0, 0.0], [1.5, 0.0, 0.0], [3.0, 0.0, 0.0]]

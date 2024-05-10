@@ -33,9 +33,9 @@ class TestVibrational(TestCase):
         freq = torch.tensor([numpy.real(x) for x in vib.get_frequencies()[6:]])
         modes = []
         for j in range(6, 6 + len(freq)):
-            modes.append(vib.get_mode(j))
+            modes.append(numpy.expand_dims(vib.get_mode(j), axis=0))
         vib.clean()
-        modes = torch.tensor(modes)
+        modes = torch.tensor(numpy.concatenate(modes, axis=0))
         # compute vibrational by torchani
         species = torch.tensor(molecule.get_atomic_numbers()).unsqueeze(0)
         masses = torchani.utils.get_atomic_masses(species, dtype=torch.double)

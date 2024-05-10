@@ -6,7 +6,6 @@ import torch
 from torch import Tensor
 
 from torchani.utils import PERIODIC_TABLE
-from torchani import infer
 from torchani.tuples import (
     SpeciesCoordinates,
     SpeciesEnergies
@@ -60,12 +59,8 @@ class ANIModel(torch.nn.ModuleDict):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesEnergies:
-        species, aev = species_aev
-        assert species.shape == aev.shape[:-1]
-
-        atomic_energies = self._atomic_energies((species, aev)).squeeze(0)
-        # shape of atomic energies is (C, A)
-        return SpeciesEnergies(species, torch.sum(atomic_energies, dim=1))
+        atomic_energies = self._atomic_energies(species_aev).squeeze(0)
+        return SpeciesEnergies(species_aev[0], torch.sum(atomic_energies, dim=1))
 
     def member(self, idx: int) -> 'ANIModel':
         if idx == 0:
@@ -78,14 +73,13 @@ class ANIModel(torch.nn.ModuleDict):
         species_aev: tp.Tuple[Tensor, Tensor],
     ) -> Tensor:
         # Obtain the atomic energies associated with a given tensor of AEV's
-        #  Note that the output is of shape (1, C, A)
+        # Note that the output is of shape (1, C, A)
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
+
         species_ = species.flatten()
         aev = aev.flatten(0, 1)
-
         output = aev.new_zeros(species_.shape)
-
         for i, m in enumerate(self.values()):
             midx = (species_ == i).nonzero().view(-1)
             if midx.shape[0] > 0:
@@ -95,13 +89,20 @@ class ANIModel(torch.nn.ModuleDict):
         return output.unsqueeze(0)
 
     def to_infer_model(self, use_mnp: bool = False):
+        # Infer is imported here to prevent circular imports
+        from torchani import infer
         if use_mnp:
             warnings.warn(
                 'use_mnp will be removed in the future. '
                 'It is too complex and not general enough',
                 category=DeprecationWarning,
             )
-        return infer.ANIInferModel(list(self.items()), use_mnp)  # type: ignore
+        else:
+            warnings.warn(
+                'non-mnp ANIModel is not optimized for performance',
+                category=DeprecationWarning,
+            )
+        return infer.InferModel(self, use_mnp=use_mnp)  # type: ignore
 
 
 class Ensemble(torch.nn.ModuleList):
@@ -140,13 +141,15 @@ class Ensemble(torch.nn.ModuleList):
         return members_atomic_energies
 
     def to_infer_model(self, use_mnp: bool = False):
+        # Infer is imported here to prevent circular imports
+        from torchani import infer
         if use_mnp:
             warnings.warn(
                 'use_mnp will be removed in the future. '
                 'It is too complex and not general enough',
                 category=DeprecationWarning,
             )
-            return infer.BmmEnsembleMNP(self)  # type: ignore
+            return infer.InferModel(self, use_mnp=True)  # type: ignore
         return infer.BmmEnsemble(self)  # type: ignore
 
 

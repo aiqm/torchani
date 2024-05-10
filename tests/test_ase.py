@@ -64,21 +64,6 @@ class TestASE(TestCase):
         self.assertEqual(f_pair, f_cell, rtol=0.1, atol=0.1)
         self.assertEqual(f_pair, f, rtol=0.1, atol=0.1)
 
-    @unittest.skipIf(True, "Verlet Cell list is not implemented correctly")
-    def testConsistentForcesCellListVerlet(self):
-        # Run a Langevin thermostat dynamic for 100 steps and after the dynamic
-        # check once that the numerical and analytical force agree to a given
-        # relative tolerance
-        model_cell = ANI1x(model_index=0, neighborlist="cell_list")
-        model_cell = model_cell.to(dtype=torch.double, device=self.device)
-        model_dyn = ANI1x(model_index=0, neighborlist="cell_list")
-        model_dyn.aev_computer.neighborlist = CellList(verlet=True)
-        model_dyn = model_cell.to(dtype=torch.double, device=self.device)
-
-        f_cell = self._testForcesPBC(model_cell, only_get_forces=True)
-        f_dyn = self._testForcesPBC(model_dyn, only_get_forces=True)
-        self.assertEqual(f_dyn, f_cell, rtol=0.1, atol=0.1)
-
     def testNumericalForcesFullPairwise(self):
         model = ANI1x(model_index=0)
         model = model.to(dtype=torch.double, device=self.device)
@@ -88,13 +73,6 @@ class TestASE(TestCase):
         model = ANI1x(model_index=0, neighborlist="cell_list")
         model = model.to(dtype=torch.double, device=self.device)
         self._testForcesPBC(model)
-
-    @unittest.skipIf(True, "Verlet Cell list is not implemented correctly")
-    def testNumericalForcesCellListVerlet(self):
-        model = ANI1x(model_index=0, neighborlist="cell_list")
-        model.aev_computer.neighborlist = CellList(verlet=True)
-        model = model.to(dtype=torch.double, device=self.device)
-        self._testForcesPBC(model, steps=100)
 
     def testNumericalForcesCellListConstantV(self):
         model = ANI1x(model_index=0, neighborlist="cell_list")
@@ -132,12 +110,15 @@ class TestASE(TestCase):
                 fn[i, j] = numeric_force(atoms, i, j, eps)
         return fn
 
-    @parameterized.expand([(False, False),
-                           (False, True),
-                           (True, False),
-                           (True, True)],
-                          name_func=lambda func, index, param:
-                              f"{func.__name__}_{index}_stress_partial_fdotr_{param.args[0]}_repulsion_{param.args[1]}")
+    @parameterized.expand(
+        [
+            (False, False),
+            (False, True),
+            (True, False),
+            (True, True),
+        ],
+        name_func=lambda func, index, param: f"{func.__name__}_fdotr_{param.args[0]}_repulsion_{param.args[1]}"
+    )
     def testWithNumericalStressFullPairwise(self, stress_partial_fdotr, repulsion):
         if repulsion:
             model = ANIdr(model_index=0)
@@ -146,8 +127,13 @@ class TestASE(TestCase):
         model = model.to(dtype=torch.double, device=self.device)
         self._testWithNumericalStressPBC(model, stress_partial_fdotr=stress_partial_fdotr)
 
-    @parameterized.expand([(False,), (True,)],
-                          name_func=lambda func, index, param: f"{func.__name__}_{index}_{param.args[0]}")
+    @parameterized.expand(
+        [
+            (False,),
+            (True,),
+        ],
+        name_func=lambda func, index, param: f"{func.__name__}_fdotr_{param.args[0]}",
+    )
     def testWithNumericalStressCellList(self, stress_partial_fdotr):
         model = ANI1x(model_index=0, neighborlist="cell_list")
         model = model.to(dtype=torch.double, device=self.device)

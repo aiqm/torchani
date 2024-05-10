@@ -11,7 +11,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 class TestGrad(TestCase):
     # torch.autograd.gradcheck and torch.autograd.gradgradcheck verify that
     # the numerical and analytical gradient and hessian of a function
-    # matches to within a given tolerance.
+    # matches within a given tolerance.
     #
     # The forward call of the function is wrapped with a lambda so that
     # gradcheck gets a function with only one tensor input and tensor output.

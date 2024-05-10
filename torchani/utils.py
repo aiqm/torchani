@@ -136,14 +136,14 @@ def sorted_gsaes(elements: tp.Sequence[str], functional: str, basis_set: str, ):
     return [gsaes[e] for e in elements]
 
 
-def check_openmp_threads():
+def check_openmp_threads() -> None:
     if "OMP_NUM_THREADS" not in os.environ:
         warnings.warn("""OMP_NUM_THREADS is not set, mnp works best if OMP_NUM_THREADS >= 2.
               You can set it by `export OMP_NUM_THREADS=4` or `export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK` if using slurm""")
-    else:
-        num_threads = int(os.environ["OMP_NUM_THREADS"])
-        assert num_threads > 0
-        print(f"OMP_NUM_THREADS is set as {num_threads}")
+        return
+    num_threads = int(os.environ["OMP_NUM_THREADS"])
+    assert num_threads > 0
+    print(f"OMP_NUM_THREADS is set as {num_threads}")
 
 
 def species_to_formula(species: np.ndarray) -> tp.List[str]:

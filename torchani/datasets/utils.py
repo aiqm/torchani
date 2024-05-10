@@ -26,7 +26,6 @@ def concatenate(source: ANIDataset,
 
     with TemporaryLocation(source._first_subds._backend) as tmp_location:
         dest = ANIDataset(tmp_location,
-                          create=True,
                           grouping=source.grouping,
                           verbose=False)
         for k, v in tqdm(source.numpy_items(),

@@ -132,17 +132,13 @@ Optimizing Models for Inference
 ===============================
 
 .. automodule:: torchani.infer
-.. autoclass:: torchani.infer.ANIInferModel
-    :members:
 .. autoclass:: torchani.infer.BmmEnsemble
-    :members:
-.. autoclass:: torchani.infer.BmmEnsembleMNP
     :members:
 .. autoclass:: torchani.infer.BmmLinear
     :members:
 .. autoclass:: torchani.infer.BmmNetwork
     :members:
-.. autoclass:: torchani.infer.InferModelBase
+.. autoclass:: torchani.infer.InferModel
     :members:
 .. autoclass:: torchani.infer.MultiNetFunction
     :members:

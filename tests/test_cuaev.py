@@ -393,8 +393,8 @@ class TestCUAEV(TestCase):
         for file in files:
             filepath = os.path.join(path, f'../dataset/pdb/{file}')
             mol = read(filepath)
-            species = torch.tensor([mol.get_atomic_numbers()], device=self.device)
-            positions = torch.tensor([mol.get_positions()], requires_grad=False, device=self.device, dtype=self.dtype)
+            species = torch.tensor(mol.get_atomic_numbers(), device=self.device).unsqueeze(0)
+            positions = torch.tensor(mol.get_positions(), requires_grad=False, device=self.device, dtype=self.dtype).unsqueeze(0)
             speciesPositions = self.ani2x.species_converter((species, positions))
             species, coordinates = speciesPositions
 
@@ -408,8 +408,8 @@ class TestCUAEV(TestCase):
         for file in files:
             filepath = os.path.join(path, f'../dataset/pdb/{file}')
             mol = read(filepath)
-            species = torch.tensor([mol.get_atomic_numbers()], device=self.device)
-            positions = torch.tensor([mol.get_positions()], requires_grad=False, device=self.device, dtype=self.dtype)
+            species = torch.tensor(mol.get_atomic_numbers(), device=self.device).unsqueeze(0)
+            positions = torch.tensor(mol.get_positions(), requires_grad=False, device=self.device, dtype=self.dtype).unsqueeze(0)
             speciesPositions = self.ani2x.species_converter((species, positions))
             species, coordinates = speciesPositions
             coordinates.requires_grad_(True)
@@ -431,8 +431,8 @@ class TestCUAEV(TestCase):
         for file in files:
             filepath = os.path.join(path, f'../dataset/pdb/{file}')
             mol = read(filepath)
-            species = torch.tensor([mol.get_atomic_numbers()], device=self.device)
-            positions = torch.tensor([mol.get_positions()], requires_grad=False, device=self.device, dtype=self.dtype)
+            species = torch.tensor(mol.get_atomic_numbers(), device=self.device).unsqueeze(0)
+            positions = torch.tensor(mol.get_positions(), requires_grad=False, device=self.device, dtype=self.dtype).unsqueeze(0)
             speciesPositions = self.ani2x.species_converter((species, positions))
             species, coordinates = speciesPositions
 
@@ -454,9 +454,9 @@ class TestCUAEV(TestCase):
         for file in files:
             filepath = os.path.join(path, f'../dataset/pdb/{file}')
             mol = read(filepath)
-            species = torch.tensor([mol.get_atomic_numbers()], device=self.device)
-            positions = torch.tensor([mol.get_positions()], requires_grad=False, device=self.device, dtype=self.dtype)
-            cell = torch.tensor(mol.get_cell(complete=True), device=self.device, dtype=self.dtype)
+            species = torch.tensor(mol.get_atomic_numbers(), device=self.device).unsqueeze(0)
+            positions = torch.tensor(mol.get_positions(), requires_grad=False, device=self.device, dtype=self.dtype).unsqueeze(0)
+            cell = torch.tensor(mol.get_cell(complete=True)[:], device=self.device, dtype=self.dtype)
             pbc = torch.tensor(mol.get_pbc(), dtype=torch.bool, device=self.device)
             speciesPositions = self.ani2x.species_converter((species, positions))
             species, coordinates = speciesPositions
@@ -479,8 +479,8 @@ class TestCUAEV(TestCase):
         for file in files:
             filepath = os.path.join(path, f'../dataset/pdb/{file}')
             mol = read(filepath)
-            species = torch.tensor([mol.get_atomic_numbers()], device=self.device)
-            positions = torch.tensor([mol.get_positions()], requires_grad=False, device=self.device, dtype=self.dtype)
+            species = torch.tensor(mol.get_atomic_numbers(), device=self.device).unsqueeze(0)
+            positions = torch.tensor(mol.get_positions(), requires_grad=False, device=self.device, dtype=self.dtype).unsqueeze(0)
             speciesPositions = self.ani2x.species_converter((species, positions))
             species, coordinates = speciesPositions
 
@@ -509,9 +509,9 @@ class TestCUAEV(TestCase):
         for file in files:
             filepath = os.path.join(path, f'../dataset/pdb/{file}')
             mol = read(filepath)
-            species = torch.tensor([mol.get_atomic_numbers()], device=self.device)
-            positions = torch.tensor([mol.get_positions()], requires_grad=False, device=self.device, dtype=self.dtype)
-            cell = torch.tensor(mol.get_cell(complete=True), device=self.device, dtype=self.dtype)
+            species = torch.tensor(mol.get_atomic_numbers(), device=self.device).unsqueeze(0)
+            positions = torch.tensor(mol.get_positions(), requires_grad=False, device=self.device, dtype=self.dtype).unsqueeze(0)
+            cell = torch.tensor(mol.get_cell(complete=True)[:], device=self.device, dtype=self.dtype)
             pbc = torch.tensor(mol.get_pbc(), dtype=torch.bool, device=self.device)
             speciesPositions = self.ani2x.species_converter((species, positions))
             species, coordinates = speciesPositions
