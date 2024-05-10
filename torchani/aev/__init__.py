@@ -1,4 +1,4 @@
-from .aev_computer import AEVComputer, SpeciesAEV, cuaev_is_installed
-from .aev_terms import StandardAngular, StandardRadial
+from torchani.aev.aev_computer import AEVComputer, cuaev_is_installed
+from torchani.aev.aev_terms import StandardAngular, StandardRadial
 
-__all__ = ['AEVComputer', 'SpeciesAEV', 'cuaev_is_installed', 'StandardRadial', 'StandardAngular']
+__all__ = ['AEVComputer', 'cuaev_is_installed', 'StandardRadial', 'StandardAngular']

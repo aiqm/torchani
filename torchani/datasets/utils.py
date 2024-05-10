@@ -10,7 +10,7 @@ from torchani.models import BuiltinModel
 from torchani.nn import Ensemble
 from torchani.datasets._annotations import Conformers, StrPath
 from torchani.datasets.datasets import ANIDataset
-from torchani.datasets._backends import TemporaryLocation
+from torchani.datasets.backends import TemporaryLocation
 
 
 __all__ = ['filter_by_high_force', 'filter_by_high_energy_error', 'concatenate']

@@ -10,7 +10,7 @@ from tqdm import tqdm
 import typing_extensions as tpx
 
 from torchani.datasets._annotations import StrPath
-from torchani.datasets._backends.interface import _ConformerGroup, _ConformerWrapper, CacheHolder, _HierarchicalStoreWrapper
+from torchani.datasets.backends.interface import _ConformerGroup, _ConformerWrapper, CacheHolder, _HierarchicalStoreWrapper
 
 
 class _H5TemporaryLocation(tp.ContextManager[StrPath]):

@@ -10,13 +10,13 @@ import numpy as np
 import typing_extensions as tpx
 
 from torchani.datasets._annotations import StrPath
-from torchani.datasets._backends.interface import (
+from torchani.datasets.backends.interface import (
     _StoreWrapper,
     _ConformerGroup,
     CacheHolder,
     _FileOrDirLocation,
 )
-from torchani.datasets._backends.zarr_impl import _ZarrTemporaryLocation
+from torchani.datasets.backends.zarr_impl import _ZarrTemporaryLocation
 
 
 try:

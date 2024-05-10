@@ -1,10 +1,10 @@
-from ._backends import (
+from torchani.datasets.backends.backends import (
     StoreFactory,
     TemporaryLocation,
     _StoreWrapper,
     _SUFFIXES,
 )
-from torchani.datasets._backends.interface import _ConformerWrapper
+from torchani.datasets.backends.interface import _ConformerWrapper
 
 __all__ = [
     "StoreFactory",

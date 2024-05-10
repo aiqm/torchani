@@ -1,0 +1,64 @@
+name: lint
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+env:
+  PY_VERSION: 3.8
+
+jobs:
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout torchani
+      uses: actions/checkout@v3
+    - name: Set up Python ${{ env.PY_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PY_VERSION }}
+    - name: Install pip
+      run: pip install --upgrade pip
+    - name: Install mypy (with stubs)
+      run: pip install --upgrade mypy types-PyYAML types-requests
+    - name: Type check with mypy
+      run: mypy .
+
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout torchani
+      uses: actions/checkout@v3
+    - name: Set up Python ${{ env.PY_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PY_VERSION }}
+    - name: Install pip
+      run: pip install --upgrade pip
+    - name: Install flake8
+      run: pip install --upgrade flake8
+    - name: Lint with flake8
+      run: flake8 .
+
+  clang-format:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout torchani
+      uses: actions/checkout@v3
+    - name: Check that clang-format is available
+      run: which clang-format; clang-format --version
+    - name: Lint with clang-format
+      run: |
+        find -name '*.cpp' -o -name '*.h' -o -name '*.cu' -o -name '*.cuh' | xargs clang-format -i
+        GIT_DIFF=$(git diff)
+        if [[ -z $GIT_DIFF ]]; then
+            exit 0
+        fi
+        echo $GIT_DIFF
+        exit 1
+
+concurrency:
+  group: lint-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true

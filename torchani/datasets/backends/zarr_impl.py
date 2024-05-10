@@ -6,7 +6,7 @@ import numpy as np
 import typing_extensions as tpx
 
 from torchani.datasets._annotations import StrPath
-from torchani.datasets._backends.interface import _ConformerGroup, _ConformerWrapper, _HierarchicalStoreWrapper
+from torchani.datasets.backends.interface import _ConformerGroup, _ConformerWrapper, _HierarchicalStoreWrapper
 
 try:
     import zarr  # noqa

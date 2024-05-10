@@ -6,21 +6,19 @@ on:
     branches:
       - master
 
+env:
+  PY_VERSION: 3.8
+
 jobs:
   tools:
-
     runs-on: self-hosted
-    strategy:
-      max-parallel: 4
-      matrix:
-        python-version: [3.8]
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Checkout torchani
+      uses: actions/checkout@v3
+    - name: Set up Python ${{ env.PY_VERSION }}
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ env.PY_VERSION }}
     - name: Fetch submodules
       run: git submodule update --init
     - name: Install dependencies

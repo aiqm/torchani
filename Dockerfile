@@ -5,7 +5,7 @@
 FROM pytorch/pytorch:1.13.1-cuda11.6-cudnn8-devel
 
 # environment
-# NGC Container forces using TF32, disable it
+# NGC Container forces using TF32, disable this
 ENV TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=0
 
 # Set default shell to /bin/bash
