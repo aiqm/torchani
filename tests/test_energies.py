@@ -3,6 +3,7 @@ import torchani
 import unittest
 import os
 import pickle
+
 from torchani.testing import TestCase
 from torchani.utils import EnergyShifter
 

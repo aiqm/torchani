@@ -37,6 +37,9 @@ dependencies:
   - coverage
   - pytest
   - parameterized
+
+  # Indirect dependencies of torch.testing
+  - hypothesis
   - expecttest
 
   # Extra data backends for tests

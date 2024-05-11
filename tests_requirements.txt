@@ -4,6 +4,8 @@ ase
 # Linters / checkers / tests-runners / CI
 pytest
 parameterized
+# Indirect dependencies of torch.testing
+hypothesis
 expecttest
 
 # Extra data backends for tests

@@ -3,16 +3,23 @@ import unittest
 import torch
 
 from torchani import units
-from torchani.testing import TestCase
 from torchani.aev import AEVComputer
 from torchani.potentials import TwoBodyDispersionD3, StandaloneTwoBodyDispersionD3
 from torchani.potentials.dispersion import constants
+from torchani.testing import ANITest, expand
 
 
-class TestDispersion(TestCase):
+@expand()
+class TestDispersion(ANITest):
     def setUp(self):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.aev_computer = AEVComputer.like_1x().double().to(self.device)
+        # for the purposes of testing we use the exact same conversion factors
+        # as the original DFTD3 code
+        self.old_angstrom_to_bohr = units.ANGSTROM_TO_BOHR
+        self.old_hartree_to_kcalpermol = units.HARTREE_TO_KCALPERMOL
+        units.ANGSTROM_TO_BOHR = 1 / 0.52917726
+        units.HARTREE_TO_KCALPERMOL = 627.509541
+
+        self.aev_computer = self._setup(AEVComputer.like_1x().double())
         # fully symmetric methane
         self.coordinates = torch.tensor(
             [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0], [0.5, 0.5, 0.5]],
@@ -25,24 +32,18 @@ class TestDispersion(TestCase):
         self.atomic_numbers = torch.tensor(
             [[1, 1, 1, 1, 6]], dtype=torch.long, device=self.device
         )
-        # for the purposes of testing we use the exact same conversion factors
-        # as the original DFTD3 code
-        self.old_angstrom_to_bohr = units.ANGSTROM_TO_BOHR
-        self.old_hartree_to_kcalpermol = units.HARTREE_TO_KCALPERMOL
-        units.ANGSTROM_TO_BOHR = 1 / 0.52917726
-        units.HARTREE_TO_KCALPERMOL = 627.509541
 
     def tearDown(self):
-        # reset conversion factors
+        # Reset conversion factors
         units.ANGSTROM_TO_BOHR = self.old_angstrom_to_bohr
         units.HARTREE_TO_KCALPERMOL = self.old_hartree_to_kcalpermol
 
     def testConstructor(self):
-        disp = TwoBodyDispersionD3.from_functional()
-        self.assertTrue(disp._s6 == torch.tensor(1.0))
+        disp = self._setup(TwoBodyDispersionD3.from_functional())
+        self.assertTrue(disp._s6 == torch.tensor(1.0, device=self.device))
 
     def testMethaneCoordinationNums(self):
-        disp = TwoBodyDispersionD3.from_functional().to(self.device)
+        disp = self._setup(TwoBodyDispersionD3.from_functional())
         neighbors = self.aev_computer.neighborlist(
             self.species, self.coordinates,
             disp.cutoff,
@@ -61,14 +62,15 @@ class TestDispersion(TestCase):
         )
         # coordination numbers taken directly from DFTD3 Grimme et. al. code
         self.assertEqual(
-            coordnums.cpu(),
+            coordnums,
             torch.tensor(
-                [1.0052222, 1.0052222, 1.0052222, 1.0052222, 3.999873048]
+                [1.0052222, 1.0052222, 1.0052222, 1.0052222, 3.999873048],
+                device=self.device,
             ).double(),
         )
 
     def testPrecomputedC6(self):
-        disp = TwoBodyDispersionD3.from_functional().to(self.device)
+        disp = self._setup(TwoBodyDispersionD3.from_functional())
         diags = {
             "H": torch.diag(disp.precalc_coeff6[0, 0]),
             "C": torch.diag(disp.precalc_coeff6[1, 1]),
@@ -84,7 +86,8 @@ class TestDispersion(TestCase):
                     -1.0000000000,
                     -1.0000000000,
                     -1.0000000000,
-                ]
+                ],
+                device=self.device,
             ),
             "C": torch.tensor(
                 [
@@ -93,7 +96,8 @@ class TestDispersion(TestCase):
                     29.3602008820,
                     25.7808990479,
                     18.2066993713,
-                ]
+                ],
+                device=self.device,
             ),
             "O": torch.tensor(
                 [
@@ -102,7 +106,8 @@ class TestDispersion(TestCase):
                     19.6767997742,
                     15.5817003250,
                     -1.0000000000,
-                ]
+                ],
+                device=self.device,
             ),
             "N": torch.tensor(
                 [
@@ -111,14 +116,16 @@ class TestDispersion(TestCase):
                     10.3708000183,
                     -1.0000000000,
                     -1.0000000000,
-                ]
+                ],
+                device=self.device,
             ),
         }
         for k in diags.keys():
-            self.assertEqual(diags[k].cpu(), expect_diags[k])
+            self.assertEqual(diags[k], expect_diags[k])
 
     def testAllCarbonConstants(self):
         c6_constants, _, _ = constants.get_c6_constants()
+        c6_constants = c6_constants.to(self.device)
         expect_c6_carbon = torch.tensor(
             [
                 [49.1130, 46.0681, 37.8419, 35.4129, 29.2830],
@@ -126,12 +133,13 @@ class TestDispersion(TestCase):
                 [37.8419, 35.5219, 29.3602, 27.5063, 22.9517],
                 [35.4129, 33.2540, 27.5063, 25.7809, 21.5377],
                 [29.2830, 27.5206, 22.9517, 21.5377, 18.2067],
-            ]
+            ],
+            device=self.device
         )
         self.assertEqual(expect_c6_carbon, c6_constants[6, 6])
 
     def testMethaneC6(self):
-        disp = TwoBodyDispersionD3.from_functional().to(self.device)
+        disp = self._setup(TwoBodyDispersionD3.from_functional())
         neighbors = self.aev_computer.neighborlist(
             self.species, self.coordinates,
             disp.cutoff,
@@ -165,64 +173,64 @@ class TestDispersion(TestCase):
                 3.0882003,
                 7.4632792,
                 7.4632792,
-            ]
-        ).double()
-        self.assertEqual(order6_coeffs.cpu(), expect_order6)
+            ],
+            device=self.device,
+            dtype=torch.double,
+        )
+        self.assertEqual(order6_coeffs, expect_order6)
 
     def testMethaneEnergy(self):
-        disp = TwoBodyDispersionD3.from_functional().to(self.device)
+        disp = self._setup(TwoBodyDispersionD3.from_functional())
         neighbors = self.aev_computer.neighborlist(
             self.species, self.coordinates,
             disp.cutoff,
         )
         energy = disp(self.species, neighbors)
         energy = units.hartree2kcalpermol(energy)
-        self.assertEqual(
-            energy.cpu(), torch.tensor([-1.251336]).double(), rtol=1e-6, atol=1e-6
-        )
+        self.assertEqual(energy, torch.tensor([-1.251336], device=self.device, dtype=torch.double), rtol=1e-6, atol=1e-6)
 
     def testMethaneStandalone(self):
-        disp = StandaloneTwoBodyDispersionD3(
+        disp = self._setup(StandaloneTwoBodyDispersionD3(
             cutoff=8.0,
-        ).to(self.device)
+        ))
         energy = disp((self.atomic_numbers, self.coordinates)).energies
         energy = units.hartree2kcalpermol(energy)
         self.assertEqual(
-            energy.cpu(), torch.tensor([-1.251336]).double(), rtol=1e-6, atol=1e-6
+            energy, torch.tensor([-1.251336], device=self.device, dtype=torch.double), rtol=1e-6, atol=1e-6
         )
 
     def testMethaneStandaloneBatch(self):
-        disp = StandaloneTwoBodyDispersionD3(
+        disp = self._setup(StandaloneTwoBodyDispersionD3(
             cutoff=8.0,
-        ).to(self.device)
+        ))
         r = 2
         coordinates = self.coordinates.repeat(r, 1, 1)
         species = self.atomic_numbers.repeat(r, 1)
         energy = disp((species, coordinates)).energies
         energy = units.hartree2kcalpermol(energy)
         self.assertEqual(
-            energy.cpu(),
-            torch.tensor([-1.251336, -1.251336]).double(),
+            energy,
+            torch.tensor([-1.251336, -1.251336], dtype=torch.double, device=self.device),
             rtol=1e-6,
             atol=1e-6,
         )
 
     def testDispersionBatches(self):
-        rep = StandaloneTwoBodyDispersionD3(
+        rep = self._setup(StandaloneTwoBodyDispersionD3(
             cutoff=8.0,
-        )
+        ))
         coordinates1 = torch.tensor(
-            [[0.0, 0.0, 0.0], [1.5, 0.0, 0.0], [3.0, 0.0, 0.0]]
+            [[0.0, 0.0, 0.0], [1.5, 0.0, 0.0], [3.0, 0.0, 0.0]], device=self.device,
         ).unsqueeze(0)
         coordinates2 = torch.tensor(
-            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [2.5, 0.0, 0.0]]
+            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [2.5, 0.0, 0.0]], device=self.device,
         ).unsqueeze(0)
         coordinates3 = torch.tensor(
-            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [3.5, 0.0, 0.0]]
+            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [3.5, 0.0, 0.0]], device=self.device,
         ).unsqueeze(0)
-        species1 = torch.tensor([[1, 6, 7]])
-        species2 = torch.tensor([[-1, 1, 6]])
-        species3 = torch.tensor([[-1, 1, 1]])
+        species1 = torch.tensor([[1, 6, 7]], device=self.device)
+        species2 = torch.tensor([[-1, 1, 6]], device=self.device)
+        species3 = torch.tensor([[-1, 1, 1]], device=self.device)
         coordinates_cat = torch.cat((coordinates1, coordinates2, coordinates3), dim=0)
         species_cat = torch.cat((species1, species2, species3), dim=0)
 
@@ -236,7 +244,7 @@ class TestDispersion(TestCase):
 
     def testForce(self):
         self.coordinates.requires_grad_(True)
-        disp = TwoBodyDispersionD3.from_functional().to(self.device)
+        disp = self._setup(TwoBodyDispersionD3.from_functional())
         neighbors = self.aev_computer.neighborlist(
             self.species, self.coordinates,
             disp.cutoff,
@@ -253,10 +261,12 @@ class TestDispersion(TestCase):
                 [0.42656701194940e-05, -0.42656701194940e-05, 0.42656701194940e-05],
                 [0.42656701194940e-05, 0.42656701194940e-05, -0.42656701194940e-05],
                 [0.00000000000000e00, 0.00000000000000e00, 0.00000000000000e00],
-            ]
-        ).double()
-        self.assertEqual(expect_grad.unsqueeze(0), gradient.cpu())
+            ],
+            device=self.device,
+            dtype=torch.double,
+        )
+        self.assertEqual(expect_grad.unsqueeze(0), gradient)
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(verbosity=2)
