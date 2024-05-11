@@ -1,18 +1,20 @@
-import torch
-import torchani
 import math
 import unittest
-from torchani.testing import TestCase
+
+import torch
+import torchani
+
+from torchani.testing import ANITest, expand
 
 
-class TestALAtomic(TestCase):
+@expand()
+class TestActiveLearning(ANITest):
     def setUp(self):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = torchani.models.ANI1x().to(self.device).double()
-        self.converter = torchani.nn.SpeciesConverter(['H', 'C', 'N', 'O'])
-        self.aev_computer = self.model.aev_computer
-        self.ani_model = self.model.neural_networks
-        self.first_model = self.model[0]
+        model = torchani.models.ANI1x().double()
+        self.model = self._setup(model)
+        self.num_networks = model.neural_networks.num_networks
+        self.first_model = self._setup(model[0])
+
         # fully symmetric methane
         self.coordinates = torch.tensor(
             [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0], [0.5, 0.5, 0.5]],
@@ -34,15 +36,13 @@ class TestALAtomic(TestCase):
         _, energies = self.model.atomic_energies(
             (self.species, self.coordinates), shift_energy=True, average=False)
         self.assertTrue(energies.shape[1:] == self.coordinates.shape[:-1])
-        self.assertTrue(energies.shape[0] == len(self.model.neural_networks))
+        self.assertTrue(energies.shape[0] == self.num_networks)
         # energies of all hydrogens should be equal
         self.assertEqual(energies[0, 0, 0], torch.tensor(-0.54562734428531045605, device=self.device,
                          dtype=torch.double))
         for e in energies:
             self.assertTrue((e[:, :-1] == e[:, 0]).all())
 
-
-class TestALQBC(TestALAtomic):
     def testMemberEnergies(self):
         # fully symmetric methane
         _, energies = self.model.members_energies(
@@ -50,7 +50,7 @@ class TestALQBC(TestALAtomic):
 
         # correctness of shape
         self.assertEqual(energies.shape[-1], self.coordinates.shape[0])
-        self.assertEqual(energies.shape[0], len(self.model.neural_networks))
+        self.assertEqual(energies.shape[0], self.num_networks)
         self.assertEqual(
             energies[0], self.first_model((self.species,
                                            self.coordinates)).energies)
@@ -58,63 +58,6 @@ class TestALQBC(TestALAtomic):
                               dtype=torch.double,
                               device=self.device)
         self.assertEqual(energies[0], expect)
-
-    def testMembersForces(self):
-        # Symmetric methane
-        forces = self.model.members_forces((self.species, self.coordinates)).forces
-        members_energies = self.model.members_energies((self.species, self.coordinates)).energies
-        forces_list = []
-        for energy in members_energies:
-            derivative = torch.autograd.grad(energy.sum(), self.coordinates, retain_graph=True)[0]
-            force = -derivative
-            forces_list.append(force)
-        _forces = torch.stack(forces_list, dim=0)
-        self.assertEqual(forces, _forces)
-
-    def testAverageMembersForces(self):
-        # Symmetric methane
-        avg_forces = self.model.members_forces((self.species, self.coordinates), average=True).forces
-        members_energies = self.model.members_energies((self.species, self.coordinates)).energies
-        forces_list = []
-        for energy in members_energies:
-            derivative = torch.autograd.grad(energy.sum(), self.coordinates, retain_graph=True)[0]
-            force = -derivative
-            forces_list.append(force)
-        _forces = torch.stack(forces_list, dim=0)
-        _forces = _forces.mean(0)
-        self.assertEqual(avg_forces, _forces)
-
-    def testForceMagnitudes(self):
-        # NOTE: This test imperfectly checks that force_magnitudes works as it is intended to;
-        #  however, dividing by the mean magnitude in near-equilibrium geometries can lead to issues
-        ch4_coord = torch.tensor([[[4.9725e-04, -2.3656e-02, -4.6554e-02],
-                            [-9.4934e-01, -4.6713e-01, -2.1225e-01],
-                            [-2.1828e-01, 6.4611e-01, 8.7319e-01],
-                            [3.7291e-01, 6.5190e-01, -6.9571e-01],
-                            [7.9173e-01, -6.8895e-01, 3.1410e-01]]], dtype=torch.double, device=self.device)
-        _, magnitudes = self.model.force_magnitudes((self.species, ch4_coord), average=False)
-        _, _, _members_forces = self.model.members_forces((self.species, ch4_coord))
-        _magnitudes = _members_forces.norm(dim=-1)
-        self.assertEqual(magnitudes, _magnitudes)
-
-    def testForceQBC(self):
-        # NOTE: Same as above test case, checks that this works for asymmetrical geometry
-        #  Also note that average=False for force_qbc and force_magnitudes
-        ch4_coord = torch.tensor([[[4.9725e-04, -2.3656e-02, -4.6554e-02],
-                            [-9.4934e-01, -4.6713e-01, -2.1225e-01],
-                            [-2.1828e-01, 6.4611e-01, 8.7319e-01],
-                            [3.7291e-01, 6.5190e-01, -6.9571e-01],
-                            [7.9173e-01, -6.8895e-01, 3.1410e-01]]], dtype=torch.double, device=self.device)
-        _, magnitudes, relative_stdev, relative_range = self.model.force_qbc((self.species, ch4_coord))
-        _, _magnitudes = self.model.force_magnitudes((self.species, ch4_coord), average=False)
-        _max_mag = _magnitudes.max(dim=0).values
-        _min_mag = _magnitudes.min(dim=0).values
-        _mean_magnitudes = _magnitudes.mean(0)
-        _relative_stdev = (_magnitudes.std(0, unbiased=True) + 1e-8) / (_mean_magnitudes + 1e-8)
-        _relative_range = ((_max_mag - _min_mag) + 1e-8) / (_mean_magnitudes + 1e-8)
-        self.assertEqual(magnitudes, _magnitudes)
-        self.assertEqual(relative_range, _relative_range)
-        self.assertEqual(relative_stdev, _relative_stdev)
 
     def testQBC(self):
         # fully symmetric methane
@@ -166,5 +109,79 @@ class TestALQBC(TestALAtomic):
         self.assertEqual(stdev_atomic_energies, atomic_qbc)
 
 
+# Note that forces functions are non-jittable
+@expand(jit=False)
+class TestActiveLearningForces(ANITest):
+    def setUp(self):
+        self.model = self._setup(torchani.models.ANI1x().double())
+        # fully symmetric methane
+        self.coordinates = torch.tensor(
+            [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0], [0.5, 0.5, 0.5]],
+            dtype=torch.double,
+            device=self.device).unsqueeze(0)
+        self.species = torch.tensor([[1, 1, 1, 1, 6]],
+                                    dtype=torch.long,
+                                    device=self.device)
+
+    def testMembersForces(self):
+        # Symmetric methane
+        forces = self.model.members_forces((self.species, self.coordinates)).forces
+        members_energies = self.model.members_energies((self.species, self.coordinates)).energies
+        forces_list = []
+        for energy in members_energies:
+            derivative = torch.autograd.grad(energy.sum(), self.coordinates, retain_graph=True)[0]
+            force = -derivative
+            forces_list.append(force)
+        _forces = torch.stack(forces_list, dim=0)
+        self.assertEqual(forces, _forces)
+
+    def testAverageMembersForces(self):
+        # Symmetric methane
+        avg_forces = self.model.members_forces((self.species, self.coordinates), average=True).forces
+        members_energies = self.model.members_energies((self.species, self.coordinates)).energies
+        forces_list = []
+        for energy in members_energies:
+            derivative = torch.autograd.grad(energy.sum(), self.coordinates, retain_graph=True)[0]
+            force = -derivative
+            forces_list.append(force)
+        _forces = torch.stack(forces_list, dim=0)
+        _forces = _forces.mean(0)
+        self.assertEqual(avg_forces, _forces)
+
+    def testForceMagnitudes(self):
+        # This test imperfectly checks that force_magnitudes works as it
+        # is intended to; however, dividing by the mean magnitude in
+        # near-equilibrium geometries can lead to issues
+        ch4_coord = torch.tensor([[[4.9725e-04, -2.3656e-02, -4.6554e-02],
+                            [-9.4934e-01, -4.6713e-01, -2.1225e-01],
+                            [-2.1828e-01, 6.4611e-01, 8.7319e-01],
+                            [3.7291e-01, 6.5190e-01, -6.9571e-01],
+                            [7.9173e-01, -6.8895e-01, 3.1410e-01]]], dtype=torch.double, device=self.device)
+        _, magnitudes = self.model.force_magnitudes((self.species, ch4_coord), average=False)
+        _, _, _members_forces = self.model.members_forces((self.species, ch4_coord))
+        _magnitudes = _members_forces.norm(dim=-1)
+        self.assertEqual(magnitudes, _magnitudes)
+
+    def testForceQBC(self):
+        # Same as above test case, checks that this works for asymmetrical
+        # geometry Also note that average=False for force_qbc and
+        # force_magnitudes
+        ch4_coord = torch.tensor([[[4.9725e-04, -2.3656e-02, -4.6554e-02],
+                            [-9.4934e-01, -4.6713e-01, -2.1225e-01],
+                            [-2.1828e-01, 6.4611e-01, 8.7319e-01],
+                            [3.7291e-01, 6.5190e-01, -6.9571e-01],
+                            [7.9173e-01, -6.8895e-01, 3.1410e-01]]], dtype=torch.double, device=self.device)
+        _, magnitudes, relative_stdev, relative_range = self.model.force_qbc((self.species, ch4_coord))
+        _, _magnitudes = self.model.force_magnitudes((self.species, ch4_coord), average=False)
+        _max_mag = _magnitudes.max(dim=0).values
+        _min_mag = _magnitudes.min(dim=0).values
+        _mean_magnitudes = _magnitudes.mean(0)
+        _relative_stdev = (_magnitudes.std(0, unbiased=True) + 1e-8) / (_mean_magnitudes + 1e-8)
+        _relative_range = ((_max_mag - _min_mag) + 1e-8) / (_mean_magnitudes + 1e-8)
+        self.assertEqual(magnitudes, _magnitudes)
+        self.assertEqual(relative_range, _relative_range)
+        self.assertEqual(relative_stdev, _relative_stdev)
+
+
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

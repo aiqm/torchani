@@ -250,6 +250,7 @@ class BuiltinModel(torch.nn.Module):
                                                          shift_energy=True, average=False, include_non_aev_potentials=True)
         return SpeciesEnergies(species, members_energies.sum(-1))
 
+    @torch.jit.unused
     def members_forces(self, species_coordinates: tp.Tuple[Tensor, Tensor],
                        cell: tp.Optional[Tensor] = None,
                        pbc: tp.Optional[Tensor] = None,
@@ -319,6 +320,7 @@ class BuiltinModel(torch.nn.Module):
         assert qbc_factors.shape == energies.shape
         return SpeciesEnergiesQBC(species, energies, qbc_factors)
 
+    @torch.jit.export
     def atomic_stdev(self, species_coordinates: tp.Tuple[Tensor, Tensor],
                     cell: tp.Optional[Tensor] = None,
                     pbc: tp.Optional[Tensor] = None,
@@ -350,6 +352,7 @@ class BuiltinModel(torch.nn.Module):
 
         return AtomicStdev(species_coordinates[0], atomic_energies, stdev_atomic_energies)
 
+    @torch.jit.unused
     def force_magnitudes(self, species_coordinates: tp.Tuple[Tensor, Tensor],
                          cell: tp.Optional[Tensor] = None,
                          pbc: tp.Optional[Tensor] = None,
@@ -369,6 +372,7 @@ class BuiltinModel(torch.nn.Module):
 
         return ForceMagnitudes(species, magnitudes)
 
+    @torch.jit.unused
     def force_qbc(self, species_coordinates: tp.Tuple[Tensor, Tensor],
                    cell: tp.Optional[Tensor] = None,
                    pbc: tp.Optional[Tensor] = None,
