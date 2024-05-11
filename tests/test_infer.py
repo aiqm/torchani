@@ -1,11 +1,14 @@
 import os
-import torch
-import torchani
-from ase.io import read
 from itertools import product
 import unittest
-from torchani.testing import TestCase
+
+import torch
+from ase.io import read
 from parameterized import parameterized_class
+
+import torchani
+from torchani.testing import TestCase
+from torchani.benchmark import timeit
 
 # Disable Tensorfloat, errors between two run of same model for large system could reach 1e-3.
 # However note that this error for large system is not that big actually.
@@ -21,7 +24,6 @@ ani2x = torchani.models.ANI2x()
 @parameterized_class(('device'), product(devices))
 @unittest.skipIf(not torch.cuda.is_available(), "Infer model needs cuda is available")
 class TestInfer(TestCase):
-
     def setUp(self):
         self.ani2x = ani2x.to(self.device)
         self.path = os.path.dirname(os.path.realpath(__file__))
@@ -87,8 +89,8 @@ class TestInfer(TestCase):
 
         steps = 10 if self.device == "cpu" else 30
         print()
-        torchani.utils.timeit(run_ani2x, steps=steps)
-        torchani.utils.timeit(run_ani2x_infer, steps=steps)
+        timeit(run_ani2x, steps=steps)
+        timeit(run_ani2x_infer, steps=steps)
 
 
 if __name__ == '__main__':

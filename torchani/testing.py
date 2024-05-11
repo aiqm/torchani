@@ -24,7 +24,6 @@ def expand(
         product(_device, _jit),
         class_name_func=_get_cls_name,
     )
-
     return decorator
 
 # If you want a class to run in all possible contexts (all combinations of
@@ -67,13 +66,6 @@ class ANITest(TestCase):
         if self.jit:
             return torch.jit.script(model)
         return model
-
-    def testName(self) -> None:
-        pass
-
-
-if __name__ == "__main__":
-    unittest.main(verbosity=2)
 
 
 __all__ = ["make_tensor", "TestCase", "ANITest", "expand"]
