@@ -1,5 +1,10 @@
+# Ase interface
 ase
+
+# Sphinx-related
 sphinx
 sphinx_rtd_theme
 sphinx-gallery
+
+# For logging on training example
 tensorboard

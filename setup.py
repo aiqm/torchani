@@ -189,6 +189,7 @@ setup(
     install_requires=[
         'typing_extensions>=4.0.0',
         'torch',
+        'numpy',
         'lark-parser',
         'requests',
         'h5py',

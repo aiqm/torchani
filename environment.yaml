@@ -11,7 +11,7 @@ dependencies:
   - typing_extensions>=4.0.0
 
   # Core
-  - numpy=1.20
+  - numpy=1.22
   - mkl=2024.0.0
   - pytorch=1.13.1
   - cudatoolkit=11.6
