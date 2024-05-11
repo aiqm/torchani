@@ -4,6 +4,7 @@ from collections import OrderedDict
 
 import torch
 from torch import Tensor
+import typing_extensions as tpx
 
 from torchani.utils import PERIODIC_TABLE
 from torchani.tuples import (
@@ -62,7 +63,7 @@ class ANIModel(torch.nn.ModuleDict):
         atomic_energies = self._atomic_energies(species_aev).squeeze(0)
         return SpeciesEnergies(species_aev[0], torch.sum(atomic_energies, dim=1))
 
-    def member(self, idx: int) -> 'ANIModel':
+    def member(self, idx: int) -> tpx.Self:
         if idx == 0:
             return self
         raise IndexError("Only idx=0 supported for ANIModel")
@@ -127,7 +128,7 @@ class Ensemble(torch.nn.ModuleList):
         species, _ = species_input
         return SpeciesEnergies(species, sum_ / self.num_networks)  # type: ignore
 
-    def member(self, idx: int) -> 'ANIModel':
+    def member(self, idx: int) -> ANIModel:
         return self[idx]
 
     @torch.jit.export

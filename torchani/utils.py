@@ -21,18 +21,18 @@ PADDING = {
     'atomic_numbers': -1,
     'coordinates': 0.0,
     'forces': 0.0,
-    'energies': 0.0
+    'energies': 0.0,
 }
 
-# GSAES were calculating using the following splin multiplicities:
-# H: 2, C: 3, N: 4, O: 3, S: 3, F: 2, Cl: 2
-# and using UKS in all cases, with tightscf, on orca 4.2.3
-# (except for the wB97X-631Gd energies, which were computed with Gaussian 09)
-# the coupled cluster energies are calculated using
-# DLPNO-CCSD def2-TZVPP def2-TZVPP/C which is not the exact same as
-# CCSD(T)*/CBS but is close enough for atomic energies. For H I set the E to
-# -0.5 since that is the exact nonrelativistic solution and I believe CC can't
-# really converge for H.
+# GSAES were calculating using the following splin multiplicities: H: 2, C: 3,
+# N: 4, O: 3, S: 3, F: 2, Cl: 2 and using UKS in all cases, with tightscf, on
+# orca 4.2.3 (except for the wB97X-631Gd energies, which were computed with
+# Gaussian 09).
+#
+# The coupled cluster GSAE energies are calculated using DLPNO-CCSD def2-TZVPP
+# def2-TZVPP/C which is not the exact same as CCSD(T)*/CBS but is close enough
+# for atomic energies. For H I set the E to -0.5 since that is the exact
+# nonrelativistic solution and I believe CC can't really converge for H.
 GSAES: tp.Dict[str, tp.Dict[str, float]] = {
     'b973c-def2mtzvp': {
         'H': -0.506930113968,
@@ -85,8 +85,6 @@ GSAES: tp.Dict[str, tp.Dict[str, float]] = {
         "F": -99.795668645591,
         "Cl": -460.052391015914,
         "Br": -2573.595184605241,
-        # Note that this value is copied directly form the source,
-        # but may be a typo? the difference in energy for I is suspicious.
         "I": -297.544092721991,
     },
     "wb97m_d3bj-def2tzvppd": {
@@ -168,14 +166,14 @@ def species_to_formula(species: np.ndarray) -> tp.List[str]:
 
 
 def cumsum_from_zero(input_: Tensor) -> Tensor:
-    r"""Cumulative sum just like pytorch's cumsum, but with the first element of
-    the result being zero"""
+    r"""Cumulative sum just like pytorch's cumsum, but with the first element
+    of the result being zero"""
     cumsum = torch.zeros_like(input_)
     torch.cumsum(input_[:-1], dim=0, out=cumsum[1:])
     return cumsum
 
 
-def broadcast_first_dim(properties):
+def broadcast_first_dim(properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
     num_molecule = 1
     for k, v in properties.items():
         shape = list(v.shape)

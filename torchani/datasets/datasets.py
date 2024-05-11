@@ -15,9 +15,28 @@ from torch import Tensor
 import numpy as np
 from tqdm import tqdm
 
-from torchani.utils import species_to_formula, PERIODIC_TABLE, ATOMIC_NUMBERS, PADDING, sort_by_element
-from torchani.datasets.backends import _StoreWrapper, StoreFactory, TemporaryLocation, _ConformerWrapper, _SUFFIXES
-from torchani.datasets._annotations import Conformers, NumpyConformers, MixedConformers, StrPath, DTypeLike, IdxLike
+from torchani.utils import (
+    species_to_formula,
+    PERIODIC_TABLE,
+    ATOMIC_NUMBERS,
+    PADDING,
+    sort_by_element,
+)
+from torchani.datasets.backends import (
+    _StoreWrapper,
+    StoreFactory,
+    TemporaryLocation,
+    _ConformerWrapper,
+    _SUFFIXES,
+)
+from torchani.datasets._annotations import (
+    Conformers,
+    NumpyConformers,
+    MixedConformers,
+    StrPath,
+    DTypeLike,
+    IdxLike,
+)
 
 # About _ELEMENT_KEYS:
 # Datasets are assumed to have a "numbers" or "species" property, which has

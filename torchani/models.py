@@ -54,11 +54,11 @@ example usage:
     _, energies = model0((species, coordinates))
 """
 import typing as tp
-import warnings
 
 import torch
 from torch import Tensor
 from torch.jit import Final
+import typing_extensions as tpx
 
 from torchani.tuples import (
     SpeciesEnergies,
@@ -90,20 +90,15 @@ class BuiltinModel(torch.nn.Module):
     atomic_numbers: Tensor
     periodic_table_index: Final[bool]
 
-    def __init__(self,
-                 aev_computer: AEVComputer,
-                 neural_networks: NN,
-                 energy_shifter: Shifter,
-                 elements: tp.Sequence[str],
-                 periodic_table_index: bool = True):
-
+    def __init__(
+        self,
+        aev_computer: AEVComputer,
+        neural_networks: NN,
+        energy_shifter: Shifter,
+        elements: tp.Sequence[str],
+        periodic_table_index: bool = True,
+    ):
         super().__init__()
-        if not periodic_table_index:
-            # if periodic table index is True then it has been
-            # set by the user, so lets output a warning that this is the default
-            warnings.warn("The default is now to accept atomic numbers as indices,"
-                          " do not set periodic_table_index=True."
-                          " if you need to accept raw indices set periodic_table_index=False")
 
         shifter: EnergyAdder
         if isinstance(energy_shifter, EnergyShifter):
@@ -127,17 +122,17 @@ class BuiltinModel(torch.nn.Module):
         # checks are performed to make sure all modules passed support the
         # correct number of species
         assert len(self.energy_shifter.self_energies) == len(self.atomic_numbers)
-        assert len(self.atomic_numbers) == self.aev_computer.num_species
+        assert self.aev_computer.num_species == len(self.atomic_numbers)
         assert self.neural_networks.num_species == len(self.atomic_numbers)
 
-    def to_infer_model(self, *args, **kwargs) -> 'BuiltinModel':
+    def to_infer_model(self, use_mnp: bool = False) -> tpx.Self:
         """ Convert the neural networks module of the model into a module
             optimized for inference.
 
             Currently this function assumes that the atomic networks consist of
             an MLP with CELU activation functions, all with the same alpha.
         """
-        self.neural_networks = self.neural_networks.to_infer_model(*args, **kwargs)
+        self.neural_networks = self.neural_networks.to_infer_model(use_mnp=use_mnp)
         return self
 
     @torch.jit.unused
@@ -207,7 +202,7 @@ class BuiltinModel(torch.nn.Module):
 
     # unfortunately this is an UGLY workaround to a torchscript bug
     @torch.jit.export
-    def _recast_long_buffers(self):
+    def _recast_long_buffers(self) -> None:
         self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(dtype=torch.long)
         self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
         self.aev_computer.neighborlist._recast_long_buffers()
@@ -224,12 +219,14 @@ class BuiltinModel(torch.nn.Module):
         from . import ase
         return ase.Calculator(self, **kwargs)
 
-    def __getitem__(self, index: int) -> 'BuiltinModel':
-        return BuiltinModel(self.aev_computer,
-                           self.neural_networks.member(index),
-                           self.energy_shifter,
-                           self.get_chemical_symbols(),
-                           self.periodic_table_index)
+    def __getitem__(self, index: int) -> tpx.Self:
+        return type(self)(
+            self.aev_computer,
+            self.neural_networks.member(index),
+            self.energy_shifter,
+            self.get_chemical_symbols(),
+            self.periodic_table_index,
+        )
 
     @torch.jit.export
     def members_energies(self, species_coordinates: tp.Tuple[Tensor, Tensor],
@@ -496,9 +493,9 @@ class PairPotentialsModel(BuiltinModel):
         return SpeciesEnergies(species_coordinates[0], atomic_energies)
 
     # NOTE: members_energies does not need to be overriden, it works correctly as is
-    def __getitem__(self, index: int) -> 'PairPotentialsModel':
+    def __getitem__(self, index: int) -> tpx.Self:
         non_aev_potentials = [p for p in self.potentials if not isinstance(p, AEVPotential)]
-        return PairPotentialsModel(
+        return type(self)(
             aev_computer=self.aev_computer,
             neural_networks=self.neural_networks.member(index),
             energy_shifter=self.energy_shifter,
