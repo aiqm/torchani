@@ -395,7 +395,7 @@ def load(path, additional_properties=()):
             anidata_size = anidata.group_size()
             if verbose:
                 pbar = tqdm(
-                    desc="=> loading {f}, total_molecules: {anidata_size}",
+                    desc=f"=> loading {f}, total_molecules: {anidata_size}",
                     total=anidata_size,
                 )
             for i, m in enumerate(anidata):

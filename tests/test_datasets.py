@@ -1,28 +1,39 @@
 import os
 from pathlib import Path
-import h5py
-import numpy as np
 import json
-import torch
-import torchani
-import unittest
 import tempfile
 import warnings
 from copy import deepcopy
+import unittest
+
+import h5py
+import numpy as np
+import torch
+
+from torchani.models import ANI1x
 from torchani.transforms import (
     AtomicNumbersToIndices,
     SubtractSAE,
     Compose,
 )
+from torchani import datasets
 from torchani.sae import calculate_saes
 from torchani.utils import PERIODIC_TABLE, ATOMIC_NUMBERS
 from torchani.testing import TestCase
 from torchani.datasets import (
+    download_builtin_dataset,
     ANIDataset,
     ANIBatchedDataset,
     create_batched_dataset,
     _BUILTIN_DATASETS,
 )
+from torchani.datasets.utils import (
+    filter_by_high_force,
+    filter_by_high_energy_error,
+    concatenate,
+)
+# Dynamically created attrs
+from torchani.datasets import TestData  # type: ignore
 
 # Optional tests for zarr
 try:
@@ -63,7 +74,7 @@ def ignore_unshuffled_warning():
 class TestDatasetUtils(TestCase):
     def setUp(self):
         self.tmpdir = tempfile.TemporaryDirectory()
-        self.test_ds = torchani.datasets.TestData(self.tmpdir.name, download=True)
+        self.test_ds = TestData(self.tmpdir.name)
         self.test_ds_single = ANIDataset(self.tmpdir.name / Path("test_data1.h5"))
 
     def tearDown(self):
@@ -72,7 +83,7 @@ class TestDatasetUtils(TestCase):
     def testConcatenate(self):
         ds = self.test_ds
         with tempfile.NamedTemporaryFile(dir=self.tmpdir.name, suffix=".h5") as f:
-            cat_ds = torchani.datasets.utils.concatenate(
+            cat_ds = concatenate(
                 ds, f.name, verbose=False, delete_originals=False
             )
             self.assertEqual(cat_ds.num_conformers, ds.num_conformers)
@@ -91,7 +102,7 @@ class TestDatasetUtils(TestCase):
                 "forces": torch.full((1, 4, 3), fill_value=3.0, dtype=torch.float),
             },
         )
-        out = torchani.datasets.utils.filter_by_high_force(
+        out = filter_by_high_force(
             ds, threshold=0.5, delete_inplace=True
         )
         self.assertEqual(len(out[0]), 1)
@@ -99,8 +110,8 @@ class TestDatasetUtils(TestCase):
 
     def testFilterEnergyError(self):
         ds = self.test_ds_single
-        model = torchani.models.ANI1x()[0]
-        out = torchani.datasets.utils.filter_by_high_energy_error(
+        model = ANI1x()[0]
+        out = filter_by_high_energy_error(
             ds, model, threshold=1.0, delete_inplace=True
         )
         self.assertEqual(len(out[0]), 3)
@@ -110,12 +121,12 @@ class TestDatasetUtils(TestCase):
 class TestBuiltinDatasets(TestCase):
     def testSmallSample(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            ds = torchani.datasets.TestData(tmpdir, download=True)
+            ds = TestData(tmpdir)
             self.assertEqual(ds.grouping, "by_num_atoms")
 
     def testDownloadSmallSample(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            torchani.datasets.download_builtin_dataset(
+            download_builtin_dataset(
                 "TestData", "wb97x-631gd", tmpdir
             )
             num_h5_files = len(list(Path(tmpdir).glob("*.h5")))
@@ -127,13 +138,13 @@ class TestBuiltinDatasets(TestCase):
         for c in classes:
             with tempfile.TemporaryDirectory() as tmpdir:
                 with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
-                    getattr(torchani.datasets, c)(tmpdir, download=False)
+                    getattr(datasets, c)(tmpdir, download=False)
 
         # these also have the B973c/def2mTZVP LoT
         for c in ["ANI1x", "ANI2x", "COMP6v1", "COMP6v2", "AminoacidDimers"]:
             with tempfile.TemporaryDirectory() as tmpdir:
                 with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
-                    getattr(torchani.datasets, c)(
+                    getattr(datasets, c)(
                         tmpdir,
                         download=False,
                         basis_set="def2mTZVP",
@@ -144,7 +155,7 @@ class TestBuiltinDatasets(TestCase):
         for c in ["ANI1x", "ANI2x", "COMP6v1", "COMP6v2"]:
             with tempfile.TemporaryDirectory() as tmpdir:
                 with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
-                    getattr(torchani.datasets, c)(
+                    getattr(datasets, c)(
                         tmpdir,
                         download=False,
                         basis_set="def2TZVPP",
@@ -152,7 +163,7 @@ class TestBuiltinDatasets(TestCase):
                     )
                 # Case insensitivity
                 with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
-                    getattr(torchani.datasets, c)(
+                    getattr(datasets, c)(
                         tmpdir,
                         download=False,
                         basis_set="DEF2tZvPp",
@@ -1337,147 +1348,5 @@ class TestANIDatasetPandas(TestANIDatasetZarr):
         self._testConvert("pq")
 
 
-class TestData(TestCase):
-    def testTensorShape(self):
-        ds = (
-            torchani.data.load(dataset_path)
-            .subtract_self_energies(ani1x_sae_dict)
-            .species_to_indices()
-            .shuffle()
-            .collate(batch_size)
-            .cache()
-        )
-        for d in ds:
-            species = d["species"]
-            coordinates = d["coordinates"]
-            energies = d["energies"]
-            self.assertEqual(len(species.shape), 2)
-            self.assertLessEqual(species.shape[0], batch_size)
-            self.assertEqual(len(coordinates.shape), 3)
-            self.assertEqual(coordinates.shape[2], 3)
-            self.assertEqual(coordinates.shape[:2], species.shape[:2])
-            self.assertEqual(len(energies.shape), 1)
-            self.assertEqual(coordinates.shape[0], energies.shape[0])
-
-    def testNoUnnecessaryPadding(self):
-        ds = (
-            torchani.data.load(dataset_path)
-            .subtract_self_energies(ani1x_sae_dict)
-            .species_to_indices()
-            .shuffle()
-            .collate(batch_size)
-            .cache()
-        )
-        for d in ds:
-            species = d["species"]
-            non_padding = (species >= 0)[:, -1].nonzero()
-            self.assertGreater(non_padding.numel(), 0)
-
-    def testReEnter(self):
-        # make sure that a dataset can be iterated multiple times
-        ds = torchani.data.load(dataset_path)
-        for _ in ds:
-            pass
-        entered = False
-        for d in ds:
-            entered = True
-        self.assertTrue(entered)
-
-        ds = ds.subtract_self_energies(ani1x_sae_dict)
-        entered = False
-        for d in ds:
-            entered = True
-        self.assertTrue(entered)
-        entered = False
-        for d in ds:
-            entered = True
-        self.assertTrue(entered)
-
-        ds = ds.species_to_indices()
-        entered = False
-        for d in ds:
-            entered = True
-        self.assertTrue(entered)
-        entered = False
-        for d in ds:
-            entered = True
-        self.assertTrue(entered)
-
-        ds = ds.shuffle()
-        entered = False
-        for d in ds:
-            entered = True
-            pass
-        self.assertTrue(entered)
-        entered = False
-        for d in ds:
-            entered = True
-        self.assertTrue(entered)
-
-        ds = ds.collate(batch_size)
-        entered = False
-        for d in ds:
-            entered = True
-            pass
-        self.assertTrue(entered)
-        entered = False
-        for d in ds:
-            entered = True
-        self.assertTrue(entered)
-
-        ds = ds.cache()
-        entered = False
-        for d in ds:
-            entered = True
-            pass
-        self.assertTrue(entered)
-        entered = False
-        for d in ds:
-            entered = True
-        self.assertTrue(entered)
-
-    def testShapeInference(self):
-        shifter = torchani.EnergyShifter(None)
-        ds = torchani.data.load(dataset_path).subtract_self_energies(shifter)
-        len(ds)
-        ds = ds.species_to_indices()
-        len(ds)
-        ds = ds.shuffle()
-        len(ds)
-        ds = ds.collate(batch_size)
-        len(ds)
-
-    def testSAE(self):
-        shifter = torchani.EnergyShifter(None)
-        torchani.data.load(dataset_path).subtract_self_energies(shifter)
-        true_self_energies = torch.tensor(
-            [
-                -19.354171758844188,
-                -19.354171758844046,
-                -54.712238523648587,
-                -75.162829556770987,
-            ],
-            dtype=torch.float64,
-        )
-        self.assertEqual(true_self_energies, shifter.self_energies)
-
-    def testDataloader(self):
-        shifter = torchani.EnergyShifter(None)
-        dataset = list(
-            torchani.data.load(dataset_path)
-            .subtract_self_energies(shifter)
-            .species_to_indices()
-            .shuffle()
-        )
-        loader = torch.utils.data.DataLoader(
-            dataset,
-            batch_size=batch_size,
-            collate_fn=torchani.data.collate_fn,
-            num_workers=2,
-        )
-        for _ in loader:
-            pass
-
-
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(verbosity=2)
