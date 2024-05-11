@@ -451,4 +451,4 @@ vector_bucket_index_compare = torch.tensor([[[0, 0, 0],
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

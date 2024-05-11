@@ -36,7 +36,7 @@ PADDING = {
 # CCSD(T)*/CBS but is close enough for atomic energies. For H I set the E to
 # -0.5 since that is the exact nonrelativistic solution and I believe CC can't
 # really converge for H.
-GSAES = {
+GSAES: tp.Dict[str, tp.Dict[str, float]] = {
     'b973c-def2mtzvp': {
         'H': -0.506930113968,
         'C': -37.81441001258,
@@ -123,7 +123,7 @@ GSAES = {
 }
 
 
-def sorted_gsaes(elements: tp.Sequence[str], functional: str, basis_set: str, ):
+def sorted_gsaes(elements: tp.Sequence[str], functional: str, basis_set: str) -> tp.List[float]:
     r"""Return sorted GSAES by element
 
     Example usage:
@@ -136,14 +136,21 @@ def sorted_gsaes(elements: tp.Sequence[str], functional: str, basis_set: str, ):
     return [gsaes[e] for e in elements]
 
 
-def check_openmp_threads() -> None:
+def check_openmp_threads(verbose: bool = True) -> None:
     if "OMP_NUM_THREADS" not in os.environ:
-        warnings.warn("""OMP_NUM_THREADS is not set, mnp works best if OMP_NUM_THREADS >= 2.
-              You can set it by `export OMP_NUM_THREADS=4` or `export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK` if using slurm""")
+        warnings.warn(
+            "OMP_NUM_THREADS not set."
+            " MNP works best if OMP_NUM_THREADS >= 2."
+            " You can set this variable by running 'export OMP_NUM_THREADS=4')"
+            " or 'export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK' if using slurm"
+        )
         return
+
     num_threads = int(os.environ["OMP_NUM_THREADS"])
-    assert num_threads > 0
-    print(f"OMP_NUM_THREADS is set as {num_threads}")
+    if num_threads <= 0:
+        raise RuntimeError(f"OMP_NUM_THREADS set to an incorrect value: {num_threads}")
+    if verbose:
+        print(f"OMP_NUM_THREADS set to: {num_threads}")
 
 
 def species_to_formula(species: np.ndarray) -> tp.List[str]:

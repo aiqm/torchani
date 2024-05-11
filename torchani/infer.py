@@ -350,8 +350,8 @@ class InferModel(torch.nn.Module):
         self.weight_list = [torch.nn.Parameter(item) for sublist in weight_list for item in sublist]
         self.bias_list = [torch.nn.Parameter(item) for sublist in bias_list for item in sublist]
 
-        # check OpenMP environment variable
-        check_openmp_threads()
+        # Check that the OpenMP environment variable is correctly set
+        check_openmp_threads(verbose=False)
 
     @torch.jit.unused
     def _copy_weights_and_biases(self) -> tp.Tuple[tp.List[tp.List[Tensor]], tp.List[tp.List[Tensor]]]:
