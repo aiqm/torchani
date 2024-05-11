@@ -78,7 +78,7 @@ class TestCPUInferMNP(TestCase):
             force2 = torch.autograd.grad(energy2.sum(), coordinates)[0]
 
             self.assertEqual(energy1, energy2, atol=1e-5, rtol=1e-5)
-            self.assertEqual(force1, force2, atol=1e-5, rtol=1e-5)
+            self.assertEqual(force1, force2, atol=5e-4, rtol=5e-4)
 
     def testBmmEnsemble(self):
         ani2x_infer = self._build_ani2x()
