@@ -7,6 +7,7 @@ import timeit
 
 import torch
 import numpy as np
+from numpy.typing import NDArray
 import ase
 from ase import units
 from ase.md.langevin import Langevin
@@ -254,7 +255,7 @@ if __name__ == "__main__":
             sizes_list = (num_atoms * torch.arange(4, args.box_repeats + 1)**3).numpy().tolist()
         else:
             assert isinstance(path_to_xyz, Path)
-            xyz_files: tp.Union[tp.List[Path], np.ndarray]
+            xyz_files: tp.Union[tp.List[Path], NDArray[tp.Any]]
 
             xyz_files = [
                 p for p in path_to_xyz.iterdir() if '.xyz' == p.suffix

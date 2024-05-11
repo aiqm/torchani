@@ -8,6 +8,7 @@ from pathlib import Path
 from collections import Counter
 
 import numpy as np
+from numpy.typing import NDArray
 import torch
 from torch import Tensor
 import torch.utils.data
@@ -148,7 +149,7 @@ def check_openmp_threads(verbose: bool = True) -> None:
         print(f"OMP_NUM_THREADS set to: {num_threads}")
 
 
-def species_to_formula(species: np.ndarray) -> tp.List[str]:
+def species_to_formula(species: NDArray[np.str_]) -> tp.List[str]:
     r"""Transforms an array of strings into the corresponding formula.  This
     function expects an array of shape (M, A) and returns a list of
     formulas of len M.

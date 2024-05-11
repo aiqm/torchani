@@ -1,31 +1,19 @@
-r"""Mypy type aliases"""
+r"""Type aliases"""
 import typing as tp
-import sys
 from pathlib import Path
 
+import numpy as np
 from torch import Tensor
-from numpy import ndarray, dtype
+from numpy.typing import NDArray
 
-# This is needed for compatibility with python 3.6, where numpy typing doesn't
-# work correctly
-if sys.version_info[:2] < (3, 7):
-    # This doesn't really matter anyways since it is only for mypy
-    DTypeLike = dtype
-else:
-    from numpy import typing as numpy_typing
-    DTypeLike = numpy_typing.DTypeLike
 
-_MutMapSubtype = tp.TypeVar('_MutMapSubtype', bound=tp.MutableMapping[str, Tensor])
-
-# Transform = Callable[[MutableMapping[str, Tensor]], MutableMapping[str, Tensor]]
-# Transform = tp.Callable[[_MutMapSubtype], _MutMapSubtype]
-
-# any of these should be interpretable as a 1D index sequence
-IdxLike = tp.Union[Tensor, ndarray, None, tp.Iterable[int], int]
+# Any of these should be interpretable as a 1D index sequence
+IdxLike = tp.Union[Tensor, NDArray[np.int_], None, tp.Iterable[int], int]
 
 Conformers = tp.MutableMapping[str, Tensor]
-NumpyConformers = tp.MutableMapping[str, ndarray]
-MixedConformers = tp.MutableMapping[str, tp.Union[Tensor, ndarray]]
+NumberOrStrArray = tp.Union[NDArray[np.int_], NDArray[np.float_], NDArray[np.str_]]
+NumpyConformers = tp.MutableMapping[str, NumberOrStrArray]
+MixedConformers = tp.MutableMapping[str, tp.Union[Tensor, NumberOrStrArray]]
 
 # mimic typeshed
 StrPath = tp.Union[str, Path]

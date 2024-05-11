@@ -13,6 +13,7 @@ from collections import OrderedDict
 import torch
 from torch import Tensor
 import numpy as np
+from numpy.typing import DTypeLike, NDArray
 from tqdm import tqdm
 
 from torchani.utils import (
@@ -34,7 +35,6 @@ from torchani.datasets._annotations import (
     NumpyConformers,
     MixedConformers,
     StrPath,
-    DTypeLike,
     IdxLike,
 )
 
@@ -83,7 +83,7 @@ def _get_formulas(conformers: NumpyConformers) -> tp.List[str]:
     elements = conformers[_get_any_element_key(conformers.keys())]
     if issubclass(elements.dtype.type, np.integer):
         elements = _numbers_to_symbols(elements)
-    return species_to_formula(elements)
+    return species_to_formula(tp.cast(NDArray[np.str_], elements))
 
 
 def _get_dim_size(conformers: NumpyConformers, common_keys: tp.Set[str], dim: int) -> int:
@@ -505,12 +505,12 @@ class _ANISubdataset(_ANIDatasetBase):
         for k in properties & _ELEMENT_KEYS:
             # try to interpret as numeric, failure means we should convert to ints
             try:
-                if (mixed_conformers[k] <= 0).any():
+                if (mixed_conformers[k] <= 0).any():  # type: ignore
                     if not allow_negative_indices:
                         raise ValueError(f'{k} are atomic numbers, must be positive')
             except TypeError:
                 numpy_conformers[k] = _symbols_to_numbers(mixed_conformers[k])
-        return numpy_conformers
+        return tp.cast(NumpyConformers, numpy_conformers)
 
     @_delegate
     @_needs_cache_update
