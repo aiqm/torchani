@@ -1,3 +1,4 @@
+import typing as tp
 import os
 import unittest
 
@@ -19,10 +20,17 @@ from torchani.potentials import PairPotential
 path = os.path.dirname(os.path.realpath(__file__))
 
 
-class TestASE(TestCase):
+def _stress_test_name(fn: tp.Any, idx: int, param: tp.Any) -> str:
+    try:
+        param.args[1]
+        return f"{fn.__name__}_fdotr_{param.args[0]}_repulsion_{param.args[1]}"
+    except IndexError:
+        return f"{fn.__name__}_fdotr_{param.args[0]}"
 
+
+class TestASE(TestCase):
     def setUp(self):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def testConsistentForcesCellWithPairwise(self):
         # Run a Langevin thermostat dynamic for 100 steps and after the dynamic
@@ -54,7 +62,7 @@ class TestASE(TestCase):
                 PairPotential(cutoff=6.4),
                 PairPotential(cutoff=5.2),
                 PairPotential(cutoff=3.0),
-            ]
+            ],
         )
         model_pair = model_pair.to(dtype=torch.double, device=self.device)
 
@@ -88,7 +96,9 @@ class TestASE(TestCase):
         atoms = Diamond(symbol="C", pbc=True, size=(repeats, repeats, repeats))
         calculator = model.ase()
         atoms.calc = calculator
-        dyn = Langevin(atoms, timestep=0.5 * units.fs, temperature_K=3820, friction=0.002, rng=prng)
+        dyn = Langevin(
+            atoms, timestep=0.5 * units.fs, temperature_K=3820, friction=0.002, rng=prng
+        )
         dyn.run(steps)
         f = atoms.get_forces()
         if only_get_forces:
@@ -117,7 +127,7 @@ class TestASE(TestCase):
             (True, False),
             (True, True),
         ],
-        name_func=lambda func, index, param: f"{func.__name__}_fdotr_{param.args[0]}_repulsion_{param.args[1]}"
+        name_func=_stress_test_name,
     )
     def testWithNumericalStressFullPairwise(self, stress_partial_fdotr, repulsion):
         if repulsion:
@@ -125,25 +135,31 @@ class TestASE(TestCase):
         else:
             model = ANI1x(model_index=0)
         model = model.to(dtype=torch.double, device=self.device)
-        self._testWithNumericalStressPBC(model, stress_partial_fdotr=stress_partial_fdotr)
+        self._testWithNumericalStressPBC(
+            model, stress_partial_fdotr=stress_partial_fdotr
+        )
 
     @parameterized.expand(
         [
             (False,),
             (True,),
         ],
-        name_func=lambda func, index, param: f"{func.__name__}_fdotr_{param.args[0]}",
+        name_func=_stress_test_name,
     )
     def testWithNumericalStressCellList(self, stress_partial_fdotr):
         model = ANI1x(model_index=0, neighborlist="cell_list")
         model = model.to(dtype=torch.double, device=self.device)
-        self._testWithNumericalStressPBC(model, stress_partial_fdotr=stress_partial_fdotr)
+        self._testWithNumericalStressPBC(
+            model, stress_partial_fdotr=stress_partial_fdotr
+        )
 
     def _testWithNumericalStressPBC(self, model, stress_partial_fdotr):
         # Run NPT dynamics for some steps and periodically check that the
         # numerical and analytical stresses agree up to a given
         # absolute difference
-        filename = os.path.join(path, '../tools/generate-unit-test-expect/others/Benzene.json')
+        filename = os.path.join(
+            path, "../tools/generate-unit-test-expect/others/Benzene.json"
+        )
         benzene = read(filename)
         # set velocities to a very small value to avoid division by zero
         # warning due to initial zero temperature.
@@ -153,10 +169,15 @@ class TestASE(TestCase):
         benzene.set_velocities(np.full((48, 3), 1e-15))
         calculator = model.ase(stress_partial_fdotr=stress_partial_fdotr)
         benzene.calc = calculator
-        dyn = NPTBerendsen(benzene, timestep=0.1 * units.fs,
-                           temperature_K=300,
-                           taut=0.1 * 1000 * units.fs, pressure_au=1.0 * units.bar,
-                           taup=1.0 * 1000 * units.fs, compressibility_au=4.57e-5 / units.bar)
+        dyn = NPTBerendsen(
+            benzene,
+            timestep=0.1 * units.fs,
+            temperature_K=300,
+            taut=0.1 * 1000 * units.fs,
+            pressure_au=1.0 * units.bar,
+            taup=1.0 * 1000 * units.fs,
+            compressibility_au=4.57e-5 / units.bar,
+        )
 
         def test_stress():
             stress = benzene.get_stress()
@@ -167,5 +188,5 @@ class TestASE(TestCase):
         dyn.run(10)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

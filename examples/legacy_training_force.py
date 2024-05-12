@@ -22,7 +22,7 @@ from tqdm import tqdm
 import torchani
 from torchani.units import hartree2kcalpermol
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 aev_computer = torchani.AEVComputer.like_1x()
 energy_shifter = torchani.utils.EnergyShifter(None)
@@ -31,19 +31,22 @@ try:
     path = os.path.dirname(os.path.realpath(__file__))
 except NameError:
     path = os.getcwd()
-dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
+dspath = os.path.join(path, "../dataset/ani-1x/sample.h5")
 
 batch_size = 2560
 
-training, validation = torchani.data.load(
-    dspath,
-    additional_properties=('forces',)
-).subtract_self_energies(energy_shifter).species_to_indices().shuffle().split(0.8, None)
+training, validation = (
+    torchani.data.load(dspath, additional_properties=("forces",))
+    .subtract_self_energies(energy_shifter)
+    .species_to_indices()
+    .shuffle()
+    .split(0.8, None)
+)
 
 training = training.collate(batch_size).cache()
 validation = validation.collate(batch_size).cache()
 
-print('Self atomic energies: ', energy_shifter.self_energies)
+print("Self atomic energies: ", energy_shifter.self_energies)
 
 ###############################################################################
 # The code to define networks, optimizers, are mostly the same
@@ -56,7 +59,7 @@ H_network = torch.nn.Sequential(
     torch.nn.CELU(0.1),
     torch.nn.Linear(128, 96),
     torch.nn.CELU(0.1),
-    torch.nn.Linear(96, 1)
+    torch.nn.Linear(96, 1),
 )
 
 C_network = torch.nn.Sequential(
@@ -66,7 +69,7 @@ C_network = torch.nn.Sequential(
     torch.nn.CELU(0.1),
     torch.nn.Linear(112, 96),
     torch.nn.CELU(0.1),
-    torch.nn.Linear(96, 1)
+    torch.nn.Linear(96, 1),
 )
 
 N_network = torch.nn.Sequential(
@@ -76,7 +79,7 @@ N_network = torch.nn.Sequential(
     torch.nn.CELU(0.1),
     torch.nn.Linear(112, 96),
     torch.nn.CELU(0.1),
-    torch.nn.Linear(96, 1)
+    torch.nn.Linear(96, 1),
 )
 
 O_network = torch.nn.Sequential(
@@ -86,7 +89,7 @@ O_network = torch.nn.Sequential(
     torch.nn.CELU(0.1),
     torch.nn.Linear(112, 96),
     torch.nn.CELU(0.1),
-    torch.nn.Linear(96, 1)
+    torch.nn.Linear(96, 1),
 )
 
 nn = torchani.ANIModel([H_network, C_network, N_network, O_network])
@@ -121,68 +124,77 @@ model = torchani.nn.Sequential(aev_computer, nn).to(device)
 # Here we will use Adam with weight decay for the weights and Stochastic Gradient
 # Descent for biases.
 
-AdamW = torch.optim.AdamW([
-    # H networks
-    {'params': [H_network[0].weight]},
-    {'params': [H_network[2].weight], 'weight_decay': 0.00001},
-    {'params': [H_network[4].weight], 'weight_decay': 0.000001},
-    {'params': [H_network[6].weight]},
-    # C networks
-    {'params': [C_network[0].weight]},
-    {'params': [C_network[2].weight], 'weight_decay': 0.00001},
-    {'params': [C_network[4].weight], 'weight_decay': 0.000001},
-    {'params': [C_network[6].weight]},
-    # N networks
-    {'params': [N_network[0].weight]},
-    {'params': [N_network[2].weight], 'weight_decay': 0.00001},
-    {'params': [N_network[4].weight], 'weight_decay': 0.000001},
-    {'params': [N_network[6].weight]},
-    # O networks
-    {'params': [O_network[0].weight]},
-    {'params': [O_network[2].weight], 'weight_decay': 0.00001},
-    {'params': [O_network[4].weight], 'weight_decay': 0.000001},
-    {'params': [O_network[6].weight]},
-])
+AdamW = torch.optim.AdamW(
+    [
+        # H networks
+        {"params": [H_network[0].weight]},
+        {"params": [H_network[2].weight], "weight_decay": 0.00001},
+        {"params": [H_network[4].weight], "weight_decay": 0.000001},
+        {"params": [H_network[6].weight]},
+        # C networks
+        {"params": [C_network[0].weight]},
+        {"params": [C_network[2].weight], "weight_decay": 0.00001},
+        {"params": [C_network[4].weight], "weight_decay": 0.000001},
+        {"params": [C_network[6].weight]},
+        # N networks
+        {"params": [N_network[0].weight]},
+        {"params": [N_network[2].weight], "weight_decay": 0.00001},
+        {"params": [N_network[4].weight], "weight_decay": 0.000001},
+        {"params": [N_network[6].weight]},
+        # O networks
+        {"params": [O_network[0].weight]},
+        {"params": [O_network[2].weight], "weight_decay": 0.00001},
+        {"params": [O_network[4].weight], "weight_decay": 0.000001},
+        {"params": [O_network[6].weight]},
+    ]
+)
 
-SGD = torch.optim.SGD([
-    # H networks
-    {'params': [H_network[0].bias]},
-    {'params': [H_network[2].bias]},
-    {'params': [H_network[4].bias]},
-    {'params': [H_network[6].bias]},
-    # C networks
-    {'params': [C_network[0].bias]},
-    {'params': [C_network[2].bias]},
-    {'params': [C_network[4].bias]},
-    {'params': [C_network[6].bias]},
-    # N networks
-    {'params': [N_network[0].bias]},
-    {'params': [N_network[2].bias]},
-    {'params': [N_network[4].bias]},
-    {'params': [N_network[6].bias]},
-    # O networks
-    {'params': [O_network[0].bias]},
-    {'params': [O_network[2].bias]},
-    {'params': [O_network[4].bias]},
-    {'params': [O_network[6].bias]},
-], lr=1e-3)
+SGD = torch.optim.SGD(
+    [
+        # H networks
+        {"params": [H_network[0].bias]},
+        {"params": [H_network[2].bias]},
+        {"params": [H_network[4].bias]},
+        {"params": [H_network[6].bias]},
+        # C networks
+        {"params": [C_network[0].bias]},
+        {"params": [C_network[2].bias]},
+        {"params": [C_network[4].bias]},
+        {"params": [C_network[6].bias]},
+        # N networks
+        {"params": [N_network[0].bias]},
+        {"params": [N_network[2].bias]},
+        {"params": [N_network[4].bias]},
+        {"params": [N_network[6].bias]},
+        # O networks
+        {"params": [O_network[0].bias]},
+        {"params": [O_network[2].bias]},
+        {"params": [O_network[4].bias]},
+        {"params": [O_network[6].bias]},
+    ],
+    lr=1e-3,
+)
 
-AdamW_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(AdamW, factor=0.5, patience=100, threshold=0)
-SGD_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(SGD, factor=0.5, patience=100, threshold=0)
+AdamW_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    AdamW, factor=0.5, patience=100, threshold=0
+)
+SGD_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    SGD, factor=0.5, patience=100, threshold=0
+)
 
 ###############################################################################
 # This part of the code is also the same
-latest_checkpoint = 'force-training-latest.pt'
+latest_checkpoint = "force-training-latest.pt"
 
 ###############################################################################
 # Resume training from previously saved checkpoints:
 if os.path.isfile(latest_checkpoint):
     checkpoint = torch.load(latest_checkpoint)
-    nn.load_state_dict(checkpoint['nn'])
-    AdamW.load_state_dict(checkpoint['AdamW'])
-    SGD.load_state_dict(checkpoint['SGD'])
-    AdamW_scheduler.load_state_dict(checkpoint['AdamW_scheduler'])
-    SGD_scheduler.load_state_dict(checkpoint['SGD_scheduler'])
+    nn.load_state_dict(checkpoint["nn"])
+    AdamW.load_state_dict(checkpoint["AdamW"])
+    SGD.load_state_dict(checkpoint["SGD"])
+    AdamW_scheduler.load_state_dict(checkpoint["AdamW_scheduler"])
+    SGD_scheduler.load_state_dict(checkpoint["SGD_scheduler"])
 
 ###############################################################################
 # During training, we need to validate on validation set and if validation error
@@ -191,15 +203,15 @@ if os.path.isfile(latest_checkpoint):
 
 def validate():
     # run validation
-    mse_sum = torch.nn.MSELoss(reduction='sum')
+    mse_sum = torch.nn.MSELoss(reduction="sum")
     total_mse = 0.0
     count = 0
     model.train(False)
     with torch.no_grad():
         for properties in validation:
-            species = properties['species'].to(device)
-            coordinates = properties['coordinates'].to(device).float()
-            true_energies = properties['energies'].to(device).float()
+            species = properties["species"].to(device)
+            coordinates = properties["coordinates"].to(device).float()
+            true_energies = properties["energies"].to(device).float()
             _, predicted_energies = model((species, coordinates))
             total_mse += mse_sum(predicted_energies, true_energies).item()
             count += predicted_energies.shape[0]
@@ -213,21 +225,21 @@ tensorboard = torch.utils.tensorboard.SummaryWriter()
 
 ###############################################################################
 # In the training loop, we need to compute force, and loss for forces
-mse = torch.nn.MSELoss(reduction='none')
+mse = torch.nn.MSELoss(reduction="none")
 
 print("training starting from epoch", AdamW_scheduler.last_epoch + 1)
 # We only train 3 epoches here in able to generate the docs quickly.
 # Real training should take much more than 3 epoches.
 max_epochs = 3
-early_stopping_learning_rate = 1.0E-5
+early_stopping_learning_rate = 1.0e-5
 force_coefficient = 0.1  # controls the importance of energy loss vs force loss
-best_model_checkpoint = 'force-training-best.pt'
+best_model_checkpoint = "force-training-best.pt"
 
 for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
     rmse = validate()
-    print('RMSE:', rmse, 'at epoch', AdamW_scheduler.last_epoch + 1)
+    print("RMSE:", rmse, "at epoch", AdamW_scheduler.last_epoch + 1)
 
-    learning_rate = AdamW.param_groups[0]['lr']
+    learning_rate = AdamW.param_groups[0]["lr"]
 
     if learning_rate < early_stopping_learning_rate:
         break
@@ -239,21 +251,23 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
     AdamW_scheduler.step(rmse)
     SGD_scheduler.step(rmse)
 
-    tensorboard.add_scalar('validation_rmse', rmse, AdamW_scheduler.last_epoch)
-    tensorboard.add_scalar('best_validation_rmse', AdamW_scheduler.best, AdamW_scheduler.last_epoch)
-    tensorboard.add_scalar('learning_rate', learning_rate, AdamW_scheduler.last_epoch)
+    tensorboard.add_scalar("validation_rmse", rmse, AdamW_scheduler.last_epoch)
+    tensorboard.add_scalar(
+        "best_validation_rmse", AdamW_scheduler.best, AdamW_scheduler.last_epoch
+    )
+    tensorboard.add_scalar("learning_rate", learning_rate, AdamW_scheduler.last_epoch)
 
     # Besides being stored in x, species and coordinates are also stored in y.
     # So here, for simplicity, we just ignore the x and use y for everything.
     for i, properties in tqdm(
         enumerate(training),
         total=len(training),
-        desc="epoch {}".format(AdamW_scheduler.last_epoch)
+        desc="epoch {}".format(AdamW_scheduler.last_epoch),
     ):
-        species = properties['species'].to(device)
-        coordinates = properties['coordinates'].to(device).float().requires_grad_(True)
-        true_energies = properties['energies'].to(device).float()
-        true_forces = properties['forces'].to(device).float()
+        species = properties["species"].to(device)
+        coordinates = properties["coordinates"].to(device).float().requires_grad_(True)
+        true_energies = properties["energies"].to(device).float()
+        true_forces = properties["forces"].to(device).float()
         num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
         _, predicted_energies = model((species, coordinates))
 
@@ -262,7 +276,9 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         # the gradient of parameters, and also to retain graph so that
         # we can backward through it a second time when computing gradient
         # w.r.t. parameters.
-        forces = -torch.autograd.grad(predicted_energies.sum(), coordinates, create_graph=True, retain_graph=True)[0]
+        forces = -torch.autograd.grad(
+            predicted_energies.sum(), coordinates, create_graph=True, retain_graph=True
+        )[0]
 
         # Now the total loss has two parts, energy loss and force loss
         energy_loss = (mse(predicted_energies, true_energies) / num_atoms.sqrt()).mean()
@@ -276,12 +292,17 @@ for _ in range(AdamW_scheduler.last_epoch + 1, max_epochs):
         SGD.step()
 
         # write current batch loss to TensorBoard
-        tensorboard.add_scalar('batch_loss', loss, AdamW_scheduler.last_epoch * len(training) + i)
+        tensorboard.add_scalar(
+            "batch_loss", loss, AdamW_scheduler.last_epoch * len(training) + i
+        )
 
-    torch.save({
-        'nn': nn.state_dict(),
-        'AdamW': AdamW.state_dict(),
-        'SGD': SGD.state_dict(),
-        'AdamW_scheduler': AdamW_scheduler.state_dict(),
-        'SGD_scheduler': SGD_scheduler.state_dict(),
-    }, latest_checkpoint)
+    torch.save(
+        {
+            "nn": nn.state_dict(),
+            "AdamW": AdamW.state_dict(),
+            "SGD": SGD.state_dict(),
+            "AdamW_scheduler": AdamW_scheduler.state_dict(),
+            "SGD_scheduler": SGD_scheduler.state_dict(),
+        },
+        latest_checkpoint,
+    )

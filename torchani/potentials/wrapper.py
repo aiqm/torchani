@@ -44,7 +44,6 @@ class PotentialWrapper(torch.nn.Module):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesEnergies:
-
         self._validate_inputs(species_coordinates)
         species, coordinates = species_coordinates
 
@@ -53,7 +52,9 @@ class PotentialWrapper(torch.nn.Module):
         else:
             element_idxs = species
         if self.potential.cutoff > 0.0:
-            neighbors = self.neighborlist(element_idxs, coordinates, self.potential.cutoff, cell, pbc)
+            neighbors = self.neighborlist(
+                element_idxs, coordinates, self.potential.cutoff, cell, pbc
+            )
         else:
             neighbors = NeighborData(torch.empty(0), torch.empty(0), torch.empty(0))
         return SpeciesEnergies(species, self.potential(element_idxs, neighbors))

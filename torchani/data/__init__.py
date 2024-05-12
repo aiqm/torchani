@@ -82,7 +82,13 @@ Example:
 .. code-block:: python
 
     energy_shifter = torchani.utils.EnergyShifter(None)
-    training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices().shuffle().split(int(0.8 * size), None)
+    training, validation = (
+        torchani.data.load(dspath)
+        .subtract_self_energies(energy_shifter)
+        .species_to_indices()
+        .shuffle()
+        .split(int(0.8 * size), None)
+    )
     training = training.collate(batch_size).cache()
     validation = validation.collate(batch_size).cache()
 
@@ -91,9 +97,25 @@ with multiprocessing to achieve comparable performance with less memory usage:
 
 .. code-block:: python
 
-    training, validation = torchani.data.load(dspath).subtract_self_energies(energy_shifter).species_to_indices().shuffle().split(0.8, None)
-    training = torch.utils.data.DataLoader(list(training), batch_size=batch_size, collate_fn=torchani.data.collate_fn, num_workers=64)
-    validation = torch.utils.data.DataLoader(list(validation), batch_size=batch_size, collate_fn=torchani.data.collate_fn, num_workers=64)
+    training, validation = (
+        torchani.data.load(dspath)
+        .subtract_self_energies(energy_shifter)
+        .species_to_indices()
+        .shuffle()
+        .split(0.8, None)
+    )
+    training = torch.utils.data.DataLoader(
+        list(training),
+        batch_size=batch_size,
+        collate_fn=torchani.data.collate_fn,
+        num_workers=64,
+    )
+    validation = torch.utils.data.DataLoader(
+        list(validation),
+        batch_size=batch_size,
+        collate_fn=torchani.data.collate_fn,
+        num_workers=64,
+    )
 """
 from os.path import join, isfile, isdir
 import os
@@ -219,8 +241,9 @@ class Transformations:
             Y = numpy.array(Y)
             if Y.shape[0] == 0:
                 raise RuntimeError(
-                    "subtract_self_energies could not find any energies in the provided dataset.\n"
-                    "Please make sure the path provided to data.load() points to a dataset has energies and is not empty or corrupted."
+                    "subtract_self_energies could not find energies in the dataset.\n"
+                    "Make sure the path provided to data.load() points to a dataset"
+                    " that *has energies* and *is not corrupted*."
                 )
             sae, _, _, _ = numpy.linalg.lstsq(X, Y, rcond=None)
             sae_ = sae

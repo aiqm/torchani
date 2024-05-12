@@ -93,9 +93,9 @@ print()
 
 # Now lets try something a bit more complicated. I want to experiment with
 # different angular terms that have a form of exp(-gamma * (cos(theta) -
-# cos(theta0))**2) how can I do that? I can pass this function to
-# torchani, as long as it exposes the same API as StandardAngular
-# (it has to have a *sublength*, a *cutoff*, and a *forward method* with the same signature)
+# cos(theta0))**2) how can I do that? I can pass this function to torchani, as
+# long as it exposes the same API as StandardAngular (it has to have a
+# *sublength*, a *cutoff*, and a *forward method* with the same signature)
 
 
 class AngularCosDiff(torch.nn.Module):

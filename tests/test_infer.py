@@ -10,18 +10,20 @@ import torchani
 from torchani.testing import TestCase
 from torchani.benchmark import timeit
 
-# Disable Tensorfloat, errors between two run of same model for large system could reach 1e-3.
-# However note that this error for large system is not that big actually.
+# Disable Tensorfloat, errors between two run of same model for large system
+# could reach 1e-3. However note that this error for large system is not that
+# big actually.
 torch.backends.cuda.matmul.allow_tf32 = False
 
-# TODO: waiting for the NVFuser [Bug](https://github.com/pytorch/pytorch/issues/84510) to be fixed
+# TODO: waiting for the NVFuser
+# [Bug](https://github.com/pytorch/pytorch/issues/84510) to be fixed
 torch._C._jit_set_nvfuser_enabled(False)
 
-devices = ['cuda', 'cpu']
+devices = ["cuda", "cpu"]
 ani2x = torchani.models.ANI2x()
 
 
-@parameterized_class(('device'), product(devices))
+@parameterized_class(("device"), product(devices))
 @unittest.skipIf(not torch.cuda.is_available(), "Infer model needs cuda is available")
 class TestInfer(TestCase):
     def setUp(self):
@@ -29,14 +31,21 @@ class TestInfer(TestCase):
         self.path = os.path.dirname(os.path.realpath(__file__))
 
     def _test(self, model_ref, model_infer):
-        files = ['small.pdb', '1hz5.pdb', '6W8H.pdb']
+        files = ["small.pdb", "1hz5.pdb", "6W8H.pdb"]
         # Skip 6W8H.pdb (slow on cpu) if device is cpu
-        files = files[:-1] if self.device == 'cpu' else files
+        files = files[:-1] if self.device == "cpu" else files
         for file in files:
-            filepath = os.path.join(self.path, f'../dataset/pdb/{file}')
+            filepath = os.path.join(self.path, f"../dataset/pdb/{file}")
             mol = read(filepath)
-            species = torch.tensor(mol.get_atomic_numbers(), device=self.device).unsqueeze(0)
-            coordinates = torch.tensor(mol.get_positions(), dtype=torch.float32, requires_grad=True, device=self.device).unsqueeze(0)
+            species = torch.tensor(
+                mol.get_atomic_numbers(), device=self.device
+            ).unsqueeze(0)
+            coordinates = torch.tensor(
+                mol.get_positions(),
+                dtype=torch.float32,
+                requires_grad=True,
+                device=self.device,
+            ).unsqueeze(0)
 
             _, energy1 = model_ref((species, coordinates))
             force1 = torch.autograd.grad(energy1.sum(), coordinates)[0]
@@ -65,21 +74,35 @@ class TestInfer(TestCase):
             run_ani2x                          : 756.459 ms/step
             run_ani2x_infer                    : 32.482 ms/step
         """
+
         def run(model, file):
-            filepath = os.path.join(self.path, f'../dataset/pdb/{file}')
+            filepath = os.path.join(self.path, f"../dataset/pdb/{file}")
             mol = read(filepath)
-            species = torch.tensor(mol.get_atomic_numbers(), device=self.device).unsqueeze(0)
-            coordinates = torch.tensor(mol.get_positions(), dtype=torch.float32, requires_grad=True, device=self.device).unsqueeze(0)
+            species = torch.tensor(
+                mol.get_atomic_numbers(), device=self.device
+            ).unsqueeze(0)
+            coordinates = torch.tensor(
+                mol.get_positions(),
+                dtype=torch.float32,
+                requires_grad=True,
+                device=self.device,
+            ).unsqueeze(0)
 
             _, energy1 = model((species, coordinates))
             _ = torch.autograd.grad(energy1.sum(), coordinates)[0]  # force
 
         use_cuaev = self.device == "cuda"
-        ani2x_jit = torch.jit.script(torchani.models.ANI2x(use_cuda_extension=use_cuaev).to(self.device))
-        ani2x_infer_jit = torchani.models.ANI2x(use_cuda_extension=use_cuaev).to_infer_model().to(self.device)
+        ani2x_jit = torch.jit.script(
+            torchani.models.ANI2x(use_cuda_extension=use_cuaev).to(self.device)
+        )
+        ani2x_infer_jit = (
+            torchani.models.ANI2x(use_cuda_extension=use_cuaev)
+            .to_infer_model()
+            .to(self.device)
+        )
         ani2x_infer_jit = torch.jit.script(ani2x_infer_jit)
 
-        file = 'small.pdb'
+        file = "small.pdb"
 
         def run_ani2x():
             run(ani2x_jit, file)
@@ -93,5 +116,5 @@ class TestInfer(TestCase):
         timeit(run_ani2x_infer, steps=steps)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

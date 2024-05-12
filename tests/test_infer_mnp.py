@@ -18,7 +18,7 @@ torch.backends.cuda.matmul.allow_tf32 = False
 torch._C._jit_set_nvfuser_enabled(False)
 
 # set num threads for multi net parallel
-os.environ['OMP_NUM_THREADS'] = '2'
+os.environ["OMP_NUM_THREADS"] = "2"
 
 PDB_PATH = (Path(__file__).resolve().parent.parent / "dataset") / "pdb"
 
@@ -51,13 +51,13 @@ class TestCPUInferMNP(TestCase):
         return model
 
     def _build_ani2x(self):
-        use_cuda = (self.device == "cuda")
+        use_cuda = self.device == "cuda"
         return torchani.models.ANI2x(use_cuda_extension=use_cuda).to(self.device)
 
     def _test(self, model_ref, model_infer):
-        files = ['small.pdb', '1hz5.pdb', '6W8H.pdb']
+        files = ["small.pdb", "1hz5.pdb", "6W8H.pdb"]
         # Skip 6W8H.pdb (slow on cpu) if device is cpu
-        files = files[:-1] if self.device == 'cpu' else files
+        files = files[:-1] if self.device == "cpu" else files
         for file in files:
             mol = read(str(PDB_PATH / file))
             species = torch.tensor(
@@ -122,5 +122,5 @@ class TestCUDAInferMNP(TestCPUInferMNP):
         return torch.jit.script(model)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

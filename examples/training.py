@@ -81,8 +81,9 @@ validation = torch.utils.data.DataLoader(
 #
 # Transform can also be applied directly when training on GPU
 #
-# Transform can also be applied to a dataset when batching it, by using the inplace_transform
-# argument of create_batched_dataset (Be careful, this may be error prone)
+# Transform can also be applied to a dataset when batching it, by using the
+# inplace_transform argument of create_batched_dataset (Be careful, this may be
+# error prone)
 #
 # In this case we wont apply any transform
 
@@ -134,7 +135,10 @@ def validate(model: BuiltinModel, validation: torch.utils.data.DataLoader) -> fl
     model.train(False)
     with torch.no_grad():
         for properties in validation:
-            properties = {k: v.to(device, non_blocking=True) for k, v in properties.items()}
+            properties = {
+                k: v.to(device, non_blocking=True)
+                for k, v in properties.items()
+            }
             species = properties['species']
             coordinates = properties['coordinates'].float()
             target_energies = properties['energies'].float()

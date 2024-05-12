@@ -18,7 +18,9 @@ _ELEMENTS_NUM = len(ATOMIC_NUMBERS)
 class RepulsionXTB(PairPotential):
     r"""Calculates the xTB repulsion energy terms for a given molecule
 
-    Potential used is as in work by Grimme: https://pubs.acs.org/doi/10.1021/acs.jctc.8b01176
+    Potential used is as in work by Grimme:
+    https://pubs.acs.org/doi/10.1021/acs.jctc.8b01176
+
     By default alpha, y_eff and krep parameters are taken from Grimme et. al.
     pairwise_kwargs are passed to PairPotential
     """
@@ -60,9 +62,9 @@ class RepulsionXTB(PairPotential):
         assert len(_alpha) == len(self.atomic_numbers)
 
         # Pre-calculate pairwise parameters for efficiency
-        self.register_buffer('y_ab', torch.outer(_y_eff, _y_eff))
-        self.register_buffer('sqrt_alpha_ab', torch.sqrt(torch.outer(_alpha, _alpha)))
-        self.register_buffer('k_rep_ab', k_rep_ab)
+        self.register_buffer("y_ab", torch.outer(_y_eff, _y_eff))
+        self.register_buffer("sqrt_alpha_ab", torch.sqrt(torch.outer(_alpha, _alpha)))
+        self.register_buffer("k_rep_ab", k_rep_ab)
         self.ANGSTROM_TO_BOHR = ANGSTROM_TO_BOHR
 
     def pair_energies(
@@ -70,7 +72,6 @@ class RepulsionXTB(PairPotential):
         element_idxs: Tensor,
         neighbors: NeighborData,
     ) -> Tensor:
-
         # Clamp distances to prevent singularities when dividing by zero
         distances = torch.clamp(neighbors.distances, min=1e-7)
 
@@ -89,7 +90,7 @@ class RepulsionXTB(PairPotential):
         k_rep_ab = self.k_rep_ab[species12[0], species12[1]]
 
         # calculates repulsion energies using distances and constants
-        return (y_ab / distances) * torch.exp(-sqrt_alpha_ab * (distances ** k_rep_ab))
+        return (y_ab / distances) * torch.exp(-sqrt_alpha_ab * (distances**k_rep_ab))
 
 
 def StandaloneRepulsionXTB(
@@ -97,8 +98,8 @@ def StandaloneRepulsionXTB(
     alpha: tp.Sequence[float] = (),
     y_eff: tp.Sequence[float] = (),
     k_rep_ab: tp.Optional[Tensor] = None,
-    symbols: tp.Sequence[str] = ('H', 'C', 'N', 'O'),
-    cutoff_fn: CutoffArg = 'smooth',
+    symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
+    cutoff_fn: CutoffArg = "smooth",
     neighborlist: NeighborlistArg = "full_pairwise",
     periodic_table_index: bool = True,
 ) -> PotentialWrapper:
@@ -108,7 +109,7 @@ def StandaloneRepulsionXTB(
         k_rep_ab=k_rep_ab,
         cutoff=cutoff,
         symbols=symbols,
-        cutoff_fn=cutoff_fn
+        cutoff_fn=cutoff_fn,
     )
     return PotentialWrapper(
         potential=module,

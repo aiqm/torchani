@@ -108,13 +108,17 @@ def get_cutoff_radii() -> Tensor:
     assert len(cutoff_radii) == num_cutoff_radii
     cutoff_radii = _make_symmetric(cutoff_radii)
     cutoff_radii = torch.cat(
-        (torch.zeros(len(cutoff_radii), dtype=cutoff_radii.dtype).unsqueeze(0),
-        cutoff_radii),
-        dim=0
+        (
+            torch.zeros(len(cutoff_radii), dtype=cutoff_radii.dtype).unsqueeze(0),
+            cutoff_radii,
+        ),
+        dim=0,
     )
     cutoff_radii = torch.cat(
-        (torch.zeros(cutoff_radii.shape[0], dtype=cutoff_radii.dtype).unsqueeze(1),
-        cutoff_radii),
+        (
+            torch.zeros(cutoff_radii.shape[0], dtype=cutoff_radii.dtype).unsqueeze(1),
+            cutoff_radii,
+        ),
         dim=1,
     )
     return cutoff_radii

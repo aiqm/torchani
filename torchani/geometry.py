@@ -7,14 +7,16 @@ from torch import Tensor
 from torchani.utils import get_atomic_masses
 
 
-def displace_to_com_frame(species_coordinates: tp.Tuple[Tensor, Tensor]) -> tp.Tuple[Tensor, Tensor]:
+def displace_to_com_frame(
+    species_coordinates: tp.Tuple[Tensor, Tensor]
+) -> tp.Tuple[Tensor, Tensor]:
     r"""
     Displace coordinates to the center-of-mass frame, input species must be
     atomic numbers, padding atoms can be included with -1 as padding, returns
     the displaced coordinates and the center-of-mass coordinates
     """
     species, coordinates = species_coordinates
-    mask = (species == -1)
+    mask = species == -1
     masses = get_atomic_masses(species, dtype=coordinates.dtype)
     masses.masked_fill_(mask, 0.0)
     mass_sum = masses.unsqueeze(-1).sum(dim=1, keepdim=True)
@@ -25,8 +27,15 @@ def displace_to_com_frame(species_coordinates: tp.Tuple[Tensor, Tensor]) -> tp.T
     return species, centered_coordinates
 
 
-def tile_into_tight_cell(species_coordinates, repeats=(3, 3, 3), noise=None, delta=1.0,
-                         density=None, fixed_displacement_size=None, make_coordinates_positive: bool = True):
+def tile_into_tight_cell(
+    species_coordinates,
+    repeats=(3, 3, 3),
+    noise=None,
+    delta=1.0,
+    density=None,
+    fixed_displacement_size=None,
+    make_coordinates_positive: bool = True,
+):
     r"""
     Tile to generate a tight cell
 
@@ -49,13 +58,13 @@ def tile_into_tight_cell(species_coordinates, repeats=(3, 3, 3), noise=None, del
 
     coordinates = coordinates.squeeze()
     if isinstance(repeats, int):
-        repeats = torch.tensor([repeats, repeats, repeats],
-                               dtype=torch.long,
-                               device=device)
+        repeats = torch.tensor(
+            [repeats, repeats, repeats], dtype=torch.long, device=device
+        )
     else:
         assert len(repeats) == 3
         repeats = torch.tensor(repeats, dtype=torch.long, device=device)
-        assert (repeats >= 1).all(), 'At least one molecule should be present'
+        assert (repeats >= 1).all(), "At least one molecule should be present"
     assert coordinates.dim() == 2
 
     # displace coordinates so that they are all positive
@@ -64,7 +73,9 @@ def tile_into_tight_cell(species_coordinates, repeats=(3, 3, 3), noise=None, del
     min_x = neg_coords[:, 0].min()
     min_y = neg_coords[:, 1].min()
     min_z = neg_coords[:, 2].min()
-    displace_r = torch.tensor([min_x, min_y, min_z], device=device, dtype=coordinates.dtype)
+    displace_r = torch.tensor(
+        [min_x, min_y, min_z], device=device, dtype=coordinates.dtype
+    )
     assert (displace_r <= 0).all()
     coordinates_positive = coordinates - displace_r
     coordinates_positive = coordinates + eps
@@ -93,7 +104,9 @@ def tile_into_tight_cell(species_coordinates, repeats=(3, 3, 3), noise=None, del
     if density is not None:
         assert delta == 1.0, msg
         assert fixed_displacement_size is None, msg
-        delta = (1 / repeats) * ((num_displacements / density)**(1 / 3) - max_dist_to_origin)
+        delta = (1 / repeats) * (
+            (num_displacements / density) ** (1 / 3) - max_dist_to_origin
+        )
         box_length = max_dist_to_origin + delta
     elif fixed_displacement_size is not None:
         assert delta == 1.0, msg
@@ -108,7 +121,13 @@ def tile_into_tight_cell(species_coordinates, repeats=(3, 3, 3), noise=None, del
     species = species.repeat(1, num_displacements)
     coordinates = torch.cat([coordinates + d for d in displacements], dim=1)
     if noise is not None:
-        coordinates += torch.empty(coordinates.shape, device=device).uniform_(-noise, noise)
+        coordinates += torch.empty(coordinates.shape, device=device).uniform_(
+            -noise, noise
+        )
     cell_length = box_length * repeats
-    cell = torch.diag(torch.tensor(cell_length.cpu().numpy().tolist(), device=device, dtype=coordinates.dtype))
+    cell = torch.diag(
+        torch.tensor(
+            cell_length.cpu().numpy().tolist(), device=device, dtype=coordinates.dtype
+        )
+    )
     return species, coordinates, cell

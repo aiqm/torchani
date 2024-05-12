@@ -42,9 +42,9 @@ import math
 ANGSTROM_TO_BOHR = 1.8897261258369282
 HARTREE_TO_EV = 27.211386024367243  # equal to ase.units.Hartree
 EV_TO_JOULE = 1.6021766208e-19  # equal to ase.units._e (electron charge)
-JOULE_TO_KCAL = 1 / 4184.  # exact
+JOULE_TO_KCAL = 1 / 4184.0  # exact
 HARTREE_TO_JOULE = HARTREE_TO_EV * EV_TO_JOULE
-AVOGADROS_NUMBER = 6.022140857e+23  # equal to ase.units._Nav
+AVOGADROS_NUMBER = 6.022140857e23  # equal to ase.units._Nav
 SPEED_OF_LIGHT = 299792458.0  # equal to ase.units._c
 AMU_TO_KG = 1.660539040e-27  # equal to ase.units._amu
 ANGSTROM_TO_METER = 1e-10
@@ -64,7 +64,9 @@ INVCM_TO_EV = 0.0001239841973964072  # equal to ase.units.invcm
 # then we convert angstroms to meters and divide by 1/ speed_of_light (to
 # convert seconds into meters). Finally divide by 100 to get inverse cm
 # The resulting value should be close to 17092
-SQRT_MHESSIAN_TO_INVCM = (math.sqrt(HARTREE_TO_JOULE / AMU_TO_KG) / ANGSTROM_TO_METER / SPEED_OF_LIGHT) / 100
+SQRT_MHESSIAN_TO_INVCM = (
+    math.sqrt(HARTREE_TO_JOULE / AMU_TO_KG) / ANGSTROM_TO_METER / SPEED_OF_LIGHT
+) / 100
 # meV is other common unit used to present vibrational transition energies
 SQRT_MHESSIAN_TO_MILLIEV = SQRT_MHESSIAN_TO_INVCM * INVCM_TO_EV * 1000
 # To convert units form mass-scaled hessian units into mDyne / Angstrom (force
@@ -142,22 +144,47 @@ def hartree2kcalpermol(x):
 
 
 def ea2debye(x):
-    """Dipole conversion, eA to Debye from NIST CCCBDB """
+    """Dipole conversion, eA to Debye from NIST CCCBDB"""
     return x / DEBYE_TO_ELECTRON_ANGSTROM
 
 
 # Add actual values to docstrings on import
-angstrom2bohr.__doc__ = str(angstrom2bohr.__doc__) + f'\n\n1 Angstrom = {angstrom2bohr(1)} Bohr'
-bohr2angstrom.__doc__ = str(bohr2angstrom.__doc__) + f'\n\n1 Bohr = {bohr2angstrom(1)} Angstrom'
-hartree2ev.__doc__ = str(hartree2ev.__doc__) + f'\n\n1 Hartree = {hartree2ev(1)} eV'
-hartree2kcalpermol.__doc__ = str(hartree2kcalpermol.__doc__) + f'\n\n1 Hartree = {hartree2kcalpermol(1)} kcal/mol'
-hartree2kjoulepermol.__doc__ = str(hartree2kjoulepermol) + f'\n\n1 Hartree = {hartree2kjoulepermol(1)} kJ/mol'
-ev2kjoulepermol.__doc__ = str(ev2kjoulepermol.__doc__) + f'\n\n1 eV = {ev2kjoulepermol(1)} kJ/mol'
-ev2kcalpermol.__doc__ = str(ev2kcalpermol.__doc__) + f'\n\n1 eV = {ev2kcalpermol(1)} kcal/mol'
-mhessian2fconst.__doc__ = str(mhessian2fconst.__doc__) + f'\n\n1 Hartree / (AMU * Angstrom^2) = {ev2kcalpermol(1)} mDyne/Angstrom'
-sqrt_mhessian2milliev.__doc__ = str(sqrt_mhessian2milliev.__doc__) + f'\n\n1 sqrt(Hartree / (AMU * Angstrom^2)) = {sqrt_mhessian2milliev(1)} meV'
-sqrt_mhessian2invcm.__doc__ = str(sqrt_mhessian2invcm.__doc__) + f'\n\n1 sqrt(Hartree / (AMU * Angstrom^2)) = {sqrt_mhessian2invcm(1)} cm^-1'
-ea2debye.__doc__ = str(ea2debye.__doc__) + f'\n\n1 Debye = {DEBYE_TO_ELECTRON_ANGSTROM} electron Angstroms'
+angstrom2bohr.__doc__ = (
+    str(angstrom2bohr.__doc__) + f"\n\n1 Angstrom = {angstrom2bohr(1)} Bohr"
+)
+bohr2angstrom.__doc__ = (
+    str(bohr2angstrom.__doc__) + f"\n\n1 Bohr = {bohr2angstrom(1)} Angstrom"
+)
+hartree2ev.__doc__ = str(hartree2ev.__doc__) + f"\n\n1 Hartree = {hartree2ev(1)} eV"
+hartree2kcalpermol.__doc__ = (
+    str(hartree2kcalpermol.__doc__)
+    + f"\n\n1 Hartree = {hartree2kcalpermol(1)} kcal/mol"
+)
+hartree2kjoulepermol.__doc__ = (
+    str(hartree2kjoulepermol) + f"\n\n1 Hartree = {hartree2kjoulepermol(1)} kJ/mol"
+)
+ev2kjoulepermol.__doc__ = (
+    str(ev2kjoulepermol.__doc__) + f"\n\n1 eV = {ev2kjoulepermol(1)} kJ/mol"
+)
+ev2kcalpermol.__doc__ = (
+    str(ev2kcalpermol.__doc__) + f"\n\n1 eV = {ev2kcalpermol(1)} kcal/mol"
+)
+mhessian2fconst.__doc__ = (
+    str(mhessian2fconst.__doc__)
+    + f"\n\n1 Hartree / (AMU * Angstrom^2) = {ev2kcalpermol(1)} mDyne/Angstrom"
+)
+sqrt_mhessian2milliev.__doc__ = (
+    str(sqrt_mhessian2milliev.__doc__)
+    + f"\n\n1 sqrt(Hartree / (AMU * Angstrom^2)) = {sqrt_mhessian2milliev(1)} meV"
+)
+sqrt_mhessian2invcm.__doc__ = (
+    str(sqrt_mhessian2invcm.__doc__)
+    + f"\n\n1 sqrt(Hartree / (AMU * Angstrom^2)) = {sqrt_mhessian2invcm(1)} cm^-1"
+)
+ea2debye.__doc__ = (
+    str(ea2debye.__doc__)
+    + f"\n\n1 Debye = {DEBYE_TO_ELECTRON_ANGSTROM} electron Angstroms"
+)
 
 
 # Old aliases (try not to use if possible)

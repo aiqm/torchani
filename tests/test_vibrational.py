@@ -11,20 +11,23 @@ from torchani.testing import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
-path = os.path.join(path, '../dataset/xyz_files/H2O.xyz')
+path = os.path.join(path, "../dataset/xyz_files/H2O.xyz")
 
 
 class TestVibrational(TestCase):
-
     def testVibrationalWavenumbers(self):
         model = torchani.models.ANI1x().double()
         d = 0.9575
         t = math.pi / 180 * 104.51
-        molecule = ase.Atoms('H2O', positions=[
-            (d, 0, 0),
-            (d * math.cos(t), d * math.sin(t), 0),
-            (0, 0, 0),
-        ], calculator=model.ase())
+        molecule = ase.Atoms(
+            "H2O",
+            positions=[
+                (d, 0, 0),
+                (d * math.cos(t), d * math.sin(t), 0),
+                (0, 0, 0),
+            ],
+            calculator=model.ase(),
+        )
         opt = ase.optimize.BFGS(molecule)
         opt.run(fmax=1e-6)
         # compute vibrational frequencies by ASE
@@ -39,7 +42,9 @@ class TestVibrational(TestCase):
         # compute vibrational by torchani
         species = torch.tensor(molecule.get_atomic_numbers()).unsqueeze(0)
         masses = torchani.utils.get_atomic_masses(species, dtype=torch.double)
-        coordinates = torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_grad_(True)
+        coordinates = (
+            torch.from_numpy(molecule.get_positions()).unsqueeze(0).requires_grad_(True)
+        )
         _, energies = model((species, coordinates))
         hessian = torchani.utils.hessian(coordinates, energies=energies)
         freq2, modes2, _, _ = torchani.utils.vibrational_analysis(masses, hessian)
@@ -53,5 +58,5 @@ class TestVibrational(TestCase):
         self.assertLess(diff.max(), 0.02)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

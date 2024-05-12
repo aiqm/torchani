@@ -137,7 +137,9 @@ class Assembler:
 
     def _check_symbols(self, symbols: tp.Optional[tp.Iterable[str]] = None) -> None:
         if not self.symbols:
-            raise ValueError("Please set symbols before setting the gsaes as self energies")
+            raise ValueError(
+                "Please set symbols before setting the gsaes as self energies"
+            )
         if symbols is not None:
             if set(self.symbols) != set(symbols):
                 raise ValueError(
@@ -205,7 +207,9 @@ class Assembler:
             pass
         else:
             raise ValueError(
-                "Incorrect specification, either specify only lot, or both functional and basis set"
+                "Incorrect specification."
+                " Either specify *only* lot (preferred)"
+                " or *both* functional *and* basis_set"
             )
         gsaes = GSAES[lot.lower()]
         self.self_energies = {s: gsaes[s] for s in self.symbols}
@@ -260,7 +264,7 @@ class Assembler:
                 self._model_type = PairPotentialsModel
             else:
                 raise ValueError(
-                    "The model class must support pairwise potentials in order to add potentials"
+                    "The model class must support pair potentials to add potentials"
                 )
         self._pairwise_potentials.append(
             PairPotentialWrapper(
@@ -274,11 +278,11 @@ class Assembler:
     def assemble(self) -> BuiltinModel:
         if not self.symbols:
             raise RuntimeError(
-                "At least one symbol is needed, please set `symbols` with a sequence of chemical symbols"
+                "Symbols not set. Call 'set_symbols' before assembly"
             )
         if self._featurizer is None:
             raise RuntimeError(
-                "Can't assemble a model without a featurizer, please `set_featurizer` first"
+                "Featurizer not set. Call 'set_featurizer' before assembly"
             )
 
         if all(e == 0.0 for e in self.self_energies.values()):
@@ -310,7 +314,7 @@ class Assembler:
             }
         else:
             raise RuntimeError(
-                "Can't assemble a model without a fn for the atomic networks, please call `set_atomic_maker` first"
+                "Atomic Network Maker not set. Call 'set_atomic_maker' before assembly"
             )
         if self.ensemble_size > 1:
             containers = []
@@ -320,7 +324,10 @@ class Assembler:
         else:
             neural_networks = self._container_type(self.atomic_networks)
         self_energies = self.self_energies
-        shifter = self._shifter_type(symbols=self.symbols, self_energies=tuple(self_energies[k] for k in self.symbols))
+        shifter = self._shifter_type(
+            symbols=self.symbols,
+            self_energies=tuple(self_energies[k] for k in self.symbols),
+        )
 
         if self._pairwise_potentials:
             potentials = []
@@ -367,6 +374,7 @@ def load_from_neurochem(
     if not pretrained:
         raise ValueError("Non pretrained models are not available from neurochem")
     from torchani.neurochem import modules_from_builtin_name
+
     components = modules_from_builtin_name(
         model_name,
         model_index,
@@ -422,7 +430,10 @@ def ANI1x(
         AEVComputer,
         angular_terms=StandardAngular.like_1x(),
         radial_terms=StandardRadial.like_1x(),
-        extra={"use_cuda_extension": use_cuda_extension, "use_cuaev_interface": use_cuaev_interface},
+        extra={
+            "use_cuda_extension": use_cuda_extension,
+            "use_cuaev_interface": use_cuaev_interface,
+        },
     )
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
@@ -471,7 +482,10 @@ def ANI1ccx(
         AEVComputer,
         radial_terms=StandardRadial.like_1ccx(),
         angular_terms=StandardAngular.like_1ccx(),
-        extra={"use_cuda_extension": use_cuda_extension, "use_cuaev_interface": use_cuaev_interface},
+        extra={
+            "use_cuda_extension": use_cuda_extension,
+            "use_cuaev_interface": use_cuaev_interface,
+        },
     )
     asm.set_atomic_maker(atomics.like_1ccx)
     asm.set_neighborlist(neighborlist)
@@ -520,7 +534,10 @@ def ANI2x(
         AEVComputer,
         radial_terms=StandardRadial.like_2x(),
         angular_terms=StandardAngular.like_2x(),
-        extra={"use_cuda_extension": use_cuda_extension, "use_cuaev_interface": use_cuaev_interface},
+        extra={
+            "use_cuda_extension": use_cuda_extension,
+            "use_cuaev_interface": use_cuaev_interface,
+        },
     )
     asm.set_atomic_maker(atomics.like_2x)
     asm.set_neighborlist(neighborlist)
@@ -549,7 +566,10 @@ def ANIala(
         AEVComputer,
         radial_terms=StandardRadial.like_2x(),
         angular_terms=StandardAngular.like_2x(),
-        extra={"use_cuda_extension": use_cuda_extension, "use_cuaev_interface": use_cuaev_interface},
+        extra={
+            "use_cuda_extension": use_cuda_extension,
+            "use_cuaev_interface": use_cuaev_interface,
+        },
     )
     asm.set_atomic_maker(atomics.like_ala)
     asm.set_neighborlist(neighborlist)
@@ -626,7 +646,9 @@ def FlexANI(
     r"""
     Flexible builder to create ANI-style models
     """
-    asm = Assembler(ensemble_size=ensemble_size, periodic_table_index=periodic_table_index)
+    asm = Assembler(
+        ensemble_size=ensemble_size, periodic_table_index=periodic_table_index
+    )
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
     asm.set_featurizer(
@@ -778,11 +800,13 @@ def fetch_state_dict(
     if local:
         dict_ = torch.load(state_dict_file, map_location=torch.device("cpu"))
         return OrderedDict(dict_)
-
+    PUBLIC_ZOO_URL = (
+        "https://github.com/roitberg-group/torchani_model_zoo/releases/download/v0.1/"
+    )
     if private:
         url = "http://moria.chem.ufl.edu/animodel/private/"
     else:
-        url = "https://github.com/roitberg-group/torchani_model_zoo/releases/download/v0.1/"
+        url = PUBLIC_ZOO_URL
     dict_ = torch.hub.load_state_dict_from_url(
         f"{url}/{state_dict_file}",
         model_dir=str(STATE_DICTS_DIR),

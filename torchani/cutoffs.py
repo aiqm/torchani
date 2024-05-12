@@ -45,7 +45,10 @@ class CutoffSmooth(Cutoff):
 CutoffArg = tp.Union[str, Cutoff]
 
 
-def parse_cutoff_fn(cutoff_fn: CutoffArg, global_cutoff: tp.Optional[Cutoff] = None) -> Cutoff:
+def parse_cutoff_fn(
+    cutoff_fn: CutoffArg,
+    global_cutoff: tp.Optional[Cutoff] = None,
+) -> Cutoff:
     if cutoff_fn == "global":
         assert global_cutoff is not None
         cutoff_fn = global_cutoff

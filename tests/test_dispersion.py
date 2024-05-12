@@ -45,7 +45,8 @@ class TestDispersion(ANITest):
     def testMethaneCoordinationNums(self):
         disp = self._setup(TwoBodyDispersionD3.from_functional())
         neighbors = self.aev_computer.neighborlist(
-            self.species, self.coordinates,
+            self.species,
+            self.coordinates,
             disp.cutoff,
         )
 
@@ -134,14 +135,15 @@ class TestDispersion(ANITest):
                 [35.4129, 33.2540, 27.5063, 25.7809, 21.5377],
                 [29.2830, 27.5206, 22.9517, 21.5377, 18.2067],
             ],
-            device=self.device
+            device=self.device,
         )
         self.assertEqual(expect_c6_carbon, c6_constants[6, 6])
 
     def testMethaneC6(self):
         disp = self._setup(TwoBodyDispersionD3.from_functional())
         neighbors = self.aev_computer.neighborlist(
-            self.species, self.coordinates,
+            self.species,
+            self.coordinates,
             disp.cutoff,
         )
 
@@ -157,9 +159,7 @@ class TestDispersion(ANITest):
             atom_index12,
             distances,
         )
-        order6_coeffs = disp._interpolate_coeff6(
-            species12, coordnums, atom_index12
-        )
+        order6_coeffs = disp._interpolate_coeff6(species12, coordnums, atom_index12)
         # C6 coefficients taken directly from DFTD3 Grimme et. al. code
         expect_order6 = torch.tensor(
             [
@@ -182,27 +182,40 @@ class TestDispersion(ANITest):
     def testMethaneEnergy(self):
         disp = self._setup(TwoBodyDispersionD3.from_functional())
         neighbors = self.aev_computer.neighborlist(
-            self.species, self.coordinates,
+            self.species,
+            self.coordinates,
             disp.cutoff,
         )
         energy = disp(self.species, neighbors)
         energy = units.hartree2kcalpermol(energy)
-        self.assertEqual(energy, torch.tensor([-1.251336], device=self.device, dtype=torch.double), rtol=1e-6, atol=1e-6)
+        self.assertEqual(
+            energy,
+            torch.tensor([-1.251336], device=self.device, dtype=torch.double),
+            rtol=1e-6,
+            atol=1e-6,
+        )
 
     def testMethaneStandalone(self):
-        disp = self._setup(StandaloneTwoBodyDispersionD3(
-            cutoff=8.0,
-        ))
+        disp = self._setup(
+            StandaloneTwoBodyDispersionD3(
+                cutoff=8.0,
+            )
+        )
         energy = disp((self.atomic_numbers, self.coordinates)).energies
         energy = units.hartree2kcalpermol(energy)
         self.assertEqual(
-            energy, torch.tensor([-1.251336], device=self.device, dtype=torch.double), rtol=1e-6, atol=1e-6
+            energy,
+            torch.tensor([-1.251336], device=self.device, dtype=torch.double),
+            rtol=1e-6,
+            atol=1e-6,
         )
 
     def testMethaneStandaloneBatch(self):
-        disp = self._setup(StandaloneTwoBodyDispersionD3(
-            cutoff=8.0,
-        ))
+        disp = self._setup(
+            StandaloneTwoBodyDispersionD3(
+                cutoff=8.0,
+            )
+        )
         r = 2
         coordinates = self.coordinates.repeat(r, 1, 1)
         species = self.atomic_numbers.repeat(r, 1)
@@ -210,23 +223,30 @@ class TestDispersion(ANITest):
         energy = units.hartree2kcalpermol(energy)
         self.assertEqual(
             energy,
-            torch.tensor([-1.251336, -1.251336], dtype=torch.double, device=self.device),
+            torch.tensor(
+                [-1.251336, -1.251336], dtype=torch.double, device=self.device
+            ),
             rtol=1e-6,
             atol=1e-6,
         )
 
     def testDispersionBatches(self):
-        rep = self._setup(StandaloneTwoBodyDispersionD3(
-            cutoff=8.0,
-        ))
+        rep = self._setup(
+            StandaloneTwoBodyDispersionD3(
+                cutoff=8.0,
+            )
+        )
         coordinates1 = torch.tensor(
-            [[0.0, 0.0, 0.0], [1.5, 0.0, 0.0], [3.0, 0.0, 0.0]], device=self.device,
+            [[0.0, 0.0, 0.0], [1.5, 0.0, 0.0], [3.0, 0.0, 0.0]],
+            device=self.device,
         ).unsqueeze(0)
         coordinates2 = torch.tensor(
-            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [2.5, 0.0, 0.0]], device=self.device,
+            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [2.5, 0.0, 0.0]],
+            device=self.device,
         ).unsqueeze(0)
         coordinates3 = torch.tensor(
-            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [3.5, 0.0, 0.0]], device=self.device,
+            [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [3.5, 0.0, 0.0]],
+            device=self.device,
         ).unsqueeze(0)
         species1 = torch.tensor([[1, 6, 7]], device=self.device)
         species2 = torch.tensor([[-1, 1, 6]], device=self.device)
@@ -246,7 +266,8 @@ class TestDispersion(ANITest):
         self.coordinates.requires_grad_(True)
         disp = self._setup(TwoBodyDispersionD3.from_functional())
         neighbors = self.aev_computer.neighborlist(
-            self.species, self.coordinates,
+            self.species,
+            self.coordinates,
             disp.cutoff,
         )
         energy = disp(self.species, neighbors)

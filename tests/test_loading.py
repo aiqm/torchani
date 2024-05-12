@@ -35,5 +35,5 @@ class TestLoading(TestCase):
         self.assertEqual(model_nc.state_dict(), model.state_dict())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -1,7 +1,6 @@
 import os
 import subprocess
 import sys
-import warnings
 import logging
 
 from setuptools import setup, find_packages
@@ -10,25 +9,11 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("setup")
 
 
-def alert(text):
-    return ('\033[91m{}\33[0m'.format(text))  # red
-
-
-BUILD_EXT_ALL_SM = '--cuaev-all-sms' in sys.argv
-if BUILD_EXT_ALL_SM:
-    warnings.warn(alert("--cuaev-all-sms flag is deprecated, please use --ext-all-sms instead."))
-    sys.argv.remove('--cuaev-all-sms')
-
-FAST_BUILD_EXT = '--cuaev' in sys.argv
-if FAST_BUILD_EXT:
-    warnings.warn(alert("--cuaev flag is deprecated, please use --ext instead."))
-    sys.argv.remove('--cuaev')
-
-BUILD_EXT_ALL_SM = BUILD_EXT_ALL_SM or '--ext-all-sms' in sys.argv
+BUILD_EXT_ALL_SM = '--ext-all-sms' in sys.argv
 if '--ext-all-sms' in sys.argv:
     sys.argv.remove('--ext-all-sms')
 
-FAST_BUILD_EXT = FAST_BUILD_EXT or '--ext' in sys.argv
+FAST_BUILD_EXT = '--ext' in sys.argv
 if '--ext' in sys.argv:
     sys.argv.remove('--ext')
 
@@ -89,7 +74,10 @@ def cuda_extension(build_all=False):
     if not build_all:
         devices = torch.cuda.device_count()
         print('FAST_BUILD_EXT: ON')
-        print('This build will only support the following devices or the devices with same cuda capability: ')
+        print(
+            'This build will only support the following devices'
+            ' (or devices with same cuda capability): '
+        )
         for i in range(devices):
             d = 'cuda:{}'.format(i)
             _sm = torch.cuda.get_device_capability(i)
@@ -108,7 +96,11 @@ def cuda_extension(build_all=False):
     # use cub in a safe manner, see:
     # https://github.com/pytorch/pytorch/pull/55292
     # https://github.com/pytorch/pytorch/pull/66219
-    nvcc_args += ['-DCUB_NS_QUALIFIER=::cuaev::cub', '-DCUB_NS_PREFIX=namespace cuaev {', '-DCUB_NS_POSTFIX=}']
+    nvcc_args += [
+        '-DCUB_NS_QUALIFIER=::cuaev::cub',
+        '-DCUB_NS_PREFIX=namespace cuaev {',
+        '-DCUB_NS_POSTFIX=}',
+    ]
     if SMs and not ONLY_BUILD_SM80:
         for sm in SMs:
             nvcc_args.append(f"-gencode=arch=compute_{sm},code=sm_{sm}")

@@ -8,10 +8,9 @@ path = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestAEVNIST(_TestAEVBase):
-
     def testNIST(self):
-        datafile = os.path.join(path, 'test_data/NIST/all')
-        with open(datafile, 'rb') as f:
+        datafile = os.path.join(path, "test_data/NIST/all")
+        with open(datafile, "rb") as f:
             data = pickle.load(f)
             # only use first 100 data points to make test take an
             # acceptable time
@@ -24,5 +23,5 @@ class TestAEVNIST(_TestAEVBase):
                 self.assertAEVEqual(radial, angular, aev)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

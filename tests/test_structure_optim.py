@@ -13,19 +13,20 @@ path = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestStructureOptimization(TestCase):
-
     def setUp(self):
         self.tolerance = 1e-6
         self.calculator = torchani.models.ANI1x(model_index=0).ase()
 
     def testRMSE(self):
-        datafile = os.path.join(path, 'test_data/NeuroChemOptimized/all')
-        with open(datafile, 'rb') as f:
+        datafile = os.path.join(path, "test_data/NeuroChemOptimized/all")
+        with open(datafile, "rb") as f:
             all_atoms = pickle.load(f)
             for atoms in all_atoms:
                 # reconstructing Atoms object.
                 # ASE does not support loading pickled object from older version
-                atoms = Atoms(atoms.get_chemical_symbols(), positions=atoms.get_positions())
+                atoms = Atoms(
+                    atoms.get_chemical_symbols(), positions=atoms.get_positions()
+                )
                 old_coordinates = copy.deepcopy(atoms.get_positions())
                 old_coordinates = torch.from_numpy(old_coordinates)
                 atoms.calc = self.calculator
@@ -35,5 +36,5 @@ class TestStructureOptimization(TestCase):
                 self.assertEqual(old_coordinates, coordinates)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

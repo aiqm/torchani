@@ -6,7 +6,7 @@ from torchani.testing import TestCase
 
 
 path = os.path.dirname(os.path.realpath(__file__))
-dspath = os.path.join(path, '../dataset/ani-1x/sample.h5')
+dspath = os.path.join(path, "../dataset/ani-1x/sample.h5")
 
 
 class TestBuiltinModelsJIT(TestCase):
@@ -20,7 +20,7 @@ class TestBuiltinModelsJIT(TestCase):
 
     def _test_model(self, model):
         properties = next(iter(self.ds))
-        input_ = (properties['species'], properties['coordinates'].float())
+        input_ = (properties["species"], properties["coordinates"].float())
         _, e = model(input_)
         _, e2 = torch.jit.script(model)(input_)
         self.assertEqual(e, e2)
@@ -39,5 +39,5 @@ class TestBuiltinModelsJIT(TestCase):
         self._test_ensemble(ani1ccx)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

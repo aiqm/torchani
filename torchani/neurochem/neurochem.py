@@ -44,15 +44,15 @@ class Constants(collections.abc.Mapping):
         self.species_to_tensor = ChemicalSymbolsToInts(species)
 
     def __iter__(self):
-        yield 'Rcr'
-        yield 'Rca'
-        yield 'EtaR'
-        yield 'ShfR'
-        yield 'EtaA'
-        yield 'Zeta'
-        yield 'ShfA'
-        yield 'ShfZ'
-        yield 'num_species'
+        yield "Rcr"
+        yield "Rca"
+        yield "EtaR"
+        yield "ShfR"
+        yield "EtaA"
+        yield "Zeta"
+        yield "ShfA"
+        yield "ShfZ"
+        yield "num_species"
 
     def __len__(self):
         return 8
@@ -84,26 +84,34 @@ def load_aev_computer_and_symbols(
     return aev_computer, symbols
 
 
-def load_constants(consts_file: tp.Union[Path, str]) -> tp.Tuple[tp.Dict[str, Tensor], tp.Dict[str, float], tp.Tuple[str, ...]]:
+def load_constants(
+    consts_file: tp.Union[Path, str]
+) -> tp.Tuple[tp.Dict[str, Tensor], tp.Dict[str, float], tp.Tuple[str, ...]]:
     aev_consts: tp.Dict[str, Tensor] = {}
     aev_cutoffs: tp.Dict[str, float] = {}
     with open(consts_file) as f:
         for i in f:
             try:
-                line = [x.strip() for x in i.split('=')]
+                line = [x.strip() for x in i.split("=")]
                 name = line[0]
                 value = line[1]
-                if name in ['Rcr', 'Rca']:
+                if name in ["Rcr", "Rca"]:
                     aev_cutoffs[name] = float(value)
-                elif name in ['EtaR', 'ShfR', 'Zeta', 'ShfZ', 'EtaA', 'ShfA']:
-                    float_values = [float(x.strip()) for x in value.replace(
-                        '[', '').replace(']', '').split(',')]
+                elif name in ["EtaR", "ShfR", "Zeta", "ShfZ", "EtaA", "ShfA"]:
+                    float_values = [
+                        float(x.strip())
+                        for x in value.replace("[", "").replace("]", "").split(",")
+                    ]
                     aev_consts[name] = torch.tensor(float_values)
-                elif name == 'Atyp':
-                    species = tuple(x.strip() for x in value.replace(
-                        '[', '').replace(']', '').split(','))
+                elif name == "Atyp":
+                    species = tuple(
+                        x.strip()
+                        for x in value.replace("[", "").replace("]", "").split(",")
+                    )
             except Exception:
-                raise NeurochemParseError(f'Unable to parse const file {consts_file}') from None
+                raise NeurochemParseError(
+                    f"Unable to parse const file {consts_file}"
+                ) from None
     return aev_consts, aev_cutoffs, species
 
 
@@ -115,9 +123,9 @@ def load_sae(filename: tp.Union[Path, str], return_dict: bool = False):
     filename = Path(filename).resolve()
     with open(filename) as f:
         for i in f:
-            line = [x.strip() for x in i.split('=')]
-            species = line[0].split(',')[0].strip()
-            index = int(line[0].split(',')[1].strip())
+            line = [x.strip() for x in i.split("=")]
+            species = line[0].split(",")[0].strip()
+            index = int(line[0].split(",")[1].strip())
             value = float(line[1])
             d[species] = value
             _self_energies.append((index, value))
@@ -135,7 +143,9 @@ def _get_activation(activation_index: int) -> tp.Optional[torch.nn.Module]:
     elif activation_index == 9:  # CELU
         return torch.nn.CELU(alpha=0.1)
     elif activation_index == 5:  # Gaussian
-        raise NeurochemParseError("Activation index 5 corresponds to a Gaussian which is not supported")
+        raise NeurochemParseError(
+            "Activation index 5 corresponds to a Gaussian which is not supported"
+        )
     raise NeurochemParseError(f"Unsupported activation index {activation_index}")
 
 
@@ -145,14 +155,15 @@ def load_atomic_network(filename: tp.Union[Path, str]) -> torch.nn.Sequential:
     filename = Path(filename).resolve()
 
     def decompress_nnf(buffer_):
-        while buffer_[0] != b'='[0]:
+        while buffer_[0] != b"="[0]:
             buffer_ = buffer_[1:]
         buffer_ = buffer_[2:]
-        return bz2.decompress(buffer_)[:-1].decode('ascii').strip()
+        return bz2.decompress(buffer_)[:-1].decode("ascii").strip()
 
     def parse_nnf(nnf_file):
         # parse input file
-        parser = lark.Lark(r'''
+        parser = lark.Lark(
+            r"""
         identifier : CNAME
 
         inputsize : "inputsize" "=" INT ";"
@@ -184,12 +195,13 @@ def load_atomic_network(filename: tp.Union[Path, str]) -> torch.nn.Sequential:
         %import common.CNAME
         %import common.WS
         %ignore WS
-        ''', parser='lalr')
+        """,
+            parser="lalr",
+        )
         tree = parser.parse(nnf_file)
 
         # execute parse tree
         class TreeExec(lark.Transformer):
-
             def identifier(self, v):
                 v = v[0].value
                 return v
@@ -198,21 +210,27 @@ def load_atomic_network(filename: tp.Union[Path, str]) -> torch.nn.Sequential:
                 if len(v) == 1:
                     v = v[0]
                     if isinstance(v, lark.tree.Tree):
-                        assert v.data == 'nans'
+                        assert v.data == "nans"
                         return math.nan
                     assert isinstance(v, lark.lexer.Token)
-                    if v.type == 'FILENAME':
+                    if v.type == "FILENAME":
                         v = v.value
-                    elif v.type == 'SIGNED_INT' or v.type == 'INT':
+                    elif v.type == "SIGNED_INT" or v.type == "INT":
                         v = int(v.value)
-                    elif v.type == 'SIGNED_FLOAT' or v.type == 'FLOAT':
+                    elif v.type == "SIGNED_FLOAT" or v.type == "FLOAT":
                         v = float(v.value)
                     else:
-                        raise NeurochemParseError(f'Type should be one of [SIGNED]_INT, [SIGNED]_FLOAT or FILENAME but found {v.type} in file {nnf_file}')
+                        raise NeurochemParseError(
+                            f"Type should be one of"
+                            " [SIGNED]_INT, [SIGNED]_FLOAT or FILENAME"
+                            f" but found {v.type} in file {nnf_file}"
+                        )
                 elif len(v) == 2:
                     v = self.value([v[0]]), self.value([v[1]])
                 else:
-                    raise NeurochemParseError(f'len(value) should be 1 or 2 but found {len(v)} in {nnf_file}')
+                    raise NeurochemParseError(
+                        f"len(value) should be 1 or 2 but found {len(v)} in {nnf_file}"
+                    )
                 return v
 
             def assign(self, v):
@@ -236,20 +254,20 @@ def load_atomic_network(filename: tp.Union[Path, str]) -> torch.nn.Sequential:
     def load_param_file(linear, in_size, out_size, wfn, bfn):
         """Load `.wparam` and `.bparam` files"""
         wsize = in_size * out_size
-        fw = open(wfn, 'rb')
-        _w = struct.unpack('{}f'.format(wsize), fw.read())
+        fw = open(wfn, "rb")
+        _w = struct.unpack("{}f".format(wsize), fw.read())
         w = torch.tensor(_w).view(out_size, in_size)
         linear.weight.data = w
         fw.close()
-        fb = open(bfn, 'rb')
-        _b = struct.unpack('{}f'.format(out_size), fb.read())
+        fb = open(bfn, "rb")
+        _b = struct.unpack("{}f".format(out_size), fb.read())
         b = torch.tensor(_b).view(out_size)
         linear.bias.data = b
         fb.close()
 
     networ_dir = str(filename.parent)
 
-    with open(filename, 'rb') as f:
+    with open(filename, "rb") as f:
         buffer_ = f.read()
         buffer_ = decompress_nnf(buffer_)
         layer_setups = parse_nnf(buffer_)
@@ -257,24 +275,28 @@ def load_atomic_network(filename: tp.Union[Path, str]) -> torch.nn.Sequential:
         layers: tp.List[torch.nn.Module] = []
         for s in layer_setups:
             # construct linear layer and load parameters
-            in_size = s['blocksize']
-            out_size = s['nodes']
-            wfn, wsz = s['weights']
-            bfn, bsz = s['biases']
+            in_size = s["blocksize"]
+            out_size = s["nodes"]
+            wfn, wsz = s["weights"]
+            bfn, bsz = s["biases"]
             if in_size * out_size != wsz:
                 raise NeurochemParseError(
-                    f'Bad parameter shape in {filename}: in_size * out_size=({in_size} * {out_size}) should be equal to wsz={wsz}'
+                    f"Bad parameter shape in {filename}:"
+                    f" in_size * out_size=({in_size} * {out_size})"
+                    f" should be equal to wsz={wsz}"
                 )
             if out_size != bsz:
                 raise NeurochemParseError(
-                    f'Bad parameter shape in {filename}: out_size={out_size} should be equal to bsz={bsz}'
+                    f"Bad parameter shape in {filename}:"
+                    f" out_size={out_size}"
+                    f" should be equal to bsz={bsz}"
                 )
             layer = torch.nn.Linear(in_size, out_size)
             wfn = os.path.join(networ_dir, wfn)
             bfn = os.path.join(networ_dir, bfn)
             load_param_file(layer, in_size, out_size, wfn, bfn)
             layers.append(layer)
-            activation = _get_activation(s['activation'])
+            activation = _get_activation(s["activation"])
             if activation is not None:
                 layers.append(activation)
 
@@ -297,7 +319,9 @@ def load_model(species: tp.Sequence[str], model_dir: tp.Union[Path, str]) -> ANI
     return ANIModel(models)
 
 
-def load_model_ensemble(species: tp.Sequence[str], prefix: tp.Union[Path, str], count: int) -> Ensemble:
+def load_model_ensemble(
+    species: tp.Sequence[str], prefix: tp.Union[Path, str], count: int
+) -> Ensemble:
     """Returns an instance of :class:`torchani.nn.Ensemble` loaded from
     NeuroChem's network directories beginning with the given prefix.
 
@@ -315,4 +339,10 @@ def load_model_ensemble(species: tp.Sequence[str], prefix: tp.Union[Path, str], 
     return Ensemble(models)
 
 
-__all__ = ['load_constants', 'load_aev_computer_and_symbols', 'load_sae', 'load_model', 'load_model_ensemble']
+__all__ = [
+    "load_constants",
+    "load_aev_computer_and_symbols",
+    "load_sae",
+    "load_model",
+    "load_model_ensemble",
+]

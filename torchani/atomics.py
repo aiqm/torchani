@@ -14,7 +14,9 @@ def _parse_activation(module: tp.Union[str, torch.nn.Module]) -> torch.nn.Module
     return module
 
 
-def _parse_atomics(module: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]]) -> tp.Callable[[str, int], torch.nn.Module]:
+def _parse_atomics(
+    module: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]],
+) -> tp.Callable[[str, int], torch.nn.Module]:
     if module == "ani1x":
         return like_1x
     elif module == "ani2x":
@@ -33,7 +35,7 @@ def standard(
     dims: tp.Sequence[int],
     activation: tp.Optional[torch.nn.Module] = None,
     bias: bool = False,
-    classifier_out: int = 1
+    classifier_out: int = 1,
 ):
     r"""Makes a standard ANI style atomic network"""
     if activation is None:
@@ -51,20 +53,20 @@ def standard(
 
 
 def like_1x(
-    atom: str = 'H',
+    atom: str = "H",
     feat_dim: int = 384,
     activation: tp.Optional[torch.nn.Module] = None,
     bias: bool = True,
-    classifier_out: int = 1
+    classifier_out: int = 1,
 ):
     r"""Makes an atomic network. Defaults are the ones in the ANI-1x (and 1ccx) model"""
     if activation is None:
         activation = torch.nn.CELU(0.1)
     dims_for_atoms = {
-        'H': (feat_dim, 160, 128, 96),
-        'C': (feat_dim, 144, 112, 96),
-        'N': (feat_dim, 128, 112, 96),
-        'O': (feat_dim, 128, 112, 96),
+        "H": (feat_dim, 160, 128, 96),
+        "C": (feat_dim, 144, 112, 96),
+        "N": (feat_dim, 128, 112, 96),
+        "O": (feat_dim, 128, 112, 96),
     }
     return standard(
         dims_for_atoms[atom],
@@ -75,23 +77,23 @@ def like_1x(
 
 
 def like_ala(
-    atom: str = 'H',
+    atom: str = "H",
     feat_dim: int = 1008,
     activation: tp.Optional[torch.nn.Module] = None,
     bias: bool = True,
-    classifier_out: int = 1
+    classifier_out: int = 1,
 ):
     r"""Makes an atomic network. The defaults are the ones used in the ANI-2x model"""
     if activation is None:
         activation = torch.nn.CELU(0.1)
     dims_for_atoms = {
-        'H': (feat_dim, 256, 192, 160),
-        'C': (feat_dim, 224, 196, 160),
-        'N': (feat_dim, 192, 160, 128),
-        'O': (feat_dim, 192, 160, 128),
-        'S': (feat_dim, 160, 128, 96),
-        'F': (feat_dim, 160, 128, 96),
-        'Cl': (feat_dim, 160, 128, 96),
+        "H": (feat_dim, 256, 192, 160),
+        "C": (feat_dim, 224, 196, 160),
+        "N": (feat_dim, 192, 160, 128),
+        "O": (feat_dim, 192, 160, 128),
+        "S": (feat_dim, 160, 128, 96),
+        "F": (feat_dim, 160, 128, 96),
+        "Cl": (feat_dim, 160, 128, 96),
     }
     return standard(
         dims_for_atoms[atom],
@@ -102,23 +104,23 @@ def like_ala(
 
 
 def like_2x(
-    atom: str = 'H',
+    atom: str = "H",
     feat_dim: int = 1008,
     activation: tp.Optional[torch.nn.Module] = None,
     bias: bool = True,
-    classifier_out: int = 1
+    classifier_out: int = 1,
 ):
     r"""Makes an atomic network. The defaults are the ones used in the ANI-2x model"""
     if activation is None:
         activation = torch.nn.CELU(0.1)
     dims_for_atoms = {
-        'H': (feat_dim, 256, 192, 160),
-        'C': (feat_dim, 224, 192, 160),
-        'N': (feat_dim, 192, 160, 128),
-        'O': (feat_dim, 192, 160, 128),
-        'S': (feat_dim, 160, 128, 96),
-        'F': (feat_dim, 160, 128, 96),
-        'Cl': (feat_dim, 160, 128, 96),
+        "H": (feat_dim, 256, 192, 160),
+        "C": (feat_dim, 224, 192, 160),
+        "N": (feat_dim, 192, 160, 128),
+        "O": (feat_dim, 192, 160, 128),
+        "S": (feat_dim, 160, 128, 96),
+        "F": (feat_dim, 160, 128, 96),
+        "Cl": (feat_dim, 160, 128, 96),
     }
     return standard(
         dims_for_atoms[atom],
@@ -129,21 +131,21 @@ def like_2x(
 
 
 def like_dr(
-    atom: str = 'H',
+    atom: str = "H",
     feat_dim: int = 1008,
     activation: tp.Optional[torch.nn.Module] = None,
     bias: bool = False,
-    classifier_out: int = 1
+    classifier_out: int = 1,
 ):
     r"""Makes an atomic network. The defaults are the ones used in the ANI-dr model"""
     dims_for_atoms = {
-        'H': (feat_dim, 256, 192, 160),
-        'C': (feat_dim, 256, 192, 160),
-        'N': (feat_dim, 192, 160, 128),
-        'O': (feat_dim, 192, 160, 128),
-        'S': (feat_dim, 160, 128, 96),
-        'F': (feat_dim, 160, 128, 96),
-        'Cl': (feat_dim, 160, 128, 96),
+        "H": (feat_dim, 256, 192, 160),
+        "C": (feat_dim, 256, 192, 160),
+        "N": (feat_dim, 192, 160, 128),
+        "O": (feat_dim, 192, 160, 128),
+        "S": (feat_dim, 160, 128, 96),
+        "F": (feat_dim, 160, 128, 96),
+        "Cl": (feat_dim, 160, 128, 96),
     }
     return standard(
         dims_for_atoms[atom],

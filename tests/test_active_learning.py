@@ -19,44 +19,55 @@ class TestActiveLearning(ANITest):
         self.coordinates = torch.tensor(
             [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0], [0.5, 0.5, 0.5]],
             dtype=torch.double,
-            device=self.device).unsqueeze(0)
-        self.species = torch.tensor([[1, 1, 1, 1, 6]],
-                                    dtype=torch.long,
-                                    device=self.device)
+            device=self.device,
+        ).unsqueeze(0)
+        self.species = torch.tensor(
+            [[1, 1, 1, 1, 6]], dtype=torch.long, device=self.device
+        )
 
     def testAverageAtomicEnergies(self):
         _, energies = self.model.atomic_energies(
-            (self.species, self.coordinates), shift_energy=True, average=True)
+            (self.species, self.coordinates), shift_energy=True, average=True
+        )
         self.assertEqual(energies.shape, self.coordinates.shape[:-1])
         # energies of all hydrogens should be equal
-        expect = torch.full(energies[:, :-1].shape, -0.54853380570289400620, dtype=torch.double, device=self.device)
+        expect = torch.full(
+            energies[:, :-1].shape,
+            -0.54853380570289400620,
+            dtype=torch.double,
+            device=self.device,
+        )
         self.assertEqual(energies[:, :-1], expect)
 
     def testAtomicEnergies(self):
         _, energies = self.model.atomic_energies(
-            (self.species, self.coordinates), shift_energy=True, average=False)
+            (self.species, self.coordinates), shift_energy=True, average=False
+        )
         self.assertTrue(energies.shape[1:] == self.coordinates.shape[:-1])
         self.assertTrue(energies.shape[0] == self.num_networks)
         # energies of all hydrogens should be equal
-        self.assertEqual(energies[0, 0, 0], torch.tensor(-0.54562734428531045605, device=self.device,
-                         dtype=torch.double))
+        self.assertEqual(
+            energies[0, 0, 0],
+            torch.tensor(
+                -0.54562734428531045605, device=self.device, dtype=torch.double
+            ),
+        )
         for e in energies:
             self.assertTrue((e[:, :-1] == e[:, 0]).all())
 
     def testMemberEnergies(self):
         # fully symmetric methane
-        _, energies = self.model.members_energies(
-            (self.species, self.coordinates))
+        _, energies = self.model.members_energies((self.species, self.coordinates))
 
         # correctness of shape
         self.assertEqual(energies.shape[-1], self.coordinates.shape[0])
         self.assertEqual(energies.shape[0], self.num_networks)
         self.assertEqual(
-            energies[0], self.first_model((self.species,
-                                           self.coordinates)).energies)
-        expect = torch.tensor([-40.277153758433975],
-                              dtype=torch.double,
-                              device=self.device)
+            energies[0], self.first_model((self.species, self.coordinates)).energies
+        )
+        expect = torch.tensor(
+            [-40.277153758433975], dtype=torch.double, device=self.device
+        )
         self.assertEqual(energies[0], expect)
 
     def testQBC(self):
@@ -64,24 +75,25 @@ class TestActiveLearning(ANITest):
         _, _, qbc = self.model.energies_qbcs((self.species, self.coordinates))
 
         std = self.model.members_energies(
-            (self.species, self.coordinates)).energies.std(dim=0,
-                                                           unbiased=True)
-        self.assertTrue(
-            torch.isclose(std / math.sqrt(self.coordinates.shape[1]), qbc))
+            (self.species, self.coordinates)
+        ).energies.std(dim=0, unbiased=True)
+        self.assertTrue(torch.isclose(std / math.sqrt(self.coordinates.shape[1]), qbc))
 
         # also test with multiple coordinates
         coord1 = torch.tensor(
             [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0], [0.5, 0.5, 0.5]],
             dtype=torch.double,
-            device=self.device).unsqueeze(0)
+            device=self.device,
+        ).unsqueeze(0)
         coord2 = torch.randn(1, 5, 3, dtype=torch.double, device=self.device)
 
         coordinates = torch.cat((coord1, coord2), dim=0)
-        species = torch.tensor([[1, 1, 1, 1, 6], [-1, 1, 1, 1, 1]],
-                               dtype=torch.long,
-                               device=self.device)
-        std = self.model.members_energies(
-            (species, coordinates)).energies.std(dim=0, unbiased=True)
+        species = torch.tensor(
+            [[1, 1, 1, 1, 6], [-1, 1, 1, 1, 1]], dtype=torch.long, device=self.device
+        )
+        std = self.model.members_energies((species, coordinates)).energies.std(
+            dim=0, unbiased=True
+        )
         _, _, qbc = self.model.energies_qbcs((species, coordinates))
         std[0] = std[0] / math.sqrt(5)
         std[1] = std[1] / math.sqrt(4)
@@ -89,21 +101,33 @@ class TestActiveLearning(ANITest):
 
     def testAtomicStdev(self):
         # Symmetric methane
-        atomic_stdev = self.model.atomic_stdev((self.species, self.coordinates)).stdev_atomic_energies
-        _, atomic_energies = self.model.atomic_energies((self.species, self.coordinates), average=False)
+        atomic_stdev = self.model.atomic_stdev(
+            (self.species, self.coordinates)
+        ).stdev_atomic_energies
+        _, atomic_energies = self.model.atomic_energies(
+            (self.species, self.coordinates), average=False
+        )
         stdev_atomic_energies = atomic_energies.std(0)
         self.assertEqual(stdev_atomic_energies, atomic_stdev)
 
         # Asymmetric methane
-        ch4_coord = torch.tensor([[[4.9725e-04, -2.3656e-02, -4.6554e-02],
-                                   [-9.4934e-01, -4.6713e-01, -2.1225e-01],
-                                   [-2.1828e-01, 6.4611e-01, 8.7319e-01],
-                                   [3.7291e-01, 6.5190e-01, -6.9571e-01],
-                                   [7.9173e-01, -6.8895e-01, 3.1410e-01]]],
-                                 dtype=torch.double,
-                                 device=self.device)
+        ch4_coord = torch.tensor(
+            [
+                [
+                    [4.9725e-04, -2.3656e-02, -4.6554e-02],
+                    [-9.4934e-01, -4.6713e-01, -2.1225e-01],
+                    [-2.1828e-01, 6.4611e-01, 8.7319e-01],
+                    [3.7291e-01, 6.5190e-01, -6.9571e-01],
+                    [7.9173e-01, -6.8895e-01, 3.1410e-01],
+                ]
+            ],
+            dtype=torch.double,
+            device=self.device,
+        )
         _, _, atomic_qbc = self.model.atomic_stdev((self.species, ch4_coord))
-        _, atomic_energies = self.model.atomic_energies((self.species, ch4_coord), average=False)
+        _, atomic_energies = self.model.atomic_energies(
+            (self.species, ch4_coord), average=False
+        )
 
         stdev_atomic_energies = atomic_energies.std(0, unbiased=True)
         self.assertEqual(stdev_atomic_energies, atomic_qbc)
@@ -118,18 +142,23 @@ class TestActiveLearningForces(ANITest):
         self.coordinates = torch.tensor(
             [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0], [0.5, 0.5, 0.5]],
             dtype=torch.double,
-            device=self.device).unsqueeze(0)
-        self.species = torch.tensor([[1, 1, 1, 1, 6]],
-                                    dtype=torch.long,
-                                    device=self.device)
+            device=self.device,
+        ).unsqueeze(0)
+        self.species = torch.tensor(
+            [[1, 1, 1, 1, 6]], dtype=torch.long, device=self.device
+        )
 
     def testMembersForces(self):
         # Symmetric methane
         forces = self.model.members_forces((self.species, self.coordinates)).forces
-        members_energies = self.model.members_energies((self.species, self.coordinates)).energies
+        members_energies = self.model.members_energies(
+            (self.species, self.coordinates)
+        ).energies
         forces_list = []
         for energy in members_energies:
-            derivative = torch.autograd.grad(energy.sum(), self.coordinates, retain_graph=True)[0]
+            derivative = torch.autograd.grad(
+                energy.sum(), self.coordinates, retain_graph=True
+            )[0]
             force = -derivative
             forces_list.append(force)
         _forces = torch.stack(forces_list, dim=0)
@@ -137,11 +166,17 @@ class TestActiveLearningForces(ANITest):
 
     def testAverageMembersForces(self):
         # Symmetric methane
-        avg_forces = self.model.members_forces((self.species, self.coordinates), average=True).forces
-        members_energies = self.model.members_energies((self.species, self.coordinates)).energies
+        avg_forces = self.model.members_forces(
+            (self.species, self.coordinates), average=True
+        ).forces
+        members_energies = self.model.members_energies(
+            (self.species, self.coordinates)
+        ).energies
         forces_list = []
         for energy in members_energies:
-            derivative = torch.autograd.grad(energy.sum(), self.coordinates, retain_graph=True)[0]
+            derivative = torch.autograd.grad(
+                energy.sum(), self.coordinates, retain_graph=True
+            )[0]
             force = -derivative
             forces_list.append(force)
         _forces = torch.stack(forces_list, dim=0)
@@ -152,12 +187,22 @@ class TestActiveLearningForces(ANITest):
         # This test imperfectly checks that force_magnitudes works as it
         # is intended to; however, dividing by the mean magnitude in
         # near-equilibrium geometries can lead to issues
-        ch4_coord = torch.tensor([[[4.9725e-04, -2.3656e-02, -4.6554e-02],
-                            [-9.4934e-01, -4.6713e-01, -2.1225e-01],
-                            [-2.1828e-01, 6.4611e-01, 8.7319e-01],
-                            [3.7291e-01, 6.5190e-01, -6.9571e-01],
-                            [7.9173e-01, -6.8895e-01, 3.1410e-01]]], dtype=torch.double, device=self.device)
-        _, magnitudes = self.model.force_magnitudes((self.species, ch4_coord), average=False)
+        ch4_coord = torch.tensor(
+            [
+                [
+                    [4.9725e-04, -2.3656e-02, -4.6554e-02],
+                    [-9.4934e-01, -4.6713e-01, -2.1225e-01],
+                    [-2.1828e-01, 6.4611e-01, 8.7319e-01],
+                    [3.7291e-01, 6.5190e-01, -6.9571e-01],
+                    [7.9173e-01, -6.8895e-01, 3.1410e-01],
+                ]
+            ],
+            dtype=torch.double,
+            device=self.device,
+        )
+        _, magnitudes = self.model.force_magnitudes(
+            (self.species, ch4_coord), average=False
+        )
         _, _, _members_forces = self.model.members_forces((self.species, ch4_coord))
         _magnitudes = _members_forces.norm(dim=-1)
         self.assertEqual(magnitudes, _magnitudes)
@@ -166,22 +211,36 @@ class TestActiveLearningForces(ANITest):
         # Same as above test case, checks that this works for asymmetrical
         # geometry Also note that average=False for force_qbc and
         # force_magnitudes
-        ch4_coord = torch.tensor([[[4.9725e-04, -2.3656e-02, -4.6554e-02],
-                            [-9.4934e-01, -4.6713e-01, -2.1225e-01],
-                            [-2.1828e-01, 6.4611e-01, 8.7319e-01],
-                            [3.7291e-01, 6.5190e-01, -6.9571e-01],
-                            [7.9173e-01, -6.8895e-01, 3.1410e-01]]], dtype=torch.double, device=self.device)
-        _, magnitudes, relative_stdev, relative_range = self.model.force_qbc((self.species, ch4_coord))
-        _, _magnitudes = self.model.force_magnitudes((self.species, ch4_coord), average=False)
+        ch4_coord = torch.tensor(
+            [
+                [
+                    [4.9725e-04, -2.3656e-02, -4.6554e-02],
+                    [-9.4934e-01, -4.6713e-01, -2.1225e-01],
+                    [-2.1828e-01, 6.4611e-01, 8.7319e-01],
+                    [3.7291e-01, 6.5190e-01, -6.9571e-01],
+                    [7.9173e-01, -6.8895e-01, 3.1410e-01],
+                ]
+            ],
+            dtype=torch.double,
+            device=self.device,
+        )
+        _, magnitudes, relative_stdev, relative_range = self.model.force_qbc(
+            (self.species, ch4_coord)
+        )
+        _, _magnitudes = self.model.force_magnitudes(
+            (self.species, ch4_coord), average=False
+        )
         _max_mag = _magnitudes.max(dim=0).values
         _min_mag = _magnitudes.min(dim=0).values
         _mean_magnitudes = _magnitudes.mean(0)
-        _relative_stdev = (_magnitudes.std(0, unbiased=True) + 1e-8) / (_mean_magnitudes + 1e-8)
+        _relative_stdev = (_magnitudes.std(0, unbiased=True) + 1e-8) / (
+            _mean_magnitudes + 1e-8
+        )
         _relative_range = ((_max_mag - _min_mag) + 1e-8) / (_mean_magnitudes + 1e-8)
         self.assertEqual(magnitudes, _magnitudes)
         self.assertEqual(relative_range, _relative_range)
         self.assertEqual(relative_stdev, _relative_stdev)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

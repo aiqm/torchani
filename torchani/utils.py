@@ -17,12 +17,12 @@ from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2
 from torchani.tuples import SpeciesEnergies, VibAnalysis
 
 PADDING = {
-    'species': -1,
-    'numbers': -1,
-    'atomic_numbers': -1,
-    'coordinates': 0.0,
-    'forces': 0.0,
-    'energies': 0.0,
+    "species": -1,
+    "numbers": -1,
+    "atomic_numbers": -1,
+    "coordinates": 0.0,
+    "forces": 0.0,
+    "energies": 0.0,
 }
 
 # GSAES were calculating using the following splin multiplicities: H: 2, C: 3,
@@ -35,50 +35,50 @@ PADDING = {
 # for atomic energies. For H I set the E to -0.5 since that is the exact
 # nonrelativistic solution and I believe CC can't really converge for H.
 GSAES: tp.Dict[str, tp.Dict[str, float]] = {
-    'b973c-def2mtzvp': {
-        'H': -0.506930113968,
-        'C': -37.81441001258,
-        'N': -54.556538547322,
-        'O': -75.029181326588,
-        'F': -99.688618987039,
-        'S': -398.043159341582,
-        'Cl': -460.082223445159,
+    "b973c-def2mtzvp": {
+        "H": -0.506930113968,
+        "C": -37.81441001258,
+        "N": -54.556538547322,
+        "O": -75.029181326588,
+        "F": -99.688618987039,
+        "S": -398.043159341582,
+        "Cl": -460.082223445159,
     },
-    'wb97x-631gd': {
-        'C': -37.8338334,
-        'Cl': -460.116700600,
-        'F': -99.6949007,
-        'H': -0.4993212,
-        'N': -54.5732825,
-        'O': -75.0424519,
-        'S': -398.0814169,
+    "wb97x-631gd": {
+        "C": -37.8338334,
+        "Cl": -460.116700600,
+        "F": -99.6949007,
+        "H": -0.4993212,
+        "N": -54.5732825,
+        "O": -75.0424519,
+        "S": -398.0814169,
     },
-    'wB97md3bj-def2tzvpp': {
-        'C': -37.870597534068,
-        'Cl': -460.197921425433,
-        'F': -99.784869113871,
-        'H': -0.498639663159,
-        'N': -54.621568655507,
-        'O': -75.111870707635,
-        'S': -398.158126819835,
+    "wB97md3bj-def2tzvpp": {
+        "C": -37.870597534068,
+        "Cl": -460.197921425433,
+        "F": -99.784869113871,
+        "H": -0.498639663159,
+        "N": -54.621568655507,
+        "O": -75.111870707635,
+        "S": -398.158126819835,
     },
-    'wb97mv-def2tzvpp': {
-        'C': -37.844395699666,
-        'Cl': -460.124987825603,
-        'F': -99.745234404775,
-        'H': -0.494111111003,
-        'N': -54.590952163069,
-        'O': -75.076760965132,
-        'S': -398.089446664032,
+    "wb97mv-def2tzvpp": {
+        "C": -37.844395699666,
+        "Cl": -460.124987825603,
+        "F": -99.745234404775,
+        "H": -0.494111111003,
+        "N": -54.590952163069,
+        "O": -75.076760965132,
+        "S": -398.089446664032,
     },
-    'ccsd(t)star-cbs': {
-        'C': -37.780724507998,
-        'Cl': -459.664237510771,
-        'F': -99.624864557142,
-        'H': -0.5000000000000,
-        'N': -54.515992576387,
-        'O': -74.976148184192,
-        'S': -397.646401989238,
+    "ccsd(t)star-cbs": {
+        "C": -37.780724507998,
+        "Cl": -459.664237510771,
+        "F": -99.624864557142,
+        "H": -0.5000000000000,
+        "N": -54.515992576387,
+        "O": -74.976148184192,
+        "S": -397.646401989238,
     },
     "dsd_blyp_d3bj-def2tzvp": {
         "H": -0.4990340388250001,
@@ -89,16 +89,16 @@ GSAES: tp.Dict[str, tp.Dict[str, float]] = {
         "I": -297.544092721991,
     },
     "wb97m_d3bj-def2tzvppd": {
-        'H': -0.4987605100487531,
-        'C': -37.87264507233593,
-        'O': -75.11317840410095,
-        'N': -54.62327513368922,
-        'F': -99.78611622985483,
-        'Cl': -460.1988762285739,
-        'S': -398.1599636677874,
-        'Br': -2574.1167240829964,
-        'I': -297.76228914445625,
-        'P': -341.3059197024934,
+        "H": -0.4987605100487531,
+        "C": -37.87264507233593,
+        "O": -75.11317840410095,
+        "N": -54.62327513368922,
+        "F": -99.78611622985483,
+        "Cl": -460.1988762285739,
+        "S": -398.1599636677874,
+        "Br": -2574.1167240829964,
+        "I": -297.76228914445625,
+        "P": -341.3059197024934,
     },
     "revpbe_d3bj-def2tzvp": {
         "H": -0.504124985686,
@@ -114,12 +114,14 @@ GSAES: tp.Dict[str, tp.Dict[str, float]] = {
         "H": -0.5013925,
         "N": -54.5915914,
         "O": -75.0768759,
-        "S": -398.1079973
+        "S": -398.1079973,
     },
 }
 
 
-def sorted_gsaes(elements: tp.Sequence[str], functional: str, basis_set: str) -> tp.List[float]:
+def sorted_gsaes(
+    elements: tp.Sequence[str], functional: str, basis_set: str
+) -> tp.List[float]:
     r"""Return sorted GSAES by element
 
     Example usage:
@@ -128,7 +130,7 @@ def sorted_gsaes(elements: tp.Sequence[str], functional: str, basis_set: str) ->
 
     Functional and basis set are case insensitive
     """
-    gsaes = GSAES[f'{functional.lower()}-{basis_set.lower()}']
+    gsaes = GSAES[f"{functional.lower()}-{basis_set.lower()}"]
     return [gsaes[e] for e in elements]
 
 
@@ -161,8 +163,11 @@ def species_to_formula(species: NDArray[np.str_]) -> tp.List[str]:
     formulas = []
     for s in species:
         symbol_counts: tp.List[tp.Tuple[str, int]] = sorted(Counter(s).items())
-        iterable = (str(i) if str(i) != '1' else '' for i in itertools.chain.from_iterable(symbol_counts))
-        formulas.append(''.join(iterable))
+        iterable = (
+            str(i) if str(i) != "1" else ""
+            for i in itertools.chain.from_iterable(symbol_counts)
+        )
+        formulas.append("".join(iterable))
     return formulas
 
 
@@ -190,8 +195,10 @@ def broadcast_first_dim(properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor
     return properties
 
 
-def pad_atomic_properties(properties: tp.Sequence[tp.Mapping[str, Tensor]],
-                          padding_values: tp.Optional[tp.Dict[str, float]] = None) -> tp.Dict[str, Tensor]:
+def pad_atomic_properties(
+    properties: tp.Sequence[tp.Mapping[str, Tensor]],
+    padding_values: tp.Optional[tp.Dict[str, float]] = None,
+) -> tp.Dict[str, Tensor]:
     """Put a sequence of atomic properties together into single tensor.
 
     Inputs are `[{'species': ..., ...}, {'species': ..., ...}, ...]` and the outputs
@@ -221,12 +228,14 @@ def pad_atomic_properties(properties: tp.Sequence[tp.Mapping[str, Tensor]],
             dtype = torch.long
         shape[0] = total_num_molecules
         shape[1] = padded_sizes[k]
-        output[k] = torch.full(shape, padding_values.get(k, 0.0), device=device, dtype=dtype)
+        output[k] = torch.full(
+            shape, padding_values.get(k, 0.0), device=device, dtype=dtype
+        )
         index0 = 0
         for n, x in zip(num_molecules, properties):
             original_size = x[k].shape[1]
             # here x[k] is implicitly cast to long if it has another integer type
-            output[k][index0: index0 + n, 0: original_size, ...] = x[k]
+            output[k][index0:index0 + n, 0:original_size, ...] = x[k]
             index0 += n
     return output
 
@@ -250,7 +259,7 @@ def present_species(species):
 # Returns:
 # dict: same set of properties with redundant padding atoms stripped.
 def strip_redundant_padding(atomic_properties):
-    species = atomic_properties['species']
+    species = atomic_properties["species"]
     non_padding = (species >= 0).any(dim=0).nonzero().squeeze()
     for k in atomic_properties:
         atomic_properties[k] = atomic_properties[k].index_select(1, non_padding)
@@ -304,6 +313,7 @@ class EnergyShifter(torch.nn.Module):
         fit_intercept (bool): Whether to calculate the intercept during the LSTSQ
             fit. The intercept will also be taken into account to shift energies.
     """
+
     self_energies: Tensor
 
     def __init__(self, self_energies, fit_intercept=False):
@@ -313,11 +323,11 @@ class EnergyShifter(torch.nn.Module):
         if self_energies is not None:
             self_energies = torch.tensor(self_energies, dtype=torch.double)
 
-        self.register_buffer('self_energies', self_energies)
+        self.register_buffer("self_energies", self_energies)
 
     @classmethod
     def with_gsaes(cls, elements: tp.Sequence[str], functional: str, basis_set: str):
-        r"""Instantiate an EnergyShifter with a given set of precomputed atomic self energies"""
+        r"""Instantiate an EnergyShifter with a given set of GSAES"""
         obj = cls(sorted_gsaes(elements, functional, basis_set), fit_intercept=False)
         return obj
 
@@ -347,11 +357,13 @@ class EnergyShifter(torch.nn.Module):
             sae += self.self_energies[-1]
         return sae
 
-    def forward(self, species_energies: tp.Tuple[Tensor, Tensor],
-                cell: tp.Optional[Tensor] = None,
-                pbc: tp.Optional[Tensor] = None) -> SpeciesEnergies:
-        """(species, molecular energies)->(species, molecular energies + sae)
-        """
+    def forward(
+        self,
+        species_energies: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> SpeciesEnergies:
+        """(species, molecular energies)->(species, molecular energies + sae)"""
         species, energies = species_energies
         sae = self._atomic_saes(species).sum(dim=1)
 
@@ -361,7 +373,7 @@ class EnergyShifter(torch.nn.Module):
 
 
 class ChemicalSymbolsToAtomicNumbers(torch.nn.Module):
-    r"""Converts a sequence of chemical symbols into a tensor of atomic numbers, of :class:`torch.long`
+    r"""Converts a sequence of chemical symbols into a tensor of atomic numbers
 
     .. code-block:: python
 
@@ -380,7 +392,7 @@ class ChemicalSymbolsToAtomicNumbers(torch.nn.Module):
             atomic_numbers = ATOMIC_NUMBERS
         self.atomics_dict = atomic_numbers
         # dummy tensor to hold output device
-        self.register_buffer('_dummy', torch.empty(0), persistent=False)
+        self.register_buffer("_dummy", torch.empty(0), persistent=False)
 
     def forward(self, symbols: tp.List[str]) -> Tensor:
         numbers = [self.atomics_dict[s] for s in symbols]
@@ -431,7 +443,7 @@ class ChemicalSymbolsToInts(torch.nn.Module):
         super().__init__()
         self.rev_species = {s: i for i, s in enumerate(all_species)}
         # dummy tensor to hold output device
-        self.register_buffer('_dummy', torch.empty(0), persistent=False)
+        self.register_buffer("_dummy", torch.empty(0), persistent=False)
 
     def forward(self, species: tp.List[str]) -> Tensor:
         r"""Convert species from sequence of strings to 1D tensor"""
@@ -442,13 +454,24 @@ class ChemicalSymbolsToInts(torch.nn.Module):
         return len(self.rev_species)
 
 
-def _get_derivatives_not_none(x: Tensor, y: Tensor, retain_graph: tp.Optional[bool] = None, create_graph: bool = False) -> Tensor:
-    ret = torch.autograd.grad([y.sum()], [x], retain_graph=retain_graph, create_graph=create_graph)[0]
+def _get_derivatives_not_none(
+    x: Tensor,
+    y: Tensor,
+    retain_graph: tp.Optional[bool] = None,
+    create_graph: bool = False,
+) -> Tensor:
+    ret = torch.autograd.grad(
+        [y.sum()], [x], retain_graph=retain_graph, create_graph=create_graph
+    )[0]
     assert ret is not None
     return ret
 
 
-def hessian(coordinates: Tensor, energies: tp.Optional[Tensor] = None, forces: tp.Optional[Tensor] = None) -> Tensor:
+def hessian(
+    coordinates: Tensor,
+    energies: tp.Optional[Tensor] = None,
+    forces: tp.Optional[Tensor] = None,
+) -> Tensor:
     """Compute analytical hessian from the energy graph or force graph.
 
     Arguments:
@@ -456,30 +479,36 @@ def hessian(coordinates: Tensor, energies: tp.Optional[Tensor] = None, forces: t
         energies (:class:`torch.Tensor`): Tensor of shape `(molecules,)`, if specified,
             then `forces` must be `None`. This energies must be computed from
             `coordinates` in a graph.
-        forces (:class:`torch.Tensor`): Tensor of shape `(molecules, atoms, 3)`, if specified,
+        forces (:class:`torch.Tensor`): Tensor of shape `(molecules, atoms,
+            3)`, if specified,
             then `energies` must be `None`. This forces must be computed from
             `coordinates` in a graph.
 
     Returns:
-        :class:`torch.Tensor`: Tensor of shape `(molecules, 3A, 3A)` where A is the number of
-        atoms in each molecule
+        :class:`torch.Tensor`: Tensor of shape `(molecules, 3A, 3A)` where A is
+        the number of atoms in each molecule
     """
     if energies is None and forces is None:
-        raise ValueError('Energies or forces must be specified')
+        raise ValueError("Energies or forces must be specified")
     if energies is not None and forces is not None:
-        raise ValueError('Energies or forces can not be specified at the same time')
+        raise ValueError("Energies or forces can not be specified at the same time")
     if forces is None:
         assert energies is not None
         forces = -_get_derivatives_not_none(coordinates, energies, create_graph=True)
     flattened_force = forces.flatten(start_dim=1)
     force_components = flattened_force.unbind(dim=1)
-    return -torch.stack([
-        _get_derivatives_not_none(coordinates, f, retain_graph=True).flatten(start_dim=1)
-        for f in force_components
-    ], dim=1)
+    return -torch.stack(
+        [
+            _get_derivatives_not_none(coordinates, f, retain_graph=True).flatten(
+                start_dim=1
+            )
+            for f in force_components
+        ],
+        dim=1,
+    )
 
 
-def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
+def vibrational_analysis(masses, hessian, mode_type="MDU", unit="cm^-1"):
     """Computing the vibrational wavenumbers from hessian.
 
     Note that normal modes in many popular software packages such as
@@ -502,14 +531,16 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     Very small negative or positive frequencies may correspond to
     translational, and rotational modes.
     """
-    if unit == 'meV':
+    if unit == "meV":
         unit_converter = sqrt_mhessian2milliev
-    elif unit == 'cm^-1':
+    elif unit == "cm^-1":
         unit_converter = sqrt_mhessian2invcm
     else:
-        raise ValueError('Only meV and cm^-1 are supported right now')
+        raise ValueError("Only meV and cm^-1 are supported right now")
 
-    assert hessian.shape[0] == 1, 'Currently only supporting computing one molecule a time'
+    assert (
+        hessian.shape[0] == 1
+    ), "Currently only supporting computing one molecule a time"
     # Solving the eigenvalue problem: Hq = w^2 * T q
     # where H is the Hessian matrix, q is the normal coordinates,
     # T = diag(m1, m1, m1, m2, m2, m2, ....) is the mass
@@ -517,10 +548,14 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     # Hq = w^2 * Tq ==> Hq = w^2 * T^(1/2) T^(1/2) q
     # Letting q' = T^(1/2) q, we then have
     # T^(-1/2) H T^(-1/2) q' = w^2 * q'
-    inv_sqrt_mass = (1 / masses.sqrt()).repeat_interleave(3, dim=1)  # shape (molecule, 3 * atoms)
-    mass_scaled_hessian = hessian * inv_sqrt_mass.unsqueeze(1) * inv_sqrt_mass.unsqueeze(2)
+    inv_sqrt_mass = (1 / masses.sqrt()).repeat_interleave(
+        3, dim=1
+    )  # shape (molecule, 3 * atoms)
+    mass_scaled_hessian = (
+        hessian * inv_sqrt_mass.unsqueeze(1) * inv_sqrt_mass.unsqueeze(2)
+    )
     if mass_scaled_hessian.shape[0] != 1:
-        raise ValueError('The input should contain only one molecule')
+        raise ValueError("The input should contain only one molecule")
     mass_scaled_hessian = mass_scaled_hessian.squeeze(0)
     eigenvalues, eigenvectors = torch.linalg.eigh(mass_scaled_hessian)
     signs = torch.sign(eigenvalues)
@@ -540,18 +575,18 @@ def vibrational_analysis(masses, hessian, mode_type='MDU', unit='cm^-1'):
     # The conversion factor for Ha/(AMU*A^2) to mDyne/(A*AMU) is about 4.3597482
     fconstants = mhessian2fconst(eigenvalues) * rmasses  # units are mDyne/A
 
-    if mode_type == 'MDN':
+    if mode_type == "MDN":
         modes = (md_normalized).reshape(frequencies.numel(), -1, 3)
-    elif mode_type == 'MDU':
+    elif mode_type == "MDU":
         modes = (md_unnormalized).reshape(frequencies.numel(), -1, 3)
-    elif mode_type == 'MWN':
+    elif mode_type == "MWN":
         modes = (mw_normalized).reshape(frequencies.numel(), -1, 3)
 
     return VibAnalysis(wavenumbers, modes, fconstants, rmasses)
 
 
 def get_atomic_masses(species, dtype=torch.float):
-    r"""Convert a tensor of atomic numbers ("periodic table indices") into a tensor of atomic masses
+    r"""Convert a tensor of atomic numbers into a tensor of atomic masses
 
     Atomic masses supported are the first 119 elements, and are taken from:
 
@@ -572,37 +607,130 @@ def get_atomic_masses(species, dtype=torch.float):
     # not an element
     assert len((species == 0).nonzero()) == 0
     default_atomic_masses = torch.tensor(
-            [0.        ,   1.008     ,   4.002602  ,   6.94      , # noqa
-             9.0121831 ,  10.81      ,  12.011     ,  14.007     , # noqa
-            15.999     ,  18.99840316,  20.1797    ,  22.98976928, # noqa
-            24.305     ,  26.9815385 ,  28.085     ,  30.973762  , # noqa
-            32.06      ,  35.45      ,  39.948     ,  39.0983    , # noqa
-            40.078     ,  44.955908  ,  47.867     ,  50.9415    , # noqa
-            51.9961    ,  54.938044  ,  55.845     ,  58.933194  , # noqa
-            58.6934    ,  63.546     ,  65.38      ,  69.723     , # noqa
-            72.63      ,  74.921595  ,  78.971     ,  79.904     , # noqa
-            83.798     ,  85.4678    ,  87.62      ,  88.90584   , # noqa
-            91.224     ,  92.90637   ,  95.95      ,  97.90721   , # noqa
-           101.07      , 102.9055    , 106.42      , 107.8682    , # noqa
-           112.414     , 114.818     , 118.71      , 121.76      , # noqa
-           127.6       , 126.90447   , 131.293     , 132.90545196, # noqa
-           137.327     , 138.90547   , 140.116     , 140.90766   , # noqa
-           144.242     , 144.91276   , 150.36      , 151.964     , # noqa
-           157.25      , 158.92535   , 162.5       , 164.93033   , # noqa
-           167.259     , 168.93422   , 173.054     , 174.9668    , # noqa
-           178.49      , 180.94788   , 183.84      , 186.207     , # noqa
-           190.23      , 192.217     , 195.084     , 196.966569  , # noqa
-           200.592     , 204.38      , 207.2       , 208.9804    , # noqa
-           208.98243   , 209.98715   , 222.01758   , 223.01974   , # noqa
-           226.02541   , 227.02775   , 232.0377    , 231.03588   , # noqa
-           238.02891   , 237.04817   , 244.06421   , 243.06138   , # noqa
-           247.07035   , 247.07031   , 251.07959   , 252.083     , # noqa
-           257.09511   , 258.09843   , 259.101     , 262.11      , # noqa
-           267.122     , 268.126     , 271.134     , 270.133     , # noqa
-           269.1338    , 278.156     , 281.165     , 281.166     , # noqa
-           285.177     , 286.182     , 289.19      , 289.194     , # noqa
-           293.204     , 293.208     , 294.214], # noqa
-        dtype=dtype, device=species.device) # noqa
+        [
+            0.0,
+            1.008,
+            4.002602,
+            6.94,
+            9.0121831,
+            10.81,
+            12.011,
+            14.007,
+            15.999,
+            18.99840316,
+            20.1797,
+            22.98976928,
+            24.305,
+            26.9815385,
+            28.085,
+            30.973762,
+            32.06,
+            35.45,
+            39.948,
+            39.0983,
+            40.078,
+            44.955908,
+            47.867,
+            50.9415,
+            51.9961,
+            54.938044,
+            55.845,
+            58.933194,
+            58.6934,
+            63.546,
+            65.38,
+            69.723,
+            72.63,
+            74.921595,
+            78.971,
+            79.904,
+            83.798,
+            85.4678,
+            87.62,
+            88.90584,
+            91.224,
+            92.90637,
+            95.95,
+            97.90721,
+            101.07,
+            102.9055,
+            106.42,
+            107.8682,
+            112.414,
+            114.818,
+            118.71,
+            121.76,
+            127.6,
+            126.90447,
+            131.293,
+            132.90545196,
+            137.327,
+            138.90547,
+            140.116,
+            140.90766,
+            144.242,
+            144.91276,
+            150.36,
+            151.964,
+            157.25,
+            158.92535,
+            162.5,
+            164.93033,
+            167.259,
+            168.93422,
+            173.054,
+            174.9668,
+            178.49,
+            180.94788,
+            183.84,
+            186.207,
+            190.23,
+            192.217,
+            195.084,
+            196.966569,
+            200.592,
+            204.38,
+            207.2,
+            208.9804,
+            208.98243,
+            209.98715,
+            222.01758,
+            223.01974,
+            226.02541,
+            227.02775,
+            232.0377,
+            231.03588,
+            238.02891,
+            237.04817,
+            244.06421,
+            243.06138,
+            247.07035,
+            247.07031,
+            251.07959,
+            252.083,
+            257.09511,
+            258.09843,
+            259.101,
+            262.11,
+            267.122,
+            268.126,
+            271.134,
+            270.133,
+            269.1338,
+            278.156,
+            281.165,
+            281.166,
+            285.177,
+            286.182,
+            289.19,
+            289.194,
+            293.204,
+            293.208,
+            294.214,
+        ],
+        dtype=dtype,
+        device=species.device,
+    )
     masses = default_atomic_masses[species]
     return masses
 
@@ -610,7 +738,9 @@ def get_atomic_masses(species, dtype=torch.float):
 # This constant, when indexed with the corresponding atomic number, gives the
 # element associated with it. Note that there is no element with atomic number
 # 0, so 'Dummy' returned in this case.
-PERIODIC_TABLE = ['Dummy'] + """
+PERIODIC_TABLE = (
+    ["Dummy"]
+    + """
     H                                                                                                                           He
     Li  Be                                                                                                  B   C   N   O   F   Ne
     Na  Mg                                                                                                  Al  Si  P   S   Cl  Ar
@@ -618,7 +748,8 @@ PERIODIC_TABLE = ['Dummy'] + """
     Rb  Sr  Y                                                           Zr  Nb  Mo  Tc  Ru  Rh  Pd  Ag  Cd  In  Sn  Sb  Te  I   Xe
     Cs  Ba  La  Ce  Pr  Nd  Pm  Sm  Eu  Gd  Tb  Dy  Ho  Er  Tm  Yb  Lu  Hf  Ta  W   Re  Os  Ir  Pt  Au  Hg  Tl  Pb  Bi  Po  At  Rn
     Fr  Ra  Ac  Th  Pa  U   Np  Pu  Am  Cm  Bk  Cf  Es  Fm  Md  No  Lr  Rf  Db  Sg  Bh  Hs  Mt  Ds  Rg  Cn  Nh  Fl  Mc  Lv  Ts  Og
-    """.strip().split()
+    """.strip().split()  # noqa
+)
 
 ATOMIC_NUMBERS = {symbol: z for z, symbol in enumerate(PERIODIC_TABLE)}
 
@@ -643,7 +774,11 @@ def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
         state_dict = torch.load(path, map_location=torch.device("cpu"))
         # Compatibility with lightning state dicts
         if "state_dict" in state_dict:
-            state_dict = {k.replace("model.", ""): v for k, v in state_dict["state_dict"].items() if k.startswith("model")}
+            state_dict = {
+                k.replace("model.", ""): v
+                for k, v in state_dict["state_dict"].items()
+                if k.startswith("model")
+            }
         keys = tuple(state_dict.keys())
         for k in keys:
             if "neural_networks" not in k:
@@ -662,6 +797,15 @@ def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
     return OrderedDict(merged_dict)
 
 
-__all__ = ['pad_atomic_properties', 'present_species', 'hessian',
-           'vibrational_analysis', 'strip_redundant_padding',
-           'ChemicalSymbolsToInts', 'get_atomic_masses', 'GSAES', 'PERIODIC_TABLE', 'ATOMIC_NUMBERS']
+__all__ = [
+    "pad_atomic_properties",
+    "present_species",
+    "hessian",
+    "vibrational_analysis",
+    "strip_redundant_padding",
+    "ChemicalSymbolsToInts",
+    "get_atomic_masses",
+    "GSAES",
+    "PERIODIC_TABLE",
+    "ATOMIC_NUMBERS",
+]

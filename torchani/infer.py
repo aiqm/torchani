@@ -11,8 +11,9 @@ from torchani.tuples import SpeciesEnergies
 from torchani.nn import Ensemble, ANIModel
 
 
-mnp_is_installed = 'torchani.mnp' in importlib.metadata.metadata(
-    __package__.split('.')[0]).get_all('Provides', [])
+mnp_is_installed = "torchani.mnp" in importlib.metadata.metadata(
+    __package__.split(".")[0]
+).get_all("Provides", [])
 
 if mnp_is_installed:
     # We need to import torchani.mnp to tell PyTorch to initialize torch.ops.mnp
@@ -32,7 +33,7 @@ def _build_new_idx_list(species: Tensor, num_species: int) -> tp.List[Tensor]:
     with torch.no_grad():
         idx_list = [torch.empty(0) for i in range(num_species)]
         for i in range(num_species):
-            mask = (species_ == i)
+            mask = species_ == i
             midx = mask.nonzero().flatten()
             if midx.shape[0] > 0:
                 idx_list[i] = midx
@@ -83,7 +84,7 @@ class BmmEnsemble(torch.nn.Module):
         self,
         species_aev: tp.Tuple[Tensor, Tensor],
         cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None
+        pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesEnergies:
         atomic_energies = self._atomic_energies(species_aev).squeeze(0)
         return SpeciesEnergies(species_aev[0], torch.sum(atomic_energies, 0, True))
@@ -124,6 +125,7 @@ class BmmAtomicNetwork(torch.nn.Module):
     BmmAtomicNetworks are used by BmmEnsemble to operate like a normal ANIModel
     and avoid iterating over the ensemble members.
     """
+
     def __init__(self, networks: tp.Sequence[torch.nn.Sequential]):
         super().__init__()
         self.num_batched_networks = len(networks)
@@ -161,6 +163,7 @@ class BmmLinear(torch.nn.Module):
     bias:   (b x 1 x p)
     output: (b x n x p)
     """
+
     def __init__(self, linears: tp.Sequence[torch.nn.Linear]):
         super().__init__()
         # Concatenate weights
@@ -204,6 +207,7 @@ class MultiNetFunction(torch.autograd.Function):
     There is no multiprocessing used here, whereas cpp version is implemented
     with OpenMP.
     """
+
     @staticmethod
     def forward(
         ctx,
@@ -216,7 +220,9 @@ class MultiNetFunction(torch.autograd.Function):
         assert num_species == len(atomic_networks)
         assert num_species == len(stream_list)
         energy_list = torch.zeros(num_species, dtype=aev.dtype, device=aev.device)
-        event_list: tp.List[tp.Optional[torch.cuda.Event]] = [torch.cuda.Event() for i in range(num_species)]
+        event_list: tp.List[tp.Optional[torch.cuda.Event]] = [
+            torch.cuda.Event() for i in range(num_species)
+        ]
         current_stream = torch.cuda.current_stream()
         start_event = torch.cuda.Event()
         start_event.record(current_stream)
@@ -225,7 +231,7 @@ class MultiNetFunction(torch.autograd.Function):
         output_list = [None] * num_species
         for i, net in enumerate(atomic_networks):
             if idx_list[i].shape[0] > 0:
-                torch.cuda.nvtx.mark(f'species = {i}')
+                torch.cuda.nvtx.mark(f"species = {i}")
                 stream_list[i].wait_event(start_event)
                 with torch.cuda.stream(stream_list[i]):
                     input_ = aev.index_select(0, idx_list[i]).requires_grad_()
@@ -266,17 +272,17 @@ class MultiNetFunction(torch.autograd.Function):
         current_stream = torch.cuda.current_stream()
         start_event = torch.cuda.Event()
         start_event.record(current_stream)
-        event_list: tp.List[tp.Optional[torch.cuda.Event]] = [torch.cuda.Event() for j, _ in enumerate(stream_list)]
+        event_list: tp.List[tp.Optional[torch.cuda.Event]] = [
+            torch.cuda.Event() for j, _ in enumerate(stream_list)
+        ]
 
         for i, output in enumerate(output_list):
             if output is not None:
-                torch.cuda.nvtx.mark(f'backward species = {i}')
+                torch.cuda.nvtx.mark(f"backward species = {i}")
                 stream_list[i].wait_event(start_event)
                 with torch.cuda.stream(stream_list[i]):
                     grad_tmp = torch.autograd.grad(
-                        output,
-                        input_list[i],
-                        grad_o.flatten().expand_as(output)
+                        output, input_list[i], grad_o.flatten().expand_as(output)
                     )[0]
                     aev_grad[idx_list[i]] = grad_tmp
                 event = event_list[i]
@@ -327,7 +333,7 @@ class InferModel(torch.nn.Module):
         # Holders for jit when use_mnp == False
         self.weight_list: tp.List[Tensor] = [torch.empty(0)]
         self.bias_list: tp.List[Tensor] = [torch.empty(0)]
-        self.celu_alpha: float = float('inf')
+        self.celu_alpha: float = float("inf")
         self.num_layers_list: tp.List[int] = [0]
         self.start_layers_list: tp.List[int] = [0]
 
@@ -344,17 +350,25 @@ class InferModel(torch.nn.Module):
         self.num_layers_list = [len(weight) for weight in weight_list]
         self.start_layers_list = [0] * self.num_species
         for i in range(self.num_species - 1):
-            self.start_layers_list[i + 1] = self.start_layers_list[i] + self.num_layers_list[i]
+            self.start_layers_list[i + 1] = (
+                self.start_layers_list[i] + self.num_layers_list[i]
+            )
 
         # Flatten weight and bias list
-        self.weight_list = [torch.nn.Parameter(item) for sublist in weight_list for item in sublist]
-        self.bias_list = [torch.nn.Parameter(item) for sublist in bias_list for item in sublist]
+        self.weight_list = [
+            torch.nn.Parameter(item) for sublist in weight_list for item in sublist
+        ]
+        self.bias_list = [
+            torch.nn.Parameter(item) for sublist in bias_list for item in sublist
+        ]
 
         # Check that the OpenMP environment variable is correctly set
         check_openmp_threads(verbose=False)
 
     @torch.jit.unused
-    def _copy_weights_and_biases(self) -> tp.Tuple[tp.List[tp.List[Tensor]], tp.List[tp.List[Tensor]]]:
+    def _copy_weights_and_biases(
+        self,
+    ) -> tp.Tuple[tp.List[tp.List[Tensor]], tp.List[tp.List[Tensor]]]:
         weight_list: tp.List[tp.List[Tensor]] = []  # shape: (num_species, num_layers)
         bias_list: tp.List[tp.List[Tensor]] = []
         for i, atomic_network in enumerate(self.atomic_networks):
@@ -374,9 +388,17 @@ class InferModel(torch.nn.Module):
                         self.celu_alpha = layer.alpha
                     else:
                         if self.celu_alpha != layer.alpha:
-                            raise ValueError("All CELU layers should have the same alpha")
+                            raise ValueError(
+                                "All CELU layers should have the same alpha"
+                            )
                 else:
-                    raise ValueError(f"Unsupported layer type {layer_type}, only supported layers are Linear, BmmLinear and CELU")
+                    raise ValueError(
+                        f"Unsupported layer type {layer_type}"
+                        " Supported layers types are:\n"
+                        "- torch.nn.Linear\n"
+                        "- torch.nn.CELU\n"
+                        "- torchani.infer.BmmLinear"
+                    )
             weight_list.append(weights)
             bias_list.append(biases)
         return weight_list, bias_list

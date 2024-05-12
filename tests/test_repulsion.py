@@ -28,7 +28,9 @@ class TestRepulsion(ANITest):
         self.assertEqual(torch.tensor([3.5325e-08], device=self.device), energies)
 
     def testStandalone(self):
-        coordinates = torch.tensor([[0.0, 0.0, 0.0], [3.5, 0.0, 0.0]], device=self.device).unsqueeze(0)
+        coordinates = torch.tensor(
+            [[0.0, 0.0, 0.0], [3.5, 0.0, 0.0]], device=self.device
+        ).unsqueeze(0)
         species = torch.tensor([[1, 1]], device=self.device)
         energies = self.sa_rep((species, coordinates)).energies
         self.assertEqual(torch.tensor([3.5325e-08], device=self.device), energies)
@@ -89,7 +91,7 @@ class TestRepulsion(ANITest):
                 ],
                 requires_grad=True,
                 dtype=torch.float,
-                device=self.device
+                device=self.device,
             )
             _atomic_energies.append(
                 model.atomic_energies((species, coordinates), average=True)

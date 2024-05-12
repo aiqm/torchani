@@ -63,7 +63,9 @@ class EnergyAdder(Potential):
         ),
         ghost_flags: tp.Optional[Tensor] = None,
     ) -> Tensor:
-        return self.atomic_energies(element_idxs, neighbors, ghost_flags, average=True).sum(dim=-1)
+        return self.atomic_energies(
+            element_idxs, neighbors, ghost_flags, average=True
+        ).sum(dim=-1)
 
 
 def StandaloneEnergyAdder(

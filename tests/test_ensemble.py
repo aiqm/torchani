@@ -10,7 +10,6 @@ N = 10
 
 
 class TestEnsemble(TestCase):
-
     def setUp(self):
         self.conformations = 20
         ani1x = torchani.models.ANI1x()
@@ -19,7 +18,9 @@ class TestEnsemble(TestCase):
         self.ensemble = torchani.nn.Sequential(self.aev_computer, self.model_iterator)
 
     def _test_molecule(self, coordinates, species):
-        model_list = [torchani.nn.Sequential(self.aev_computer, m) for m in self.model_iterator]
+        model_list = [
+            torchani.nn.Sequential(self.aev_computer, m) for m in self.model_iterator
+        ]
         coordinates.requires_grad_(True)
         _, energy1 = self.ensemble((species, coordinates))
         force1 = torch.autograd.grad(energy1.sum(), coordinates)[0]
@@ -31,8 +32,8 @@ class TestEnsemble(TestCase):
 
     def testGDB(self):
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
-            with open(datafile, 'rb') as f:
+            datafile = os.path.join(path, "test_data/ANI1_subset/{}".format(i))
+            with open(datafile, "rb") as f:
                 coordinates, species, _, _, _, _ = pickle.load(f)
                 coordinates = torch.from_numpy(coordinates)
                 species = torch.from_numpy(species)
@@ -40,12 +41,11 @@ class TestEnsemble(TestCase):
 
 
 class TestEnsembleJIT(TestEnsemble):
-
     def setUp(self):
         super().setUp()
         self.ensemble = torchani.nn.Sequential(self.aev_computer, self.model_iterator)
         self.ensemble = torch.jit.script(self.ensemble)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

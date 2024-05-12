@@ -19,8 +19,8 @@ from torchani.aev.aev_terms import (
 )
 
 cuaev_is_installed = "torchani.cuaev" in importlib.metadata.metadata(
-    __package__.split('.')[0]
-).get_all('Provides', [])
+    __package__.split(".")[0]
+).get_all("Provides", [])
 
 
 if cuaev_is_installed:
@@ -35,6 +35,7 @@ def jit_unused_if_no_cuaev():
         if not cuaev_is_installed:
             return torch.jit.unused(func)
         return torch.jit.export(func)
+
     return decorator
 
 
@@ -59,7 +60,8 @@ class AEVComputer(torch.nn.Module):
         ShfZ (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
             equation (4) in the `ANI paper`_.
         num_species (int): Number of supported atom types.
-        use_cuda_extension (bool): Whether to use cuda extension for faster calculation (needs cuaev installed).
+        use_cuda_extension (bool): Whether to use cuda extension for faster
+        calculation (needs cuaev installed).
 
     .. _ANI paper:
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
@@ -77,26 +79,29 @@ class AEVComputer(torch.nn.Module):
     use_cuaev_interface: Final[bool]
     triu_index: Tensor
 
-    def __init__(self,
-                Rcr: tp.Optional[float] = None,
-                Rca: tp.Optional[float] = None,
-                EtaR: tp.Optional[Tensor] = None,
-                ShfR: tp.Optional[Tensor] = None,
-                EtaA: tp.Optional[Tensor] = None,
-                Zeta: tp.Optional[Tensor] = None,
-                ShfA: tp.Optional[Tensor] = None,
-                ShfZ: tp.Optional[Tensor] = None,
-                num_species: tp.Optional[int] = None,
-                use_cuda_extension: bool = False,
-                use_cuaev_interface: bool = False,
-                cutoff_fn: CutoffArg = 'cosine',
-                neighborlist: NeighborlistArg = 'full_pairwise',
-                radial_terms='standard',
-                angular_terms='standard'):
-
+    def __init__(
+        self,
+        Rcr: tp.Optional[float] = None,
+        Rca: tp.Optional[float] = None,
+        EtaR: tp.Optional[Tensor] = None,
+        ShfR: tp.Optional[Tensor] = None,
+        EtaA: tp.Optional[Tensor] = None,
+        Zeta: tp.Optional[Tensor] = None,
+        ShfA: tp.Optional[Tensor] = None,
+        ShfZ: tp.Optional[Tensor] = None,
+        num_species: tp.Optional[int] = None,
+        use_cuda_extension: bool = False,
+        use_cuaev_interface: bool = False,
+        cutoff_fn: CutoffArg = "cosine",
+        neighborlist: NeighborlistArg = "full_pairwise",
+        radial_terms="standard",
+        angular_terms="standard",
+    ):
         # due to legacy reasons num_species is a kwarg, but it should always be
         # provided
-        assert num_species is not None, "num_species should be provided to construct an AEVComputer"
+        assert (
+            num_species is not None
+        ), "num_species should be provided to construct an AEVComputer"
 
         super().__init__()
         self.use_cuda_extension = use_cuda_extension
@@ -110,25 +115,32 @@ class AEVComputer(torch.nn.Module):
         # if a cutoff function is passed, it is used for both radial and
         # angular terms.
         cutoff_fn = parse_cutoff_fn(cutoff_fn)
-        self.angular_terms = parse_angular_terms(angular_terms, cutoff_fn, EtaA, Zeta, ShfA, ShfZ, Rca)
+        self.angular_terms = parse_angular_terms(
+            angular_terms, cutoff_fn, EtaA, Zeta, ShfA, ShfZ, Rca
+        )
         self.radial_terms = parse_radial_terms(radial_terms, cutoff_fn, EtaR, ShfR, Rcr)
         self.neighborlist = parse_neighborlist(neighborlist)
         if self.angular_terms.cutoff > self.radial_terms.cutoff:
             raise ValueError(
-                f"Angular cutoff {self.angular_terms.cutoff} should be smaller than radial cutoff {self.radial_terms.cutoff}"
+                f"Angular cutoff {self.angular_terms.cutoff}"
+                f" should be smaller than radial cutoff {self.radial_terms.cutoff}"
             )
         if isinstance(cutoff_fn, CutoffCosine):
-            self.cutoff_fn_type = 'cosine'
+            self.cutoff_fn_type = "cosine"
         elif isinstance(cutoff_fn, CutoffSmooth):
             if cutoff_fn.order == 2 and cutoff_fn.eps == 1e-10:
-                self.cutoff_fn_type = 'smooth'
+                self.cutoff_fn_type = "smooth"
             else:
-                self.cutoff_fn_type = 'smooth_modified'
+                self.cutoff_fn_type = "smooth_modified"
         else:
-            self.cutoff_fn_type = 'others'
+            self.cutoff_fn_type = "others"
 
-        self.register_buffer('triu_index',
-                             self._calculate_triu_index(num_species).to(device=self.radial_terms.EtaR.device))
+        self.register_buffer(
+            "triu_index",
+            self._calculate_triu_index(num_species).to(
+                device=self.radial_terms.EtaR.device
+            ),
+        )
 
         # length variables are updated once radial and angular terms are initialized
         # The lengths of buffers can't be changed with load_state_dict so we can
@@ -142,8 +154,12 @@ class AEVComputer(torch.nn.Module):
         # cuda aev
         if self.use_cuda_extension:
             assert cuaev_is_installed, "AEV cuda extension is not installed"
-            assert isinstance(self.angular_terms, StandardAngular), 'nonstandard aev terms not supported for cuaev'
-            assert isinstance(self.radial_terms, StandardRadial), 'nonstandard aev terms not supported for cuaev'
+            assert isinstance(
+                self.angular_terms, StandardAngular
+            ), "nonstandard aev terms not supported for cuaev"
+            assert isinstance(
+                self.radial_terms, StandardRadial
+            ), "nonstandard aev terms not supported for cuaev"
         if cuaev_is_installed:
             self._register_cuaev_computer()
 
@@ -159,29 +175,36 @@ class AEVComputer(torch.nn.Module):
         # initialization, it is always necessary to reinitialize in forward at
         # least once, since some tensors may be on CPU at this point**
         empty = torch.empty(0)
-        self.cuaev_computer = torch.classes.cuaev.CuaevComputer(0.0, 0.0, empty, empty, empty, empty, empty, empty, 1, True)
+        self.cuaev_computer = torch.classes.cuaev.CuaevComputer(
+            0.0, 0.0, empty, empty, empty, empty, empty, empty, 1, True
+        )
 
     @jit_unused_if_no_cuaev()
     def _init_cuaev_computer(self) -> None:
-        assert self.cutoff_fn_type != 'others', 'cuaev currently only supports cosine and smooth cutoff functions'
-        assert self.cutoff_fn_type != 'smooth_modified', 'cuaev currently only supports standard parameters for smooth cutoff function'
-        use_cos_cutoff = self.cutoff_fn_type == 'cosine'
-        self.cuaev_computer = torch.classes.cuaev.CuaevComputer(self.radial_terms.cutoff,
-                                                                self.angular_terms.cutoff,
-                                                                self.radial_terms.EtaR.flatten(),
-                                                                self.radial_terms.ShfR.flatten(),
-                                                                self.angular_terms.EtaA.flatten(),
-                                                                self.angular_terms.Zeta.flatten(),
-                                                                self.angular_terms.ShfA.flatten(),
-                                                                self.angular_terms.ShfZ.flatten(),
-                                                                self.num_species,
-                                                                use_cos_cutoff)
+        assert (
+            self.cutoff_fn_type != "others"
+        ), "cuaev only supports cosine and smooth cutoff functions"
+        assert (
+            self.cutoff_fn_type != "smooth_modified"
+        ), "cuaev only supports standard parameters for smooth cutoff function"
+        use_cos_cutoff = self.cutoff_fn_type == "cosine"
+        self.cuaev_computer = torch.classes.cuaev.CuaevComputer(
+            self.radial_terms.cutoff,
+            self.angular_terms.cutoff,
+            self.radial_terms.EtaR.flatten(),
+            self.radial_terms.ShfR.flatten(),
+            self.angular_terms.EtaA.flatten(),
+            self.angular_terms.Zeta.flatten(),
+            self.angular_terms.ShfA.flatten(),
+            self.angular_terms.ShfZ.flatten(),
+            self.num_species,
+            use_cos_cutoff,
+        )
 
     @staticmethod
     def _calculate_triu_index(num_species: int) -> Tensor:
         # helper method for initialization
-        species1, species2 = torch.triu_indices(num_species,
-                                                num_species).unbind(0)
+        species1, species2 = torch.triu_indices(num_species, num_species).unbind(0)
         pair_index = torch.arange(species1.shape[0], dtype=torch.long)
         ret = torch.zeros(num_species, num_species, dtype=torch.long)
         ret[species1, species2] = pair_index
@@ -190,21 +213,23 @@ class AEVComputer(torch.nn.Module):
 
     @classmethod
     def like_1x(cls, **kwargs) -> tpx.Self:
-        return cls(angular_terms='ani1x', radial_terms='ani1x', num_species=4, **kwargs)
+        return cls(angular_terms="ani1x", radial_terms="ani1x", num_species=4, **kwargs)
 
     @classmethod
     def like_2x(cls, **kwargs) -> tpx.Self:
-        return cls(angular_terms='ani2x', radial_terms='ani2x', num_species=7, **kwargs)
+        return cls(angular_terms="ani2x", radial_terms="ani2x", num_species=7, **kwargs)
 
     @classmethod
     def like_1ccx(cls, **kwargs) -> tpx.Self:
         # just a synonym
         return cls.like_1x(**kwargs)
 
-    def forward(self,
-                input_: tp.Tuple[Tensor, Tensor],
-                cell: tp.Optional[Tensor] = None,
-                pbc: tp.Optional[Tensor] = None) -> SpeciesAEV:
+    def forward(
+        self,
+        input_: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> SpeciesAEV:
         """Compute AEVs
 
         Arguments:
@@ -257,17 +282,25 @@ class AEVComputer(torch.nn.Module):
                 self._init_cuaev_computer()
                 self.cuaev_is_initialized = True
             if self.use_cuaev_interface:
-                atom_index12, distances, diff_vector = self.neighborlist(species, coordinates, self.radial_terms.cutoff, cell, pbc)
-                aev = self._compute_cuaev_with_half_nbrlist(species, coordinates, atom_index12, diff_vector, distances)
+                atom_index12, distances, diff_vector = self.neighborlist(
+                    species, coordinates, self.radial_terms.cutoff, cell, pbc
+                )
+                aev = self._compute_cuaev_with_half_nbrlist(
+                    species, coordinates, atom_index12, diff_vector, distances
+                )
             else:
-                assert pbc is None or (not pbc.any()), "cuaev currently does not support PBC"
+                assert pbc is None or (
+                    not pbc.any()
+                ), "cuaev currently does not support PBC"
                 aev = self._compute_cuaev(species, coordinates)
             return SpeciesAEV(species, aev)
 
-        # WARNING: The coordinates that are input into the neighborlist are **not** assumed to be
-        # mapped into the central cell for pbc calculations,
-        # and **in general are not**
-        neighbor_data = self.neighborlist(species, coordinates, self.radial_terms.cutoff, cell, pbc)
+        # WARNING: The coordinates that are input into the neighborlist are
+        # **not** assumed to be mapped into the central cell for pbc
+        # calculations, and **in general are not**
+        neighbor_data = self.neighborlist(
+            species, coordinates, self.radial_terms.cutoff, cell, pbc
+        )
         aev = self._compute_aev(
             element_idxs=species,
             neighbor_idxs=neighbor_data.indices,
@@ -292,21 +325,31 @@ class AEVComputer(torch.nn.Module):
         jlist = atom_index12.flip(0).view(-1)
         ilist_sorted, indices = ilist.sort(stable=True)
         jlist = jlist[indices]
-        ilist_unique, numneigh = torch.unique_consecutive(ilist_sorted, return_counts=True)
+        ilist_unique, numneigh = torch.unique_consecutive(
+            ilist_sorted, return_counts=True
+        )
         return ilist_unique, jlist, numneigh
 
     @jit_unused_if_no_cuaev()
     @staticmethod
-    def _full_to_half_nbrlist(ilist_unique: Tensor, jlist: Tensor, numneigh: Tensor, species: Tensor, fullnbr_diff_vector: Tensor) -> tp.Tuple[Tensor, Tensor, Tensor]:
+    def _full_to_half_nbrlist(
+        ilist_unique: Tensor,
+        jlist: Tensor,
+        numneigh: Tensor,
+        species: Tensor,
+        fullnbr_diff_vector: Tensor,
+    ) -> tp.Tuple[Tensor, Tensor, Tensor]:
         """
-        Limitations: only works for lammps-type pbc neighborlists (with local and ghost atoms).
-                     TorchANI neighborlists only have 1 set of atoms and do mapping with local and image
-                     atoms, which will not work here.
+        Limitations: only works for lammps-type pbc neighborlists (with local
+        and ghost atoms). TorchANI neighborlists only have 1 set of atoms and
+        do mapping with local and image atoms, which will not work here.
         """
         ilist_unique = ilist_unique.long()
         jlist = jlist.long()
         ilist = torch.repeat_interleave(ilist_unique, numneigh)
-        atom_index12 = torch.cat([ilist.unsqueeze(0), jlist.unsqueeze(0)], 0)  # [2, num_pairs]
+        atom_index12 = torch.cat(
+            [ilist.unsqueeze(0), jlist.unsqueeze(0)], 0
+        )  # [2, num_pairs]
 
         # sort by atom i
         sort_indices = atom_index12[0].sort().indices
@@ -322,16 +365,38 @@ class AEVComputer(torch.nn.Module):
         return atom_index12, diff_vector, distances
 
     @jit_unused_if_no_cuaev()
-    def _compute_cuaev_with_half_nbrlist(self, species: Tensor, coordinates: Tensor, atom_index12: Tensor, diff_vector: Tensor, distances: Tensor) -> Tensor:
+    def _compute_cuaev_with_half_nbrlist(
+        self,
+        species: Tensor,
+        coordinates: Tensor,
+        atom_index12: Tensor,
+        diff_vector: Tensor,
+        distances: Tensor,
+    ) -> Tensor:
         species = species.to(torch.int32)
         atom_index12 = atom_index12.to(torch.int32)
-        # The coordinates will not be used in forward calculation, but it's gradient (force) will still be calculated in cuaev kernel,
-        # so it's important to have coordinates passed as an argument.
-        aev = torch.ops.cuaev.run_with_half_nbrlist(coordinates, species, atom_index12, diff_vector, distances, self.cuaev_computer)
+        # The coordinates will not be used in forward calculation, but it's
+        # gradient (force) will still be calculated in cuaev kernel, so it's
+        # important to have coordinates passed as an argument.
+        aev = torch.ops.cuaev.run_with_half_nbrlist(
+            coordinates,
+            species,
+            atom_index12,
+            diff_vector,
+            distances,
+            self.cuaev_computer,
+        )
         return aev
 
     @jit_unused_if_no_cuaev()
-    def _compute_cuaev_with_full_nbrlist(self, species: Tensor, coordinates: Tensor, ilist_unique: Tensor, jlist: Tensor, numneigh: Tensor) -> Tensor:
+    def _compute_cuaev_with_full_nbrlist(
+        self,
+        species: Tensor,
+        coordinates: Tensor,
+        ilist_unique: Tensor,
+        jlist: Tensor,
+        numneigh: Tensor,
+    ) -> Tensor:
         """
         Computing aev with full nbrlist that is from
             1. Lammps interface
@@ -339,17 +404,23 @@ class AEVComputer(torch.nn.Module):
 
         The full neighbor list format needs the following three tensors:
             - `ilist_unique`: This is a 1D tensor containing all local atom indices.
-            - `jlist`: A 1D tensor containing all the neighbors for all atoms. The neighbors for atom `i` could
-                       be inferred from the numneigh tensor.
-            - `numneigh`: This is a 1D tensor that specifies the number of neighbors for each atom i.
+            - `jlist`: A 1D tensor containing all the neighbors for all atoms.
+                  The neighbors for atom `i` could be inferred from the numneigh
+                  tensor.
+            - `numneigh`: This is a 1D tensor that specifies the number of
+                neighbors for each atom i.
         """
-        assert coordinates.shape[0] == 1, "_compute_cuaev_with_full_nbrlist currently only support single molecule"
-        aev = torch.ops.cuaev.run_with_full_nbrlist(coordinates,
-                                                    species.to(torch.int32),
-                                                    ilist_unique.to(torch.int32),
-                                                    jlist.to(torch.int32),
-                                                    numneigh.to(torch.int32),
-                                                    self.cuaev_computer)
+        assert (
+            coordinates.shape[0] == 1
+        ), "_compute_cuaev_with_full_nbrlist currently only support single molecule"
+        aev = torch.ops.cuaev.run_with_full_nbrlist(
+            coordinates,
+            species.to(torch.int32),
+            ilist_unique.to(torch.int32),
+            jlist.to(torch.int32),
+            numneigh.to(torch.int32),
+            self.cuaev_computer,
+        )
         return aev
 
     def _compute_aev(
@@ -368,13 +439,15 @@ class AEVComputer(torch.nn.Module):
             num_atoms,
             species12,
             neighbor_idxs=neighbor_idxs,
-            distances=distances
+            distances=distances,
         )
 
         # Rca is usually much smaller than Rcr, using neighbor list with
         # cutoff = Rcr is a waste of resources. Now we will get a smaller neighbor
         # list that only cares about atoms with distances <= Rca
-        even_closer_indices = (distances <= self.angular_terms.cutoff).nonzero().flatten()
+        even_closer_indices = (
+            (distances <= self.angular_terms.cutoff).nonzero().flatten()
+        )
         neighbor_idxs = neighbor_idxs.index_select(1, even_closer_indices)
         species12 = species12.index_select(1, even_closer_indices)
         diff_vectors = diff_vectors.index_select(0, even_closer_indices)
@@ -384,37 +457,52 @@ class AEVComputer(torch.nn.Module):
             num_atoms,
             species12,
             neighbor_idxs=neighbor_idxs,
-            diff_vectors=diff_vectors
+            diff_vectors=diff_vectors,
         )
 
         return torch.cat([radial_aev, angular_aev], dim=-1)
 
-    def _compute_angular_aev(self, num_molecules: int, num_atoms: int, species12: Tensor, neighbor_idxs: Tensor, diff_vectors: Tensor) -> Tensor:
-
+    def _compute_angular_aev(
+        self,
+        num_molecules: int,
+        num_atoms: int,
+        species12: Tensor,
+        neighbor_idxs: Tensor,
+        diff_vectors: Tensor,
+    ) -> Tensor:
         central_atom_index, pair_index12, sign12 = self._triple_by_molecule(
-            neighbor_idxs)
+            neighbor_idxs
+        )
         species12_small = species12[:, pair_index12]
         vec12 = diff_vectors.index_select(0, pair_index12.view(-1)).view(
-            2, -1, 3) * sign12.unsqueeze(-1)
-        species12_ = torch.where(sign12 == 1, species12_small[1],
-                                 species12_small[0])
+            2, -1, 3
+        ) * sign12.unsqueeze(-1)
+        species12_ = torch.where(sign12 == 1, species12_small[1], species12_small[0])
 
         angular_terms_ = self.angular_terms(vec12)
         angular_aev = angular_terms_.new_zeros(
-            (num_molecules * num_atoms * self.num_species_pairs,
-             self.angular_sublength))
-        index = central_atom_index * self.num_species_pairs + self.triu_index[
-            species12_[0], species12_[1]]
+            (num_molecules * num_atoms * self.num_species_pairs, self.angular_sublength)
+        )
+        index = (
+            central_atom_index * self.num_species_pairs
+            + self.triu_index[species12_[0], species12_[1]]
+        )
         angular_aev.index_add_(0, index, angular_terms_)
-        angular_aev = angular_aev.reshape(num_molecules, num_atoms,
-                                          self.angular_length)
+        angular_aev = angular_aev.reshape(num_molecules, num_atoms, self.angular_length)
         return angular_aev
 
-    def _compute_radial_aev(self, num_molecules: int, num_atoms: int, species12: Tensor, neighbor_idxs: Tensor, distances: Tensor) -> Tensor:
+    def _compute_radial_aev(
+        self,
+        num_molecules: int,
+        num_atoms: int,
+        species12: Tensor,
+        neighbor_idxs: Tensor,
+        distances: Tensor,
+    ) -> Tensor:
         radial_terms_ = self.radial_terms(distances)
         radial_aev = radial_terms_.new_zeros(
-            (num_molecules * num_atoms * self.num_species,
-             self.radial_sublength))
+            (num_molecules * num_atoms * self.num_species, self.radial_sublength)
+        )
         index12 = neighbor_idxs * self.num_species + species12.flip(0)
         radial_aev.index_add_(0, index12[0], radial_terms_)
         radial_aev.index_add_(0, index12[1], radial_terms_)
@@ -422,7 +510,8 @@ class AEVComputer(torch.nn.Module):
         return radial_aev
 
     def _triple_by_molecule(
-            self, atom_index12: Tensor) -> tp.Tuple[Tensor, Tensor, Tensor]:
+        self, atom_index12: Tensor
+    ) -> tp.Tuple[Tensor, Tensor, Tensor]:
         """Input: indices for pairs of atoms that are close to each other.
         each pair only appear once, i.e. only one of the pairs (1, 2) and
         (2, 1) exists.
@@ -439,23 +528,28 @@ class AEVComputer(torch.nn.Module):
 
         # sort and compute unique key
         uniqued_central_atom_index, counts = torch.unique_consecutive(
-            sorted_ai1, return_inverse=False, return_counts=True)
+            sorted_ai1, return_inverse=False, return_counts=True
+        )
 
         # compute central_atom_index
-        pair_sizes = (counts * (counts - 1)).div(2, rounding_mode='floor')
+        pair_sizes = (counts * (counts - 1)).div(2, rounding_mode="floor")
         pair_indices = torch.repeat_interleave(pair_sizes)
-        central_atom_index = uniqued_central_atom_index.index_select(
-            0, pair_indices)
+        central_atom_index = uniqued_central_atom_index.index_select(0, pair_indices)
 
         # do local combinations within unique key, assuming sorted
         m = counts.max().item() if counts.numel() > 0 else 0
         n = pair_sizes.shape[0]
-        intra_pair_indices = torch.tril_indices(
-            m, m, -1, device=ai1.device).unsqueeze(1).expand(-1, n, -1)
-        mask = (torch.arange(intra_pair_indices.shape[2], device=ai1.device) < pair_sizes.unsqueeze(1)).flatten()
+        intra_pair_indices = (
+            torch.tril_indices(m, m, -1, device=ai1.device)
+            .unsqueeze(1)
+            .expand(-1, n, -1)
+        )
+        mask = (
+            torch.arange(intra_pair_indices.shape[2], device=ai1.device)
+            < pair_sizes.unsqueeze(1)
+        ).flatten()
         sorted_local_index12 = intra_pair_indices.flatten(1, 2)[:, mask]
-        sorted_local_index12 += cumsum_from_zero(counts).index_select(
-            0, pair_indices)
+        sorted_local_index12 += cumsum_from_zero(counts).index_select(0, pair_indices)
 
         # unsort result from last part
         local_index12 = rev_indices[sorted_local_index12]

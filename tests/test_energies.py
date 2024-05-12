@@ -13,7 +13,6 @@ N = 97
 
 
 class TestActivation(TestCase):
-
     def testFittedSoftplus(self):
         celu = torch.nn.CELU(alpha=0.1)
         fsp = torchani.nn.FittedSoftplus()
@@ -23,14 +22,12 @@ class TestActivation(TestCase):
 
 
 class TestANI2x(TestCase):
-
     def setUp(self):
         self.model_pti = torchani.models.ANI2x(model_index=0)
         self.model = torchani.models.ANI2x(model_index=0, periodic_table_index=False)
 
     def testDiatomics(self):
-        coordinates = torch.tensor([[[0.0, 0.0, 0.0],
-                                    [0.0, 0.0, 2.0]]])
+        coordinates = torch.tensor([[[0.0, 0.0, 0.0], [0.0, 0.0, 2.0]]])
         coordinates = coordinates.repeat(4, 1, 1)
         # F2, S2, O2, Cl2
         species_pti = torch.tensor([[9, 9], [16, 16], [8, 8], [17, 17]])
@@ -51,43 +48,65 @@ class TestANIdr(TestCase):
         self.model = torchani.models.ANIdr()[0]
 
     def testDiatomics(self):
-        coordinates = torch.tensor(
-            [[[0.0, 0.0, 0.0],
-             [0.0, 0.0, 2.0]]]
-        )
+        coordinates = torch.tensor([[[0.0, 0.0, 0.0], [0.0, 0.0, 2.0]]])
         coordinates = coordinates.repeat(4, 1, 1)
         # F2, S2, O2, Cl2
         species = torch.tensor([[9, 9], [16, 16], [8, 8], [17, 17]])
         e = self.model((species, coordinates)).energies
 
         e = torchani.units.hartree2kcalpermol(e)
-        e_expect = torch.tensor(
-            [-125122.7685, -499630.9805, -94078.2276, -577468.0107]
-        )
+        e_expect = torch.tensor([-125122.7685, -499630.9805, -94078.2276, -577468.0107])
         self.assertEqual(e_expect.to(torch.float), e.to(torch.float))
 
 
 class TestCorrectInput(TestCase):
-
     def setUp(self):
         self.model = torchani.models.ANI1x(model_index=0, periodic_table_index=False)
-        self.converter = torchani.nn.SpeciesConverter(['H', 'C', 'N', 'O'])
+        self.converter = torchani.nn.SpeciesConverter(["H", "C", "N", "O"])
         self.aev_computer = self.model.aev_computer
         self.ani_model = self.model.neural_networks
 
     def testUnknownSpecies(self):
         # unsupported atomic number raises a value error
-        self.assertRaises(ValueError, self.converter, (torch.tensor([[1, 1, 7, 10]]), torch.zeros((1, 4, 3))))
+        self.assertRaises(
+            ValueError,
+            self.converter,
+            (torch.tensor([[1, 1, 7, 10]]), torch.zeros((1, 4, 3))),
+        )
         # larger index than supported by the model raises a value error
-        self.assertRaises(ValueError, self.model, (torch.tensor([[0, 1, 2, 4]]), torch.zeros((1, 4, 3))))
+        self.assertRaises(
+            ValueError,
+            self.model,
+            (torch.tensor([[0, 1, 2, 4]]), torch.zeros((1, 4, 3))),
+        )
 
     def testIncorrectShape(self):
         # non matching shapes between species and coordinates
-        self.assertRaises(AssertionError, self.model, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 3))))
-        self.assertRaises(AssertionError, self.aev_computer, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 3))))
-        self.assertRaises(AssertionError, self.ani_model, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 384))))
-        self.assertRaises(AssertionError, self.model, (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 4, 4))))
-        self.assertRaises(AssertionError, self.model, (torch.tensor([0, 1, 2, 3]), torch.zeros((4, 3))))
+        self.assertRaises(
+            AssertionError,
+            self.model,
+            (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 3))),
+        )
+        self.assertRaises(
+            AssertionError,
+            self.aev_computer,
+            (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 3))),
+        )
+        self.assertRaises(
+            AssertionError,
+            self.ani_model,
+            (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 384))),
+        )
+        self.assertRaises(
+            AssertionError,
+            self.model,
+            (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 4, 4))),
+        )
+        self.assertRaises(
+            AssertionError,
+            self.model,
+            (torch.tensor([0, 1, 2, 3]), torch.zeros((4, 3))),
+        )
 
 
 class TestEnergies(TestCase):
@@ -99,12 +118,14 @@ class TestEnergies(TestCase):
         self.aev_computer = model.aev_computer
         self.nnp = model.neural_networks
         self.energy_shifter = EnergyShifter(model.energy_shifter.self_energies.tolist())
-        self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
+        self.model = torchani.nn.Sequential(
+            self.aev_computer, self.nnp, self.energy_shifter
+        )
 
     def testIsomers(self):
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
-            with open(datafile, 'rb') as f:
+            datafile = os.path.join(path, "test_data/ANI1_subset/{}".format(i))
+            with open(datafile, "rb") as f:
                 coordinates, species, _, _, energies, _ = pickle.load(f)
                 coordinates = torch.from_numpy(coordinates).to(torch.float)
                 species = torch.from_numpy(species)
@@ -116,19 +137,23 @@ class TestEnergies(TestCase):
         species_coordinates = []
         energies = []
         for i in range(N):
-            datafile = os.path.join(path, 'test_data/ANI1_subset/{}'.format(i))
-            with open(datafile, 'rb') as f:
+            datafile = os.path.join(path, "test_data/ANI1_subset/{}".format(i))
+            with open(datafile, "rb") as f:
                 coordinates, species, _, _, e, _ = pickle.load(f)
                 coordinates = torch.from_numpy(coordinates).to(torch.float)
                 species = torch.from_numpy(species)
                 e = torch.from_numpy(e).to(torch.float)
                 species_coordinates.append(
-                    torchani.utils.broadcast_first_dim({'species': species, 'coordinates': coordinates}))
+                    torchani.utils.broadcast_first_dim(
+                        {"species": species, "coordinates": coordinates}
+                    )
+                )
                 energies.append(e)
-        species_coordinates = torchani.utils.pad_atomic_properties(
-            species_coordinates)
+        species_coordinates = torchani.utils.pad_atomic_properties(species_coordinates)
         energies = torch.cat(energies)
-        energies_ = self.model((species_coordinates['species'], species_coordinates['coordinates'])).energies
+        energies_ = self.model(
+            (species_coordinates["species"], species_coordinates["coordinates"])
+        ).energies
         self.assertEqual(energies, energies_, exact_dtype=False)
 
 
@@ -138,7 +163,9 @@ class TestEnergiesEnergyShifterJIT(TestEnergies):
     def setUp(self):
         super().setUp()
         self.energy_shifter = torch.jit.script(self.energy_shifter)
-        self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
+        self.model = torchani.nn.Sequential(
+            self.aev_computer, self.nnp, self.energy_shifter
+        )
 
 
 class TestEnergiesANIModelJIT(TestEnergies):
@@ -147,7 +174,9 @@ class TestEnergiesANIModelJIT(TestEnergies):
     def setUp(self):
         super().setUp()
         self.nnp = torch.jit.script(self.nnp)
-        self.model = torchani.nn.Sequential(self.aev_computer, self.nnp, self.energy_shifter)
+        self.model = torchani.nn.Sequential(
+            self.aev_computer, self.nnp, self.energy_shifter
+        )
 
 
 class TestEnergiesJIT(TestEnergies):
@@ -158,5 +187,5 @@ class TestEnergiesJIT(TestEnergies):
         self.model = torch.jit.script(self.model)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

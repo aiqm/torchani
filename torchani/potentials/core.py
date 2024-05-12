@@ -18,13 +18,17 @@ class Potential(torch.nn.Module):
     cutoff: float
     atomic_numbers: Tensor
 
-    def __init__(self,
-                 *args,
-                 cutoff: float = 5.2,
-                 symbols: tp.Sequence[str] = ('H', 'C', 'N', 'O'),
-                 **kwargs):
+    def __init__(
+        self,
+        *args,
+        cutoff: float = 5.2,
+        symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
+        **kwargs
+    ):
         super().__init__()
-        self.atomic_numbers = torch.tensor([ATOMIC_NUMBERS[e] for e in symbols], dtype=torch.long)
+        self.atomic_numbers = torch.tensor(
+            [ATOMIC_NUMBERS[e] for e in symbols], dtype=torch.long
+        )
         self.cutoff = cutoff
 
     @torch.jit.unused
@@ -35,7 +39,7 @@ class Potential(torch.nn.Module):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
-        ghost_flags: tp.Optional[Tensor] = None
+        ghost_flags: tp.Optional[Tensor] = None,
     ) -> Tensor:
         r"""
         Outputs "energy", with shape (N,)
@@ -45,12 +49,13 @@ class Potential(torch.nn.Module):
         raise NotImplementedError
 
     @torch.jit.export
-    def atomic_energies(self,
-                        element_idxs: Tensor,
-                        neighbors: NeighborData,
-                        ghost_flags: tp.Optional[Tensor] = None,
-                        average: bool = False,
-                        ) -> Tensor:
+    def atomic_energies(
+        self,
+        element_idxs: Tensor,
+        neighbors: NeighborData,
+        ghost_flags: tp.Optional[Tensor] = None,
+        average: bool = False,
+    ) -> Tensor:
         r"""Outputs "atomic_energies"
 
         All distances are assumed to lie inside self.cutoff (which may be infinite)
@@ -72,12 +77,13 @@ class PairPotential(Potential):
 
     Subclasses must override pair_energies
     """
+
     def __init__(
         self,
         *args,
         cutoff: float = 5.2,
-        symbols: tp.Sequence[str] = ('H', 'C', 'N', 'O'),
-        cutoff_fn: CutoffArg = 'dummy',
+        symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
+        cutoff_fn: CutoffArg = "dummy",
         **kwargs
     ):
         super().__init__(cutoff=cutoff, symbols=symbols)
@@ -102,7 +108,7 @@ class PairPotential(Potential):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
-        ghost_flags: tp.Optional[Tensor] = None
+        ghost_flags: tp.Optional[Tensor] = None,
     ) -> Tensor:
         # Validation
         assert element_idxs.ndim == 2, "species should be 2 dimensional"
@@ -112,13 +118,12 @@ class PairPotential(Potential):
 
         pair_energies = self.pair_energies(element_idxs, neighbors)
 
-        pair_energies *= self.cutoff_fn(
-            neighbors.distances,
-            self.cutoff
-        )
+        pair_energies *= self.cutoff_fn(neighbors.distances, self.cutoff)
 
         if ghost_flags is not None:
-            assert ghost_flags.numel() == element_idxs.numel(), "ghost_flags and species should have the same number of elements"
+            assert (
+                ghost_flags.numel() == element_idxs.numel()
+            ), "ghost_flags and species should have the same number of elements"
             ghost12 = ghost_flags.flatten()[neighbors.indices]
             ghost_mask = torch.logical_or(ghost12[0], ghost12[1])
             pair_energies = torch.where(ghost_mask, pair_energies * 0.5, pair_energies)
@@ -128,9 +133,8 @@ class PairPotential(Potential):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
-        ghost_flags: tp.Optional[Tensor] = None
+        ghost_flags: tp.Optional[Tensor] = None,
     ) -> Tensor:
-
         pair_energies = self._calculate_pair_energies_wrapper(
             element_idxs,
             neighbors,
@@ -139,9 +143,11 @@ class PairPotential(Potential):
         energies = torch.zeros(
             element_idxs.shape[0],
             dtype=pair_energies.dtype,
-            device=pair_energies.device
+            device=pair_energies.device,
         )
-        molecule_indices = torch.div(neighbors.indices[0], element_idxs.shape[1], rounding_mode='floor')
+        molecule_indices = torch.div(
+            neighbors.indices[0], element_idxs.shape[1], rounding_mode="floor"
+        )
         energies.index_add_(0, molecule_indices, pair_energies)
         return energies
 
@@ -164,7 +170,7 @@ class PairPotential(Potential):
         atomic_energies = torch.zeros(
             molecules_num * atoms_num,
             dtype=pair_energies.dtype,
-            device=pair_energies.device
+            device=pair_energies.device,
         )
         atomic_energies.index_add_(0, neighbors.indices[0], pair_energies / 2)
         atomic_energies.index_add_(0, neighbors.indices[1], pair_energies / 2)

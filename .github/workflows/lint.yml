@@ -21,10 +21,10 @@ jobs:
         python-version: ${{ env.PY_VERSION }}
     - name: Install pip
       run: pip install --upgrade pip
-    - name: Install mypy (with stubs)
-      run: pip install --upgrade mypy types-PyYAML types-requests
+    - name: Install mypy
+      run: pip install --upgrade mypy
     - name: Type check with mypy
-      run: mypy .
+      run: mypy --install-types --non-interactive .
 
   flake8:
     runs-on: ubuntu-latest

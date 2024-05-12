@@ -105,9 +105,15 @@ def modules_from_info(
     else:
         if model_index >= info.ensemble_size:
             raise ValueError(
-                f"The ensemble size is only {info.ensemble_size}, model {model_index} can't be loaded"
+                f"Model index {model_index} should be <= {info.ensemble_size}"
             )
-        neural_networks = load_model(symbols, model_dir_from_prefix(info.ensemble_prefix, model_index))
+        neural_networks = load_model(
+            symbols,
+            model_dir_from_prefix(
+                info.ensemble_prefix,
+                model_index,
+            ),
+        )
     return aev_computer, neural_networks, shifter, symbols
 
 

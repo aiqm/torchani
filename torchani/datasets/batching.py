@@ -195,7 +195,8 @@ def create_batched_dataset(
     # These are pairs of indices that index first the group and then the
     # specific conformer, it is possible to just use one index for
     # everything but this is simpler at the cost of slightly more memory.
-    # First we get all group sizes for all datasets concatenated in a tensor, in the same
+    # First we get all group sizes for all datasets concatenated in a tensor,
+    # in the same
     # order as h5_map
     group_sizes_values = torch.tensor(
         tuple(dataset.group_sizes.values()), dtype=torch.long
@@ -433,7 +434,7 @@ def _save_splits_into_batches(
             all_batch_indices = torch.split(indices_of_split, batch_size)
 
             all_batch_indices_packets = [
-                all_batch_indices[j: j + max_batches_per_packet]
+                all_batch_indices[j:j + max_batches_per_packet]
                 for j in range(0, len(all_batch_indices), max_batches_per_packet)
             ]
             num_batch_indices_packets = len(all_batch_indices_packets)
@@ -503,7 +504,8 @@ def _save_splits_into_batches(
                 # Now we need to reassign the conformers to the specified
                 # batches. Since to get here we cat'ed and sorted, to
                 # reassign we need to unsort and split.
-                # The format of this is {'species': (batch1, batch2, ...), 'coordinates': (batch1, batch2, ...)}
+                # The format of this is {'species': (batch1, batch2, ...),
+                # 'coordinates': (batch1, batch2, ...)}
                 batch_packet_dict = {
                     k: torch.split(t[indices_to_unsort_batch_cat], batch_sizes)
                     for k, t in batches_cat.items()

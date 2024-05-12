@@ -89,7 +89,9 @@ torch.backends.cudnn.allow_tf32 = False
 # show warnings to users with ampere or newer gpu
 if torch.cuda.is_available():
     num_devices = torch.cuda.device_count()
-    max_sm_major = max([torch.cuda.get_device_capability(i)[0] for i in range(num_devices)])
+    max_sm_major = max(
+        [torch.cuda.get_device_capability(i)[0] for i in range(num_devices)]
+    )
     if (max_sm_major >= 8):
         warnings.warn(
             "TF32 (TensorFloat 32) is disabled for accuracy reason")

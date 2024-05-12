@@ -12,12 +12,20 @@ from torchani.units import hartree2kcalpermol
 
 # parse command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('dir', help='Path to the COMP6 directory')
-parser.add_argument('-b', '--batchatoms', type=int, default=4096,
-                    help='Maximum number of ATOMs in each batch')
-parser.add_argument('-d', '--device',
-                    help='Device of modules and tensors',
-                    default=('cuda' if torch.cuda.is_available() else 'cpu'))
+parser.add_argument("dir", help="Path to the COMP6 directory")
+parser.add_argument(
+    "-b",
+    "--batchatoms",
+    type=int,
+    default=4096,
+    help="Maximum number of ATOMs in each batch",
+)
+parser.add_argument(
+    "-d",
+    "--device",
+    help="Device of modules and tensors",
+    default=("cuda" if torch.cuda.is_available() else "cpu"),
+)
 args = parser.parse_args()
 
 # run benchmark
@@ -44,14 +52,13 @@ def by_batch(species, coordinates, model):
     forces = []
     for s, c in zip(species, coordinates):
         e = model((s, c)).energies
-        f, = torch.autograd.grad(e.sum(), c)
+        (f,) = torch.autograd.grad(e.sum(), c)
         energies.append(e)
         forces.append(f)
     return torch.cat(energies).detach(), torch.cat(forces).detach()
 
 
 class Averager:
-
     def __init__(self):
         self.count = 0
         self.cumsum = 0
@@ -80,28 +87,32 @@ def do_benchmark(model):
     rmse_averager_force = Averager()
     for i in tqdm(dataset, position=0, desc="dataset"):
         # read
-        coordinates = torch.tensor(i['coordinates'], device=args.device)
-        species = model.species_to_tensor(i['species']) \
-                       .unsqueeze(0).expand(coordinates.shape[0], -1)
-        energies = torch.tensor(i['energies'], device=args.device)
-        forces = torch.tensor(i['forces'], device=args.device)
+        coordinates = torch.tensor(i["coordinates"], device=args.device)
+        species = (
+            model.species_to_tensor(i["species"])
+            .unsqueeze(0)
+            .expand(coordinates.shape[0], -1)
+        )
+        energies = torch.tensor(i["energies"], device=args.device)
+        forces = torch.tensor(i["forces"], device=args.device)
         # compute
         energies2, forces2 = by_batch(species, coordinates, model)
         ediff = energies - energies2
-        relative_ediff = relative_energies(energies) - \
-            relative_energies(energies2)
+        relative_ediff = relative_energies(energies) - relative_energies(energies2)
         fdiff = forces.flatten() - forces2.flatten()
         # update
         mae_averager_energy.update(ediff.abs())
         mae_averager_relative_energy.update(relative_ediff.abs())
         mae_averager_force.update(fdiff.abs())
-        rmse_averager_energy.update(ediff ** 2)
-        rmse_averager_relative_energy.update(relative_ediff ** 2)
-        rmse_averager_force.update(fdiff ** 2)
+        rmse_averager_energy.update(ediff**2)
+        rmse_averager_relative_energy.update(relative_ediff**2)
+        rmse_averager_force.update(fdiff**2)
     mae_energy = hartree2kcalpermol(mae_averager_energy.compute())
     rmse_energy = hartree2kcalpermol(math.sqrt(rmse_averager_energy.compute()))
     mae_relative_energy = hartree2kcalpermol(mae_averager_relative_energy.compute())
-    rmse_relative_energy = hartree2kcalpermol(math.sqrt(rmse_averager_relative_energy.compute()))
+    rmse_relative_energy = hartree2kcalpermol(
+        math.sqrt(rmse_averager_relative_energy.compute())
+    )
     mae_force = hartree2kcalpermol(mae_averager_force.compute())
     rmse_force = hartree2kcalpermol(math.sqrt(rmse_averager_force.compute()))
     print("Energy:", mae_energy, rmse_energy)

@@ -11,30 +11,34 @@ from torchani.utils import PERIODIC_TABLE
 
 def make_methane(device=None, eq_bond=1.09):
     if device is None:
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     d = eq_bond * 2 / math.sqrt(3)
-    coordinates = torch.tensor(
-        [[[0.0, 0.0, 0.0], [0, 1, 1], [1, 0, 1], [1, 1, 0], [0.5, 0.5, 0.5]]],
-        device=device,
-        dtype=torch.double) * d
+    coordinates = (
+        torch.tensor(
+            [[[0.0, 0.0, 0.0], [0, 1, 1], [1, 0, 1], [1, 1, 0], [0.5, 0.5, 0.5]]],
+            device=device,
+            dtype=torch.double,
+        )
+        * d
+    )
     species = torch.tensor([[1, 1, 1, 1, 6]], device=device, dtype=torch.long)
     return species, coordinates.double()
 
 
 def make_water(device=None, eq_bond=0.957582, eq_angle=104.485):
     if device is None:
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     d = eq_bond
     t = (math.pi / 180) * eq_angle  # convert to radians
     coordinates = torch.tensor(
-        [[d, 0, 0], [d * math.cos(t), d * math.sin(t), 0], [0, 0, 0]],
-        device=device).double()
+        [[d, 0, 0], [d * math.cos(t), d * math.sin(t), 0], [0, 0, 0]], device=device
+    ).double()
     species = torch.tensor([[1, 1, 8]], device=device, dtype=torch.long)
     return species, coordinates.double()
 
 
 def tensor_from_xyz(path):
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         lines = f.readlines()
         num_atoms = int(lines[0])
         coordinates = []
@@ -57,7 +61,12 @@ def tensor_from_xyz(path):
     return species, coordinates, cell
 
 
-def tensor_to_xyz(path, species_coordinates: tp.Tuple[Tensor, Tensor], cell: tp.Optional[Tensor] = None, no_exponent: bool = True):
+def tensor_to_xyz(
+    path,
+    species_coordinates: tp.Tuple[Tensor, Tensor],
+    cell: tp.Optional[Tensor] = None,
+    no_exponent: bool = True,
+):
     path = Path(path).resolve()
     # input species must be atomic numbers
     species, coordinates = species_coordinates
@@ -71,11 +80,11 @@ def tensor_to_xyz(path, species_coordinates: tp.Tuple[Tensor, Tensor], cell: tp.
     coordinates = coordinates.view(-1, 3)
     species = species.view(-1)
 
-    with open(path, 'w') as f:
-        f.write(f'{num_atoms}\n')
+    with open(path, "w") as f:
+        f.write(f"{num_atoms}\n")
         if cell is not None:
             warnings.warn("Cell printing is not yet implemented, ignoring cell")
-        f.write('\n')
+        f.write("\n")
         for s, c in zip(species, coordinates):
             if no_exponent:
                 line = f"{c[0]:.15f} {c[1]:.15f} {c[2]:.15f}\n"

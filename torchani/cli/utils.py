@@ -30,7 +30,10 @@ def h5info(path: tp.Union[str, Path]) -> None:
     shape_max_len = max([len(s) for s in shapes]) + 3
     print('\nFirst Conformer Properties (Non-batched): ')
     for i, k in enumerate(conformer.keys()):
-        print(f'  {k.ljust(key_max_len)} shape: {shapes[i].ljust(shape_max_len)} dtype: {conformer[k].dtype}')
+        key = k.ljust(key_max_len)
+        shape = shapes[i].ljust(shape_max_len)
+        dtype = conformer[k].dtype
+        print(f'  {key} shape: {shape} dtype: {dtype}')
 
 
 def h5pack(
@@ -157,7 +160,7 @@ def h5pack(
                     if interactive:
                         if data_part_name:
                             print(f"Invalid name {data_part_name}")
-                            print("**Only alphanumeric characters or '_' are supported**")
+                            print("Only [a-zA-Z0-9_] chars are supported")
 
                         data_part_name = input(
                             f"Data part name for file {f.name}?: "
@@ -176,7 +179,7 @@ def h5pack(
                     if interactive:
                         if data_part_name:
                             print(f"Invalid name {main_part_name}")
-                            print("**Only alphanumeric characters or '_' are supported**")
+                            print("Only [a-zA-Z0-9_] chars are supported")
 
                         data_part_name = input(
                             f"Main part name for file {f.name}?: "

@@ -7,10 +7,7 @@ from torch import Tensor
 import typing_extensions as tpx
 
 from torchani.utils import PERIODIC_TABLE
-from torchani.tuples import (
-    SpeciesCoordinates,
-    SpeciesEnergies
-)
+from torchani.tuples import SpeciesCoordinates, SpeciesEnergies
 
 
 class ANIModel(torch.nn.ModuleDict):
@@ -92,15 +89,16 @@ class ANIModel(torch.nn.ModuleDict):
     def to_infer_model(self, use_mnp: bool = False):
         # Infer is imported here to prevent circular imports
         from torchani import infer
+
         if use_mnp:
             warnings.warn(
-                'use_mnp will be removed in the future. '
-                'It is too complex and not general enough',
+                "use_mnp will be removed in the future. "
+                "It is too complex and not general enough",
                 category=DeprecationWarning,
             )
         else:
             warnings.warn(
-                'non-mnp ANIModel is not optimized for performance',
+                "non-mnp ANIModel is not optimized for performance",
                 category=DeprecationWarning,
             )
         return infer.InferModel(self, use_mnp=use_mnp)  # type: ignore
@@ -116,12 +114,17 @@ class Ensemble(torch.nn.ModuleList):
         super().__init__(modules)
         self.num_networks = len(modules)
         if any(m.num_species != modules[0].num_species for m in modules):
-            raise ValueError("All modules in the ensemble must support the same number of species")
+            raise ValueError(
+                "All modules in the ensemble must support the same number of species"
+            )
         self.num_species = modules[0].num_species
 
-    def forward(self, species_input: tp.Tuple[Tensor, Tensor],  # type: ignore
-                cell: tp.Optional[Tensor] = None,
-                pbc: tp.Optional[Tensor] = None) -> SpeciesEnergies:
+    def forward(
+        self,
+        species_input: tp.Tuple[Tensor, Tensor],  # type: ignore
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> SpeciesEnergies:
         sum_ = 0
         for x in self:
             sum_ += x(species_input)[1]
@@ -144,10 +147,11 @@ class Ensemble(torch.nn.ModuleList):
     def to_infer_model(self, use_mnp: bool = False):
         # Infer is imported here to prevent circular imports
         from torchani import infer
+
         if use_mnp:
             warnings.warn(
-                'use_mnp will be removed in the future. '
-                'It is too complex and not general enough',
+                "use_mnp will be removed in the future. "
+                "It is too complex and not general enough",
                 category=DeprecationWarning,
             )
             return infer.InferModel(self, use_mnp=True)  # type: ignore
@@ -160,9 +164,12 @@ class Sequential(torch.nn.ModuleList):
     def __init__(self, *modules):
         super().__init__(modules)
 
-    def forward(self, input_: tp.Tuple[Tensor, Tensor],  # type: ignore
-                cell: tp.Optional[Tensor] = None,
-                pbc: tp.Optional[Tensor] = None):
+    def forward(
+        self,
+        input_: tp.Tuple[Tensor, Tensor],  # type: ignore
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ):
         for module in self:
             input_ = module(input_, cell=cell, pbc=pbc)
         return input_
@@ -200,25 +207,31 @@ class SpeciesConverter(torch.nn.Module):
         sequence of all supported species, in order (it is recommended to order
         according to atomic number).
     """
+
     conv_tensor: Tensor
 
     def __init__(self, species: tp.Sequence[str]):
         super().__init__()
         rev_idx = {s: k for k, s in enumerate(PERIODIC_TABLE)}
         maxidx = max(rev_idx.values())
-        self.register_buffer('conv_tensor', torch.full((maxidx + 2,), -1, dtype=torch.long))
+        self.register_buffer(
+            "conv_tensor", torch.full((maxidx + 2,), -1, dtype=torch.long)
+        )
         for i, s in enumerate(species):
             self.conv_tensor[rev_idx[s]] = i
 
-    def forward(self, input_: tp.Tuple[Tensor, Tensor],
-                cell: tp.Optional[Tensor] = None,
-                pbc: tp.Optional[Tensor] = None):
-        """Convert species from periodic table element index to 0, 1, 2, 3, ... indexing"""
+    def forward(
+        self,
+        input_: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ):
+        r"""Convert species from atomic numbers to 0, 1, 2, 3, ... indexing"""
         species, coordinates = input_
         converted_species = self.conv_tensor[species]
 
         # check if unknown species are included
         if converted_species[species.ne(-1)].lt(0).any():
-            raise ValueError(f'Unknown species found in {species}')
+            raise ValueError(f"Unknown species found in {species}")
 
         return SpeciesCoordinates(converted_species.to(species.device), coordinates)
