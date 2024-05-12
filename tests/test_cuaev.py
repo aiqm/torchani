@@ -1,11 +1,14 @@
 import os
-import torch
-import torchani
 import unittest
 import pickle
+
+import torch
 from ase.io import read
-from torchani.testing import TestCase, make_tensor
 from parameterized import parameterized_class
+
+import torchani
+from torchani.testing import TestCase, make_tensor
+from torchani.csrc import CUAEV_IS_INSTALLED
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -17,7 +20,7 @@ skipIfNoMultiGPU = unittest.skipIf(
     "There are not enough GPU devices to run this test",
 )
 skipIfNoCUAEV = unittest.skipIf(
-    not torchani.aev.cuaev_is_installed, "only valid when cuaev is installed"
+    not CUAEV_IS_INSTALLED, "only valid when cuaev is installed"
 )
 
 
@@ -55,7 +58,7 @@ class TestCUAEVNoGPU(TestCase):
         self.assertIn("cuaev::run", str(s.graph))
 
     def testAEVComputer(self):
-        aev_computer = torchani.AEVComputer.like_1x(use_cuda_extension=True)
+        aev_computer = torchani.AEVComputer.style_1x(use_cuda_extension=True)
         s = torch.jit.script(aev_computer)
         # Computation of AEV using cuaev when there is no atoms does not
         # require CUDA, and can be run without GPU
@@ -66,7 +69,7 @@ class TestCUAEVNoGPU(TestCase):
         self.assertIn("cuaev::run", str(s.graph_for((species, coordinates))))
 
     def testPickle(self):
-        aev_computer = torchani.AEVComputer.like_1x(use_cuda_extension=True)
+        aev_computer = torchani.AEVComputer.style_1x(use_cuda_extension=True)
         tmpfile = "/tmp/cuaev.pkl"
         with open(tmpfile, "wb") as file:
             pickle.dump(aev_computer, file)
@@ -96,12 +99,12 @@ class TestCUAEV(TestCase):
         self.tolerance = 5e-5 if self.dtype == torch.float32 else 5e-13
         self.device = device
         self.aev_computer_1x = (
-            torchani.AEVComputer.like_1x(cutoff_fn=self.cutoff_fn)
+            torchani.AEVComputer.style_1x(cutoff_fn=self.cutoff_fn)
             .to(self.dtype)
             .to(self.device)
         )
         self.cuaev_computer_1x = (
-            torchani.AEVComputer.like_1x(
+            torchani.AEVComputer.style_1x(
                 cutoff_fn=self.cutoff_fn, use_cuda_extension=True
             )
             .to(self.dtype)
@@ -114,19 +117,19 @@ class TestCUAEV(TestCase):
         )
 
         self.aev_computer_2x = (
-            torchani.AEVComputer.like_2x(cutoff_fn=self.cutoff_fn)
+            torchani.AEVComputer.style_2x(cutoff_fn=self.cutoff_fn)
             .to(self.dtype)
             .to(self.device)
         )
         self.cuaev_computer_2x = (
-            torchani.AEVComputer.like_2x(
+            torchani.AEVComputer.style_2x(
                 cutoff_fn=self.cutoff_fn, use_cuda_extension=True
             )
             .to(self.dtype)
             .to(self.device)
         )
         self.cuaev_computer_2x_use_interface = (
-            torchani.AEVComputer.like_2x(
+            torchani.AEVComputer.style_2x(
                 cutoff_fn=self.cutoff_fn,
                 use_cuda_extension=True,
                 use_cuaev_interface=True,

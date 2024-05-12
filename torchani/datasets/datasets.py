@@ -1,6 +1,5 @@
 import typing as tp
 import inspect
-import warnings
 import math
 import re
 from os import fspath
@@ -359,14 +358,15 @@ class _ANISubdataset(_ANIDatasetBase):
         self._update_cache(check_properties=True, verbose=verbose)
         if self.grouping == "legacy":
             if self.properties & _LEGACY_BROKEN_KEYS:
+                import warnings
                 warnings.warn(
-                    f"Unsupported properties {_LEGACY_BROKEN_KEYS & self.properties}"
+                    f"{_LEGACY_BROKEN_KEYS & self.properties}"
                     " found in legacy dataset, this will generate"
-                    " unpredictable issues."
+                    " unpredictable issues.\n"
                     " Probably .items() and .values() will work but"
                     " not much else. It is highly  recommended that"
-                    " you backup these properties if needed and"
-                    " delete them using dataset.delete_properties"
+                    " you backup these properties (if needed) and"
+                    " *delete them* using dataset.delete_properties"
                 )
 
     def open(self, mode: str = "r") -> None:

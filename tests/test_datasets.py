@@ -101,14 +101,25 @@ class TestDatasetUtils(TestCase):
                 "forces": torch.full((1, 4, 3), fill_value=3.0, dtype=torch.float),
             },
         )
-        out = filter_by_high_force(ds, threshold=0.5, delete_inplace=True)
+        out = filter_by_high_force(
+            ds,
+            threshold=0.5,
+            delete_inplace=True,
+            verbose=False,
+        )
         self.assertEqual(len(out[0]), 1)
         self.assertEqual(len(out[0][0]["coordinates"]), 1)
 
     def testFilterEnergyError(self):
         ds = self.test_ds_single
         model = ANI1x()[0]
-        out = filter_by_high_energy_error(ds, model, threshold=1.0, delete_inplace=True)
+        out = filter_by_high_energy_error(
+            ds,
+            model,
+            threshold=1.0,
+            delete_inplace=True,
+            verbose=False,
+        )
         self.assertEqual(len(out[0]), 3)
         self.assertEqual(sum(len(c["coordinates"]) for c in out[0]), 1909)
 

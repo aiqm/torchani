@@ -1,7 +1,4 @@
-import math
 import typing as tp
-import warnings
-import importlib.metadata
 
 import torch
 from torch import Tensor
@@ -9,26 +6,45 @@ from torch import Tensor
 from torchani.utils import check_openmp_threads
 from torchani.tuples import SpeciesEnergies
 from torchani.nn import Ensemble, ANIModel
+from torchani.csrc import MNP_IS_INSTALLED
 
 
-mnp_is_installed = "torchani.mnp" in importlib.metadata.metadata(
-    __package__.split(".")[0]
-).get_all("Provides", [])
-
-if mnp_is_installed:
+if MNP_IS_INSTALLED:
     # We need to import torchani.mnp to tell PyTorch to initialize torch.ops.mnp
     from . import mnp  # type: ignore # noqa: F401
-else:
-    warnings.warn("mnp not installed")
 
 
-def _is_same_tensor(last: Tensor, current: Tensor) -> bool:
+def jit_unused_if_no_mnp():
+    def decorator(func):
+        if MNP_IS_INSTALLED:
+            return torch.jit.export(func)
+        return torch.jit.unused(func)
+
+    return decorator
+
+
+@jit_unused_if_no_mnp()
+def _is_same_tensor_optimized(last: Tensor, current: Tensor) -> bool:
     if torch.jit.is_scripting():
         return torch.ops.mnp.is_same_tensor(last, current)
     return last.data_ptr() == current.data_ptr()
 
 
-def _build_new_idx_list(species: Tensor, num_species: int) -> tp.List[Tensor]:
+def _is_same_tensor(last: Tensor, current: Tensor) -> bool:
+    # Fallback to this, it is slow but it is the only available path if MNP is
+    # not installed, at least until TorchScript supports data_ptr() (which is
+    # probably never)
+    same_shape = last.shape == current.shape
+    if not same_shape:
+        return False
+    return bool((last == current).all().item())
+
+
+def _build_new_idx_list(
+    species: Tensor,
+    num_species: int,
+    idx_list: tp.List[Tensor],
+) -> tp.List[Tensor]:
     species_ = species.flatten()
     with torch.no_grad():
         idx_list = [torch.empty(0) for i in range(num_species)]
@@ -63,6 +79,7 @@ class BmmEnsemble(torch.nn.Module):
 
     def __init__(self, ensemble: Ensemble):
         super().__init__()
+        self._MNP_IS_INSTALLED = MNP_IS_INSTALLED
         self.num_networks = 1  # BmmEnsemble operates as a single ANIModel
         self.num_batched_networks = ensemble.num_networks
         self.num_species = ensemble.num_species
@@ -74,11 +91,13 @@ class BmmEnsemble(torch.nn.Module):
             ]
         )
 
-        # bookkeeping for optimization purposes
-        self.last_species: Tensor = torch.empty(1)
-        self.idx_list: tp.List[Tensor] = [
-            torch.empty(0) for i in range(self.num_species)
-        ]
+        # bookkeeping for optimization
+        self._last_species: Tensor = torch.empty(1)
+        self._idx_list: tp.List[Tensor] = _build_new_idx_list(
+            self._last_species,
+            self.num_species,
+            [],
+        )
 
     def forward(  # type: ignore
         self,
@@ -97,20 +116,39 @@ class BmmEnsemble(torch.nn.Module):
 
         # Initialize each species index if it has not been initialized or the
         # species has changed
-        if not _is_same_tensor(self.last_species, species):
-            self.idx_list = _build_new_idx_list(species, self.num_species)
-        self.last_species = species
+        if self._MNP_IS_INSTALLED:
+            same_species = _is_same_tensor_optimized(self._last_species, species)
+        else:
+            same_species = _is_same_tensor(self._last_species, species)
+
+        if not same_species:
+            self._idx_list = _build_new_idx_list(
+                species,
+                self.num_species,
+                self._idx_list,
+            )
+        self._last_species = species
 
         aev = aev.flatten(0, 1)
         atomic_energies = torch.zeros(aev.shape[0], dtype=aev.dtype, device=aev.device)
         for i, net in enumerate(self.atomic_networks):
-            if self.idx_list[i].shape[0] > 0:
-                torch.ops.mnp.nvtx_range_push(f"network_{i}")
-                input_ = aev.index_select(0, self.idx_list[i])
-                atomic_energies[self.idx_list[i]] = net(input_).flatten()
-                torch.ops.mnp.nvtx_range_pop()
+            if self._idx_list[i].shape[0] > 0:
+                if self._MNP_IS_INSTALLED:
+                    self._nvtx_push(i)
+                input_ = aev.index_select(0, self._idx_list[i])
+                atomic_energies[self._idx_list[i]] = net(input_).flatten()
+                if self._MNP_IS_INSTALLED:
+                    self._nvtx_pop()
         atomic_energies = atomic_energies.unsqueeze(0)
         return atomic_energies
+
+    @jit_unused_if_no_mnp()
+    def _nvtx_pop(self) -> None:
+        torch.ops.mnp.nvtx_range_pop()
+
+    @jit_unused_if_no_mnp()
+    def _nvtx_push(self, i: int) -> None:
+        torch.ops.mnp.nvtx_range_push(f"network_{i}")
 
 
 class BmmAtomicNetwork(torch.nn.Module):
@@ -306,11 +344,29 @@ class InferModel(torch.nn.Module):
 
     def __init__(self, module: tp.Union[Ensemble, ANIModel], use_mnp: bool = False):
         super().__init__()
+        if not torch.cuda.is_available():
+            raise RuntimeError(
+                "InferModel requires a CUDA device since it relies on CUDA Streams"
+            )
+        import warnings
+
+        # Infer model in general is hard to maintain so we emit some
+        # deprecation messages. In the future we may not support it anymore
+        if use_mnp:
+            msg = (
+                "InferModel with MNP C++ extension is experimental."
+                " It has a complex implementation, and may be removed in the future."
+            )
+        else:
+            msg = (
+                "InferModel with no MNP C++ extension is not optimized."
+                " It is meant as a proof of concept and may be removed in the future."
+            )
+        warnings.warn(msg, category=DeprecationWarning)
+
+        self._MNP_IS_INSTALLED = MNP_IS_INSTALLED
         self.num_networks = 1  # For compatibility with ANIModel and Ensemble API
         self.num_species = module.num_species
-
-        if not torch.cuda.is_available():
-            raise RuntimeError("InferModel requires a CUDA device")
 
         if isinstance(module, Ensemble):
             self.atomic_networks = torch.nn.ModuleList(
@@ -322,48 +378,53 @@ class InferModel(torch.nn.Module):
         else:
             self.atomic_networks = torch.nn.ModuleList(list(module.values()))
         self._is_bmm = isinstance(module, Ensemble)
+
         self._use_mnp = use_mnp
 
-        # bookkeeping for optimization purposes
-        self.last_species = torch.empty(1)
-        self.idx_list = [torch.empty(0) for i in range(self.num_species)]
+        # bookkeeping for optimization
+        self._last_species: Tensor = torch.empty(1)
+        self._idx_list: tp.List[Tensor] = _build_new_idx_list(
+            self._last_species,
+            self.num_species,
+            [],
+        )
 
-        self.stream_list = [torch.cuda.Stream() for i in range(self.num_species)]
+        self._stream_list = [torch.cuda.Stream() for i in range(self.num_species)]
 
-        # Holders for jit when use_mnp == False
-        self.weight_list: tp.List[Tensor] = [torch.empty(0)]
-        self.bias_list: tp.List[Tensor] = [torch.empty(0)]
-        self.celu_alpha: float = float("inf")
-        self.num_layers_list: tp.List[int] = [0]
-        self.start_layers_list: tp.List[int] = [0]
+        # Variables used only to pass tensors to torch.ops.mnp when use_mnp=True
+        self._weight_list: tp.List[Tensor] = []
+        self._bias_list: tp.List[Tensor] = []
+        self._num_layers_list: tp.List[int] = []
+        self._start_layers_list: tp.List[int] = []
+        # Alpha can't be zero for CELU, this denotes 'not set'
+        self._celu_alpha: float = 0.0
 
         if self._use_mnp:
+            # Check that the OpenMP environment variable is correctly set
+            check_openmp_threads(verbose=False)
+            if not self._MNP_IS_INSTALLED:
+                raise RuntimeError("The MNP C++ extension is not installed")
             self._init_mnp()
 
     @torch.jit.unused
     def _init_mnp(self) -> None:
-        if not mnp_is_installed:
-            raise RuntimeError("MNP extension is not installed")
         # Copy weights and biases (and transform them if copying from a BmmEnsemble)
         weight_list, bias_list = self._copy_weights_and_biases()
 
-        self.num_layers_list = [len(weight) for weight in weight_list]
-        self.start_layers_list = [0] * self.num_species
+        self._num_layers_list = [len(weight) for weight in weight_list]
+        self._start_layers_list = [0] * self.num_species
         for i in range(self.num_species - 1):
-            self.start_layers_list[i + 1] = (
-                self.start_layers_list[i] + self.num_layers_list[i]
+            self._start_layers_list[i + 1] = (
+                self._start_layers_list[i] + self._num_layers_list[i]
             )
 
         # Flatten weight and bias list
-        self.weight_list = [
+        self._weight_list = [
             torch.nn.Parameter(item) for sublist in weight_list for item in sublist
         ]
-        self.bias_list = [
+        self._bias_list = [
             torch.nn.Parameter(item) for sublist in bias_list for item in sublist
         ]
-
-        # Check that the OpenMP environment variable is correctly set
-        check_openmp_threads(verbose=False)
 
     @torch.jit.unused
     def _copy_weights_and_biases(
@@ -378,26 +439,33 @@ class InferModel(torch.nn.Module):
                 layer_type = type(layer)
                 # Note that clone().detach() converts Parameter into Tensor
                 if layer_type is torch.nn.Linear:
+                    if self._is_bmm:
+                        raise ValueError(
+                            "torch.nn.Linear layers only supported for non-Bmm models"
+                        )
                     weights.append(layer.weight.clone().detach().transpose(0, 1))
                     biases.append(layer.bias.clone().detach().unsqueeze(0))
                 elif layer_type is BmmLinear:
+                    if not self._is_bmm:
+                        raise ValueError(
+                            "BmmLinear layers only supported for Bmm models"
+                        )
                     weights.append(layer.weight.clone().detach())
                     biases.append(layer.bias.clone().detach())
                 elif layer_type is torch.nn.CELU:
-                    if math.isinf(self.celu_alpha):
-                        self.celu_alpha = layer.alpha
-                    else:
-                        if self.celu_alpha != layer.alpha:
-                            raise ValueError(
-                                "All CELU layers should have the same alpha"
-                            )
+                    if self._celu_alpha == 0.0:
+                        if layer.alpha == 0.0:
+                            raise ValueError("alpha can't be 0.0 for CELU")
+                        self._celu_alpha = layer.alpha
+                    elif self._celu_alpha != layer.alpha:
+                        raise ValueError("All CELU layers should have the same alpha")
                 else:
                     raise ValueError(
                         f"Unsupported layer type {layer_type}"
                         " Supported layers types are:\n"
-                        "- torch.nn.Linear\n"
-                        "- torch.nn.CELU\n"
-                        "- torchani.infer.BmmLinear"
+                        "- torch.nn.Linear (for non-bmm models)\n"
+                        "- torchani.infer.BmmLinear (for bmm models)\n"
+                        "- torch.nn.CELU"
                     )
             weight_list.append(weights)
             bias_list.append(biases)
@@ -414,34 +482,51 @@ class InferModel(torch.nn.Module):
         assert aev.shape[0] == 1, "InferModel only supports single-conformer inputs"
         aev = aev.flatten(0, 1)
 
-        if not _is_same_tensor(self.last_species, species):
-            self.idx_list = _build_new_idx_list(species, self.num_species)
-        self.last_species = species
-
-        if self._use_mnp:
-            energies = torch.ops.mnp.run(
-                aev,
-                self.num_species,
-                self.num_layers_list,
-                self.start_layers_list,
-                self.idx_list,
-                self.weight_list,
-                self.bias_list,
-                self.stream_list,
-                self._is_bmm,
-                self.celu_alpha,
-            )
+        if self._MNP_IS_INSTALLED:
+            same_species = _is_same_tensor_optimized(self._last_species, species)
         else:
-            if torch.jit.is_scripting():
-                raise RuntimeError("JIT Infer Model only supports use_mnp=True")
-            else:
+            same_species = _is_same_tensor(self._last_species, species)
+
+        if not same_species:
+            self._idx_list = _build_new_idx_list(
+                species,
+                self.num_species,
+                self._idx_list,
+            )
+        self._last_species = species
+
+        # pyMNP code path
+        if not self._use_mnp:
+            if not torch.jit.is_scripting():
                 energies = MultiNetFunction.apply(
                     aev,
-                    self.idx_list,
+                    self._idx_list,
                     self.atomic_networks,
-                    self.stream_list,
+                    self._stream_list,
                 )
+                return SpeciesEnergies(species, energies)
+            raise RuntimeError(
+                "InferModel can only be JIT-compiled if init with use_mnp=True"
+            )
+
+        # cppMNP code path
+        energies = self._multi_net_function_mnp(aev)
         return SpeciesEnergies(species, energies)
+
+    @jit_unused_if_no_mnp()
+    def _multi_net_function_mnp(self, aev: Tensor) -> Tensor:
+        return torch.ops.mnp.run(
+            aev,
+            self.num_species,
+            self._num_layers_list,
+            self._start_layers_list,
+            self._idx_list,
+            self._weight_list,
+            self._bias_list,
+            self._stream_list,
+            self._is_bmm,
+            self._celu_alpha,
+        )
 
     @torch.jit.export
     def _atomic_energies(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:

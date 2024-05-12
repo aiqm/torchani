@@ -1,5 +1,4 @@
 import math
-import warnings
 from pathlib import Path
 
 import torch
@@ -12,12 +11,8 @@ from torchani.cutoffs import parse_cutoff_fn, CutoffArg
 state_dicts_path = Path(__file__).parent.parent.joinpath("resources/state_dicts/")
 
 
-def _warn_parameters():
-    warnings.warn("Generated parameters may differ from published model to 1e-7")
-
-
 class StandardRadial(torch.nn.Module):
-    """Compute the radial subAEV terms of the center atom given neighbors
+    """Compute the radial sub-AEV terms of the center atom given neighbors
 
     This correspond to equation (3) in the `ANI paper`_. This function just
     computes the terms. The sum in the equation is not computed.  The input
@@ -57,66 +52,84 @@ class StandardRadial(torch.nn.Module):
         ret = 0.25 * torch.exp(-self.EtaR * (distances - self.ShfR) ** 2) * fc
         # At this point, ret now has shape
         # (conformations x atoms, ?, ?) where ? depend on constants.
-        # We then should flat the last 2 dimensions to view the subAEV as a two
+        # We then should flat the last 2 dimensions to view the sub-AEV as a two
         # dimensional tensor (onnx doesn't support negative indices in flatten)
         return ret.flatten(start_dim=1)
 
     @classmethod
     def cover_linearly(
         cls,
-        eta: float,
-        num_shifts: int,
         start: float = 0.9,
         cutoff: float = 5.2,
+        eta: float = 19.7,
+        num_shifts: int = 16,
         cutoff_fn: CutoffArg = "cosine",
     ) -> tpx.Self:
         r"""Builds angular terms by linearly subdividing space radially up to a cutoff
 
         "num_shifts" are created, starting from "start" until "cutoff",
-        excluding it.  This is the way angular and radial shifts were
-        originally created in ANI
+        excluding it. This similar to the way angular and radial shifts were
+        originally created for the ANI models
         """
         ShfR = torch.linspace(start, cutoff, int(num_shifts) + 1)[:-1].to(torch.float)
         EtaR = torch.tensor([eta], dtype=torch.float)
         return cls(EtaR, ShfR, cutoff, cutoff_fn)
 
     @classmethod
-    def like_1x(cls, **kwargs) -> tpx.Self:
-        exact = kwargs.pop("exact", True)
-        m = cls.cover_linearly(cutoff=5.2, eta=16.0, num_shifts=16, **kwargs)
-        if exact:
-            state_dict = torch.load(
-                state_dicts_path.joinpath("radial_1x_state_dict.pth")
-            )
-            m.load_state_dict(state_dict)
-        else:
-            _warn_parameters()
+    def style_1x(
+        cls,
+        start: float = 0.9,
+        cutoff: float = 5.2,
+        eta: float = 16.0,
+        num_shifts: int = 16,
+        cutoff_fn: CutoffArg = "cosine",
+    ) -> tpx.Self:
+        return cls.cover_linearly(
+            start=start,
+            cutoff=cutoff,
+            eta=eta,
+            num_shifts=num_shifts,
+            cutoff_fn=cutoff_fn,
+        )
+
+    @classmethod
+    def style_2x(
+        cls,
+        start: float = 0.8,
+        cutoff: float = 5.1,
+        eta: float = 19.7,
+        num_shifts: int = 16,
+        cutoff_fn: CutoffArg = "cosine",
+    ) -> tpx.Self:
+        return cls.cover_linearly(
+            start=start,
+            cutoff=cutoff,
+            eta=eta,
+            num_shifts=num_shifts,
+            cutoff_fn=cutoff_fn,
+        )
+
+    @classmethod
+    def like_1x(cls) -> tpx.Self:
+        m = cls.style_1x(cutoff_fn="cosine")
+        m.load_state_dict(torch.load(state_dicts_path / "radial_1x_state_dict.pth"))
         return m
 
     @classmethod
-    def like_2x(cls, **kwargs) -> tpx.Self:
-        exact = kwargs.pop("exact", True)
-        m = cls.cover_linearly(cutoff=5.1, eta=19.7, num_shifts=16, start=0.8, **kwargs)
-        # note that this term is different in the last decimal in 2x,
-        # using this method the term is 2.6812 but in 2x it is 2.681250095,
-        # here we keep consistency with 2x
-        m.ShfR[0, 7] = 2.681250095
-        if exact:
-            state_dict = torch.load(
-                state_dicts_path.joinpath("radial_2x_state_dict.pth")
-            )
-            m.load_state_dict(state_dict)
-        else:
-            _warn_parameters()
+    def like_1ccx(cls) -> tpx.Self:
+        m = cls.style_1x(cutoff_fn="cosine")
+        m.load_state_dict(torch.load(state_dicts_path / "radial_1ccx_state_dict.pth"))
         return m
 
     @classmethod
-    def like_1ccx(cls, **kwargs) -> tpx.Self:
-        return cls.like_1x(**kwargs)
+    def like_2x(cls) -> tpx.Self:
+        m = cls.style_2x(cutoff_fn="cosine")
+        m.load_state_dict(torch.load(state_dicts_path / "radial_2x_state_dict.pth"))
+        return m
 
 
 class StandardAngular(torch.nn.Module):
-    """Compute the angular subAEV terms of the center atom given neighbor pairs.
+    """Compute the angular sub-AEV terms of the center atom given neighbor pairs.
 
     This correspond to equation (4) in the `ANI paper`_. This function just
     compute the terms. The sum is not computed.  The input tensor has shape
@@ -180,19 +193,19 @@ class StandardAngular(torch.nn.Module):
         ret = 2 * factor1 * factor2 * (fcj12[0] * fcj12[1])
         # At this point, ret now has shape
         # (conformations x atoms, ?, ?, ?, ?) where ? depend on constants.
-        # We then should flat the last 4 dimensions to view the subAEV as a two
+        # We then should flat the last 4 dimensions to view the sub-AEV as a two
         # dimensional tensor (onnx doesn't support negative indices in flatten)
         return ret.flatten(start_dim=1)
 
     @classmethod
     def cover_linearly(
         cls,
-        eta: float,
-        num_shifts: int,
-        zeta: float,
-        num_angle_sections: int,
         start: float = 0.9,
-        cutoff: float = 5.2,
+        cutoff: float = 3.5,
+        eta: float = 12.5,
+        zeta: float = 14.1,
+        num_shifts: int = 8,
+        num_angle_sections: int = 4,
         cutoff_fn: CutoffArg = "cosine",
     ) -> tpx.Self:
         r"""Builds angular terms by linearly subdividing space in the angular
@@ -213,67 +226,73 @@ class StandardAngular(torch.nn.Module):
         return cls(EtaA, Zeta, ShfA, ShfZ, cutoff, cutoff_fn)
 
     @classmethod
-    def like_1x(cls, **kwargs) -> tpx.Self:
-        exact = kwargs.pop("exact", True)
-        m = cls.cover_linearly(
-            cutoff=3.5, eta=8.0, zeta=32.0, num_shifts=4, num_angle_sections=8, **kwargs
+    def style_1x(
+        cls,
+        start: float = 0.9,
+        cutoff: float = 3.5,
+        eta: float = 8.0,
+        zeta: float = 32.0,
+        num_shifts: int = 4,
+        num_angle_sections: int = 8,
+        cutoff_fn: CutoffArg = "cosine",
+    ) -> tpx.Self:
+        return cls.cover_linearly(
+            start=start,
+            cutoff=cutoff,
+            eta=eta,
+            zeta=zeta,
+            num_shifts=num_shifts,
+            num_angle_sections=num_angle_sections,
+            cutoff_fn=cutoff_fn,
         )
-        if exact:
-            state_dict = torch.load(
-                state_dicts_path.joinpath("angular_1x_state_dict.pth")
-            )
-            m.load_state_dict(state_dict)
-        else:
-            _warn_parameters()
+
+    @classmethod
+    def style_2x(
+        cls,
+        start: float = 0.8,
+        cutoff: float = 3.5,
+        eta: float = 12.5,
+        zeta: float = 14.1,
+        num_shifts: int = 8,
+        num_angle_sections: int = 4,
+        cutoff_fn: CutoffArg = "cosine",
+    ) -> tpx.Self:
+        return cls.cover_linearly(
+            start=start,
+            cutoff=cutoff,
+            eta=eta,
+            zeta=zeta,
+            num_shifts=num_shifts,
+            num_angle_sections=num_angle_sections,
+            cutoff_fn=cutoff_fn,
+        )
+
+    @classmethod
+    def like_1x(cls) -> tpx.Self:
+        m = cls.style_1x(cutoff_fn="cosine")
+        m.load_state_dict(torch.load(state_dicts_path / "angular_1x_state_dict.pth"))
         return m
 
     @classmethod
-    def like_2x(cls, **kwargs) -> tpx.Self:
-        exact = kwargs.pop("exact", True)
-        m = cls.cover_linearly(
-            cutoff=3.5,
-            eta=12.5,
-            num_shifts=8,
-            start=0.8,
-            zeta=14.1,
-            num_angle_sections=4,
-            **kwargs
-        )
-        if exact:
-            state_dict = torch.load(
-                state_dicts_path.joinpath("angular_2x_state_dict.pth")
-            )
-            m.load_state_dict(state_dict)
-        else:
-            _warn_parameters()
+    def like_1ccx(cls) -> tpx.Self:
+        m = cls.style_1x(cutoff_fn="cosine")
+        m.load_state_dict(torch.load(state_dicts_path / "angular_1ccx_state_dict.pth"))
         return m
 
     @classmethod
-    def like_1ccx(cls, **kwargs) -> tpx.Self:
-        return cls.like_1x(**kwargs)
+    def like_2x(cls) -> tpx.Self:
+        m = cls.style_2x(cutoff_fn="cosine")
+        m.load_state_dict(torch.load(state_dicts_path / "angular_2x_state_dict.pth"))
+        return m
 
 
-# for legacy aev computer initialization the parameters for the angular and
-# radial terms are passed directly to the aev computer and we forward them
-# here, otherwise the fully built module is passed, so we just return it,
-# and we make sure that the paramters passed are None to prevent confusion
-def parse_angular_terms(angular_terms, cutoff_fn, EtaA, Zeta, ShfA, ShfZ, Rca):
-    # legacy input
-    if angular_terms == "standard":
-        return StandardAngular(EtaA, Zeta, ShfA, ShfZ, Rca, cutoff_fn=cutoff_fn)
-
-    # new input
-    assert EtaA is None
-    assert Zeta is None
-    assert ShfA is None
-    assert ShfZ is None
-    assert Rca is None
+def parse_angular_terms(angular_terms):
     if angular_terms == "ani1x":
-        angular_terms = StandardAngular.like_1x(cutoff_fn=cutoff_fn)
+        angular_terms = StandardAngular.like_1x()
     elif angular_terms == "ani2x":
-        angular_terms = StandardAngular.like_2x(cutoff_fn=cutoff_fn)
+        angular_terms = StandardAngular.like_2x()
     elif angular_terms == "ani1ccx":
-        angular_terms = StandardAngular.like_1ccx(cutoff_fn=cutoff_fn)
+        angular_terms = StandardAngular.like_1ccx()
     else:
         assert isinstance(
             angular_terms, torch.nn.Module
@@ -284,26 +303,16 @@ def parse_angular_terms(angular_terms, cutoff_fn, EtaA, Zeta, ShfA, ShfZ, Rca):
         assert hasattr(
             angular_terms, "cutoff"
         ), "Custom angular terms should have a cutoff attribute"
-
     return angular_terms
 
 
-def parse_radial_terms(radial_terms, cutoff_fn, EtaR, ShfR, Rcr):
-    # legacy input
-    if radial_terms == "standard":
-        radial_terms = StandardRadial(EtaR, ShfR, Rcr, cutoff_fn=cutoff_fn)
-        return radial_terms
-
-    # new input
-    assert EtaR is None
-    assert ShfR is None
-    assert Rcr is None
+def parse_radial_terms(radial_terms):
     if radial_terms == "ani1x":
-        radial_terms = StandardRadial.like_1x(cutoff_fn=cutoff_fn)
+        radial_terms = StandardRadial.like_1x()
     elif radial_terms == "ani2x":
-        radial_terms = StandardRadial.like_2x(cutoff_fn=cutoff_fn)
+        radial_terms = StandardRadial.like_2x()
     elif radial_terms == "ani1ccx":
-        radial_terms = StandardRadial.like_1ccx(cutoff_fn=cutoff_fn)
+        radial_terms = StandardRadial.like_1ccx()
     else:
         assert isinstance(
             radial_terms, torch.nn.Module
@@ -314,5 +323,4 @@ def parse_radial_terms(radial_terms, cutoff_fn, EtaR, ShfR, Rcr):
         assert hasattr(
             radial_terms, "cutoff"
         ), "Custom radial terms should have a cutoff attribute"
-
     return radial_terms

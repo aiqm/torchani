@@ -27,6 +27,7 @@ formats of NeuroChem at :attr:`torchani.neurochem`, and more at :attr:`torchani.
 .. _ANI-2x:
     https://doi.org/10.26434/chemrxiv.11819268.v1
 """
+import os
 import warnings
 from importlib.metadata import version, PackageNotFoundError
 
@@ -83,21 +84,34 @@ __all__ = [
     'data',  # TODO: Get rid of this
 ]
 
-# disable tf32
+# TF32 catastrophically degrades accuracy so we disable it
 torch.backends.cuda.matmul.allow_tf32 = False
 torch.backends.cudnn.allow_tf32 = False
-# show warnings to users with ampere or newer gpu
+
+# We warn about this only if an Ampere GPU (or newer) is detected
+# (suppressed by setting TORCHANI_NO_WARN_TF32)
 if torch.cuda.is_available():
     num_devices = torch.cuda.device_count()
     max_sm_major = max(
         [torch.cuda.get_device_capability(i)[0] for i in range(num_devices)]
     )
-    if (max_sm_major >= 8):
+    if (max_sm_major >= 8) and ("TORCHANI_NO_WARN_TF32" not in os.environ):
         warnings.warn(
-            "TF32 (TensorFloat 32) is disabled for accuracy reason")
+            "Torchani disables TF32 (supported by your GPU) to prevent accuracy loss."
+            " To suppress warning set the env var TORCHANI_NO_WARN_TF32 to any value"
+        )
 
+# We warn about ASE not being available since it is an optional dependency, but
+# many users will probably want to enable it
+# TODO: Maybe just make this a hard dependency
 try:
     from . import ase  # noqa: F401
     __all__.append('ase')
 except ImportError:
-    warnings.warn("Dependency not satisfied, torchani.ase will not be available")
+    if "TORCHANI_NO_WARN_ASE" not in os.environ:
+        warnings.warn(
+            "ASE could not be found."
+            " The torchani.ase module and model's *.ase() methods won't be available\n"
+            " To use them install ASE ('pip install ase' or'conda install ase')"
+            " To suppress warning set the env var TORCHANI_NO_WARN_ASE to any value"
+        )

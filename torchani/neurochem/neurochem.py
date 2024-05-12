@@ -1,4 +1,3 @@
-import warnings
 from pathlib import Path
 import typing as tp
 import struct
@@ -26,10 +25,12 @@ class NeurochemParseError(RuntimeError):
 
 class Constants(collections.abc.Mapping):
     def __init__(self, filename: tp.Union[Path, str]):
+        import warnings
         warnings.warn(
             "torchani.neurochem.Constants is deprecated, "
             "please use torchani.neurochem.load_constants or "
-            "torchani.neurochem.load_aev_computer_and_symbols instead"
+            "torchani.neurochem.load_aev_computer_and_symbols instead",
+            category=DeprecationWarning,
         )
         self.filename = str(filename)
         aev_constants, aev_cutoffs, species = load_constants(filename)
@@ -69,7 +70,7 @@ def load_aev_computer_and_symbols(
     cutoff_fn: CutoffArg = "cosine",
 ) -> tp.Tuple[AEVComputer, tp.Tuple[str, ...]]:
     aev_consts, aev_cutoffs, symbols = load_constants(consts_file)
-    aev_computer = AEVComputer(
+    aev_computer = AEVComputer.from_neurochem_constants(
         Rcr=aev_cutoffs["Rcr"],
         Rca=aev_cutoffs["Rca"],
         num_species=len(symbols),
@@ -77,8 +78,6 @@ def load_aev_computer_and_symbols(
         neighborlist=neighborlist,
         use_cuda_extension=use_cuda_extension,
         use_cuaev_interface=use_cuaev_interface,
-        radial_terms="standard",
-        angular_terms="standard",
         **aev_consts,
     )
     return aev_computer, symbols

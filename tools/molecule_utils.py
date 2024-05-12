@@ -1,7 +1,6 @@
 import typing as tp
 from pathlib import Path
 import math
-import warnings
 
 import torch
 from torch import Tensor
@@ -64,7 +63,6 @@ def tensor_from_xyz(path):
 def tensor_to_xyz(
     path,
     species_coordinates: tp.Tuple[Tensor, Tensor],
-    cell: tp.Optional[Tensor] = None,
     no_exponent: bool = True,
 ):
     path = Path(path).resolve()
@@ -82,8 +80,6 @@ def tensor_to_xyz(
 
     with open(path, "w") as f:
         f.write(f"{num_atoms}\n")
-        if cell is not None:
-            warnings.warn("Cell printing is not yet implemented, ignoring cell")
         f.write("\n")
         for s, c in zip(species, coordinates):
             if no_exponent:

@@ -1,5 +1,4 @@
 import torch
-import warnings
 import unittest
 import os
 import pickle
@@ -46,47 +45,30 @@ class TestAEVConstructor(TestCase):
         aev_1ccx = AEVComputer.like_1ccx()
         self._compare_constants(aev_1ccx_nc, aev_1ccx, rtol=1e-17, atol=1e-17)
 
-    def testANI1x(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                action="ignore",
-                message="Generated parameters may differ from published model to 1e-7",
-            )
-            approx_angular = StandardAngular.like_1x(exact=False)
-            approx_radial = StandardRadial.like_1x(exact=False)
-        exact_angular = StandardAngular.like_1x(exact=True)
-        exact_radial = StandardRadial.like_1x(exact=True)
+    def testTerms1x(self):
+        style_angular = StandardAngular.style_1x()
+        style_radial = StandardRadial.style_1x()
+        exact_angular = StandardAngular.like_1x()
+        exact_radial = StandardRadial.like_1x()
+        self._compare_constants(exact_angular, style_angular)
+        self._compare_constants(exact_radial, style_radial)
 
-        self._compare_constants(exact_angular, approx_angular)
-        self._compare_constants(exact_radial, approx_radial)
+    def testTerms2x(self):
+        style_angular = StandardAngular.style_2x()
+        style_radial = StandardRadial.style_2x()
+        exact_angular = StandardAngular.like_2x()
+        exact_radial = StandardRadial.like_2x()
+        self._compare_constants(exact_angular, style_angular)
+        self._compare_constants(exact_radial, style_radial)
 
-    def testANI2x(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                action="ignore",
-                message="Generated parameters may differ from published model to 1e-7",
-            )
-            approx_angular = StandardAngular.like_2x(exact=False)
-            approx_radial = StandardRadial.like_2x(exact=False)
-        exact_angular = StandardAngular.like_2x(exact=True)
-        exact_radial = StandardRadial.like_2x(exact=True)
-
-        self._compare_constants(exact_angular, approx_angular)
-        self._compare_constants(exact_radial, approx_radial)
-
-    def testANI1ccx(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                action="ignore",
-                message="Generated parameters may differ from published model to 1e-7",
-            )
-            approx_angular = StandardAngular.like_1ccx(exact=False)
-            approx_radial = StandardRadial.like_1ccx(exact=False)
-        exact_angular = StandardAngular.like_1ccx(exact=True)
-        exact_radial = StandardRadial.like_1ccx(exact=True)
-
-        self._compare_constants(exact_angular, approx_angular)
-        self._compare_constants(exact_radial, approx_radial)
+    def testTerms1ccx(self):
+        # Note that 1ccx should be the same as 1x, exactly
+        style_angular = StandardAngular.style_1x()
+        style_radial = StandardRadial.style_1x()
+        exact_angular = StandardAngular.like_1ccx()
+        exact_radial = StandardRadial.like_1ccx()
+        self._compare_constants(exact_angular, style_angular)
+        self._compare_constants(exact_radial, style_radial)
 
     def _compare_constants(self, aev_computer, aev_computer_alt, rtol=1e-7, atol=1e-7):
         alt_state_dict = aev_computer_alt.state_dict()

@@ -60,7 +60,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # .. _sae_linfit.dat:
 #   https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/sae_linfit.dat
 
-aev_computer = torchani.AEVComputer.like_1x()
+aev_computer = torchani.AEVComputer.style_1x()
 energy_shifter = torchani.utils.EnergyShifter(None)
 
 ###############################################################################

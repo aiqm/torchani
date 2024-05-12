@@ -3,10 +3,10 @@ import math
 
 import torch
 from torch import Tensor
-from torch.jit import Final
 
 
 # All cutoffs assume the elements in "distances" are smaller than "cutoff"
+# Cutoff modules must have no parameters
 class Cutoff(torch.nn.Module):
     def forward(self, distances: Tensor, cutoff: float) -> Tensor:
         raise NotImplementedError
@@ -23,22 +23,18 @@ class CutoffCosine(Cutoff):
 
 
 class CutoffSmooth(Cutoff):
-    order: Final[int]
-    eps: Final[float]
-
-    def __init__(self, eps: float = 1e-10, order: int = 2):
-        super().__init__()
-        # Higher orders make the cutoff more similar to 1
-        # for a wider range of distances, before the cutoff.
-        # lower orders distort the underlying function more
-        assert order > 0, "order must be a positive integer greater than zero"
-        assert order % 2 == 0, "Order must be even"
-
-        self.order = order
-        self.eps = eps
-
     def forward(self, distances: Tensor, cutoff: float) -> Tensor:
-        e = 1 - 1 / (1 - (distances / cutoff) ** self.order).clamp(min=self.eps)
+        order = 2
+        eps = 1e-10
+        e = 1 - 1 / (1 - (distances / cutoff) ** order).clamp(min=eps)
+        return torch.exp(e)
+
+
+class CutoffSmooth4(Cutoff):
+    def forward(self, distances: Tensor, cutoff: float) -> Tensor:
+        order = 4
+        eps = 1e-10
+        e = 1 - 1 / (1 - (distances / cutoff) ** order).clamp(min=eps)
         return torch.exp(e)
 
 
@@ -57,9 +53,9 @@ def parse_cutoff_fn(
     elif cutoff_fn == 'cosine':
         cutoff_fn = CutoffCosine()
     elif cutoff_fn in ('smooth', 'smooth2'):
-        cutoff_fn = CutoffSmooth(order=2)
+        cutoff_fn = CutoffSmooth()
     elif cutoff_fn == 'smooth4':
-        cutoff_fn = CutoffSmooth(order=4)
+        cutoff_fn = CutoffSmooth4()
     else:
         assert isinstance(cutoff_fn, Cutoff)
     return cutoff_fn

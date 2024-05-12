@@ -19,6 +19,7 @@ def calculate_saes(
     device: str = "cpu",
     max_epochs: int = 1,
     lr: float = 0.01,
+    verbose: bool = False,
 ) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
     if mode == "exact":
         if lr != 0.01:
@@ -26,7 +27,8 @@ def calculate_saes(
         if max_epochs != 1:
             raise ValueError("max_epochs is only used with mode=sgd")
 
-    assert mode in ["sgd", "exact"]
+    if mode not in ["sgd", "exact"]:
+        raise ValueError("'mode' must be one of ['sgd', 'exact']")
     if isinstance(dataset, DataLoader):
         assert isinstance(dataset.dataset, ANIBatchedDataset)
         old_transform = dataset.dataset.transform
@@ -38,14 +40,16 @@ def calculate_saes(
 
     num_species = len(elements)
     num_batches_to_use = math.ceil(len(dataset) * fraction)
-    print(
-        f"Using {num_batches_to_use} batches"
-        f" out of a total of {len(dataset)} batches"
-        " to estimate SAE"
-    )
+    if verbose:
+        print(
+            f"Using {num_batches_to_use} batches"
+            f" out of a total of {len(dataset)} batches"
+            " to estimate SAE"
+        )
 
     if mode == "exact":
-        print("Calculating SAE using exact OLS method...")
+        if verbose:
+            print("Calculating SAE using exact OLS method...")
         m_out, b_out = _calculate_saes_exact(
             dataset,
             num_species,
@@ -54,7 +58,8 @@ def calculate_saes(
             fit_intercept=fit_intercept,
         )
     elif mode == "sgd":
-        print("Estimating SAE using stochastic gradient descent...")
+        if verbose:
+            print("Estimating SAE using stochastic gradient descent...")
         m_out, b_out = _calculate_saes_sgd(
             dataset,
             num_species,

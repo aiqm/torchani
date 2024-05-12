@@ -26,7 +26,6 @@ Some of the Featurizers support custom made cuda operators that accelerate them
 """
 import functools
 from copy import deepcopy
-import warnings
 import math
 from dataclasses import dataclass
 from collections import OrderedDict
@@ -194,6 +193,10 @@ class Assembler:
         self._check_symbols(value.keys())
         self._self_energies = {k: v for k, v in value.items()}
 
+    def set_zeros_as_self_energies(self) -> None:
+        self._check_symbols()
+        self.self_energies = {s: 0.0 for s in self.symbols}
+
     def set_gsaes_as_self_energies(
         self,
         lot: str = "",
@@ -284,9 +287,6 @@ class Assembler:
             raise RuntimeError(
                 "Featurizer not set. Call 'set_featurizer' before assembly"
             )
-
-        if all(e == 0.0 for e in self.self_energies.values()):
-            warnings.warn("Assembling model with ZERO self energies!")
 
         feat_cutoff_fn = parse_cutoff_fn(
             self._featurizer.cutoff_fn, self._global_cutoff_fn

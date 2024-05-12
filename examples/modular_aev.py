@@ -12,6 +12,7 @@ from torch import Tensor
 
 import torchani
 from torchani.cutoffs import Cutoff
+from torchani.aev import StandardRadial, AEVComputer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -31,8 +32,8 @@ coordinates = torch.tensor(
 )
 species = torch.tensor([[1, 0, 0, 0, 0]], device=device)
 
-# Suppose that we want to make exactly the same aev computer as ANI 2x:
-aev_computer = torchani.AEVComputer.like_2x().to(device)
+# Suppose that we want to make an aev computer in the ANI 2x style:
+aev_computer = AEVComputer.style_2x().to(device)
 species, aevs = aev_computer((species, coordinates))
 radial_length = aev_computer.radial_length
 print("AEV computer like 2x")
@@ -49,7 +50,7 @@ print()
 # WARNING: Be very careful, if a model has not been trained using this cutoff function
 # then using this aev computer with it will give nonsensical results
 
-aev_computer_smooth = torchani.AEVComputer.like_1x(cutoff_fn="smooth").to(device)
+aev_computer_smooth = AEVComputer.style_1x(cutoff_fn="smooth").to(device)
 radial_length = aev_computer_smooth.radial_length
 species, aevs = aev_computer_smooth((species, coordinates))
 print("AEV computer like 1x, but with a smooth cutoff")
@@ -79,7 +80,7 @@ class CutoffBiweight(Cutoff):
         return (cutoff**2 - distances**2) ** 2 / cutoff**4
 
 
-aev_computer_bw = torchani.AEVComputer.like_1x(cutoff_fn=CutoffBiweight()).to(device)
+aev_computer_bw = AEVComputer.style_1x(cutoff_fn=CutoffBiweight()).to(device)
 radial_length = aev_computer_bw.radial_length
 species, aevs = aev_computer_smooth((species, coordinates))
 print("AEV computer like 1x, but with a custom cutoff function")
@@ -135,27 +136,26 @@ class AngularCosDiff(torch.nn.Module):
         return out
 
 
-# Now to initialize this function I want EtaA and ShfA to be the same as in
-# standard ANI 1x, but I want Gamma and ShfZ to be different.
-# note that here I have one Gamma for each ShfZ, and they come in pairs and
-# belong together, for this reason the shapes of the tensors and sublengths
-# are a bit different than in standard angular terms
-EtaA = torchani.aev.StandardAngular.like_1x().EtaA
-ShfA = torchani.aev.StandardAngular.like_1x().ShfA
-cutoff = torchani.aev.StandardAngular.like_1x().cutoff
+# Now lets initialize this function with some parameters
+EtaA = torch.tensor([8.0])
+ShfA = torch.tensor([0.9000, 1.5500, 2.2000, 2.8500], dtype=torch.float,)
 ShfZ = torch.linspace(0, math.pi, 9)
+cutoff = 3.5
 Gamma = torch.tensor(
-    [1023, 146.5, 36, 18.6, 15.5, 18.6, 36, 146.5, 1023], dtype=torch.float
+    [1023, 146.5, 36, 18.6, 15.5, 18.6, 36, 146.5, 1023],
+    dtype=torch.float,
 )
 
-custom_terms = AngularCosDiff(EtaA, ShfA, Gamma, ShfZ, cutoff, cutoff_fn="cosine")
-
-aev_computer_cosdiff = torchani.aev.AEVComputer(
-    radial_terms="ani1x", angular_terms=custom_terms, num_species=4
+# We will use standard radial terms in the ani-1x style but our custom angular terms
+aev_computer_cosdiff = AEVComputer(
+    radial_terms=StandardRadial.style_1x(),
+    angular_terms=AngularCosDiff(EtaA, ShfA, Gamma, ShfZ, cutoff, cutoff_fn="cosine"),
+    num_species=4,
 ).to(device)
+
 radial_length = aev_computer_cosdiff.radial_length
 species, aevs = aev_computer_cosdiff((species, coordinates))
-print("AEV computer like 1x, but with custom angular terms")
+print("AEV computer similar to 1x, but with custom angular terms")
 print("for first atom, first 10 terms of radial:", aevs[0, 0, :10])
 print(
     "for first atom, first 10 terms of angular:",

@@ -26,6 +26,7 @@ def expand(
     )
     return decorator
 
+
 # If you want a class to run in all possible contexts (all combinations of
 # cuda, cpu, jit and nojit) then use @expand()
 
@@ -59,8 +60,8 @@ class ANITest(TestCase):
         if (getattr(cls, "_device", "cpu") == "cuda") and not torch.cuda.is_available():
             raise unittest.SkipTest("CUDA is not available")
 
-    # jit-scripting should for the most part be transparent to users, so we assume the
-    # input and output types of this function are actually the same
+    # jit-scripting should for the most part be transparent to users, so we
+    # assume the input and output types of this function are actually the same
     def _setup(self, model: _T) -> _T:
         model = model.to(self.device)
         if self.jit:

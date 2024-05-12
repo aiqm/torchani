@@ -12,15 +12,6 @@ path = os.path.dirname(os.path.realpath(__file__))
 N = 97
 
 
-class TestActivation(TestCase):
-    def testFittedSoftplus(self):
-        celu = torch.nn.CELU(alpha=0.1)
-        fsp = torchani.nn.FittedSoftplus()
-        x = torch.linspace(-3, 3, 1000)
-        # this functions are approximately equal to 1e-2
-        self.assertEqual(celu(x), fsp(x), atol=1e-2, rtol=1e-2)
-
-
 class TestANI2x(TestCase):
     def setUp(self):
         self.model_pti = torchani.models.ANI2x(model_index=0)

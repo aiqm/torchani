@@ -48,9 +48,9 @@ def timeit(
                     func(*args)
                     torch.cuda.nvtx.range_pop()
         events = prof.key_averages()
-        for i, e in enumerate(events):
-            print(i, ":", e.key)
         if verbose:
+            for i, e in enumerate(events):
+                print(i, ":", e.key)
             print(
                 events.table(
                     sort_by="self_cuda_time_total",
@@ -81,8 +81,7 @@ def timeit(
 
     if run_profile:
         return time_ms, events
-    else:
-        return time_ms
+    return time_ms
 
 
 __all__ = ["timeit"]

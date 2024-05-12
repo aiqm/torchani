@@ -3,7 +3,7 @@ import unittest
 import torch
 
 import torchani
-from torchani.testing import TestCase
+from torchani.testing import TestCase, expand, ANITest
 from torchani.aev import AEVComputer
 from torchani.neighbors import CellList
 from torchani.geometry import tile_into_tight_cell
@@ -299,7 +299,7 @@ class TestCellListEnergies(TestCase):
         # test also fails with AEVComputer FullPairwise ** against itself **.
         # This is becausse non determinancy in order of operations in cuda
         # creates small floating point errors that may be larger than the
-        # default threshold
+        # default threshold (I hope)
         self.model_cl = self.model_cl.to(self.device).float()
         self.model_fp = self.model_fp.to(self.device).float()
         species = torch.zeros(100).unsqueeze(0).to(torch.long).to(self.device)
@@ -324,110 +324,6 @@ class TestCellListEnergies(TestCase):
                 pbc=self.pbc.to(self.device),
             )
             self.assertEqual(e_c, e_j, rtol=1e-4, atol=1e-4)
-
-    def testCellListLargeRandom(self):
-        aev_cl = self.aev_cl.to(self.device).double()
-        aev_fp = self.aev_fp.to(self.device).double()
-        species = torch.LongTensor(100).random_(0, 4).to(self.device).unsqueeze(0)
-        for j in range(self.num_to_test):
-            coordinates = (
-                torch.randn(100, 3).unsqueeze(0).to(self.device).to(torch.double)
-                * 3
-                * self.cell_size
-            )
-            coordinates = torch.clamp(
-                coordinates, min=0.0001, max=self.cell_size - 0.0001
-            )
-
-            _, aevs_cl = aev_cl(
-                (species, coordinates),
-                cell=self.cell.to(self.device).double(),
-                pbc=self.pbc.to(self.device),
-            )
-            _, aevs_fp = aev_fp(
-                (species, coordinates),
-                cell=self.cell.to(self.device).double(),
-                pbc=self.pbc.to(self.device),
-            )
-            self.assertEqual(aevs_cl, aevs_fp)
-
-    def testCellListLargeRandomNoPBC(self):
-        aev_cl = self.aev_cl.to(self.device).double()
-        aev_fp = self.aev_fp.to(self.device).double()
-        species = torch.LongTensor(100).random_(0, 4).to(self.device).unsqueeze(0)
-        for j in range(self.num_to_test):
-            coordinates = (
-                torch.randn(100, 3).unsqueeze(0).to(self.device).to(torch.double)
-                * 3
-                * self.cell_size
-            )
-            coordinates = torch.clamp(
-                coordinates, min=0.0001, max=self.cell_size - 0.0001
-            )
-
-            _, aevs_cl = aev_cl((species, coordinates))
-            _, aevs_fp = aev_fp((species, coordinates))
-            self.assertEqual(aevs_cl, aevs_fp)
-
-    def testCellListLargeRandomJITNoPBC(self):
-        # JIT optimizations are avoided to prevent cuda bugs that make first
-        # evaluations extremely slow
-        torch._C._jit_set_profiling_executor(False)
-        torch._C._jit_set_profiling_mode(False)  # this also has an effect
-        torch._C._jit_override_can_fuse_on_cpu(False)
-        torch._C._jit_set_texpr_fuser_enabled(False)  # this has an effect
-        if torch.cuda.is_available():
-            torch._C._jit_set_nvfuser_enabled(False)
-        aev_cl = torch.jit.script(self.aev_cl).to(self.device).double()
-        aev_fp = torch.jit.script(self.aev_fp).to(self.device).double()
-        species = torch.LongTensor(100).random_(0, 4).to(self.device).unsqueeze(0)
-        for j in range(self.num_to_test):
-            coordinates = (
-                torch.randn(100, 3).unsqueeze(0).to(self.device).to(torch.double)
-                * 3
-                * self.cell_size
-            )
-            coordinates = torch.clamp(
-                coordinates, min=0.0001, max=self.cell_size - 0.0001
-            )
-
-            _, aevs_cl = aev_cl((species, coordinates))
-            _, aevs_fp = aev_fp((species, coordinates))
-            self.assertEqual(aevs_cl, aevs_fp)
-
-    def testCellListLargeRandomJIT(self):
-        # JIT optimizations are avoided to prevent cuda bugs that make first
-        # evaluations extremely slow
-        torch._C._jit_set_profiling_executor(False)
-        torch._C._jit_set_profiling_mode(False)  # this also has an effect
-        torch._C._jit_override_can_fuse_on_cpu(False)
-        torch._C._jit_set_texpr_fuser_enabled(False)  # this has an effect
-        if torch.cuda.is_available():
-            torch._C._jit_set_nvfuser_enabled(False)
-        aev_cl = torch.jit.script(self.aev_cl).to(self.device).double()
-        aev_fp = torch.jit.script(self.aev_fp).to(self.device).double()
-        species = torch.LongTensor(100).random_(0, 4).to(self.device).unsqueeze(0)
-        for j in range(self.num_to_test):
-            coordinates = (
-                torch.randn(100, 3).unsqueeze(0).to(self.device).to(torch.double)
-                * 3
-                * self.cell_size
-            )
-            coordinates = torch.clamp(
-                coordinates, min=0.0001, max=self.cell_size - 0.0001
-            )
-
-            _, aevs_cl = aev_cl(
-                (species, coordinates),
-                cell=self.cell.to(self.device).double(),
-                pbc=self.pbc.to(self.device),
-            )
-            _, aevs_fp = aev_fp(
-                (species, coordinates),
-                cell=self.cell.to(self.device).double(),
-                pbc=self.pbc.to(self.device),
-            )
-            self.assertEqual(aevs_cl, aevs_fp)
 
     def testCellListRandomFloat(self):
         aev_cl = self.aev_cl.to(self.device).to(torch.float)
@@ -525,6 +421,76 @@ vector_bucket_index_compare = torch.tensor(
     ],
     dtype=torch.long,
 )
+
+
+@expand()
+class TestCellListLargeSystem(ANITest):
+    def setUp(self):
+        # JIT optimizations are avoided to prevent cuda bugs that make first
+        # evaluations extremely slow (?)
+        torch._C._jit_set_profiling_executor(False)
+        cut = 5.2
+        cell_size = cut * 3 + 0.1
+
+        self.cut = cut
+        self.cell_size = cell_size
+        self.num_to_test = 10
+        self.pbc = torch.tensor(
+            [True, True, True],
+            dtype=torch.bool,
+            device=self.device,
+        )
+        self.cell = torch.diag(
+            torch.tensor([cell_size, cell_size, cell_size], device=self.device),
+        ).float()
+        self.aev_cl = self._setup(AEVComputer.like_1x(neighborlist="cell_list"))
+        self.aev_fp = self._setup(AEVComputer.like_1x(neighborlist="full_pairwise"))
+
+    def tearDown(self) -> None:
+        # JIT optimizations are reset since this generates bugs in the
+        # repulsion tests (!) for some reason TODO: Figure out why and see if
+        # this remains in pytorch 2
+        torch._C._jit_set_profiling_executor(True)
+
+    def testRandomNoPBC(self):
+        species = torch.LongTensor(100).random_(0, 4).to(self.device).unsqueeze(0)
+        for j in range(self.num_to_test):
+            coordinates = (
+                torch.randn(100, 3).unsqueeze(0).to(self.device).to(torch.double)
+                * 3
+                * self.cell_size
+            )
+            coordinates = torch.clamp(
+                coordinates, min=0.0001, max=self.cell_size - 0.0001
+            )
+
+            _, aevs_cl = self.aev_cl((species, coordinates))
+            _, aevs_fp = self.aev_fp((species, coordinates))
+            self.assertEqual(aevs_cl, aevs_fp)
+
+    def testRandom(self):
+        species = torch.LongTensor(100).random_(0, 4).to(self.device).unsqueeze(0)
+        for j in range(self.num_to_test):
+            coordinates = (
+                torch.randn(100, 3).unsqueeze(0).to(self.device).to(torch.double)
+                * 3
+                * self.cell_size
+            )
+            coordinates = torch.clamp(
+                coordinates, min=0.0001, max=self.cell_size - 0.0001
+            )
+
+            _, aevs_cl = self.aev_cl(
+                (species, coordinates),
+                cell=self.cell.to(self.device).double(),
+                pbc=self.pbc.to(self.device),
+            )
+            _, aevs_fp = self.aev_fp(
+                (species, coordinates),
+                cell=self.cell.to(self.device).double(),
+                pbc=self.pbc.to(self.device),
+            )
+            self.assertEqual(aevs_cl, aevs_fp)
 
 
 if __name__ == "__main__":

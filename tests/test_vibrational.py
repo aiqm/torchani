@@ -1,12 +1,16 @@
+import typing as tp
 import os
 import math
 import unittest
-import torch
-import torchani
+
 import ase
 import ase.optimize
 import ase.vibrations
-import numpy
+import numpy as np
+from numpy.typing import NDArray
+
+import torch
+import torchani
 from torchani.testing import TestCase
 
 
@@ -33,12 +37,12 @@ class TestVibrational(TestCase):
         # compute vibrational frequencies by ASE
         vib = ase.vibrations.Vibrations(molecule)
         vib.run()
-        freq = torch.tensor([numpy.real(x) for x in vib.get_frequencies()[6:]])
-        modes = []
+        freq = torch.tensor([np.real(x) for x in vib.get_frequencies()[6:]])
+        modes: tp.List[NDArray[np.float_]] = []
         for j in range(6, 6 + len(freq)):
-            modes.append(numpy.expand_dims(vib.get_mode(j), axis=0))
+            modes.append(np.expand_dims(vib.get_mode(j), axis=0))
         vib.clean()
-        modes = torch.tensor(numpy.concatenate(modes, axis=0))
+        tensor_modes = torch.tensor(np.concatenate(modes, axis=0))
         # compute vibrational by torchani
         species = torch.tensor(molecule.get_atomic_numbers()).unsqueeze(0)
         masses = torchani.utils.get_atomic_masses(species, dtype=torch.double)
@@ -52,10 +56,10 @@ class TestVibrational(TestCase):
         modes2 = modes2[6:]
         self.assertEqual(freq, freq2, atol=0, rtol=0.02, exact_dtype=False)
 
-        diff1 = (modes - modes2).abs().max(dim=-1).values.max(dim=-1).values
-        diff2 = (modes + modes2).abs().max(dim=-1).values.max(dim=-1).values
+        diff1 = (tensor_modes - modes2).abs().max(dim=-1).values.max(dim=-1).values
+        diff2 = (tensor_modes + modes2).abs().max(dim=-1).values.max(dim=-1).values
         diff = torch.where(diff1 < diff2, diff1, diff2)
-        self.assertLess(diff.max(), 0.02)
+        self.assertLess(float(diff.max().item()), 0.02)
 
 
 if __name__ == "__main__":

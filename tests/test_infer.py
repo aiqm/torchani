@@ -7,17 +7,10 @@ from ase.io import read
 from parameterized import parameterized_class
 
 import torchani
+from torchani.csrc import CUAEV_IS_INSTALLED
 from torchani.testing import TestCase
 from torchani.benchmark import timeit
 
-# Disable Tensorfloat, errors between two run of same model for large system
-# could reach 1e-3. However note that this error for large system is not that
-# big actually.
-torch.backends.cuda.matmul.allow_tf32 = False
-
-# TODO: waiting for the NVFuser
-# [Bug](https://github.com/pytorch/pytorch/issues/84510) to be fixed
-torch._C._jit_set_nvfuser_enabled(False)
 
 devices = ["cuda", "cpu"]
 ani2x = torchani.models.ANI2x()
@@ -27,8 +20,20 @@ ani2x = torchani.models.ANI2x()
 @unittest.skipIf(not torch.cuda.is_available(), "Infer model needs cuda is available")
 class TestInfer(TestCase):
     def setUp(self):
+        # Disable Tensorfloat, errors between two run of same model for large system
+        # could reach 1e-3. However note that this error for large system is not that
+        # big actually.
+        self._saved_tf32 = torch.backends.cuda.matmul.allow_tf32
+        torch.backends.cuda.matmul.allow_tf32 = False
+        # TODO: waiting for the NVFuser
+        # [Bug](https://github.com/pytorch/pytorch/issues/84510) to be fixed
+        torch._C._jit_set_nvfuser_enabled(False)
         self.ani2x = ani2x.to(self.device)
         self.path = os.path.dirname(os.path.realpath(__file__))
+
+    def tearDown(self) -> None:
+        torch.backends.cuda.matmul.allow_tf32 = self._saved_tf32
+        torch._C._jit_set_nvfuser_enabled(True)
 
     def _test(self, model_ref, model_infer):
         files = ["small.pdb", "1hz5.pdb", "6W8H.pdb"]
@@ -91,7 +96,7 @@ class TestInfer(TestCase):
             _, energy1 = model((species, coordinates))
             _ = torch.autograd.grad(energy1.sum(), coordinates)[0]  # force
 
-        use_cuaev = self.device == "cuda"
+        use_cuaev = (self.device == "cuda") and CUAEV_IS_INSTALLED
         ani2x_jit = torch.jit.script(
             torchani.models.ANI2x(use_cuda_extension=use_cuaev).to(self.device)
         )

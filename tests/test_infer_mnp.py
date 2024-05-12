@@ -7,6 +7,7 @@ from ase.io import read
 
 import torchani
 from torchani.testing import TestCase
+from torchani.csrc import MNP_IS_INSTALLED, CUAEV_IS_INSTALLED
 
 # Disable Tensorfloat, errors between two run of same model for large system
 # could reach 1e-3. However note that this error for large system is not that
@@ -24,7 +25,7 @@ PDB_PATH = (Path(__file__).resolve().parent.parent / "dataset") / "pdb"
 
 
 @unittest.skipIf(
-    not torchani.infer.mnp_is_installed,
+    not MNP_IS_INSTALLED,
     "Nvtx commands need the MNP extension",
 )
 class TestNvtx(TestCase):
@@ -38,7 +39,7 @@ class TestNvtx(TestCase):
     "InferMNP model needs CUDA",
 )
 @unittest.skipIf(
-    not torchani.infer.mnp_is_installed,
+    not MNP_IS_INSTALLED,
     "InferMNP model needs the MNP extension",
 )
 class TestCPUInferMNP(TestCase):
@@ -51,8 +52,8 @@ class TestCPUInferMNP(TestCase):
         return model
 
     def _build_ani2x(self):
-        use_cuda = self.device == "cuda"
-        return torchani.models.ANI2x(use_cuda_extension=use_cuda).to(self.device)
+        use_cuaev = (self.device == "cuda") and CUAEV_IS_INSTALLED
+        return torchani.models.ANI2x(use_cuda_extension=use_cuaev).to(self.device)
 
     def _test(self, model_ref, model_infer):
         files = ["small.pdb", "1hz5.pdb", "6W8H.pdb"]
@@ -108,7 +109,7 @@ class TestCPUInferMNP(TestCase):
     "InferMNP model needs CUDA",
 )
 @unittest.skipIf(
-    not torchani.infer.mnp_is_installed,
+    not MNP_IS_INSTALLED,
     "InferMNP model needs the MNP extension",
 )
 class TestCUDAInferMNP(TestCPUInferMNP):

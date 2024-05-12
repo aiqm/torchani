@@ -33,7 +33,6 @@ Example::
     )
 """
 import typing as tp
-import warnings
 
 import torch
 from torch import Tensor
@@ -178,20 +177,14 @@ class SubtractSAE(Transform):
 
 class AtomicNumbersToIndices(Transform):
     r"""
-    WARNING: Using this class is very error prone and not recommended
+    Converts atomic numbers to arbitrary indices
 
-    Converts atomic numbers to arbitrary indices, provided for legacy support
-
-    (If added to a transform pipeline, it should in general be the *last*
-    transform)
+    Provided for legacy support, if added to a transform pipeline, it should in
+    general be the *last* transform.
     """
 
     def __init__(self, symbols: tp.Sequence[str]):
         super().__init__()
-        warnings.warn(
-            "It is not recommended convert atomic numbers to indices, this is "
-            " very error prone and can generate multiple issues"
-        )
         self.atomic_numbers = torch.tensor(
             [ATOMIC_NUMBERS[s] for s in symbols],
             dtype=torch.long,

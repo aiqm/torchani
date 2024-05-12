@@ -330,27 +330,30 @@ _BUILTIN_DATASETS_LOT: tp.List[str] = list(
 )
 
 
-def download_builtin_dataset(dataset: str, lot: str, root=None):
+def download_builtin_dataset(dataset: str, lot: str, root=None, verbose: bool = True):
     """
     Download dataset at specified root folder, or at the default folder:
     ./datasets/{dataset}-{lot}/
     """
-    assert dataset in _BUILTIN_DATASETS, f"{dataset} is not avaiable"
-    assert lot in _BUILTIN_DATASETS_LOT, f"{lot} is not avaiable"
+    if dataset not in _BUILTIN_DATASETS:
+        raise ValueError(f"{dataset} is not avaiable")
+    if lot not in _BUILTIN_DATASETS_LOT:
+        raise ValueError(f"{lot} is not avaiable")
 
     parts = lot.split("-")
-    assert len(parts) == 2, f"bad LoT format: {lot}"
+    if len(parts) != 2:
+        raise ValueError(f"'lot' format {lot} incorrect. It should be <fnal>-<basis>")
 
     functional = parts[0]
     basis_set = parts[1]
     location = f"./datasets/{dataset}-{lot}/" if root is None else root
-    if Path(location).exists():
+    if Path(location).exists() and verbose:
         print(
-            f"Found existing dataset at {Path(location).absolute().as_posix()},"
-            f" will check files integrality."
+            f"Found existing dataset at {str(Path(location).resolve())},"
+            f" will check files integraity."
         )
     else:
-        print(f"Will download dataset at {Path(location).absolute().as_posix()}")
+        print(f"Will download dataset at {str(Path(location).resolve())}")
     getattr(sys.modules[__name__], dataset)(
         location, download=True, functional=functional, basis_set=basis_set
     )

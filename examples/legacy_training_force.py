@@ -24,7 +24,7 @@ from torchani.units import hartree2kcalpermol
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-aev_computer = torchani.AEVComputer.like_1x()
+aev_computer = torchani.AEVComputer.style_1x()
 energy_shifter = torchani.utils.EnergyShifter(None)
 
 try:

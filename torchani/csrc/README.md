@@ -132,11 +132,17 @@ python tests/test_infer.py
 
 ## Usage
 #### CUAEV
-Pass `use_cuda_extension=True` when construct aev_computer, for example:
+Pass `use_cuda_extension=True` when constructing an aev_computer, for example:
 ```python
-cuaev_computer = torchani.AEVComputer(Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=True)
+cuaev_computer = torchani.AEVComputer.from_neurochem_constants(
+    Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=True,
+)
 # or
 cuaev_computer = torchani.AEVComputer.like_1x(use_cuda_extension=True)
+# or
+cuaev_computer = torchani.AEVComputer.style_1x(
+    cutoff_fn="smooth", use_cuda_extension=True,
+)
 ```
 
 #### MNP
@@ -147,12 +153,6 @@ bmm_ensemble = ani2x.neural_networks.to_infer_model(use_mnp=True)
 # single model
 model = ani2x.neural_networks[0].to_infer_model(use_mnp=True)
 ```
-
-## TODOs
-- [x] CUAEV Forward
-- [x] CUAEV Backwad (Force)
-- [x] CUAEV Double Backwad (Force training need aev's double backward w.r.t. grad_aev)
-- [ ] PBC
 
 ## Benchmark
 
