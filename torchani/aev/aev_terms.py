@@ -1,9 +1,9 @@
+import typing as tp
 import math
 from pathlib import Path
 
 import torch
 from torch import Tensor
-from torch.jit import Final
 import typing_extensions as tpx
 
 from torchani.cutoffs import parse_cutoff_fn, CutoffArg
@@ -11,7 +11,37 @@ from torchani.cutoffs import parse_cutoff_fn, CutoffArg
 state_dicts_path = Path(__file__).parent.parent.joinpath("resources/state_dicts/")
 
 
-class StandardRadial(torch.nn.Module):
+class _Term(torch.nn.Module):
+    cutoff: float
+    sublength: int
+
+    def __init__(
+        self,
+        *args: tp.Any,
+        cutoff: float,
+        cutoff_fn: CutoffArg = "cosine",
+        **kwargs: tp.Any,
+    ) -> None:
+        super().__init__()
+        self.cutoff_fn = parse_cutoff_fn(cutoff_fn)
+        self.cutoff = cutoff
+        self.sublength = 0
+
+    def forward(self, input_: Tensor) -> Tensor:
+        raise NotImplementedError("Must be implemented by subclasses")
+
+
+# NOTE: These are the same for now, but probably will need to be distinguished
+# in the future
+class AngularTerm(_Term):
+    pass
+
+
+class RadialTerm(_Term):
+    pass
+
+
+class StandardRadial(RadialTerm):
     """Compute the radial sub-AEV terms of the center atom given neighbors
 
     This correspond to equation (3) in the `ANI paper`_. This function just
@@ -24,15 +54,17 @@ class StandardRadial(torch.nn.Module):
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
     """
 
-    cutoff: Final[float]
-    sublength: Final[int]
     EtaR: Tensor
     ShfR: Tensor
 
     def __init__(
-        self, EtaR: Tensor, ShfR: Tensor, cutoff: float, cutoff_fn: CutoffArg = "cosine"
+        self,
+        EtaR: Tensor,
+        ShfR: Tensor,
+        cutoff: float,
+        cutoff_fn: CutoffArg = "cosine",
     ):
-        super().__init__()
+        super().__init__(cutoff=cutoff, cutoff_fn=cutoff_fn)
         # initialize the cutoff function
         self.cutoff_fn = parse_cutoff_fn(cutoff_fn)
 
@@ -41,7 +73,6 @@ class StandardRadial(torch.nn.Module):
         self.register_buffer("EtaR", EtaR.view(-1, 1))
         self.register_buffer("ShfR", ShfR.view(1, -1))
         self.sublength = self.EtaR.numel() * self.ShfR.numel()
-        self.cutoff = cutoff
 
     def forward(self, distances: Tensor) -> Tensor:
         distances = distances.view(-1, 1, 1)
@@ -128,7 +159,7 @@ class StandardRadial(torch.nn.Module):
         return m
 
 
-class StandardAngular(torch.nn.Module):
+class StandardAngular(AngularTerm):
     """Compute the angular sub-AEV terms of the center atom given neighbor pairs.
 
     This correspond to equation (4) in the `ANI paper`_. This function just
@@ -141,8 +172,6 @@ class StandardAngular(torch.nn.Module):
         http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
     """
 
-    sublength: Final[int]
-    cutoff: Final[float]
     EtaA: Tensor
     Zeta: Tensor
     ShfA: Tensor
@@ -157,10 +186,7 @@ class StandardAngular(torch.nn.Module):
         cutoff: float,
         cutoff_fn: CutoffArg = "cosine",
     ):
-        super().__init__()
-        # initialize the cutoff function
-        self.cutoff_fn = parse_cutoff_fn(cutoff_fn)
-
+        super().__init__(cutoff=cutoff, cutoff_fn=cutoff_fn)
         # convert constant tensors to a ready-to-broadcast shape
         # shape convension (..., EtaA, Zeta, ShfA, ShfZ)
         self.register_buffer("EtaA", EtaA.view(-1, 1, 1, 1))
@@ -173,7 +199,6 @@ class StandardAngular(torch.nn.Module):
             * self.ShfA.numel()
             * self.ShfZ.numel()
         )
-        self.cutoff = cutoff
 
     def forward(self, vectors12: Tensor) -> Tensor:
         vectors12 = vectors12.view(2, -1, 3, 1, 1, 1, 1)
@@ -286,41 +311,34 @@ class StandardAngular(torch.nn.Module):
         return m
 
 
-def parse_angular_terms(angular_terms):
-    if angular_terms == "ani1x":
-        angular_terms = StandardAngular.like_1x()
-    elif angular_terms == "ani2x":
-        angular_terms = StandardAngular.like_2x()
-    elif angular_terms == "ani1ccx":
-        angular_terms = StandardAngular.like_1ccx()
-    else:
-        assert isinstance(
-            angular_terms, torch.nn.Module
-        ), "Custom angular terms should be a torch module"
-        assert hasattr(
-            angular_terms, "sublength"
-        ), "Custom angular terms should have a sublength attribute"
-        assert hasattr(
-            angular_terms, "cutoff"
-        ), "Custom angular terms should have a cutoff attribute"
-    return angular_terms
+_Models = tp.Union[
+    tp.Literal["ani1x"],
+    tp.Literal["ani2x"],
+    tp.Literal["ani1ccx"],
+]
+AngularTermArg = tp.Union[_Models, AngularTerm]
+RadialTermArg = tp.Union[_Models, RadialTerm]
 
 
-def parse_radial_terms(radial_terms):
-    if radial_terms == "ani1x":
-        radial_terms = StandardRadial.like_1x()
-    elif radial_terms == "ani2x":
-        radial_terms = StandardRadial.like_2x()
-    elif radial_terms == "ani1ccx":
-        radial_terms = StandardRadial.like_1ccx()
-    else:
-        assert isinstance(
-            radial_terms, torch.nn.Module
-        ), "Custom radial terms should be a torch module"
-        assert hasattr(
-            radial_terms, "sublength"
-        ), "Custom radial terms should have a sublength attribute"
-        assert hasattr(
-            radial_terms, "cutoff"
-        ), "Custom radial terms should have a cutoff attribute"
-    return radial_terms
+def parse_angular_term(angular_term: AngularTermArg) -> AngularTerm:
+    if angular_term == "ani1x":
+        angular_term = StandardAngular.like_1x()
+    elif angular_term == "ani2x":
+        angular_term = StandardAngular.like_2x()
+    elif angular_term == "ani1ccx":
+        angular_term = StandardAngular.like_1ccx()
+    elif not isinstance(angular_term, AngularTerm):
+        raise ValueError(f"Unsupported angular term: {angular_term}")
+    return tp.cast(AngularTerm, angular_term)
+
+
+def parse_radial_term(radial_term: RadialTermArg) -> RadialTerm:
+    if radial_term == "ani1x":
+        radial_term = StandardRadial.like_1x()
+    elif radial_term == "ani2x":
+        radial_term = StandardRadial.like_2x()
+    elif radial_term == "ani1ccx":
+        radial_term = StandardRadial.like_1ccx()
+    elif not isinstance(radial_term, RadialTerm):
+        raise ValueError(f"Unsupported radial term: {radial_term}")
+    return tp.cast(RadialTerm, radial_term)

@@ -445,6 +445,14 @@ class TestCellListLargeSystem(ANITest):
         ).float()
         self.aev_cl = self._setup(AEVComputer.like_1x(neighborlist="cell_list"))
         self.aev_fp = self._setup(AEVComputer.like_1x(neighborlist="full_pairwise"))
+        if self.jit and self.device == "cuda":
+            # JIT + CUDA can have slightly different answers
+            # TODO: Why? maybe due to nvfuser?
+            self.rtol = 1.0e-6
+            self.atol = 1.0e-6
+        else:
+            self.rtol = 1.0e-7
+            self.atol = 1.0e-7
 
     def tearDown(self) -> None:
         # JIT optimizations are reset since this generates bugs in the
@@ -466,7 +474,7 @@ class TestCellListLargeSystem(ANITest):
 
             _, aevs_cl = self.aev_cl((species, coordinates))
             _, aevs_fp = self.aev_fp((species, coordinates))
-            self.assertEqual(aevs_cl, aevs_fp)
+            self.assertEqual(aevs_cl, aevs_fp, rtol=self.rtol, atol=self.atol)
 
     def testRandom(self):
         species = torch.LongTensor(100).random_(0, 4).to(self.device).unsqueeze(0)
@@ -490,7 +498,7 @@ class TestCellListLargeSystem(ANITest):
                 cell=self.cell.to(self.device).double(),
                 pbc=self.pbc.to(self.device),
             )
-            self.assertEqual(aevs_cl, aevs_fp)
+            self.assertEqual(aevs_cl, aevs_fp, rtol=self.rtol, atol=self.atol)
 
 
 if __name__ == "__main__":

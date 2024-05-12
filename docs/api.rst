@@ -4,6 +4,10 @@ Atomic Environment Vectors (AEV)
 .. automodule:: torchani.aev
 .. autoclass:: torchani.aev.AEVComputer
     :members:
+.. autoclass:: torchani.aev.AngularTerm
+    :members:
+.. autoclass:: torchani.aev.RadialTerm
+    :members:
 .. autoclass:: torchani.aev.StandardRadial
     :members:
 .. autoclass:: torchani.aev.StandardAngular
@@ -24,6 +28,8 @@ Neighborlists
 =============
 
 .. automodule:: torchani.neighbors
+.. autoclass:: torchani.neighbors.Neighborlist
+    :members:
 .. autoclass:: torchani.neighbors.FullPairwise
     :members:
 .. autoclass:: torchani.neighbors.CellList
@@ -98,6 +104,8 @@ Potentials
     :members:
 .. autoclass:: torchani.potentials.StandaloneTwoBodyDispersionD3
     :members:
+.. autoclass:: torchani.potentials.elemental.EnergyAdder
+    :members:
 .. autoclass:: torchani.potentials.wrapper.PotentialWrapper
     :members:
 
@@ -119,8 +127,6 @@ General Utilities
     :members:
 .. autoclass:: torchani.SpeciesConverter
     :members:
-.. autoclass:: torchani.EnergyShifter
-    :members:
 
 Hessian, Normal Modes, Vibrations
 =================================
@@ -134,9 +140,9 @@ Optimizing Models for Inference
 .. automodule:: torchani.infer
 .. autoclass:: torchani.infer.BmmEnsemble
     :members:
-.. autoclass:: torchani.infer.BmmLinear
+.. autoclass:: torchani.infer.BmmAtomicNetwork
     :members:
-.. autoclass:: torchani.infer.BmmNetwork
+.. autoclass:: torchani.infer.BmmLinear
     :members:
 .. autoclass:: torchani.infer.InferModel
     :members:

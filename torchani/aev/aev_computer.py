@@ -10,10 +10,12 @@ from torchani.utils import cumsum_from_zero
 from torchani.neighbors import parse_neighborlist, NeighborlistArg, FullPairwise
 from torchani.cutoffs import CutoffArg
 from torchani.aev.aev_terms import (
-    parse_angular_terms,
-    parse_radial_terms,
+    parse_angular_term,
+    parse_radial_term,
     StandardAngular,
     StandardRadial,
+    RadialTermArg,
+    AngularTermArg,
 )
 from torchani.csrc import CUAEV_IS_INSTALLED
 
@@ -48,8 +50,8 @@ class AEVComputer(torch.nn.Module):
 
     def __init__(
         self,
-        radial_terms,
-        angular_terms,
+        radial_terms: RadialTermArg,
+        angular_terms: AngularTermArg,
         num_species: int,
         use_cuda_extension: bool = False,
         use_cuaev_interface: bool = False,
@@ -62,8 +64,8 @@ class AEVComputer(torch.nn.Module):
         self.num_species = num_species
         self.num_species_pairs = num_species * (num_species + 1) // 2
 
-        self.angular_terms = parse_angular_terms(angular_terms)
-        self.radial_terms = parse_radial_terms(radial_terms)
+        self.angular_terms = parse_angular_term(angular_terms)
+        self.radial_terms = parse_radial_term(radial_terms)
 
         # Here types must match exactly
         _angular_cut_tp = type(self.angular_terms.cutoff_fn)
@@ -81,12 +83,7 @@ class AEVComputer(torch.nn.Module):
                 f" should be smaller than radial cutoff {self.radial_terms.cutoff}"
             )
 
-        self.register_buffer(
-            "triu_index",
-            self._calculate_triu_index(num_species).to(
-                device=self.radial_terms.EtaR.device
-            ),
-        )
+        self.register_buffer("triu_index", self._calculate_triu_index(num_species))
         self.radial_sublength = self.radial_terms.sublength
         self.angular_sublength = self.angular_terms.sublength
         self.radial_length = self.radial_sublength * self.num_species
@@ -384,15 +381,17 @@ class AEVComputer(torch.nn.Module):
 
     @jit_unused_if_no_cuaev()
     def _init_cuaev_computer(self) -> None:
+        # If we reach this part of the code then the radial and
+        # angular terms must be Standard*, so these tensors will exist
         self.cuaev_computer = torch.classes.cuaev.CuaevComputer(
             self.radial_terms.cutoff,
             self.angular_terms.cutoff,
-            self.radial_terms.EtaR.flatten(),
-            self.radial_terms.ShfR.flatten(),
-            self.angular_terms.EtaA.flatten(),
-            self.angular_terms.Zeta.flatten(),
-            self.angular_terms.ShfA.flatten(),
-            self.angular_terms.ShfZ.flatten(),
+            self.radial_terms.EtaR.flatten(),   # type: ignore
+            self.radial_terms.ShfR.flatten(),   # type: ignore
+            self.angular_terms.EtaA.flatten(),  # type: ignore
+            self.angular_terms.Zeta.flatten(),  # type: ignore
+            self.angular_terms.ShfA.flatten(),  # type: ignore
+            self.angular_terms.ShfZ.flatten(),  # type: ignore
             self.num_species,
             (self._cutoff_fn_type == "CutoffCosine"),
         )

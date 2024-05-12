@@ -45,6 +45,12 @@ from torchani.potentials import (
     EnergyAdder,
 )
 from torchani.aev import AEVComputer, StandardAngular, StandardRadial
+from torchani.aev.aev_terms import (
+    RadialTermArg,
+    AngularTermArg,
+    parse_radial_term,
+    parse_angular_term,
+)
 from torchani.nn import ANIModel, Ensemble
 from torchani.utils import GSAES, sort_by_element
 from torchani.storage import STATE_DICTS_DIR
@@ -66,28 +72,20 @@ class FeaturizerWrapper:
     def __init__(
         self,
         cls: FeaturizerType,
-        radial_terms: torch.nn.Module,
-        angular_terms: torch.nn.Module,
+        radial_terms: RadialTermArg,
+        angular_terms: AngularTermArg,
         cutoff_fn: CutoffArg = "global",
         extra: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
         self.cls = cls
         self.cutoff_fn = cutoff_fn
-        self.radial_terms = radial_terms
-        self.angular_terms = angular_terms
+        self.radial_terms = parse_radial_term(radial_terms)
+        self.angular_terms = parse_angular_term(angular_terms)
         if angular_terms.cutoff > radial_terms.cutoff:  # type: ignore
             raise ValueError("Angular cutoff must be smaller or equal to radial cutoff")
         if angular_terms.cutoff <= 0 or radial_terms.cutoff <= 0:  # type: ignore
             raise ValueError("Cutoffs must be strictly positive")
         self.extra = extra
-
-    @property
-    def angular_cutoff(self) -> float:
-        return tp.cast(float, self.angular_terms.cutoff)
-
-    @property
-    def radial_cutoff(self) -> float:
-        return tp.cast(float, self.radial_terms.cutoff)
 
 
 @dataclass
@@ -229,8 +227,8 @@ class Assembler:
     def set_featurizer(
         self,
         featurizer_type: FeaturizerType,
-        angular_terms: torch.nn.Module,
-        radial_terms: torch.nn.Module,
+        angular_terms: AngularTermArg,
+        radial_terms: RadialTermArg,
         cutoff_fn: CutoffArg = "global",
         extra: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
@@ -280,9 +278,7 @@ class Assembler:
 
     def assemble(self) -> BuiltinModel:
         if not self.symbols:
-            raise RuntimeError(
-                "Symbols not set. Call 'set_symbols' before assembly"
-            )
+            raise RuntimeError("Symbols not set. Call 'set_symbols' before assembly")
         if self._featurizer is None:
             raise RuntimeError(
                 "Featurizer not set. Call 'set_featurizer' before assembly"
@@ -394,7 +390,7 @@ def load_from_neurochem(
 def ANI1x(
     model_index: tp.Optional[int] = None,
     pretrained: bool = True,
-    neighborlist: str = "full_pairwise",
+    neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
@@ -446,7 +442,7 @@ def ANI1x(
 def ANI1ccx(
     model_index: tp.Optional[int] = None,
     pretrained: bool = True,
-    neighborlist: str = "full_pairwise",
+    neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
@@ -499,7 +495,7 @@ def ANI1ccx(
 def ANI2x(
     model_index: tp.Optional[int] = None,
     pretrained: bool = True,
-    neighborlist: str = "full_pairwise",
+    neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
@@ -551,7 +547,7 @@ def ANI2x(
 def ANIala(
     model_index: tp.Optional[int] = None,
     pretrained: bool = True,
-    neighborlist: str = "full_pairwise",
+    neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
@@ -583,7 +579,7 @@ def ANIala(
 def ANIdr(
     model_index: tp.Optional[int] = None,
     pretrained: bool = True,
-    neighborlist: str = "full_pairwise",
+    neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_ops: bool = False,
     periodic_table_index: bool = True,
 ) -> BuiltinModel:

@@ -1077,20 +1077,24 @@ class CellList(Neighborlist):
         return bool(need_new_list)
 
 
-NeighborlistArg = tp.Union[Neighborlist, str]
+_Kinds = tp.Union[
+    tp.Literal["full_pairwise"],
+    tp.Literal["cell_list"],
+    tp.Literal["verlet_cell_list"],
+    tp.Literal["base"],
+]
+NeighborlistArg = tp.Union[_Kinds, Neighborlist]
 
 
 def parse_neighborlist(neighborlist: NeighborlistArg = "base") -> Neighborlist:
-    _neighborlist: Neighborlist
     if neighborlist == "full_pairwise":
-        _neighborlist = FullPairwise()
+        neighborlist = FullPairwise()
     elif neighborlist == "cell_list":
-        _neighborlist = CellList()
+        neighborlist = CellList()
     elif neighborlist == "verlet_cell_list":
-        _neighborlist = CellList(verlet=True)
+        neighborlist = CellList(verlet=True)
     elif neighborlist == "base":
-        _neighborlist = Neighborlist()
-    else:
-        assert isinstance(neighborlist, Neighborlist)
-        _neighborlist = neighborlist
-    return _neighborlist
+        neighborlist = Neighborlist()
+    elif not isinstance(neighborlist, Neighborlist):
+        raise ValueError(f"Unsupported neighborlist: {neighborlist}")
+    return tp.cast(Neighborlist, neighborlist)

@@ -38,7 +38,15 @@ class CutoffSmooth4(Cutoff):
         return torch.exp(e)
 
 
-CutoffArg = tp.Union[str, Cutoff]
+_Kinds = tp.Union[
+    tp.Literal["global"],
+    tp.Literal["dummy"],
+    tp.Literal["cosine"],
+    tp.Literal["smooth"],
+    tp.Literal["smooth2"],
+    tp.Literal["smooth4"],
+]
+CutoffArg = tp.Union[_Kinds, Cutoff]
 
 
 def parse_cutoff_fn(
@@ -48,14 +56,14 @@ def parse_cutoff_fn(
     if cutoff_fn == "global":
         assert global_cutoff is not None
         cutoff_fn = global_cutoff
-    if cutoff_fn == 'dummy':
+    if cutoff_fn == "dummy":
         cutoff_fn = CutoffDummy()
-    elif cutoff_fn == 'cosine':
+    elif cutoff_fn == "cosine":
         cutoff_fn = CutoffCosine()
-    elif cutoff_fn in ('smooth', 'smooth2'):
+    elif cutoff_fn in ("smooth", "smooth2"):
         cutoff_fn = CutoffSmooth()
-    elif cutoff_fn == 'smooth4':
+    elif cutoff_fn == "smooth4":
         cutoff_fn = CutoffSmooth4()
-    else:
-        assert isinstance(cutoff_fn, Cutoff)
-    return cutoff_fn
+    elif not isinstance(cutoff_fn, Cutoff):
+        raise ValueError(f"Unsupported cutoff fn: {cutoff_fn}")
+    return tp.cast(Cutoff, cutoff_fn)

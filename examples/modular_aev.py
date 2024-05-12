@@ -10,9 +10,8 @@ import math
 import torch
 from torch import Tensor
 
-import torchani
 from torchani.cutoffs import Cutoff
-from torchani.aev import StandardRadial, AEVComputer
+from torchani.aev import StandardRadial, AEVComputer, AngularTerm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -72,9 +71,6 @@ print()
 
 
 class CutoffBiweight(Cutoff):
-    def __init__(self):
-        super().__init__()
-
     def forward(self, distances: Tensor, cutoff: float) -> Tensor:
         # assuming all elements in distances are smaller than cutoff
         return (cutoff**2 - distances**2) ** 2 / cutoff**4
@@ -96,11 +92,11 @@ print()
 # different angular terms that have a form of exp(-gamma * (cos(theta) -
 # cos(theta0))**2) how can I do that? I can pass this function to torchani, as
 # long as it exposes the same API as StandardAngular (it has to have a
-# *sublength*, a *cutoff*, and a *forward method* with the same signature)
+# *sublength*, a *cutoff*, a *cutoff_fn* and a *forward method* with the same
+# signature)
 
 
-class AngularCosDiff(torch.nn.Module):
-    cutoff: float
+class AngularCosDiff(AngularTerm):
     sublength: int
     ShfZ: Tensor
     Gamma: Tensor
@@ -108,16 +104,14 @@ class AngularCosDiff(torch.nn.Module):
     EtaA: Tensor
 
     def __init__(self, EtaA, ShfA, Gamma, ShfZ, cutoff, cutoff_fn="cosine"):
-        super().__init__()
+        super().__init__(cutoff=cutoff, cutoff_fn=cutoff_fn)
         self.register_buffer("Gamma", Gamma.view(1, 1, -1))
         self.register_buffer("EtaA", EtaA.view(-1, 1, 1))
         self.register_buffer("ShfA", ShfA.view(1, -1, 1))
         self.register_buffer("ShfZ", ShfZ.view(1, 1, -1))
-        self.cutoff_fn = torchani.cutoffs.parse_cutoff_fn(cutoff_fn)
-        self.cutoff = cutoff
-
         assert self.ShfZ.numel() == self.Gamma.numel()
 
+        # set the sublength
         self.sublength = self.EtaA.numel() * self.ShfA.numel() * self.ShfZ.numel()
 
     def forward(self, vectors12: Tensor) -> Tensor:
@@ -146,9 +140,10 @@ Gamma = torch.tensor(
     dtype=torch.float,
 )
 
-# We will use standard radial terms in the ani-1x style but our custom angular terms
+# We will use standard radial terms in the ani-1x style but our custom angular
+# terms, and we need to pass the same cutoff_fn to both
 aev_computer_cosdiff = AEVComputer(
-    radial_terms=StandardRadial.style_1x(),
+    radial_terms=StandardRadial.style_1x(cutoff_fn="cosine"),
     angular_terms=AngularCosDiff(EtaA, ShfA, Gamma, ShfZ, cutoff, cutoff_fn="cosine"),
     num_species=4,
 ).to(device)
