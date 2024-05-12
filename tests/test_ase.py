@@ -2,15 +2,17 @@ import typing as tp
 from itertools import product
 import os
 import unittest
+import pickle
 
 import torch
 import numpy as np
 from parameterized import parameterized
+from ase import units, Atoms
+from ase.io import read
+from ase.optimize import BFGS
 from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
 from ase.md.nptberendsen import NPTBerendsen
-from ase import units
-from ase.io import read
 from ase.calculators.test import numeric_force
 
 from torchani.neighbors import CellList
@@ -167,6 +169,30 @@ class TestASE(ANITest):
 
         dyn.attach(test_stress, interval=2)
         dyn.run(10)
+
+
+@expand(jit=False)
+class TestOptimizationASE(ANITest):
+    def setUp(self):
+        self.tolerance = 1e-6
+        self.calculator = self._setup(ANI1x(model_index=0)).ase()
+
+    def testCoordsRMSE(self):
+        datafile = os.path.join(path, "test_data/NeuroChemOptimized/all")
+        with open(datafile, "rb") as f:
+            systems = pickle.load(f)
+            for system in systems:
+                # reconstructing Atoms object.
+                # ASE does not support loading pickled object from older version
+                positions = system.get_positions()
+                symbols = system.get_chemical_symbols()
+                atoms = Atoms(symbols, positions=positions)
+                old_coordinates = torch.tensor(positions.copy(), device=self.device)
+                atoms.calc = self.calculator
+                opt = BFGS(atoms)
+                opt.run()
+                coordinates = atoms.get_positions()
+                self.assertEqual(old_coordinates, coordinates)
 
 
 if __name__ == "__main__":
