@@ -24,7 +24,7 @@ dependencies:
   - tqdm  # progress bar
 
   # Ase interface (optional)
-  - ase
+  - ase=3.22
 
   # Neurochem files (legacy)
   - lark-parser

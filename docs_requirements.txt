@@ -1,5 +1,5 @@
 # Ase interface
-ase
+ase==3.22
 
 # Sphinx-related
 sphinx

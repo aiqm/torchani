@@ -1,5 +1,5 @@
 # Ase interface
-ase
+ase==3.22
 
 # Utils for running tools
 pynvml
