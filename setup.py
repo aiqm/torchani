@@ -17,11 +17,6 @@ FAST_BUILD_EXT = '--ext' in sys.argv
 if '--ext' in sys.argv:
     sys.argv.remove('--ext')
 
-# Use along with --cuaev for CI test to reduce compilation time on Non-GPUs system
-ONLY_BUILD_SM80 = '--only-sm80' in sys.argv
-if ONLY_BUILD_SM80:
-    sys.argv.remove('--only-sm80')
-
 # compile cuaev with DEBUG infomation
 CUAEV_DEBUG = '--cuaev-debug' in sys.argv
 if CUAEV_DEBUG:
@@ -101,11 +96,9 @@ def cuda_extension(build_all=False):
         '-DCUB_NS_PREFIX=namespace cuaev {',
         '-DCUB_NS_POSTFIX=}',
     ]
-    if SMs and not ONLY_BUILD_SM80:
+    if SMs:
         for sm in SMs:
             nvcc_args.append(f"-gencode=arch=compute_{sm},code=sm_{sm}")
-    elif ONLY_BUILD_SM80:  # --cuaev --only-sm80
-        nvcc_args.append("-gencode=arch=compute_80,code=sm_80")
     else:  # no gpu detected
         print('Will build for all SMs')
         nvcc_args.append("-gencode=arch=compute_60,code=sm_60")

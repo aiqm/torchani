@@ -1,50 +1,64 @@
-*.prof
-/tools/benchmark/*
+# Python cache and build
 __pycache__
-nohup.out
-/data
-a.out
-/test.py
-/.vscode
-/build*
-/docs-build*
 .eggs
 *.egg-info
-*.ninja
 /torchani.egg-info
+*.pyc
+
+# Vscode
+/.vscode
+
+# Vim
+*.swp
+*.swo
+
+# Binary files
 /*.h5
 /*.hdf5
-.ipynb_checkpoints
-benchmark_xyz
-*.pyc
-*checkpoint*
 *.pt
+*.o
+*.so
+*.pckl
+*.zip
+a.out
+
+# Mypy and pytest cache
+*_cache
+
+# Ninja
+*.ninja
+*.ninja_log
+
+# Code coverage
+.coverage
+htmlcov/
+
+# Notebooks
+.ipynb_checkpoints
+Untitled.ipynb
+
+*.prof
+/tools/benchmark/*
+/data
+/test.py
+/build*
+/docs-build*
+benchmark_xyz
+*checkpoint*
 /tests/runs
 /quicktest.py
 /*.ipt
 /*.params
 /*.dat
-*.o
-*.so
-*.ninja_log
 /tmp
-*_cache
 datacache
 dist
-*.pckl
-# No vim swap files
-*.swp
-*.swo
 /download
 /download.tar.xz
 *.qdrep
 *.qdstrm
-*.zip
-Untitled.ipynb
 /nnp_training.py
 /test*.py
-.coverage
-htmlcov/
 /include
 training_outputs/
 examples/dataset.pkl
