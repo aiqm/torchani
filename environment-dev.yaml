@@ -28,7 +28,7 @@ dependencies:
   - requests
 
   # Ase interface
-  - ase=3.22
+  - ase
 
   # Linters / checkers / tests-runners / CI
   - black

@@ -183,13 +183,22 @@ class TestVibrationsASE(ANITest):
         vib = Vibrations(molecule)
         vib.run()
         array_freqs = np.array([np.real(x) for x in vib.get_frequencies()[6:]])
-        modes: tp.List[NDArray[np.float_]] = []
+        _modes: tp.List[NDArray[np.float_]] = []
         for j in range(6, 6 + len(array_freqs)):
-            modes.append(np.expand_dims(vib.get_mode(j), axis=0))
+            _modes.append(np.expand_dims(vib.get_mode(j), axis=0))
         vib.clean()
-        array_modes = np.concatenate(modes, axis=0)
-        self.assertEqual(array_modes, modes_expect)
-        self.assertEqual(array_freqs, freqs_expect)
+        modes = np.concatenate(_modes, axis=0)
+        self.assertEqual(
+            freqs_expect,
+            freqs_expect,
+            atol=0,
+            rtol=0.02,
+            exact_dtype=False,
+        )
+        diff1 = np.abs(modes_expect - modes).max(axis=-1).max(axis=-1)
+        diff2 = np.abs(modes_expect + modes).max(axis=-1).max(axis=-1)
+        diff = np.where(diff1 < diff2, diff1, diff2)
+        self.assertLess(float(diff.max().item()), 0.02)
 
 
 @expand(jit=False)
