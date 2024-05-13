@@ -8,7 +8,7 @@ on:
 
 jobs:
   unittests-cpu:
-    runs-on: self-hosted
+    runs-on: [self-hosted, richard]
 
     steps:
       - name: Checkout repository

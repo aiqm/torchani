@@ -26,7 +26,7 @@ env:
 
 jobs:
   build_docker_and_unittest:
-    runs-on: self-hosted
+    runs-on: [self-hosted, richard]
     permissions:
       contents: read
       packages: write

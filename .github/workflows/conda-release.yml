@@ -11,7 +11,7 @@ env:
 
 jobs:
   conda-release:
-    runs-on: self-hosted
+    runs-on: [self-hosted, richard]
     permissions:
       contents: read
       packages: write

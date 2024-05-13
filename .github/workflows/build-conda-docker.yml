@@ -26,7 +26,7 @@ env:
 
 jobs:
   build_conda_docker:
-    runs-on: self-hosted
+    runs-on: [self-hosted, richard]
     permissions:
       contents: read
       packages: write

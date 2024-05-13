@@ -11,7 +11,7 @@ env:
 
 jobs:
   mypy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ipickering]
     steps:
     - name: Checkout torchani
       uses: actions/checkout@v3
@@ -27,7 +27,7 @@ jobs:
       run: mypy --install-types --non-interactive .
 
   flake8:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ipickering]
     steps:
     - name: Checkout torchani
       uses: actions/checkout@v3
@@ -43,7 +43,7 @@ jobs:
       run: flake8 .
 
   clang-format:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ipickering]
     steps:
     - name: Checkout torchani
       uses: actions/checkout@v3
