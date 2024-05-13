@@ -1,27 +1,25 @@
 import typing as tp
+from pathlib import Path
 from itertools import product
-import os
 import unittest
 import pickle
 
-import torch
 import numpy as np
-from parameterized import parameterized
+from numpy.typing import NDArray
 from ase import units, Atoms
 from ase.io import read
+from ase.vibrations import Vibrations
 from ase.optimize import BFGS
 from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
 from ase.md.nptberendsen import NPTBerendsen
 from ase.calculators.test import numeric_force
+from parameterized import parameterized
 
 from torchani.neighbors import CellList
 from torchani.testing import ANITest, expand
 from torchani.models import ANI1x, ANIdr, PairPotentialsModel
 from torchani.potentials import PairPotential
-
-
-path = os.path.dirname(os.path.realpath(__file__))
 
 
 def _stress_test_name(fn: tp.Any, idx: int, param: tp.Any) -> str:
@@ -106,7 +104,7 @@ class TestASE(ANITest):
             num_atoms = len(atoms)
 
         def _get_numeric_force(atoms, eps, num_atoms):
-            fn = torch.zeros((num_atoms, 3), dtype=torch.double)
+            fn = np.zeros((num_atoms, 3), dtype=np.float64)
             for i in range(num_atoms):
                 for j in range(3):
                     fn[i, j] = numeric_force(atoms, i, j, eps)
@@ -140,10 +138,9 @@ class TestASE(ANITest):
         # Run NPT dynamics for some steps and periodically check that the
         # numerical and analytical stresses agree up to a given
         # absolute difference
-        filename = os.path.join(
-            path, "../tools/generate-unit-test-expect/others/Benzene.json"
-        )
-        benzene = read(filename)
+        parts = ["tools", "generate-unit-test-expect", "others", "Benzene.json"]
+        json_file = Path(Path(__file__).parent.parent, *parts).resolve()
+        benzene = read(str(json_file))
         # set velocities to a very small value to avoid division by zero
         # warning due to initial zero temperature.
         #
@@ -172,14 +169,39 @@ class TestASE(ANITest):
 
 
 @expand(jit=False)
+class TestVibrationsASE(ANITest):
+    def testWater(self) -> None:
+        model = ANI1x().double()
+        data_path = Path(Path(__file__).parent, "test_data", "water-vib-expect.npz")
+        with np.load(data_path) as data:
+            coordinates = data["coordinates"]
+            species = data["species"]
+            modes_expect = data["modes"]
+            freqs_expect = data["freqs"]
+        molecule = Atoms(numbers=species, positions=coordinates, calculator=model.ase())
+        # Compute vibrational frequencies with ASE
+        vib = Vibrations(molecule)
+        vib.run()
+        array_freqs = np.array([np.real(x) for x in vib.get_frequencies()[6:]])
+        modes: tp.List[NDArray[np.float_]] = []
+        for j in range(6, 6 + len(array_freqs)):
+            modes.append(np.expand_dims(vib.get_mode(j), axis=0))
+        vib.clean()
+        array_modes = np.concatenate(modes, axis=0)
+        self.assertEqual(array_modes, modes_expect)
+        self.assertEqual(array_freqs, freqs_expect)
+
+
+@expand(jit=False)
 class TestOptimizationASE(ANITest):
     def setUp(self):
         self.tolerance = 1e-6
         self.calculator = self._setup(ANI1x(model_index=0)).ase()
 
     def testCoordsRMSE(self):
-        datafile = os.path.join(path, "test_data/NeuroChemOptimized/all")
-        with open(datafile, "rb") as f:
+        path_parts = ["test_data", "NeuroChemOptimized", "all"]
+        data_file = Path(Path(__file__).parent, *path_parts).resolve()
+        with open(data_file, "rb") as f:
             systems = pickle.load(f)
             for system in systems:
                 # reconstructing Atoms object.
@@ -187,7 +209,7 @@ class TestOptimizationASE(ANITest):
                 positions = system.get_positions()
                 symbols = system.get_chemical_symbols()
                 atoms = Atoms(symbols, positions=positions)
-                old_coordinates = torch.tensor(positions.copy(), device=self.device)
+                old_coordinates = positions.copy()
                 atoms.calc = self.calculator
                 opt = BFGS(atoms)
                 opt.run()
