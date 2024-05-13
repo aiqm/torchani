@@ -4,27 +4,72 @@ import typing as tp
 import torch
 from torch import Tensor
 
-from torchani.utils import get_atomic_masses
+from torchani.utils import AtomicNumbersToMasses
+from torchani.constants import ATOMIC_MASSES
+
+Reference = tp.Union[
+    tp.Literal["center_of_mass"], tp.Literal["center_of_geometry"], tp.Literal["origin"]
+]
 
 
-def displace_to_com_frame(
-    species_coordinates: tp.Tuple[Tensor, Tensor]
-) -> tp.Tuple[Tensor, Tensor]:
+class Displacer(torch.nn.Module):
     r"""
-    Displace coordinates to the center-of-mass frame, input species must be
-    atomic numbers, padding atoms can be included with -1 as padding, returns
-    the displaced coordinates and the center-of-mass coordinates
+    Displace coordinates to the center-of-mass (center_of_mass=True) frame, or
+    center_of_geometry frame (center_of_mass=False) input species must be
+    atomic numbers, padding atoms can be included with -1 as padding. Returns
+    the centered coordinates
     """
-    species, coordinates = species_coordinates
-    mask = species == -1
-    masses = get_atomic_masses(species, dtype=coordinates.dtype)
-    masses.masked_fill_(mask, 0.0)
-    mass_sum = masses.unsqueeze(-1).sum(dim=1, keepdim=True)
-    com_coordinates = coordinates * masses.unsqueeze(-1) / mass_sum
-    com_coordinates = com_coordinates.sum(dim=1, keepdim=True)
-    centered_coordinates = coordinates - com_coordinates
-    centered_coordinates[mask, :] = 0.0
-    return species, centered_coordinates
+
+    def __init__(
+        self,
+        masses: tp.Iterable[float] = ATOMIC_MASSES,
+        reference: Reference = "center_of_mass",
+        device: tp.Union[torch.device, tp.Literal["cpu"], tp.Literal["cuda"]] = "cpu",
+        dtype: torch.dtype = torch.float,
+    ) -> None:
+        super().__init__()
+        self._atomic_masses: Tensor = torch.tensor(masses, device=device, dtype=dtype)
+        self._center_of_mass = (reference == "center_of_mass")
+        self._skip = (reference == "origin")
+        self._converter = AtomicNumbersToMasses(masses, dtype=dtype, device=device)
+
+    def forward(self, species: Tensor, coordinates: Tensor) -> Tensor:
+        # Do nothing if reference is origin
+        if self._skip:
+            return coordinates
+
+        mask = species == -1
+        if self._center_of_mass:
+            masses = self._converter(species)
+            mass_sum = masses.unsqueeze(-1).sum(dim=1, keepdim=True)
+            weights = masses.unsqueeze(-1) / mass_sum
+        else:
+            is_not_dummy = ~mask
+            not_dummy_sum = is_not_dummy.unsqueeze(-1).sum(dim=1, keepdim=True)
+            weights = is_not_dummy.unsqueeze(-1) / not_dummy_sum
+        com_coordinates = coordinates * weights
+        com_coordinates = com_coordinates.sum(dim=1, keepdim=True)
+        centered_coordinates = coordinates - com_coordinates
+        centered_coordinates[mask, :] = 0.0
+        return centered_coordinates
+
+
+# Convenience fn around Displacer that is non-jittable
+def displace(
+    atomic_numbers: Tensor,
+    coordinates: Tensor,
+    reference: Reference = "center_of_mass",
+) -> Tensor:
+    if torch.jit.is_scripting():
+        raise RuntimeError(
+            "'torchani.geometry.displace' doesn't support JIT, "
+            " consider using torchani.geometry.Displacer instead"
+        )
+    return Displacer(
+        device=atomic_numbers.device,
+        dtype=coordinates.dtype,
+        reference=reference,
+    )(atomic_numbers, coordinates)
 
 
 def tile_into_tight_cell(

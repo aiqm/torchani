@@ -13,8 +13,26 @@ import torch
 from torch import Tensor
 import torch.utils.data
 
+from torchani.constants import ATOMIC_MASSES
 from torchani.units import sqrt_mhessian2invcm, sqrt_mhessian2milliev, mhessian2fconst
 from torchani.tuples import SpeciesEnergies, VibAnalysis
+
+
+__all__ = [
+    "pad_atomic_properties",
+    "present_species",
+    "hessian",
+    "vibrational_analysis",
+    "strip_redundant_padding",
+    "ChemicalSymbolsToInts",
+    "ChemicalSymbolsToAtomicNumbers",
+    "AtomicNumbersToMasses",
+    "get_atomic_masses",
+    "GSAES",
+    "PERIODIC_TABLE",
+    "ATOMIC_NUMBERS",
+]
+
 
 PADDING = {
     "species": -1,
@@ -421,16 +439,6 @@ class ChemicalSymbolsToInts(torch.nn.Module):
 
        # index_tensor is now [0 1 0 0 1 3 2]
 
-
-    .. warning::
-
-        If the input is a string python will iterate over
-        characters, this means that a string such as 'CHClFe' will be
-        intepreted as 'C' 'H' 'C' 'l' 'F' 'e'. It is recommended that you
-        input either a :class:`list` or a :class:`numpy.ndarray` ['C', 'H', 'Cl', 'Fe'],
-        and not a string. The output of a call does NOT correspond to a
-        tensor of atomic numbers.
-
     Arguments:
         all_species (:class:`collections.abc.Sequence` of :class:`str`):
         sequence of all supported species, in order (it is recommended to order
@@ -441,6 +449,8 @@ class ChemicalSymbolsToInts(torch.nn.Module):
 
     def __init__(self, all_species: tp.Sequence[str]):
         super().__init__()
+        if isinstance(all_species, str):
+            raise ValueError("Input must be a *sequence of str*, but it can't be *str*")
         self.rev_species = {s: i for i, s in enumerate(all_species)}
         # dummy tensor to hold output device
         self.register_buffer("_dummy", torch.empty(0), persistent=False)
@@ -585,7 +595,7 @@ def vibrational_analysis(masses, hessian, mode_type="MDU", unit="cm^-1"):
     return VibAnalysis(wavenumbers, modes, fconstants, rmasses)
 
 
-def get_atomic_masses(species, dtype=torch.float):
+class AtomicNumbersToMasses(torch.nn.Module):
     r"""Convert a tensor of atomic numbers into a tensor of atomic masses
 
     Atomic masses supported are the first 119 elements, and are taken from:
@@ -597,143 +607,49 @@ def get_atomic_masses(species, dtype=torch.float):
     They are all consistent with those used in ASE
 
     Arguments:
-        species (:class:`torch.Tensor`): tensor with atomic numbers
+        atomic_numbers (:class:`torch.Tensor`): tensor with atomic numbers
 
     Returns:
-        :class:`torch.Tensor`: Tensor of dtype :class:`torch.double`, with
-        atomic masses, with the same shape as the input.
+        :class:`torch.Tensor`: with, atomic masses, with the same shape as the input.
     """
-    # Note that there should not be any atoms with index zero, because that is
-    # not an element
-    assert len((species == 0).nonzero()) == 0
-    default_atomic_masses = torch.tensor(
-        [
-            0.0,
-            1.008,
-            4.002602,
-            6.94,
-            9.0121831,
-            10.81,
-            12.011,
-            14.007,
-            15.999,
-            18.99840316,
-            20.1797,
-            22.98976928,
-            24.305,
-            26.9815385,
-            28.085,
-            30.973762,
-            32.06,
-            35.45,
-            39.948,
-            39.0983,
-            40.078,
-            44.955908,
-            47.867,
-            50.9415,
-            51.9961,
-            54.938044,
-            55.845,
-            58.933194,
-            58.6934,
-            63.546,
-            65.38,
-            69.723,
-            72.63,
-            74.921595,
-            78.971,
-            79.904,
-            83.798,
-            85.4678,
-            87.62,
-            88.90584,
-            91.224,
-            92.90637,
-            95.95,
-            97.90721,
-            101.07,
-            102.9055,
-            106.42,
-            107.8682,
-            112.414,
-            114.818,
-            118.71,
-            121.76,
-            127.6,
-            126.90447,
-            131.293,
-            132.90545196,
-            137.327,
-            138.90547,
-            140.116,
-            140.90766,
-            144.242,
-            144.91276,
-            150.36,
-            151.964,
-            157.25,
-            158.92535,
-            162.5,
-            164.93033,
-            167.259,
-            168.93422,
-            173.054,
-            174.9668,
-            178.49,
-            180.94788,
-            183.84,
-            186.207,
-            190.23,
-            192.217,
-            195.084,
-            196.966569,
-            200.592,
-            204.38,
-            207.2,
-            208.9804,
-            208.98243,
-            209.98715,
-            222.01758,
-            223.01974,
-            226.02541,
-            227.02775,
-            232.0377,
-            231.03588,
-            238.02891,
-            237.04817,
-            244.06421,
-            243.06138,
-            247.07035,
-            247.07031,
-            251.07959,
-            252.083,
-            257.09511,
-            258.09843,
-            259.101,
-            262.11,
-            267.122,
-            268.126,
-            271.134,
-            270.133,
-            269.1338,
-            278.156,
-            281.165,
-            281.166,
-            285.177,
-            286.182,
-            289.19,
-            289.194,
-            293.204,
-            293.208,
-            294.214,
-        ],
-        dtype=dtype,
-        device=species.device,
-    )
-    masses = default_atomic_masses[species]
-    return masses
+    atomic_masses: Tensor
 
+    def __init__(
+        self,
+        masses: tp.Iterable[float] = ATOMIC_MASSES,
+        device: tp.Union[torch.device, tp.Literal["cpu"], tp.Literal["cuda"]] = "cpu",
+        dtype: torch.dtype = torch.float,
+    ) -> None:
+        super().__init__()
+        self.register_buffer(
+            "atomic_masses",
+            torch.tensor(masses, device=device, dtype=dtype),
+        )
+
+    def forward(self, atomic_numbers: Tensor) -> Tensor:
+        assert not (atomic_numbers == 0).any(), "Input should be atomic numbers"
+        mask = (atomic_numbers == -1)
+        masses = self.atomic_masses[atomic_numbers]
+        masses.masked_fill_(mask, 0.0)
+        return masses
+
+
+# Convenience fn around AtomicNumbersToMasses that is non-jittable
+def atomic_numbers_to_masses(
+    atomic_numbers: Tensor,
+    dtype: torch.dtype = torch.float,
+) -> Tensor:
+    if torch.jit.is_scripting():
+        raise RuntimeError(
+            "'torchani.utils.atomic_numbers_to_masses' doesn't support JIT, "
+            " consider using torchani.utils.AtomicNumbersToMasses instead"
+        )
+    device = atomic_numbers.device
+    return AtomicNumbersToMasses(device=device, dtype=dtype)(atomic_numbers)
+
+
+# Alias for bw compatibility
+get_atomic_masses = atomic_numbers_to_masses
 
 # This constant, when indexed with the corresponding atomic number, gives the
 # element associated with it. Note that there is no element with atomic number
@@ -795,17 +711,3 @@ def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
                     raise ValueError(f"Incompatible values for key {k}")
         merged_dict.update(state_dict)
     return OrderedDict(merged_dict)
-
-
-__all__ = [
-    "pad_atomic_properties",
-    "present_species",
-    "hessian",
-    "vibrational_analysis",
-    "strip_redundant_padding",
-    "ChemicalSymbolsToInts",
-    "get_atomic_masses",
-    "GSAES",
-    "PERIODIC_TABLE",
-    "ATOMIC_NUMBERS",
-]

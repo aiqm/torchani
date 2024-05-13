@@ -1,15 +1,15 @@
+import typing as tp
+
 import torch
 from torch import Tensor
 
-from torchani.geometry import displace_to_com_frame
+from torchani.geometry import Displacer, Reference
+from torchani.constants import ATOMIC_MASSES
+
+__all__ = ["DipoleComputer", "compute_dipole"]
 
 
-def compute_dipole(
-    species: Tensor,
-    coordinates: Tensor,
-    charges: Tensor,
-    center_of_mass: bool = True
-) -> Tensor:
+class DipoleComputer(torch.nn.Module):
     """
     Compute dipoles in eA
 
@@ -22,9 +22,44 @@ def compute_dipole(
     Returns:
         dipoles (torch.Tensor): (M, 3)
     """
-    assert species.shape == charges.shape == coordinates.shape[:-1]
-    charges = charges.unsqueeze(-1)
-    if center_of_mass:
-        _, coordinates = displace_to_com_frame((species, coordinates))
-    dipole = torch.sum(charges * coordinates, dim=1)
-    return dipole
+
+    def __init__(
+        self,
+        masses: tp.Iterable[float] = ATOMIC_MASSES,
+        reference: Reference = "center_of_mass",
+        device: tp.Union[torch.device, tp.Literal["cpu"], tp.Literal["cuda"]] = "cpu",
+        dtype: torch.dtype = torch.float,
+    ) -> None:
+        super().__init__()
+        self._displacer = Displacer(
+            masses,
+            reference,
+            device,
+            dtype,
+        )
+
+    def forward(self, species: Tensor, coordinates: Tensor, charges: Tensor) -> Tensor:
+        assert species.shape == charges.shape == coordinates.shape[:-1]
+        charges = charges.unsqueeze(-1)
+        coordinates = self._displacer(species, coordinates)
+        dipole = torch.sum(charges * coordinates, dim=1)
+        return dipole
+
+
+# Convenience fn around DipoleComputer that is non-jittable
+def compute_dipole(
+    species: Tensor,
+    coordinates: Tensor,
+    charges: Tensor,
+    reference: Reference = "center_of_mass",
+) -> Tensor:
+    if torch.jit.is_scripting():
+        raise RuntimeError(
+            "'torchani.calc.compute_dipole' doesn't support JIT, "
+            " consider using torchani.calc.DipoleComputer instead"
+        )
+    return DipoleComputer(
+        reference=reference,
+        device=species.device,
+        dtype=coordinates.dtype,
+    )(species, coordinates, charges)

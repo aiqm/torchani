@@ -113,16 +113,20 @@ Creation of 3D Geometries
 =========================
 
 .. automodule:: torchani.geometry
+.. autofunction:: torchani.geometry.displace
+.. autoclass:: torchani.geometry.Displacer
+    :members:
 .. autofunction:: torchani.geometry.tile_into_tight_cell
-.. autofunction:: torchani.geometry.displace_to_com_frame
 
 General Utilities
 =================
 
 .. automodule:: torchani.utils
-.. autofunction:: torchani.utils.get_atomic_masses
 .. autofunction:: torchani.utils.pad_atomic_properties
 .. autofunction:: torchani.utils.map_to_central
+.. autofunction:: torchani.utils.atomic_numbers_to_masses
+.. autoclass:: torchani.utils.AtomicNumbersToMasses
+    :members:
 .. autoclass:: torchani.utils.ChemicalSymbolsToInts
     :members:
 .. autoclass:: torchani.SpeciesConverter
