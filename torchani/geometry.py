@@ -72,6 +72,7 @@ def displace(
     )(atomic_numbers, coordinates)
 
 
+# TODO: This function is not supported anymore probably
 def tile_into_tight_cell(
     species_coordinates,
     repeats=(3, 3, 3),

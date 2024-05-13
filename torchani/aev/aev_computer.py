@@ -66,23 +66,15 @@ class AEVComputer(torch.nn.Module):
 
         self.angular_terms = parse_angular_term(angular_terms)
         self.radial_terms = parse_radial_term(radial_terms)
-
-        # Here types must match exactly
-        _angular_cut_tp = type(self.angular_terms.cutoff_fn)
-        _radial_cut_tp = type(self.radial_terms.cutoff_fn)
-        if _angular_cut_tp != _radial_cut_tp:  # noqa
-            raise ValueError(
-                "Cutoff function must be the same for both angular and radial terms"
-            )
-        self._cutoff_fn_type = _radial_cut_tp.__name__
-
-        self.neighborlist = parse_neighborlist(neighborlist)
+        if not (self.angular_terms.cutoff_fn.is_same(self.radial_terms.cutoff_fn)):
+            raise ValueError("Cutoff fn must be the same for angular and radial terms")
         if self.angular_terms.cutoff > self.radial_terms.cutoff:
             raise ValueError(
                 f"Angular cutoff {self.angular_terms.cutoff}"
                 f" should be smaller than radial cutoff {self.radial_terms.cutoff}"
             )
-
+        self._cuaev_cutoff_fn = self.angular_terms.cutoff_fn._cuaev_name
+        self.neighborlist = parse_neighborlist(neighborlist)
         self.register_buffer("triu_index", self._calculate_triu_index(num_species))
         self.radial_sublength = self.radial_terms.sublength
         self.angular_sublength = self.angular_terms.sublength
@@ -106,12 +98,11 @@ class AEVComputer(torch.nn.Module):
         if self.use_cuda_extension:
             if not CUAEV_IS_INSTALLED:
                 raise ValueError("The AEV CUDA extension is not installed")
-            if self._cutoff_fn_type not in [
-                "CutoffSmooth",
-                "CutoffCosine",
-            ]:
+            if not self._cuaev_cutoff_fn:
                 raise ValueError(
-                    "The AEV CUDA extension only supports cosine and smooth cutoff fn"
+                    f"The AEV CUDA extension doesn't support cutoff fn"
+                    f" {self.angular_terms.cutoff_fn}"
+                    " Only supported fn are cosine and smooth (with default args)"
                 )
             if type(self.angular_terms) is not StandardAngular:
                 raise ValueError(
@@ -123,11 +114,10 @@ class AEVComputer(torch.nn.Module):
                     "The AEV CUDA extension only supports StandardRadial(...)"
                     " Custom angular terms are not supported"
                 )
-            _default_neighborlist = (
-                (neighborlist == "full_pairwise")
-                or isinstance(neighborlist, FullPairwise)
-            )
-            if not _default_neighborlist and not use_cuaev_interface:
+            if (
+                not isinstance(self.neighborlist, FullPairwise)
+                and (not use_cuaev_interface)
+            ):
                 raise ValueError(
                     "For non default neighborlists set 'use_cuaev_interface=True'"
                 )
@@ -224,7 +214,7 @@ class AEVComputer(torch.nn.Module):
                 species, coordinates, atom_index12, diff_vector, distances
             )
         else:
-            pbc is None or (
+            assert (pbc is None) or (
                 not pbc.any()
             ), "cuAEV doesn't support PBC when use_cuaev_interface=False"
             aev = self._compute_cuaev(species, coordinates)
@@ -393,7 +383,7 @@ class AEVComputer(torch.nn.Module):
             self.angular_terms.ShfA.flatten(),  # type: ignore
             self.angular_terms.ShfZ.flatten(),  # type: ignore
             self.num_species,
-            (self._cutoff_fn_type == "CutoffCosine"),
+            (self._cuaev_cutoff_fn == "cosine"),
         )
 
     @jit_unused_if_no_cuaev()
@@ -549,7 +539,7 @@ class AEVComputer(torch.nn.Module):
                 equation (4) in the `ANI paper`_.
             num_species (int): Number of supported atom types.
             use_cuda_extension (bool): Whether to use cuda extension for faster
-            calculation (needs cuaev installed).
+                calculation (needs cuaev installed).
 
         .. _ANI paper:
             http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
