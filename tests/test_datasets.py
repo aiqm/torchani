@@ -399,6 +399,12 @@ class TestFineGrainedShuffle(TestCase):
 
 class TestEstimationSAE(TestCase):
     def setUp(self):
+        # This test relies on legacy datasets for now, so we ignore this warning
+        warnings.filterwarnings(
+            "ignore",
+            message=".*legacy dataset.*",
+            category=UserWarning,
+        )
         self.tmp_dir_batched = tempfile.TemporaryDirectory()
         self.batch_size = 2560
         create_batched_dataset(
@@ -420,6 +426,10 @@ class TestEstimationSAE(TestCase):
             direct_cache=True,
         )
         self.train = ANIBatchedDataset(self.tmp_dir_batched.name, split="training")
+
+    def tearDown(self) -> None:
+        warnings.resetwarnings()
+        self.tmp_dir_batched.cleanup()
 
     def testExactSAE(self):
         self._testExactSAE(direct=False)
@@ -472,9 +482,6 @@ class TestEstimationSAE(TestCase):
             atol=0.2,
             rtol=0.2,
         )
-
-    def tearDown(self):
-        self.tmp_dir_batched.cleanup()
 
 
 class TestTransforms(TestCase):

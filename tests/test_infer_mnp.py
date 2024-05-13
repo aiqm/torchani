@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import warnings
 import torch
 import unittest
 
@@ -47,6 +48,15 @@ class TestCPUInferMNP(TestCase):
         self.scripting = False
         self.device = "cpu"
         self.ani2x = self._build_ani2x()
+        # This module is actually deprecated, so we filter those warnings here
+        warnings.filterwarnings(
+            "ignore",
+            message=".* MNP .*",
+            category=DeprecationWarning,
+        )
+
+    def tearDown(self) -> None:
+        warnings.resetwarnings()
 
     def _setup_model(self, model):
         return model
@@ -118,6 +128,11 @@ class TestCUDAInferMNP(TestCPUInferMNP):
         self.device = "cuda"
         self.ani2x = torchani.models.ANI2x().to(self.device)
         self.path = os.path.dirname(os.path.realpath(__file__))
+        warnings.filterwarnings(
+            "ignore",
+            message=".* MNP .*",
+            category=DeprecationWarning,
+        )
 
     def _setup_model(self, model):
         return torch.jit.script(model)
