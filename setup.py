@@ -106,7 +106,7 @@ def cuda_extension(build_all=False):
         nvcc_args.append("-gencode=arch=compute_70,code=sm_70")
         _torch_cuda_version = torch.version.cuda
         if _torch_cuda_version is not None:
-            cuda_version = float(torch.version.cuda)
+            cuda_version = float(_torch_cuda_version)
         else:
             cuda_version = 0
         if cuda_version >= 10:
@@ -126,12 +126,12 @@ def cuda_extension(build_all=False):
         name='torchani.cuaev',
         sources=["torchani/csrc/cuaev.cpp", "torchani/csrc/aev.cu"],
         include_dirs=include_dirs,
-        extra_compile_args={'cxx': ['-std=c++14'], 'nvcc': nvcc_args})
+        extra_compile_args={'cxx': ['-std=c++17'], 'nvcc': nvcc_args})
 
 
 def mnp_extension():
     from torch.utils.cpp_extension import CUDAExtension
-    cxx_args = ['-std=c++14', '-fopenmp']
+    cxx_args = ['-std=c++17', '-fopenmp']
     if CUAEV_DEBUG:
         cxx_args.append('-DTORCHANI_DEBUG')
     return CUDAExtension(
@@ -173,12 +173,12 @@ setup(
     license='MIT',
     packages=find_packages(),
     include_package_data=True,
-    use_scm_version=True,
+    use_scm_version={"fallback_version": "0.0.0"},
     setup_requires=["setuptools>=61", 'setuptools_scm>=8'],
     install_requires=[
+        'numpy>=1.24',
+        'torch==2.3',
         'typing_extensions>=4.0.0',
-        'torch',
-        'numpy',
         'lark-parser',
         'requests',
         'h5py',

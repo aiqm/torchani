@@ -25,7 +25,7 @@ size_t get_env_num_threads(const char* var_name, size_t def_value = 1) {
   return def_value;
 }
 
-// TODO: Could switch to if constexpr once Pytorch support c++17.
+// TODO: PyTorch now supports C++ 17, this can be done with 'if constexpr'
 // TODO: When reach to really big system, each network could be ran in different GPUs.
 template <bool use_stream, bool is_bmm>
 class MultiNetFunction : public torch::autograd::Function<MultiNetFunction<use_stream, is_bmm>> {

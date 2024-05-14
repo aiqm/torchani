@@ -6,15 +6,23 @@ channels:
   - https://conda.anaconda.org/nvidia
 dependencies:
   # General
-  - python=3.8.1
+  - python=3.8
   - pip
   - typing_extensions>=4.0.0
 
+  # Required dependencies:
   # Core
-  - numpy=1.22
-  - mkl=2024.0.0
-  - pytorch=1.13.1
-  - cudatoolkit=11.6
+  - numpy>=1.24
+  - pytorch=2.3
+  - pytorch-cuda=11.8
+
+  # For building the extensions, the cuda libraries speciefied by the pytorch-cuda
+  # metapackage are not enough, so we use the nvidia::cuda-toolkit=11.8 metapackage
+  # to fetch missing libraries. The issue is that nvidia bundles nvcc-12.4, so we
+  # specifically override it with nvidia::cuda-nvcc-11.8, since pytorch errors out
+  # on 12.4
+  - nvidia::cuda-toolkit=11.8
+  - nvidia::cuda-nvcc=11.8
 
   # Data
   - h5py  # HDF5 backend
@@ -23,9 +31,36 @@ dependencies:
   # Utils
   - tqdm  # progress bar
 
-  # Ase interface (optional)
-  - ase
-
   # Neurochem files (legacy)
   - lark-parser
   - requests
+
+  # Optional dependencies:
+  # Ase interface:
+  - ase
+
+  # Tests:
+  # Linters / checkers / tests-runners / CI
+  - black
+  - flake8
+  - mypy
+  - coverage
+  - pytest
+  - parameterized
+  # Indirect dependencies of torch.testing
+  - hypothesis
+  - expecttest
+  # Extra data backends for tests
+  - pandas  # csv support
+  - pyarrow  # Parquet backend
+  - zarr  # Zarr backend
+
+  # Tools:
+  - matplotlib
+  - pynvml
+
+  # Docs:
+  - sphinx
+  - sphinx_rtd_theme
+  - sphinx-gallery
+  - tensorboard

@@ -1,7 +1,10 @@
 # CSRC
 Cpp source files for CUAEV and MNP extensions.
-- CUAEV: CUDA Extension for AEV calculation. Performance improvement is expected to be ~3X for AEV computation and ~1.5X for energy training, 2.6X for energy+force training.
-- MNP: Multi Net Parallel between different species networks using OpenMP (Inference Only) to reduce CUDA call overhead.
+- CUAEV: CUDA Extension for AEV calculation. Performance improvement is
+  expected to be ~3X for AEV computation and ~1.5X for energy training, 2.6X
+  for energy+force training.
+- MNP: Multi Net Parallel between different species networks using OpenMP
+  (Inference Only) to reduce CUDA call overhead.
 
 ## Requirement
 Following [pytorch.org](https://pytorch.org/) to install PyTorch.
@@ -11,7 +14,12 @@ conda install pytorch cudatoolkit=11.6 -c pytorch
 ```
 
 ## Build from source
-In most cases, if `gcc` and `cuda` environment are well configured, runing the following command at `torchani` directory will install torchani and all extensions together.
+
+NOTE: These instructions are very outdated, do not use!
+
+In most cases, if `gcc` and `cuda` environment are well configured, runing the
+following command at `torchani` directory will install torchani and all
+extensions together.
 
 ```bash
 git clone git@github.com:roitberg-group/torchani_sandbox.git
@@ -21,6 +29,7 @@ cd torchani
 python setup.py install --ext          # only build for detected gpus
 python setup.py install --ext-all-sms  # build for all gpus
 # ============== development ==============
+
 # `pip install -e . && ` is only needed for the very first install (because issue of https://github.com/pypa/pip/issues/1883)
 pip install -e . && pip install -v -e . --global-option="--ext"          # only build for detected gpus
 pip install -e . && pip install -v -e . --global-option="--ext-all-sms"  # build for all gpus
@@ -34,7 +43,10 @@ git pull
 pip install -v -e . --global-option="--ext"
 ```
 
-Some notes for building extensions on multiple HPC, cuda version might be outdated and please check again.
+Some notes for building extensions on multiple HPC machines.
+
+NOTE: These are very outdated. Currently TorchANI is built with CUDA Toolkit 11.8
+and PyTorch 2.3
 <details>
 <summary>Hipergator</summary>
 
@@ -45,12 +57,14 @@ conda create -n cuaev python=3.8
 conda activate cuaev
 # modules
 module load cuda/11.4.3 gcc/9.3.0 git/2.30.1
-# pytorch
-conda install pytorch==1.12.1 cudatoolkit=11.6 -c pytorch -c conda-forge
+# pytorch and other dependencies
+conda env create -f ./environment.yaml
+
 # install torchani
-git clone https://github.com/roitberg-group/torchani_sandbox.git
-cd torchani
-pip install -e . && pip install -v -e . --global-option="--ext"
+git clone --recurse-submodules https://github.com/roitberg-group/torchani_sandbox.git
+cd ./torchani_sandbox
+pip install -v --no-deps --no-build-isolation -e .
+pip install -v --no-deps --no-build-isolation -e . --global-option="--ext"
 ```
 
 </details>

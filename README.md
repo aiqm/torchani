@@ -10,7 +10,6 @@ Metrics:
 Checks:
 
 [![CodeFactor](https://www.codefactor.io/repository/github/aiqm/torchani/badge/master)](https://www.codefactor.io/repository/github/aiqm/torchani/overview/master)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/aiqm/torchani.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/aiqm/torchani/alerts/)
 [![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/flake8/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
 [![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/clang-format/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
 [![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/mypy/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
@@ -25,10 +24,6 @@ Deploy:
 [![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-docs/badge.svg)](https://github.com/aiqm/torchani/actions)
 [![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-pypi/badge.svg)](https://github.com/aiqm/torchani/actions)
 
-We are usually compatible with stable PyTorch, which this tag shows:
-
-[![Actions Status](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/stable-torch.yml/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/stable-torch.yml)
-
 TorchANI is a pytorch implementation of ANI. It is currently under alpha
 release, which means, the API is not stable yet. If you find a bug of TorchANI,
 or have some feature request, feel free to open an issue on GitHub, or send us
@@ -36,7 +31,13 @@ a pull request.
 
 <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo2.png width=500/>
 
-## Conda install (for users)
+TorchANI is tested against (usually) the latest PyTorch version
+
+## Install TorchANI
+
+### Conda installation
+
+TODO: Support this again (currently only building from source works)
 
 To install TorchANI using conda run:
 
@@ -52,12 +53,6 @@ Or in a single command:
 conda create -n ani -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville -c pytorch -c nvidia -c defaults -c conda-forge sandbox python=3.8
 ```
 
-Versions when installing using conda:
-
-- python 3.8
-- cuda 11.3
-- pytorch 1.12.1
-
 Notes:
 
 - We are hosting the packages only for internal usage at
@@ -68,29 +63,45 @@ Notes:
   need to add a `--force-reinstall` flag instead of waiting for the next
   nightly update.
 
-## Build from source (for developers)
+### Using pip
 
-To install TorchANI from GitHub run:
+TODO: Support this again (currently only building from source works)
+
+## Build TorchANI from source
+
+To install TorchANI from GitHub run the following:
 
 ```bash
-git clone https://github.com/aiqm/torchani.git
-cd torchani
-conda env create -f ./environment-dev.yaml
-pip install -v -e .
-pip install -v -e . --global-option="--ext-all-sms"  # cuda/c++ extensions (optional)
-bash ./download.sh  # download files needed for tests and examples (optional)
-sphix-build docs build  # to build the documentation (optional)
-pytest -v  # manually run unit tests (optional)
+# Clone the repo and cd to the directory
+git clone --recurse-submodules https://github.com/roitberg-group/torchani_sandbox.git
+cd ./torchani_sandbox
+
+# Create a conda (or mamba) environment
+# Note that environment.yaml contains many optional dependencies needed to
+# build the extensions, build the documentation, and run tests and tools
+# You can skip these if you are not planning to do that
+conda env create -f ./environment.yaml
+
+# Install torchani
+pip install -v --no-deps --no-build-isolation -e .
+
+# Install CUDA and C++ extensions (optional)
+# Use the "--ext-all-sms" flag instead of "--ext" if you want to build for all GPUs
+pip install -v --no-deps --no-build-isolation -e . --global-option="--ext"
+
+# Download files needed for testing and building the docs (optional)
+bash ./download.sh
+
+# Build the documentation (optional)
+sphix-build docs docs-build
+
+# Manually run unit tests (optional)
+cd ./tests
+pytest -v .
 ```
 
-If you only intend to run torchani, and you will not run the tests or build the
-documentation, you can use `environment.yaml` instead
-
-Notes:
-
-- If you install torchani from source you will need to build the CUDA/C++ extensions
-  manually, typically calling the command specified works, but for a more
-  detailed process check [TorchANI CSRC](torchani/csrc).
+Usually this process works for most use cases, but for more details regarding
+building the CUDA and C++ extensions refer to [TorchANI CSRC](torchani/csrc).
 
 ## CUDA / C++ extensions
 
@@ -102,7 +113,8 @@ github.
 ## Command Line Interface
 
 After installation, there will be an executable script (torchani) available on
-you path, which contain some builtin utilities. Check usage by calling ``torchani --help``.
+you path, which contain some builtin utilities. Check usage by calling
+``torchani --help``.
 
 ## Citations
 
@@ -124,15 +136,15 @@ Please cite the following paper if you use TorchANI:
 (Note that this only applies for the public repo)
 
 If you opened a pull request, you could see your generated documents at
-https://aiqm.github.io/torchani-test-docs/ after you `docs` check succeed.
-Keep in mind that this repository is only for the purpose of convenience of
-development, and only keeps the latest push.
-The CI runing for other pull requests might overwrite this repository. You
-could rerun the `docs` check to overwrite this repo to your build.
+https://aiqm.github.io/torchani-test-docs/ after you `docs` check succeed. Keep
+in mind that this repository is only for the purpose of convenience of
+development, and only keeps the latest push. The CI runing for other pull
+requests might overwrite this repository. You could rerun the `docs` check to
+overwrite this repo to your build.
 
 ## Notes to developers
 
 - Never commit to the master branch directly. If you need to change something,
-  create a new branch, submit a PR on GitHub.
+  create a new branch and submit a PR on GitHub.
 - All the tests on GitHub must pass before your PR can be merged.
 - Code review is required before merging a pull request.

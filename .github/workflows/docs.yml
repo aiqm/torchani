@@ -6,31 +6,28 @@ on:
     branches:
       - master
 
+env:
+  PY_VERSION: 3.8
+
 jobs:
   docs:
-
     runs-on: [self-hosted, ipickering]
-    strategy:
-      max-parallel: 4
-      matrix:
-        python-version: [3.8]
-
     steps:
     - name: Checkout torchnai
       uses: actions/checkout@v3
       with:
         token: ${{ secrets.PAT }}
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{ env.PY_VERSION }}
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ env.PY_VERSION }}
 
     - name: Install dependencies
       run: ci/install_stable_dependencies.sh
 
     - name: Install TorchANI
-      run: python setup.py install
+      run: pip install  -v --no-deps --no-build-isolation --editable .
 
     - name: Download data files
       run: ./download.sh
