@@ -15,26 +15,38 @@ jobs:
     steps:
     - name: Checkout torchani
       uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PAT }}
+
     - name: Set up Python ${{ env.PY_VERSION }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ env.PY_VERSION }}
+
     - name: Fetch submodules
       run: git submodule update --init
+
     - name: Install dependencies
       run: ci/install_stable_dependencies.sh
+
     - name: Pytorch info
       run: python -c 'from torch.utils.collect_env import get_pretty_env_info; print(get_pretty_env_info())'
+
     - name: Install TorchANI
       run: pip install .
+
     - name: Download data files
       run: ./download.sh
+
     - name: Inference benchmark
       run: python tools/inference-benchmark.py --tqdm dataset/xyz_files/CH4-5.xyz
+
     - name: COMP6 Benchmark
       run: python tools/comp6.py dataset/COMP6/COMP6v1/s66x8
+
     - name: Training Benchmark
       run: python tools/training-benchmark.py dataset/ani1-up_to_gdb4/ani_gdb_s01.h5
+
     - name: Training Benchmark Nsight System
       run: python tools/training-benchmark-nsys-profile.py --dry-run dataset/ani1-up_to_gdb4/ani_gdb_s01.h5
 

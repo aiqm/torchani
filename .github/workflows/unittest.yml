@@ -8,10 +8,10 @@ on:
 
 jobs:
   unittests-cpu:
-    runs-on: [self-hosted, richard]
+    runs-on: [self-hosted, ipickering]
 
     steps:
-      - name: Checkout repository
+      - name: Checkout torchani
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PAT }}

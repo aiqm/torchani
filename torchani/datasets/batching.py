@@ -305,7 +305,7 @@ def _divide_into_folds(
     folds: int,
     rng: tp.Optional[torch.Generator] = None,
     direct_cache: bool = False,
-) -> tp.Tuple[tp.List[Tensor], tp.OrderedDict[str, Path]]:
+) -> tp.Tuple[tp.Tuple[Tensor, ...], tp.OrderedDict[str, Path]]:
     # the idea here is to work with "blocks" of size num_conformers / folds
     # cast to list for mypy
     conformer_blocks = list(torch.chunk(conformer_indices, folds))
@@ -334,7 +334,7 @@ def _divide_into_folds(
     if not direct_cache:
         _create_split_paths(split_paths)
 
-    return conformer_splits, split_paths
+    return tuple(conformer_splits), split_paths
 
 
 def _divide_into_splits(
@@ -342,7 +342,7 @@ def _divide_into_splits(
     dest_path: Path,
     splits: tp.Dict[str, float],
     direct_cache: bool = False,
-) -> tp.Tuple[tp.List[Tensor], tp.OrderedDict[str, Path]]:
+) -> tp.Tuple[tp.Tuple[Tensor, ...], tp.OrderedDict[str, Path]]:
     total_num_conformers = len(conformer_indices)
     split_sizes = OrderedDict(
         [(k, int(total_num_conformers * v)) for k, v in splits.items()]
@@ -359,7 +359,8 @@ def _divide_into_splits(
         any_key = list(split_sizes.keys())[0]
         split_sizes[any_key] += leftover
         assert sum(split_sizes.values()) == total_num_conformers
-    conformer_splits = torch.split(conformer_indices, list(split_sizes.values()))
+    # TODO: Unnecessary cast in current pytorch
+    conformer_splits = tuple(torch.split(conformer_indices, list(split_sizes.values())))
     assert len(conformer_splits) == len(split_sizes.values())
     print(
         f"Splits have number of conformers: {dict(split_sizes)}."
@@ -386,7 +387,7 @@ def _create_split_paths(split_paths: tp.OrderedDict[str, Path]) -> None:
 
 def _save_splits_into_batches(
     split_paths: tp.OrderedDict[str, Path],
-    conformer_splits: tp.List[Tensor],
+    conformer_splits: tp.Tuple[Tensor, ...],
     transform: Transform,
     properties: tp.Sequence[str],
     dataset: ANIDataset,

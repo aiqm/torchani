@@ -104,7 +104,11 @@ def cuda_extension(build_all=False):
         nvcc_args.append("-gencode=arch=compute_60,code=sm_60")
         nvcc_args.append("-gencode=arch=compute_61,code=sm_61")
         nvcc_args.append("-gencode=arch=compute_70,code=sm_70")
-        cuda_version = float(torch.version.cuda)
+        _torch_cuda_version = torch.version.cuda
+        if _torch_cuda_version is not None:
+            cuda_version = float(torch.version.cuda)
+        else:
+            cuda_version = 0
         if cuda_version >= 10:
             nvcc_args.append("-gencode=arch=compute_75,code=sm_75")
         if cuda_version >= 11:

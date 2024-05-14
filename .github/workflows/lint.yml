@@ -15,14 +15,23 @@ jobs:
     steps:
     - name: Checkout torchani
       uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PAT }}
+
     - name: Set up Python ${{ env.PY_VERSION }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ env.PY_VERSION }}
+
     - name: Install pip
       run: pip install --upgrade pip
+
     - name: Install mypy
       run: pip install --upgrade mypy
+
+    - name: Remove mypy cache
+      run: rm -rf .mypy_cache
+
     - name: Type check with mypy
       run: mypy --install-types --non-interactive .
 
@@ -31,6 +40,8 @@ jobs:
     steps:
     - name: Checkout torchani
       uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PAT }}
     - name: Set up Python ${{ env.PY_VERSION }}
       uses: actions/setup-python@v4
       with:
@@ -47,6 +58,8 @@ jobs:
     steps:
     - name: Checkout torchani
       uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PAT }}
     - name: Check that clang-format is available
       run: which clang-format; clang-format --version
     - name: Lint with clang-format

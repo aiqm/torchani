@@ -224,12 +224,13 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
             splitted_conformers: NumpyConformers = dict()
             for k in keys_copy:
                 if getter == "get_conformers":
-                    splits = torch.split(conformers.pop(k), max_size)
+                    # TODO: unnecessary cast in current pytorch
+                    splits = tuple(torch.split(conformers.pop(k), max_size))
                 else:
-                    splits = [
+                    splits = tuple(
                         conformers[k][j:j + max_size]
                         for j in range(0, len(conformers[k]), max_size)
-                    ]
+                    )
                 splitted_conformers.update({k: splits})
             num_chunks = len(splitted_conformers[any_key])
             for j in range(num_chunks):

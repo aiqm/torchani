@@ -26,13 +26,13 @@ env:
 
 jobs:
   build_docker_and_unittest:
-    runs-on: [self-hosted, richard]
+    runs-on: [self-hosted, ipickering]
     permissions:
       contents: read
       packages: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout torchani
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.PAT }}

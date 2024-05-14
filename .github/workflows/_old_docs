@@ -9,7 +9,7 @@ on:
 jobs:
   docs:
 
-    runs-on: [self-hosted, richard]
+    runs-on: [self-hosted, ipickering]
     strategy:
       max-parallel: 4
       matrix:
