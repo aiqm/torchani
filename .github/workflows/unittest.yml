@@ -32,6 +32,19 @@ jobs:
             && cd ./tests
             && pytest -v ."
 
+      - name: Cleanup of all privileged-mode data
+        if: ${{ always() }}
+        continue-on-error: true
+        run: >-
+            docker run
+            --rm
+            --privileged
+            -v $PWD:/ani ubuntu:latest
+            bash -c
+            'rm -rf /ani/torchani.egg-info
+            && rm -rf /ani/.pytest_cache
+            && find . -name "__pycache__" -prune -exec rm -rf "{}" \;'
+
 concurrency:
   group: unittests-cpu-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

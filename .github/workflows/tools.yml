@@ -11,7 +11,7 @@ env:
 
 jobs:
   tools:
-    runs-on: self-hosted
+    runs-on: [self-hosted, ipickering]
     steps:
     - name: Checkout torchani
       uses: actions/checkout@v3

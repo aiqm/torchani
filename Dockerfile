@@ -1,7 +1,7 @@
 FROM pytorch/pytorch:2.3.0-cuda11.8-cudnn8-devel
 WORKDIR /torchani_sandbox
 
-# NGC image forces TF32, disable this
+# NGC image forces TF32, but we disable this
 # TODO: Do we need this for the pytorch images?
 ENV TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=0
 ENV CUDA_HOME=/usr/local/cuda/
