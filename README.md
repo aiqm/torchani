@@ -1,10 +1,12 @@
 # <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo1.png width=180/>  Accurate Neural Network Potential on PyTorch
 
 Metrics: (UNTRACKED FOR PRIVATE REPO)
+
 ![PyPI](https://img.shields.io/pypi/v/torchani.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchani.svg)
 
 CI:
+
 [
     ![unittests (cpu)](
         https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittest.yml/badge.svg
@@ -27,6 +29,7 @@ CI:
 ](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yml)
 
 Deployment: (STOPPED FOR PRIVATE REPO)
+
 [
     ![conda homepage](
         https://img.shields.io/badge/conda--package-page-blue
