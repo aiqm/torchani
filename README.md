@@ -1,28 +1,52 @@
 # <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo1.png width=180/>  Accurate Neural Network Potential on PyTorch
 
-Metrics:
-
-[![conda-release](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/conda-release.yml/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/conda-release.yml)
-[![conda-page](https://img.shields.io/badge/conda--package-page-blue)](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
+Metrics: (UNTRACKED FOR PRIVATE REPO)
 ![PyPI](https://img.shields.io/pypi/v/torchani.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchani.svg)
 
-Checks:
+CI:
+[
+    ![unittests (cpu)](
+        https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittest.yml/badge.svg
+    )
+](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittest.yml)
+[
+    ![unittests (gpu, extension)](
+        https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-docker.yml/badge.svg
+    )
+](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-docker.yml)
+[
+    ![flake8, mypy, clang-format](
+        https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yml/badge.svg
+    )
+](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yml)
+[
+    ![tools](
+        https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yml/badge.svg
+    )
+](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yml)
 
-[![CodeFactor](https://www.codefactor.io/repository/github/aiqm/torchani/badge/master)](https://www.codefactor.io/repository/github/aiqm/torchani/overview/master)
-[![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/flake8/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
-[![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/clang-format/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
-[![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/mypy/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
-[![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/unittests/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
-[![Actions Status](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-docker.yml/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-docker.yml)
-[![Actions Status](https://github.com/aiqm/torchani/workflows/docs/badge.svg)](https://github.com/aiqm/torchani/actions)
-[![Actions Status](https://github.com/aiqm/torchani/workflows/runnable-submodules/badge.svg)](https://github.com/aiqm/torchani/actions)
-[![Actions Status](https://github.com/roitberg-group/torchani_sandbox/workflows/tools/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions)
-
-Deploy:
-
-[![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-docs/badge.svg)](https://github.com/aiqm/torchani/actions)
-[![Actions Status](https://github.com/aiqm/torchani/workflows/deploy-pypi/badge.svg)](https://github.com/aiqm/torchani/actions)
+Deployment: (STOPPED FOR PRIVATE REPO)
+[
+    ![conda homepage](
+        https://img.shields.io/badge/conda--package-page-blue
+    )
+](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
+[
+    ![conda release](
+        https://github.com/roitberg-group/torchani_sandbox/actions/workflows/conda-release.yml/badge.svg
+    )
+](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/conda-release.yml)
+[
+    ![docs release](
+        https://github.com/aiqm/torchani/workflows/deploy-docs/badge.svg
+    )
+](https://github.com/aiqm/torchani/actions)
+[
+    ![pypi relesase](
+        https://github.com/aiqm/torchani/workflows/deploy-pypi/badge.svg
+    )
+](https://github.com/aiqm/torchani/actions)
 
 TorchANI is a pytorch implementation of ANI. It is currently under alpha
 release, which means, the API is not stable yet. If you find a bug of TorchANI,
@@ -31,45 +55,45 @@ a pull request.
 
 <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo2.png width=500/>
 
-TorchANI is tested against (usually) the latest PyTorch version
+TorchANI is tested against the (usually) latest PyTorch version
 
 ## Install TorchANI
 
-### Conda installation
+### Using conda (BROKEN)
 
-TODO: Support this again (currently only building from source works)
+**TODO**: Support this again (currently only building from source works)
 
 To install TorchANI using conda run:
 
 ```bash
 conda create -n ani python=3.8
 conda activate ani
-conda install -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville -c pytorch -c nvidia -c defaults -c conda-forge sandbox
-```
-
-Or in a single command:
-
-```bash
-conda create -n ani -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville -c pytorch -c nvidia -c defaults -c conda-forge sandbox python=3.8
+# The following command is all one line
+conda install \
+    -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville \
+    -c pytorch \
+    -c nvidia \
+    -c defaults \
+    -c conda-forge \
+    sandbox
 ```
 
 Notes:
 
-- We are hosting the packages only for internal usage at
-  https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville
-- The `conda install` command could also be used for your own conda environment
-  or could be used to update to the latest nightly version.
-- In the case where multiple updates has been released within a day, you may
+- The conda package is hosted at
+  https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville only for
+  internal use
+- In the case where multiple updates were released within the same day, you may
   need to add a `--force-reinstall` flag instead of waiting for the next
   nightly update.
 
-### Using pip
+### Using pip (BROKEN)
 
-TODO: Support this again (currently only building from source works)
+**TODO**: Support this again (currently only building from source works)
 
 ## Build TorchANI from source
 
-To install TorchANI from GitHub run the following:
+To install TorchANI directly from the GitHub repo run the following:
 
 ```bash
 # Clone the repo and cd to the directory
@@ -106,15 +130,14 @@ building the CUDA and C++ extensions refer to [TorchANI CSRC](torchani/csrc).
 ## CUDA / C++ extensions
 
 A CUDA extension for speeding up AEV calculations and a C++ extension for
-parallelizing networks (MNP or Multi Net Parallel) using MPI are compiled by
-default in the conda build, and have to be built manually if installed from
-github.
+parallelizing networks (MNP or Multi Net Parallel) using OpenMP are compiled by
+default in the conda package. They have to be built manually if installed from
+GitHub.
 
 ## Command Line Interface
 
-After installation, there will be an executable script (torchani) available on
-you path, which contain some builtin utilities. Check usage by calling
-``torchani --help``.
+Torchani provides an executable script, `torchani`, with some utilities. Check
+usage by calling ``torchani --help``.
 
 ## Citations
 
@@ -124,16 +147,23 @@ Please cite the following paper if you use TorchANI:
   Adrian E. Roitberg. *TorchANI: A Free and Open Source PyTorch Based Deep
   Learning Implementation of the ANI Neural Network Potentials*. Journal of
   Chemical Information and Modeling 2020 60 (7), 3408-3415,
-  [![DOI for Citing](https://img.shields.io/badge/DOI-10.1021%2Facs.jcim.0c00451-green.svg)](https://doi.org/10.1021/acs.jcim.0c00451)
+  [
+    ![DOI for Citing](
+        https://img.shields.io/badge/DOI-10.1021%2Facs.jcim.0c00451-green.svg
+    )
+](https://doi.org/10.1021/acs.jcim.0c00451)
 
-[![JCIM Cover](https://pubs.acs.org/na101/home/literatum/publisher/achs/journals/content/jcisd8/2020/jcisd8.2020.60.issue-7/jcisd8.2020.60.issue-7/20200727/jcisd8.2020.60.issue-7.largecover.jpg)](https://pubs.acs.org/toc/jcisd8/60/7)
+[
+    ![JCIM Cover](
+        https://pubs.acs.org/na101/home/literatum/publisher/achs/journals/content/jcisd8/2020/jcisd8.2020.60.issue-7/jcisd8.2020.60.issue-7/20200727/jcisd8.2020.60.issue-7.largecover.jpg)
+    ](
+        https://pubs.acs.org/toc/jcisd8/60/7
+    )
 
 - Please refer to [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI) for ANI
   model references.
 
-## Documentation repository
-
-(Note that this only applies for the public repo)
+## Documentation repository (ONLY APPLIES TO PUBLIC REPO)
 
 If you opened a pull request, you could see your generated documents at
 https://aiqm.github.io/torchani-test-docs/ after you `docs` check succeed. Keep
