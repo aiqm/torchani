@@ -93,7 +93,7 @@ pip install -v --no-deps --no-build-isolation -e . --global-option="--ext"
 bash ./download.sh
 
 # Build the documentation (optional)
-sphix-build docs docs-build
+sphinx-build docs/src docs/build
 
 # Manually run unit tests (optional)
 cd ./tests

@@ -1,9 +1,8 @@
 # Python cache and build
-__pycache__
-.eggs
-*.egg-info
-/torchani.egg-info
+__pycache__/
 *.pyc
+.eggs
+*.egg-info/
 
 # Vscode
 /.vscode
@@ -23,7 +22,8 @@ __pycache__
 a.out
 
 # Mypy and pytest cache
-*_cache
+.mypy_cache/
+.pytest_cache/
 
 # Ninja
 *.ninja
@@ -37,31 +37,31 @@ htmlcov/
 .ipynb_checkpoints
 Untitled.ipynb
 
+# Full directories relative to project root
+/tests/runs/
+/tools/plots/
+/tools/benchmark/
+# Data downloaded with download.sh
+/download/
+# Used for CUB when building CUDA / C++ extensions
+/include/
+# Build output of Sphinx docs
+/docs/build/
+# Build output of CUDA / C++ extensions
+/build/
+
+# Nvidia Nsight Systems profiling
+*.qdrep
+*.qdstrm
+
 *.prof
-/tools/benchmark/*
-/data
-/test.py
-/build*
-/docs-build*
-benchmark_xyz
 *checkpoint*
-/tests/runs
-/quicktest.py
 /*.ipt
 /*.params
 /*.dat
 /tmp
 datacache
 dist
-/download
-/download.tar.xz
-*.qdrep
-*.qdstrm
-/nnp_training.py
-/test*.py
-/include
-training_outputs/
 examples/dataset.pkl
 examples/batched_dataset_1x/*
-/tools/plots/*
 /tests/.hypothesis

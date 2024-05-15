@@ -17,20 +17,15 @@ jobs:
       uses: actions/checkout@v3
       with:
         token: ${{ secrets.PAT }}
-
     - name: Set up Python ${{ env.PY_VERSION }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ env.PY_VERSION }}
-
     - name: Install dependencies
-      run: ci/install_stable_dependencies.sh
-
+      run: pip install 'setuptools>=61' 'setuptools_scm>=8' -r docs_requirements.txt
     - name: Install TorchANI
-      run: pip install  -v --no-deps --no-build-isolation --editable .
-
+      run: pip install --no-build-isolation --editable .
     - name: Download data files
       run: ./download.sh
-
     - name: Build docs
-      run: sphinx-build docs build
+      run: sphinx-build docs/src docs/build

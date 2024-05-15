@@ -23,27 +23,13 @@ jobs:
             docker run
             --rm
             --gpus '"device=none"'
-            --privileged
             -v $PWD:/ani pytorch/pytorch:2.3.0-cuda11.8-cudnn8-devel
             bash -c
-            "cd /ani
+            "cp -r /ani/ /ani-tmp/
+            && cd /ani-tmp
             && pip install 'setuptools>=61' 'setuptools_scm>=8' -r tests_requirements.txt
-            && pip install -v --no-build-isolation --editable .
-            && cd ./tests
-            && pytest -v ."
-
-      - name: Cleanup of all privileged-mode data
-        if: ${{ always() }}
-        continue-on-error: true
-        run: >-
-            docker run
-            --rm
-            --privileged
-            -v $PWD:/ani ubuntu:latest
-            bash -c
-            'rm -rf /ani/torchani.egg-info
-            && rm -rf /ani/.pytest_cache
-            && find . -name "__pycache__" -prune -exec rm -rf "{}" \;'
+            && pip install --no-build-isolation --editable .
+            && pytest ."
 
 concurrency:
   group: unittests-cpu-${{ github.event.pull_request.number || github.sha }}

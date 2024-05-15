@@ -21,6 +21,7 @@ dependencies:
   # to fetch missing libraries. The issue is that nvidia bundles nvcc-12.4, so we
   # specifically override it with nvidia::cuda-nvcc-11.8, since pytorch errors out
   # on 12.4
+  # TODO: Fix this
   - nvidia::cuda-toolkit=11.8
   - nvidia::cuda-nvcc=11.8
 

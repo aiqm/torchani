@@ -22,7 +22,7 @@ RUN ./download.sh
 COPY *_requirements.txt .
 
 # Install requirements (note that only tests_requirements are needed for unit-tests)
-RUN pip install twine wheel pytest \
+RUN pip install \
     -r tests_requirements.txt \
     -r tools_requirements.txt \
     -r docs_requirements.txt
