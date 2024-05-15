@@ -7,49 +7,33 @@ Metrics: (UNTRACKED FOR PRIVATE REPO)
 
 CI:
 
-[
-    ![unittests (cpu)](
-        https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittest.yml/badge.svg
-    )
-](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittest.yml)
-[
-    ![unittests (gpu, extension)](
-        https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-docker.yml/badge.svg
-    )
-](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-docker.yml)
-[
-    ![flake8, mypy, clang-format](
-        https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yml/badge.svg
-    )
-](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yml)
-[
-    ![tools](
+[![unittests (cpu)](
+    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittest.yml/badge.svg
+)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittest.yml)
+[![unittests (gpu, extension)](
+    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-docker.yml/badge.svg
+)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-docker.yml)
+[![flake8, mypy, clang-format](
+    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yml/badge.svg
+)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yml)
+[![tools](
         https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yml/badge.svg
-    )
-](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yml)
+)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yml)
 
 Deployment: (STOPPED FOR PRIVATE REPO)
 
-[
-    ![conda homepage](
+[![conda homepage](
         https://img.shields.io/badge/conda--package-page-blue
-    )
-](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
-[
-    ![conda release](
-        https://github.com/roitberg-group/torchani_sandbox/actions/workflows/conda-release.yml/badge.svg
-    )
-](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/conda-release.yml)
-[
-    ![docs release](
-        https://github.com/aiqm/torchani/workflows/deploy-docs/badge.svg
-    )
-](https://github.com/aiqm/torchani/actions)
-[
-    ![pypi relesase](
-        https://github.com/aiqm/torchani/workflows/deploy-pypi/badge.svg
-    )
-](https://github.com/aiqm/torchani/actions)
+)](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
+[![conda release](
+    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/conda-release.yml/badge.svg
+)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/conda-release.yml)
+[![docs release](
+    https://github.com/aiqm/torchani/workflows/deploy-docs/badge.svg
+)](https://github.com/aiqm/torchani/actions)
+[![pypi relesase](
+    https://github.com/aiqm/torchani/workflows/deploy-pypi/badge.svg
+)](https://github.com/aiqm/torchani/actions)
 
 TorchANI is a pytorch implementation of ANI. It is currently under alpha
 release, which means, the API is not stable yet. If you find a bug of TorchANI,
