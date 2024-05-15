@@ -7,31 +7,31 @@ Metrics: (UNTRACKED FOR PRIVATE REPO)
 
 CI:
 
-[![unittests (cpu)](
+[![unittest workflow](
     https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittest.yml/badge.svg
 )](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittest.yml)
-[![unittests (gpu, extension)](
+[![build-docker workflow](
     https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-docker.yml/badge.svg
 )](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-docker.yml)
-[![flake8, mypy, clang-format](
+[![lint workflow](
     https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yml/badge.svg
 )](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yml)
-[![tools](
+[![tools workflow](
         https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yml/badge.svg
 )](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yml)
 
 Deployment: (STOPPED FOR PRIVATE REPO)
 
-[![conda homepage](
+[![Custom conda badge, link to page](
         https://img.shields.io/badge/conda--package-page-blue
 )](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
-[![conda release](
+[![conda-release workflow](
     https://github.com/roitberg-group/torchani_sandbox/actions/workflows/conda-release.yml/badge.svg
 )](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/conda-release.yml)
-[![docs release](
+[![deploy-docs workflow](
     https://github.com/aiqm/torchani/workflows/deploy-docs/badge.svg
 )](https://github.com/aiqm/torchani/actions)
-[![pypi relesase](
+[![deploy-pypi workflow](
     https://github.com/aiqm/torchani/workflows/deploy-pypi/badge.svg
 )](https://github.com/aiqm/torchani/actions)
 
