@@ -78,9 +78,9 @@ Notes:
 
 **TODO**: Support this again (currently only building from source works)
 
-## Build TorchANI from source
+## From source
 
-To install TorchANI directly from the GitHub repo run the following:
+To build install TorchANI directly from the GitHub repo run the following:
 
 ```bash
 # Clone the repo and cd to the directory
@@ -150,7 +150,7 @@ Please cite the following paper if you use TorchANI:
 - Please refer to [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI) for ANI
   model references.
 
-## Documentation repository (ONLY APPLIES TO PUBLIC REPO)
+## Documentation (ONLY APPLIES TO PUBLIC REPO)
 
 If you opened a pull request, you could see your generated documents at
 https://aiqm.github.io/torchani-test-docs/ after you `docs` check succeed. Keep
