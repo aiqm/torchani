@@ -1,1 +1,32 @@
+# Python cache and build
+__pycache__/
+*.pyc
+.eggs
+*.egg-info/
+
+# Vscode
+/.vscode
+
+# Vim
+*.swp
+*.swo
+
+# Repo objects
 .git/
+
+# Mypy and test cache
+.mypy_cache/
+.pytest_cache/
+
+# logos and compressed downloads
+*.png
+*.zip
+
+# Full directories relative to project root
+/tests/runs/
+/tools/plots/
+/tools/benchmark/
+# Build output of Sphinx docs
+/docs/build/
+# Build output of CUDA / C++ extensions
+/build/

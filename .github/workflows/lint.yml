@@ -14,11 +14,11 @@ jobs:
     runs-on: [self-hosted, ipickering]
     steps:
     - name: Checkout torchani
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         token: ${{ secrets.PAT }}
     - name: Set up Python ${{ env.PY_VERSION }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PY_VERSION }}
     - name: Install pip
@@ -32,11 +32,11 @@ jobs:
     runs-on: [self-hosted, ipickering]
     steps:
     - name: Checkout torchani
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         token: ${{ secrets.PAT }}
     - name: Set up Python ${{ env.PY_VERSION }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PY_VERSION }}
     - name: Install pip
@@ -50,7 +50,7 @@ jobs:
     runs-on: [self-hosted, ipickering]
     steps:
     - name: Checkout torchani
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         token: ${{ secrets.PAT }}
     - name: Check that clang-format is available

@@ -41,14 +41,14 @@ Untitled.ipynb
 /tests/runs/
 /tools/plots/
 /tools/benchmark/
-# Data downloaded with download.sh
-/download/
 # Used for CUB when building CUDA / C++ extensions
 /include/
 # Build output of Sphinx docs
 /docs/build/
 # Build output of CUDA / C++ extensions
 /build/
+# Data downloaded with download.sh
+/download/
 
 # Nvidia Nsight Systems profiling
 *.qdrep
