@@ -1,4 +1,4 @@
-name: tools
+name: unittests
 
 on:
   pull_request:
@@ -8,10 +8,10 @@ on:
 
 env:
   REGISTRY: ${{ github.repository }}
-  IMAGE_NAME: 'tools'
+  IMAGE_NAME: 'unittests-ext'
 
 jobs:
-  tools:
+  cpu-tests:
     runs-on: [self-hosted, ipickering]
     permissions:
       contents: read
@@ -38,37 +38,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Inference benchmark
+      - name: Run unit tests (CPU)
         run: >-
           docker run
           --rm
-          --gpus all
+          --gpus '"device=none"'
           ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/inference-benchmark.py --tqdm dataset/xyz_files/CH4-5.xyz"
-
-      - name: COMP6 benchmark
-        run: >-
-          docker run
-          --rm
-          --gpus all
-          ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/comp6.py dataset/COMP6/COMP6v1/s66x8"
-
-      - name: Training benchmark
-        run: >-
-          docker run
-          --rm
-          --gpus all
-          ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/training-benchmark.py dataset/ani1-up_to_gdb4/ani_gdb_s01.h5"
-
-      - name: Training benchmark (Nsight Systems)
-        run: >-
-          docker run
-          --rm
-          --gpus all
-          ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/training-benchmark-nsys-profile.py --dry-run dataset/ani1-up_to_gdb4/ani_gdb_s01.h5"
+          bash -c "pytest ."
 
       - name: Remove image
         if: ${{ always() }}
@@ -76,5 +52,5 @@ jobs:
         run: docker image rm ${{ steps.meta.outputs.tags }}
 
 concurrency:
-  group: tools-${{ github.event.pull_request.number || github.sha }}
+  group: unittests-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

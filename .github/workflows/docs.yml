@@ -7,25 +7,51 @@ on:
       - master
 
 env:
-  PY_VERSION: 3.8
+  REGISTRY: ${{ github.repository }}
+  IMAGE_NAME: 'docs'
 
 jobs:
   docs:
     runs-on: [self-hosted, ipickering]
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-    - name: Checkout torchnai
-      uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.PAT }}
-    - name: Set up Python ${{ env.PY_VERSION }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PY_VERSION }}
-    - name: Install dependencies
-      run: pip install 'setuptools>=61' 'setuptools_scm>=8' -r docs_requirements.txt
-    - name: Install TorchANI
-      run: pip install --no-build-isolation --editable .
-    - name: Download data files
-      run: ./download.sh
-    - name: Build docs
-      run: sphinx-build docs/src docs/build
+      - name: Checkout torchani
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT }}
+          submodules: recursive
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build extensions and run tests
+        run: >-
+          docker run
+          --rm
+          --gpus '"device=none"'
+          ${{ steps.meta.outputs.tags }}
+          bash -c
+          "sphinx-build docs/src docs/build"
+
+      - name: Remove image
+        if: ${{ always() }}
+        continue-on-error: true
+        run: docker image rm ${{ steps.meta.outputs.tags }}
+
+concurrency:
+  group: docs-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
