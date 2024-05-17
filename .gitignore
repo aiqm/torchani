@@ -45,6 +45,7 @@ Untitled.ipynb
 /include/
 # Build output of Sphinx docs
 /docs/build/
+/docs/src/sg_execution_times.rst
 # Build output of CUDA / C++ extensions
 /build/
 # Data downloaded with download.sh

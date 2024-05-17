@@ -4,11 +4,8 @@ Train Your Own Neural Network Potential
 =======================================
 
 This example shows how to use TorchANI to train a neural network potential
-with the setup identical to NeuroChem. We will use the same configuration as
-specified in `inputtrain.ipt`_
-
-.. _`inputtrain.ipt`:
-    https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/inputtrain.ipt
+with the setup identical to NeuroChem. We will use the same cenfiguration as
+specified in the inputtrain.ipt used in the ani-model-zoo repo
 
 .. note::
     TorchANI provide tools to run NeuroChem training config file `inputtrain.ipt`.
@@ -53,12 +50,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # .. note::
 #
 #   Besides defining these hyperparameters programmatically,
-#   `torchani.neurochem` provide tools to read them from file.
-#
-# .. _rHCNO-5.2R_16-3.5A_a4-8.params:
-#   https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params
-# .. _sae_linfit.dat:
-#   https://github.com/aiqm/torchani/blob/master/torchani/resources/ani-1x_8x/sae_linfit.dat
+#   `torchani.neurochem` provide tools to read them from neurochem style files file.
 
 aev_computer = torchani.AEVComputer.style_1x()
 energy_shifter = torchani.utils.EnergyShifter(None)

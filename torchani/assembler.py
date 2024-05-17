@@ -359,34 +359,6 @@ class Assembler:
         )
 
 
-def load_from_neurochem(
-    model_name: str,
-    model_index: tp.Optional[int],
-    use_cuda_extension: bool,
-    use_cuaev_interface: bool,
-    periodic_table_index: bool,
-    pretrained: bool,
-) -> BuiltinModel:
-    if not pretrained:
-        raise ValueError("Non pretrained models are not available from neurochem")
-    from torchani.neurochem import modules_from_builtin_name
-
-    components = modules_from_builtin_name(
-        model_name,
-        model_index,
-        use_cuda_extension,
-        use_cuaev_interface,
-    )
-    aev_computer, neural_networks, energy_shifter, elements = components
-    return BuiltinModel(
-        aev_computer,
-        neural_networks,
-        energy_shifter,
-        elements,
-        periodic_table_index=periodic_table_index,
-    )
-
-
 def ANI1x(
     model_index: tp.Optional[int] = None,
     pretrained: bool = True,
@@ -394,7 +366,6 @@ def ANI1x(
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
-    use_neurochem_source: bool = False,
 ) -> BuiltinModel:
     """The ANI-1x model as in `ani-1x_8x on GitHub`_ and `Active Learning Paper`_.
 
@@ -409,15 +380,6 @@ def ANI1x(
     .. _Active Learning Paper:
         https://aip.scitation.org/doi/abs/10.1063/1.5023802
     """
-    if use_neurochem_source:
-        return load_from_neurochem(
-            model_name="ani1x",
-            model_index=model_index,
-            use_cuda_extension=use_cuda_extension,
-            use_cuaev_interface=use_cuaev_interface,
-            periodic_table_index=periodic_table_index,
-            pretrained=pretrained,
-        )
     asm = Assembler(ensemble_size=8, periodic_table_index=periodic_table_index)
     asm.set_symbols(ELEMENTS_1X, auto_sort=False)
     asm.set_atomic_maker(atomics.like_1x)
@@ -446,7 +408,6 @@ def ANI1ccx(
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
-    use_neurochem_source: bool = False,
 ) -> BuiltinModel:
     """The ANI-1ccx model as in `ani-1ccx_8x on GitHub`_ and `Transfer Learning Paper`_.
 
@@ -462,15 +423,6 @@ def ANI1ccx(
     .. _Transfer Learning Paper:
         https://doi.org/10.26434/chemrxiv.6744440.v1
     """
-    if use_neurochem_source:
-        return load_from_neurochem(
-            model_name="ani1ccx",
-            model_index=model_index,
-            use_cuda_extension=use_cuda_extension,
-            use_cuaev_interface=use_cuaev_interface,
-            periodic_table_index=periodic_table_index,
-            pretrained=pretrained,
-        )
     asm = Assembler(ensemble_size=8, periodic_table_index=periodic_table_index)
     asm.set_symbols(ELEMENTS_1X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")
@@ -499,7 +451,6 @@ def ANI2x(
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
-    use_neurochem_source: bool = False,
 ) -> BuiltinModel:
     """The ANI-2x model as in `ANI2x Paper`_ and `ANI2x Results on GitHub`_.
 
@@ -514,15 +465,6 @@ def ANI2x(
     .. _ANI2x Paper:
         https://doi.org/10.26434/chemrxiv.11819268.v1
     """
-    if use_neurochem_source:
-        return load_from_neurochem(
-            model_name="ani2x",
-            model_index=model_index,
-            use_cuda_extension=use_cuda_extension,
-            use_cuaev_interface=use_cuaev_interface,
-            periodic_table_index=periodic_table_index,
-            pretrained=pretrained,
-        )
     asm = Assembler(ensemble_size=8, periodic_table_index=periodic_table_index)
     asm.set_symbols(ELEMENTS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")

@@ -25,6 +25,7 @@ Welcome to TorchANI's documentation!
     examples/modular_aev
     examples/repulsive_potential
     examples/dispersion_potential
+    examples/neurochem_loading
 
 .. toctree::
     :maxdepth: 2

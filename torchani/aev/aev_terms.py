@@ -1,14 +1,11 @@
 import typing as tp
 import math
-from pathlib import Path
 
 import torch
 from torch import Tensor
 import typing_extensions as tpx
 
 from torchani.cutoffs import parse_cutoff_fn, CutoffArg
-
-state_dicts_path = Path(__file__).parent.parent.joinpath("resources/state_dicts/")
 
 
 class _Term(torch.nn.Module):
@@ -142,21 +139,65 @@ class StandardRadial(RadialTerm):
 
     @classmethod
     def like_1x(cls) -> tpx.Self:
-        m = cls.style_1x(cutoff_fn="cosine")
-        m.load_state_dict(torch.load(state_dicts_path / "radial_1x_state_dict.pth"))
-        return m
+        return cls(
+            EtaR=torch.tensor([16.0], dtype=torch.float),
+            ShfR=torch.tensor(
+                [
+                    0.9,
+                    1.1687500,
+                    1.4375000,
+                    1.7062500,
+                    1.9750000,
+                    2.2437500,
+                    2.5125000,
+                    2.7812500,
+                    3.0500000,
+                    3.3187500,
+                    3.5875000,
+                    3.8562500,
+                    4.1250000,
+                    4.3937500,
+                    4.6625000,
+                    4.9312500,
+                ],
+                dtype=torch.float,
+            ),
+            cutoff=5.2,
+            cutoff_fn="cosine",
+        )
 
     @classmethod
     def like_1ccx(cls) -> tpx.Self:
-        m = cls.style_1x(cutoff_fn="cosine")
-        m.load_state_dict(torch.load(state_dicts_path / "radial_1ccx_state_dict.pth"))
-        return m
+        return cls.like_1x()
 
     @classmethod
     def like_2x(cls) -> tpx.Self:
-        m = cls.style_2x(cutoff_fn="cosine")
-        m.load_state_dict(torch.load(state_dicts_path / "radial_2x_state_dict.pth"))
-        return m
+        return cls(
+            EtaR=torch.tensor([19.7], dtype=torch.float),
+            ShfR=torch.tensor(
+                [
+                    0.8,
+                    1.0687500,
+                    1.3375000,
+                    1.6062500,
+                    1.8750000,
+                    2.1437500,
+                    2.4125000,
+                    2.6812500,
+                    2.9500000,
+                    3.2187500,
+                    3.4875000,
+                    3.7562500,
+                    4.0250000,
+                    4.2937500,
+                    4.5625000,
+                    4.8312500,
+                ],
+                dtype=torch.float,
+            ),
+            cutoff=5.1,
+            cutoff_fn="cosine",
+        )
 
 
 class StandardAngular(AngularTerm):
@@ -294,21 +335,69 @@ class StandardAngular(AngularTerm):
 
     @classmethod
     def like_1x(cls) -> tpx.Self:
-        m = cls.style_1x(cutoff_fn="cosine")
-        m.load_state_dict(torch.load(state_dicts_path / "angular_1x_state_dict.pth"))
-        return m
+        return cls(
+            EtaA=torch.tensor([8.0], dtype=torch.float),
+            Zeta=torch.tensor([32.0], dtype=torch.float),
+            ShfA=torch.tensor(
+                [
+                    0.9,
+                    1.5500000,
+                    2.2000000,
+                    2.8500000,
+                ],
+                dtype=torch.float,
+            ),
+            ShfZ=torch.tensor(
+                [
+                    0.19634954,
+                    0.58904862,
+                    0.98174770,
+                    1.3744468,
+                    1.7671459,
+                    2.1598449,
+                    2.5525440,
+                    2.9452431,
+                ],
+                dtype=torch.float,
+            ),
+            cutoff=3.5,
+            cutoff_fn="cosine",
+        )
 
     @classmethod
     def like_1ccx(cls) -> tpx.Self:
-        m = cls.style_1x(cutoff_fn="cosine")
-        m.load_state_dict(torch.load(state_dicts_path / "angular_1ccx_state_dict.pth"))
-        return m
+        return cls.like_1x()
 
     @classmethod
     def like_2x(cls) -> tpx.Self:
-        m = cls.style_2x(cutoff_fn="cosine")
-        m.load_state_dict(torch.load(state_dicts_path / "angular_2x_state_dict.pth"))
-        return m
+        return cls(
+            EtaA=torch.tensor([12.5], dtype=torch.float),
+            Zeta=torch.tensor([14.1], dtype=torch.float),
+            ShfA=torch.tensor(
+                [
+                    0.8,
+                    1.1375000,
+                    1.4750000,
+                    1.8125000,
+                    2.1500000,
+                    2.4875000,
+                    2.8250000,
+                    3.1625000,
+                ],
+                dtype=torch.float,
+            ),
+            ShfZ=torch.tensor(
+                [
+                    0.39269908,
+                    1.1780972,
+                    1.9634954,
+                    2.7488936,
+                ],
+                dtype=torch.float,
+            ),
+            cutoff=3.5,
+            cutoff_fn="cosine",
+        )
 
 
 _Models = tp.Union[

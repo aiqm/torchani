@@ -12,6 +12,7 @@ import requests
 from torchani.aev import AEVComputer
 from torchani.utils import EnergyShifter
 from torchani.nn import Ensemble, ANIModel
+from torchani.models import BuiltinModel
 from torchani.storage import NEUROCHEM_DIR
 from torchani.neurochem.utils import model_dir_from_prefix
 from torchani.neurochem.neurochem import (
@@ -22,7 +23,12 @@ from torchani.neurochem.neurochem import (
 )
 
 
-__all__ = ["modules_from_builtin_name", "modules_from_info_file"]
+__all__ = [
+    "modules_from_builtin_name",
+    "modules_from_info_file",
+    "download_model_parameters",
+    "load_builtin",
+]
 
 
 SUPPORTED_MODELS = {"ani1x", "ani2x", "ani1ccx"}
@@ -61,27 +67,40 @@ class NeurochemInfo:
     def from_builtin_name(cls, model_name: str) -> tpx.Self:
         if model_name not in SUPPORTED_MODELS:
             raise ValueError(
-                f"Neurochem model {model_name} not supported",
+                f"Neurochem model {model_name} not supported,"
+                f" supported models are: {SUPPORTED_MODELS}",
             )
         suffix = model_name.replace("ani", "")
         info_file_path = NEUROCHEM_DIR / f"ani-{suffix}_8x.info"
         if not info_file_path.is_file():
-            repo = "ani-model-zoo"
-            tag = "ani-2x"
-            extracted_dirname = f"{repo}-{tag}"
-            url = f"https://github.com/aiqm/{repo}/archive/{tag}.zip"
-
-            print("Downloading ANI model parameters ...")
-            resource_res = requests.get(url)
-            resource_zip = zipfile.ZipFile(io.BytesIO(resource_res.content))
-            resource_zip.extractall(NEUROCHEM_DIR)
-
-            extracted_dir = Path(NEUROCHEM_DIR) / extracted_dirname
-            for f in (extracted_dir / "resources").iterdir():
-                shutil.move(str(f), NEUROCHEM_DIR / f.name)
-            shutil.rmtree(extracted_dir)
+            download_model_parameters()
         info = cls.from_info_file(info_file_path)
         return info
+
+
+def download_model_parameters(
+    root: tp.Optional[Path] = None, verbose: bool = True
+) -> None:
+    if root is None:
+        root = NEUROCHEM_DIR
+    if any(root.iterdir()):
+        if verbose:
+            print("Found existing files in directory, assuming params already present")
+        return
+    repo = "ani-model-zoo"
+    tag = "ani-2x"
+    extracted_dirname = f"{repo}-{tag}"
+    url = f"https://github.com/aiqm/{repo}/archive/{tag}.zip"
+    if verbose:
+        print("Downloading ANI model parameters ...")
+    resource_res = requests.get(url)
+    resource_zip = zipfile.ZipFile(io.BytesIO(resource_res.content))
+    resource_zip.extractall(root)
+
+    extracted_dir = Path(root) / extracted_dirname
+    for f in (extracted_dir / "resources").iterdir():
+        shutil.move(str(f), root / f.name)
+    shutil.rmtree(extracted_dir)
 
 
 def modules_from_info(
@@ -152,4 +171,27 @@ def modules_from_info_file(
         model_index,
         use_cuda_extension,
         use_cuaev_interface,
+    )
+
+
+def load_builtin(
+    model_name: str,
+    model_index: tp.Optional[int] = None,
+    use_cuda_extension: bool = False,
+    use_cuaev_interface: bool = False,
+    periodic_table_index: bool = True,
+) -> BuiltinModel:
+    components = modules_from_builtin_name(
+        model_name,
+        model_index,
+        use_cuda_extension,
+        use_cuaev_interface,
+    )
+    aev_computer, neural_networks, energy_shifter, elements = components
+    return BuiltinModel(
+        aev_computer,
+        neural_networks,
+        energy_shifter,
+        elements,
+        periodic_table_index=periodic_table_index,
     )
