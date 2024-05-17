@@ -1,0 +1,30 @@
+# This file collects optional dependencies of torchani.
+
+# Ase interface, needed for tests, docs, tools, and for MD
+ase
+
+# Tests: tests-runner and class parametrization
+pytest
+parameterized
+
+# Tests: Indirect dependencies of torch.testing
+hypothesis
+expecttest
+
+# Tests: Extra data backends (parquet and zarr)
+pandas
+pyarrow
+zarr
+
+# Docs: Sphinx-related, for building the docs
+sphinx
+sphinx_rtd_theme
+sphinx-gallery
+
+# Docs: For logging on training example
+tensorboard
+
+
+# Tools: Utils for running various scripts found in /torchani/tools/
+pynvml
+matplotlib

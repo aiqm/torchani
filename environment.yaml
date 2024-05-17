@@ -8,13 +8,15 @@ dependencies:
   # General
   - python=3.10
   - pip
-  - typing_extensions>=4.0.0
 
   # Required dependencies:
-  # Core
   - numpy>=1.24
   - pytorch=2.3
   - pytorch-cuda=11.8
+  - typing_extensions>=4.0.0
+  - h5py  # HDF5 backend for datasets
+  - tqdm  # progress bar util
+  - lark-parser  # legacy neurochem files
 
   # For building the extensions, the cuda libraries speciefied by the pytorch-cuda
   # metapackage are not enough, so we use the nvidia::cuda-toolkit=11.8 metapackage
@@ -25,36 +27,25 @@ dependencies:
   - nvidia::cuda-toolkit=11.8
   - nvidia::cuda-nvcc=11.8
 
-  # Data
-  - h5py  # HDF5 backend
-
-  # Utils
-  - tqdm  # progress bar
-
-  # Neurochem files (legacy)
-  - lark-parser
-
-  # Optional dependencies:
-  # Ase interface:
+  # Other optional dependencies follow:
+  # Ase interface, needed for dynamics and for tests/tools/docs:
   - ase
 
   # Tests:
-  # Linters / checkers / tests-runners / CI
-  - black
-  - flake8
-  - mypy
-  - coverage
-  - pytest
-  - parameterized
-  # Indirect dependencies of torch.testing
-  - hypothesis
-  - expecttest
-  # Extra data backends for tests
-  - pandas  # csv support
+  - coverage  # code coverage
+  - black  # formatter
+  - flake8  # linter
+  - mypy  # type checking
+  - pytest  # tests runner
+  - parameterized  # parametrize test classes
+  - hypothesis  # indirect dependency of torch.testing
+  - expecttest  # indirect dependency of torch.testing
+  # Extra data backends for tests:
+  - pandas  # Parquet backend
   - pyarrow  # Parquet backend
   - zarr  # Zarr backend
 
-  # Tools:
+  # Tools :
   - matplotlib
   - pynvml
 

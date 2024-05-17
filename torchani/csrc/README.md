@@ -69,7 +69,7 @@ pip install -v --no-deps --no-build-isolation --editable . --global-option="--ex
 ## Test
 ```bash
 cd torchani
-pip install -r tests_requirements.txt
+pip install -r dev_requirements.txt
 ./download.sh
 # cuaev
 python tests/test_cuaev.py
@@ -116,8 +116,8 @@ RUN                Total AEV    Forward      Backward     Force        Optimizer
 ```
 
 benchmark
-```
-pip install -r tools_requirements.txt
+```bash
+pip install -r dev_requirements.txt
 python tools/training-aev-benchmark.py download/dataset/ani-1x/sample.h5
 python tools/aev-benchmark-size.py -p
 ```

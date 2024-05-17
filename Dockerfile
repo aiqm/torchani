@@ -14,14 +14,11 @@ RUN apt update && apt install -y git wget unzip
 COPY ./download.sh .
 RUN ./download.sh
 
-# Copy pip requirements files
-COPY *_requirements.txt .
+# Copy pip optional dependencies file
+COPY dev_requirements.txt .
 
-# Install requirements (only tests_requirements.txt is needed for unit-tests)
-RUN pip install \
-    -r tests_requirements.txt \
-    -r tools_requirements.txt \
-    -r docs_requirements.txt
+# Install optional dependencies
+RUN pip install -r dev_requirements.txt
 
 # Copy all other necessary repo files
 COPY . /torchani_sandbox

@@ -105,7 +105,6 @@ if torch.cuda.is_available():
 
 # We warn about ASE not being available since it is an optional dependency, but
 # many users will probably want to enable it
-# TODO: Maybe just make this a hard dependency
 try:
     from . import ase  # noqa: F401
     __all__.append('ase')
