@@ -46,7 +46,7 @@ TorchANI is tested against the (usually) latest PyTorch version
 
 ## Install TorchANI
 
-### Using conda (BROKEN)
+### From Anaconda, using conda (BROKEN)
 
 **TODO**: Support this again (currently only building from source works)
 
@@ -74,11 +74,11 @@ Notes:
   need to add a `--force-reinstall` flag instead of waiting for the next
   nightly update.
 
-### Using pip (BROKEN)
+### From PyPI, using pip (BROKEN)
 
 **TODO**: Support this again (currently only building from source works)
 
-## From source
+### From source, using conda
 
 To build install TorchANI directly from the GitHub repo run the following:
 
@@ -88,10 +88,10 @@ git clone --recurse-submodules https://github.com/roitberg-group/torchani_sandbo
 cd ./torchani_sandbox
 
 # Create a conda (or mamba) environment
-# Note that environment.yaml contains many optional dependencies needed to
+# Note that environment-dev.yaml contains many optional dependencies needed to
 # build the extensions, build the documentation, and run tests and tools
-# You can skip these if you are not planning to do that
-conda env create -f ./environment.yaml
+# You can comment these out if you are not planning to do that
+conda env create -f ./environment-dev.yaml
 
 # Install torchani
 pip install -v --no-deps --no-build-isolation -e .
@@ -113,6 +113,27 @@ pytest -v .
 
 Usually this process works for most use cases, but for more details regarding
 building the CUDA and C++ extensions refer to [TorchANI CSRC](torchani/csrc).
+
+### From source, using pip
+
+Note: please use a venv if you are installing torchani using `pip`
+
+```bash
+# Clone the repo and cd to the directory
+git clone --recurse-submodules https://github.com/roitberg-group/torchani_sandbox.git
+cd ./torchani_sandbox
+
+# TODO: create a venv
+pip install -r ./dev_requirements.txt
+pip install -v --no-build-isolation -e .
+
+# In this case you will need to manually download the CUDA Toolkit to build
+# the extensions.
+
+pip install -v --no-build-isolation -e . --global-option="--ext"
+
+# All the same optional steps as with conda are possible ...
+```
 
 ## CUDA / C++ extensions
 

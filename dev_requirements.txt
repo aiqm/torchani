@@ -8,7 +8,6 @@ pytest
 parameterized
 
 # Tests: Indirect dependencies of torch.testing
-hypothesis
 expecttest
 
 # Tests: Extra data backends (parquet and zarr)
