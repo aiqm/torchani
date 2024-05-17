@@ -502,7 +502,7 @@ class AEVComputer(torch.nn.Module):
 
     # Constructors:
     @classmethod
-    def from_neurochem_constants(
+    def from_constants(
         cls,
         Rcr: float,
         Rca: float,

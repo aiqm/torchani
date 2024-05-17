@@ -179,7 +179,6 @@ setup(
         'numpy>=1.24',
         'torch==2.3',
         'typing_extensions>=4.0.0',
-        'lark-parser',
         'h5py',
         'tqdm',
     ],

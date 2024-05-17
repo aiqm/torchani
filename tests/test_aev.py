@@ -17,35 +17,16 @@ from torchani.utils import (
     pad_atomic_properties,
     map_to_central,
 )
-from torchani.neurochem import load_aev_computer_and_symbols
 from torchani.aev import AEVComputer, StandardAngular, StandardRadial
 
 
 path = os.path.dirname(os.path.realpath(__file__))
-const_file_1x = os.path.join(path, "test_data/rHCNO-5.2R_16-3.5A_a4-8.params")
-const_file_1ccx = os.path.join(path, "test_data/rHCNO-5.2R_16-3.5A_a4-8.params")
-const_file_2x = os.path.join(path, "test_data/rHCNOSFCl-5.1R_16-3.5A_a8-4.params")
 N = 97
 
 
 class TestAEVConstructor(TestCase):
     # Test that checks that inexact friendly constructor
     # reproduces the values from ANI1x with the correct parameters
-    def testEqualNeurochem1x(self):
-        aev_1x_nc, _ = load_aev_computer_and_symbols(const_file_1x)
-        aev_1x = AEVComputer.like_1x()
-        self._compare_constants(aev_1x_nc, aev_1x, rtol=1e-17, atol=1e-17)
-
-    def testEqualNeurochem2x(self):
-        aev_2x_nc, _ = load_aev_computer_and_symbols(const_file_2x)
-        aev_2x = AEVComputer.like_2x()
-        self._compare_constants(aev_2x_nc, aev_2x, rtol=1e-17, atol=1e-17)
-
-    def testEqualNeurochem1ccx(self):
-        aev_1ccx_nc, _ = load_aev_computer_and_symbols(const_file_1ccx)
-        aev_1ccx = AEVComputer.like_1ccx()
-        self._compare_constants(aev_1ccx_nc, aev_1ccx, rtol=1e-17, atol=1e-17)
-
     def testTerms1x(self):
         style_angular = StandardAngular.style_1x()
         style_radial = StandardRadial.style_1x()

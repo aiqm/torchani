@@ -81,7 +81,7 @@ python tests/test_infer.py
 #### CUAEV
 Pass `use_cuda_extension=True` when constructing an aev_computer, for example:
 ```python
-cuaev_computer = torchani.AEVComputer.from_neurochem_constants(
+cuaev_computer = torchani.AEVComputer.from_constants(
     Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=True,
 )
 # or

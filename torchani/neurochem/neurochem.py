@@ -9,7 +9,15 @@ from collections import OrderedDict
 
 import torch
 from torch import Tensor
-import lark
+try:
+    import lark
+except ImportError:
+    raise ImportError(
+        "Error when trying to import 'torchani.neurochem':"
+        " The 'lark-parser' package could not be found. 'torchani.neurochem'"
+        " won't be available. Please install 'lark-parser' if you want to use it."
+        " ('conda install lark-parser' or 'pip install lark-parser')"
+    ) from None
 
 from torchani.aev import AEVComputer
 from torchani.nn import ANIModel, Ensemble
@@ -73,7 +81,7 @@ def load_aev_computer_and_symbols(
     cutoff_fn: CutoffArg = "cosine",
 ) -> tp.Tuple[AEVComputer, tp.Tuple[str, ...]]:
     aev_consts, aev_cutoffs, symbols = load_constants(consts_file)
-    aev_computer = AEVComputer.from_neurochem_constants(
+    aev_computer = AEVComputer.from_constants(
         Rcr=aev_cutoffs["Rcr"],
         Rca=aev_cutoffs["Rca"],
         num_species=len(symbols),

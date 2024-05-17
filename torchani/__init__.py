@@ -51,9 +51,9 @@ from torchani import (
     sae,
     infer,
     constants,
-    neurochem,  # TODO: Get rid of this
     data,  # TODO: Get rid of this
 )
+# NOTE: ase is an optional dependency so we don't import it here
 
 try:
     __version__ = version("torchani")
@@ -82,7 +82,6 @@ __all__ = [
     "sae",
     "infer",
     "constants",
-    'neurochem',  # TODO: Get rid of this
     'data',  # TODO: Get rid of this
 ]
 
@@ -103,16 +102,17 @@ if torch.cuda.is_available():
             " To suppress warning set the env var TORCHANI_NO_WARN_TF32 to any value"
         )
 
-# We warn about ASE not being available since it is an optional dependency, but
-# many users will probably want to enable it
+# Optional dependencies
 try:
     from . import ase  # noqa: F401
     __all__.append('ase')
+    ASE_IS_AVAILABLE = True
 except ImportError:
-    if "TORCHANI_NO_WARN_ASE" not in os.environ:
-        warnings.warn(
-            "ASE could not be found."
-            " The torchani.ase module and model's *.ase() methods won't be available\n"
-            " To use them install ASE ('pip install ase' or'conda install ase')"
-            " To suppress warning set the env var TORCHANI_NO_WARN_ASE to any value"
-        )
+    ASE_IS_AVAILABLE = False
+
+try:
+    from . import neurochem  # noqa: F401
+    __all__.append('neurochem')
+    NEUROCHEM_IS_AVAILABLE = True
+except ImportError:
+    NEUROCHEM_IS_AVAILABLE = False

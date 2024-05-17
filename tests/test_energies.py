@@ -33,7 +33,7 @@ class TestANI2x(ANITest):
         e = self.model((species, coordinates)).energies
         self.assertEqual(e_pti, e)
 
-        # compare against 2x energies calculated directly from neurochem by kdavis
+        # compare against 2x energies calculated directly from original model
         e = hartree2kcalpermol(e)
         e_expect = torch.tensor(
             [-125100.7729, -499666.2354, -94191.3460, -577504.1792], device=self.device

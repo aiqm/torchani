@@ -3,6 +3,9 @@
 # Ase interface, needed for tests, docs, tools, and for MD
 ase
 
+# Legacy neurochem file reader
+lark-parser
+
 # Tests: tests-runner and class parametrization
 pytest
 parameterized
