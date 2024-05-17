@@ -10,16 +10,16 @@ from pathlib import Path
 import requests
 
 from torchani.aev import AEVComputer
-from torchani.utils import EnergyShifter
 from torchani.nn import Ensemble, ANIModel
 from torchani.models import BuiltinModel
 from torchani.storage import NEUROCHEM_DIR
+from torchani.potentials import EnergyAdder
 from torchani.neurochem.utils import model_dir_from_prefix
 from torchani.neurochem.neurochem import (
     load_aev_computer_and_symbols,
     load_model_ensemble,
     load_model,
-    load_sae,
+    load_energy_adder,
 )
 
 
@@ -108,13 +108,13 @@ def modules_from_info(
     model_index: tp.Optional[int] = None,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
-) -> tp.Tuple[AEVComputer, NN, EnergyShifter, tp.Sequence[str]]:
+) -> tp.Tuple[AEVComputer, NN, EnergyAdder, tp.Sequence[str]]:
     aev_computer, symbols = load_aev_computer_and_symbols(
         info.const,
         use_cuda_extension=use_cuda_extension,
         use_cuaev_interface=use_cuaev_interface,
     )
-    shifter = load_sae(info.sae)
+    adder = load_energy_adder(info.sae)
 
     neural_networks: NN
     if model_index is None:
@@ -133,7 +133,7 @@ def modules_from_info(
                 model_index,
             ),
         )
-    return aev_computer, neural_networks, shifter, symbols
+    return aev_computer, neural_networks, adder, symbols
 
 
 def modules_from_builtin_name(
@@ -141,7 +141,7 @@ def modules_from_builtin_name(
     model_index: tp.Optional[int] = None,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
-) -> tp.Tuple[AEVComputer, NN, EnergyShifter, tp.Sequence[str]]:
+) -> tp.Tuple[AEVComputer, NN, EnergyAdder, tp.Sequence[str]]:
     r"""
     Creates the necessary modules to generate a pretrained builtin model,
     parsing the data from legacy neurochem files. and optional arguments to
@@ -160,7 +160,7 @@ def modules_from_info_file(
     model_index: tp.Optional[int] = None,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
-) -> tp.Tuple[AEVComputer, NN, EnergyShifter, tp.Sequence[str]]:
+) -> tp.Tuple[AEVComputer, NN, EnergyAdder, tp.Sequence[str]]:
     r"""
     Creates the necessary modules to generate a pretrained neurochem model,
     parsing the data from legacy neurochem files. and optional arguments to
@@ -187,11 +187,11 @@ def load_builtin(
         use_cuda_extension,
         use_cuaev_interface,
     )
-    aev_computer, neural_networks, energy_shifter, elements = components
+    aev_computer, neural_networks, energy_adder, elements = components
     return BuiltinModel(
         aev_computer,
         neural_networks,
-        energy_shifter,
+        energy_adder,
         elements,
         periodic_table_index=periodic_table_index,
     )

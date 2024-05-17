@@ -15,7 +15,9 @@ from torchani.aev import AEVComputer
 from torchani.nn import ANIModel, Ensemble
 from torchani.cutoffs import CutoffArg
 from torchani.neighbors import NeighborlistArg
-from torchani.utils import EnergyShifter, ChemicalSymbolsToInts
+from torchani.potentials import EnergyAdder
+from torchani.tuples import SpeciesEnergies
+from torchani.utils import ChemicalSymbolsToInts
 from torchani.neurochem.utils import model_dir_from_prefix
 
 
@@ -26,6 +28,7 @@ class NeurochemParseError(RuntimeError):
 class Constants(collections.abc.Mapping):
     def __init__(self, filename: tp.Union[Path, str]):
         import warnings
+
         warnings.warn(
             "torchani.neurochem.Constants is deprecated, "
             "please use torchani.neurochem.load_constants or "
@@ -114,29 +117,51 @@ def load_constants(
     return aev_consts, aev_cutoffs, species
 
 
-def load_sae(filename: tp.Union[Path, str], return_dict: bool = False):
-    """Returns an object of :class:`EnergyShifter` with self energies from
+def load_energy_adder(filename: tp.Union[Path, str]) -> EnergyAdder:
+    """Returns an object of :class:`EnergyAdder` with self energies from
     NeuroChem sae file"""
     _self_energies = []
-    d = {}
-    filename = Path(filename).resolve()
-    with open(filename) as f:
+    _symbols = []
+    with open(Path(filename).resolve(), mode="rt", encoding="utf-8") as f:
         for i in f:
             line = [x.strip() for x in i.split("=")]
             species = line[0].split(",")[0].strip()
             index = int(line[0].split(",")[1].strip())
             value = float(line[1])
-            d[species] = value
+            _symbols.append((index, species))
             _self_energies.append((index, value))
-    self_energies = [i for _, i in sorted(_self_energies)]
-    if return_dict:
-        return EnergyShifter(self_energies), d
-    return EnergyShifter(self_energies)
+    self_energies = [e for _, e in sorted(_self_energies)]
+    symbols = [s for _, s in sorted(_symbols)]
+    return EnergyAdder(symbols, self_energies)
+
+
+class EnergyShifter(torch.nn.Module):
+    def __init__(self, adder: EnergyAdder) -> None:
+        super().__init__()
+        self._adder = adder
+
+    def forward(
+        self,
+        species_energies: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> SpeciesEnergies:
+        species, energies = species_energies
+        self_energies = self._adder(species)
+        return SpeciesEnergies(species, energies + self_energies)
+
+
+# This function is kept for backwards compatibility
+def load_sae(filename: tp.Union[Path, str]):
+    """Returns an object of :class:`EnergyShifter` with self energies from
+    NeuroChem sae file"""
+    return EnergyShifter(load_energy_adder(filename))
 
 
 def _get_activation(activation_index: int) -> tp.Optional[torch.nn.Module]:
     # Activation defined in:
-    # https://github.com/Jussmith01/NeuroChem/blob/stable1/src-atomicnnplib/cunetwork/cuannlayer_t.cu#L920
+    # https://github.com/Jussmith01/NeuroChem/blob
+    #   /stable1/src-atomicnnplib/cunetwork/cuannlayer_t.cu#L920
     if activation_index == 6:
         return None
     elif activation_index == 9:  # CELU
@@ -250,21 +275,17 @@ def load_atomic_network(filename: tp.Union[Path, str]) -> torch.nn.Sequential:
         layer_setups = TreeExec().transform(tree)
         return layer_setups
 
-    def load_param_file(linear, in_size, out_size, wfn, bfn):
+    def load_param_file(linear: torch.nn.Linear, in_size: int, out_size: int, wfn, bfn):
         """Load `.wparam` and `.bparam` files"""
         wsize = in_size * out_size
-        fw = open(wfn, "rb")
-        _w = struct.unpack("{}f".format(wsize), fw.read())
-        w = torch.tensor(_w).view(out_size, in_size)
-        linear.weight.data = w
-        fw.close()
-        fb = open(bfn, "rb")
-        _b = struct.unpack("{}f".format(out_size), fb.read())
-        b = torch.tensor(_b).view(out_size)
-        linear.bias.data = b
-        fb.close()
-
-    networ_dir = str(filename.parent)
+        with open(wfn, mode="rb") as fw:
+            _w = struct.unpack("{}f".format(wsize), fw.read())
+            w = torch.tensor(_w).view(out_size, in_size)
+            linear.weight.data = w
+        with open(bfn, mode="rb") as fb:
+            _b = struct.unpack("{}f".format(out_size), fb.read())
+            b = torch.tensor(_b).view(out_size)
+            linear.bias.data = b
 
     with open(filename, "rb") as f:
         buffer_ = f.read()
@@ -272,6 +293,7 @@ def load_atomic_network(filename: tp.Union[Path, str]) -> torch.nn.Sequential:
         layer_setups = parse_nnf(buffer_)
 
         layers: tp.List[torch.nn.Module] = []
+        network_dir = str(filename.parent)
         for s in layer_setups:
             # construct linear layer and load parameters
             in_size = s["blocksize"]
@@ -291,8 +313,8 @@ def load_atomic_network(filename: tp.Union[Path, str]) -> torch.nn.Sequential:
                     f" should be equal to bsz={bsz}"
                 )
             layer = torch.nn.Linear(in_size, out_size)
-            wfn = os.path.join(networ_dir, wfn)
-            bfn = os.path.join(networ_dir, bfn)
+            wfn = os.path.join(network_dir, wfn)
+            bfn = os.path.join(network_dir, bfn)
             load_param_file(layer, in_size, out_size, wfn, bfn)
             layers.append(layer)
             activation = _get_activation(s["activation"])
@@ -342,6 +364,7 @@ __all__ = [
     "load_constants",
     "load_aev_computer_and_symbols",
     "load_sae",
+    "load_energy_adder",
     "load_model",
     "load_model_ensemble",
 ]

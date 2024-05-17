@@ -73,7 +73,6 @@ from torchani.utils import (
     ChemicalSymbolsToInts,
     PERIODIC_TABLE,
     ATOMIC_NUMBERS,
-    EnergyShifter,
 )
 from torchani.aev import AEVComputer
 from torchani.potentials import (
@@ -86,7 +85,6 @@ from torchani.neighbors import rescreen
 
 
 NN = tp.Union[ANIModel, Ensemble]
-Shifter = tp.Union[EnergyShifter, EnergyAdder]
 
 
 class BuiltinModel(torch.nn.Module):
@@ -99,25 +97,15 @@ class BuiltinModel(torch.nn.Module):
         self,
         aev_computer: AEVComputer,
         neural_networks: NN,
-        energy_shifter: Shifter,
+        energy_shifter: EnergyAdder,
         elements: tp.Sequence[str],
         periodic_table_index: bool = True,
     ):
         super().__init__()
 
-        shifter: EnergyAdder
-        if isinstance(energy_shifter, EnergyShifter):
-            if energy_shifter.fit_intercept:
-                raise ValueError("Intercept in energy shifter not supported")
-            shifter = EnergyAdder(
-                symbols=elements, self_energies=energy_shifter.self_energies.tolist()
-            )
-        else:
-            shifter = energy_shifter
-
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
-        self.energy_shifter = shifter
+        self.energy_shifter = energy_shifter
         self.species_to_tensor = ChemicalSymbolsToInts(elements)
         device = self.energy_shifter.self_energies.device
         self.species_converter = SpeciesConverter(elements).to(device)
