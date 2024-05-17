@@ -180,7 +180,6 @@ setup(
         'torch==2.3',
         'typing_extensions>=4.0.0',
         'lark-parser',
-        'requests',
         'h5py',
         'pyyaml',
         'tqdm',

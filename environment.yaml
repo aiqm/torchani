@@ -34,7 +34,6 @@ dependencies:
 
   # Neurochem files (legacy)
   - lark-parser
-  - requests
 
   # Optional dependencies:
   # Ase interface:

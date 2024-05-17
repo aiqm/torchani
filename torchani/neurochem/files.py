@@ -1,13 +1,11 @@
 r"""Some utilities for extracting information from neurochem files"""
+import torch
 import typing_extensions as tpx
 from dataclasses import dataclass
 import typing as tp
-import io
 import zipfile
 import shutil
 from pathlib import Path
-
-import requests
 
 from torchani.aev import AEVComputer
 from torchani.nn import Ensemble, ANIModel
@@ -83,6 +81,7 @@ def download_model_parameters(
 ) -> None:
     if root is None:
         root = NEUROCHEM_DIR
+    zip_path = root / "neurochem-builtins.zip"
     if any(root.iterdir()):
         if verbose:
             print("Found existing files in directory, assuming params already present")
@@ -93,10 +92,10 @@ def download_model_parameters(
     url = f"https://github.com/aiqm/{repo}/archive/{tag}.zip"
     if verbose:
         print("Downloading ANI model parameters ...")
-    resource_res = requests.get(url)
-    resource_zip = zipfile.ZipFile(io.BytesIO(resource_res.content))
-    resource_zip.extractall(root)
-
+    torch.hub.download_url_to_file(url, str(zip_path), progress=verbose)
+    with zipfile.ZipFile(zip_path) as zf:
+        zf.extractall(root)
+    zip_path.unlink()
     extracted_dir = Path(root) / extracted_dirname
     for f in (extracted_dir / "resources").iterdir():
         shutil.move(str(f), root / f.name)
