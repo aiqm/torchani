@@ -181,7 +181,6 @@ setup(
         'typing_extensions>=4.0.0',
         'lark-parser',
         'h5py',
-        'pyyaml',
         'tqdm',
     ],
     entry_points={

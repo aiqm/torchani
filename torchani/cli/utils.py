@@ -3,12 +3,11 @@ import hashlib
 import re
 import csv
 import typing as tp
+import json
 from pathlib import Path
 
-import yaml
-
 from torchani.datasets import ANIDataset
-from torchani.datasets.builtin import _DATASETS_YAML_PATH
+from torchani.datasets.builtin import _DATASETS_JSON_PATH
 from torchani.datasets.download import _CHUNK_SIZE
 
 
@@ -48,7 +47,7 @@ def h5pack(
 ) -> None:
     r"""
     If passed a directory with h5 files, generates a corresponding
-    dataset.yaml, md5.csv, and an archive dataset.tar.gz for the given dataset.
+    dataset.json, md5.csv, and an archive dataset.tar.gz for the given dataset.
     internal: bool
         Controls whether to append to the internal files the dataset has, or to
         create external files. Default is to create external files.
@@ -65,7 +64,7 @@ def h5pack(
     paths: Path | Sequence[Path]
         Path to a directory with .h5 files, or sequence of paths to .h5 files
     dest_dir: Path
-        Destination directory for the archive, md5.csv and dataset.yaml
+        Destination directory for the archive, md5.csv and dataset.json
     """
 
     if force_renaming and not interactive:
@@ -217,9 +216,9 @@ def h5pack(
                     )
 
         if internal:
-            yaml_path = _DATASETS_YAML_PATH
-            with open(_DATASETS_YAML_PATH, mode="rt", encoding="utf-8") as yamlfile:
-                internal_data_dict = yaml.safe_load(yamlfile)
+            json_path = _DATASETS_JSON_PATH
+            with open(_DATASETS_JSON_PATH, mode="rt", encoding="utf-8") as fj:
+                internal_data_dict = json.load(fj)
             if ds_name in internal_data_dict:
                 if lot in internal_data_dict[ds_name]["lot"]:
                     raise ValueError(
@@ -234,7 +233,7 @@ def h5pack(
                 internal_data_dict.update(data_dict)
                 data_dict = internal_data_dict.copy()
         else:
-            yaml_path = dest_dir / f"{parts['Data']}.yaml"
+            json_path = dest_dir / f"{parts['Data']}.json"
 
-        with open(yaml_path, "wt", encoding="utf-8") as yamlfile:
-            yaml.dump(data_dict, yamlfile)
+        with open(json_path, "wt", encoding="utf-8") as fj:
+            json.dump(data_dict, fj)
