@@ -1,3 +1,4 @@
+import json
 r"""Torchani Builtin Datasets
 
 This module provides access to the following datasets, calculated with specific
@@ -298,7 +299,6 @@ import sys
 from pathlib import Path
 from collections import OrderedDict
 
-import yaml
 from tqdm import tqdm
 
 from torchani.datasets.download import _download_and_extract_archive, _check_integrity
@@ -307,10 +307,10 @@ from torchani.datasets._annotations import StrPath
 from torchani.storage import DATASETS_DIR
 
 _BASE_URL = "http://moria.chem.ufl.edu/animodel/ground_truth_data/"
-_DATASETS_YAML_PATH = Path(__file__).parent / "builtin-datasets.yaml"
+_DATASETS_JSON_PATH = Path(__file__).parent / "builtin-datasets.json"
 
-with open(_DATASETS_YAML_PATH, mode="rt", encoding="utf-8") as f:
-    _BUILTIN_DATASETS_SPEC = yaml.safe_load(f)
+with open(_DATASETS_JSON_PATH, mode="rt", encoding="utf-8") as f:
+    _BUILTIN_DATASETS_SPEC = json.load(f)
 
 # Convert csv file with format "file_name, MD5-hash" into a dictionary
 _MD5S: tp.Dict[str, str] = dict()
@@ -395,7 +395,7 @@ def _check_files_integrity(
 
 # This Function is a Builder Factory that creates builder functions
 # that instantiate builtin ani datasets.
-# Functions are created using a yaml file as a template, their names are:
+# Functions are created using a json file as a template, their names are:
 #   - COMP6V1
 #   - ANI1x
 #   - ANI2x

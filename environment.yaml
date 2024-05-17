@@ -27,14 +27,12 @@ dependencies:
 
   # Data
   - h5py  # HDF5 backend
-  - pyyaml  # builtin datasets specification
 
   # Utils
   - tqdm  # progress bar
 
   # Neurochem files (legacy)
   - lark-parser
-  - requests
 
   # Optional dependencies:
   # Ase interface:

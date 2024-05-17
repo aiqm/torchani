@@ -1,0 +1,628 @@
+{
+ "TestData": {
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "TestData-sample-wb97x-631gd.tar.gz",
+    "files": [
+     "test_data1.h5",
+     "test_data2.h5"
+    ]
+   }
+  },
+  "default-lot": "wb97x-631gd"
+ },
+ "TestDataIons": {
+  "lot": {
+   "b973c-def2mtzvp": {
+    "archive": "TestData-ions-b973c-def2mtzvp.tar.gz",
+    "files": [
+     "ANI-1x_sample-B973c-def2mTZVP.h5",
+     "Ions-sample-B973c-def2mTZVP.h5"
+    ]
+   }
+  },
+  "default-lot": "b973c-def2mtzvp"
+ },
+ "TestDataForcesDipoles": {
+  "lot": {
+   "b973c-def2mtzvp": {
+    "archive": "TestData-forces_dipoles-b973c-def2mtzvp.tar.gz",
+    "files": [
+     "ANI-1x_sample-B973c-def2mTZVP.h5"
+    ]
+   }
+  },
+  "default-lot": "b973c-def2mtzvp"
+ },
+ "IonsVeryHeavy": {
+  "lot": {
+   "b973c-def2mtzvp": {
+    "archive": "Ions-very_heavy-b973c-def2mtzvp.tar.gz",
+    "files": [
+     "Ions-very_heavy-B973c-def2mTZVP.h5"
+    ]
+   }
+  },
+  "default-lot": "b973c-def2mtzvp"
+ },
+ "IonsHeavy": {
+  "lot": {
+   "b973c-def2mtzvp": {
+    "archive": "Ions-heavy-b973c-def2mtzvp.tar.gz",
+    "files": [
+     "Ions-heavy-B973c-def2mTZVP.h5"
+    ]
+   }
+  },
+  "default-lot": "b973c-def2mtzvp"
+ },
+ "IonsLight": {
+  "lot": {
+   "b973c-def2mtzvp": {
+    "archive": "Ions-light-b973c-def2mtzvp.tar.gz",
+    "files": [
+     "Ions-light-B973c-def2mTZVP.h5"
+    ]
+   }
+  },
+  "default-lot": "b973c-def2mtzvp"
+ },
+ "ANI1q": {
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "ANI-1q-wb97x-631gd.tar.gz",
+    "files": [
+     "ANI-1q-wB97X-631Gd.h5"
+    ]
+   }
+  },
+  "default-lot": "wb97x-631gd"
+ },
+ "ANI2qHeavy": {
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "ANI-2q_heavy-wb97x-631gd.tar.gz",
+    "files": [
+     "ANI-2q_heavy-wB97X-631Gd.h5"
+    ]
+   }
+  },
+  "default-lot": "wb97x-631gd"
+ },
+ "ANI1ccx": {
+  "lot": {
+   "ccsd(t)star-cbs": {
+    "archive": "ANI-1ccx-ccsd_t_star-cbs.tar.gz",
+    "files": [
+     "ANI-1ccx-CCSD_parentheses_T_star-CBS.h5"
+    ]
+   }
+  },
+  "default-lot": "ccsd(t)star-cbs"
+ },
+ "AminoacidDimers": {
+  "lot": {
+   "b973c-def2mtzvp": {
+    "archive": "Aminoacid-dimers-b973c-def2mtzvp.tar.gz",
+    "files": [
+     "Aminoacid-dimers-B973c-def2mTZVP.h5"
+    ]
+   }
+  },
+  "default-lot": "b973c-def2mtzvp"
+ },
+ "ANI1x": {
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "ANI-1x-wb97x-631gd.tar.gz",
+    "files": [
+     "ANI-1x-wB97X-631Gd.h5"
+    ]
+   },
+   "b973c-def2mtzvp": {
+    "archive": "ANI-1x-b973c-def2mtzvp.tar.gz",
+    "files": [
+     "ANI-1x-B973c-def2mTZVP.h5"
+    ]
+   },
+   "wb97md3bj-def2tzvpp": {
+    "archive": "ANI-1x-wb97md3bj-def2tzvpp.tar.gz",
+    "files": [
+     "ANI-1x-wB97MD3BJ-def2TZVPP.h5"
+    ]
+   },
+   "wb97mv-def2tzvpp": {
+    "archive": "ANI-1x-wb97mv-def2tzvpp.tar.gz",
+    "files": [
+     "ANI-1x-wB97MV-def2TZVPP.h5"
+    ]
+   },
+   "wb97x-def2tzvpp": {
+    "archive": "ANI1x-wb97x-def2tzvpp.tar.gz",
+    "files": [
+     "ANI-1x-wb97x-def2tzvpp.h5"
+    ]
+   }
+  },
+  "default-lot": "wb97x-631gd"
+ },
+ "ANI2x": {
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "ANI-2x-wb97x-631gd.tar.gz",
+    "files": [
+     "ANI-1x-wB97X-631Gd.h5",
+     "ANI-2x_heavy-wB97X-631Gd.h5",
+     "ANI-2x_dimers-wB97X-631Gd.h5"
+    ]
+   },
+   "b973c-def2mtzvp": {
+    "archive": "ANI-2x-b973c-def2mtzvp.tar.gz",
+    "files": [
+     "ANI-1x-B973c-def2mTZVP.h5",
+     "ANI-2x_heavy_and_dimers-B973c-def2mTZVP.h5"
+    ]
+   },
+   "wb97md3bj-def2tzvpp": {
+    "archive": "ANI-2x-wb97md3bj-def2tzvpp.tar.gz",
+    "files": [
+     "ANI-1x-wB97MD3BJ-def2TZVPP.h5",
+     "ANI-2x_heavy_and_dimers-wB97MD3BJ-def2TZVPP.h5"
+    ]
+   },
+   "wb97mv-def2tzvpp": {
+    "archive": "ANI-2x-wb97mv-def2tzvpp.tar.gz",
+    "files": [
+     "ANI-1x-wB97MV-def2TZVPP.h5",
+     "ANI-2x_heavy_and_dimers-wB97MV-def2TZVPP.h5"
+    ]
+   },
+   "wb97x-def2tzvpp": {
+    "archive": "ANI2x-wb97x-def2tzvpp.tar.gz",
+    "files": [
+     "ANI-1x-wb97x-def2tzvpp.h5",
+     "ANI-2x_subset-wb97x-def2tzvpp.h5"
+    ]
+   }
+  },
+  "default-lot": "wb97x-631gd"
+ },
+ "COMP6v1": {
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "COMP6-v1-wb97x-631gd.tar.gz",
+    "files": [
+     "ANI-BenchMD-wB97X-631Gd.h5",
+     "S66x8-v1-wB97X-631Gd.h5",
+     "DrugBank-testset-wB97X-631Gd.h5",
+     "Tripeptides-v1-wB97X-631Gd.h5",
+     "GDB11-07-wB97X-631Gd.h5",
+     "GDB11-08-wB97X-631Gd.h5",
+     "GDB11-09-wB97X-631Gd.h5",
+     "GDB11-10-wB97X-631Gd.h5",
+     "GDB11-11-wB97X-631Gd.h5",
+     "GDB13-12-wB97X-631Gd.h5",
+     "GDB13-13-wB97X-631Gd.h5"
+    ]
+   },
+   "b973c-def2mtzvp": {
+    "archive": "COMP6-v1-b973c-def2mtzvp.tar.gz",
+    "files": [
+     "COMP6-v1_full-B973c-def2mTZVP.h5"
+    ]
+   },
+   "wb97md3bj-def2tzvpp": {
+    "archive": "COMP6-v1-wb97md3bj-def2tzvpp.tar.gz",
+    "files": [
+     "COMP6-v1_full-wB97MD3BJ-def2TZVPP.h5"
+    ]
+   },
+   "wb97mv-def2tzvpp": {
+    "archive": "COMP6-v1-wb97mv-def2tzvpp.tar.gz",
+    "files": [
+     "COMP6-v1_full-wB97MV-def2TZVPP.h5"
+    ]
+   },
+   "wb97x-def2tzvpp": {
+    "archive": "COMP6-v1-wb97x-def2tzvpp.tar.gz",
+    "files": [
+     "ANI-BenchMD-wB97X-def2TZVPP.h5",
+     "S66x8-v1-wB97X-def2TZVPP.h5",
+     "DrugBank-testset-wB97X-def2TZVPP.h5",
+     "Tripeptides-v1-wB97X-def2TZVPP.h5",
+     "GDB-7to9-wB97X-def2TZVPP.h5",
+     "GDB-10to13-wB97X-def2TZVPP.h5"
+    ]
+   }
+  },
+  "default-lot": "wb97x-631gd"
+ },
+ "COMP6v2": {
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "COMP6-v2-wb97x-631gd.tar.gz",
+    "files": [
+     "ANI-BenchMD-wB97X-631Gd.h5",
+     "S66x8-v1-wB97X-631Gd.h5",
+     "DrugBank-testset-wB97X-631Gd.h5",
+     "Tripeptides-v1-wB97X-631Gd.h5",
+     "GDB11-07-wB97X-631Gd.h5",
+     "GDB11-08-wB97X-631Gd.h5",
+     "GDB11-09-wB97X-631Gd.h5",
+     "GDB11-10-wB97X-631Gd.h5",
+     "GDB11-11-wB97X-631Gd.h5",
+     "GDB13-12-wB97X-631Gd.h5",
+     "GDB13-13-wB97X-631Gd.h5",
+     "GDB-heavy07-wB97X-631Gd.h5",
+     "GDB-heavy08-wB97X-631Gd.h5",
+     "GDB-heavy09-wB97X-631Gd.h5",
+     "GDB-heavy10-wB97X-631Gd.h5",
+     "GDB-heavy11-wB97X-631Gd.h5",
+     "Tripeptides-sulphur-wB97X-631Gd.h5",
+     "DrugBank-SFCl-wB97X-631Gd.h5"
+    ]
+   },
+   "b973c-def2mtzvp": {
+    "archive": "COMP6-v2-b973c-def2mtzvp.tar.gz",
+    "files": [
+     "COMP6-v1_full-B973c-def2mTZVP.h5",
+     "COMP6-heavy-B973c-def2mTZVP.h5"
+    ]
+   },
+   "wb97md3bj-def2tzvpp": {
+    "archive": "COMP6-v2-wb97md3bj-def2tzvpp.tar.gz",
+    "files": [
+     "COMP6-heavy-wB97MD3BJ-def2TZVPP.h5",
+     "COMP6-v1_full-wB97MD3BJ-def2TZVPP.h5"
+    ]
+   },
+   "wb97mv-def2tzvpp": {
+    "archive": "COMP6-v2-wb97mv-def2tzvpp.tar.gz",
+    "files": [
+     "COMP6-heavy-wB97MV-def2TZVPP.h5",
+     "COMP6-v1_full-wB97MV-def2TZVPP.h5"
+    ]
+   }
+  },
+  "default-lot": "wb97x-631gd"
+ },
+ "QM9C7O2H10": {
+  "default-lot": "g4mp2-631g_2df_p",
+  "lot": {
+   "g4mp2-631g_2df_p": {
+    "archive": "QM9C7O2H10-g4mp2-631g_2df_p.tar.gz",
+    "files": [
+     "QM9C7O2H10-C7O2H10-g4mp2-631g_2df_p.h5"
+    ]
+   }
+  }
+ },
+ "QM9Clean": {
+  "default-lot": "b3lyp-631g_2df_p",
+  "lot": {
+   "b3lyp-631g_2df_p": {
+    "archive": "QM9Clean-b3lyp-631g_2df_p.tar.gz",
+    "files": [
+     "QM9Clean-gdb17_clean-b3lyp-631g_2df_p.h5"
+    ]
+   }
+  }
+ },
+ "QM9Dirty": {
+  "default-lot": "b3lyp-631g_2df_p",
+  "lot": {
+   "b3lyp-631g_2df_p": {
+    "archive": "QM9Dirty-b3lyp-631g_2df_p.tar.gz",
+    "files": [
+     "QM9Clean-gdb17_clean-b3lyp-631g_2df_p.h5",
+     "QM9Dirty-gdb17_failed-b3lyp-631g_2df_p.h5"
+    ]
+   }
+  }
+ },
+ "Iso17EquilibriumSet1": {
+  "default-lot": "pbe_ts-fhi_aims_numerical",
+  "lot": {
+   "pbe_ts-fhi_aims_numerical": {
+    "archive": "Iso17EquilibriumSet1-pbe_ts-fhi_aims_numerical.tar.gz",
+    "files": [
+     "Iso17Equilibrium-set_1-pbe_ts-fhi_aims_numerical.h5"
+    ]
+   }
+  }
+ },
+ "Iso17EquilibriumSet2": {
+  "default-lot": "pbe_ts-fhi_aims_numerical",
+  "lot": {
+   "pbe_ts-fhi_aims_numerical": {
+    "archive": "Iso17EquilibriumSet2-pbe_ts-fhi_aims_numerical.tar.gz",
+    "files": [
+     "Iso17Equilibrium-set_2-pbe_ts-fhi_aims_numerical.h5"
+    ]
+   }
+  }
+ },
+ "Iso17TestSet1": {
+  "default-lot": "pbe_ts-fhi_aims_numerical",
+  "lot": {
+   "pbe_ts-fhi_aims_numerical": {
+    "archive": "Iso17TestSet1-pbe_ts-fhi_aims_numerical.tar.gz",
+    "files": [
+     "Iso17Test-set_1-pbe_ts-fhi_aims_numerical.h5"
+    ]
+   }
+  }
+ },
+ "Iso17TestSet2": {
+  "default-lot": "pbe_ts-fhi_aims_numerical",
+  "lot": {
+   "pbe_ts-fhi_aims_numerical": {
+    "archive": "Iso17TestSet2-pbe_ts-fhi_aims_numerical.tar.gz",
+    "files": [
+     "Iso17Test-set_2-pbe_ts-fhi_aims_numerical.h5"
+    ]
+   }
+  }
+ },
+ "Iso17TrainSet1": {
+  "default-lot": "pbe_ts-fhi_aims_numerical",
+  "lot": {
+   "pbe_ts-fhi_aims_numerical": {
+    "archive": "Iso17TrainSet1-pbe_ts-fhi_aims_numerical.tar.gz",
+    "files": [
+     "Iso17Train-set_1-pbe_ts-fhi_aims_numerical.h5"
+    ]
+   }
+  }
+ },
+ "SN2": {
+  "default-lot": "dsd_blyp_d3bj-def2tzvp",
+  "lot": {
+   "dsd_blyp_d3bj-def2tzvp": {
+    "archive": "SN2-dsd_blyp_d3bj-def2tzvp.tar.gz",
+    "files": [
+     "SN2-h_c_f_cl_br_i-dsd_blyp_d3bj-def2tzvp.h5"
+    ]
+   }
+  }
+ },
+ "ANICCScan": {
+  "lot": {
+   "b973c-def2mtzvp": {
+    "archive": "ANI-ccscan-b973c-def2mtzvp.tar.gz",
+    "files": [
+     "ANI-ccscan-b973c-def2mtzvp.h5"
+    ]
+   },
+   "uwb97x-631gd": {
+    "archive": "ANI-ccscan-Uwb97x-631gd.tar.gz",
+    "files": [
+     "ANI-ccscan-Uwb97x-631gd.h5"
+    ]
+   }
+  },
+  "default-lot": "uwb97x-631gd"
+ },
+ "DielsAlder": {
+  "lot": {
+   "uwb97x-631gd": {
+    "archive": "DielsAlder-Uwb97x-631gd.tar.gz",
+    "files": [
+     "DielsAlder-0001-Uwb97x-631gd.h5",
+     "DielsAlder-0002-Uwb97x-631gd.h5",
+     "DielsAlder-0003-Uwb97x-631gd.h5",
+     "DielsAlder-0004-Uwb97x-631gd.h5",
+     "DielsAlder-0005-Uwb97x-631gd.h5",
+     "DielsAlder-0006-Uwb97x-631gd.h5",
+     "DielsAlder-0007_irc_pes_and_nms_qbc-Uwb97x-631gd.h5",
+     "DielsAlder-0008_md_qbc_and_aniirc_pes-Uwb97x-631gd.h5"
+    ]
+   }
+  },
+  "default-lot": "uwb97x-631gd"
+ },
+ "ANI1e": {
+  "default-lot": "wb97x-631gd",
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "ANI1e-wb97x-631gd.tar.gz",
+    "files": [
+     "ANI1e-equilibrium_structures-wb97x-631gd.h5"
+    ]
+   }
+  }
+ },
+ "SPICEDes370K": {
+  "default-lot": "wb97m_d3bj-def2tzvppd",
+  "lot": {
+   "wb97m_d3bj-def2tzvppd": {
+    "archive": "SPICEDes370K-wb97m_d3bj-def2tzvppd.tar.gz",
+    "files": [
+     "SPICE-des_370K_supplement-wb97m_d3bj-def2tzvppd.h5",
+     "SPICE-des_370K-wb97m_d3bj-def2tzvppd.h5"
+    ]
+   }
+  }
+ },
+ "SPICEDesMonomers": {
+  "default-lot": "wb97m_d3bj-def2tzvppd",
+  "lot": {
+   "wb97m_d3bj-def2tzvppd": {
+    "archive": "SPICEDesMonomers-wb97m_d3bj-def2tzvppd.tar.gz",
+    "files": [
+     "SPICE-des_monomers-wb97m_d3bj-def2tzvppd.h5"
+    ]
+   }
+  }
+ },
+ "SPICEDipeptides": {
+  "default-lot": "wb97m_d3bj-def2tzvppd",
+  "lot": {
+   "wb97m_d3bj-def2tzvppd": {
+    "archive": "SPICEDipeptides-wb97m_d3bj-def2tzvppd.tar.gz",
+    "files": [
+     "SPICE-dipeptides-wb97m_d3bj-def2tzvppd.h5"
+    ]
+   }
+  }
+ },
+ "SPICEIonPairs": {
+  "default-lot": "wb97m_d3bj-def2tzvppd",
+  "lot": {
+   "wb97m_d3bj-def2tzvppd": {
+    "archive": "SPICEIonPairs-wb97m_d3bj-def2tzvppd.tar.gz",
+    "files": [
+     "SPICE-ion_pairs_v1_1-wb97m_d3bj-def2tzvppd.h5"
+    ]
+   }
+  }
+ },
+ "SPICEPubChem2xCompatible": {
+  "default-lot": "wb97m_d3bj-def2tzvppd",
+  "lot": {
+   "wb97m_d3bj-def2tzvppd": {
+    "archive": "SPICEPubChem2xCompatible-wb97m_d3bj-def2tzvppd.tar.gz",
+    "files": [
+     "SPICE-pubchem_2x_compatible-wb97m_d3bj-def2tzvppd.h5"
+    ]
+   }
+  }
+ },
+ "SPICEPubChem": {
+  "default-lot": "wb97m_d3bj-def2tzvppd",
+  "lot": {
+   "wb97m_d3bj-def2tzvppd": {
+    "archive": "SPICEPubChem-wb97m_d3bj-def2tzvppd.tar.gz",
+    "files": [
+     "SPICE-pubchem_set_1-wb97m_d3bj-def2tzvppd.h5",
+     "SPICE-pubchem_set_2-wb97m_d3bj-def2tzvppd.h5",
+     "SPICE-pubchem_set_3-wb97m_d3bj-def2tzvppd.h5",
+     "SPICE-pubchem_set_4-wb97m_d3bj-def2tzvppd.h5",
+     "SPICE-pubchem_set_5-wb97m_d3bj-def2tzvppd.h5",
+     "SPICE-pubchem_set_6-wb97m_d3bj-def2tzvppd.h5"
+    ]
+   }
+  }
+ },
+ "SPICESolvatedAminoacids": {
+  "default-lot": "wb97m_d3bj-def2tzvppd",
+  "lot": {
+   "wb97m_d3bj-def2tzvppd": {
+    "archive": "SPICESolvatedAminoacids-wb97m_d3bj-def2tzvppd.tar.gz",
+    "files": [
+     "SPICE-solvated_aminoacids_v1_1-wb97m_d3bj-def2tzvppd.h5"
+    ]
+   }
+  }
+ },
+ "SolvatedProteinFragments": {
+  "default-lot": "revpbe_d3bj-def2tzvp",
+  "lot": {
+   "revpbe_d3bj-def2tzvp": {
+    "archive": "SolvatedProteinFragments-revpbe_d3bj-def2tzvp.tar.gz",
+    "files": [
+     "SolvatedProteinFragments-fragments-revpbe_d3bj-def2tzvp.h5"
+    ]
+   }
+  }
+ },
+ "Train3BPAMixedT": {
+  "default-lot": "wb97x-631gd",
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "Train3BPAMixedT-wb97x-631gd.tar.gz",
+    "files": [
+     "Train3BPAMixedT-train_mixed_temperature-wb97x-631gd.h5"
+    ]
+   }
+  }
+ },
+ "Train3BPA300K": {
+  "default-lot": "wb97x-631gd",
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "Train3BPA300K-wb97x-631gd.tar.gz",
+    "files": [
+     "Train3BPA300K-train_300K-wb97x-631gd.h5"
+    ]
+   }
+  }
+ },
+ "Test3BPA300K": {
+  "default-lot": "wb97x-631gd",
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "Test3BPA300K-wb97x-631gd.tar.gz",
+    "files": [
+     "Test3BPA300K-test_300K-wb97x-631gd.h5"
+    ]
+   }
+  }
+ },
+ "Test3BPA600K": {
+  "default-lot": "wb97x-631gd",
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "Test3BPA600K-wb97x-631gd.tar.gz",
+    "files": [
+     "Test3BPA600K-test_600K-wb97x-631gd.h5"
+    ]
+   }
+  }
+ },
+ "Test3BPA1200K": {
+  "default-lot": "wb97x-631gd",
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "Test3BPA1200K-wb97x-631gd.tar.gz",
+    "files": [
+     "Test3BPA1200K-test_1200K-wb97x-631gd.h5"
+    ]
+   }
+  }
+ },
+ "Test3BPADihedral180": {
+  "default-lot": "wb97x-631gd",
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "Test3BPADihedral180-wb97x-631gd.tar.gz",
+    "files": [
+     "Test3BPADihedral180-test_dih_beta180-wb97x-631gd.h5"
+    ]
+   }
+  }
+ },
+ "Test3BPADihedral150": {
+  "default-lot": "wb97x-631gd",
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "Test3BPADihedral150-wb97x-631gd.tar.gz",
+    "files": [
+     "Test3BPADihedral150-test_dih_beta150-wb97x-631gd.h5"
+    ]
+   }
+  }
+ },
+ "Test3BPADihedral120": {
+  "default-lot": "wb97x-631gd",
+  "lot": {
+   "wb97x-631gd": {
+    "archive": "Test3BPADihedral120-wb97x-631gd.tar.gz",
+    "files": [
+     "Test3BPADihedral120-test_dih_beta120-wb97x-631gd.h5"
+    ]
+   }
+  }
+ },
+ "ANIExCorr": {
+  "default-lot": "pbe-dzvp",
+  "lot": {
+   "pbe-dzvp": {
+    "archive": "ANIExCorr-pbe-dzvp.tar.gz",
+    "files": [
+     "ANIExCorr-AminoacidLike-pbe-dzvp.h5"
+    ]
+   }
+  }
+ }
+}
