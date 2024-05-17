@@ -10,20 +10,18 @@ Cpp source files for CUAEV and MNP extensions.
 Following [pytorch.org](https://pytorch.org/) to install PyTorch.
 On linux, for example:
 ```
-conda install pytorch cudatoolkit=11.6 -c pytorch
+conda install pytorch pytorch-cuda=11.8 cuda-toolkit=11.8 cuda-compiler=11.8 -c pytorch -c nvidia
 ```
 
 ## Build from source
-
-NOTE: These instructions are very outdated, do not use!
 
 In most cases, if `gcc` and `cuda` environment are well configured, runing the
 following command at `torchani` directory will install torchani and all
 extensions together.
 
 ```bash
-git clone git@github.com:roitberg-group/torchani_sandbox.git
-cd torchani
+git clone --recurse-submodules git@github.com:roitberg-group/torchani_sandbox.git
+cd torchani_sandbox
 # choose one option below
 # ============== install ==============
 python setup.py install --ext          # only build for detected gpus
@@ -43,95 +41,30 @@ git pull
 pip install -v -e . --global-option="--ext"
 ```
 
-Some notes for building extensions on multiple HPC machines.
-
-NOTE: These are very outdated. Currently TorchANI is built with CUDA Toolkit 11.8
-and PyTorch 2.3
-<details>
-<summary>Hipergator</summary>
+To build the extension in a HPC cluster (access to conda/mamba either
+by local install or a "module" is needed):
 
 ```bash
+# First start an interactive session with GPU access. How to do this will
+# depend on your specific cluster, here are some examples:
+# Hipergator
 srun -p gpu --ntasks=1 --cpus-per-task=2 --gpus=geforce:1 --time=02:00:00 --mem=10gb  --pty -u bash -i
-# create env if necessary
-conda create -n cuaev python=3.8
-conda activate cuaev
-# modules
-module load cuda/11.4.3 gcc/9.3.0 git/2.30.1
-# pytorch and other dependencies
-conda env create -f ./environment.yaml
-
-# install torchani
-git clone --recurse-submodules https://github.com/roitberg-group/torchani_sandbox.git
-cd ./torchani_sandbox
-pip install -v --no-deps --no-build-isolation -e .
-pip install -v --no-deps --no-build-isolation -e . --global-option="--ext"
-```
-
-</details>
-
-<details>
-<summary>Bridges2</summary>
-
-```bash
-# prepare
+# Bridges2
 srun -p GPU-small --ntasks=1 --cpus-per-task=5 --gpus=1 --time=02:00:00 --mem=20gb  --pty -u bash -i
-# create env if necessary
-conda create -n cuaev python=3.8
-conda activate cuaev
-# modules
-module load cuda/10.2.0
-# pytorch
-conda install pytorch cudatoolkit=10.2 -c pytorch
-# install torchani
-git clone https://github.com/roitberg-group/torchani_sandbox.git
-cd torchani
-pip install -e . && pip install -v -e . --global-option="--ext"
-```
-
-</details>
-
-<details>
-<summary>Expanse</summary>
-
-```bash
+# Expanse
 srun -p gpu-shared --ntasks=1 --account=cwr109 --cpus-per-task=1 --gpus=1 --time=01:00:00 --mem=10gb  --pty -u bash -i
-# create env if necessary
-conda create -n cuaev python=3.8
-conda activate cuaev
-# modules
-module load cuda10.2/toolkit/10.2.89 gcc/7.5.0
-# pytorch
-conda install pytorch cudatoolkit=10.2 -c pytorch
-# install torchani
-git clone https://github.com/roitberg-group/torchani_sandbox.git
-cd torchani
-pip install -e . && pip install -v -e . --global-option="--ext"
-```
-
-</details>
-
-
-<details>
-<summary>Moria</summary>
-
-```bash
+# Moria
 srun --ntasks=1 --cpus-per-task=2 --gres=gpu:1 --time=02:00:00 --mem=10gb  --pty -u bash -i
-# create env if necessary
-conda create -n cuaev python=3.8
-conda activate cuaev
-# cuda path (could be added to ~/.bashrc)
-export CUDA_HOME=/usr/local/cuda-11.1
-export PATH=${CUDA_HOME}/bin:$PATH
-export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
-# pytorch
-conda install pytorch cudatoolkit=11.6 -c pytorch
-# install torchani
-git clone https://github.com/roitberg-group/torchani_sandbox.git
-cd torchani
-pip install -e . && pip install -v -e . --global-option="--ext-all-sms"
-```
+# Create env and install torchani with the extensions.
+# Installing with --ext-all-sms  guarantees that the extension will run correctly
+# whatever the GPU is you select during runs, as long as pytorch supports that GPU
+conda create -f ./environment.yml
+git clone --recurse-submodules https://github.com/roitberg-group/torchani_sandbox.git
+cd torchani_sandbox
+pip install  -v --no-deps --no-build-isolation --editable .
+pip install -v --no-deps --no-build-isolation --editable . --global-option="--ext-all-sms"
 
-</details>
+```
 
 ## Test
 ```bash

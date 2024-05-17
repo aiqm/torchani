@@ -21,8 +21,8 @@ setup_cuda_home
 setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_constraint
 export USER=roitberg-group
-# default python version is 3.8 if it's not set
-PYTHON_VERSION="${PYTHON_VERSION:-3.8}"
+# default python version is 3.10 if it's not set
+PYTHON_VERSION="${PYTHON_VERSION:-3.10}"
 # default package is torchani
 PACKAGE="${PACKAGE:-torchani}"
 export CONDA=$(conda info --base)

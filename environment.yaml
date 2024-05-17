@@ -6,7 +6,7 @@ channels:
   - https://conda.anaconda.org/nvidia
 dependencies:
   # General
-  - python=3.8
+  - python=3.10
   - pip
   - typing_extensions>=4.0.0
 

@@ -53,7 +53,7 @@ TorchANI is tested against the (usually) latest PyTorch version
 To install TorchANI using conda run:
 
 ```bash
-conda create -n ani python=3.8
+conda create -n ani python=3.10
 conda activate ani
 # The following command is all one line
 conda install \
