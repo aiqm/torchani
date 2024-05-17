@@ -1,3 +1,4 @@
+import typing_extensions as tpx
 from pathlib import Path
 import typing as tp
 import struct
@@ -15,7 +16,8 @@ from torchani.aev import AEVComputer
 from torchani.nn import ANIModel, Ensemble
 from torchani.cutoffs import CutoffArg
 from torchani.neighbors import NeighborlistArg
-from torchani.potentials import EnergyAdder, PotentialWrapper
+from torchani.potentials import EnergyAdder
+from torchani.tuples import SpeciesEnergies
 from torchani.utils import ChemicalSymbolsToInts
 from torchani.neurochem.utils import model_dir_from_prefix
 
@@ -27,6 +29,7 @@ class NeurochemParseError(RuntimeError):
 class Constants(collections.abc.Mapping):
     def __init__(self, filename: tp.Union[Path, str]):
         import warnings
+
         warnings.warn(
             "torchani.neurochem.Constants is deprecated, "
             "please use torchani.neurochem.load_constants or "
@@ -133,14 +136,27 @@ def load_energy_adder(filename: tp.Union[Path, str]) -> EnergyAdder:
     return EnergyAdder(symbols, self_energies)
 
 
+class EnergyShifter(torch.nn.Module):
+    def __init__(self, adder: EnergyAdder) -> None:
+        super().__init__()
+        self._adder = adder
+
+    def forward(
+        self,
+        species_energies: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> SpeciesEnergies:
+        species, energies = species_energies
+        self_energies = self._adder(species)
+        return SpeciesEnergies(species, energies + self_energies)
+
+
 # This function is kept for backwards compatibility
-def load_sae(filename: tp.Union[Path, str]) -> EnergyAdder:
-    """Returns an object of :class:`EnergyAdder` with self energies from
+def load_sae(filename: tp.Union[Path, str]):
+    """Returns an object of :class:`EnergyShifter` with self energies from
     NeuroChem sae file"""
-    return PotentialWrapper(
-        load_energy_adder(filename),
-        periodic_table_index=False,
-    )
+    return EnergyShifter(load_energy_adder(filename))
 
 
 def _get_activation(activation_index: int) -> tp.Optional[torch.nn.Module]:
