@@ -1,3 +1,4 @@
+import typing as tp
 import torch
 import unittest
 import os
@@ -97,7 +98,7 @@ class TestIsolated(TestCase):
             self.rcr + 1e-4,
             2 * self.rcr,
         ]
-        error = ()
+        error: tp.Tuple[str, float] = ("", 0.0)
         for dist in distances:
             coordinates = torch.tensor(
                 [[[-dist, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, dist]]],
@@ -108,7 +109,7 @@ class TestIsolated(TestCase):
                 _, _ = self.aev_computer((species, coordinates))
             except IndexError:
                 error = (traceback.format_exc(), dist)
-            if error:
+            if error[0]:
                 self.fail(
                     f"\n\n{error[0]}\nFailure at distance: {error[1]}\n"
                     f"Radial r_cut of aev_computer: {self.rcr}\n"
@@ -125,7 +126,7 @@ class TestIsolated(TestCase):
             self.rcr + 1e-4,
             2 * self.rcr,
         ]
-        error = ()
+        error: tp.Tuple[str, float] = ("", 0.0)
         for dist in distances:
             coordinates = torch.tensor(
                 [[[0.0, 0.0, 0.0], [0.0, 0.0, dist]]],
@@ -136,7 +137,7 @@ class TestIsolated(TestCase):
                 _, _ = self.aev_computer((species, coordinates))
             except IndexError:
                 error = (traceback.format_exc(), dist)
-            if error:
+            if error[0]:
                 self.fail(
                     f"\n\n{error[0]}\nFailure at distance: {error[1]}\n"
                     f"Radial r_cut of aev_computer: {self.rcr}\n"
@@ -146,7 +147,7 @@ class TestIsolated(TestCase):
     def testH(self):
         # Tests for failure on a single atom
         species = self.species_to_tensor(["H"]).to(self.device).unsqueeze(0)
-        error = ()
+        error = ""
         coordinates = torch.tensor(
             [[[0.0, 0.0, 0.0]]], requires_grad=True, device=self.device
         )
@@ -166,7 +167,7 @@ class TestAEV(_TestAEVBase):
         assert N % 5 == 0, "N must be a multiple of 5"
         coordinates_list = []
         species_list = []
-        grads_expect = []
+        grads_expect_list = []
         for j in range(N):
             c = torch.randn((1, 3, 3), dtype=torch.float, requires_grad=True)
             s = torch.randint(low=0, high=4, size=(1, 3), dtype=torch.long)
@@ -174,15 +175,16 @@ class TestAEV(_TestAEVBase):
                 s[0, 0] = -1
             _, aev = self.aev_computer((s, c))
             aev.backward(torch.ones_like(aev))
-
-            grads_expect.append(c.grad)
+            if c.grad is None:
+                self.fail("Got a None gradient")
+            grads_expect_list.append(c.grad)
             coordinates_list.append(c)
             species_list.append(s)
 
         coordinates_cat = torch.cat(coordinates_list, dim=0).detach()
         coordinates_cat.requires_grad_(True)
         species_cat = torch.cat(species_list, dim=0)
-        grads_expect = torch.cat(grads_expect, dim=0)
+        grads_expect = torch.cat(grads_expect_list, dim=0)
 
         _, aev = self.aev_computer((species_cat, coordinates_cat))
         aev.backward(torch.ones_like(aev))
@@ -215,7 +217,6 @@ class TestAEV(_TestAEVBase):
         self.assertFalse(torch.isnan(aev).any())
 
     def testBoundingCell(self):
-        # AEV should not output NaN even when coordinates are superimposed
         datafile = os.path.join(path, "test_data/ANI1_subset/10")
         with open(datafile, "rb") as f:
             coordinates, species, _, _, _, _ = pickle.load(f)

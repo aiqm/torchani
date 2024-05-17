@@ -12,7 +12,8 @@ from torchani.neurochem.files import (
     modules_from_builtin_name,
     modules_from_info_file,
     download_model_parameters,
-    load_builtin,
+    load_builtin_from_name,
+    load_builtin_from_info_file,
 )
 
 __all__ = [
@@ -26,5 +27,6 @@ __all__ = [
     "download_model_parameters",
     "modules_from_builtin_name",
     "modules_from_info_file",
-    "load_builtin",
+    "load_builtin_from_name",
+    "load_builtin_from_info_file",
 ]

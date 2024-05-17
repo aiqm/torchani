@@ -1,50 +1,41 @@
+from pathlib import Path
 import unittest
 import pickle
-import os
+
 import torch
-import torchani
-from torchani.testing import TestCase
 
-path = os.path.dirname(os.path.realpath(__file__))
-N = 10
+from torchani.testing import ANITest, expand
+from torchani.models import ANI1x
 
 
-class TestEnsemble(TestCase):
+@expand()
+class TestEnsemble(ANITest):
     def setUp(self):
-        self.conformations = 20
-        ani1x = torchani.models.ANI1x()
-        self.aev_computer = ani1x.aev_computer
-        self.model_iterator = ani1x.neural_networks
-        self.ensemble = torchani.nn.Sequential(self.aev_computer, self.model_iterator)
-
-    def _test_molecule(self, coordinates, species):
-        model_list = [
-            torchani.nn.Sequential(self.aev_computer, m) for m in self.model_iterator
-        ]
-        coordinates.requires_grad_(True)
-        _, energy1 = self.ensemble((species, coordinates))
-        force1 = torch.autograd.grad(energy1.sum(), coordinates)[0]
-        energy2 = [m((species, coordinates))[1] for m in model_list]
-        energy2 = sum(energy2) / len(model_list)
-        force2 = torch.autograd.grad(energy2.sum(), coordinates)[0]
-        self.assertEqual(energy1, energy2)
-        self.assertEqual(force1, force2)
+        model = ANI1x(periodic_table_index=False)
+        self.ensemble = self._setup(model)
+        self.model_list = [self._setup(model[j]) for j in range(len(model))]
+        self.num_conformers = 10
+        self.file_path = (Path(__file__).resolve().parent / "test_data") / "ANI1_subset"
 
     def testGDB(self):
-        for i in range(N):
-            datafile = os.path.join(path, "test_data/ANI1_subset/{}".format(i))
-            with open(datafile, "rb") as f:
+        for i in range(self.num_conformers):
+            with open(self.file_path / str(i), "rb") as f:
                 coordinates, species, _, _, _, _ = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates)
-                species = torch.from_numpy(species)
-                self._test_molecule(coordinates, species)
+                coordinates = torch.tensor(
+                    coordinates, requires_grad=True, device=self.device
+                )
+                species = torch.tensor(species, device=self.device, dtype=torch.long)
+                coordinates.requires_grad_(True)
 
+                energy_mean = self.ensemble((species, coordinates)).energies
+                energy_expect = sum(
+                    [m((species, coordinates)).energies for m in self.model_list]
+                ) / len(self.model_list)
+                self.assertEqual(energy_mean, energy_expect)
 
-class TestEnsembleJIT(TestEnsemble):
-    def setUp(self):
-        super().setUp()
-        self.ensemble = torchani.nn.Sequential(self.aev_computer, self.model_iterator)
-        self.ensemble = torch.jit.script(self.ensemble)
+                force_mean = torch.autograd.grad(energy_mean.sum(), coordinates)[0]
+                force_expect = torch.autograd.grad(energy_expect.sum(), coordinates)[0]
+                self.assertEqual(force_mean, force_expect)
 
 
 if __name__ == "__main__":

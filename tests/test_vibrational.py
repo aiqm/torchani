@@ -1,31 +1,40 @@
 from pathlib import Path
 import unittest
 
+import torch
 import numpy as np
 
-import torch
-import torchani
-from torchani.testing import TestCase
+from torchani.models import ANI1x
+from torchani.testing import ANITest, expand
+from torchani.utils import vibrational_analysis, hessian, get_atomic_masses
 
 
-class TestVibrational(TestCase):
+@expand(jit=False, device="cpu")
+class TestVibrational(ANITest):
     def testWater(self):
-        model = torchani.models.ANI1x().double()
+        model = self._setup(ANI1x().double())
         # Expected results
         data_path = (Path(__file__).parent / "test_data") / "water-vib-expect.npz"
         with np.load(data_path) as data:
             coordinates = torch.tensor(
                 np.expand_dims(data["coordinates"], 0),
                 dtype=torch.float,
+                device=self.device,
                 requires_grad=True,
             )
-            species = torch.tensor(np.expand_dims(data["species"], 0), dtype=torch.long)
-            modes_expect = torch.tensor(data["modes"], dtype=torch.float)
-            freqs_expect = torch.tensor(data["freqs"], dtype=torch.float)
-        masses = torchani.utils.get_atomic_masses(species, dtype=torch.double)
-        _, energies = model((species, coordinates))
-        hessian = torchani.utils.hessian(coordinates, energies=energies)
-        freq2, modes2, _, _ = torchani.utils.vibrational_analysis(masses, hessian)
+            species = torch.tensor(
+                np.expand_dims(data["species"], 0), dtype=torch.long, device=self.device
+            )
+            modes_expect = torch.tensor(
+                data["modes"], dtype=torch.float, device=self.device
+            )
+            freqs_expect = torch.tensor(
+                data["freqs"], dtype=torch.float, device=self.device
+            )
+        masses = get_atomic_masses(species, dtype=torch.double)
+        energies = model((species, coordinates)).energies
+        hessian_out = hessian(coordinates, energies=energies)
+        freq2, modes2, _, _ = vibrational_analysis(masses, hessian_out)
         freq2 = freq2[6:].float()
         modes2 = modes2[6:]
         self.assertEqual(freqs_expect, freq2, atol=0, rtol=0.02, exact_dtype=False)

@@ -1,61 +1,79 @@
-import torch
-import torchani
+from pathlib import Path
 import unittest
-import os
 import pickle
 
-from torchani.testing import TestCase
-from torchani.utils import EnergyShifter
+import torch
+
+from torchani.testing import ANITest, expand
+from torchani.utils import pad_atomic_properties, broadcast_first_dim
+from torchani.models import ANI1x, ANI2x, ANIdr
+from torchani.units import hartree2kcalpermol
 
 
-path = os.path.dirname(os.path.realpath(__file__))
-N = 97
-
-
-class TestANI2x(TestCase):
+@expand()
+class TestANI2x(ANITest):
     def setUp(self):
-        self.model_pti = torchani.models.ANI2x(model_index=0)
-        self.model = torchani.models.ANI2x(model_index=0, periodic_table_index=False)
+        self.model_pti = self._setup(ANI2x(model_index=0))
+        self.model = self._setup(ANI2x(model_index=0, periodic_table_index=False))
 
     def testDiatomics(self):
-        coordinates = torch.tensor([[[0.0, 0.0, 0.0], [0.0, 0.0, 2.0]]])
+        coordinates = torch.tensor(
+            [[[0.0, 0.0, 0.0], [0.0, 0.0, 2.0]]], device=self.device
+        )
         coordinates = coordinates.repeat(4, 1, 1)
         # F2, S2, O2, Cl2
-        species_pti = torch.tensor([[9, 9], [16, 16], [8, 8], [17, 17]])
+        species_pti = torch.tensor(
+            [[9, 9], [16, 16], [8, 8], [17, 17]], device=self.device, dtype=torch.long
+        )
         # in 2x the species are not in periodic table order unfortunately
-        species = torch.tensor([[5, 5], [4, 4], [3, 3], [6, 6]])
+        species = torch.tensor(
+            [[5, 5], [4, 4], [3, 3], [6, 6]], device=self.device, dtype=torch.long
+        )
         e_pti = self.model_pti((species_pti, coordinates)).energies
         e = self.model((species, coordinates)).energies
         self.assertEqual(e_pti, e)
 
         # compare against 2x energies calculated directly from neurochem by kdavis
-        e = torchani.units.hartree2kcalpermol(e)
-        e_expect = torch.tensor([-125100.7729, -499666.2354, -94191.3460, -577504.1792])
-        self.assertEqual(e_expect.to(torch.float), e.to(torch.float))
+        e = hartree2kcalpermol(e)
+        e_expect = torch.tensor(
+            [-125100.7729, -499666.2354, -94191.3460, -577504.1792], device=self.device
+        )
+        self.assertEqual(e_expect, e)
 
 
-class TestANIdr(TestCase):
+@expand()
+class TestANIdr(ANITest):
     def setUp(self):
-        self.model = torchani.models.ANIdr()[0]
+        self.model = self._setup(ANIdr(model_index=0))
 
     def testDiatomics(self):
-        coordinates = torch.tensor([[[0.0, 0.0, 0.0], [0.0, 0.0, 2.0]]])
+        coordinates = torch.tensor(
+            [[[0.0, 0.0, 0.0], [0.0, 0.0, 2.0]]], dtype=torch.float, device=self.device
+        )
         coordinates = coordinates.repeat(4, 1, 1)
         # F2, S2, O2, Cl2
-        species = torch.tensor([[9, 9], [16, 16], [8, 8], [17, 17]])
+        species = torch.tensor(
+            [[9, 9], [16, 16], [8, 8], [17, 17]], dtype=torch.long, device=self.device
+        )
         e = self.model((species, coordinates)).energies
 
-        e = torchani.units.hartree2kcalpermol(e)
-        e_expect = torch.tensor([-125122.7685, -499630.9805, -94078.2276, -577468.0107])
-        self.assertEqual(e_expect.to(torch.float), e.to(torch.float))
+        e = hartree2kcalpermol(e)
+        e_expect = torch.tensor(
+            [-125122.7685, -499630.9805, -94078.2276, -577468.0107],
+            device=self.device,
+            dtype=torch.float,
+        )
+        self.assertEqual(e_expect, e)
 
 
-class TestCorrectInput(TestCase):
+@expand(device="cpu", jit=False)
+class TestCorrectInput(ANITest):
     def setUp(self):
-        self.model = torchani.models.ANI1x(model_index=0, periodic_table_index=False)
-        self.converter = torchani.nn.SpeciesConverter(["H", "C", "N", "O"])
-        self.aev_computer = self.model.aev_computer
-        self.ani_model = self.model.neural_networks
+        model = ANI1x(model_index=0, periodic_table_index=False)
+        self.model = self._setup(model)
+        self.converter = self._setup(model.species_converter)
+        self.aev_computer = self._setup(model.aev_computer)
+        self.ani_model = self._setup(model.neural_networks)
 
     def testUnknownSpecies(self):
         # unsupported atomic number raises a value error
@@ -100,82 +118,50 @@ class TestCorrectInput(TestCase):
         )
 
 
-class TestEnergies(TestCase):
-    # tests the predicions for a torchani.nn.Sequential(AEVComputer(),
-    # ANIModel(), EnergyShifter()) against precomputed values
-
+@expand()
+class TestEnergies(ANITest):
     def setUp(self):
-        model = torchani.models.ANI1x(model_index=0, periodic_table_index=False)
-        self.aev_computer = model.aev_computer
-        self.nnp = model.neural_networks
-        self.energy_shifter = EnergyShifter(model.energy_shifter.self_energies.tolist())
-        self.model = torchani.nn.Sequential(
-            self.aev_computer, self.nnp, self.energy_shifter
-        )
+        self.model = self._setup(ANI1x(model_index=0, periodic_table_index=False))
+        self.num_conformers = 50
+        self.file_path = (Path(__file__).resolve().parent / "test_data") / "ANI1_subset"
 
     def testIsomers(self):
-        for i in range(N):
-            datafile = os.path.join(path, "test_data/ANI1_subset/{}".format(i))
-            with open(datafile, "rb") as f:
+        for i in range(self.num_conformers):
+            with open(self.file_path / str(i), "rb") as f:
                 coordinates, species, _, _, energies, _ = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).to(torch.float)
-                species = torch.from_numpy(species)
-                energies = torch.from_numpy(energies).to(torch.float)
+                coordinates = torch.tensor(
+                    coordinates, dtype=torch.float, device=self.device
+                )
+                species = torch.tensor(species, device=self.device, dtype=torch.long)
+                energies = torch.tensor(energies, dtype=torch.float, device=self.device)
                 energies_ = self.model((species, coordinates)).energies
-                self.assertEqual(energies, energies_, exact_dtype=False)
+                self.assertEqual(energies, energies_)
 
     def testPadding(self):
-        species_coordinates = []
-        energies = []
-        for i in range(N):
-            datafile = os.path.join(path, "test_data/ANI1_subset/{}".format(i))
-            with open(datafile, "rb") as f:
-                coordinates, species, _, _, e, _ = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).to(torch.float)
-                species = torch.from_numpy(species)
-                e = torch.from_numpy(e).to(torch.float)
-                species_coordinates.append(
-                    torchani.utils.broadcast_first_dim(
-                        {"species": species, "coordinates": coordinates}
+        batch = []
+        for i in range(self.num_conformers):
+            with open(self.file_path / str(i), "rb") as f:
+                coordinates, species, _, _, energies, _ = pickle.load(f)
+                coordinates = torch.tensor(
+                    coordinates, dtype=torch.float, device=self.device
+                )
+                species = torch.tensor(species, device=self.device, dtype=torch.long)
+                energies = torch.tensor(energies, dtype=torch.float, device=self.device)
+                batch.append(
+                    broadcast_first_dim(
+                        {
+                            "species": species,
+                            "coordinates": coordinates,
+                            "energies": energies,
+                        }
                     )
                 )
-                energies.append(e)
-        species_coordinates = torchani.utils.pad_atomic_properties(species_coordinates)
-        energies = torch.cat(energies)
-        energies_ = self.model(
-            (species_coordinates["species"], species_coordinates["coordinates"])
-        ).energies
-        self.assertEqual(energies, energies_, exact_dtype=False)
-
-
-class TestEnergiesEnergyShifterJIT(TestEnergies):
-    # only JIT compile the energy shifter and repeat all tests
-
-    def setUp(self):
-        super().setUp()
-        self.energy_shifter = torch.jit.script(self.energy_shifter)
-        self.model = torchani.nn.Sequential(
-            self.aev_computer, self.nnp, self.energy_shifter
-        )
-
-
-class TestEnergiesANIModelJIT(TestEnergies):
-    # only JIT compile the ANI nnp ANIModel and repeat all tests
-
-    def setUp(self):
-        super().setUp()
-        self.nnp = torch.jit.script(self.nnp)
-        self.model = torchani.nn.Sequential(
-            self.aev_computer, self.nnp, self.energy_shifter
-        )
-
-
-class TestEnergiesJIT(TestEnergies):
-    # JIT compile the whole model and repeat all tests
-
-    def setUp(self):
-        super().setUp()
-        self.model = torch.jit.script(self.model)
+        padded_batch = pad_atomic_properties(batch)
+        species = padded_batch["species"]
+        coordinates = padded_batch["coordinates"]
+        energies_expect = padded_batch["energies"]
+        energies = self.model((species, coordinates)).energies
+        self.assertEqual(energies, energies_expect)
 
 
 if __name__ == "__main__":

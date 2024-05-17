@@ -8,12 +8,12 @@ class _TestAEVBase(TestCase):
     def setUp(self):
         self.aev_computer = AEVComputer.like_1x()
         self.radial_length = self.aev_computer.radial_length
-        self._debug = False
+        self._debug_aev = False
 
     def assertAEVEqual(self, expected_radial, expected_angular, aev):
         radial = aev[..., : self.radial_length]
         angular = aev[..., self.radial_length:]
-        if self._debug:
+        if self._debug_aev:
             aid = 1
             print(torch.stack([expected_radial[0, aid, :], radial[0, aid, :]]))
         self.assertEqual(expected_radial, radial)

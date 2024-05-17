@@ -10,20 +10,20 @@ This tutorial illustrates how to manually load model from `NeuroChem files`_.
 # To begin with, let's first import the modules we will use:
 import torch
 
-import torchani
-from torchani.utils import ChemicalSymbolsToInts
+from torchani.storage import NEUROCHEM_DIR
 from torchani.neurochem import (
     download_model_parameters,
     load_aev_computer_and_symbols,
     load_sae,
     load_model_ensemble,
     load_model,
+    load_builtin_from_info_file,
 )
 
 ###############################################################################
 # First lets download all model parameters, by default they will be loaded into
 # torchani.storage.NEUROCHEM_DIR, which is ~/.local/torchani/Neurochem.
-root = torchani.storage.NEUROCHEM_DIR
+root = NEUROCHEM_DIR
 download_model_parameters()
 
 ###############################################################################
@@ -34,24 +34,21 @@ const_file = root / "ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params"
 aev_computer, symbols = load_aev_computer_and_symbols(const_file)
 
 model_prefix = root / "ani-1x_8x/train"
-ensemble = load_model_ensemble(symbols, model_prefix, 8)
+ensemble_networks = load_model_ensemble(symbols, model_prefix, 8)
 sae_file = root / "ani-1x_8x/sae_linfit.dat"
 energy_shifter = load_sae(sae_file)
 
 ###############################################################################
 # We can also load a single model from the ensemble
 model_dir = root / "ani-1x_8x/train0/networks"
-model = load_model(symbols, model_dir)
+single_network = load_model(symbols, model_dir)
 
 ###############################################################################
-# You can create the pipeline of computing energies:
-# (Coordinates) -[AEVComputer]-> (AEV) -[Neural Network]->
-# (Raw energies) -[EnergyShifter]-> (Final energies)
-# From using either the ensemble or a single model:
-nnp1 = torchani.nn.Sequential(aev_computer, ensemble, energy_shifter)
-nnp2 = torchani.nn.Sequential(aev_computer, model, energy_shifter)
-print(nnp1)
-print(nnp2)
+# We can also load a full builtin model using neurochem
+ensemble = load_builtin_from_info_file(root / "ani-1x_8x.info")
+single_model = load_builtin_from_info_file(root / "ani-1x_8x.info", model_index=0)
+print(ensemble)
+print(single_model)
 
 ###############################################################################
 # Now let's define a methane molecule
@@ -67,12 +64,11 @@ coordinates = torch.tensor(
     ],
     requires_grad=True,
 )
-species_to_tensor = ChemicalSymbolsToInts(symbols)
-species = species_to_tensor(["C", "H", "H", "H", "H"]).unsqueeze(0)
+species = torch.tensor([[6, 1, 1, 1, 1]], dtype=torch.long)
 
 ###############################################################################
 # Now let's compute energies using the ensemble directly:
-energy = nnp1((species, coordinates)).energies
+energy = ensemble((species, coordinates)).energies
 derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
 force = -derivative
 print("Energy:", energy.item())
@@ -80,7 +76,7 @@ print("Force:", force.squeeze())
 
 ###############################################################################
 # We can do the same thing with the single model:
-energy = nnp2((species, coordinates)).energies
+energy = single_model((species, coordinates)).energies
 derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
 force = -derivative
 print("Energy:", energy.item())

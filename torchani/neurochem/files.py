@@ -25,7 +25,8 @@ __all__ = [
     "modules_from_builtin_name",
     "modules_from_info_file",
     "download_model_parameters",
-    "load_builtin",
+    "load_builtin_from_name",
+    "load_builtin_from_info_file",
 ]
 
 
@@ -173,7 +174,31 @@ def modules_from_info_file(
     )
 
 
-def load_builtin(
+def load_builtin_from_info_file(
+    info_file: tp.Union[Path, str],
+    model_index: tp.Optional[int] = None,
+    use_cuda_extension: bool = False,
+    use_cuaev_interface: bool = False,
+    periodic_table_index: bool = True,
+) -> BuiltinModel:
+    info_file = Path(info_file).resolve()
+    components = modules_from_info_file(
+        info_file,
+        model_index,
+        use_cuda_extension,
+        use_cuaev_interface,
+    )
+    aev_computer, neural_networks, energy_adder, elements = components
+    return BuiltinModel(
+        aev_computer,
+        neural_networks,
+        energy_adder,
+        elements,
+        periodic_table_index=periodic_table_index,
+    )
+
+
+def load_builtin_from_name(
     model_name: str,
     model_index: tp.Optional[int] = None,
     use_cuda_extension: bool = False,
