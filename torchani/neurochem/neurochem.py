@@ -1,4 +1,3 @@
-import typing_extensions as tpx
 from pathlib import Path
 import typing as tp
 import struct
