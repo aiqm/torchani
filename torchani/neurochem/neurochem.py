@@ -3,7 +3,6 @@ import typing as tp
 import struct
 import bz2
 import math
-import collections.abc
 import os
 from collections import OrderedDict
 
@@ -25,52 +24,11 @@ from torchani.cutoffs import CutoffArg
 from torchani.neighbors import NeighborlistArg
 from torchani.potentials import EnergyAdder
 from torchani.tuples import SpeciesEnergies
-from torchani.utils import ChemicalSymbolsToInts
 from torchani.neurochem.utils import model_dir_from_prefix
 
 
 class NeurochemParseError(RuntimeError):
     pass
-
-
-class Constants(collections.abc.Mapping):
-    def __init__(self, filename: tp.Union[Path, str]):
-        import warnings
-
-        warnings.warn(
-            "torchani.neurochem.Constants is deprecated, "
-            "please use torchani.neurochem.load_constants or "
-            "torchani.neurochem.load_aev_computer_and_symbols instead",
-            category=DeprecationWarning,
-        )
-        self.filename = str(filename)
-        aev_constants, aev_cutoffs, species = load_constants(filename)
-        for k, t in aev_constants.items():
-            setattr(self, k, t)
-
-        for k, v in aev_cutoffs.items():
-            setattr(self, k, v)
-
-        self.species = list(species)
-        self.num_species = len(species)
-        self.species_to_tensor = ChemicalSymbolsToInts(species)
-
-    def __iter__(self):
-        yield "Rcr"
-        yield "Rca"
-        yield "EtaR"
-        yield "ShfR"
-        yield "EtaA"
-        yield "Zeta"
-        yield "ShfA"
-        yield "ShfZ"
-        yield "num_species"
-
-    def __len__(self):
-        return 8
-
-    def __getitem__(self, item):
-        return getattr(self, item)
 
 
 def load_aev_computer_and_symbols(

@@ -14,8 +14,7 @@ Available transformations are listed below:
 
 - `species_to_indices` accepts two different kinds of arguments. It converts
   species from elements (e. g. "H", "C", "Cl", etc) into internal torchani
-  indices (as returned by :class:`torchani.utils.ChemicalSymbolsToInts` or the
-  ``species_to_tensor`` method of a :class:`torchani.models.BuiltinModel`), if
+  indices (as returned by :class:`torchani.utils.ChemicalSymbolsToInts`), if
   its argument is an iterable of species. By default species_to_indices behaves
   this way, with an argument of ``('H', 'C', 'N', 'O', 'F', 'S', 'Cl')``
   However, if its argument is the string "periodic_table", then elements are

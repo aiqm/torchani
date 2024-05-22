@@ -428,10 +428,10 @@ class ChemicalSymbolsToInts(torch.nn.Module):
 
 
        # We initialize ChemicalSymbolsToInts with the supported species
-       species_to_tensor = ChemicalSymbolsToInts(['H', 'C', 'Fe', 'Cl'])
+       symbols_to_idxs = ChemicalSymbolsToInts(['H', 'C', 'Fe', 'Cl'])
 
        # We have a species list which we want to convert to an index tensor
-       index_tensor = species_to_tensor(['H', 'C', 'H', 'H', 'C', 'Cl', 'Fe'])
+       index_tensor = symbols_to_idxs(['H', 'C', 'H', 'H', 'C', 'Cl', 'Fe'])
 
        # index_tensor is now [0 1 0 0 1 3 2]
 

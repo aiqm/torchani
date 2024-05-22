@@ -35,9 +35,6 @@ example usage:
     # get an ASE Calculator using this ensemble
     ani1x_calc = ani1x.ase()
 
-    # convert atom species from string to long tensor
-    ani1x.species_to_tensor(['C', 'H', 'H', 'H', 'H'])
-
     # output shape of energies is (M, C), where M is the number of ensemble members
     _, members_energies = ani1x.members_energies((species, coordinates))
 
@@ -70,7 +67,6 @@ from torchani.tuples import (
 )
 from torchani.nn import SpeciesConverter, Ensemble, ANIModel
 from torchani.utils import (
-    ChemicalSymbolsToInts,
     PERIODIC_TABLE,
     ATOMIC_NUMBERS,
 )
@@ -106,7 +102,6 @@ class BuiltinModel(torch.nn.Module):
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
         self.energy_shifter = energy_shifter
-        self.species_to_tensor = ChemicalSymbolsToInts(elements)
         device = self.energy_shifter.self_energies.device
         self.species_converter = SpeciesConverter(elements).to(device)
 

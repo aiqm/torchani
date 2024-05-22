@@ -65,12 +65,12 @@ class TestIsolated(TestCase):
     def setUp(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.aev_computer = AEVComputer.like_1x().to(self.device)
-        self.species_to_tensor = ChemicalSymbolsToInts(["H", "C", "N", "O"])
+        self.symbols_to_idxs = ChemicalSymbolsToInts(["H", "C", "N", "O"])
         self.rcr = self.aev_computer.radial_terms.cutoff
         self.rca = self.aev_computer.angular_terms.cutoff
 
     def testCO2(self):
-        species = self.species_to_tensor(["O", "C", "O"]).to(self.device).unsqueeze(0)
+        species = self.symbols_to_idxs(["O", "C", "O"]).to(self.device).unsqueeze(0)
         distances = [
             1.0,
             self.rca,
@@ -98,7 +98,7 @@ class TestIsolated(TestCase):
                 )
 
     def testH2(self):
-        species = self.species_to_tensor(["H", "H"]).to(self.device).unsqueeze(0)
+        species = self.symbols_to_idxs(["H", "H"]).to(self.device).unsqueeze(0)
         distances = [
             1.0,
             self.rca,
@@ -127,7 +127,7 @@ class TestIsolated(TestCase):
 
     def testH(self):
         # Tests for failure on a single atom
-        species = self.species_to_tensor(["H"]).to(self.device).unsqueeze(0)
+        species = self.symbols_to_idxs(["H"]).to(self.device).unsqueeze(0)
         error = ""
         coordinates = torch.tensor(
             [[[0.0, 0.0, 0.0]]], requires_grad=True, device=self.device
@@ -227,9 +227,12 @@ class TestAEV(_TestAEVBase):
                     )
                 )
                 radial_angular.append((radial, angular))
-        species_coordinates = pad_atomic_properties(species_coordinates)
+        species_coordinates_dict = pad_atomic_properties(species_coordinates)
         _, aev = self.aev_computer(
-            (species_coordinates["species"], species_coordinates["coordinates"])
+            (
+                species_coordinates_dict["species"],
+                species_coordinates_dict["coordinates"],
+            )
         )
         start = 0
         for expected_radial, expected_angular in radial_angular:
@@ -410,8 +413,8 @@ class TestAEVOnBenzenePBC(TestCase):
         benzene = ase.io.read(filename)
         self.cell = torch.tensor(benzene.get_cell(complete=True)[:], dtype=torch.float)
         self.pbc = torch.tensor(benzene.get_pbc(), dtype=torch.bool)
-        species_to_tensor = ChemicalSymbolsToInts(["H", "C", "N", "O"])
-        self.species = species_to_tensor(benzene.get_chemical_symbols()).unsqueeze(0)
+        symbols_to_idxs = ChemicalSymbolsToInts(["H", "C", "N", "O"])
+        self.species = symbols_to_idxs(benzene.get_chemical_symbols()).unsqueeze(0)
         self.coordinates = torch.tensor(benzene.get_positions()).unsqueeze(0).float()
         _, self.aev = self.aev_computer(
             (self.species, self.coordinates), cell=self.cell, pbc=self.pbc
@@ -433,8 +436,8 @@ class TestAEVOnBenzenePBC(TestCase):
         cell2 = torch.stack([4 * c1, c2, c3])
         _, aev2 = self.aev_computer((species2, coordinates2), cell=cell2, pbc=self.pbc)
         for i in range(3):
-            _start = (i * self.natoms)
-            _end = ((i + 1) * self.natoms)
+            _start = i * self.natoms
+            _end = (i + 1) * self.natoms
             aev3 = aev2[:, _start:_end, :]
             self.assertEqual(self.aev, aev3)
 

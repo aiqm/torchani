@@ -1,7 +1,10 @@
 import unittest
 import torch
-import torchani
-from torchani.testing import TestCase, ANITest, expand
+
+from torchani.testing import ANITest, expand
+from torchani.nn import SpeciesConverter
+from torchani.utils import ChemicalSymbolsToInts
+from torchani.models import ANI1x
 from torchani.grad import energies_and_forces
 
 
@@ -25,15 +28,20 @@ class TestSpeciesConverter(ANITest):
             dtype=torch.long,
         )
         dummy_coordinates = torch.empty(2, 5, 3, device=self.device)
-        converter = self._setup(torchani.SpeciesConverter(["H", "C", "N", "O"]))
+        converter = self._setup(SpeciesConverter(["H", "C", "N", "O"]))
         output = converter((input_, dummy_coordinates)).species
         self.assertEqual(output, expect)
 
 
-class TestBuiltinEnsemblePeriodicTableIndex(TestCase):
+@expand(device="cpu", jit=False)
+class TestBuiltinEnsemblePeriodicTableIndex(ANITest):
     def setUp(self):
-        self.model1 = torchani.models.ANI1x(periodic_table_index=False)
-        self.model2 = torchani.models.ANI1x()
+        model1 = ANI1x(periodic_table_index=False)
+        model2 = ANI1x()
+        self.model1 = self._setup(model1)
+        self.model2 = self._setup(model2)
+        self.single_model1 = self._setup(model1[0])
+        self.single_model2 = self._setup(model2[0])
         self.coordinates = torch.tensor(
             [
                 [
@@ -44,11 +52,14 @@ class TestBuiltinEnsemblePeriodicTableIndex(TestCase):
                     [0.66091919, -0.16799635, -0.91037834],
                 ]
             ],
+            device=self.device,
+            dtype=torch.float,
         )
-        self.species1 = self.model1.species_to_tensor(
-            ["C", "H", "H", "H", "H"]
-        ).unsqueeze(0)
-        self.species2 = torch.tensor([[6, 1, 1, 1, 1]])
+        symbols_to_idxs = self._setup(ChemicalSymbolsToInts(["H", "C", "N", "O"]))
+        self.species1 = symbols_to_idxs(["C", "H", "H", "H", "H"]).unsqueeze(0)
+        self.species2 = torch.tensor(
+            [[6, 1, 1, 1, 1]], device=self.device, dtype=torch.long
+        )
 
     def testCH4Ensemble(self):
         energy1, force1 = energies_and_forces(
@@ -61,12 +72,11 @@ class TestBuiltinEnsemblePeriodicTableIndex(TestCase):
         self.assertEqual(force1, force2)
 
     def testCH4Single(self):
-        energy1 = self.model1((self.species1, self.coordinates)).energies
         energy1, force1 = energies_and_forces(
-            self.model1[0], self.species1, self.coordinates
+            self.single_model1, self.species1, self.coordinates
         )
         energy2, force2 = energies_and_forces(
-            self.model2[0], self.species2, self.coordinates
+            self.single_model2, self.species2, self.coordinates
         )
         self.assertEqual(energy1, energy2)
         self.assertEqual(force1, force2)
