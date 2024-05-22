@@ -37,6 +37,7 @@ import typing as tp
 import torch
 from torch import Tensor
 
+from torchani.grad import energies_and_forces
 from torchani.utils import ATOMIC_NUMBERS
 from torchani.nn import SpeciesConverter
 from torchani.potentials import (
@@ -51,8 +52,9 @@ class Transform(torch.nn.Module):
     r"""
     Base class for callables that modify conformer properties on the fly
 
-    If the callable supports only a limited number of atomic numbers (in a given order)
-    then the atomic_numbers tensor should be defined, otherwise it should be None
+    If the callable supports only a limited number of atomic numbers (in a
+    given order) then the atomic_numbers tensor should be defined, otherwise it
+    should be None
     """
     atomic_numbers: tp.Optional[Tensor]
 
@@ -72,50 +74,33 @@ class Identity(Transform):
         return properties
 
 
-class SubtractEnergy(Transform):
+class SubtractEnergyAndForce(Transform):
     r"""
-    Subtract the energy calculated from an arbitrary Wrapper module This
-    can be coupled with, e.g., an arbitrary pairwise potential in order to
-    subtract analytic energies before training.
+    Subtract the energies (and optionally forces) from an arbitrary Wrapper
+    module. This can be coupled with, e.g., an arbitrary pairwise potential.
     """
 
-    def __init__(self, wrapper: PotentialWrapper):
+    def __init__(self, wrapper: PotentialWrapper, subtract_force: bool = True):
         super().__init__()
         if not wrapper.periodic_table_index:
             raise ValueError("Wrapper module should have periodic_table_index=True")
         self.wrapper = wrapper
-        self.atomic_numbers = self.wrapper.potential.atomic_numbers
+        self.atomic_numbers = wrapper.potential.atomic_numbers
+        self.subtract_force = subtract_force
 
     def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
-        properties["energies"] -= self.wrapper(
-            (properties["species"], properties["coordinates"]),
-        ).energies
-        return properties
-
-
-class SubtractForce(Transform):
-    r"""
-    Subtract the force calculated from an arbitrary Wrapper module. This
-    can be coupled with, e.g., an arbitrary pairwise potential in order to
-    subtract analytic forces before training.
-    """
-
-    def __init__(self, wrapper: PotentialWrapper):
-        super().__init__()
-        if not wrapper.periodic_table_index:
-            raise ValueError("Wrapper module should have periodic_table_index=True")
-        self.wrapper = wrapper
-        self.atomic_numbers = self.wrapper.potential.atomic_numbers
-
-    def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
-        coords = properties["coordinates"]
-        coords.requires_grad_(True)
-        energies = self.wrapper(
-            (properties["species"], properties["coordinates"]),
-        ).energies
-        forces = -torch.autograd.grad(energies.sum(), coords)[0]
-        coords.requires_grad_(False)
-        properties["forces"] -= forces
+        species = properties["species"]
+        coordinates = properties["coordinates"]
+        if self.subtract_force:
+            if torch.jit.is_scripting():
+                raise RuntimeError(
+                    "It is not possible to JIT compile transforms that calculate forces"
+                )
+            energies, forces = energies_and_forces(self.wrapper, species, coordinates)
+            properties["forces"] -= forces
+            properties["energies"] -= energies
+        else:
+            properties["energies"] -= self.wrapper((species, coordinates)).energies
         return properties
 
 
@@ -129,10 +114,13 @@ class SubtractRepulsionXTB(Transform):
     def __init__(
         self,
         *args,
+        subtract_force: bool = True,
         **kwargs,
     ):
         super().__init__()
-        self._transform = SubtractEnergy(StandaloneRepulsionXTB(*args, **kwargs))
+        self._transform = SubtractEnergyAndForce(
+            StandaloneRepulsionXTB(*args, **kwargs), subtract_force=subtract_force
+        )
         self.atomic_numbers = self._transform.atomic_numbers
 
     def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
@@ -149,10 +137,14 @@ class SubtractTwoBodyDispersionD3(Transform):
     def __init__(
         self,
         *args,
+        subtract_force: bool = True,
         **kwargs,
     ):
         super().__init__()
-        self._transform = SubtractEnergy(StandaloneTwoBodyDispersionD3(*args, **kwargs))
+        self._transform = SubtractEnergyAndForce(
+            StandaloneTwoBodyDispersionD3(*args, **kwargs),
+            subtract_force=subtract_force,
+        )
         self.atomic_numbers = self._transform.atomic_numbers
 
     def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
@@ -168,7 +160,9 @@ class SubtractSAE(Transform):
 
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self._transform = SubtractEnergy(StandaloneEnergyAdder(*args, **kwargs))
+        self._transform = SubtractEnergyAndForce(
+            StandaloneEnergyAdder(*args, **kwargs), subtract_force=False
+        )
         self.atomic_numbers = self._transform.atomic_numbers
 
     def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:

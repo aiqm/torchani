@@ -7,20 +7,22 @@ vibration analysis, but the Hessian in ASE's vibration analysis is computed
 numerically, which is slow and less accurate.
 
 TorchANI therefore provide an interface to compute the Hessian matrix and do
-vibration analysis analytically, thanks to the super power of `torch.autograd`.
+vibration analysis analytically, thanks to the power of `torch.autograd`.
 """
 # To begin with, let's first import the modules and setup devices we will use:
 import ase
 from ase.optimize import LBFGS
 
 import torch
-import torchani
+from torchani.models import ANI1x
+from torchani.grad import energies_forces_and_hessians, vibrational_analysis
+from torchani.utils import get_atomic_masses
 
 
 ###############################################################################
 # Let's now manually specify the device we want TorchANI to run:
 device = torch.device("cpu")
-model = torchani.models.ANI1x().to(device).double()
+model = ANI1x().to(device=device, dtype=torch.double)
 
 ###############################################################################
 # Let's first construct a water molecule and do structure optimization:
@@ -48,24 +50,19 @@ coordinates = torch.tensor(
     molecule.get_positions(),
     device=device,
     dtype=torch.float,
-    requires_grad=True,
 ).unsqueeze(0)
 
 ###############################################################################
-# TorchANI needs the masses of elements in AMU to compute vibrations. The
+# To do vibrational analysis, we need the hessian matrix. and the masses
+# of the elements in AMU. The
 # masses in AMU can be obtained from a tensor with atomic numbers by using
-# this utility:
-masses = torchani.utils.get_atomic_masses(species, dtype=torch.float)
+# the ``get_atomic_masses`` utility, and the hessian can be calculated together
+# with the energies and forces (note that it is no loss to also calculate energies
+# and forces, even when we don't use them, since TorchANI uses ``autograd`` to do this,
+# which would internally calculate energies and forces anyways).
+masses = get_atomic_masses(species, dtype=torch.float)
+hessian, _, _ = energies_forces_and_hessians(model, species, coordinates)
 
-###############################################################################
-# To do vibration analysis, we first need to generate a graph that computes
-# energies from species and coordinates. The code to generate a graph of energy
-# is the same as the code to compute energy:
-energies = model((species, coordinates)).energies
-
-###############################################################################
-# We can now use the energy graph to compute analytical Hessian matrix:
-hessian = torchani.utils.hessian(coordinates, energies=energies)
 
 ###############################################################################
 # The Hessian matrix should have shape `(1, 9, 9)`, where 1 means there is only
@@ -77,8 +74,8 @@ print(hessian.shape)
 # cm^-1. Since there are in total 9 degree of freedom, there are in total 9
 # frequencies. Only the frequencies of the 3 vibrational modes are interesting.
 # We output the modes as MDU (mass deweighted unnormalized), to compare with ASE.
-freq, modes, fconstants, rmasses = torchani.utils.vibrational_analysis(
-    masses, hessian, mode_type="MDU"
+freq, modes, fconstants, rmasses = vibrational_analysis(
+    masses, hessian, mode_kind="mdu"
 )
 torch.set_printoptions(precision=3, sci_mode=False)
 

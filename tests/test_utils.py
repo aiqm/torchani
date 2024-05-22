@@ -12,8 +12,6 @@ from torchani.utils import (
     # Converters
     ChemicalSymbolsToInts,
     ChemicalSymbolsToAtomicNumbers,
-    # Hessian
-    hessian,
     # GSAES
     sorted_gsaes,
 )
@@ -35,12 +33,6 @@ class TestConverters(ANITest):
         self.assertEqual(
             atomic_nums, torch.tensor([1, 1, 6, 17, 7, 1], dtype=torch.long)
         )
-
-
-@expand(device="cpu", jit=True)
-class TestHessian(ANITest):
-    def testHessian(self):
-        torch.jit.script(hessian)
 
 
 @expand(device="cpu", jit=False)

@@ -7,6 +7,7 @@ import torch
 from torchani.models import ANI1x
 from torchani.testing import ANITest, expand
 from torchani.utils import pad_atomic_properties, broadcast_first_dim
+from torchani.grad import energies_and_forces
 
 
 @expand()
@@ -20,14 +21,13 @@ class TestForce(ANITest):
         for i in range(self.num_conformers):
             with open(self.file_path / str(i), "rb") as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
-                coordinates = torch.tensor(
-                    coordinates, device=self.device, requires_grad=True
-                )
+                coordinates = torch.tensor(coordinates, device=self.device)
                 species = torch.tensor(species, device=self.device, dtype=torch.long)
                 forces = torch.tensor(forces, device=self.device)
-                _, energies = self.model((species, coordinates))
-                derivative = torch.autograd.grad(energies.sum(), coordinates)[0]
-                self.assertEqual(forces, -derivative)
+                energies, forces_pred = energies_and_forces(
+                    self.model, species, coordinates
+                )
+                self.assertEqual(forces, forces_pred)
 
     def testPadding(self):
         batch = []
@@ -35,7 +35,8 @@ class TestForce(ANITest):
             with open(self.file_path / str(i), "rb") as f:
                 coordinates, species, _, _, _, forces = pickle.load(f)
                 coordinates = torch.tensor(
-                    coordinates, device=self.device, requires_grad=True
+                    coordinates,
+                    device=self.device,
                 )
                 species = torch.tensor(species, device=self.device, dtype=torch.long)
                 forces = torch.tensor(forces, device=self.device)
@@ -52,11 +53,7 @@ class TestForce(ANITest):
         coordinates = padded_batch["coordinates"].to(self.device)
         species = padded_batch["species"].to(self.device)
         forces = padded_batch["forces"].to(self.device)
-        energies = self.model((species, coordinates)).energies
-        pred_forces = -torch.autograd.grad(
-            energies.sum(),
-            coordinates,
-        )[0]
+        energies, pred_forces = energies_and_forces(self.model, species, coordinates)
         self.assertEqual(pred_forces, forces)
 
 

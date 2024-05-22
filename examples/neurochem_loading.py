@@ -11,6 +11,7 @@ This tutorial illustrates how to manually load model from `NeuroChem files`_.
 import torch
 
 from torchani.storage import NEUROCHEM_DIR
+from torchani.grad import energies_and_forces
 from torchani.neurochem import (
     download_model_parameters,
     load_aev_computer_and_symbols,
@@ -62,22 +63,17 @@ coordinates = torch.tensor(
             [0.66091919, -0.16799635, -0.91037834],
         ]
     ],
-    requires_grad=True,
 )
 species = torch.tensor([[6, 1, 1, 1, 1]], dtype=torch.long)
 
 ###############################################################################
 # Now let's compute energies using the ensemble directly:
-energy = ensemble((species, coordinates)).energies
-derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
-force = -derivative
-print("Energy:", energy.item())
-print("Force:", force.squeeze())
+energies, forces = energies_and_forces(ensemble, species, coordinates)
+print("Energy:", energies.item())
+print("Force:", forces.squeeze())
 
 ###############################################################################
 # We can do the same thing with the single model:
-energy = single_model((species, coordinates)).energies
-derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
-force = -derivative
-print("Energy:", energy.item())
-print("Force:", force.squeeze())
+energies, forces = energies_and_forces(single_model, species, coordinates)
+print("Energy:", energies.item())
+print("Force:", forces.squeeze())

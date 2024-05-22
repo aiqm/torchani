@@ -1,3 +1,4 @@
+import warnings
 import unittest
 import os
 
@@ -12,16 +13,17 @@ const_file_1x = os.path.join(path, "test_data/rHCNO-5.2R_16-3.5A_a4-8.params")
 const_file_1ccx = os.path.join(path, "test_data/rHCNO-5.2R_16-3.5A_a4-8.params")
 const_file_2x = os.path.join(path, "test_data/rHCNOSFCl-5.1R_16-3.5A_a8-4.params")
 
+if not NEUROCHEM_IS_AVAILABLE:
+    warnings.warn("Skipping all neurochem tests, install 'lark-parser' to run them")
+    raise unittest.SkipTest(
+        "neurochem submodule is not available, skipping all neurochem tests."
+    )
+
 
 @expand(device="cpu", jit=False)
 class TestModelLoader(ANITest):
     # check that models loaded from a neurochem source are equal to models
     # loaded directly from a state_dict
-
-    def setUp(self) -> None:
-        if not NEUROCHEM_IS_AVAILABLE:
-            self.skipTest("neurochem submodule is not available")
-
     def testANI1x(self):
         model = self._setup(ANI1x())
         model_nc = self._setup(torchani.neurochem.load_builtin_from_name("ani1x"))

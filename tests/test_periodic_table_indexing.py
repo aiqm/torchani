@@ -2,6 +2,7 @@ import unittest
 import torch
 import torchani
 from torchani.testing import TestCase, ANITest, expand
+from torchani.grad import energies_and_forces
 
 
 @expand()
@@ -43,7 +44,6 @@ class TestBuiltinEnsemblePeriodicTableIndex(TestCase):
                     [0.66091919, -0.16799635, -0.91037834],
                 ]
             ],
-            requires_grad=True,
         )
         self.species1 = self.model1.species_to_tensor(
             ["C", "H", "H", "H", "H"]
@@ -51,20 +51,25 @@ class TestBuiltinEnsemblePeriodicTableIndex(TestCase):
         self.species2 = torch.tensor([[6, 1, 1, 1, 1]])
 
     def testCH4Ensemble(self):
-        energy1 = self.model1((self.species1, self.coordinates)).energies
-        energy2 = self.model2((self.species2, self.coordinates)).energies
-        derivative1 = torch.autograd.grad(energy1.sum(), self.coordinates)[0]
-        derivative2 = torch.autograd.grad(energy2.sum(), self.coordinates)[0]
+        energy1, force1 = energies_and_forces(
+            self.model1, self.species1, self.coordinates
+        )
+        energy2, force2 = energies_and_forces(
+            self.model2, self.species2, self.coordinates
+        )
         self.assertEqual(energy1, energy2)
-        self.assertEqual(derivative1, derivative2)
+        self.assertEqual(force1, force2)
 
     def testCH4Single(self):
-        energy1 = self.model1[0]((self.species1, self.coordinates)).energies
-        energy2 = self.model2[0]((self.species2, self.coordinates)).energies
-        derivative1 = torch.autograd.grad(energy1.sum(), self.coordinates)[0]
-        derivative2 = torch.autograd.grad(energy2.sum(), self.coordinates)[0]
+        energy1 = self.model1((self.species1, self.coordinates)).energies
+        energy1, force1 = energies_and_forces(
+            self.model1[0], self.species1, self.coordinates
+        )
+        energy2, force2 = energies_and_forces(
+            self.model2[0], self.species2, self.coordinates
+        )
         self.assertEqual(energy1, energy2)
-        self.assertEqual(derivative1, derivative2)
+        self.assertEqual(force1, force2)
 
 
 if __name__ == "__main__":

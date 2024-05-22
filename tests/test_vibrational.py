@@ -6,7 +6,8 @@ import numpy as np
 
 from torchani.models import ANI1x
 from torchani.testing import ANITest, expand
-from torchani.utils import vibrational_analysis, hessian, get_atomic_masses
+from torchani.grad import vibrational_analysis, energies_forces_and_hessians
+from torchani.utils import get_atomic_masses
 
 
 @expand(jit=False, device="cpu")
@@ -20,7 +21,6 @@ class TestVibrational(ANITest):
                 np.expand_dims(data["coordinates"], 0),
                 dtype=torch.float,
                 device=self.device,
-                requires_grad=True,
             )
             species = torch.tensor(
                 np.expand_dims(data["species"], 0), dtype=torch.long, device=self.device
@@ -32,9 +32,10 @@ class TestVibrational(ANITest):
                 data["freqs"], dtype=torch.float, device=self.device
             )
         masses = get_atomic_masses(species, dtype=torch.double)
-        energies = model((species, coordinates)).energies
-        hessian_out = hessian(coordinates, energies=energies)
-        freq2, modes2, _, _ = vibrational_analysis(masses, hessian_out)
+        energies, forces, hessians = energies_forces_and_hessians(
+            model, species, coordinates
+        )
+        freq2, modes2, _, _ = vibrational_analysis(masses, hessians)
         freq2 = freq2[6:].float()
         modes2 = modes2[6:]
         self.assertEqual(freqs_expect, freq2, atol=0, rtol=0.02, exact_dtype=False)

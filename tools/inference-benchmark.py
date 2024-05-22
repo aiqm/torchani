@@ -5,7 +5,7 @@ import tqdm
 import torch
 
 from torchani.models import ANI1x
-from torchani.utils import EnergyShifter
+from torchani.grad import energies_and_forces, forces
 
 # parse command line arguments
 parser = argparse.ArgumentParser()
@@ -26,12 +26,7 @@ args = parser.parse_args()
 
 # set up benchmark
 device = torch.device(args.device)
-ani1x = ANI1x()
-nnp = torch.nn.Sequential(
-    ani1x.aev_computer,
-    ani1x.neural_networks[0],
-    EnergyShifter(ani1x.energy_shifter.self_energies.tolist()),
-).to(device)
+ani1x = ANI1x(model_index=0, periodic_table_index=False).to(device)
 
 
 # load XYZ files
@@ -44,7 +39,7 @@ class XYZ:
         self.mols = []
         atom_count = None
         species = []
-        coordinates = []
+        _coordinates = []
         state = "ready"
         for i in lines:
             i = i.strip()
@@ -54,17 +49,19 @@ class XYZ:
             elif state == "comment":
                 state = "atoms"
             else:
-                s, x, y, z = i.split()
-                x, y, z = float(x), float(y), float(z)
+                s, _x, _y, _z = i.split()
+                x, y, z = float(_x), float(_y), float(_z)
                 species.append(s)
-                coordinates.append([x, y, z])
+                _coordinates.append([x, y, z])
+                if atom_count is None:
+                    raise RuntimeError("Atom count not present")
                 atom_count -= 1
                 if atom_count == 0:
                     state = "ready"
                     species = ani1x.species_to_tensor(species).to(device)
-                    coordinates = torch.tensor(coordinates, device=device)
+                    coordinates = torch.tensor(_coordinates, device=device)
                     self.mols.append((species, coordinates))
-                    coordinates = []
+                    _coordinates = []
                     species = []
 
     def __len__(self):
@@ -87,10 +84,10 @@ print("[Batch mode]")
 species, coordinates = torch.utils.data.dataloader.default_collate(list(xyz))
 coordinates.requires_grad_(True)
 start = timeit.default_timer()
-energies = nnp((species, coordinates))[1]
+energies = ani1x((species, coordinates)).energies
 mid = timeit.default_timer()
 print("Energy time:", mid - start)
-force = -torch.autograd.grad(energies.sum(), coordinates)[0]
+force = forces(energies, coordinates)
 print("Force time:", timeit.default_timer() - mid)
 print()
 
@@ -101,7 +98,6 @@ if args.tqdm:
     xyz = tqdm.tqdm(xyz)
 for species, coordinates in xyz:
     species = species.unsqueeze(0)
-    coordinates = coordinates.unsqueeze(0).detach().requires_grad_(True)
-    energies = nnp((species, coordinates))[1]
-    force = -torch.autograd.grad(energies.sum(), coordinates)[0]
+    coordinates = coordinates.unsqueeze(0)
+    _, _ = energies_and_forces(ani1x, species, coordinates.detach())
 print("Time:", timeit.default_timer() - start)

@@ -10,6 +10,7 @@ with dispersion in the first place.
 import torch
 
 from torchani.potentials import StandaloneTwoBodyDispersionD3
+from torchani.grad import energies_and_forces
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # By default the dispersion interactions have no cutoff
@@ -25,12 +26,10 @@ coordinates = torch.tensor(
             [0.66091919, -0.16799635, -0.91037834],
         ]
     ],
-    requires_grad=True,
     device=device,
 )
 znumbers = torch.tensor([[6, 1, 1, 1, 1]], device=device)
-disp_energy = disp((znumbers, coordinates)).energies
-force = -torch.autograd.grad(disp_energy.sum(), coordinates)[0]
+disp_energy, force = energies_and_forces(disp, znumbers, coordinates)
 print("Dispersion Energy:", disp_energy)
 print("Force:", force.squeeze())
 
@@ -40,9 +39,7 @@ print("Force:", force.squeeze())
 r = 4
 coordinates = coordinates.repeat(r, 1, 1)
 znumbers = znumbers.repeat(r, 1)
-
-disp_energy = disp((znumbers, coordinates)).energies
-force = -torch.autograd.grad(disp_energy.sum(), coordinates)[0]
+disp_energy, force = energies_and_forces(disp, znumbers, coordinates)
 print("Dispersion Energy:", disp_energy)
 print("Force:", force.squeeze())
 
@@ -60,11 +57,9 @@ coordinates = torch.tensor(
             [0.66091919, -0.16799635, -0.91037834],
         ]
     ],
-    requires_grad=True,
     device=device,
 )
 znumbers = torch.tensor([[6, 16, 1, 8, 26]], device=device)
-disp_energy = disp((znumbers, coordinates)).energies
-force = -torch.autograd.grad(disp_energy.sum(), coordinates)[0]
+disp_energy, force = energies_and_forces(disp, znumbers, coordinates)
 print("Dispersion Energy:", disp_energy)
 print("Force:", force.squeeze())

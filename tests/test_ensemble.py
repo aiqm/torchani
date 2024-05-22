@@ -6,6 +6,7 @@ import torch
 
 from torchani.testing import ANITest, expand
 from torchani.models import ANI1x
+from torchani.grad import energies_and_forces, forces
 
 
 @expand()
@@ -21,21 +22,19 @@ class TestEnsemble(ANITest):
         for i in range(self.num_conformers):
             with open(self.file_path / str(i), "rb") as f:
                 coordinates, species, _, _, _, _ = pickle.load(f)
-                coordinates = torch.tensor(
-                    coordinates, requires_grad=True, device=self.device
-                )
+                coordinates = torch.tensor(coordinates, device=self.device)
                 species = torch.tensor(species, device=self.device, dtype=torch.long)
+                energies_mean, forces_mean = energies_and_forces(
+                    self.ensemble, species, coordinates
+                )
                 coordinates.requires_grad_(True)
-
-                energy_mean = self.ensemble((species, coordinates)).energies
-                energy_expect = sum(
+                energies_expect = sum(
                     [m((species, coordinates)).energies for m in self.model_list]
                 ) / len(self.model_list)
-                self.assertEqual(energy_mean, energy_expect)
+                forces_expect = forces(energies_expect, coordinates)
 
-                force_mean = torch.autograd.grad(energy_mean.sum(), coordinates)[0]
-                force_expect = torch.autograd.grad(energy_expect.sum(), coordinates)[0]
-                self.assertEqual(force_mean, force_expect)
+                self.assertEqual(energies_mean, energies_expect)
+                self.assertEqual(forces_mean, forces_expect)
 
 
 if __name__ == "__main__":

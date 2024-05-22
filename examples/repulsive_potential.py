@@ -9,6 +9,7 @@ potential energy surface at short distances
 import torch
 
 from torchani.potentials import StandaloneRepulsionXTB
+from torchani.grad import energies_and_forces
 
 # This is an example of how to use the repulsion interactions coded in torchani
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -24,12 +25,10 @@ coordinates = torch.tensor(
             [0.66091919, -0.16799635, -0.91037834],
         ]
     ],
-    requires_grad=True,
     device=device,
 )
 znumbers = torch.tensor([[6, 1, 1, 1, 1]], device=device)
-rep_energy = rep((znumbers, coordinates)).energies
-force = -torch.autograd.grad(rep_energy.sum(), coordinates)[0]
+rep_energy, force = energies_and_forces(rep, znumbers, coordinates)
 print("Repulsion Energy:", rep_energy)
 print("Force:", force.squeeze())
 
@@ -39,9 +38,7 @@ print("Force:", force.squeeze())
 r = 4
 coordinates = coordinates.repeat(r, 1, 1)
 znumbers = znumbers.repeat(r, 1)
-
-rep_energy = rep((znumbers, coordinates)).energies
-force = -torch.autograd.grad(rep_energy.sum(), coordinates)[0]
+rep_energy, force = energies_and_forces(rep, znumbers, coordinates)
 print("Repulsion Energy:", rep_energy)
 print("Force:", force.squeeze())
 
@@ -59,11 +56,9 @@ coordinates = torch.tensor(
             [0.66091919, -0.16799635, -0.91037834],
         ]
     ],
-    requires_grad=True,
     device=device,
 )
 znumbers = torch.tensor([[6, 16, 1, 8, 26]], device=device)
-rep_energy = rep((znumbers, coordinates)).energies
-force = -torch.autograd.grad(rep_energy.sum(), coordinates)[0]
+rep_energy, force = energies_and_forces(rep, znumbers, coordinates)
 print("Repulsion Energy:", rep_energy)
 print("Force:", force.squeeze())

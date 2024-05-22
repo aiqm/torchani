@@ -7,6 +7,7 @@ from torchani.aev import AEVComputer
 from torchani.potentials import TwoBodyDispersionD3, StandaloneTwoBodyDispersionD3
 from torchani.potentials.dispersion import constants
 from torchani.testing import ANITest, expand
+from torchani.grad import energies_and_forces
 
 
 @expand()
@@ -263,16 +264,9 @@ class TestDispersion(ANITest):
         self.assertEqual(energies, energies_cat)
 
     def testForce(self):
-        self.coordinates.requires_grad_(True)
-        disp = self._setup(TwoBodyDispersionD3.from_functional())
-        neighbors = self.aev_computer.neighborlist(
-            self.species,
-            self.coordinates,
-            disp.cutoff,
-        )
-        energy = disp(self.species, neighbors)
-        gradient = torch.autograd.grad(energy, self.coordinates)[0]
-        gradient /= units.ANGSTROM_TO_BOHR
+        model = self._setup(StandaloneTwoBodyDispersionD3(periodic_table_index=False))
+        _, forces = energies_and_forces(model, self.species, self.coordinates)
+        grad = -forces / units.ANGSTROM_TO_BOHR
         # compare with analytical gradient from Grimme's DFTD3 (DFTD3 gives
         # gradient in Bohr)
         expect_grad = torch.tensor(
@@ -286,7 +280,7 @@ class TestDispersion(ANITest):
             device=self.device,
             dtype=torch.double,
         )
-        self.assertEqual(expect_grad.unsqueeze(0), gradient)
+        self.assertEqual(expect_grad.unsqueeze(0), grad)
 
 
 if __name__ == "__main__":

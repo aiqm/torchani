@@ -10,6 +10,7 @@ import torchani
 from torchani.csrc import CUAEV_IS_INSTALLED
 from torchani.testing import TestCase
 from torchani.benchmark import timeit
+from torchani.grad import energies_and_forces
 
 
 devices = ["cuda", "cpu"]
@@ -48,15 +49,11 @@ class TestInfer(TestCase):
             coordinates = torch.tensor(
                 mol.get_positions(),
                 dtype=torch.float32,
-                requires_grad=True,
                 device=self.device,
             ).unsqueeze(0)
 
-            _, energy1 = model_ref((species, coordinates))
-            force1 = torch.autograd.grad(energy1.sum(), coordinates)[0]
-            _, energy2 = model_infer((species, coordinates))
-            force2 = torch.autograd.grad(energy2.sum(), coordinates)[0]
-
+            force1, energy1 = energies_and_forces(model_ref, species, coordinates)
+            force2, energy2 = energies_and_forces(model_infer, species, coordinates)
             self.assertEqual(energy1, energy2, atol=1e-5, rtol=1e-5)
             self.assertEqual(force1, force2, atol=1e-5, rtol=1e-5)
 
@@ -89,12 +86,10 @@ class TestInfer(TestCase):
             coordinates = torch.tensor(
                 mol.get_positions(),
                 dtype=torch.float32,
-                requires_grad=True,
                 device=self.device,
             ).unsqueeze(0)
-
-            _, energy1 = model((species, coordinates))
-            _ = torch.autograd.grad(energy1.sum(), coordinates)[0]  # force
+            # Calculate energies and forces for the benchmark
+            _, _ = energies_and_forces(model, species, coordinates)
 
         use_cuaev = (self.device == "cuda") and CUAEV_IS_INSTALLED
         ani2x_jit = torch.jit.script(

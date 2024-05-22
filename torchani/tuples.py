@@ -6,6 +6,22 @@ import typing as tp
 from torch import Tensor
 
 
+class EnergiesForces(tp.NamedTuple):
+    energies: Tensor
+    forces: Tensor
+
+
+class EnergiesForcesHessians(tp.NamedTuple):
+    energies: Tensor
+    forces: Tensor
+    hessians: Tensor
+
+
+class ForcesHessians(tp.NamedTuple):
+    forces: Tensor
+    hessians: Tensor
+
+
 class SpeciesAEV(tp.NamedTuple):
     r"""
     Chemical elements and AEV feature tensor

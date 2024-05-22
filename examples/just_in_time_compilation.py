@@ -15,6 +15,7 @@ import torch
 from torch import Tensor
 
 import torchani
+from torchani.grad import hessians, forces
 
 ###############################################################################
 # Scripting builtin model directly
@@ -88,41 +89,43 @@ class CustomModule(torch.nn.Module):
     ) -> tp.Tuple[Tensor, tp.Optional[Tensor], tp.Optional[Tensor]]:
         if return_forces or return_hessians:
             coordinates.requires_grad_(True)
-
         energies = self.model((species, coordinates)).energies
-
-        forces: tp.Optional[Tensor] = None
-        hessians: tp.Optional[Tensor] = None
+        _forces: tp.Optional[Tensor] = None
+        _hessians: tp.Optional[Tensor] = None
         if return_forces or return_hessians:
-            grad = torch.autograd.grad(
-                [energies.sum()], [coordinates], create_graph=return_hessians
-            )[0]
-            assert grad is not None
-            forces = -grad
+            _forces = forces(
+                energies, coordinates, retain_graph=True, create_graph=return_hessians
+            )
             if return_hessians:
-                hessians = torchani.utils.hessian(coordinates, forces=forces)
-        return energies, forces, hessians
+                assert _forces is not None
+                _hessians = hessians(_forces, coordinates)
+        return energies, _forces, _hessians
 
 
 custom_model = CustomModule()
 compiled_custom_model = torch.jit.script(custom_model)
 torch.jit.save(compiled_custom_model, "compiled_custom_model.pt")
 loaded_compiled_custom_model = torch.jit.load("compiled_custom_model.pt")
-energies, forces, hessians = custom_model(species, coordinates, True, True)
+energies_eager, forces_eager, hessians_eager = custom_model(
+    species, coordinates, True, True
+)
 energies_jit, forces_jit, hessians_jit = loaded_compiled_custom_model(
     species, coordinates, True, True
 )
 
-print("Energy, eager mode vs loaded jit:", energies.item(), energies_jit.item())
+print("Energy, eager mode vs loaded jit:", energies_eager.item(), energies_jit.item())
 print()
 print(
-    "Force, eager mode vs loaded jit:\n", forces.squeeze(0), "\n", forces_jit.squeeze(0)
+    "Force, eager mode vs loaded jit:\n",
+    forces_eager.squeeze(0),
+    "\n",
+    forces_jit.squeeze(0),
 )
 print()
 torch.set_printoptions(sci_mode=False, linewidth=1000)
 print(
     "Hessian, eager mode vs loaded jit:\n",
-    hessians.squeeze(0),
+    hessians_eager.squeeze(0),
     "\n",
     hessians_jit.squeeze(0),
 )

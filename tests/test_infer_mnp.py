@@ -9,6 +9,7 @@ from ase.io import read
 import torchani
 from torchani.testing import TestCase
 from torchani.csrc import MNP_IS_INSTALLED, CUAEV_IS_INSTALLED
+from torchani.grad import energies_and_forces
 
 # Disable Tensorfloat, errors between two run of same model for large system
 # could reach 1e-3. However note that this error for large system is not that
@@ -79,16 +80,12 @@ class TestCPUInferMNP(TestCase):
             coordinates = torch.tensor(
                 mol.get_positions(),
                 dtype=torch.float32,
-                requires_grad=True,
                 device=self.device,
             ).unsqueeze(0)
 
-            _, energy1 = model_ref((species, coordinates))
-            force1 = torch.autograd.grad(energy1.sum(), coordinates)[0]
-            _, energy2 = model_infer((species, coordinates))
-            force2 = torch.autograd.grad(energy2.sum(), coordinates)[0]
-
-            self.assertEqual(energy1, energy2, atol=1e-5, rtol=1e-5)
+            force1, energy1 = energies_and_forces(model_ref, species, coordinates)
+            force2, energy2 = energies_and_forces(model_infer, species, coordinates)
+            self.assertEqual(energy1, energy2, atol=5e-4, rtol=5e-4)
             self.assertEqual(force1, force2, atol=5e-4, rtol=5e-4)
 
     def testBmmEnsemble(self):

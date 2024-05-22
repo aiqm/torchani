@@ -3,6 +3,7 @@ import os
 import pickle
 
 import torch
+from torch.autograd import gradcheck, gradgradcheck
 
 import torchani
 from torchani.testing import ANITest, expand
@@ -11,7 +12,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 
 
 @expand()
-class TestGrad(ANITest):
+class TestTorchNumericalCheck(ANITest):
     # torch.autograd.gradcheck (and torch.autograd.gradgradcheck) verify that
     # the numerical and analytical gradient (and hessian respectively) of a
     # function match within a given tolerance.
@@ -31,26 +32,26 @@ class TestGrad(ANITest):
             data = pickle.load(fb)[1243:1250]
         self.data = data
 
-    def testGradCheck(self):
+    def testAutograd(self):
         for coordinates, species, _, _, _, _ in self.data:
             coordinates = torch.tensor(
                 coordinates, device=self.device, dtype=torch.double, requires_grad=True
             )
             species = torch.tensor(species, device=self.device, dtype=torch.long)
 
-            torch.autograd.gradcheck(
+            gradcheck(
                 lambda x: self.model((species, x)).energies,
                 coordinates,
                 nondet_tol=1e-13,
             )
 
-    def testGradGradCheck(self):
+    def testDoubleAutograd(self):
         for coordinates, species, _, _, _, _ in self.data:
             coordinates = torch.tensor(
                 coordinates, device=self.device, dtype=torch.double, requires_grad=True
             )
             species = torch.tensor(species, device=self.device, dtype=torch.long)
-            torch.autograd.gradgradcheck(
+            gradgradcheck(
                 lambda x: self.model((species, x)).energies,
                 coordinates,
                 nondet_tol=1e-13,

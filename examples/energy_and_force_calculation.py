@@ -1,4 +1,4 @@
-"""
+r"""
 Computing Energy and Force Using Built-in Models
 ================================================
 
@@ -9,10 +9,11 @@ TorchANI and can be used directly.
 import torch
 
 import torchani
+from torchani.grad import energies_and_forces
 
 ###############################################################################
 # Let's now manually specify the device we want TorchANI to run:
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 ###############################################################################
 # Let's now load the built-in ANI-2x model. The builtin ANI-2x contains 8
@@ -32,50 +33,61 @@ model = torchani.models.ANI2x().to(device)
 # ``N``.
 #
 # .. note:: The coordinates are in Angstrom, and the energies you get are in Hartree
-coordinates = torch.tensor([[[0.03192167, 0.00638559, 0.01301679],
-                             [-0.83140486, 0.39370209, -0.26395324],
-                             [-0.66518241, -0.84461308, 0.20759389],
-                             [0.45554739, 0.54289633, 0.81170881],
-                             [0.66091919, -0.16799635, -0.91037834]]],
-                           requires_grad=True, device=device)
+coordinates = torch.tensor(
+    [
+        [
+            [0.03192167, 0.00638559, 0.01301679],
+            [-0.83140486, 0.39370209, -0.26395324],
+            [-0.66518241, -0.84461308, 0.20759389],
+            [0.45554739, 0.54289633, 0.81170881],
+            [0.66091919, -0.16799635, -0.91037834],
+        ]
+    ],
+    device=device,
+)
 # In periodic table, C = 6 and H = 1
 species = torch.tensor([[6, 1, 1, 1, 1]], device=device)
 
 ###############################################################################
 # Now let's compute energy and force:
-energy = model((species, coordinates)).energies
-forces = model.members_forces((species, coordinates), average=True).forces
+energy, force = energies_and_forces(model, species, coordinates)
 
 
 ###############################################################################
 # And print to see the result:
-print('Energy:', energy.item(), 'Hartree')
-print('Force (Hartree / Å): \n', forces)
+print("Energy (Hartree):", energy.item())
+print("Force (Hartree / Å): \n", force)
 
 ###############################################################################
 # you can get the atomic energies (WARNING: these have no physical meaning)
 # by calling:
-_, atomic_energies = model.atomic_energies((species, coordinates),
-                                           shift_energy=True, average=True)
+_, atomic_energies = model.atomic_energies(
+    (species, coordinates),
+    shift_energy=True,
+    average=True,
+)
 
 ###############################################################################
 # this gives you the average (shifted) energies over all models of the ensemble
 # by default, with the same shape as the coordinates.
 # (Dummy atoms, if present, will have an energy of zero.)
-print('Average Atomic energies, for species 6 1 1 1 1: \n', atomic_energies)
+print("Average Atomic energies: \n", atomic_energies)
 
 ###############################################################################
 # you can access model specific atomic energies by indexing:
-_, atomic_energies = model.atomic_energies((species, coordinates),
-                                           shift_energy=True, average=False)
-print('Atomic energies of first model, for species 6 1 1 1 1: \n',
-      atomic_energies[0, :, :])
+_, atomic_energies = model.atomic_energies(
+    (species, coordinates),
+    shift_energy=True,
+    average=False,
+)
+print("Atomic energies of first model: \n", atomic_energies[0, :, :])
 
 ###############################################################################
 # You can also return atomic energy contributions  directly from their atomic
 # NNs before ground state atomic energies are added:
-unshifted_atomic_energies = model.atomic_energies((species, coordinates),
-                                                  shift_energy=False,
-                                                  average=False).energies
-print('Atomic energies, before adding ground state atomic energies: \n',
-      unshifted_atomic_energies[0])
+unshifted_atomic_energies = model.atomic_energies(
+    (species, coordinates),
+    shift_energy=False,
+    average=False,
+).energies
+print("Atomic energies, before shifting: \n", unshifted_atomic_energies[0])

@@ -5,6 +5,7 @@ import torch
 import torchani
 
 from torchani.testing import ANITest, expand
+from torchani.grad import forces, energies_and_forces
 
 
 @expand()
@@ -150,38 +151,43 @@ class TestActiveLearningForces(ANITest):
 
     def testMembersForces(self):
         # Symmetric methane
-        forces = self.model.members_forces((self.species, self.coordinates)).forces
+        expect_forces = self.model.members_forces(
+            (self.species, self.coordinates)
+        ).forces
+        self.coordinates.requires_grad_(True)
         members_energies = self.model.members_energies(
             (self.species, self.coordinates)
         ).energies
-        forces_list = []
-        for energy in members_energies:
-            derivative = torch.autograd.grad(
-                energy.sum(), self.coordinates, retain_graph=True
-            )[0]
-            force = -derivative
-            forces_list.append(force)
+        forces_list = [
+            forces(
+                energies,
+                self.coordinates,
+                retain_graph=True,
+            )
+            for energies in members_energies
+        ]
         _forces = torch.stack(forces_list, dim=0)
-        self.assertEqual(forces, _forces)
+        self.assertEqual(expect_forces, _forces)
 
     def testAverageMembersForces(self):
         # Symmetric methane
-        avg_forces = self.model.members_forces(
-            (self.species, self.coordinates), average=True
-        ).forces
+        _, expect_forces = energies_and_forces(
+            self.model, self.species, self.coordinates
+        )
+        self.coordinates.requires_grad_(True)
         members_energies = self.model.members_energies(
             (self.species, self.coordinates)
         ).energies
-        forces_list = []
-        for energy in members_energies:
-            derivative = torch.autograd.grad(
-                energy.sum(), self.coordinates, retain_graph=True
-            )[0]
-            force = -derivative
-            forces_list.append(force)
-        _forces = torch.stack(forces_list, dim=0)
-        _forces = _forces.mean(0)
-        self.assertEqual(avg_forces, _forces)
+        forces_list = [
+            forces(
+                energies,
+                self.coordinates,
+                retain_graph=True,
+            )
+            for energies in members_energies
+        ]
+        test_forces = torch.stack(forces_list, dim=0)
+        self.assertEqual(expect_forces, test_forces.mean(0))
 
     def testForceMagnitudes(self):
         # This test imperfectly checks that force_magnitudes works as it

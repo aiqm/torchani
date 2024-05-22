@@ -8,6 +8,7 @@ from tqdm import tqdm
 from torchani.models import ANI1x
 from torchani.data._pyanitools import anidataloader
 from torchani.units import hartree2kcalpermol
+from torchani.grad import energies_and_forces
 
 
 # parse command line arguments
@@ -45,14 +46,13 @@ def recursive_h5_files(base):
 def by_batch(species, coordinates, model):
     shape = species.shape
     batchsize = max(1, args.batchatoms // shape[1])
-    coordinates = coordinates.clone().detach().requires_grad_(True)
+    coordinates = coordinates.clone().detach()
     species = torch.split(species, batchsize)
     coordinates = torch.split(coordinates, batchsize)
     energies = []
     forces = []
     for s, c in zip(species, coordinates):
-        e = model((s, c)).energies
-        (f,) = torch.autograd.grad(e.sum(), c)
+        e, f = energies_and_forces(model, s, c)
         energies.append(e)
         forces.append(f)
     return torch.cat(energies).detach(), torch.cat(forces).detach()
