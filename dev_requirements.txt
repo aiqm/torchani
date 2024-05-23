@@ -1,9 +1,9 @@
 # This file collects optional dependencies of torchani.
 
-# Ase interface, needed for tests, docs, tools, and for MD
+# Ase interface, used in ase test, ase docs example, tools, in the ase module
 ase
 
-# Legacy neurochem file reader
+# Legacy neurochem model loader, used in the neurochem module and tested in neurochem test
 lark-parser
 
 # Tests: tests-runner and class parametrization
@@ -25,7 +25,6 @@ sphinx-gallery
 
 # Docs: For logging on training example
 tensorboard
-
 
 # Tools: Utils for running various scripts found in /torchani/tools/
 pynvml
