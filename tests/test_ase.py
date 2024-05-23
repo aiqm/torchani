@@ -1,11 +1,19 @@
 import typing as tp
 from pathlib import Path
 from itertools import product
+import warnings
 import unittest
 import pickle
 
 import numpy as np
 from numpy.typing import NDArray
+from parameterized import parameterized
+
+from torchani import ASE_IS_AVAILABLE
+if not ASE_IS_AVAILABLE:
+    warnings.warn("Skipping all ASE tests, install ase to run them")
+    raise unittest.SkipTest("ASE is not available, skipping all ASE tests.")
+
 from ase import units, Atoms
 from ase.vibrations import Vibrations
 from ase.optimize import BFGS
@@ -13,7 +21,6 @@ from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
 from ase.md.nptberendsen import NPTBerendsen
 from ase.calculators.test import numeric_force
-from parameterized import parameterized
 
 from torchani.neighbors import CellList
 from torchani.io import read_xyz

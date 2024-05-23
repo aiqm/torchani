@@ -44,11 +44,11 @@ _T = tp.TypeVar("_T", bound=torch.nn.Module)
 
 @expand()
 class ANITest(TestCase):
-    _device: str
+    _device: tp.Literal["cpu", "cuda"]
     _jit: bool
 
     @property
-    def device(self) -> str:
+    def device(self) -> tp.Literal["cpu", "cuda"]:
         return getattr(self, "_device", "cpu")
 
     @property

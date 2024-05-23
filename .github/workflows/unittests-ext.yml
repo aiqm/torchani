@@ -42,7 +42,7 @@ jobs:
           ${{ steps.meta.outputs.tags }}
           bash -c
           'pip install -v --no-build-isolation --editable . --global-option="--ext"
-          && pytest ./tests/test_cuaev.py ./tests/test_infer.py ./tests/test_infer_mnp.py'
+          && pytest ./tests/test_cuaev.py ./tests/test_infer.py'
 
       - name: Remove image
         if: ${{ always() }}

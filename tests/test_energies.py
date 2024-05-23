@@ -5,7 +5,7 @@ import pickle
 import torch
 
 from torchani.testing import ANITest, expand
-from torchani.utils import pad_atomic_properties, broadcast_first_dim
+from torchani.utils import pad_atomic_properties
 from torchani.models import ANI1x, ANI2x, ANIdr
 from torchani.units import hartree2kcalpermol
 
@@ -148,13 +148,11 @@ class TestEnergies(ANITest):
                 species = torch.tensor(species, device=self.device, dtype=torch.long)
                 energies = torch.tensor(energies, dtype=torch.float, device=self.device)
                 batch.append(
-                    broadcast_first_dim(
-                        {
-                            "species": species,
-                            "coordinates": coordinates,
-                            "energies": energies,
-                        }
-                    )
+                    {
+                        "species": species,
+                        "coordinates": coordinates,
+                        "energies": energies,
+                    }
                 )
         padded_batch = pad_atomic_properties(batch)
         species = padded_batch["species"]

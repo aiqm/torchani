@@ -18,8 +18,6 @@ from torchani.tuples import SpeciesEnergies
 
 __all__ = [
     "pad_atomic_properties",
-    "present_species",
-    "strip_redundant_padding",
     "ChemicalSymbolsToInts",
     "ChemicalSymbolsToAtomicNumbers",
     "AtomicNumbersToMasses",
@@ -193,22 +191,6 @@ def cumsum_from_zero(input_: Tensor) -> Tensor:
     return cumsum
 
 
-def broadcast_first_dim(properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
-    num_molecule = 1
-    for k, v in properties.items():
-        shape = list(v.shape)
-        n = shape[0]
-        if num_molecule != 1:
-            assert n == 1 or n == num_molecule, "unable to broadcast"
-        else:
-            num_molecule = n
-    for k, v in properties.items():
-        shape = list(v.shape)
-        shape[0] = num_molecule
-        properties[k] = v.expand(shape)
-    return properties
-
-
 def pad_atomic_properties(
     properties: tp.Sequence[tp.Mapping[str, Tensor]],
     padding_values: tp.Optional[tp.Dict[str, float]] = None,
@@ -252,32 +234,6 @@ def pad_atomic_properties(
             output[k][index0:index0 + n, 0:original_size, ...] = x[k]
             index0 += n
     return output
-
-
-# Given a vector of species of atoms, compute the unique species present.
-# Arguments:
-# species (:class:`torch.Tensor`): 1D vector of shape ``(atoms,)``
-# Returns:
-# :class:`torch.Tensor`: 1D vector storing present atom types sorted.
-# present_species, _ = species.flatten()._unique(sorted=True)
-def present_species(species):
-    present_species = species.flatten().unique(sorted=True)
-    if present_species[0].item() == -1:
-        present_species = present_species[1:]
-    return present_species
-
-
-# Strip trailing padding atoms.
-# Arguments:
-# atomic_properties (dict): properties to strip
-# Returns:
-# dict: same set of properties with redundant padding atoms stripped.
-def strip_redundant_padding(atomic_properties):
-    species = atomic_properties["species"]
-    non_padding = (species >= 0).any(dim=0).nonzero().squeeze()
-    for k in atomic_properties:
-        atomic_properties[k] = atomic_properties[k].index_select(1, non_padding)
-    return atomic_properties
 
 
 def map_to_central(coordinates: Tensor, cell: Tensor, pbc: Tensor) -> Tensor:

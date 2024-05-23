@@ -6,7 +6,7 @@ import torch
 
 from torchani.models import ANI1x
 from torchani.testing import ANITest, expand
-from torchani.utils import pad_atomic_properties, broadcast_first_dim
+from torchani.utils import pad_atomic_properties
 from torchani.grad import energies_and_forces
 
 
@@ -41,13 +41,11 @@ class TestForce(ANITest):
                 species = torch.tensor(species, device=self.device, dtype=torch.long)
                 forces = torch.tensor(forces, device=self.device)
                 batch.append(
-                    broadcast_first_dim(
-                        {
-                            "species": species,
-                            "coordinates": coordinates,
-                            "forces": forces,
-                        }
-                    )
+                    {
+                        "species": species,
+                        "coordinates": coordinates,
+                        "forces": forces,
+                    }
                 )
         padded_batch = pad_atomic_properties(batch)
         coordinates = padded_batch["coordinates"].to(self.device)

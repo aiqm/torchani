@@ -447,7 +447,6 @@ class TestCellListLargeSystem(ANITest):
         self.aev_fp = self._setup(AEVComputer.like_1x(neighborlist="full_pairwise"))
         if self.jit and self.device == "cuda":
             # JIT + CUDA can have slightly different answers
-            # TODO: Why? maybe due to nvfuser?
             self.rtol = 1.0e-6
             self.atol = 1.0e-6
         else:

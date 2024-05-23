@@ -1,5 +1,4 @@
 from pathlib import Path
-import typing as tp
 import unittest
 import os
 import pickle
@@ -8,22 +7,37 @@ import traceback
 
 import torch
 
-from common_aev_test import _TestAEVBase
 from torchani.testing import TestCase
 from torchani.neighbors import FullPairwise
 from torchani.nn import SpeciesConverter
 from torchani.utils import (
     ChemicalSymbolsToInts,
-    broadcast_first_dim,
     pad_atomic_properties,
     map_to_central,
 )
 from torchani.aev import AEVComputer, StandardAngular, StandardRadial
 from torchani.io import read_xyz
+from torchani.neighbors import CellList
 
 
 path = os.path.dirname(os.path.realpath(__file__))
 N = 97
+
+
+class _TestAEVBase(TestCase):
+    def setUp(self):
+        self.aev_computer = AEVComputer.like_1x()
+        self.radial_length = self.aev_computer.radial_length
+        self._debug_aev = False
+
+    def assertAEVEqual(self, expected_radial, expected_angular, aev):
+        radial = aev[..., : self.radial_length]
+        angular = aev[..., self.radial_length:]
+        if self._debug_aev:
+            aid = 1
+            print(torch.stack([expected_radial[0, aid, :], radial[0, aid, :]]))
+        self.assertEqual(expected_radial, radial)
+        self.assertEqual(expected_angular, angular)
 
 
 class TestAEVConstructor(TestCase):
@@ -81,7 +95,6 @@ class TestIsolated(TestCase):
             self.rcr + 1e-4,
             2 * self.rcr,
         ]
-        error: tp.Tuple[str, float] = ("", 0.0)
         for dist in distances:
             coordinates = torch.tensor(
                 [[[-dist, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, dist]]],
@@ -91,10 +104,8 @@ class TestIsolated(TestCase):
             try:
                 _, _ = self.aev_computer((species, coordinates))
             except IndexError:
-                error = (traceback.format_exc(), dist)
-            if error[0]:
                 self.fail(
-                    f"\n\n{error[0]}\nFailure at distance: {error[1]}\n"
+                    f"\n\n{traceback.format_exc()}\nFailure at distance: {dist}\n"
                     f"Radial r_cut of aev_computer: {self.rcr}\n"
                     f"Angular r_cut of aev_computer: {self.rca}"
                 )
@@ -109,7 +120,6 @@ class TestIsolated(TestCase):
             self.rcr + 1e-4,
             2 * self.rcr,
         ]
-        error: tp.Tuple[str, float] = ("", 0.0)
         for dist in distances:
             coordinates = torch.tensor(
                 [[[0.0, 0.0, 0.0], [0.0, 0.0, dist]]],
@@ -119,10 +129,8 @@ class TestIsolated(TestCase):
             try:
                 _, _ = self.aev_computer((species, coordinates))
             except IndexError:
-                error = (traceback.format_exc(), dist)
-            if error[0]:
                 self.fail(
-                    f"\n\n{error[0]}\nFailure at distance: {error[1]}\n"
+                    f"\n\n{traceback.format_exc()}\nFailure at distance: {dist}\n"
                     f"Radial r_cut of aev_computer: {self.rcr}\n"
                     f"Angular r_cut of aev_computer: {self.rca}"
                 )
@@ -130,16 +138,15 @@ class TestIsolated(TestCase):
     def testH(self):
         # Tests for failure on a single atom
         species = self.symbols_to_idxs(["H"]).to(self.device).unsqueeze(0)
-        error = ""
         coordinates = torch.tensor(
             [[[0.0, 0.0, 0.0]]], requires_grad=True, device=self.device
         )
         try:
             _, _ = self.aev_computer((species, coordinates))
         except IndexError:
-            error = traceback.format_exc()
-        if error:
-            self.fail(f"\n\n{error}\nFailure on lone atom\n")
+            self.fail(
+                f"\n\n{traceback.format_exc()}\nFailure on lone atom\n"
+            )
 
 
 class TestAEV(_TestAEVBase):
@@ -224,9 +231,7 @@ class TestAEV(_TestAEVBase):
                 radial = torch.from_numpy(radial)
                 angular = torch.from_numpy(angular)
                 species_coordinates.append(
-                    broadcast_first_dim(
-                        {"species": species, "coordinates": coordinates}
-                    )
+                    {"species": species, "coordinates": coordinates}
                 )
                 radial_angular.append((radial, angular))
         species_coordinates_dict = pad_atomic_properties(species_coordinates)
@@ -461,6 +466,98 @@ class TestAEVOnBenzenePBC(TestCase):
         _, aev2 = self.aev_computer((species2, coordinates2))
         aev2 = aev2[:, : self.natoms, :]
         self.assertEqual(self.aev, aev2)
+
+
+class TestAEVNIST(_TestAEVBase):
+    def testNIST(self):
+        datafile = os.path.join(path, "test_data/NIST/all")
+        with open(datafile, "rb") as f:
+            data = pickle.load(f)
+            # only use first 100 data points to make test take an
+            # acceptable time
+            for coordinates, species, radial, angular, _, _ in data[:100]:
+                coordinates = torch.from_numpy(coordinates).to(torch.float)
+                species = torch.from_numpy(species)
+                radial = torch.from_numpy(radial).to(torch.float)
+                angular = torch.from_numpy(angular).to(torch.float)
+                _, aev = self.aev_computer((species, coordinates))
+                self.assertAEVEqual(radial, angular, aev)
+
+
+class TestDynamicsAEV(_TestAEVBase):
+    def testBenzene(self):
+        for i in [2, 8]:
+            datafile = os.path.join(path, f"test_data/benzene-md/{i}.dat")
+            with open(datafile, "rb") as f:
+                (
+                    coordinates,
+                    species,
+                    expected_radial,
+                    expected_angular,
+                    _,
+                    _,
+                    cell,
+                    pbc,
+                ) = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
+                species = torch.from_numpy(species).unsqueeze(0)
+                expected_radial = torch.from_numpy(expected_radial).float().unsqueeze(0)
+                expected_angular = (
+                    torch.from_numpy(expected_angular).float().unsqueeze(0)
+                )
+                cell = torch.from_numpy(cell).float()
+                pbc = torch.from_numpy(pbc).bool()
+                _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
+                self.assertAEVEqual(expected_radial, expected_angular, aev)
+
+    def testBenzeneCellList(self):
+        for i in [2, 8]:
+            datafile = os.path.join(path, f"test_data/benzene-md/{i}.dat")
+            self.aev_computer.neighborlist = CellList()
+            with open(datafile, "rb") as f:
+                (
+                    coordinates,
+                    species,
+                    expected_radial,
+                    expected_angular,
+                    _,
+                    _,
+                    cell,
+                    pbc,
+                ) = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
+                species = torch.from_numpy(species).unsqueeze(0)
+                expected_radial = torch.from_numpy(expected_radial).float().unsqueeze(0)
+                expected_angular = (
+                    torch.from_numpy(expected_angular).float().unsqueeze(0)
+                )
+                cell = torch.from_numpy(cell).float()
+                pbc = torch.from_numpy(pbc).bool()
+                _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
+                self.assertAEVEqual(expected_radial, expected_angular, aev)
+
+    def testTripeptide(self):
+        for i in range(100):
+            datafile = os.path.join(path, f"test_data/tripeptide-md/{i}.dat")
+            with open(datafile, "rb") as f:
+                (
+                    coordinates,
+                    species,
+                    expected_radial,
+                    expected_angular,
+                    _,
+                    _,
+                    _,
+                    _,
+                ) = pickle.load(f)
+                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
+                species = torch.from_numpy(species).unsqueeze(0)
+                expected_radial = torch.from_numpy(expected_radial).float().unsqueeze(0)
+                expected_angular = (
+                    torch.from_numpy(expected_angular).float().unsqueeze(0)
+                )
+                _, aev = self.aev_computer((species, coordinates))
+                self.assertAEVEqual(expected_radial, expected_angular, aev)
 
 
 if __name__ == "__main__":
