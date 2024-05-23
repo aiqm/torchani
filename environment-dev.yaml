@@ -27,7 +27,7 @@ dependencies:
   # Optional ASE interface, needed for dynamics and for tests/tools/docs:
   - ase
 
-  # Needed for legacy neurochem file reader
+  # Optional legacy Neurochem model loader
   - lark-parser
 
   # Tests:
