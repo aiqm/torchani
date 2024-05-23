@@ -85,10 +85,10 @@ git clone --recurse-submodules https://github.com/roitberg-group/torchani_sandbo
 cd ./torchani_sandbox
 
 # Create a conda (or mamba) environment
-# Note that environment-dev.yaml contains many optional dependencies needed to
+# Note that dev_environment.yaml contains many optional dependencies needed to
 # build the extensions, build the documentation, and run tests and tools
 # You can comment these out if you are not planning to do that
-conda env create -f ./environment-dev.yaml
+conda env create -f ./dev_environment.yaml
 
 # Install torchani
 pip install -v --no-deps --no-build-isolation -e .
