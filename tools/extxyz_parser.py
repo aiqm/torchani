@@ -1,4 +1,4 @@
-r"""This tool parsers files in the ase extxyz format, like the ones in the 3BPA dataset
+r"""This tool parsers files in the extxyz format, like the ones in the 3BPA dataset
 and converts them into .h5 files
 
 Currently it is fairly specific for 3BPA but can be easily modified.

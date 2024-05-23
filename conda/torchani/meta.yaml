@@ -46,7 +46,7 @@ test:
     - download.sh
     - dataset/*
   commands:
-    - pip install pytest pynvml ase parameterized expecttest
+    - pip install pytest ase parameterized expecttest
     - ./download.sh
     # cuaev test
     - python tests/test_cuaev.py

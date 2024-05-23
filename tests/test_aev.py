@@ -4,9 +4,7 @@ import unittest
 import os
 import pickle
 import itertools
-import ase
 import ase.io
-import math
 import traceback
 from common_aev_test import _TestAEVBase
 from torchani.testing import TestCase
@@ -335,8 +333,11 @@ class TestPBCSeeEachOther(TestCase):
 
     def testNonRectangularPBCConnersSeeEachOther(self):
         species = torch.tensor([[0, 0]])
-        cell = ase.geometry.cellpar_to_cell([10, 10, 10 * math.sqrt(2), 90, 45, 90])
-        cell = torch.tensor(ase.geometry.complete_cell(cell), dtype=torch.double)
+        cell = torch.tensor(
+            [[10.0, 0.0, 0.0], [0.0, 10.0, 0.0], [10.0, 0.0, 10.0]],
+            dtype=torch.double,
+        )
+
         pbc = torch.ones(3, dtype=torch.bool)
 
         xyz1 = torch.tensor([0.1, 0.1, 0.05], dtype=torch.double)
@@ -352,8 +353,10 @@ class TestPBCSeeEachOther(TestCase):
 class TestAEVOnBoundary(TestCase):
     def setUp(self):
         self.eps = 1e-9
-        cell = ase.geometry.cellpar_to_cell([100, 100, 100 * math.sqrt(2), 90, 45, 90])
-        self.cell = torch.tensor(ase.geometry.complete_cell(cell), dtype=torch.double)
+        self.cell = torch.tensor(
+            [[100.0, 0.0, 0.0], [0.0, 100.0, 0.0], [100.0, 0.0, 100.0]],
+            dtype=torch.double,
+        )
         self.inv_cell = torch.inverse(self.cell)
         self.coordinates = torch.tensor(
             [
