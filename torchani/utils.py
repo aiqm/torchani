@@ -482,7 +482,7 @@ class AtomicNumbersToMasses(torch.nn.Module):
     def __init__(
         self,
         masses: tp.Iterable[float] = ATOMIC_MASSES,
-        device: tp.Union[torch.device, tp.Literal["cpu"], tp.Literal["cuda"]] = "cpu",
+        device: tp.Union[torch.device, tp.Literal["cpu", "cuda"]] = "cpu",
         dtype: torch.dtype = torch.float,
     ) -> None:
         super().__init__()

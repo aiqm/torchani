@@ -9,7 +9,6 @@ from torch import Tensor
 # all parameters of a Cutoff **must be passed to init**
 # If cuaev supports the cutoff _cuaev_name must be defined to be a unique string
 class Cutoff(torch.nn.Module):
-
     _cuaev_name: str
 
     def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
@@ -63,15 +62,17 @@ class CutoffSmooth(Cutoff):
         return f"order={self.order}, eps={self.eps:.1e}"
 
 
-_Kinds = tp.Union[
-    tp.Literal["global"],
-    tp.Literal["dummy"],
-    tp.Literal["cosine"],
-    tp.Literal["smooth"],
-    tp.Literal["smooth2"],
-    tp.Literal["smooth4"],
+CutoffArg = tp.Union[
+    tp.Literal[
+        "global",
+        "dummy",
+        "cosine",
+        "smooth",
+        "smooth2",
+        "smooth4",
+    ],
+    Cutoff,
 ]
-CutoffArg = tp.Union[_Kinds, Cutoff]
 
 
 def parse_cutoff_fn(

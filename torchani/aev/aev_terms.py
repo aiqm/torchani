@@ -400,11 +400,7 @@ class StandardAngular(AngularTerm):
         )
 
 
-_Models = tp.Union[
-    tp.Literal["ani1x"],
-    tp.Literal["ani2x"],
-    tp.Literal["ani1ccx"],
-]
+_Models = tp.Literal["ani1x", "ani2x", "ani1ccx"]
 AngularTermArg = tp.Union[_Models, AngularTerm]
 RadialTermArg = tp.Union[_Models, RadialTerm]
 

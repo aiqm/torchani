@@ -1077,13 +1077,15 @@ class CellList(Neighborlist):
         return bool(need_new_list)
 
 
-_Kinds = tp.Union[
-    tp.Literal["full_pairwise"],
-    tp.Literal["cell_list"],
-    tp.Literal["verlet_cell_list"],
-    tp.Literal["base"],
+NeighborlistArg = tp.Union[
+    tp.Literal[
+        "full_pairwise",
+        "cell_list",
+        "verlet_cell_list",
+        "base",
+    ],
+    Neighborlist,
 ]
-NeighborlistArg = tp.Union[_Kinds, Neighborlist]
 
 
 def parse_neighborlist(neighborlist: NeighborlistArg = "base") -> Neighborlist:
