@@ -53,6 +53,7 @@ from torchani import (
     constants,
     grad,
     data,  # TODO: Get rid of this
+    io,
 )
 # NOTE: ase and neurochem are optional dependencies so we don't import those here
 
@@ -77,6 +78,7 @@ __all__ = [
     'datasets',
     'transforms',
     'cli',
+    'io',
     'geometry',
     'calc',
     'assembler',

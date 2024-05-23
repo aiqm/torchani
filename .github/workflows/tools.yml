@@ -40,7 +40,7 @@ jobs:
           --rm
           --gpus all
           ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/inference-benchmark.py --tqdm dataset/xyz_files/CH4-5.xyz"
+          bash -c "python tools/inference-benchmark.py"
 
       - name: COMP6 benchmark
         run: >-

@@ -13,7 +13,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 class TestAEVBenzeneMD(_TestAEVBase):
     def testBenzeneMD(self):
         for i in [2, 8]:
-            datafile = os.path.join(path, "test_data/benzene-md/{}.dat".format(i))
+            datafile = os.path.join(path, f"test_data/benzene-md/{i}.dat")
             with open(datafile, "rb") as f:
                 (
                     coordinates,
@@ -38,7 +38,7 @@ class TestAEVBenzeneMD(_TestAEVBase):
 
     def testBenzeneMDCellList(self):
         for i in [2, 8]:
-            datafile = os.path.join(path, "test_data/benzene-md/{}.dat".format(i))
+            datafile = os.path.join(path, f"test_data/benzene-md/{i}.dat")
             self.aev_computer.neighborlist = CellList()
             with open(datafile, "rb") as f:
                 (

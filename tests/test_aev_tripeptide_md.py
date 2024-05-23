@@ -10,7 +10,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 class TestAEVTripeptideMD(_TestAEVBase):
     def testTripeptideMD(self):
         for i in range(100):
-            datafile = os.path.join(path, "test_data/tripeptide-md/{}.dat".format(i))
+            datafile = os.path.join(path, f"test_data/tripeptide-md/{i}.dat")
             with open(datafile, "rb") as f:
                 (
                     coordinates,

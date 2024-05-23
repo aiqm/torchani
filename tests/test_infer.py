@@ -1,9 +1,9 @@
 import os
 from itertools import product
 import unittest
+from pathlib import Path
 
 import torch
-from ase.io import read
 from parameterized import parameterized_class
 
 import torchani
@@ -11,6 +11,7 @@ from torchani.csrc import CUAEV_IS_INSTALLED
 from torchani.testing import TestCase
 from torchani.benchmark import timeit
 from torchani.grad import energies_and_forces
+from torchani.io import read_xyz
 
 
 devices = ["cuda", "cpu"]
@@ -37,21 +38,16 @@ class TestInfer(TestCase):
         torch._C._jit_set_nvfuser_enabled(True)
 
     def _test(self, model_ref, model_infer):
-        files = ["small.pdb", "1hz5.pdb", "6W8H.pdb"]
-        # Skip 6W8H.pdb (slow on cpu) if device is cpu
-        files = files[:-1] if self.device == "cpu" else files
+        files = ["small.xyz", "1hz5.xyz", "6W8H.xyz"]
         for file in files:
-            filepath = os.path.join(self.path, f"../dataset/pdb/{file}")
-            mol = read(filepath)
-            species = torch.tensor(
-                mol.get_atomic_numbers(), device=self.device
-            ).unsqueeze(0)
-            coordinates = torch.tensor(
-                mol.get_positions(),
-                dtype=torch.float32,
+            # Skip 6W8H.pdb (large, slow) if device is cpu
+            if self.device == "cpu" and file.startswith("6W8H"):
+                continue
+            species, coordinates, _ = read_xyz(
+                (Path(__file__).parent / "test_data") / file,
                 device=self.device,
-            ).unsqueeze(0)
-
+                dtype=torch.float,
+            )
             force1, energy1 = energies_and_forces(model_ref, species, coordinates)
             force2, energy2 = energies_and_forces(model_infer, species, coordinates)
             self.assertEqual(energy1, energy2, atol=1e-5, rtol=1e-5)
@@ -78,17 +74,11 @@ class TestInfer(TestCase):
         """
 
         def run(model, file):
-            filepath = os.path.join(self.path, f"../dataset/pdb/{file}")
-            mol = read(filepath)
-            species = torch.tensor(
-                mol.get_atomic_numbers(), device=self.device
-            ).unsqueeze(0)
-            coordinates = torch.tensor(
-                mol.get_positions(),
-                dtype=torch.float32,
+            species, coordinates, _ = read_xyz(
+                (Path(__file__).parent / "test_data") / file,
                 device=self.device,
-            ).unsqueeze(0)
-            # Calculate energies and forces for the benchmark
+                dtype=torch.float,
+            )
             _, _ = energies_and_forces(model, species, coordinates)
 
         use_cuaev = (self.device == "cuda") and CUAEV_IS_INSTALLED
@@ -102,7 +92,7 @@ class TestInfer(TestCase):
         )
         ani2x_infer_jit = torch.jit.script(ani2x_infer_jit)
 
-        file = "small.pdb"
+        file = "small.xyz"
 
         def run_ani2x():
             run(ani2x_jit, file)

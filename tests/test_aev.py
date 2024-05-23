@@ -1,14 +1,17 @@
+from pathlib import Path
 import typing as tp
-import torch
 import unittest
 import os
 import pickle
 import itertools
-import ase.io
 import traceback
+
+import torch
+
 from common_aev_test import _TestAEVBase
 from torchani.testing import TestCase
 from torchani.neighbors import FullPairwise
+from torchani.nn import SpeciesConverter
 from torchani.utils import (
     ChemicalSymbolsToInts,
     broadcast_first_dim,
@@ -16,6 +19,7 @@ from torchani.utils import (
     map_to_central,
 )
 from torchani.aev import AEVComputer, StandardAngular, StandardRadial
+from torchani.io import read_xyz
 
 
 path = os.path.dirname(os.path.realpath(__file__))
@@ -171,7 +175,7 @@ class TestAEV(_TestAEVBase):
 
     def testIsomers(self):
         for i in range(N):
-            datafile = os.path.join(path, "test_data/ANI1_subset/{}".format(i))
+            datafile = os.path.join(path, f"test_data/ANI1_subset/{i}")
             with open(datafile, "rb") as f:
                 (
                     coordinates,
@@ -212,7 +216,7 @@ class TestAEV(_TestAEVBase):
         species_coordinates = []
         radial_angular = []
         for i in range(N):
-            datafile = os.path.join(path, "test_data/ANI1_subset/{}".format(i))
+            datafile = os.path.join(path, f"test_data/ANI1_subset/{i}")
             with open(datafile, "rb") as f:
                 coordinates, species, radial, angular, _, _ = pickle.load(f)
                 coordinates = torch.from_numpy(coordinates)
@@ -410,15 +414,15 @@ class TestAEVOnBoundary(TestCase):
 class TestAEVOnBenzenePBC(TestCase):
     def setUp(self):
         self.aev_computer = AEVComputer.like_1x()
-        filename = os.path.join(
-            path, "../tools/generate-unit-test-expect/others/Benzene.json"
+        species, coordinates, cell = read_xyz(
+            (Path(__file__).parent / "test_data") / "benzene.xyz"
         )
-        benzene = ase.io.read(filename)
-        self.cell = torch.tensor(benzene.get_cell(complete=True)[:], dtype=torch.float)
-        self.pbc = torch.tensor(benzene.get_pbc(), dtype=torch.bool)
-        symbols_to_idxs = ChemicalSymbolsToInts(["H", "C", "N", "O"])
-        self.species = symbols_to_idxs(benzene.get_chemical_symbols()).unsqueeze(0)
-        self.coordinates = torch.tensor(benzene.get_positions()).unsqueeze(0).float()
+        assert cell is not None
+        self.cell = cell
+        self.pbc = torch.tensor([True, True, True], dtype=torch.bool)
+        self.species, self.coordinates = SpeciesConverter(["H", "C", "N", "O"])(
+            (species, coordinates)
+        )
         _, self.aev = self.aev_computer(
             (self.species, self.coordinates), cell=self.cell, pbc=self.pbc
         )

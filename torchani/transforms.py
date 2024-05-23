@@ -225,9 +225,9 @@ class Compose(Transform):
         return properties
 
     def __repr__(self) -> str:
-        format_string = self.__class__.__name__ + "("
+        parts = [self.__class__.__name__, "("]
         for t in self.transforms:
-            format_string += "\n"
-            format_string += "    {0}".format(t)
-        format_string += "\n)"
-        return format_string
+            parts.append("\n")
+            parts.append(f"    {t}")
+        parts.append("\n)")
+        return "".join(parts)

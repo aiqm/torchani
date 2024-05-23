@@ -417,14 +417,9 @@ class InferModel(torch.nn.Module):
             self._start_layers_list[i + 1] = (
                 self._start_layers_list[i] + self._num_layers_list[i]
             )
-
-        # Flatten weight and bias list
-        self._weight_list = [
-            torch.nn.Parameter(item) for sublist in weight_list for item in sublist
-        ]
-        self._bias_list = [
-            torch.nn.Parameter(item) for sublist in bias_list for item in sublist
-        ]
+        # Flatten lists
+        self._weight_list = [w for sublist in weight_list for w in sublist]
+        self._bias_list = [b for sublist in bias_list for b in sublist]
 
     @torch.jit.unused
     def _copy_weights_and_biases(
@@ -515,6 +510,14 @@ class InferModel(torch.nn.Module):
 
     @jit_unused_if_no_mnp()
     def _multi_net_function_mnp(self, aev: Tensor) -> Tensor:
+        # These lists are not registered, so always cast them here. If they are
+        # already in the correct device/dtype this is a no-op
+        self._weight_list = [
+            p.to(device=aev.device, dtype=aev.dtype) for p in self._weight_list
+        ]
+        self._bias_list = [
+            p.to(device=aev.device, dtype=aev.dtype) for p in self._bias_list
+        ]
         return torch.ops.mnp.run(
             aev,
             self.num_species,
