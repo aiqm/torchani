@@ -45,7 +45,7 @@ from torchani.potentials import (
     EnergyAdder,
 )
 from torchani.aev import AEVComputer, StandardAngular, StandardRadial
-from torchani.aev.aev_terms import (
+from torchani.aev.terms import (
     RadialTermArg,
     AngularTermArg,
     parse_radial_term,

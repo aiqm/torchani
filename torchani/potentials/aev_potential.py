@@ -5,7 +5,7 @@ from torch import Tensor
 from torchani.neighbors import NeighborData
 from torchani.nn import Ensemble, ANIModel
 from torchani.utils import PERIODIC_TABLE
-from torchani.aev.aev_computer import AEVComputer
+from torchani.aev.computer import AEVComputer
 from torchani.potentials.core import Potential
 
 NN = tp.Union[ANIModel, Ensemble]
