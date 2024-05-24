@@ -20,7 +20,7 @@ following command at `torchani` directory will install torchani and all
 extensions together.
 
 ```bash
-git clone --recurse-submodules git@github.com:roitberg-group/torchani_sandbox.git
+git clone git@github.com:roitberg-group/torchani_sandbox.git
 cd torchani_sandbox
 # choose one option below
 # ============== install ==============
@@ -59,7 +59,7 @@ srun --ntasks=1 --cpus-per-task=2 --gres=gpu:1 --time=02:00:00 --mem=10gb  --pty
 # Installing with --ext-all-sms  guarantees that the extension will run correctly
 # whatever the GPU is you select during runs, as long as pytorch supports that GPU
 conda create -f ./environment.yml
-git clone --recurse-submodules https://github.com/roitberg-group/torchani_sandbox.git
+git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd torchani_sandbox
 pip install  -v --no-deps --no-build-isolation --editable .
 pip install -v --no-deps --no-build-isolation --editable . --global-option="--ext-all-sms"

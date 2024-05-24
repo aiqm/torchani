@@ -42,13 +42,13 @@ jobs:
           ${{ steps.meta.outputs.tags }}
           bash -c "python tools/inference-benchmark.py"
 
-      - name: COMP6 benchmark
+      - name: COMP6v1 benchmark
         run: >-
           docker run
           --rm
           --gpus all
           ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/comp6.py dataset/COMP6/COMP6v1/s66x8"
+          bash -c "python tools/comp6v1-benchmark.py"
 
       - name: Training benchmark
         run: >-

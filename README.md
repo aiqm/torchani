@@ -81,7 +81,7 @@ To build install TorchANI directly from the GitHub repo run the following:
 
 ```bash
 # Clone the repo and cd to the directory
-git clone --recurse-submodules https://github.com/roitberg-group/torchani_sandbox.git
+git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd ./torchani_sandbox
 
 # Create a conda (or mamba) environment
@@ -117,7 +117,7 @@ Note: please use a venv if you are installing torchani using `pip`
 
 ```bash
 # Clone the repo and cd to the directory
-git clone --recurse-submodules https://github.com/roitberg-group/torchani_sandbox.git
+git clone https://github.com/roitberg-group/torchani_sandbox.git
 cd ./torchani_sandbox
 
 # TODO: create a venv
