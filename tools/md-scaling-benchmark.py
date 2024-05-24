@@ -1,9 +1,9 @@
 import typing as tp
 from pathlib import Path
 import time
+import math
 import pickle
 import copy
-import timeit
 
 import torch
 import numpy as np
@@ -18,7 +18,19 @@ import matplotlib as mpl
 from torchani import geometry
 from torchani.models import ANI1x, ANI2x, ANI1ccx
 from torchani.ase import Calculator
-from molecule_utils import make_water, tensor_from_xyz
+from torchani.io import read_xyz
+
+
+def make_water(device=None, eq_bond=0.957582, eq_angle=104.485):
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    d = eq_bond
+    t = (math.pi / 180) * eq_angle  # convert to radians
+    coordinates = torch.tensor(
+        [[d, 0, 0], [d * math.cos(t), d * math.sin(t), 0], [0, 0, 0]], device=device
+    ).double()
+    species = torch.tensor([[1, 1, 8]], device=device, dtype=torch.long)
+    return species, coordinates.double()
 
 
 def plot_file(file_path, comment, show=False):
@@ -253,8 +265,7 @@ if __name__ == "__main__":
 
             xyz_files = [p for p in path_to_xyz.iterdir() if ".xyz" == p.suffix]
             for f in xyz_files:
-                species, coordinates, _ = tensor_from_xyz(f)
-                sizes_list.append(len(species))
+                sizes_list.append(read_xyz(f)[0].shape[1])
             sizes = np.asarray(sizes_list)
             xyz_files = np.asarray(xyz_files)
             idx = np.argsort(sizes)
@@ -276,10 +287,10 @@ if __name__ == "__main__":
         def time_func(key, func):
             def wrapper(*args, **kwargs):
                 torch.cuda.synchronize()
-                start = timeit.default_timer()
+                start = time.perf_counter()
                 ret = func(*args, **kwargs)
                 torch.cuda.synchronize()
-                end = timeit.default_timer()
+                end = time.perf_counter()
                 timers[key] += (end - start) / (3600 * 24) * 1e6 / 100
                 return ret
 
@@ -320,7 +331,7 @@ if __name__ == "__main__":
                         (species, coordinates), density=0.0923, noise=0.1, repeats=r + 1
                     )
                 else:
-                    species, coordinates, cell = tensor_from_xyz(r)
+                    species, coordinates, cell = read_xyz(r)
 
                 coordinates.requires_grad_()
                 calc = model.ase()
@@ -332,8 +343,8 @@ if __name__ == "__main__":
                     torch._C._jit_set_nvfuser_enabled(False)
                     calc.model = torch.jit.script(calc.model)
                 atoms_args = {
-                    "symbols": species.squeeze().tolist(),
-                    "positions": coordinates.to(torch.float).squeeze().tolist(),
+                    "symbols": species.squeeze(0).tolist(),
+                    "positions": coordinates.to(torch.float).squeeze(0).tolist(),
                     "calculator": calc,
                 }
 
@@ -344,9 +355,9 @@ if __name__ == "__main__":
 
                 # run and time Langevin dynamics
                 dyn = Langevin(molecule, 1 * units.fs, 300 * units.kB, 0.2)
-                start = time.time()
+                start = time.perf_counter()
                 dyn.run(args.steps)
-                end = time.time()
+                end = time.perf_conter()
 
                 times.append((end - start) * 1e6 / args.steps / (3600 * 24))
                 timers_list.append(copy.deepcopy(timers))

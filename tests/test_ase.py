@@ -1,3 +1,4 @@
+import shutil
 import typing as tp
 from pathlib import Path
 from itertools import product
@@ -181,6 +182,11 @@ class TestASE(ANITest):
 
 @expand(jit=False)
 class TestVibrationsASE(ANITest):
+    def tearDown(self) -> None:
+        vib_path = Path(Path(__file__).parent, "vib")
+        if vib_path.is_dir():
+            shutil.rmtree(vib_path)
+
     def testWater(self) -> None:
         model = ANI1x().double()
         data_path = Path(Path(__file__).parent, "test_data", "water-vib-expect.npz")

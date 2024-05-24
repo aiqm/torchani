@@ -10,64 +10,12 @@ import pynvml
 from tqdm import tqdm
 
 import torchani
+from torchani.models import ANI1x
 from torchani.units import hartree2kcalpermol
-from tool_utils import time_functions_in_model
+from tool_utils import time_functions
 
 summary = ""
 runcounter = 0
-
-
-def build_network():
-    H_network = torch.nn.Sequential(
-        torch.nn.Linear(384, 160),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(160, 128),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(128, 96),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(96, 1),
-    )
-
-    C_network = torch.nn.Sequential(
-        torch.nn.Linear(384, 144),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(144, 112),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(112, 96),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(96, 1),
-    )
-
-    N_network = torch.nn.Sequential(
-        torch.nn.Linear(384, 128),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(128, 112),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(112, 96),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(96, 1),
-    )
-
-    O_network = torch.nn.Sequential(
-        torch.nn.Linear(384, 128),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(128, 112),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(112, 96),
-        torch.nn.CELU(0.1),
-        torch.nn.Linear(96, 1),
-    )
-    nets = [H_network, C_network, N_network, O_network]
-
-    for net in nets:
-        net.apply(init_normal)
-
-    return nets
-
-
-def init_normal(m):
-    if isinstance(m, torch.nn.Linear):
-        torch.nn.init.kaiming_uniform_(m.weight)
 
 
 def checkgpu(device=None):
@@ -129,36 +77,33 @@ def benchmark(args, dataset, use_cuda_extension, force_train=False):
     if args.nsight and runcounter >= 0:
         torch.cuda.nvtx.range_push(args.runname)
     synchronize = True
-    timers = {}
-
-    aev_computer = torchani.AEVComputer.like_1x(use_cuda_extension=use_cuda_extension)
-
-    nn = torchani.ANIModel(build_network())
+    _model = ANI1x(model_index=0, use_cuda_extension=use_cuda_extension)
+    aev_computer = _model.aev_computer
+    nn = _model.neural_networks
     model = torch.nn.Sequential(aev_computer, nn).to(args.device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.000001)
     mse = torch.nn.MSELoss(reduction="none")
 
     # enable timers
-    timers: tp.Dict[str, int] = dict()
-    fn_to_time_aev = [
+    timers: tp.Dict[str, float] = {}
+    _aev_fns = (
         "_compute_radial_aev",
         "_compute_angular_aev",
         "_compute_aev",
         "_triple_by_molecule",
         "forward",
-    ]
-    fn_to_time_neighborlist = ["forward"]
-    fn_to_time_nn = ["forward"]
-    fn_to_time_opt = ["step"]
-    fn_to_time_model = ["forward"]
-
-    time_functions_in_model(model, fn_to_time_model, timers, synchronize)
-    time_functions_in_model(aev_computer, fn_to_time_aev, timers, synchronize)
-    time_functions_in_model(
-        aev_computer.neighborlist, fn_to_time_neighborlist, timers, synchronize
     )
-    time_functions_in_model(nn, fn_to_time_nn, timers, synchronize)
-    time_functions_in_model(optimizer, fn_to_time_opt, timers, synchronize)
+    time_functions(
+        [
+            ("forward", model),
+            ("forward", aev_computer.neighborlist),
+            ("step", optimizer),
+            (_aev_fns, aev_computer),
+            ("forward", nn),
+        ],
+        timers,
+        synchronize,
+    )
 
     print("=> start training")
     start = time.time()
@@ -166,7 +111,6 @@ def benchmark(args, dataset, use_cuda_extension, force_train=False):
     force_time = 0
 
     for epoch in range(0, args.num_epochs):
-
         print("Epoch: %d/%d" % (epoch + 1, args.num_epochs))
         pbar = tqdm(desc="rmse: ?", total=len(dataset))
 
