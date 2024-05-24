@@ -52,6 +52,7 @@ from torchani.aev.terms import (
     parse_angular_term,
 )
 from torchani.nn import ANIModel, Ensemble
+from torchani.atomics import AtomicContainer
 from torchani.utils import GSAES, sort_by_element
 from torchani.storage import STATE_DICTS_DIR
 
@@ -81,9 +82,9 @@ class FeaturizerWrapper:
         self.cutoff_fn = cutoff_fn
         self.radial_terms = parse_radial_term(radial_terms)
         self.angular_terms = parse_angular_term(angular_terms)
-        if angular_terms.cutoff > radial_terms.cutoff:  # type: ignore
+        if self.angular_terms.cutoff > self.radial_terms.cutoff:
             raise ValueError("Angular cutoff must be smaller or equal to radial cutoff")
-        if angular_terms.cutoff <= 0 or radial_terms.cutoff <= 0:  # type: ignore
+        if self.angular_terms.cutoff <= 0 or self.radial_terms.cutoff <= 0:
             raise ValueError("Cutoffs must be strictly positive")
         self.extra = extra
 
@@ -303,7 +304,7 @@ class Assembler:
             **feat_kwargs,  # type: ignore
         )
         # This fails because the attribute is marked as final, but it should not be
-        neural_networks: tp.Union[ANIModel, Ensemble]
+        neural_networks: AtomicContainer
         if self._fn_for_networks is not None:
             self._atomic_networks = {
                 s: self._fn_for_networks(s, featurizer.aev_length) for s in self.symbols

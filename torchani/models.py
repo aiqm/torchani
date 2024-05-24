@@ -65,7 +65,8 @@ from torchani.tuples import (
     ForceStdev,
     ForceMagnitudes,
 )
-from torchani.nn import SpeciesConverter, Ensemble, ANIModel
+from torchani.atomics import AtomicContainer
+from torchani.nn import SpeciesConverter
 from torchani.utils import (
     PERIODIC_TABLE,
     ATOMIC_NUMBERS,
@@ -80,9 +81,6 @@ from torchani.potentials import (
 from torchani.neighbors import rescreen
 
 
-NN = tp.Union[ANIModel, Ensemble]
-
-
 class BuiltinModel(torch.nn.Module):
     r"""Private template for the builtin ANI models"""
 
@@ -92,7 +90,7 @@ class BuiltinModel(torch.nn.Module):
     def __init__(
         self,
         aev_computer: AEVComputer,
-        neural_networks: NN,
+        neural_networks: AtomicContainer,
         energy_shifter: EnergyAdder,
         elements: tp.Sequence[str],
         periodic_table_index: bool = True,

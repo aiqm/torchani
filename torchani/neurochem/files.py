@@ -8,7 +8,7 @@ import shutil
 from pathlib import Path
 
 from torchani.aev import AEVComputer
-from torchani.nn import Ensemble, ANIModel
+from torchani.atomics import AtomicContainer
 from torchani.models import BuiltinModel
 from torchani.storage import NEUROCHEM_DIR
 from torchani.potentials import EnergyAdder
@@ -31,8 +31,6 @@ __all__ = [
 
 
 SUPPORTED_MODELS = {"ani1x", "ani2x", "ani1ccx"}
-
-NN = tp.Union[ANIModel, Ensemble]
 
 
 @dataclass
@@ -108,7 +106,7 @@ def modules_from_info(
     model_index: tp.Optional[int] = None,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
-) -> tp.Tuple[AEVComputer, NN, EnergyAdder, tp.Sequence[str]]:
+) -> tp.Tuple[AEVComputer, AtomicContainer, EnergyAdder, tp.Sequence[str]]:
     aev_computer, symbols = load_aev_computer_and_symbols(
         info.const,
         use_cuda_extension=use_cuda_extension,
@@ -116,7 +114,7 @@ def modules_from_info(
     )
     adder = load_energy_adder(info.sae)
 
-    neural_networks: NN
+    neural_networks: AtomicContainer
     if model_index is None:
         neural_networks = load_model_ensemble(
             symbols, info.ensemble_prefix, info.ensemble_size
@@ -141,7 +139,7 @@ def modules_from_builtin_name(
     model_index: tp.Optional[int] = None,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
-) -> tp.Tuple[AEVComputer, NN, EnergyAdder, tp.Sequence[str]]:
+) -> tp.Tuple[AEVComputer, AtomicContainer, EnergyAdder, tp.Sequence[str]]:
     r"""
     Creates the necessary modules to generate a pretrained builtin model,
     parsing the data from legacy neurochem files. and optional arguments to
@@ -160,7 +158,7 @@ def modules_from_info_file(
     model_index: tp.Optional[int] = None,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
-) -> tp.Tuple[AEVComputer, NN, EnergyAdder, tp.Sequence[str]]:
+) -> tp.Tuple[AEVComputer, AtomicContainer, EnergyAdder, tp.Sequence[str]]:
     r"""
     Creates the necessary modules to generate a pretrained neurochem model,
     parsing the data from legacy neurochem files. and optional arguments to

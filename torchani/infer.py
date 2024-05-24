@@ -5,8 +5,8 @@ from torch import Tensor
 
 from torchani.utils import check_openmp_threads
 from torchani.tuples import SpeciesEnergies
-from torchani.nn import Ensemble, ANIModel
 from torchani.csrc import MNP_IS_INSTALLED
+from torchani.atomics import AtomicContainer
 
 
 if MNP_IS_INSTALLED:
@@ -56,9 +56,10 @@ def _build_new_idx_list(
     return idx_list
 
 
-class BmmEnsemble(torch.nn.Module):
+class BmmEnsemble(AtomicContainer):
     r"""
-    The inference-optimized analogue of an ANIModel.
+    The inference-optimized analogue of an Ensemble, functions just like a
+    single ANIModel.
 
     This class fuses all networks of an ensemble that correspond to the same
     element into one single BmmAtomicNetwork.
@@ -74,20 +75,23 @@ class BmmEnsemble(torch.nn.Module):
     The BmmAtomicNetwork modules consist of sequences of BmmLinear, which
     perform Batched Matrix Multiplication (BMM).
     """
-    num_networks: int
-    num_species: int
 
-    def __init__(self, ensemble: Ensemble):
+    def __init__(self, ensemble: AtomicContainer):
         super().__init__()
         self._MNP_IS_INSTALLED = MNP_IS_INSTALLED
-        self.num_networks = 1  # BmmEnsemble operates as a single ANIModel
+        self.num_networks = 1  # Operates as a single ANIModel
         self.num_batched_networks = ensemble.num_networks
         self.num_species = ensemble.num_species
-
+        if not hasattr(ensemble, "members"):
+            raise TypeError(
+                "BmmEnsemble can only take a torchani.nn.Ensemble as an input"
+            )
         self.atomic_networks = torch.nn.ModuleList(
             [
-                BmmAtomicNetwork([animodel[symbol] for animodel in ensemble])
-                for symbol in ensemble[0]
+                BmmAtomicNetwork(
+                    [animodel.atomics[symbol] for animodel in ensemble.members]
+                )
+                for symbol in ensemble.member(0).atomics
             ]
         )
 
@@ -99,7 +103,7 @@ class BmmEnsemble(torch.nn.Module):
             [],
         )
 
-    def forward(  # type: ignore
+    def forward(
         self,
         species_aev: tp.Tuple[Tensor, Tensor],
         cell: tp.Optional[Tensor] = None,
@@ -160,7 +164,7 @@ class BmmAtomicNetwork(torch.nn.Module):
     of an ensemble. They consist on a sequence of BmmLinear layers with
     interleaved activation functions.
 
-    BmmAtomicNetworks are used by BmmEnsemble to operate like a normal ANIModel
+    BmmAtomicNetworks are used by BmmEnsemble to operate like a single ANIModel
     and avoid iterating over the ensemble members.
     """
 
@@ -336,13 +340,11 @@ class MultiNetFunction(torch.autograd.Function):
         return aev_grad, None, None, None
 
 
-class InferModel(torch.nn.Module):
-    num_networks: int
-    num_species: int
+class InferModel(AtomicContainer):
     _is_bmm: bool
     _use_mnp: bool
 
-    def __init__(self, module: tp.Union[Ensemble, ANIModel], use_mnp: bool = False):
+    def __init__(self, module: AtomicContainer, use_mnp: bool = False):
         super().__init__()
         if not torch.cuda.is_available():
             raise RuntimeError(
@@ -365,19 +367,22 @@ class InferModel(torch.nn.Module):
         warnings.warn(msg, category=DeprecationWarning)
 
         self._MNP_IS_INSTALLED = MNP_IS_INSTALLED
-        self.num_networks = 1  # For compatibility with ANIModel and Ensemble API
+        self.num_networks = 1
         self.num_species = module.num_species
 
-        if isinstance(module, Ensemble):
+        # In this case it is an Ensemble (note that we duck type this)
+        if hasattr(module, "members"):
             self.atomic_networks = torch.nn.ModuleList(
                 [
-                    BmmAtomicNetwork([animodel[symbol] for animodel in module])
-                    for symbol in module[0]
+                    BmmAtomicNetwork(
+                        [animodel.atomics[symbol] for animodel in module.members]
+                    )
+                    for symbol in module.member(0).atomics
                 ]
             )
         else:
-            self.atomic_networks = torch.nn.ModuleList(list(module.values()))
-        self._is_bmm = isinstance(module, Ensemble)
+            self.atomic_networks = torch.nn.ModuleList(list(module.atomics.values()))
+        self._is_bmm = hasattr(module, "members")
 
         self._use_mnp = use_mnp
 
@@ -468,7 +473,7 @@ class InferModel(torch.nn.Module):
 
     def forward(
         self,
-        species_aev: tp.Tuple[Tensor, Tensor],  # type: ignore
+        species_aev: tp.Tuple[Tensor, Tensor],
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesEnergies:
@@ -530,7 +535,3 @@ class InferModel(torch.nn.Module):
             self._is_bmm,
             self._celu_alpha,
         )
-
-    @torch.jit.export
-    def _atomic_energies(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:
-        raise NotImplementedError("Not implemented for InferModel")

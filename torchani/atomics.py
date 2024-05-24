@@ -3,6 +3,43 @@ import typing as tp
 from copy import deepcopy
 
 import torch
+from torch import Tensor
+
+from torchani.tuples import SpeciesEnergies
+
+
+class AtomicContainer(torch.nn.Module):
+    r"""Base class for ANI modules that contain atomic neural networks"""
+    num_networks: int
+    num_species: int
+
+    def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
+        super().__init__()
+        self.num_networks = 0
+        self.num_species = 0
+
+    def forward(
+        self,
+        species_aev: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> SpeciesEnergies:
+        raise NotImplementedError()
+
+    def member(self, idx: int) -> "AtomicContainer":
+        if idx == 0:
+            return self
+        raise IndexError("Only idx=0 supported")
+
+    @torch.jit.export
+    def _atomic_energies(
+        self,
+        species_aev: tp.Tuple[Tensor, Tensor],
+    ) -> Tensor:
+        raise NotImplementedError()
+
+    def to_infer_model(self, use_mnp: bool = False) -> "AtomicContainer":
+        return self
 
 
 def _parse_activation(module: tp.Union[str, torch.nn.Module]) -> torch.nn.Module:
