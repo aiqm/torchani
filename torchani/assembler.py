@@ -25,7 +25,6 @@ These pieces are assembled into a Model, which is a subclass of BuiltinModel
 Some of the Featurizers support custom made cuda operators that accelerate them
 """
 import functools
-from copy import deepcopy
 import math
 from dataclasses import dataclass
 from collections import OrderedDict
@@ -121,7 +120,6 @@ class Assembler:
         self._fn_for_networks: tp.Optional[
             tp.Callable[[str, int], torch.nn.Module]
         ] = None
-        self._atomic_networks: tp.Dict[str, torch.nn.Module] = {}
         self._shifter_type: ShifterType = shifter_type
         self._container_type: ContainerType = container_type
         self._symbols: tp.Tuple[str, ...] = tuple(symbols)
@@ -167,13 +165,6 @@ class Assembler:
             self._symbols = sort_by_element(symbols)
         else:
             self._symbols = tuple(symbols)
-
-    @property
-    def atomic_networks(self) -> tp.OrderedDict[str, torch.nn.Module]:
-        odict = OrderedDict()
-        for k in self.symbols:
-            odict[k] = deepcopy(self._atomic_networks[k])
-        return odict
 
     def set_atomic_maker(
         self,
@@ -277,6 +268,17 @@ class Assembler:
             )
         )
 
+    def build_atomic_networks(
+        self, in_dim: int
+    ) -> tp.OrderedDict[str, torch.nn.Module]:
+        if self._fn_for_networks is None:
+            raise RuntimeError(
+                "Atomic Network Maker not set. Call 'set_atomic_maker' before assembly"
+            )
+        return OrderedDict(
+            [(s, self._fn_for_networks(s, in_dim)) for s in self.symbols]
+        )
+
     def assemble(self) -> BuiltinModel:
         if not self.symbols:
             raise RuntimeError("Symbols not set. Call 'set_symbols' before assembly")
@@ -303,23 +305,20 @@ class Assembler:
             num_species=self.elements_num,
             **feat_kwargs,  # type: ignore
         )
-        # This fails because the attribute is marked as final, but it should not be
         neural_networks: AtomicContainer
-        if self._fn_for_networks is not None:
-            self._atomic_networks = {
-                s: self._fn_for_networks(s, featurizer.aev_length) for s in self.symbols
-            }
-        else:
-            raise RuntimeError(
-                "Atomic Network Maker not set. Call 'set_atomic_maker' before assembly"
-            )
         if self.ensemble_size > 1:
             containers = []
             for j in range(self.ensemble_size):
-                containers.append(self._container_type(self.atomic_networks))
+                containers.append(
+                    self._container_type(
+                        self.build_atomic_networks(featurizer.aev_length)
+                    )
+                )
             neural_networks = Ensemble(containers)
         else:
-            neural_networks = self._container_type(self.atomic_networks)
+            neural_networks = self._container_type(
+                self.build_atomic_networks(featurizer.aev_length)
+            )
         self_energies = self.self_energies
         shifter = self._shifter_type(
             symbols=self.symbols,

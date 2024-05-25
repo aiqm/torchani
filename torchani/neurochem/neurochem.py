@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 import torch
 from torch import Tensor
+
 try:
     import lark
 except ImportError:
@@ -72,7 +73,7 @@ def load_constants(
                     ]
                     aev_consts[name] = torch.tensor(float_values)
                 elif name == "Atyp":
-                    species = tuple(
+                    symbols = tuple(
                         x.strip()
                         for x in value.replace("[", "").replace("]", "").split(",")
                     )
@@ -80,7 +81,7 @@ def load_constants(
                 raise NeurochemParseError(
                     f"Unable to parse const file {consts_file}"
                 ) from None
-    return aev_consts, aev_cutoffs, species
+    return aev_consts, aev_cutoffs, symbols
 
 
 def load_energy_adder(filename: tp.Union[Path, str]) -> EnergyAdder:
@@ -91,11 +92,11 @@ def load_energy_adder(filename: tp.Union[Path, str]) -> EnergyAdder:
     with open(Path(filename).resolve(), mode="rt", encoding="utf-8") as f:
         for i in f:
             line = [x.strip() for x in i.split("=")]
-            species = line[0].split(",")[0].strip()
-            index = int(line[0].split(",")[1].strip())
-            value = float(line[1])
-            _symbols.append((index, species))
-            _self_energies.append((index, value))
+            symbol = line[0].split(",")[0].strip()
+            idx = int(line[0].split(",")[1].strip())
+            energy = float(line[1])
+            _symbols.append((idx, symbol))
+            _self_energies.append((idx, energy))
     self_energies = [e for _, e in sorted(_self_energies)]
     symbols = [s for _, s in sorted(_symbols)]
     return EnergyAdder(symbols, self_energies)
@@ -290,40 +291,40 @@ def load_atomic_network(filename: tp.Union[Path, str]) -> torch.nn.Sequential:
         return torch.nn.Sequential(*layers)
 
 
-def load_model(species: tp.Sequence[str], model_dir: tp.Union[Path, str]) -> ANIModel:
+def load_model(symbols: tp.Sequence[str], model_dir: tp.Union[Path, str]) -> ANIModel:
     """Returns an instance of :class:`torchani.nn.ANIModel` loaded from
     NeuroChem's network directory.
 
     Arguments:
-        species (:class:`collections.abc.Sequence`): Sequence of strings for
+        symbols (:class:`collections.abc.Sequence`): Sequence of strings for
             chemical symbols of each supported atom type in correct order.
         model_dir (str): String for directory storing network configurations.
     """
     model_dir = Path(model_dir).resolve()
-    models = OrderedDict()
-    for i in species:
-        models[i] = load_atomic_network(model_dir / f"ANN-{i}.nnf")
-    return ANIModel(models)
+    return ANIModel(
+        OrderedDict(
+            [(s, load_atomic_network(model_dir / f"ANN-{s}.nnf")) for s in symbols]
+        )
+    )
 
 
 def load_model_ensemble(
-    species: tp.Sequence[str], prefix: tp.Union[Path, str], count: int
+    symbols: tp.Sequence[str], prefix: tp.Union[Path, str], count: int
 ) -> Ensemble:
     """Returns an instance of :class:`torchani.nn.Ensemble` loaded from
     NeuroChem's network directories beginning with the given prefix.
 
     Arguments:
-        species (:class:`collections.abc.Sequence`): Sequence of strings for
+        symbols (:class:`collections.abc.Sequence`): Sequence of strings for
             chemical symbols of each supported atom type in correct order.
         prefix (str): Prefix of paths of directory that networks configurations
             are stored.
         count (int): Number of models in the ensemble.
     """
     prefix = Path(prefix)
-    models = []
-    for i in range(count):
-        models.append(load_model(species, model_dir_from_prefix(prefix, i)))
-    return Ensemble(models)
+    return Ensemble(
+        [load_model(symbols, model_dir_from_prefix(prefix, i)) for i in range(count)]
+    )
 
 
 __all__ = [
