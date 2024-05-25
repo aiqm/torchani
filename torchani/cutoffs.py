@@ -6,7 +6,7 @@ from torch import Tensor
 
 
 # All cutoffs assume the elements in "distances" are smaller than "cutoff"
-# all parameters of a Cutoff **must be passed to init**
+# all parameters of a Cutoff **must be passed to init of the superclass**
 # If cuaev supports the cutoff _cuaev_name must be defined to be a unique string
 class Cutoff(torch.nn.Module):
     _cuaev_name: str
