@@ -6,7 +6,6 @@ import unittest
 
 import torch
 
-from torchani.benchmark import timeit
 from torchani.models import ANI2x
 from torchani.testing import ANITest, expand
 from torchani.csrc import MNP_IS_INSTALLED, CUAEV_IS_INSTALLED
@@ -113,44 +112,6 @@ class TestInfer(ANITest):
             self._build_ani2x(idx=0),
             self._build_ani2x(mnp=True, idx=0, infer=True),
         )
-
-    def testBenchmark(self):
-        self._benchmark()
-
-    def testBenchmark_mnp(self):
-        self._benchmark(mnp=True)
-
-    def _benchmark(self, mnp: bool = False) -> None:
-        """
-        Sample benchmark result on 2080 Ti
-        cuda:
-            run_ani2x                          : 21.739 ms/step
-            run_ani2x_infer                    : 9.630 ms/step
-        cpu:
-            run_ani2x                          : 756.459 ms/step
-            run_ani2x_infer                    : 32.482 ms/step
-        """
-        def _run(model, file):
-            species, coordinates, _ = read_xyz(
-                (Path(__file__).parent / "test_data") / file,
-                device=self.device,
-                dtype=torch.float,
-            )
-            _, _ = energies_and_forces(model, species, coordinates)
-
-        ani2x = self._build_ani2x()
-        ani2x_infer = self._build_ani2x(mnp=mnp, infer=True)
-
-        def run():
-            _run(ani2x, "small.xyz")
-
-        def run_infer():
-            _run(ani2x_infer, "small.xyz")
-
-        steps = 10 if self.device == "cpu" else 30
-        print()
-        timeit(run, steps=steps)
-        timeit(run_infer, steps=steps)
 
 
 if __name__ == "__main__":

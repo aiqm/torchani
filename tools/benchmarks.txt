@@ -1,0 +1,63 @@
+
+# no jit fork
+                 MNP Ensemble Benchmark                  
+ device  strategy    JIT    cuAEV  time      speedup [%] 
+ cpu     --          True   False  49.46896  --          
+ cpu     BMM         True   False  34.84702  41.96       
+ cpu     cppMNP+BMM  True   False  45.09594  9.70        
+ cuda    --          True   True   18.34608  --          
+ cuda    BMM         True   True   4.04518   353.53      
+ cuda    cppMNP+BMM  True   True   3.29240   457.23      
+ cpu     --          False  False  64.40243  --          
+ cpu     BMM         False  False  47.16852  36.54       
+ cpu     cppMNP+BMM  False  False  45.58725  41.27       
+ cuda    --          False  True   23.11250  --          
+ cuda    BMM         False  True   4.86697   374.88      
+ cuda    cppMNP+BMM  False  True   3.08896   648.23      
+
+              MNP Single Model Benchmark               
+ device  strategy  JIT    cuAEV  time      speedup [%] 
+ cpu     --        True   False  27.68927  --          
+ cpu     cppMNP    True   False  25.83739  7.17        
+ cuda    --        True   True   3.79654   --          
+ cuda    cppMNP    True   True   2.56786   47.85       
+ cpu     --        False  False  32.07999  --          
+ cpu     pyMNP     False  False  29.21881  9.79        
+ cpu     cppMNP    False  False  26.98791  18.87       
+ cuda    --        False  True   4.47051   --          
+ cuda    pyMNP     False  True   5.24694   -14.80      
+ cuda    cppMNP    False  True   2.89157   54.60       
+
+
+# jit fork
+                  MNP Ensemble Benchmark                  
+ device  strategy    JIT    cuAEV  time       speedup [%] 
+ cpu     --          True   False  252.79600  --          
+ cpu     BMM         True   False  34.60659   630.49      
+ cpu     cppMNP+BMM  True   False  44.58141   467.04      
+ cuda    --          True   True   17.04337   --          
+ cuda    BMM         True   True   4.12925    312.75      
+ cuda    cppMNP+BMM  True   True   3.06811    455.50      
+ cpu     --          False  False  63.64925   --          
+ cpu     BMM         False  False  46.48059   36.94       
+ cpu     cppMNP+BMM  False  False  45.43016   40.10       
+ cuda    --          False  True   22.99959   --          
+ cuda    BMM         False  True   4.85133    374.09      
+ cuda    cppMNP+BMM  False  True   3.46447    563.87      
+
+Running Single Model in cpu, JIT: True
+Running Single Model in cuda, JIT: True
+Running Single Model in cpu, JIT: False
+Running Single Model in cuda, JIT: False
+               MNP Single Model Benchmark               
+ device  strategy  JIT    cuAEV  time       speedup [%] 
+ cpu     --        True   False  137.64382  --          
+ cpu     cppMNP    True   False  26.01996   428.99      
+ cuda    --        True   True   3.62793    --          
+ cuda    cppMNP    True   True   2.65356    36.72       
+ cpu     --        False  False  29.12184   --          
+ cpu     pyMNP     False  False  29.44318   -1.09       
+ cpu     cppMNP    False  False  27.72037   5.06        
+ cuda    --        False  True   4.51741    --          
+ cuda    pyMNP     False  True   5.40080    -16.36      
+ cuda    cppMNP    False  True   2.97547    51.82       

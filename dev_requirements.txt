@@ -29,3 +29,4 @@ tensorboard
 # Tools: Utils for running various scripts found in /torchani/tools/
 pynvml
 matplotlib
+rich

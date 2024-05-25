@@ -46,6 +46,7 @@ dependencies:
   # Tools :
   - matplotlib
   - pynvml
+  - rich
 
   # Docs:
   - sphinx
