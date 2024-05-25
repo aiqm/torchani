@@ -74,7 +74,7 @@ class TestInfer(ANITest):
     def _test(self, model_ref, model_infer):
         files = ["small.xyz", "1hz5.xyz", "6W8H.xyz"]
         for file in files:
-            # Skip 6W8H.pdb (large, slow) if device is cpu
+            # Skip 6W8H.xyz (large, slow) if device is cpu
             if self.device == "cpu" and file.startswith("6W8H"):
                 continue
             species, coordinates, _ = read_xyz(
