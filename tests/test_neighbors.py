@@ -21,9 +21,16 @@ class TestCellList(TestCase):
         # 3 buckets in each direction are needed to cover it, if one uses
         # a cutoff of 5.2 and a bucket length of 5.200001
         coordinates = torch.tensor(
-            [[cut / 2, cut / 2, cut / 2], [cut / 2 + 0.1, cut / 2 + 0.1, cut / 2 + 0.1]]
-        ).unsqueeze(0)
-        species = torch.tensor([0, 0]).unsqueeze(0)
+            [
+                [
+                    [cut / 2, cut / 2, cut / 2],
+                    [cut / 2 + 0.1, cut / 2 + 0.1, cut / 2 + 0.1],
+                ]
+            ],
+            dtype=torch.float,
+            device=self.device,
+        )
+        species = torch.tensor([[1, 1]], dtype=torch.long, device=self.device)
         species, coordinates, _ = tile_into_tight_cell(
             (species, coordinates),
             fixed_displacement_size=cut,
@@ -36,8 +43,14 @@ class TestCellList(TestCase):
         self.species = species
         # first bucket is 0 - 5.2, in 3 directions, and subsequent buckets
         # are on top of that
-        self.pbc = torch.tensor([True, True, True], dtype=torch.bool)
-        self.cell = torch.diag(torch.tensor([cell_size, cell_size, cell_size])).float()
+        self.pbc = torch.tensor(
+            [True, True, True], dtype=torch.bool, device=self.device
+        )
+        self.cell = torch.diag(
+            torch.tensor(
+                [cell_size, cell_size, cell_size], dtype=torch.float, device=self.device
+            )
+        )
         self.clist = CellList()
 
     def testInitDefault(self):
@@ -52,7 +65,8 @@ class TestCellList(TestCase):
         self.assertTrue(clist.total_buckets == 27)
         self.assertTrue(
             (
-                clist.shape_buckets_grid == torch.tensor([3, 3, 3], dtype=torch.long)
+                clist.shape_buckets_grid
+                == torch.tensor([3, 3, 3], dtype=torch.long, device=self.device)
             ).all()
         )
         # since it is padded shape should be 5 5 5
@@ -93,8 +107,8 @@ class TestCellList(TestCase):
         clist._setup_variables(self.cell, self.cut)
         flat = clist._to_flat_index(vector_bucket_index_compare)
         # all flat bucket indices are present
-        flat_compare = torch.repeat_interleave(torch.arange(0, 27).to(torch.long), 2)
-        self.assertTrue((flat == flat_compare).all())
+        flat_compare = torch.repeat_interleave(torch.arange(0, 27, dtype=torch.long), 2)
+        self.assertEqual(flat, flat_compare.unsqueeze(0))
 
     def testFlatBucketIndexAlternative(self):
         clist = self.clist
@@ -106,8 +120,8 @@ class TestCellList(TestCase):
             .unbind(1)
         ].reshape(1, atoms)
         self.assertTrue(clist.total_buckets == 27)
-        flat_compare = torch.repeat_interleave(torch.arange(0, 27).to(torch.long), 2)
-        self.assertTrue((flat == flat_compare).all())
+        flat_compare = torch.repeat_interleave(torch.arange(0, 27, dtype=torch.long), 2)
+        self.assertEqual(flat, flat_compare.unsqueeze(0))
 
     def testCounts(self):
         num_flat = 27
@@ -122,8 +136,7 @@ class TestCellList(TestCase):
         self.assertTrue(count_in_flat.shape == torch.Size([num_flat]))
         self.assertTrue((count_in_flat == 2).all())
         # these are all 0 2 4 6 ...
-        self.assertTrue(cumcount_in_flat.shape == torch.Size([num_flat]))
-        self.assertTrue((cumcount_in_flat == torch.arange(0, 54, 2)).all())
+        self.assertEqual(cumcount_in_flat, torch.arange(0, 54, 2))
         # max counts in a bucket is 2
         self.assertTrue(max_ == 2)
 
@@ -144,7 +157,7 @@ class TestCellList(TestCase):
 
     def _check_neighborlists_consistency(self, coordinates, species=None):
         if species is None:
-            species = torch.tensor([0, 0, 0]).unsqueeze(0)
+            species = torch.tensor([[1, 1, 1]], dtype=torch.long)
         aev_cl = AEVComputer.like_1x(neighborlist="cell_list")
         aev_fp = AEVComputer.like_1x(neighborlist="full_pairwise")
         _, aevs_cl = aev_cl((species, coordinates), cell=self.cell, pbc=self.pbc)
@@ -208,7 +221,7 @@ class TestCellList(TestCase):
                 ]
             ]
         )
-        species = torch.tensor([0, 0]).unsqueeze(0)
+        species = torch.tensor([[1, 1]], dtype=torch.long)
         self._check_neighborlists_consistency(coordinates, species)
 
     def testCellListIsConsistentV6(self):
@@ -223,7 +236,7 @@ class TestCellList(TestCase):
                     [cut / 2 + 0.1, cut / 2 + 0.1, cut / 2 + 0.1],
                 ]
             ).unsqueeze(0)
-            species = torch.tensor([0, 0]).unsqueeze(0)
+            species = torch.tensor([[1, 1]], dtype=torch.long)
             species, coordinates, _ = tile_into_tight_cell(
                 (species, coordinates),
                 fixed_displacement_size=cut,
@@ -234,11 +247,15 @@ class TestCellList(TestCase):
 
     def testCellListIsConsistentRandomV2(self):
         for j in range(100):
-            coordinates = torch.randn(10, 3).unsqueeze(0) * 3 * self.cell_size
+            coordinates = (
+                torch.randn((1, 10, 3), device=self.device, dtype=torch.float)
+                * 3
+                * self.cell_size
+            )
             coordinates = torch.clamp(
                 coordinates, min=0.0001, max=self.cell_size - 0.0001
             )
-            species = torch.zeros(10).unsqueeze(0).to(torch.long)
+            species = torch.ones((1, 10), dtype=torch.long)
             self._check_neighborlists_consistency(coordinates, species)
 
 
@@ -259,12 +276,8 @@ class TestCellListEnergies(TestCase):
         ).float()
         self.aev_cl = AEVComputer.like_1x(neighborlist="cell_list")
         self.aev_fp = AEVComputer.like_1x(neighborlist="full_pairwise")
-        self.model_cl = torchani.models.ANI1x(
-            model_index=0, periodic_table_index=False
-        ).to(self.device)
-        self.model_fp = torchani.models.ANI1x(
-            model_index=0, periodic_table_index=False
-        ).to(self.device)
+        self.model_cl = torchani.models.ANI1x(model_index=0).to(self.device)
+        self.model_fp = torchani.models.ANI1x(model_index=0).to(self.device)
         self.model_cl.aev_computer = self.aev_cl
         self.model_fp.aev_computer = self.aev_fp
         self.num_to_test = 10
@@ -272,10 +285,10 @@ class TestCellListEnergies(TestCase):
     def testCellListEnergiesRandom(self):
         self.model_cl = self.model_cl.to(self.device).double()
         self.model_fp = self.model_fp.to(self.device).double()
-        species = torch.zeros(100).unsqueeze(0).to(torch.long).to(self.device)
+        species = torch.ones((1, 100), dtype=torch.long, device=self.device)
         for j in range(self.num_to_test):
             coordinates = (
-                torch.randn(100, 3).unsqueeze(0).to(self.device).to(torch.double)
+                torch.randn((1, 100, 3), device=self.device, dtype=torch.double)
                 * 3
                 * self.cell_size
             )
@@ -302,10 +315,10 @@ class TestCellListEnergies(TestCase):
         # default threshold (I hope)
         self.model_cl = self.model_cl.to(self.device).float()
         self.model_fp = self.model_fp.to(self.device).float()
-        species = torch.zeros(100).unsqueeze(0).to(torch.long).to(self.device)
+        species = torch.ones((1, 100), dtype=torch.long, device=self.device)
         for j in range(self.num_to_test):
             coordinates = (
-                torch.randn(100, 3).unsqueeze(0).to(self.device).to(torch.float)
+                torch.randn((1, 100, 3), device=self.device, dtype=torch.float)
                 * 3
                 * self.cell_size
             )
@@ -328,10 +341,12 @@ class TestCellListEnergies(TestCase):
     def testCellListRandomFloat(self):
         aev_cl = self.aev_cl.to(self.device).to(torch.float)
         aev_fp = self.aev_fp.to(self.device).to(torch.float)
-        species = torch.LongTensor(100).random_(0, 4).to(self.device).unsqueeze(0)
+        idxs = torch.randint(
+            self.aev_cl.num_species, (1, 100), device=self.device, dtype=torch.long
+        )
         for j in range(self.num_to_test):
             coordinates = (
-                torch.randn(100, 3).unsqueeze(0).to(self.device).to(torch.float)
+                torch.randn((1, 100, 3), device=self.device, dtype=torch.float)
                 * 3
                 * self.cell_size
             )
@@ -340,12 +355,12 @@ class TestCellListEnergies(TestCase):
             )
 
             _, aevs_cl = aev_cl(
-                (species, coordinates),
+                (idxs, coordinates),
                 cell=self.cell.to(self.device),
                 pbc=self.pbc.to(self.device),
             )
             _, aevs_fp = aev_fp(
-                (species, coordinates),
+                (idxs, coordinates),
                 cell=self.cell.to(self.device),
                 pbc=self.pbc.to(self.device),
             )
@@ -460,10 +475,12 @@ class TestCellListLargeSystem(ANITest):
         torch._C._jit_set_profiling_executor(True)
 
     def testRandomNoPBC(self):
-        species = torch.LongTensor(100).random_(0, 4).to(self.device).unsqueeze(0)
+        idxs = torch.randint(
+            self.aev_cl.num_species, (1, 100), device=self.device, dtype=torch.long
+        )
         for j in range(self.num_to_test):
             coordinates = (
-                torch.randn(100, 3).unsqueeze(0).to(self.device).to(torch.double)
+                torch.randn((1, 100, 3), device=self.device, dtype=torch.double)
                 * 3
                 * self.cell_size
             )
@@ -471,15 +488,17 @@ class TestCellListLargeSystem(ANITest):
                 coordinates, min=0.0001, max=self.cell_size - 0.0001
             )
 
-            _, aevs_cl = self.aev_cl((species, coordinates))
-            _, aevs_fp = self.aev_fp((species, coordinates))
+            _, aevs_cl = self.aev_cl((idxs, coordinates))
+            _, aevs_fp = self.aev_fp((idxs, coordinates))
             self.assertEqual(aevs_cl, aevs_fp, rtol=self.rtol, atol=self.atol)
 
     def testRandom(self):
-        species = torch.LongTensor(100).random_(0, 4).to(self.device).unsqueeze(0)
+        idxs = torch.randint(
+            self.aev_cl.num_species, (1, 100), device=self.device, dtype=torch.long
+        )
         for j in range(self.num_to_test):
             coordinates = (
-                torch.randn(100, 3).unsqueeze(0).to(self.device).to(torch.double)
+                torch.randn((1, 100, 3), device=self.device, dtype=torch.double)
                 * 3
                 * self.cell_size
             )
@@ -488,12 +507,12 @@ class TestCellListLargeSystem(ANITest):
             )
 
             _, aevs_cl = self.aev_cl(
-                (species, coordinates),
+                (idxs, coordinates),
                 cell=self.cell.to(self.device).double(),
                 pbc=self.pbc.to(self.device),
             )
             _, aevs_fp = self.aev_fp(
-                (species, coordinates),
+                (idxs, coordinates),
                 cell=self.cell.to(self.device).double(),
                 pbc=self.pbc.to(self.device),
             )

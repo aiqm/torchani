@@ -264,8 +264,8 @@ class TestDispersion(ANITest):
         self.assertEqual(energies, energies_cat)
 
     def testForce(self):
-        model = self._setup(StandaloneTwoBodyDispersionD3(periodic_table_index=False))
-        _, forces = energies_and_forces(model, self.species, self.coordinates)
+        model = self._setup(StandaloneTwoBodyDispersionD3())
+        _, forces = energies_and_forces(model, self.atomic_numbers, self.coordinates)
         grad = -forces / units.ANGSTROM_TO_BOHR
         # compare with analytical gradient from Grimme's DFTD3 (DFTD3 gives
         # gradient in Bohr)
