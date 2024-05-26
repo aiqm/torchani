@@ -1,26 +1,34 @@
-import torch
-import torchani
 import unittest
-import os
-from torchani.testing import TestCase
+
+import torch
+
+from torchani.testing import ANITest, expand
+from torchani.models import ANI1x, ANI2x
+from torchani.datasets import create_batched_dataset, TestData
 
 
-path = os.path.dirname(os.path.realpath(__file__))
-dspath = os.path.join(path, "../dataset/ani-1x/sample.h5")
-
-
-class TestBuiltinModelsJIT(TestCase):
+@expand(jit=True, device="cpu")
+class TestBuiltinModels(ANITest):
     # Tests if JIT compiled models have the same output energies
     # as eager (non JIT) models
 
     def setUp(self):
         # in general self energies should be subtracted, and shuffle should be
         # performed, but for these tests this is not important
-        self.ds = torchani.data.load(dspath).species_to_indices().collate(256).cache()
+        self.ds = create_batched_dataset(
+            TestData(verbose=False, skip_check=True),
+            splits={"training": 1.0},
+            direct_cache=True,
+            batch_size=256,
+            verbose=False,
+        )["training"]
 
     def _test_model(self, model):
         properties = next(iter(self.ds))
-        input_ = (properties["species"], properties["coordinates"].float())
+        input_ = (
+            properties["species"].to(self.device),
+            properties["coordinates"].to(self.device, dtype=torch.float),
+        )
         _, e = model(input_)
         _, e2 = torch.jit.script(model)(input_)
         self.assertEqual(e, e2)
@@ -31,11 +39,11 @@ class TestBuiltinModelsJIT(TestCase):
             self._test_model(m)
 
     def testANI1x(self):
-        ani1x = torchani.models.ANI1x(periodic_table_index=False)
+        ani1x = ANI1x().to(self.device)
         self._test_ensemble(ani1x)
 
-    def testANI1ccx(self):
-        ani1ccx = torchani.models.ANI1ccx(periodic_table_index=False)
+    def testANI2x(self):
+        ani1ccx = ANI2x().to(self.device)
         self._test_ensemble(ani1ccx)
 
 
