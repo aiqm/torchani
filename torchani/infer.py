@@ -32,9 +32,7 @@ def _is_same_tensor_optimized(last: Tensor, current: Tensor) -> bool:
 
 
 def _is_same_tensor(last: Tensor, current: Tensor) -> bool:
-    # Fallback to this, it is slow but it is the only available path if MNP is
-    # not installed, at least until TorchScript supports data_ptr() (which is
-    # probably never)
+    # Potentially, slower fallback if MNP is not installed (until JIT supports data_ptr)
     same_shape = last.shape == current.shape
     if not same_shape:
         return False
@@ -84,9 +82,7 @@ class BmmEnsemble(AtomicContainer):
         self.num_batched_networks = ensemble.num_networks
         self.num_species = ensemble.num_species
         if not hasattr(ensemble, "members"):
-            raise TypeError(
-                "BmmEnsemble can only take a torchani.nn.Ensemble as an input"
-            )
+            raise TypeError("BmmEnsemble can only take an Ensemble as an input")
         self.atomic_networks = torch.nn.ModuleList(
             [
                 BmmAtomicNetwork(
@@ -144,7 +140,7 @@ class BmmEnsemble(AtomicContainer):
 
 class BmmAtomicNetwork(torch.nn.Module):
     r"""
-    The inference-optimized analogue of atomic networks.
+    The inference-optimized analogue of an atomic networks.
 
     BmmAtomicNetwork instances are "combined" atomic networks for a single
     element, each of which holds all networks associated with all the members
@@ -183,14 +179,14 @@ class BmmAtomicNetwork(torch.nn.Module):
 
 class BmmLinear(torch.nn.Module):
     """
-    Batch Linear layer fuses multiple Linear layers that have same architecture
-    If "b" is the number of fused layers (which usually corresponds to members
+    Batched Linear layer that fuses multiple Linear layers that have same architecture
+    If "e" is the number of fused layers (which usually corresponds to members
     in an ensamble), then we have:
 
-    input:  (b x n x m)
-    weight: (b x m x p)
-    bias:   (b x 1 x p)
-    output: (b x n x p)
+    input:  (e x n x m)
+    weight: (e x m x p)
+    bias:   (e x 1 x p)
+    output: (e x n x p)
     """
 
     def __init__(self, linears: tp.Sequence[torch.nn.Linear]):
@@ -218,113 +214,6 @@ class BmmLinear(torch.nn.Module):
             f" out_features={self.weight.shape[2]},"
             f" bias={self.bias is not None}"
         )
-
-
-# ######################################################################################
-# The code below implements the MNP (Multi Net Parallel) functionality, aimed
-# at paralleling multiple networks across distinct CUDA streams. However, given
-# the complexity of this algorithm and its lack of generalizability, it is
-# deprecated and will be removed in the future
-# ######################################################################################
-class MultiNetFunction(torch.autograd.Function):
-    r"""
-    Run Multiple Networks (HCNO..) on different streams, this is python
-    implementation of MNP (Multi Net Parallel) autograd function, which
-    actually cannot parallel between different species networks because of loop
-    performance of dynamic interpretation of python language.
-
-    There is no multiprocessing used here, whereas cpp version is implemented
-    with OpenMP.
-    """
-
-    @staticmethod
-    def forward(
-        ctx,
-        aev,
-        idx_list,
-        atomic_networks,
-        stream_list,
-    ):
-        num_species = len(atomic_networks)
-        assert num_species == len(atomic_networks)
-        assert num_species == len(stream_list)
-        energy_list = torch.zeros(num_species, dtype=aev.dtype, device=aev.device)
-        event_list: tp.List[tp.Optional[torch.cuda.Event]] = [
-            torch.cuda.Event() for i in range(num_species)
-        ]
-        current_stream = torch.cuda.current_stream()
-        start_event = torch.cuda.Event()
-        start_event.record(current_stream)
-
-        input_list = [None] * num_species
-        output_list = [None] * num_species
-        for i, net in enumerate(atomic_networks):
-            if idx_list[i].shape[0] > 0:
-                torch.cuda.nvtx.mark(f"species = {i}")
-                stream_list[i].wait_event(start_event)
-                with torch.cuda.stream(stream_list[i]):
-                    input_ = aev.index_select(0, idx_list[i]).requires_grad_()
-                    with torch.enable_grad():
-                        output = net(input_).flatten()
-                    input_list[i] = input_
-                    output_list[i] = output
-                    energy_list[i] = torch.sum(output)
-                event = event_list[i]
-                assert event is not None  # mypy
-                event.record(stream_list[i])
-            else:
-                event_list[i] = None
-
-        # sync default stream with events on different streams
-        for event in event_list:
-            if event is not None:
-                current_stream.wait_event(event)
-
-        ctx.energy_list = energy_list
-        ctx.stream_list = stream_list
-        ctx.output_list = output_list
-        ctx.input_list = input_list
-        ctx.idx_list = idx_list
-        ctx.aev = aev
-        output = torch.sum(energy_list, 0, True)
-        return output
-
-    @staticmethod
-    def backward(ctx, grad_o):
-        stream_list = ctx.stream_list
-        output_list = ctx.output_list
-        input_list = ctx.input_list
-        idx_list = ctx.idx_list
-        aev = ctx.aev
-        aev_grad = torch.zeros_like(aev)
-
-        current_stream = torch.cuda.current_stream()
-        start_event = torch.cuda.Event()
-        start_event.record(current_stream)
-        event_list: tp.List[tp.Optional[torch.cuda.Event]] = [
-            torch.cuda.Event() for j, _ in enumerate(stream_list)
-        ]
-
-        for i, output in enumerate(output_list):
-            if output is not None:
-                torch.cuda.nvtx.mark(f"backward species = {i}")
-                stream_list[i].wait_event(start_event)
-                with torch.cuda.stream(stream_list[i]):
-                    grad_tmp = torch.autograd.grad(
-                        output, input_list[i], grad_o.flatten().expand_as(output)
-                    )[0]
-                    aev_grad[idx_list[i]] = grad_tmp
-                event = event_list[i]
-                assert event is not None  # mypy
-                event.record(stream_list[i])
-            else:
-                event_list[i] = None
-
-        # sync default stream with events on different streams
-        for event in event_list:
-            if event is not None:
-                current_stream.wait_event(event)
-        return aev_grad, None, None, None
 
 
 class InferModel(AtomicContainer):
@@ -473,7 +362,7 @@ class InferModel(AtomicContainer):
         # pyMNP code path
         if not self._use_mnp:
             if not torch.jit.is_scripting():
-                energies = MultiNetFunction.apply(
+                energies = PythonMNP.apply(
                     aev,
                     self._idx_list,
                     self.atomic_networks,
@@ -483,11 +372,11 @@ class InferModel(AtomicContainer):
             raise RuntimeError("JIT-InferModel only supported with use_mnp=True")
 
         # cppMNP code path
-        energies = self._multi_net_function_cpp(aev)
+        energies = self._cpp_mnp(aev)
         return SpeciesEnergies(species, energies)
 
     @jit_unused_if_no_mnp()
-    def _multi_net_function_cpp(self, aev: Tensor) -> Tensor:
+    def _cpp_mnp(self, aev: Tensor) -> Tensor:
         weights: tp.List[Tensor] = []
         biases: tp.List[Tensor] = []
         for name, buffer in self.named_buffers():
@@ -507,3 +396,102 @@ class InferModel(AtomicContainer):
             self._is_bmm,
             self._celu_alpha,
         )
+
+
+# ######################################################################################
+# This code is a python implementation of the MNP (Multi Net Parallel) functionality,
+# which is supposed to parallelize multiple networks across distinct CUDA streams.
+# The python implementation is meant as a proof of concept and is not performant,
+# in fact it is slower than a straightforward loop.
+# This implementation has no multiprocessing, but OpenMP is used for the C++
+# Implementation in torchani.csrc
+# ######################################################################################
+class PythonMNP(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx,
+        aev,
+        idx_list,
+        atomic_networks,
+        stream_list,
+    ):
+        num_species = len(atomic_networks)
+        assert num_species == len(atomic_networks)
+        assert num_species == len(stream_list)
+        energy_list = torch.zeros(num_species, dtype=aev.dtype, device=aev.device)
+        event_list: tp.List[tp.Optional[torch.cuda.Event]] = [
+            torch.cuda.Event() for i in range(num_species)
+        ]
+        current_stream = torch.cuda.current_stream()
+        start_event = torch.cuda.Event()
+        start_event.record(current_stream)
+
+        input_list = [None] * num_species
+        output_list = [None] * num_species
+        for i, net in enumerate(atomic_networks):
+            if idx_list[i].shape[0] > 0:
+                torch.cuda.nvtx.mark(f"species = {i}")
+                stream_list[i].wait_event(start_event)
+                with torch.cuda.stream(stream_list[i]):
+                    input_ = aev.index_select(0, idx_list[i]).requires_grad_()
+                    with torch.enable_grad():
+                        output = net(input_).flatten()
+                    input_list[i] = input_
+                    output_list[i] = output
+                    energy_list[i] = torch.sum(output)
+                event = event_list[i]
+                assert event is not None  # mypy
+                event.record(stream_list[i])
+            else:
+                event_list[i] = None
+
+        # sync default stream with events on different streams
+        for event in event_list:
+            if event is not None:
+                current_stream.wait_event(event)
+
+        ctx.energy_list = energy_list
+        ctx.stream_list = stream_list
+        ctx.output_list = output_list
+        ctx.input_list = input_list
+        ctx.idx_list = idx_list
+        ctx.aev = aev
+        output = torch.sum(energy_list, 0, True)
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_o):
+        stream_list = ctx.stream_list
+        output_list = ctx.output_list
+        input_list = ctx.input_list
+        idx_list = ctx.idx_list
+        aev = ctx.aev
+        aev_grad = torch.zeros_like(aev)
+
+        current_stream = torch.cuda.current_stream()
+        start_event = torch.cuda.Event()
+        start_event.record(current_stream)
+        event_list: tp.List[tp.Optional[torch.cuda.Event]] = [
+            torch.cuda.Event() for j, _ in enumerate(stream_list)
+        ]
+
+        for i, output in enumerate(output_list):
+            if output is not None:
+                torch.cuda.nvtx.mark(f"backward species = {i}")
+                stream_list[i].wait_event(start_event)
+                with torch.cuda.stream(stream_list[i]):
+                    grad_tmp = torch.autograd.grad(
+                        output, input_list[i], grad_o.flatten().expand_as(output)
+                    )[0]
+                    aev_grad[idx_list[i]] = grad_tmp
+                event = event_list[i]
+                assert event is not None  # mypy
+                event.record(stream_list[i])
+            else:
+                event_list[i] = None
+
+        # sync default stream with events on different streams
+        for event in event_list:
+            if event is not None:
+                current_stream.wait_event(event)
+        return aev_grad, None, None, None

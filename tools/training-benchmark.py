@@ -13,6 +13,7 @@ console = Console()
 
 
 def main(
+    jit: bool,
     sync: bool,
     nvtx: bool,
     device: str,
@@ -20,8 +21,11 @@ def main(
     num_profile: int,
     num_warm_up: int,
     dataset: str,
+    detail: bool = False,
 ) -> int:
     model = ANI1x(model_index=0).to(device)
+    if jit:
+        model = torch.jit.script(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.000001)
     mse = torch.nn.MSELoss(reduction="none")
 
@@ -50,7 +54,7 @@ def main(
             model.aev_computer.neighborlist,
             model.aev_computer.angular_terms,
             model.aev_computer.radial_terms,
-        ],
+        ] if detail else [],
         device=device,
         nvtx=nvtx,
         sync=sync,
@@ -112,14 +116,14 @@ if __name__ == "__main__":
         "--num-warm-up",
         help="Number of warm up batches",
         type=int,
-        default=50,
+        default=100,
     )
     parser.add_argument(
         "-e",
         "--num-profile",
         help="Number of profiling batches",
         type=int,
-        default=50,
+        default=100,
     )
     parser.add_argument(
         "-b",
@@ -138,6 +142,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Whether to disable sync between CUDA calls",
     )
+    parser.add_argument(
+        "--detail",
+        action="store_true",
+        help="Whether to include benchmark detail",
+    )
     args = parser.parse_args()
     if args.nvtx and not torch.cuda.is_available():
         raise ValueError("CUDA is needed to profile with NVTX")
@@ -151,14 +160,26 @@ if __name__ == "__main__":
         console.print(
             f"CUDA sync {'[green]ENABLED[/green]' if sync else '[red]DISABLED[/red]'}"
         )
-    sys.exit(
-        main(
-            sync=sync,
-            nvtx=args.nvtx,
-            device=args.device,
-            batch_size=args.batch_size,
-            dataset=args.dataset,
-            num_warm_up=args.num_warm_up,
-            num_profile=args.num_profile,
-        )
+    main(
+        jit=False,
+        sync=sync,
+        nvtx=args.nvtx,
+        device=args.device,
+        batch_size=args.batch_size,
+        dataset=args.dataset,
+        num_warm_up=args.num_warm_up,
+        num_profile=args.num_profile,
+        detail=args.detail,
     )
+    main(
+        jit=True,
+        sync=sync,
+        nvtx=args.nvtx,
+        device=args.device,
+        batch_size=args.batch_size,
+        dataset=args.dataset,
+        num_warm_up=args.num_warm_up,
+        num_profile=args.num_profile,
+        detail=False,
+    )
+    sys.exit(0)

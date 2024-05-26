@@ -18,20 +18,29 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def main(
+    optimize: str,
     file: str,
     nvtx: bool,
     sync: bool,
     no_tqdm: bool,
     device: tp.Literal["cpu", "cuda"],
+    detail: bool = False,
 ) -> int:
+    console.print(
+        f"Profiling with optimization={optimize}, on device: {device.upper()}"
+    )
     if not file:
         xyz_file_path = Path(ROOT, "tests", "test_data", "CH4-5.xyz")
     elif file.startswith("/"):
         xyz_file_path = Path(file)
     else:
         xyz_file_path = Path.cwd() / file
-
     model = ANI1x()[0].to(device)
+    if optimize == "jit":
+        model = torch.jit.script(model)
+    elif optimize == "compile":
+        # Compile transforms the model into a Callable
+        model = torch.compile(model)  # type: ignore
     species, coordinates, _ = read_xyz(xyz_file_path, device=device)
     num_conformations = species.shape[0]
     timer = Timer(
@@ -43,19 +52,30 @@ def main(
             model.aev_computer.neighborlist,
             model.aev_computer.angular_terms,
             model.aev_computer.radial_terms,
-        ],
+        ]
+        if (optimize == "none" and detail)
+        else [],
         device=device,
         nvtx=nvtx,
         sync=sync,
-        extra_title="Batch",
     )
-    console.print(f"Profiling on {num_conformations} conformations")
+    console.print(f"Batch of {num_conformations} conformations")
+    for _ in tqdm(range(30), desc="Warm up", total=30, leave=False):
+        energies_and_forces(model, species, coordinates)
     timer.start_profiling()
-    energies_and_forces(model, species, coordinates)
+    for _ in tqdm(range(10), desc="Profiling", total=10, leave=False):
+        timer.start_batch()
+        energies_and_forces(model, species, coordinates)
+        timer.end_batch()
     timer.stop_profiling()
     timer.display()
 
     model = ANI1x()[0].to(device)
+    if optimize == "jit":
+        model = torch.jit.script(model)
+    elif optimize == "compile":
+        # Compile transforms the model into a Callable
+        model = torch.compile(model)  # type: ignore
     timer = Timer(
         modules=[
             model,
@@ -65,28 +85,48 @@ def main(
             model.aev_computer.neighborlist,
             model.aev_computer.angular_terms,
             model.aev_computer.radial_terms,
-        ],
+        ]
+        if (optimize == "none" and detail)
+        else [],
         device=device,
         nvtx=nvtx,
         sync=sync,
-        extra_title="Single Molecule",
-        reduction="sum",
     )
-    timer.start_profiling()
-    for species, coordinates in tqdm(
-        zip(species, coordinates),
-        desc="Inference on single molecules",
+    console.print("Batch of 1 conformation")
+    for j, (_species, _coordinates) in tqdm(
+        enumerate(zip(species, coordinates)),
+        desc="Warm Up",
         disable=no_tqdm,
-        total=num_conformations,
+        total=200,
         leave=False,
     ):
         _, _ = energies_and_forces(
             model,
-            species.unsqueeze(0),
-            coordinates.unsqueeze(0).detach(),
+            _species.unsqueeze(0),
+            _coordinates.unsqueeze(0).detach(),
         )
+        if j == 199:
+            break
+    timer.start_profiling()
+    for j, (_species, _coordinates) in tqdm(
+        enumerate(zip(species, coordinates)),
+        desc="Profiling",
+        disable=no_tqdm,
+        total=100,
+        leave=False,
+    ):
+        timer.start_batch()
+        _, _ = energies_and_forces(
+            model,
+            _species.unsqueeze(0),
+            _coordinates.unsqueeze(0).detach(),
+        )
+        timer.end_batch()
+        if j == 100:
+            break
     timer.stop_profiling()
     timer.display()
+    console.print()
     return 0
 
 
@@ -115,6 +155,17 @@ if __name__ == "__main__":
         action="store_true",
         help="Whether to disable sync between CUDA calls",
     )
+    parser.add_argument(
+        "-c",
+        "--compile",
+        action="store_true",
+        help="Whether to use torch.compile for optimization",
+    )
+    parser.add_argument(
+        "--detail",
+        action="store_true",
+        help="Detailed breakdown of benchmark",
+    )
     args = parser.parse_args()
     if args.nvtx and not torch.cuda.is_available():
         raise ValueError("CUDA is needed to profile with NVTX")
@@ -127,12 +178,32 @@ if __name__ == "__main__":
     console.print(
         f"CUDA sync {'[green]ENABLED[/green]' if sync else '[red]DISABLED[/red]'}"
     )
-    sys.exit(
+    main(
+        optimize="none",
+        file=args.filename,
+        nvtx=args.nvtx,
+        sync=sync,
+        no_tqdm=args.no_tqdm,
+        device=args.device,
+        detail=args.detail,
+    )
+    main(
+        optimize="jit",
+        file=args.filename,
+        nvtx=args.nvtx,
+        sync=sync,
+        no_tqdm=args.no_tqdm,
+        device=args.device,
+    )
+    if args.compile:
+        if not tuple(map(int, torch.__version__.split("."))) >= (2, 0):
+            raise RuntimeError("PyTorch 2.0 or later needed for torch.compile")
         main(
-            args.filename,
+            optimize="compile",
+            file=args.filename,
             nvtx=args.nvtx,
             sync=sync,
             no_tqdm=args.no_tqdm,
             device=args.device,
         )
-    )
+    sys.exit(0)

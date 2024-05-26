@@ -155,21 +155,29 @@ class Timer:
             bw_values = self._last_timers[".".join((name, "backward"))]
             bw = self.reduction_fn(np.array(bw_values)) if bw_values else 0.0
             table.add_row(name, f"{fw:.5f}", f"{bw:.5f}")
-        console.print("WARNING: Backward times are not reliable", style="yellow")
-        console.print()
-        console.print(table)
+        if self.modules:
+            console.print(
+                "WARNING: Backward times are unreliable. Hooks, sync create overhead",
+                style="yellow",
+            )
+            console.print(table)
         if "batch" in self._last_timers:
             value = self._last_timers["batch"]
-            console.print(f"Batch median-time (ms): {np.median(np.array(value)):.5f}")
+            _time = self.reduction_fn(np.array(value))
+            console.print(
+                f"Batch {self.reduction_title} time ({self.units}): {_time:.5f}"
+            )
         if "opt-step" in self._last_timers:
             value = self._last_timers["opt-step"]
+            _time = self.reduction_fn(np.array(value))
             console.print(
-                f"Optimizer step median-time (ms): {np.median(np.array(value)):.5f}"
+                f"Optimizer {self.reduction_title} time ({self.units}): {_time:.5f}"
             )
         if "loss-bw" in self._last_timers:
             value = self._last_timers["loss-bw"]
+            _time = self.reduction_fn(np.array(value))
             console.print(
-                f"Loss backwards median-time (ms): {np.median(np.array(value)):.5f}"
+                f"Loss bw {self.reduction_title} time ({self.units}): {_time:.5f}"
             )
 
     def start_fw(self, module, args=None, kwargs=None, output=None) -> None:
@@ -186,18 +194,18 @@ class Timer:
 
     def _start(self, module, label) -> None:
         name = ".".join((module.__class__.__name__, label))
-        if self.sync:
-            torch.cuda.synchronize()
         if self.nvtx:
             torch.cuda.nvtx.range_push(name)
+        if self.sync:
+            torch.cuda.synchronize()
         self.timers[name].append(time.perf_counter_ns())
 
     def _end(self, module, label) -> None:
-        if self.sync:
-            torch.cuda.synchronize()
+        name = ".".join((module.__class__.__name__, label))
         if self.nvtx:
             torch.cuda.nvtx.range_pop()
-        name = ".".join((module.__class__.__name__, label))
+        if self.sync:
+            torch.cuda.synchronize()
         self.timers[name][-1] = (
             time.perf_counter_ns() - self.timers[name][-1]
         ) * self.factor

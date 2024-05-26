@@ -124,7 +124,7 @@ class AEVComputer(torch.nn.Module):
 
     @staticmethod
     def _calculate_triu_index(num_species: int) -> Tensor:
-        # helper method for initialization
+        # Helper method for initialization
         species1, species2 = torch.triu_indices(num_species, num_species).unbind(0)
         pair_index = torch.arange(species1.shape[0], dtype=torch.long)
         ret = torch.zeros(num_species, num_species, dtype=torch.long)
@@ -376,12 +376,12 @@ class AEVComputer(torch.nn.Module):
         self.cuaev_computer = torch.classes.cuaev.CuaevComputer(
             self.radial_terms.cutoff,
             self.angular_terms.cutoff,
-            self.radial_terms.EtaR.flatten(),   # type: ignore
-            self.radial_terms.ShfR.flatten(),   # type: ignore
-            self.angular_terms.EtaA.flatten(),  # type: ignore
-            self.angular_terms.Zeta.flatten(),  # type: ignore
-            self.angular_terms.ShfA.flatten(),  # type: ignore
-            self.angular_terms.ShfZ.flatten(),  # type: ignore
+            self.radial_terms.EtaR.flatten(),
+            self.radial_terms.ShfR.flatten(),
+            self.angular_terms.EtaA.flatten(),
+            self.angular_terms.Zeta.flatten(),
+            self.angular_terms.ShfA.flatten(),
+            self.angular_terms.ShfZ.flatten(),
             self.num_species,
             (self._cuaev_cutoff_fn == "cosine"),
         )
