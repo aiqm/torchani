@@ -1,4 +1,5 @@
 import typing as tp
+from itertools import accumulate
 
 import torch
 from torch import Tensor
@@ -40,7 +41,7 @@ def _is_same_tensor(last: Tensor, current: Tensor) -> bool:
     return bool((last == current).all().item())
 
 
-def _build_new_idx_list(
+def _make_idx_list(
     species: Tensor,
     num_species: int,
     idx_list: tp.List[Tensor],
@@ -97,10 +98,8 @@ class BmmEnsemble(AtomicContainer):
 
         # bookkeeping for optimization
         self._last_species: Tensor = torch.empty(1)
-        self._idx_list: tp.List[Tensor] = _build_new_idx_list(
-            self._last_species,
-            self.num_species,
-            [],
+        self._idx_list: tp.List[Tensor] = _make_idx_list(
+            self._last_species, self.num_species, []
         )
 
     def forward(
@@ -126,33 +125,21 @@ class BmmEnsemble(AtomicContainer):
             same_species = _is_same_tensor(self._last_species, species)
 
         if not same_species:
-            self._idx_list = _build_new_idx_list(
-                species,
-                self.num_species,
-                self._idx_list,
-            )
+            self._idx_list = _make_idx_list(species, self.num_species, self._idx_list)
         self._last_species = species
 
         aev = aev.flatten(0, 1)
         atomic_energies = torch.zeros(aev.shape[0], dtype=aev.dtype, device=aev.device)
         for i, net in enumerate(self.atomic_networks):
             if self._idx_list[i].shape[0] > 0:
-                if self._MNP_IS_INSTALLED:
-                    self._nvtx_push(i)
+                if not torch.jit.is_scripting():
+                    torch.cuda.nvtx.range_push(f"bmm-species-{i}")
                 input_ = aev.index_select(0, self._idx_list[i])
                 atomic_energies[self._idx_list[i]] = net(input_).flatten()
-                if self._MNP_IS_INSTALLED:
-                    self._nvtx_pop()
+                if not torch.jit.is_scripting():
+                    torch.cuda.nvtx.range_pop()
         atomic_energies = atomic_energies.unsqueeze(0)
         return atomic_energies
-
-    @jit_unused_if_no_mnp()
-    def _nvtx_pop(self) -> None:
-        torch.ops.mnp.nvtx_range_pop()
-
-    @jit_unused_if_no_mnp()
-    def _nvtx_push(self, i: int) -> None:
-        torch.ops.mnp.nvtx_range_push(f"network_{i}")
 
 
 class BmmAtomicNetwork(torch.nn.Module):
@@ -386,21 +373,22 @@ class InferModel(AtomicContainer):
 
         self._use_mnp = use_mnp
 
-        # bookkeeping for optimization
+        # Bookkeeping for optimization
         self._last_species: Tensor = torch.empty(1)
-        self._idx_list: tp.List[Tensor] = _build_new_idx_list(
-            self._last_species,
-            self.num_species,
-            [],
+        self._idx_list: tp.List[Tensor] = _make_idx_list(
+            self._last_species, self.num_species, []
         )
 
+        # Stream list, to use multiple cuda streams (doesn't really work correctly)
         self._stream_list = [torch.cuda.Stream() for i in range(self.num_species)]
 
-        # Variables used only to pass tensors to torch.ops.mnp when use_mnp=True
-        self._weight_list: tp.List[Tensor] = []
-        self._bias_list: tp.List[Tensor] = []
-        self._num_layers_list: tp.List[int] = []
-        self._start_layers_list: tp.List[int] = []
+        # Variables used to pass tensors to torch.ops.mnp when use_mnp=True
+        self._weight_names: tp.List[str] = []
+        self._bias_names: tp.List[str] = []
+        # Num linears (or bmm-linears) in each atomic network
+        self._num_layers: tp.List[int] = []
+        # Idx in the flattened weight/bias lists where each atomic network starts
+        self._first_layer_idxs: tp.List[int] = []
         # Alpha can't be zero for CELU, this denotes 'not set'
         self._celu_alpha: float = 0.0
 
@@ -409,56 +397,49 @@ class InferModel(AtomicContainer):
             check_openmp_threads(verbose=False)
             if not self._MNP_IS_INSTALLED:
                 raise RuntimeError("The MNP C++ extension is not installed")
-            self._init_mnp()
+            # Copy params from networks (reshape & trans if copying from BmmEnsemble)
+            weights, biases, self._num_layers = self._copy_weights_and_biases()
 
-    @torch.jit.unused
-    def _init_mnp(self) -> None:
-        # Copy weights and biases (and transform them if copying from a BmmEnsemble)
-        weight_list, bias_list = self._copy_weights_and_biases()
+            # Cumulative sum from zero, over all the layers, gives the starting idxs
+            self._first_layer_idxs = list(accumulate(self._num_layers[:-1], initial=0))
 
-        self._num_layers_list = [len(weight) for weight in weight_list]
-        self._start_layers_list = [0] * self.num_species
-        for i in range(self.num_species - 1):
-            self._start_layers_list[i + 1] = (
-                self._start_layers_list[i] + self._num_layers_list[i]
-            )
-        # Flatten lists
-        self._weight_list = [w for sublist in weight_list for w in sublist]
-        self._bias_list = [b for sublist in bias_list for b in sublist]
+            # Flatten weight/bias lists and and register as buffers
+            # (registration is so they behave correctly with to(*) methods)
+            for j, w in enumerate(weights):
+                name = f"weigth-{j}"
+                self.register_buffer(name, w)
+                self._weight_names.append(name)
+
+            for j, b in enumerate(biases):
+                name = f"bias-{j}"
+                self.register_buffer(name, b)
+                self._bias_names.append(name)
 
     @torch.jit.unused
     def _copy_weights_and_biases(
         self,
-    ) -> tp.Tuple[tp.List[tp.List[Tensor]], tp.List[tp.List[Tensor]]]:
-        weight_list: tp.List[tp.List[Tensor]] = []  # shape: (num_species, num_layers)
-        bias_list: tp.List[tp.List[Tensor]] = []
-        for i, atomic_network in enumerate(self.atomic_networks):
-            weights: tp.List[Tensor] = []
-            biases: tp.List[Tensor] = []
+    ) -> tp.Tuple[tp.List[Tensor], tp.List[Tensor], tp.List[int]]:
+        num_layers: tp.List[int] = []  # len: num_species
+        weights: tp.List[Tensor] = []  # len: sum(num_species * num_layers[j])
+        biases: tp.List[Tensor] = []  # len: sum(num_species * num_layers[j])
+        for atomic_network in self.atomic_networks:
+            num_layers.append(0)
             for layer in atomic_network:
                 layer_type = type(layer)
-                # Note that clone().detach() converts Parameter into Tensor
-                if layer_type is torch.nn.Linear:
-                    if self._is_bmm:
-                        raise ValueError(
-                            "torch.nn.Linear layers only supported for non-Bmm models"
-                        )
+                # *.clone().detach() converts torch.nn.Parameter into Tensor
+                if layer_type is torch.nn.Linear and not self._is_bmm:
                     weights.append(layer.weight.clone().detach().transpose(0, 1))
                     biases.append(layer.bias.clone().detach().unsqueeze(0))
-                elif layer_type is BmmLinear:
-                    if not self._is_bmm:
-                        raise ValueError(
-                            "BmmLinear layers only supported for Bmm models"
-                        )
+                    num_layers[-1] += 1
+                elif layer_type is BmmLinear and self._is_bmm:
                     weights.append(layer.weight.clone().detach())
                     biases.append(layer.bias.clone().detach())
+                    num_layers[-1] += 1
                 elif layer_type is torch.nn.CELU:
                     if self._celu_alpha == 0.0:
-                        if layer.alpha == 0.0:
-                            raise ValueError("alpha can't be 0.0 for CELU")
                         self._celu_alpha = layer.alpha
                     elif self._celu_alpha != layer.alpha:
-                        raise ValueError("All CELU layers should have the same alpha")
+                        raise ValueError("All CELU layers must have the same alpha")
                 else:
                     raise ValueError(
                         f"Unsupported layer type {layer_type}"
@@ -467,9 +448,7 @@ class InferModel(AtomicContainer):
                         "- torchani.infer.BmmLinear (for bmm models)\n"
                         "- torch.nn.CELU"
                     )
-            weight_list.append(weights)
-            bias_list.append(biases)
-        return weight_list, bias_list
+        return weights, biases, num_layers
 
     def forward(
         self,
@@ -488,11 +467,7 @@ class InferModel(AtomicContainer):
             same_species = _is_same_tensor(self._last_species, species)
 
         if not same_species:
-            self._idx_list = _build_new_idx_list(
-                species,
-                self.num_species,
-                self._idx_list,
-            )
+            self._idx_list = _make_idx_list(species, self.num_species, self._idx_list)
         self._last_species = species
 
         # pyMNP code path
@@ -505,32 +480,29 @@ class InferModel(AtomicContainer):
                     self._stream_list,
                 )
                 return SpeciesEnergies(species, energies)
-            raise RuntimeError(
-                "InferModel can only be JIT-compiled if init with use_mnp=True"
-            )
+            raise RuntimeError("JIT-InferModel only supported with use_mnp=True")
 
         # cppMNP code path
-        energies = self._multi_net_function_mnp(aev)
+        energies = self._multi_net_function_cpp(aev)
         return SpeciesEnergies(species, energies)
 
     @jit_unused_if_no_mnp()
-    def _multi_net_function_mnp(self, aev: Tensor) -> Tensor:
-        # These lists are not registered, so always cast them here. If they are
-        # already in the correct device/dtype this is a no-op
-        self._weight_list = [
-            p.to(device=aev.device, dtype=aev.dtype) for p in self._weight_list
-        ]
-        self._bias_list = [
-            p.to(device=aev.device, dtype=aev.dtype) for p in self._bias_list
-        ]
+    def _multi_net_function_cpp(self, aev: Tensor) -> Tensor:
+        weights: tp.List[Tensor] = []
+        biases: tp.List[Tensor] = []
+        for name, buffer in self.named_buffers():
+            if name in self._bias_names:
+                biases.append(buffer)
+            elif name in self._weight_names:
+                weights.append(buffer)
         return torch.ops.mnp.run(
             aev,
             self.num_species,
-            self._num_layers_list,
-            self._start_layers_list,
+            self._num_layers,
+            self._first_layer_idxs,
             self._idx_list,
-            self._weight_list,
-            self._bias_list,
+            weights,
+            biases,
             self._stream_list,
             self._is_bmm,
             self._celu_alpha,

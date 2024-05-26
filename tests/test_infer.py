@@ -17,15 +17,6 @@ if not MNP_IS_INSTALLED:
     warnings.warn("Skipping all MNP tests, install compiled extensions to run them")
 
 
-@expand(jit=False, device="cpu")
-class TestNvtx(ANITest):
-    def testNVTX(self):
-        if not MNP_IS_INSTALLED:
-            raise unittest.SkipTest("MNP extension is not available, skipping MNP test")
-        torch.ops.mnp.nvtx_range_push("hello")
-        torch.ops.mnp.nvtx_range_pop()
-
-
 @expand()
 class TestInfer(ANITest):
     def setUp(self):

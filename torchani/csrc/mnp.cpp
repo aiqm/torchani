@@ -1,6 +1,5 @@
 #include <c10/cuda/CUDAGuard.h>
 #include <c10/cuda/CUDAStream.h>
-#include <nvToolsExt.h>
 #include <omp.h>
 #include <torch/extension.h>
 
@@ -270,22 +269,10 @@ bool is_same_tensor(Tensor last, Tensor current) {
   return last.data_ptr() == current.data_ptr();
 }
 
-// nvtx push
-void nvtx_range_push(c10::string_view name) {
-  ::nvtxRangePushA(std::string(name).c_str());
-}
-
-// nvtx pop
-void nvtx_range_pop() {
-  ::nvtxRangePop();
-}
-
 // mnp stands for multi network parallel
 TORCH_LIBRARY(mnp, m) {
   m.def("run", run_autograd);
   m.def("is_same_tensor", is_same_tensor);
-  m.def("nvtx_range_push", nvtx_range_push);
-  m.def("nvtx_range_pop", nvtx_range_pop);
 }
 
 TORCH_LIBRARY_IMPL(mnp, Autograd, m) {
