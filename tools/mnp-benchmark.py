@@ -14,6 +14,7 @@ from torchani.models import ANI2x
 from torchani.grad import energies_and_forces
 
 from tool_utils import timeit
+ROOT = Path(__file__).resolve().parent.parent
 
 if not MNP_IS_INSTALLED:
     raise RuntimeError("MNP is not installed, can't run benchmark")
@@ -54,7 +55,7 @@ def benchmark(
 
     def _run(model, file):
         species, coordinates, _ = read_xyz(
-            Path(Path(__file__).parent.parent, "tests", "test_data", file),
+            Path(ROOT, "tests", "test_data", file),
             device=device,
             dtype=torch.float,
         )
@@ -149,7 +150,7 @@ def main() -> int:
         (True, False),
         devices,
     ):
-        console.print(f"Running Ensemble in {device}, JIT: {jit}")
+        console.print(f"Profiling Ensemble in {device}, JIT: {jit}")
         benchmark(ensemble_table, jit, device, idx=None)
     console.print(ensemble_table)
     console.print()
@@ -159,7 +160,7 @@ def main() -> int:
         devices,
     ):
         console.print(
-            f"Running Single Model in {device}, JIT: {jit}"
+            f"Profiling Single Model in {device}, JIT: {jit}"
         )
         benchmark(single_table, jit, device, idx=0)
     console.print(single_table)

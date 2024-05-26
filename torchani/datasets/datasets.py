@@ -740,6 +740,7 @@ class _ANISubdataset(_ANIDatasetBase):
                     total=self.num_conformer_groups,
                     desc=f"Converting to {backend}",
                     disable=not verbose,
+                    leave=False,
                 ):
                     # mypy doesn't know that @wrap'ed functions have __wrapped__
                     # attribute, and fixing this is ugly
@@ -798,6 +799,7 @@ class _ANISubdataset(_ANIDatasetBase):
                     total=self.num_conformer_groups,
                     desc="Regrouping by formulas",
                     disable=not verbose,
+                    leave=False,
                 ):
                     # Get all formulas in the group to discriminate conformers by
                     # formula and then attach conformers with the same formula to the
@@ -845,6 +847,7 @@ class _ANISubdataset(_ANIDatasetBase):
                     total=self.num_conformer_groups,
                     desc="Regrouping by number of atoms",
                     disable=not verbose,
+                    leave=False,
                 ):
                     # This is done to accomodate the current group convention
                     new_name = str(_get_num_atoms(conformers)).zfill(3)
@@ -884,6 +887,7 @@ class _ANISubdataset(_ANIDatasetBase):
                     total=self.num_conformer_groups,
                     desc="Deleting properties",
                     disable=not verbose,
+                    leave=False,
                 ):
                     for property_ in properties:
                         del f[group_key][property_]

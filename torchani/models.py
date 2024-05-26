@@ -148,8 +148,7 @@ class BuiltinModel(torch.nn.Module):
         species_coordinates = self._maybe_convert_species(species_coordinates)
         species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
         species, energies = self.neural_networks(species_aevs)
-        energies += self.energy_shifter(species)
-        return SpeciesEnergies(species, energies)
+        return SpeciesEnergies(species, energies + self.energy_shifter(species))
 
     @torch.jit.export
     def _maybe_convert_species(
@@ -491,8 +490,9 @@ class PairPotentialsModel(BuiltinModel):
                 neighbor_data = rescreen(cutoff, neighbor_data)
                 previous_cutoff = cutoff
             energies += pot(element_idxs, neighbor_data)
-        energies += self.energy_shifter(element_idxs)
-        return SpeciesEnergies(element_idxs, energies)
+        return SpeciesEnergies(
+            element_idxs, energies + self.energy_shifter(element_idxs)
+        )
 
     @torch.jit.export
     def atomic_energies(

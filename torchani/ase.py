@@ -118,7 +118,7 @@ class Calculator(ase.calculators.calculator.Calculator):
         else:
             energy = self.model((species, coordinates)).energies
 
-        energy *= ase.units.Hartree
+        energy = energy * ase.units.Hartree
         self.results["energy"] = energy.item()
         self.results["free_energy"] = energy.item()
 

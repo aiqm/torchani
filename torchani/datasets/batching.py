@@ -113,7 +113,11 @@ class ANIBatchedDataset(torch.utils.data.Dataset[Conformers]):
         self._data = [
             self._extractor(idx)
             for idx in tqdm(
-                range(len(self)), total=len(self), disable=not verbose, desc=desc
+                range(len(self)),
+                total=len(self),
+                disable=not verbose,
+                desc=desc,
+                leave=False,
             )
         ]
         desc = "Applying transforms once and discarding"
@@ -121,7 +125,11 @@ class ANIBatchedDataset(torch.utils.data.Dataset[Conformers]):
             self._data = [
                 self.transform(p)
                 for p in tqdm(
-                    self._data, total=len(self), disable=not verbose, desc=desc
+                    self._data,
+                    total=len(self),
+                    disable=not verbose,
+                    desc=desc,
+                    leave=False,
                 )
             ]
             self.transform = Identity()
@@ -130,7 +138,11 @@ class ANIBatchedDataset(torch.utils.data.Dataset[Conformers]):
             self._data = [
                 {k: v.pin_memory() for k, v in batch.items()}
                 for batch in tqdm(
-                    self._data, total=len(self), disable=not verbose, desc=desc
+                    self._data,
+                    total=len(self),
+                    disable=not verbose,
+                    desc=desc,
+                    leave=False,
                 )
             ]
         self._extractor = self._memory_extractor
@@ -221,7 +233,12 @@ def create_batched_dataset(
     # do the specified operation
     if folds is not None:
         conformer_splits, split_paths = _divide_into_folds(
-            conformer_indices, dest_path, folds, rng, direct_cache
+            conformer_indices,
+            dest_path,
+            folds,
+            rng,
+            direct_cache,
+            verbose,
         )
     else:
         if splits is None:
@@ -231,7 +248,11 @@ def create_batched_dataset(
             raise ValueError("The sum of the split fractions has to add up to one")
 
         conformer_splits, split_paths = _divide_into_splits(
-            conformer_indices, dest_path, splits, direct_cache
+            conformer_indices,
+            dest_path,
+            splits,
+            direct_cache,
+            verbose,
         )
 
     # (3) Compute the batch indices for each split and save the conformers to disk
@@ -305,14 +326,15 @@ def _divide_into_folds(
     folds: int,
     rng: tp.Optional[torch.Generator] = None,
     direct_cache: bool = False,
+    verbose: bool = True,
 ) -> tp.Tuple[tp.Tuple[Tensor, ...], tp.OrderedDict[str, Path]]:
     # the idea here is to work with "blocks" of size num_conformers / folds
     # cast to list for mypy
     conformer_blocks = list(torch.chunk(conformer_indices, folds))
     conformer_splits: tp.List[Tensor] = []
     split_paths_list: tp.List[tp.Tuple[str, Path]] = []
-
-    print(f"Generating {folds} folds for cross validation or ensemble training")
+    if verbose:
+        print(f"Generating {folds} folds for cross validation or ensemble training")
     for f in range(folds):
         # the first shuffle is necessary so that validation splits are shuffled
         validation_split = conformer_blocks[f]
@@ -342,6 +364,7 @@ def _divide_into_splits(
     dest_path: Path,
     splits: tp.Dict[str, float],
     direct_cache: bool = False,
+    verbose: bool = True,
 ) -> tp.Tuple[tp.Tuple[Tensor, ...], tp.OrderedDict[str, Path]]:
     total_num_conformers = len(conformer_indices)
     split_sizes = OrderedDict(
@@ -362,10 +385,11 @@ def _divide_into_splits(
     # TODO: Unnecessary cast in current pytorch
     conformer_splits = tuple(torch.split(conformer_indices, list(split_sizes.values())))
     assert len(conformer_splits) == len(split_sizes.values())
-    print(
-        f"Splits have number of conformers: {dict(split_sizes)}."
-        f" The requested percentages were: {splits}"
-    )
+    if verbose:
+        print(
+            f"Splits have number of conformers: {dict(split_sizes)}."
+            f" The requested percentages were: {splits}"
+        )
     return conformer_splits, split_paths
 
 
@@ -488,6 +512,7 @@ def _save_splits_into_batches(
                     total=len(counts_cat),
                     desc=desc,
                     disable=not verbose,
+                    leave=False,
                 ):
                     group_idx, start, end = group_slice
                     # select the specific group from the whole list of files

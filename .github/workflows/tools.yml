@@ -42,13 +42,13 @@ jobs:
           ${{ steps.meta.outputs.tags }}
           bash -c "python tools/inference-benchmark.py"
 
-      - name: COMP6v1 benchmark
+      - name: COMP6v1 accuracy benchmark
         run: >-
           docker run
           --rm
           --gpus all
           ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/comp6v1-benchmark.py"
+          bash -c "python tools/comp6v1-accuracy-benchmark.py"
 
       - name: Training benchmark
         run: >-
@@ -58,13 +58,29 @@ jobs:
           ${{ steps.meta.outputs.tags }}
           bash -c "python tools/training-benchmark.py"
 
-      - name: Training benchmark (Nsight Systems)
+      - name: Training benchmark (Nsight)
         run: >-
           docker run
           --rm
           --gpus all
           ${{ steps.meta.outputs.tags }}
           bash -c "python tools/training-benchmark.py --nvtx"
+
+      - name: MD benchmark
+        run: >-
+          docker run
+          --rm
+          --gpus all
+          ${{ steps.meta.outputs.tags }}
+          bash -c "python tools/md-benchmark.py"
+
+      - name: MD benchmark (Nsight)
+        run: >-
+          docker run
+          --rm
+          --gpus all
+          ${{ steps.meta.outputs.tags }}
+          bash -c "python tools/md-benchmark.py --nvtx"
 
       - name: Remove image
         if: ${{ always() }}

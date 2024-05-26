@@ -1,4 +1,5 @@
 import json
+
 r"""Torchani Builtin Datasets
 
 This module provides access to the following datasets, calculated with specific
@@ -365,6 +366,7 @@ def _check_files_integrity(
     suffix: str = ".h5",
     name: str = "Dataset",
     skip_hash_check: bool = False,
+    verbose: bool = True,
 ) -> None:
     # Checks that:
     # (1) There are files in the dataset
@@ -384,7 +386,12 @@ def _check_files_integrity(
         )
     if skip_hash_check:
         return
-    for f in tqdm(present_files, desc=f"Checking integrity of dataset {name}"):
+    for f in tqdm(
+        present_files,
+        desc=f"Checking integrity of dataset {name}",
+        disable=not verbose,
+        leave=False,
+    ):
         if not _check_integrity(f, files_and_md5s[f.name]):
             raise RuntimeError(
                 f"All expected files for dataset {name}"
@@ -443,7 +450,12 @@ def _register_dataset_builder(name: str) -> None:
 
         # Check for corruption
         _check_files_integrity(
-            _files_and_md5s, _root, suffix, name, skip_hash_check=skip_check
+            _files_and_md5s,
+            _root,
+            suffix,
+            name,
+            skip_hash_check=skip_check,
+            verbose=verbose,
         )
 
         # Order dataset paths using the order given in "files and md5s"
