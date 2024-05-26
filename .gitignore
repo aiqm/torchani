@@ -54,6 +54,7 @@ Untitled.ipynb
 # Nvidia Nsight Systems profiling
 *.qdrep
 *.qdstrm
+*.nsys-rep
 
 *.prof
 *checkpoint*
