@@ -209,7 +209,13 @@ class BuiltinModel(torch.nn.Module):
         self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
         self.aev_computer.neighborlist._recast_long_buffers()
 
-    def ase(self, **kwargs):
+    def ase(
+        self,
+        overwrite: bool = False,
+        stress_partial_fdotr: bool = False,
+        stress_numerical: bool = False,
+        jit: bool = False,
+    ):
         """Get an ASE Calculator using this ANI model
 
         Arguments:
@@ -218,9 +224,13 @@ class BuiltinModel(torch.nn.Module):
         Returns:
             calculator (:class:`ase.Calculator`): A calculator to be used with ASE
         """
-        from . import ase
-
-        return ase.Calculator(self, **kwargs)
+        from torchani.ase import Calculator
+        return Calculator(
+            torch.jit.script(self) if jit else self,
+            overwrite=overwrite,
+            stress_partial_fdotr=stress_partial_fdotr,
+            stress_numerical=stress_numerical,
+        )
 
     def __getitem__(self, index: int) -> tpx.Self:
         return type(self)(

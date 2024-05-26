@@ -7,22 +7,30 @@ import ase
 import ase.io
 import ase.md
 from rich.console import Console
+from tqdm import tqdm
 
 from torchani.models import ANI1x
-from tool_utils import Timer
+from tool_utils import Timer, Opt
 
 console = Console()
 ROOT = Path(__file__).resolve().parent.parent
 
 
 def main(
+    detail: bool,
+    opt: Opt,
     sync: bool,
     nvtx: bool,
     device: str,
     file: str,
+    no_tqdm: bool,
     num_warm_up: int,
     num_profile: int,
 ) -> int:
+    detail = (opt is Opt.NONE) and detail
+    console.print(
+        f"Profiling with optimization={opt.value}, on device: {device.upper()}"
+    )
     if not file:
         xyz_file_path = Path(ROOT, "tests", "test_data", "small.xyz")
     elif file.startswith("/"):
@@ -32,7 +40,7 @@ def main(
 
     molecule = ase.io.read(str(xyz_file_path))
     model = ANI1x(model_index=0).to(torch.device(device))
-    molecule.calc = model.ase()
+    molecule.calc = model.ase(jit=opt is Opt.JIT)
     dyn = ase.md.verlet.VelocityVerlet(molecule, timestep=1 * ase.units.fs)
 
     timer = Timer(
@@ -44,16 +52,32 @@ def main(
             model.aev_computer.radial_terms,
             model.neural_networks,
             model.energy_shifter,
-        ],
-        device=device,
+        ]
+        if detail
+        else [],
         nvtx=nvtx,
         sync=sync,
     )
-    console.print(f"Warm up for {num_warm_up} steps")
-    dyn.run(num_warm_up)
-    console.print(f"Profiling for {num_profile} steps")
+    for _ in tqdm(
+        range(num_warm_up),
+        desc="Warm up",
+        total=num_warm_up,
+        leave=False,
+        disable=no_tqdm,
+    ):
+        dyn.run(1)
     timer.start_profiling()
     with torch.autograd.profiler.emit_nvtx(enabled=nvtx, record_shapes=True):
+        for _ in tqdm(
+            range(num_profile),
+            desc="Profiling",
+            total=num_profile,
+            leave=False,
+            disable=no_tqdm,
+        ):
+            timer.start_batch()
+            dyn.run(1)
+            timer.end_batch()
         dyn.run(num_profile)
     timer.stop_profiling()
     timer.display()
@@ -98,6 +122,17 @@ if __name__ == "__main__":
         action="store_true",
         help="Whether to disable sync between CUDA calls",
     )
+    parser.add_argument(
+        "--detail",
+        action="store_true",
+        help="Whether to enable detailed profiling",
+    )
+    parser.add_argument(
+        "--no-tqdm",
+        dest="no_tqdm",
+        action="store_true",
+        help="Whether to disable tqdm to display progress",
+    )
     args = parser.parse_args()
     if args.nvtx and not torch.cuda.is_available():
         raise ValueError("CUDA is needed to profile with NVTX")
@@ -111,13 +146,27 @@ if __name__ == "__main__":
         console.print(
             f"CUDA sync {'[green]ENABLED[/green]' if sync else '[red]DISABLED[/red]'}"
         )
-    sys.exit(
-        main(
-            sync=sync,
-            nvtx=args.nvtx,
-            device=args.device,
-            file=args.file,
-            num_warm_up=args.num_warm_up,
-            num_profile=args.num_profile,
-        )
+        console.print()
+    main(
+        detail=args.detail,
+        opt=Opt.NONE,
+        sync=sync,
+        nvtx=args.nvtx,
+        device=args.device,
+        file=args.file,
+        num_warm_up=args.num_warm_up,
+        num_profile=args.num_profile,
+        no_tqdm=args.no_tqdm,
     )
+    main(
+        detail=args.detail,
+        opt=Opt.JIT,
+        sync=sync,
+        nvtx=args.nvtx,
+        device=args.device,
+        file=args.file,
+        num_warm_up=args.num_warm_up,
+        num_profile=args.num_profile,
+        no_tqdm=args.no_tqdm,
+    )
+    sys.exit(0)

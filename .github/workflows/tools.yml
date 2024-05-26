@@ -40,7 +40,7 @@ jobs:
           --rm
           --gpus all
           ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/inference-benchmark.py"
+          bash -c "python tools/inference-benchmark.py --no-tqdm"
 
       - name: COMP6v1 accuracy benchmark
         run: >-
@@ -48,7 +48,7 @@ jobs:
           --rm
           --gpus all
           ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/comp6v1-accuracy-benchmark.py"
+          bash -c "python tools/comp6v1-accuracy-benchmark.py --no-tqdm"
 
       - name: Training benchmark
         run: >-
@@ -56,15 +56,15 @@ jobs:
           --rm
           --gpus all
           ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/training-benchmark.py"
+          bash -c "python tools/training-benchmark.py --no-tqdm"
 
-      - name: Training benchmark (Nsight)
+      - name: Training benchmark (Nsight dry run)
         run: >-
           docker run
           --rm
           --gpus all
           ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/training-benchmark.py --nvtx"
+          bash -c "python tools/training-benchmark.py --nvtx --no-tqdm"
 
       - name: MD benchmark
         run: >-
@@ -72,15 +72,15 @@ jobs:
           --rm
           --gpus all
           ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/md-benchmark.py"
+          bash -c "python tools/md-benchmark.py --no-tqdm"
 
-      - name: MD benchmark (Nsight)
+      - name: MD benchmark (Nsight dry run)
         run: >-
           docker run
           --rm
           --gpus all
           ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/md-benchmark.py --nvtx"
+          bash -c "python tools/md-benchmark.py --nvtx --no-tqdm"
 
       - name: Remove image
         if: ${{ always() }}

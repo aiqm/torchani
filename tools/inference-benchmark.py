@@ -11,23 +11,26 @@ from torchani.models import ANI1x
 from torchani.grad import energies_and_forces
 from torchani.io import read_xyz
 
-from tool_utils import Timer
+from tool_utils import Timer, Opt
 
 console = Console()
 ROOT = Path(__file__).resolve().parent.parent
 
 
 def main(
-    optimize: str,
+    opt: Opt,
     file: str,
     nvtx: bool,
     sync: bool,
     no_tqdm: bool,
     device: tp.Literal["cpu", "cuda"],
-    detail: bool = False,
+    detail: bool,
+    num_warm_up: int,
+    num_profile: int,
 ) -> int:
+    detail = (opt is Opt.NONE) and detail
     console.print(
-        f"Profiling with optimization={optimize}, on device: {device.upper()}"
+        f"Profiling with optimization={opt.value}, on device: {device.upper()}"
     )
     if not file:
         xyz_file_path = Path(ROOT, "tests", "test_data", "CH4-5.xyz")
@@ -36,9 +39,9 @@ def main(
     else:
         xyz_file_path = Path.cwd() / file
     model = ANI1x()[0].to(device)
-    if optimize == "jit":
+    if opt is Opt.JIT:
         model = torch.jit.script(model)
-    elif optimize == "compile":
+    elif opt is Opt.COMPILE:
         # Compile transforms the model into a Callable
         model = torch.compile(model)  # type: ignore
     species, coordinates, _ = read_xyz(xyz_file_path, device=device)
@@ -53,17 +56,28 @@ def main(
             model.aev_computer.angular_terms,
             model.aev_computer.radial_terms,
         ]
-        if (optimize == "none" and detail)
+        if detail
         else [],
-        device=device,
         nvtx=nvtx,
         sync=sync,
     )
     console.print(f"Batch of {num_conformations} conformations")
-    for _ in tqdm(range(30), desc="Warm up", total=30, leave=False):
+    for _ in tqdm(
+        range(num_warm_up),
+        desc="Warm up",
+        total=num_warm_up,
+        leave=False,
+        disable=no_tqdm,
+    ):
         energies_and_forces(model, species, coordinates)
     timer.start_profiling()
-    for _ in tqdm(range(10), desc="Profiling", total=10, leave=False):
+    for _ in tqdm(
+        range(num_profile),
+        desc="Profiling",
+        total=num_profile,
+        leave=False,
+        disable=no_tqdm,
+    ):
         timer.start_batch()
         energies_and_forces(model, species, coordinates)
         timer.end_batch()
@@ -71,9 +85,9 @@ def main(
     timer.display()
 
     model = ANI1x()[0].to(device)
-    if optimize == "jit":
+    if opt is Opt.JIT:
         model = torch.jit.script(model)
-    elif optimize == "compile":
+    elif opt is Opt.COMPILE:
         # Compile transforms the model into a Callable
         model = torch.compile(model)  # type: ignore
     timer = Timer(
@@ -86,18 +100,17 @@ def main(
             model.aev_computer.angular_terms,
             model.aev_computer.radial_terms,
         ]
-        if (optimize == "none" and detail)
+        if detail
         else [],
-        device=device,
         nvtx=nvtx,
         sync=sync,
     )
     console.print("Batch of 1 conformation")
     for j, (_species, _coordinates) in tqdm(
-        enumerate(zip(species, coordinates)),
+        enumerate(zip(species[:num_warm_up], coordinates[:num_warm_up])),
         desc="Warm Up",
         disable=no_tqdm,
-        total=200,
+        total=num_warm_up,
         leave=False,
     ):
         _, _ = energies_and_forces(
@@ -105,14 +118,12 @@ def main(
             _species.unsqueeze(0),
             _coordinates.unsqueeze(0).detach(),
         )
-        if j == 199:
-            break
     timer.start_profiling()
     for j, (_species, _coordinates) in tqdm(
-        enumerate(zip(species, coordinates)),
+        enumerate(zip(species[:num_profile], coordinates[:num_profile])),
         desc="Profiling",
         disable=no_tqdm,
-        total=100,
+        total=num_profile,
         leave=False,
     ):
         timer.start_batch()
@@ -122,11 +133,8 @@ def main(
             _coordinates.unsqueeze(0).detach(),
         )
         timer.end_batch()
-        if j == 100:
-            break
     timer.stop_profiling()
     timer.display()
-    console.print()
     return 0
 
 
@@ -166,6 +174,20 @@ if __name__ == "__main__":
         action="store_true",
         help="Detailed breakdown of benchmark",
     )
+    parser.add_argument(
+        "-w",
+        "--num-warm-up",
+        help="Number of warm up steps",
+        type=int,
+        default=50,
+    )
+    parser.add_argument(
+        "-e",
+        "--num-profile",
+        help="Number of profiling steps",
+        type=int,
+        default=50,
+    )
     args = parser.parse_args()
     if args.nvtx and not torch.cuda.is_available():
         raise ValueError("CUDA is needed to profile with NVTX")
@@ -178,32 +200,41 @@ if __name__ == "__main__":
     console.print(
         f"CUDA sync {'[green]ENABLED[/green]' if sync else '[red]DISABLED[/red]'}"
     )
+    console.print()
     main(
-        optimize="none",
+        opt=Opt.NONE,
         file=args.filename,
         nvtx=args.nvtx,
         sync=sync,
         no_tqdm=args.no_tqdm,
         device=args.device,
         detail=args.detail,
+        num_warm_up=args.num_warm_up,
+        num_profile=args.num_profile,
     )
     main(
-        optimize="jit",
+        opt=Opt.JIT,
         file=args.filename,
         nvtx=args.nvtx,
         sync=sync,
         no_tqdm=args.no_tqdm,
         device=args.device,
+        detail=args.detail,
+        num_warm_up=args.num_warm_up,
+        num_profile=args.num_profile,
     )
     if args.compile:
         if not tuple(map(int, torch.__version__.split("."))) >= (2, 0):
             raise RuntimeError("PyTorch 2.0 or later needed for torch.compile")
         main(
-            optimize="compile",
+            opt=Opt.COMPILE,
             file=args.filename,
             nvtx=args.nvtx,
             sync=sync,
             no_tqdm=args.no_tqdm,
             device=args.device,
+            detail=args.detail,
+            num_warm_up=args.num_warm_up,
+            num_profile=args.num_profile,
         )
     sys.exit(0)

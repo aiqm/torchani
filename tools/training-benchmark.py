@@ -8,23 +8,28 @@ from rich.console import Console
 from torchani import datasets
 from torchani.datasets import create_batched_dataset
 from torchani.models import ANI1x
-from tool_utils import Timer
+from tool_utils import Timer, Opt
 console = Console()
 
 
 def main(
-    jit: bool,
+    opt: Opt,
     sync: bool,
     nvtx: bool,
     device: str,
+    no_tqdm: bool,
     batch_size: int,
     num_profile: int,
     num_warm_up: int,
     dataset: str,
-    detail: bool = False,
+    detail: bool,
 ) -> int:
+    console.print(
+        f"Profiling with optimization={opt.value}, on device: {device.upper()}"
+    )
+    detail = (opt is Opt.JIT) and detail
     model = ANI1x(model_index=0).to(device)
-    if jit:
+    if opt is Opt.JIT:
         model = torch.jit.script(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.000001)
     mse = torch.nn.MSELoss(reduction="none")
@@ -55,12 +60,11 @@ def main(
             model.aev_computer.angular_terms,
             model.aev_computer.radial_terms,
         ] if detail else [],
-        device=device,
         nvtx=nvtx,
         sync=sync,
     )
     total_batches = num_warm_up + num_profile
-    pbar = tqdm(desc="Warm up", total=total_batches, leave=False)
+    pbar = tqdm(desc="Warm up", total=total_batches, leave=False, disable=no_tqdm)
     while True:
         for properties in train:
             properties = {k: v.to(device) for k, v in properties.items()}
@@ -147,6 +151,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Whether to include benchmark detail",
     )
+    parser.add_argument(
+        "--no-tqdm",
+        dest="no_tqdm",
+        action="store_true",
+        help="Whether to disable tqdm to display progress",
+    )
     args = parser.parse_args()
     if args.nvtx and not torch.cuda.is_available():
         raise ValueError("CUDA is needed to profile with NVTX")
@@ -160,8 +170,9 @@ if __name__ == "__main__":
         console.print(
             f"CUDA sync {'[green]ENABLED[/green]' if sync else '[red]DISABLED[/red]'}"
         )
+        console.print()
     main(
-        jit=False,
+        opt=Opt.NONE,
         sync=sync,
         nvtx=args.nvtx,
         device=args.device,
@@ -170,9 +181,10 @@ if __name__ == "__main__":
         num_warm_up=args.num_warm_up,
         num_profile=args.num_profile,
         detail=args.detail,
+        no_tqdm=args.no_tqdm,
     )
     main(
-        jit=True,
+        opt=Opt.JIT,
         sync=sync,
         nvtx=args.nvtx,
         device=args.device,
@@ -180,6 +192,7 @@ if __name__ == "__main__":
         dataset=args.dataset,
         num_warm_up=args.num_warm_up,
         num_profile=args.num_profile,
-        detail=False,
+        detail=args.detail,
+        no_tqdm=args.no_tqdm,
     )
     sys.exit(0)

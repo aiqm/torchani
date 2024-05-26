@@ -17,7 +17,10 @@ console = Console()
 
 
 def main(
-    subset: str, jit: bool, max_size: int, device: tp.Literal["cpu", "cuda"]
+    subset: str,
+    max_size: int,
+    device: tp.Literal["cpu", "cuda"],
+    no_tqdm: bool,
 ) -> int:
     ds = getattr(datasets, "COMP6v1")(verbose=False)
     locations = [
@@ -28,18 +31,18 @@ def main(
     if not len(locations) == 1:
         raise ValueError(f"Subset {subset} could not be found")
     console.print(
-        f"Benchmarking on subset {subset} with JIT={jit}, on device {device.upper()}"
+        f"Benchmarking on subset {subset} on device {device.upper()}"
     )
     ds = ANIDataset(locations=locations)
     model = ANI1x().to(device)
-    if jit:
-        model = torch.jit.script(model)
     count = 0
     energies_rmse = 0.0
     forces_rmse = 0.0
     energies_mae = 0.0
     forces_mae = 0.0
-    pbar = tqdm(total=ds.num_conformers, desc="COMP6v1 benchmark", leave=False)
+    pbar = tqdm(
+        total=ds.num_conformers, desc="COMP6v1 benchmark", leave=False, disable=no_tqdm
+    )
     for k, j, d in ds.chunked_items(max_size=max_size):
         size = d["species"].shape[0]
         count += size
@@ -92,14 +95,17 @@ if __name__ == "__main__":
         default=("cuda" if torch.cuda.is_available() else "cpu"),
     )
     parser.add_argument(
-        "-j",
-        "--jit",
+        "--no-tqdm",
+        dest="no_tqdm",
         action="store_true",
-        help="JIT compile model",
+        help="Whether to disable tqdm to display progress",
     )
     args = parser.parse_args()
     sys.exit(
         main(
-            device=args.device, jit=args.jit, subset=args.subset, max_size=args.max_size
+            device=args.device,
+            subset=args.subset,
+            max_size=args.max_size,
+            no_tqdm=args.no_tqdm,
         )
     )

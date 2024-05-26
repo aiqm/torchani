@@ -1,3 +1,4 @@
+from enum import Enum
 import numpy as np
 from copy import deepcopy
 import typing as tp
@@ -11,11 +12,16 @@ from rich.table import Table
 from torch.profiler import record_function, ProfilerActivity
 
 
+class Opt(Enum):
+    JIT = "jit"
+    NONE = "none"
+    COMPILE = "compile"
+
+
 class Timer:
     def __init__(
         self,
         modules: tp.List[torch.nn.Module],
-        device: str,
         nvtx: bool = False,
         sync: bool = True,
         extra_title: str = "",
@@ -26,7 +32,6 @@ class Timer:
         self.module_names = tuple(m.__class__.__name__ for m in modules)
         self.nvtx = nvtx
         self.sync = sync
-        self.device = device
         self.timers: tp.Dict[str, tp.List[float]] = defaultdict(list)
         self._last_timers: tp.Dict[str, tp.List[float]] = defaultdict(list)
         self.batch_counter = 0
@@ -140,7 +145,7 @@ class Timer:
         table = Table(
             title="".join(
                 (
-                    f"{self.reduction_title} times on device: {self.device.upper()}",
+                    f"{self.reduction_title} times",
                     self.extra_title,
                 )
             ),
