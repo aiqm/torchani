@@ -55,6 +55,7 @@ Untitled.ipynb
 *.qdrep
 *.qdstrm
 *.nsys-rep
+report*.sqlite
 
 *.prof
 *checkpoint*
