@@ -35,11 +35,11 @@ species = torch.tensor([[1, 0, 0, 0, 0]], device=device)
 aev_computer = AEVComputer.style_2x().to(device)
 species, aevs = aev_computer((species, coordinates))
 radial_length = aev_computer.radial_length
-print("AEV computer like 2x")
-print("for first atom, first 10 terms of radial:", aevs[0, 0, :10])
+print("AEV computer similar to 2x")
+print("for first atom, first 5 terms of radial:", aevs[0, 0, :5].tolist())
 print(
-    "for first atom, first 10 terms of angular:",
-    aevs[0, 0, radial_length: radial_length + 10],
+    "for first atom, first 5 terms of angular:",
+    aevs[0, 0, radial_length: radial_length + 5].tolist(),
 )
 print()
 
@@ -52,11 +52,11 @@ print()
 aev_computer_smooth = AEVComputer.style_1x(cutoff_fn="smooth").to(device)
 radial_length = aev_computer_smooth.radial_length
 species, aevs = aev_computer_smooth((species, coordinates))
-print("AEV computer like 1x, but with a smooth cutoff")
-print("for first atom, first 10 terms of radial:", aevs[0, 0, :10])
+print("AEV computer similar to 1x, but with a smooth cutoff")
+print("for first atom, first 5 terms of radial:", aevs[0, 0, :5].tolist())
 print(
-    "for first atom, first 10 terms of angular:",
-    aevs[0, 0, radial_length: radial_length + 10],
+    "for first atom, first 5 terms of angular:",
+    aevs[0, 0, radial_length: radial_length + 5].tolist(),
 )
 print()
 
@@ -79,11 +79,11 @@ class CutoffBiweight(Cutoff):
 aev_computer_bw = AEVComputer.style_1x(cutoff_fn=CutoffBiweight()).to(device)
 radial_length = aev_computer_bw.radial_length
 species, aevs = aev_computer_smooth((species, coordinates))
-print("AEV computer like 1x, but with a custom cutoff function")
-print("for first atom, first 10 terms of radial:", aevs[0, 0, :10])
+print("AEV computer similar to 1x, but with a custom cutoff function")
+print("for first atom, first 5 terms of radial:", aevs[0, 0, :5].tolist())
 print(
-    "for first atom, first 10 terms of angular:",
-    aevs[0, 0, radial_length: radial_length + 10],
+    "for first atom, first 5 terms of angular:",
+    aevs[0, 0, radial_length: radial_length + 5].tolist(),
 )
 print()
 
@@ -114,9 +114,9 @@ class AngularCosDiff(AngularTerm):
         # set the sublength
         self.sublength = self.EtaA.numel() * self.ShfA.numel() * self.ShfZ.numel()
 
-    def forward(self, vectors12: Tensor) -> Tensor:
+    def forward(self, vectors12: Tensor, distances12: Tensor) -> Tensor:
         vectors12 = vectors12.view(2, -1, 3, 1, 1, 1)
-        distances12 = vectors12.norm(2, dim=2)
+        distances12 = distances12.view(2, -1, 1, 1, 1)
         cos_angles = vectors12.prod(0).sum(1) / torch.clamp(
             distances12.prod(0), min=1e-10
         )
@@ -151,9 +151,9 @@ aev_computer_cosdiff = AEVComputer(
 radial_length = aev_computer_cosdiff.radial_length
 species, aevs = aev_computer_cosdiff((species, coordinates))
 print("AEV computer similar to 1x, but with custom angular terms")
-print("for first atom, first 10 terms of radial:", aevs[0, 0, :10])
+print("for first atom, first 5 terms of radial:", aevs[0, 0, :5].tolist())
 print(
-    "for first atom, first 10 terms of angular:",
-    aevs[0, 0, radial_length: radial_length + 10],
+    "for first atom, first 5 terms of angular:",
+    aevs[0, 0, radial_length: radial_length + 5].tolist(),
 )
 print()

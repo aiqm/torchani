@@ -47,21 +47,21 @@ def main(
     species, coordinates, _ = read_xyz(xyz_file_path, device=device)
     num_conformations = species.shape[0]
     timer = Timer(
-        modules=[
-            model,
-            model.aev_computer,
-            model.neural_networks,
-            model.energy_shifter,
-            model.aev_computer.neighborlist,
-            model.aev_computer.angular_terms,
-            model.aev_computer.radial_terms,
+        modules_and_fns=[
+            (model, "forward"),
+            (model.aev_computer, "forward"),
+            (model.neural_networks, "forward"),
+            (model.energy_shifter, "forward"),
+            (model.aev_computer.neighborlist, "forward"),
+            (model.aev_computer.angular_terms, "forward"),
+            (model.aev_computer.radial_terms, "forward"),
         ]
         if detail
         else [],
         nvtx=nvtx,
         sync=sync,
     )
-    console.print(f"Batch of {num_conformations} conformations")
+
     for _ in tqdm(
         range(num_warm_up),
         desc="Warm up",
@@ -78,34 +78,11 @@ def main(
         leave=False,
         disable=no_tqdm,
     ):
-        timer.start_batch()
+        timer.start_range(f"batch-size-{num_conformations}")
         energies_and_forces(model, species, coordinates)
-        timer.end_batch()
+        timer.end_range(f"batch-size-{num_conformations}")
     timer.stop_profiling()
-    timer.display()
 
-    model = ANI1x()[0].to(device)
-    if opt is Opt.JIT:
-        model = torch.jit.script(model)
-    elif opt is Opt.COMPILE:
-        # Compile transforms the model into a Callable
-        model = torch.compile(model)  # type: ignore
-    timer = Timer(
-        modules=[
-            model,
-            model.aev_computer,
-            model.neural_networks,
-            model.energy_shifter,
-            model.aev_computer.neighborlist,
-            model.aev_computer.angular_terms,
-            model.aev_computer.radial_terms,
-        ]
-        if detail
-        else [],
-        nvtx=nvtx,
-        sync=sync,
-    )
-    console.print("Batch of 1 conformation")
     for j, (_species, _coordinates) in tqdm(
         enumerate(zip(species[:num_warm_up], coordinates[:num_warm_up])),
         desc="Warm Up",
@@ -126,13 +103,13 @@ def main(
         total=num_profile,
         leave=False,
     ):
-        timer.start_batch()
+        timer.start_range("batch-size-1")
         _, _ = energies_and_forces(
             model,
             _species.unsqueeze(0),
             _coordinates.unsqueeze(0).detach(),
         )
-        timer.end_batch()
+        timer.end_range("batch-size-1")
     timer.stop_profiling()
     timer.display()
     return 0
@@ -186,7 +163,7 @@ if __name__ == "__main__":
         "--num-profile",
         help="Number of profiling steps",
         type=int,
-        default=50,
+        default=10,
     )
     args = parser.parse_args()
     if args.nvtx and not torch.cuda.is_available():

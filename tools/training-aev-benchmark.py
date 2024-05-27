@@ -87,8 +87,11 @@ def benchmark(args, dataset, use_cuda_extension, force_train=False):
     # enable timers
     timers: tp.Dict[str, float] = {}
     _aev_fns = (
-        "_compute_radial_aev",
-        "_compute_angular_aev",
+        "_collect_radial_terms",
+        "_collect_angular_terms",
+        "_collect_radial_terms",
+        "angular_terms",
+        "radial_terms",
         "_compute_aev",
         "_triple_by_molecule",
         "forward",

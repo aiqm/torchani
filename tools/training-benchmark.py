@@ -9,6 +9,7 @@ from torchani import datasets
 from torchani.datasets import create_batched_dataset
 from torchani.models import ANI1x
 from tool_utils import Timer, Opt
+
 console = Console()
 
 
@@ -27,7 +28,7 @@ def main(
     console.print(
         f"Profiling with optimization={opt.value}, on device: {device.upper()}"
     )
-    detail = (opt is Opt.JIT) and detail
+    detail = (opt is Opt.NONE) and detail
     model = ANI1x(model_index=0).to(device)
     if opt is Opt.JIT:
         model = torch.jit.script(model)
@@ -51,15 +52,17 @@ def main(
 
     counter = 0
     timer = Timer(
-        modules=[
-            model,
-            model.aev_computer,
-            model.neural_networks,
-            model.energy_shifter,
-            model.aev_computer.neighborlist,
-            model.aev_computer.angular_terms,
-            model.aev_computer.radial_terms,
-        ] if detail else [],
+        modules_and_fns=[
+            (model, "forward"),
+            (model.aev_computer, "forward"),
+            (model.neural_networks, "forward"),
+            (model.energy_shifter, "forward"),
+            (model.aev_computer.neighborlist, "forward"),
+            (model.aev_computer.angular_terms, "forward"),
+            (model.aev_computer.radial_terms, "forward"),
+        ]
+        if detail
+        else [],
         nvtx=nvtx,
         sync=sync,
     )
@@ -67,29 +70,34 @@ def main(
     pbar = tqdm(desc="Warm up", total=total_batches, leave=False, disable=no_tqdm)
     while True:
         for properties in train:
-            properties = {k: v.to(device) for k, v in properties.items()}
             if not timer.is_profiling and (counter == num_warm_up):
                 pbar.set_description("Profiling")
                 timer.start_profiling()
             pbar.update(1)
 
-            timer.start_batch()
+            timer.start_range("prepare-batch")
+            properties = {k: v.to(device) for k, v in properties.items()}
             species = properties["species"]
             coordinates = properties["coordinates"].to(dtype=torch.float)
             targ_energies = properties["energies"].to(dtype=torch.float)
             num_atoms = (species >= 0).sum(dim=1, dtype=torch.float)
+            timer.end_range("prepare-batch")
+
+            timer.start_range("loss-fw")
             with torch.autograd.profiler.emit_nvtx(
                 enabled=(timer.is_profiling and nvtx), record_shapes=True
             ):
                 pred_energies = model((species, coordinates)).energies
             loss = (mse(pred_energies, targ_energies) / num_atoms.sqrt()).mean()
-            timer.start_loss()
+            timer.end_range("loss-fw")
+
+            timer.start_range("loss-bw")
             loss.backward()
-            timer.end_loss()
-            timer.end_batch()
-            timer.start_opt()
+            timer.end_range("loss-bw")
+
+            timer.start_range("optimizer")
             optimizer.step()
-            timer.end_opt()
+            timer.end_range("optimizer")
             counter += 1
             if counter == total_batches:
                 break
@@ -127,7 +135,7 @@ if __name__ == "__main__":
         "--num-profile",
         help="Number of profiling batches",
         type=int,
-        default=100,
+        default=10,
     )
     parser.add_argument(
         "-b",

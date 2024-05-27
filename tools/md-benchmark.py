@@ -44,14 +44,14 @@ def main(
     dyn = ase.md.verlet.VelocityVerlet(molecule, timestep=1 * ase.units.fs)
 
     timer = Timer(
-        modules=[
-            model,
-            model.aev_computer,
-            model.aev_computer.neighborlist,
-            model.aev_computer.angular_terms,
-            model.aev_computer.radial_terms,
-            model.neural_networks,
-            model.energy_shifter,
+        modules_and_fns=[
+            (model, "forward"),
+            (model.aev_computer, "forward"),
+            (model.neural_networks, "forward"),
+            (model.energy_shifter, "forward"),
+            (model.aev_computer.neighborlist, "forward"),
+            (model.aev_computer.angular_terms, "forward"),
+            (model.aev_computer.radial_terms, "forward"),
         ]
         if detail
         else [],
@@ -75,9 +75,9 @@ def main(
             leave=False,
             disable=no_tqdm,
         ):
-            timer.start_batch()
+            timer.start_range("md-step")
             dyn.run(1)
-            timer.end_batch()
+            timer.end_range("md-step")
         dyn.run(num_profile)
     timer.stop_profiling()
     timer.display()
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         "--num-profile",
         help="Number of profiling steps",
         type=int,
-        default=100,
+        default=10,
     )
     parser.add_argument(
         "--nvtx",

@@ -144,8 +144,8 @@ def main() -> int:
         table.add_column("strategy", style="blue")
         table.add_column("JIT", style="blue")
         table.add_column("cuAEV", style="blue")
-        table.add_column("time [ms]", style="cyan")
-        table.add_column("speedup [%]")
+        table.add_column("time (ms)", style="cyan")
+        table.add_column("speedup (%)")
     for jit, device in itertools.product(
         (True, False),
         devices,
