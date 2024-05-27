@@ -24,18 +24,15 @@ class _Term(torch.nn.Module):
         self.cutoff = cutoff
         self.sublength = 0
 
-    def forward(self, input_: Tensor) -> Tensor:
+
+class AngularTerm(_Term):
+    def forward(self, vectors: Tensor, distances: Tensor) -> Tensor:
         raise NotImplementedError("Must be implemented by subclasses")
 
 
-# NOTE: These are the same for now, but probably will need to be distinguished
-# in the future
-class AngularTerm(_Term):
-    pass
-
-
 class RadialTerm(_Term):
-    pass
+    def forward(self, distances: Tensor) -> Tensor:
+        raise NotImplementedError("Must be implemented by subclasses")
 
 
 class StandardRadial(RadialTerm):
@@ -79,10 +76,10 @@ class StandardRadial(RadialTerm):
         # We choose to be consistent with NeuroChem instead of the paper here.
         ret = 0.25 * torch.exp(-self.EtaR * (distances - self.ShfR) ** 2) * fc
         # At this point, ret now has shape
-        # (conformations x atoms, ?, ?) where ? depend on constants.
+        # (pairs, ?, ?) where ? depend on constants.
         # We then should flat the last 2 dimensions to view the sub-AEV as a two
         # dimensional tensor (onnx doesn't support negative indices in flatten)
-        return ret.flatten(start_dim=1)
+        return ret.view(-1, self.sublength)
 
     @classmethod
     def cover_linearly(
@@ -241,9 +238,9 @@ class StandardAngular(AngularTerm):
             * self.ShfZ.numel()
         )
 
-    def forward(self, vectors12: Tensor) -> Tensor:
+    def forward(self, vectors12: Tensor, distances12: Tensor) -> Tensor:
         vectors12 = vectors12.view(2, -1, 3, 1, 1, 1, 1)
-        distances12 = vectors12.norm(2, dim=-5)
+        distances12 = distances12.view(2, -1, 1, 1, 1, 1)
         cos_angles = vectors12.prod(0).sum(1) / torch.clamp(
             distances12.prod(0), min=1e-10
         )
@@ -258,10 +255,10 @@ class StandardAngular(AngularTerm):
         # https://github.com/roitberg-group/torchani_sandbox/issues/178
         ret = 2 * factor1 * factor2 * (fcj12[0] * fcj12[1])
         # At this point, ret now has shape
-        # (conformations x atoms, ?, ?, ?, ?) where ? depend on constants.
+        # (triples, ?, ?, ?, ?) where ? depend on constants.
         # We then should flat the last 4 dimensions to view the sub-AEV as a two
         # dimensional tensor (onnx doesn't support negative indices in flatten)
-        return ret.flatten(start_dim=1)
+        return ret.view(-1, self.sublength)
 
     @classmethod
     def cover_linearly(

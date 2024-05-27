@@ -1,6 +1,5 @@
 from enum import Enum
 import numpy as np
-from copy import deepcopy
 import typing as tp
 import time
 from collections import defaultdict
@@ -18,209 +17,111 @@ class Opt(Enum):
     COMPILE = "compile"
 
 
+class Reduction(Enum):
+    MEAN = "mean"
+    SUM = "sum"
+    MEDIAN = "median"
+
+
 class Timer:
     def __init__(
         self,
-        modules: tp.List[torch.nn.Module],
+        modules_and_fns: tp.List[tp.Tuple[torch.nn.Module, str]],
         nvtx: bool = False,
         sync: bool = True,
-        extra_title: str = "",
-        reduction: str = "median",
-        units: str = "ms",
     ) -> None:
-        self.modules = modules
-        self.module_names = tuple(m.__class__.__name__ for m in modules)
+        self.modules_and_fns = modules_and_fns
+        self.saved_fns = [getattr(m, f) for m, f in modules_and_fns]
         self.nvtx = nvtx
         self.sync = sync
         self.timers: tp.Dict[str, tp.List[float]] = defaultdict(list)
-        self._last_timers: tp.Dict[str, tp.List[float]] = defaultdict(list)
-        self.batch_counter = 0
         self.is_profiling = False
-        if units == "ns":
-            self.factor = 1.0
-        elif units == "mus":
-            self.factor = 1e-3
-        elif units == "ms":
-            self.factor = 1e-6
-        elif units == "s":
-            self.factor = 1e-9
-        else:
-            raise ValueError("Unsupported units")
-        self.units = units
-        reduction_fn: tp.Callable[..., tp.Any]
-        if reduction == "sum":
-            reduction_fn = np.sum
-        elif reduction == "mean":
-            reduction_fn = np.mean
-        elif reduction == "median":
-            reduction_fn = np.median
-        else:
-            raise ValueError(f"Unknown reduction {reduction}")
-        self.reduction_fn = reduction_fn
-        self.reduction_title = reduction.replace("sum", "total").capitalize()
-        if extra_title:
-            extra_title = f", {extra_title}"
-        self.extra_title = extra_title
 
     def start_profiling(self) -> None:
-        self.batch_counter = 0
         self.is_profiling = True
-        for m in self.modules:
-            self.time_module(m)
+        for m, f in self.modules_and_fns:
+            self.time_fn_in_module(m, f)
         if self.nvtx:
             torch.cuda.profiler.start()
 
-    def start_loss(self) -> None:
+    def start_range(self, label: str) -> None:
         if not self.is_profiling:
             return
         if self.sync:
             torch.cuda.synchronize()
         if self.nvtx:
-            torch.cuda.nvtx.range_push("loss-bw")
-        self.timers["loss-bw"].append(time.perf_counter_ns())
+            torch.cuda.nvtx.range_push(label)
+        self.timers[label].append(time.perf_counter_ns())
 
-    def end_loss(self) -> None:
+    def end_range(self, label: str) -> None:
         if not self.is_profiling:
             return
         if self.sync:
             torch.cuda.synchronize()
         if self.nvtx:
             torch.cuda.nvtx.range_pop()
-        self.timers["loss-bw"][-1] = (
-            time.perf_counter_ns() - self.timers["loss-bw"][-1]
-        ) * self.factor
-
-    def start_opt(self) -> None:
-        if not self.is_profiling:
-            return
-        if self.sync:
-            torch.cuda.synchronize()
-        if self.nvtx:
-            torch.cuda.nvtx.range_push("opt-step")
-        self.timers["opt-step"].append(time.perf_counter_ns())
-
-    def end_opt(self) -> None:
-        if not self.is_profiling:
-            return
-        if self.sync:
-            torch.cuda.synchronize()
-        if self.nvtx:
-            torch.cuda.nvtx.range_pop()
-        self.timers["opt-step"][-1] = (
-            time.perf_counter_ns() - self.timers["opt-step"][-1]
-        ) * self.factor
-
-    def start_batch(self) -> None:
-        if not self.is_profiling:
-            return
-        if self.sync:
-            torch.cuda.synchronize()
-        if self.nvtx:
-            torch.cuda.nvtx.range_push(f"batch-{self.batch_counter}")
-        self.batch_counter += 1
-        self.timers["batch"].append(time.perf_counter_ns())
-
-    def end_batch(self) -> None:
-        if not self.is_profiling:
-            return
-        if self.sync:
-            torch.cuda.synchronize()
-        if self.nvtx:
-            torch.cuda.nvtx.range_pop()
-        self.timers["batch"][-1] = (
-            time.perf_counter_ns() - self.timers["batch"][-1]
-        ) * self.factor
+        self.timers[label][-1] = (time.perf_counter_ns() - self.timers[label][-1]) / 1e6
 
     def stop_profiling(self) -> None:
-        self.batch_counter = 0
         self.is_profiling = False
         if self.nvtx:
             torch.cuda.profiler.stop()
-        # Reset timers
-        self._last_timers = deepcopy(self.timers)
-        self.timers = defaultdict(list)
+        # Restore the wrapped functions
+        for (m, f), sf in zip(self.modules_and_fns, self.saved_fns):
+            setattr(m, f, sf)
 
     def display(self) -> None:
         console = Console()
         table = Table(
-            title="".join(
-                (
-                    f"{self.reduction_title} times",
-                    self.extra_title,
-                )
-            ),
             box=None,
         )
-        table.add_column("module", style="magenta")
-        table.add_column(f"forward ({self.units})", style="green")
-        table.add_column(f"backward ({self.units})", style="blue")
-        for name in self.module_names:
-            fw_values = self._last_timers[".".join((name, "forward"))]
-            fw = self.reduction_fn(np.array(fw_values)) if fw_values else 0.0
-            bw_values = self._last_timers[".".join((name, "backward"))]
-            bw = self.reduction_fn(np.array(bw_values)) if bw_values else 0.0
-            table.add_row(name, f"{fw:.5f}", f"{bw:.5f}")
-        if self.modules:
+        table.add_column("timing", style="magenta")
+        table.add_column("num", style="blue")
+        table.add_column("median (ms)", style="green")
+        table.add_column("mean (ms)", style="green")
+        table.add_column("std (ms)", style="green")
+        table.add_column("total (ms)", style="green")
+        for k, v in self.timers.items():
+            fw = np.array(v) if v else np.array([0.0])
+            table.add_row(
+                k,
+                f"{len(fw)}",
+                f"{np.median(fw):.5f}",
+                f"{np.mean(fw):.5f}",
+                f"{np.std(fw):.5f}",
+                f"{np.sum(fw):.5f}",
+            )
+        if self.modules_and_fns:
             console.print(
-                "WARNING: Backward times are unreliable. Hooks, sync create overhead",
+                "WARNING: Callbacks and sync create overhead",
                 style="yellow",
             )
-            console.print(table)
-        if "batch" in self._last_timers:
-            value = self._last_timers["batch"]
-            _time = self.reduction_fn(np.array(value))
-            console.print(
-                f"Batch {self.reduction_title} time ({self.units}): {_time:.5f}"
-            )
-        if "opt-step" in self._last_timers:
-            value = self._last_timers["opt-step"]
-            _time = self.reduction_fn(np.array(value))
-            console.print(
-                f"Optimizer {self.reduction_title} time ({self.units}): {_time:.5f}"
-            )
-        if "loss-bw" in self._last_timers:
-            value = self._last_timers["loss-bw"]
-            _time = self.reduction_fn(np.array(value))
-            console.print(
-                f"Loss bw {self.reduction_title} time ({self.units}): {_time:.5f}"
-            )
+        console.print(table)
+        console.print()
 
-    def start_fw(self, module, args=None, kwargs=None, output=None) -> None:
-        self._start(module, label="forward")
+    def time_fn_in_module(self, module, fn_name: str) -> None:
+        fn = getattr(module, fn_name)
+        qualname = fn.__qualname__
 
-    def end_fw(self, module, args=None, kwargs=None, output=None) -> None:
-        self._end(module, label="forward")
+        def wrapper(*args, **kwargs):
+            if self.sync:
+                torch.cuda.synchronize()
+            if self.nvtx:
+                torch.cuda.nvtx.range_push(qualname)
+            start = time.perf_counter_ns()
+            ret = fn(*args, **kwargs)
+            if self.sync:
+                torch.cuda.synchronize()
+            if self.nvtx:
+                torch.cuda.nvtx.range_pop()
+            end = time.perf_counter_ns()
+            self.timers[qualname].append((end - start) / 1e6)
+            return ret
 
-    def start_bw(self, module, grad_output=None) -> None:
-        self._start(module, label="backward")
+        setattr(module, fn_name, wrapper)
 
-    def end_bw(self, module, grad_input=None, grad_output=None) -> None:
-        self._end(module, label="backward")
-
-    def _start(self, module, label) -> None:
-        name = ".".join((module.__class__.__name__, label))
-        if self.nvtx:
-            torch.cuda.nvtx.range_push(name)
-        if self.sync:
-            torch.cuda.synchronize()
-        self.timers[name].append(time.perf_counter_ns())
-
-    def _end(self, module, label) -> None:
-        name = ".".join((module.__class__.__name__, label))
-        if self.nvtx:
-            torch.cuda.nvtx.range_pop()
-        if self.sync:
-            torch.cuda.synchronize()
-        self.timers[name][-1] = (
-            time.perf_counter_ns() - self.timers[name][-1]
-        ) * self.factor
-
-    def time_module(self, module) -> None:
-        module.register_forward_pre_hook(self.start_fw)
-        module.register_forward_hook(self.end_fw)
-
-        module.register_full_backward_pre_hook(self.start_bw)
-        module.register_full_backward_hook(self.end_bw)
+    def reset_timers(self) -> None:
+        self.timers = defaultdict(list)
 
 
 def time_func(
@@ -295,10 +196,10 @@ def timeit(
         label = func.__name__
 
     # warmup
-    torch.cuda.nvtx.range_push(f"{label}_warmup")
+    torch.cuda.nvtx.range_push(f"{label}-warmup")
     for _ in range(warmup):
         func(*args)
-    torch.cuda.nvtx.range_pop()  # pop label_warmup
+    torch.cuda.nvtx.range_pop()
 
     # start timer
     if cpu_timing:
@@ -315,7 +216,7 @@ def timeit(
         with torch.profiler.profile(activities=[ProfilerActivity.CUDA]) as prof:
             with record_function("run_total"):
                 for i in range(steps):
-                    torch.cuda.nvtx.range_push(f"{i}th_iteration")
+                    torch.cuda.nvtx.range_push(f"iteration-{i}")
                     func(*args)
                     torch.cuda.nvtx.range_pop()
         events = prof.key_averages()
@@ -332,7 +233,7 @@ def timeit(
     else:
         events = None
         for i in range(steps):
-            torch.cuda.nvtx.range_push(f"{i}th_iteration")
+            torch.cuda.nvtx.range_push(f"iteration-{i}")
             func(*args)
             torch.cuda.nvtx.range_pop()
     torch.cuda.nvtx.range_pop()  # pop label
