@@ -8,11 +8,11 @@ from torchani.testing import TestCase, expand, ANITest
 from torchani.aev import AEVComputer
 from torchani.neighbors import (
     CellList,
-    fractionalize_coords,
-    flatten_grid_idx3,
+    coords_to_fractional,
     coords_to_grid_idx3,
-    image_pairs_within_grid_elements,
-    count_atoms_in_grid,
+    flatten_grid_idx3,
+    image_pairs_inside_buckets,
+    count_atoms_in_buckets,
 )
 from torchani.geometry import tile_into_tight_cell
 
@@ -78,7 +78,7 @@ class TestCellList(TestCase):
 
     def testFractionalize(self):
         # Coordinate fractionalization
-        frac = fractionalize_coords(self.coordinates, self.cell)
+        frac = coords_to_fractional(self.coordinates, self.cell)
         self.assertTrue(~torch.isnan(frac).any())
         self.assertTrue(~torch.isinf(frac).any())
         self.assertTrue((frac < 1.0).all())
@@ -124,30 +124,34 @@ class TestCellList(TestCase):
         clist._setup_variables(self.cell, self.cutoff)
         atom_grid_idx = flatten_grid_idx3(atom_grid_idx3_expect, clist.grid_shape)
         self.assertEqual(clist.grid_numel, grid_numel_expect)
-        grid_count, grid_cumcount = count_atoms_in_grid(atom_grid_idx, clist.grid_numel)
+        grid_count, grid_cumcount = count_atoms_in_buckets(
+            atom_grid_idx, clist.grid_numel
+        )
         # these are all 2
         self.assertEqual(grid_count.shape, (grid_numel_expect,))
         self.assertTrue((grid_count == 2).all())
         # these are all 0 2 4 6 ...
         self.assertEqual(grid_cumcount, torch.arange(0, 54, 2))
 
-    def testWithinBetween(self):
+    def testImagePairsInsideCentralBuckets(self):
         clist = self.clist
         clist._setup_variables(self.cell, self.cutoff)
         atom_grid_idx3 = coords_to_grid_idx3(
             self.coordinates, self.cell, clist.grid_shape
         )
         atom_grid_idx = flatten_grid_idx3(atom_grid_idx3, clist.grid_shape)
-        grid_count, grid_cumcount = count_atoms_in_grid(atom_grid_idx, clist.grid_numel)
-        within = image_pairs_within_grid_elements(
+        grid_count, grid_cumcount = count_atoms_in_buckets(
+            atom_grid_idx, clist.grid_numel
+        )
+        inside = image_pairs_inside_buckets(
             grid_count,
             grid_cumcount,
             int(grid_count.max()),
         )
-        # some hand comparisons with the within indices
-        self.assertEqual(within.shape, (2, 27))
-        self.assertEqual(within[0], torch.arange(0, 54, 2))
-        self.assertEqual(within[1], torch.arange(1, 55, 2))
+        # some hand comparisons
+        self.assertEqual(inside.shape, (2, 27))
+        self.assertEqual(inside[0], torch.arange(0, 54, 2))
+        self.assertEqual(inside[1], torch.arange(1, 55, 2))
 
     def testCellListInit(self):
         AEVComputer.like_1x(neighborlist="cell_list")
