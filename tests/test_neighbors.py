@@ -48,8 +48,8 @@ class TestCellList(TestCase):
         self.cell = torch.eye(3, dtype=torch.float, device=self.device) * self.cell_size
         self.clist = CellList()
 
-    def testInitDefault(self):
-        self.assertTrue(self.clist.offset_idx3.shape == (13, 3))
+    def testInit(self):
+        self.assertTrue(self.clist._offset_idx3.shape == (13, 3))
 
     def testSetupGrid(self):
         grid_shape = setup_grid(
