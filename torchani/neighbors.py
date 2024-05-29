@@ -294,7 +294,7 @@ class FullPairwise(Neighborlist):
 
 
 class CellList(Neighborlist):
-    surround_offset_idx3: Tensor
+    offset_idx3: Tensor
 
     def __init__(self):
         super().__init__()
@@ -320,7 +320,7 @@ class CellList(Neighborlist):
         #
         # shape (neighbors=13, 3)
         self.register_buffer(
-            "surround_offset_idx3",
+            "offset_idx3",
             torch.tensor(
                 [
                     # Surrounding buckets in the same plane (gz-offset = 0)
@@ -346,7 +346,32 @@ class CellList(Neighborlist):
 
     @torch.jit.export
     def _recast_long_buffers(self) -> None:
-        self.surround_offset_idx3 = self.surround_offset_idx3.to(dtype=torch.long)
+        self.offset_idx3 = self.offset_idx3.to(dtype=torch.long)
+
+    def _validate_and_parse_cell_and_pbc(
+        self,
+        coordinates: Tensor,
+        cell: tp.Optional[Tensor],
+        pbc: tp.Optional[Tensor],
+    ) -> tp.Tuple[Tensor, Tensor, Tensor]:
+        device = coordinates.device
+        if pbc is None:
+            pbc = torch.zeros(3, dtype=torch.bool, device=device)
+        assert pbc is not None
+
+        if not ((~pbc).all() or pbc.all()):
+            raise ValueError("Cell list only supports PBC in all or no directions")
+
+        if cell is None:
+            if pbc.any():
+                raise ValueError("Cell must be provided if PBC is required")
+            displaced_coordinates, cell = self._compute_bounding_cell(
+                coordinates.detach(), eps=1e-3
+            )
+            return displaced_coordinates, cell, pbc
+
+        assert cell is not None
+        return coordinates.detach(), cell, pbc
 
     def forward(
         self,
@@ -358,21 +383,16 @@ class CellList(Neighborlist):
     ) -> NeighborData:
         assert cutoff >= 0.0, "Cutoff must be a positive float"
         assert coordinates.shape[0] == 1, "Cell list doesn't support batches"
-        if cell is None:
-            assert pbc is None or not pbc.any()
+
         # If cell is None then a bounding cell for the molecule is obtained
         # from the coordinates, in this case the coordinates are assumed to be
         # mapped to the central cell, since anything else would be meaningless
-        pbc = pbc if pbc is not None else self.default_pbc
-        assert pbc.all() or (not pbc.any()), "CellList supports PBC in all or no dirs"
 
-        if cell is None:
-            # Displaced coordinates only used for computation if pbc is not required
-            coordinates_displaced, cell = self._compute_bounding_cell(
-                coordinates.detach(), eps=1e-3
-            )
-        else:
-            coordinates_displaced = coordinates.detach()
+        # coordinates are displaced only if pbc=False, otherwise they are actually
+        # the same as the input coordinates, but detached from the graph.
+        displaced_coordinates, cell, pbc = self._validate_and_parse_cell_and_pbc(
+            coordinates, cell, pbc
+        )
 
         grid_shape = setup_grid(
             cell.detach(),
@@ -382,7 +402,7 @@ class CellList(Neighborlist):
         # Since coords will be fractionalized they can lie outside the cell
         # before this step
         atom_pairs, shift_indices = self._compute_cell_list(
-            coordinates_displaced.detach(),
+            displaced_coordinates.detach(),
             grid_shape,
             cell,
             pbc,
@@ -415,7 +435,7 @@ class CellList(Neighborlist):
         # or by a single flat "grid_idx" (g).
         # Shapes (C, A, 3) and (C, A)
         atom_grid_idx3 = coords_to_grid_idx3(coordinates, cell, grid_shape)
-        atom_grid_idx = flatten_grid_idx3(atom_grid_idx3, grid_shape)
+        atom_grid_idx = flatten_idx3(atom_grid_idx3, grid_shape)
 
         # 2) Get image pairs of atoms WITHIN atoms inside a bucket
         # To do this, first calculate:
@@ -434,16 +454,23 @@ class CellList(Neighborlist):
         )
 
         # 3) Get image pairs BETWEEN atoms inside a bucket and its surrounding buckets
-        # To do this, first get a grid_idx3 of the surrounding buckets of each atom
-        # roughly: "grid_idx3[a, n, 3]" and "grid_idx[a, n]"
-        # shapes (C, A, N, 3) and (C, A, N) (N=13 for 1-bucket-per-cutoff)
-        # "atom_surround_idx3" has some negative idxs and some overflowing
-        # idxs, so apply modulo grid_shape to flatten
-        atom_surround_idx3 = self.grid_idx3_to_surround_idx3(atom_grid_idx3)
-        # "atom_surround_idx" contains only positive idxs inside central cell
-        atom_surround_idx = flatten_grid_idx3(
-            atom_surround_idx3 % grid_shape, grid_shape
+        #
+        # First calc the grid_idx3 associated with the buckets
+        # surrounding a given atom. "self bucket" not included.
+        #
+        # The surrounding buckets will either lie in the central cell or wrap
+        # around one or more dimensions due to PBC. In the latter case the
+        # atom_surround_idx3 may be negative, or larger than the corrseponding
+        # grid_shape dim, which can be used to identify them. The required shift
+        # is given by the number and value of negative and overflowing
+        # dimensions.
+        # shape (C, A, N=13, 3) contains negative and overflowing idxs
+        atom_surround_idx3 = atom_grid_idx3.unsqueeze(-2) + self.offset_idx3.view(
+            1, 1, -1, 3
         )
+        # Modulo grid_shape is used to get rid of the negative and overflowing idxs
+        # shape (C, A, N=13) contains only positive idxs
+        atom_surround_idx = flatten_idx3(atom_surround_idx3 % grid_shape, grid_shape)
 
         # 4) Calc upper and lower part of the image_pairs_between.
         # The "unpadded" upper part of the pairlist repeats each image idx a
@@ -470,7 +497,7 @@ class CellList(Neighborlist):
         # shape (C, A, N) -> (C, A) -> (C*A,) (get rid of C with view)
         total_count_in_atom_surround = count_in_atom_surround.sum(-1).view(-1)
 
-        # Both shapes (C*A,) for i[a] and a[i]
+        # Both shapes (C*A,)
         atom_to_image, image_to_atom = atom_image_converters(atom_grid_idx)
 
         # For each atom we have one image_pair_between associated with each of
@@ -506,32 +533,6 @@ class CellList(Neighborlist):
         image_pairs = torch.cat((_image_pairs_between, _image_pairs_within), dim=1)
         atom_pairs = image_to_atom[image_pairs]
         return atom_pairs, shift_idxs
-
-    def grid_idx3_to_surround_idx3(self, atom_grid_idx3: Tensor) -> Tensor:
-        # Calc the grid_idx3 and grid_idx associated with the buckets
-        # surrounding a given atom.
-        #
-        # The surrounding buckets will either lie in the central cell or wrap
-        # around one or more dimensions due to PBC. In the latter case the
-        # atom_surround_idx3 may be negative, or larger than the corrseponding
-        # grid_shape dim
-        #
-        # Depending on whether there is 1, 2 or 3 negative (or overflowing)
-        # idxs, the atoms in the bucket should be shifted along 1, 2 or 3 dim,
-        # since the central bucket is up against a wall, an edge or a corner
-        # respectively.
-        mols, atoms, _ = atom_grid_idx3.shape
-        neighbors, _ = self.surround_offset_idx3.shape
-
-        # This is actually strict surrounding buckets. "self bucket"
-        # is not counted.
-
-        # After this step some of the atom_surround_idx3 are negative, and some
-        # will overflow. This determines which buckets to wrap later.
-        atom_surround_idx3 = atom_grid_idx3.view(
-            mols, atoms, 1, 3
-        ) + self.surround_offset_idx3.view(mols, 1, neighbors, 3)
-        return atom_surround_idx3
 
 
 class VerletCellList(CellList):
@@ -576,28 +577,21 @@ class VerletCellList(CellList):
     ) -> NeighborData:
         assert cutoff >= 0.0, "Cutoff must be a positive float"
         assert coordinates.shape[0] == 1, "Cell list doesn't support batches"
-        if cell is None:
-            assert pbc is None or not pbc.any()
-        pbc = pbc if pbc is not None else self.default_pbc
-        assert pbc.all() or (not pbc.any()), "CellList supports PBC in all or no dirs"
 
-        if cell is None:
-            # Displaced coordinates only used for computation if pbc is not required
-            coordinates_displaced, cell = self._compute_bounding_cell(
-                coordinates.detach(), eps=1e-3
-            )
-        else:
-            coordinates_displaced = coordinates.detach()
+        displaced_coordinates, cell, pbc = self._validate_and_parse_cell_and_pbc(
+            coordinates, cell, pbc
+        )
 
-        # Its not very costly to set up the grid each step,
+        # It is not costly to set up the grid each step,
         # and it avoids keeping track of a lot of state
         grid_shape = setup_grid(
             cell.detach(),
             cutoff,
         )
+
         cell_lengths = torch.linalg.norm(cell.detach(), dim=0)
 
-        if self._can_use_old_list(coordinates_displaced, cell_lengths):
+        if self._can_use_old_list(displaced_coordinates, cell_lengths):
             # If a cell list is not needed use the old cached values
             # NOTE: Cached values should NOT be updated here
             atom_pairs = self.old_atom_pairs
@@ -605,7 +599,7 @@ class VerletCellList(CellList):
         else:
             # The cell list is calculated with a skin (?) here.
             atom_pairs, shift_indices = self._compute_cell_list(
-                coordinates_displaced.detach(),
+                displaced_coordinates.detach(),
                 grid_shape,
                 cell,
                 pbc,
@@ -613,7 +607,7 @@ class VerletCellList(CellList):
             self._cache_values(
                 atom_pairs,
                 shift_indices,
-                coordinates_displaced.detach(),
+                displaced_coordinates.detach(),
                 cell_lengths,
             )
 
@@ -644,7 +638,7 @@ class VerletCellList(CellList):
 
     @torch.jit.unused
     def reset_cached_values(self, dtype: torch.dtype = torch.float) -> None:
-        device = self.surround_offset_idx3.device
+        device = self.offset_idx3.device
         self._cache_values(
             torch.zeros(1, dtype=torch.long, device=device),
             torch.zeros(1, dtype=torch.long, device=device),
@@ -671,71 +665,61 @@ def coords_to_grid_idx3(
     cell: Tensor,  # shape (3, 3)
     grid_shape: Tensor,  # shape (3,)
 ) -> Tensor:
-    # 1) Fractionalize coordinates. All coordinates will be relative to the
-    # cell lengths after this step, which means they lie in the range [0., 1.)
+    # 1) Fractionalize coordinates. After this ll coordinates lie in [0., 1.)
     fractionals = coords_to_fractional(coordinates, cell)  # shape (C, A, 3)
-    # 2) assign to each fractional the corresponding grid_idx3
-    grid_idx3 = torch.floor(fractionals * grid_shape).to(torch.long)
-    return grid_idx3
+    # 2) Assign to each fractional its corresponding grid_idx3
+    return torch.floor(fractionals * grid_shape).to(torch.long)
 
 
 def coords_to_fractional(coordinates: Tensor, cell: Tensor) -> Tensor:
-    # Scale coordinates to box size
+    # Transform and wrap all coordinates to be relative to the cell vectors
     #
-    # Make all coordinates relative to the box size. This means for
-    # instance that if the coordinate is 3.15 times the cell length, it is
-    # turned into 3.15; if it is 0.15 times the cell length, it is turned
-    # into 0.15, etc
+    # Input to this function may have coordinates outside the box. If the
+    # coordinate is 0.16 or 3.15 times the cell length, it is turned into 0.16
+    # or 0.15 respectively.
+    # All output coords are in the range [0.0, 1.0)
     fractional_coords = torch.matmul(coordinates, cell.inverse())
-    # this is done to account for possible coordinates outside the box,
-    # which amber does, in order to calculate diffusion coefficients, etc
     fractional_coords -= fractional_coords.floor()
-    # fractional_coordinates should be in the range [0, 1.0)
     fractional_coords[fractional_coords >= 1.0] += -1.0
     fractional_coords[fractional_coords < 0.0] += 1.0
     return fractional_coords
 
 
-def flatten_grid_idx3(
-    grid_idx3: Tensor,
+def flatten_idx3(
+    idx3: Tensor,
     grid_shape: Tensor,
 ) -> Tensor:
-    # Converts a tensor that holds idx3 (all of which lie inside the central
+    # Convert a tensor that holds idx3 (all of which lie inside the central
     # grid) to one that holds flat idxs (last dimension is removed). For
     # row-major flattening the factors needed are: (GY * GZ, GZ, 1)
     grid_factors = grid_shape.clone()
     grid_factors[0] = grid_shape[1] * grid_shape[2]
     grid_factors[1] = grid_shape[2]
     grid_factors[2] = 1
-    return (grid_idx3 * grid_factors).sum(-1)
+    return (idx3 * grid_factors).sum(-1)
 
 
 def atom_image_converters(grid_idx: Tensor) -> tp.Tuple[Tensor, Tensor]:
-    # NOTE: Since sorting is not stable this may scramble the atoms
-    # so that the atidx you get after applying
-    # atidx_from_imidx[something] will not be the correct order
-    # since what we want is the pairs this is fine, pairs are agnostic to
-    # species. (?)
+    # NOTE: Since sorting is not stable this may scramble the atoms,
+    # this is not important for the neighborlist, only the pairs are important,
+    # and non-stable sorting is marginally faster.
 
-    # this are the "image indices", indices that sort atoms in the order of
-    # the flattened bucket index.  Only occupied buckets are considered, so
+    # For the "image indices", (indices that sort atoms in the order of
+    # the flattened bucket index) only occupied buckets are considered, so
     # if a bucket is unoccupied the index is not taken into account.  for
     # example if the atoms are distributed as:
-    # / 1 9 8 / - / 3 2 4 / 7 /
-    # where the bars delimit flat buckets, then the assoc. image indices
-    # are:
-    # / 0 1 2 / - / 3 4 5 / 6 /
-    # atom indices can be reconstructed from the image indices, so the
-    # pairlist can be built with image indices and then at the end calling
-    # atom_indices_from_image_indices[pairlist] you convert to atom_indices
+    # |1 9 8|, |empty|, |3 2 4|, |7|
+    # where the bars delimit flat buckets, then the image idxs will be:
+    # |0 1 2|, |empty|, |3 4 5|, |6|
+    #
+    # "atom_indices" can be reconstructed from the "image_indices". The
+    # pairlist can be built with image indices, and
+    # image_to_atom[image_neighborlist] = atom_neighborlist
 
-    # atom_to_image returns tensors that convert image indices into atom
-    # indices and viceversa
-    # move to device necessary? not sure
     grid_idx = grid_idx.view(-1)  # shape (C, A) -> (A,), get rid of C
     image_to_atom = torch.argsort(grid_idx)
     atom_to_image = torch.argsort(image_to_atom)
-    # output shapes are (A,) (A,)
+    # Both shapes (A,)
     return atom_to_image, image_to_atom
 
 
@@ -743,14 +727,11 @@ def count_atoms_in_buckets(
     atom_grid_idx: Tensor,  # shape (C, A)
     grid_shape: Tensor,
 ) -> tp.Tuple[Tensor, Tensor]:
-    # NOTE: count in flat bucket: 3 0 0 0 ... 2 0 0 0 ... 1 0 1 0 ...,
-    # shape is total grid elements G. grid_cumcount has the number of
-    # atoms BEFORE a given bucket cumulative buckets count: 0 3 3 3 ... 3 5
-    # 5 5 ... 5 6 6 7 ...
+    # Return number of atoms in each bucket, and cumulative number of
+    # atoms before each bucket, as indexed with the flat grid_idx
     atom_grid_idx = atom_grid_idx.view(-1)  # shape (A,), get rid of C
-    # G = the total number of grid elements
     count_in_grid = torch.bincount(atom_grid_idx, minlength=int(grid_shape.prod()))
-    # Both shape (G,)
+    # Both shape (G,), the total number of "grid elements"|"buckets"
     return count_in_grid, cumsum_from_zero(count_in_grid)
 
 

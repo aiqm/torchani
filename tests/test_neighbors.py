@@ -11,7 +11,7 @@ from torchani.neighbors import (
     setup_grid,
     coords_to_fractional,
     coords_to_grid_idx3,
-    flatten_grid_idx3,
+    flatten_idx3,
     image_pairs_within,
     count_atoms_in_buckets,
 )
@@ -49,7 +49,7 @@ class TestCellList(TestCase):
         self.clist = CellList()
 
     def testInitDefault(self):
-        self.assertTrue(self.clist.surround_offset_idx3.shape == (13, 3))
+        self.assertTrue(self.clist.offset_idx3.shape == (13, 3))
 
     def testSetupGrid(self):
         grid_shape = setup_grid(
@@ -85,7 +85,7 @@ class TestCellList(TestCase):
             self.cell,
             self.cutoff,
         )
-        grid_idx = flatten_grid_idx3(atom_grid_idx3_expect, grid_shape)
+        grid_idx = flatten_idx3(atom_grid_idx3_expect, grid_shape)
         # All flat grid indices are present in this test
         grid_idx_compare = torch.repeat_interleave(
             torch.arange(0, 27, dtype=torch.long), 2
@@ -98,7 +98,7 @@ class TestCellList(TestCase):
             self.cell,
             self.cutoff,
         )
-        atom_grid_idx = flatten_grid_idx3(atom_grid_idx3_expect, grid_shape)
+        atom_grid_idx = flatten_idx3(atom_grid_idx3_expect, grid_shape)
         self.assertEqual(int(grid_shape.prod()), grid_numel_expect)
         grid_count, grid_cumcount = count_atoms_in_buckets(
             atom_grid_idx, grid_shape,
@@ -117,7 +117,7 @@ class TestCellList(TestCase):
         atom_grid_idx3 = coords_to_grid_idx3(
             self.coordinates, self.cell, grid_shape
         )
-        atom_grid_idx = flatten_grid_idx3(atom_grid_idx3, grid_shape)
+        atom_grid_idx = flatten_idx3(atom_grid_idx3, grid_shape)
         grid_count, grid_cumcount = count_atoms_in_buckets(
             atom_grid_idx, grid_shape,
         )
