@@ -8,11 +8,12 @@ from torchani.testing import TestCase, expand, ANITest
 from torchani.aev import AEVComputer
 from torchani.neighbors import (
     CellList,
-    fractionalize_coords,
-    flatten_grid_idx3,
+    setup_grid,
+    coords_to_fractional,
     coords_to_grid_idx3,
-    image_pairs_within_grid_elements,
-    count_atoms_in_grid,
+    flatten_grid_idx3,
+    image_pairs_within,
+    count_atoms_in_buckets,
 )
 from torchani.geometry import tile_into_tight_cell
 
@@ -48,106 +49,87 @@ class TestCellList(TestCase):
         self.clist = CellList()
 
     def testInitDefault(self):
-        self.assertTrue(self.clist.buckets_per_cutoff == 1)
-        self.assertTrue(self.clist.num_neighbors == 13)
+        self.assertTrue(self.clist.surround_offset_idx3.shape == (13, 3))
 
-    def testSetupCell(self):
-        clist = self.clist
-        clist._setup_variables(self.cell, self.cutoff)
+    def testSetupGrid(self):
+        grid_shape = setup_grid(
+            self.cell,
+            self.cutoff,
+        )
         # this creates a unit cell with 27 buckets
         # and a grid of 3 x 3 x 3 buckets (3 in each direction, GX == GY == GZ == 3)
         expect_shape = torch.tensor([3, 3, 3], dtype=torch.long, device=self.device)
-        self.assertEqual(clist.grid_numel, 27)
-        self.assertEqual(clist.grid_shape, expect_shape)
-        # since it is circularly padded, shape should be 5 5 5
-        self.assertEqual(clist.vector_idx_to_flat.shape, (5, 5, 5))
-
-    def testVectorIndexToFlat(self):
-        clist = self.clist
-        clist._setup_variables(self.cell, self.cutoff)
-        # check some specific values of the tensor, it should be in row major
-        # order so for instance the values in the z axis are 0 1 2 in the y
-        # axis 0 3 6 and in the x axis 0 9 18
-        self.assertTrue(clist.vector_idx_to_flat[1, 1, 1] == 0)
-        self.assertTrue(clist.vector_idx_to_flat[2, 1, 1] == 9)
-        self.assertTrue(clist.vector_idx_to_flat[1, 2, 1] == 3)
-        self.assertTrue(clist.vector_idx_to_flat[1, 1, 2] == 1)
-        self.assertTrue(clist.vector_idx_to_flat[0, 1, 1] == 18)
-        self.assertTrue(clist.vector_idx_to_flat[1, 0, 1] == 6)
-        self.assertTrue(clist.vector_idx_to_flat[1, 1, 0] == 2)
+        self.assertEqual(grid_shape, expect_shape)
 
     def testFractionalize(self):
         # Coordinate fractionalization
-        frac = fractionalize_coords(self.coordinates, self.cell)
+        frac = coords_to_fractional(self.coordinates, self.cell)
         self.assertTrue(~torch.isnan(frac).any())
         self.assertTrue(~torch.isinf(frac).any())
         self.assertTrue((frac < 1.0).all())
         self.assertTrue((frac >= 0.0).all())
 
     def testGridIdx3(self):
-        clist = self.clist
-        clist._setup_variables(self.cell, self.cutoff)
+        grid_shape = setup_grid(
+            self.cell,
+            self.cutoff,
+        )
         atom_grid_idx3 = coords_to_grid_idx3(
-            self.coordinates, self.cell, clist.grid_shape
+            self.coordinates, self.cell, grid_shape
         )
         self.assertTrue(atom_grid_idx3.shape == (1, 54, 3))
         self.assertEqual(atom_grid_idx3, atom_grid_idx3_expect)
 
     def testGridIdx(self):
-        clist = self.clist
-        clist._setup_variables(self.cell, self.cutoff)
-        grid_idx = flatten_grid_idx3(atom_grid_idx3_expect, clist.grid_shape)
+        grid_shape = setup_grid(
+            self.cell,
+            self.cutoff,
+        )
+        grid_idx = flatten_grid_idx3(atom_grid_idx3_expect, grid_shape)
         # All flat grid indices are present in this test
         grid_idx_compare = torch.repeat_interleave(
             torch.arange(0, 27, dtype=torch.long), 2
         )
         self.assertEqual(grid_idx, grid_idx_compare.view(1, -1))
 
-    def testGridIndexAlt(self):
-        # Alternative test
-        clist = self.clist
-        clist._setup_variables(self.cell, self.cutoff)
-        grid_idx = clist.vector_idx_to_flat[
-            (atom_grid_idx3_expect + torch.ones(1, dtype=torch.long))
-            .reshape(-1, 3)
-            .unbind(1)
-        ].reshape(1, -1)
-        grid_idx_compare = torch.repeat_interleave(
-            torch.arange(0, 27, dtype=torch.long), 2
-        )
-        self.assertEqual(clist.grid_numel, 27)
-        self.assertEqual(grid_idx, grid_idx_compare.view(1, -1))
-
     def testCounts(self):
         grid_numel_expect = 27
-        clist = self.clist
-        clist._setup_variables(self.cell, self.cutoff)
-        atom_grid_idx = flatten_grid_idx3(atom_grid_idx3_expect, clist.grid_shape)
-        self.assertEqual(clist.grid_numel, grid_numel_expect)
-        grid_count, grid_cumcount = count_atoms_in_grid(atom_grid_idx, clist.grid_numel)
+        grid_shape = setup_grid(
+            self.cell,
+            self.cutoff,
+        )
+        atom_grid_idx = flatten_grid_idx3(atom_grid_idx3_expect, grid_shape)
+        self.assertEqual(int(grid_shape.prod()), grid_numel_expect)
+        grid_count, grid_cumcount = count_atoms_in_buckets(
+            atom_grid_idx, grid_shape,
+        )
         # these are all 2
         self.assertEqual(grid_count.shape, (grid_numel_expect,))
         self.assertTrue((grid_count == 2).all())
         # these are all 0 2 4 6 ...
         self.assertEqual(grid_cumcount, torch.arange(0, 54, 2))
 
-    def testWithinBetween(self):
-        clist = self.clist
-        clist._setup_variables(self.cell, self.cutoff)
-        atom_grid_idx3 = coords_to_grid_idx3(
-            self.coordinates, self.cell, clist.grid_shape
+    def testImagePairsWithinBuckets(self):
+        grid_shape = setup_grid(
+            self.cell,
+            self.cutoff,
         )
-        atom_grid_idx = flatten_grid_idx3(atom_grid_idx3, clist.grid_shape)
-        grid_count, grid_cumcount = count_atoms_in_grid(atom_grid_idx, clist.grid_numel)
-        within = image_pairs_within_grid_elements(
+        atom_grid_idx3 = coords_to_grid_idx3(
+            self.coordinates, self.cell, grid_shape
+        )
+        atom_grid_idx = flatten_grid_idx3(atom_grid_idx3, grid_shape)
+        grid_count, grid_cumcount = count_atoms_in_buckets(
+            atom_grid_idx, grid_shape,
+        )
+        within = image_pairs_within(
             grid_count,
             grid_cumcount,
             int(grid_count.max()),
         )
-        # some hand comparisons with the within indices
+        # some hand comparisons
         self.assertEqual(within.shape, (2, 27))
-        self.assertEqual(within[0], torch.arange(0, 54, 2))
-        self.assertEqual(within[1], torch.arange(1, 55, 2))
+        self.assertEqual(within[0], torch.arange(1, 55, 2))
+        self.assertEqual(within[1], torch.arange(0, 54, 2))
 
     def testCellListInit(self):
         AEVComputer.like_1x(neighborlist="cell_list")
@@ -350,8 +332,11 @@ class TestCellListEnergiesCuda(TestCellListEnergies):
 class TestCellListLargeSystem(ANITest):
     def setUp(self):
         # JIT optimizations are avoided to prevent cuda bugs that make first
-        # evaluations extremely slow (?)
-        torch._C._jit_set_profiling_executor(False)
+        # evaluations extremely slow for old pytorch
+        # NOTE: This may not even happen anymore with the re-coding of the
+        # cell-list code
+        if tuple(map(int, torch.__version__.split("."))) < (2, 0):
+            torch._C._jit_set_profiling_executor(False)
         cut = 5.2
         cell_size = cut * 3 + 0.1
 
@@ -378,9 +363,9 @@ class TestCellListLargeSystem(ANITest):
 
     def tearDown(self) -> None:
         # JIT optimizations are reset since this generates bugs in the
-        # repulsion tests (!) for some reason TODO: Figure out why and see if
-        # this remains in pytorch 2
-        torch._C._jit_set_profiling_executor(True)
+        # on the repulsion tests, on old pytorch
+        if tuple(map(int, torch.__version__.split("."))) < (2, 0):
+            torch._C._jit_set_profiling_executor(True)
 
     def testRandomNoPBC(self):
         idxs = torch.randint(

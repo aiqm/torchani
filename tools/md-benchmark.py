@@ -1,5 +1,4 @@
 import argparse
-import sys
 from pathlib import Path
 
 import torch
@@ -26,10 +25,14 @@ def main(
     no_tqdm: bool,
     num_warm_up: int,
     num_profile: int,
+    neighborlist: str,
 ) -> int:
     detail = (opt is Opt.NONE) and detail
     console.print(
-        f"Profiling with optimization={opt.value}, on device: {device.upper()}"
+        "Profiling"
+        f" with optimization={opt.value},"
+        f" on device: {device.upper()},"
+        f" with {neighborlist.upper()}"
     )
     if not file:
         xyz_file_path = Path(ROOT, "tests", "test_data", "small.xyz")
@@ -39,7 +42,7 @@ def main(
         xyz_file_path = Path.cwd() / file
 
     molecule = ase.io.read(str(xyz_file_path))
-    model = ANI1x(model_index=0).to(torch.device(device))
+    model = ANI1x(model_index=0, neighborlist=neighborlist).to(torch.device(device))
     molecule.calc = model.ase(jit=opt is Opt.JIT)
     dyn = ase.md.verlet.VelocityVerlet(molecule, timestep=1 * ase.units.fs)
 
@@ -157,6 +160,7 @@ if __name__ == "__main__":
         num_warm_up=args.num_warm_up,
         num_profile=args.num_profile,
         no_tqdm=args.no_tqdm,
+        neighborlist="full_pairwise",
     )
     main(
         detail=args.detail,
@@ -168,5 +172,29 @@ if __name__ == "__main__":
         num_warm_up=args.num_warm_up,
         num_profile=args.num_profile,
         no_tqdm=args.no_tqdm,
+        neighborlist="full_pairwise",
     )
-    sys.exit(0)
+    main(
+        detail=args.detail,
+        opt=Opt.NONE,
+        sync=sync,
+        nvtx=args.nvtx,
+        device=args.device,
+        file=args.file,
+        num_warm_up=args.num_warm_up,
+        num_profile=args.num_profile,
+        no_tqdm=args.no_tqdm,
+        neighborlist="cell_list",
+    )
+    main(
+        detail=args.detail,
+        opt=Opt.JIT,
+        sync=sync,
+        nvtx=args.nvtx,
+        device=args.device,
+        file=args.file,
+        num_warm_up=args.num_warm_up,
+        num_profile=args.num_profile,
+        no_tqdm=args.no_tqdm,
+        neighborlist="cell_list",
+    )
