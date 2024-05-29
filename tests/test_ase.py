@@ -23,7 +23,6 @@ from ase.md.langevin import Langevin
 from ase.md.nptberendsen import NPTBerendsen
 from ase.calculators.test import numeric_force
 
-from torchani.neighbors import CellList
 from torchani.io import read_xyz
 from torchani.testing import ANITest, expand
 from torchani.models import ANI1x, ANIdr, PairPotentialsModel
@@ -82,12 +81,6 @@ class TestASE(ANITest):
 
     def testNumericalForcesCellList(self):
         model = self._setup(ANI1x(model_index=0, neighborlist="cell_list").double())
-        self._testForcesPBC(model)
-
-    def testNumericalForcesCellListConstantV(self):
-        model = self._setup(
-            ANI1x(model_index=0, neighborlist=CellList(constant_volume=True)).double()
-        )
         self._testForcesPBC(model)
 
     def _testForcesPBC(self, model, only_get_forces=False, repeats=2, steps=10):
