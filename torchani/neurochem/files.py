@@ -186,12 +186,12 @@ def load_builtin_from_info_file(
         use_cuda_extension,
         use_cuaev_interface,
     )
-    aev_computer, neural_networks, energy_adder, elements = components
+    aev_computer, neural_networks, energy_adder, symbols = components
     return BuiltinModel(
+        symbols,
         aev_computer,
         neural_networks,
         energy_adder,
-        elements,
         periodic_table_index=periodic_table_index,
     )
 
@@ -209,11 +209,11 @@ def load_builtin_from_name(
         use_cuda_extension,
         use_cuaev_interface,
     )
-    aev_computer, neural_networks, energy_adder, elements = components
+    aev_computer, neural_networks, energy_adder, symbols = components
     return BuiltinModel(
+        symbols,
         aev_computer,
         neural_networks,
         energy_adder,
-        elements,
         periodic_table_index=periodic_table_index,
     )

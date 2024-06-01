@@ -350,9 +350,9 @@ class Assembler:
         else:
             kwargs = {}
         return self._model_type(
+            symbols=self.symbols,
             aev_computer=featurizer,
             energy_shifter=shifter,
-            elements=self.symbols,
             neural_networks=neural_networks,
             periodic_table_index=self.periodic_table_index,
             **kwargs,

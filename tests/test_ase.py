@@ -60,7 +60,7 @@ class TestASE(ANITest):
                 aev_computer=model_cell.aev_computer,
                 neural_networks=model_cell.neural_networks,
                 energy_shifter=model_cell.energy_shifter,
-                elements=model_cell.get_chemical_symbols(),
+                symbols=model_cell.get_chemical_symbols(),
                 pairwise_potentials=[
                     PairPotential(cutoff=6.4),
                     PairPotential(cutoff=5.2),

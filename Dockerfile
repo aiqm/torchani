@@ -7,8 +7,11 @@ ENV CUDA_HOME=/usr/local/cuda/
 ENV PATH=${CUDA_HOME}/bin:$PATH
 ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 
-# Get dependencies to extract data and get correct setuptools_scm version
-RUN apt update && apt install -y git wget unzip
+# Get dependencies to:
+# Download test data (wget)
+# Get correct setuptools_scm version (git)
+# Build C++/CUDA extensions fast (ninja-build)
+RUN apt update && apt install -y git wget unzip ninja-build
 
 # Download test data
 COPY ./download.sh .

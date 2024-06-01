@@ -89,10 +89,10 @@ class BuiltinModel(torch.nn.Module):
 
     def __init__(
         self,
+        symbols: tp.Sequence[str],
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: EnergyAdder,
-        elements: tp.Sequence[str],
         periodic_table_index: bool = True,
     ):
         super().__init__()
@@ -101,10 +101,10 @@ class BuiltinModel(torch.nn.Module):
         self.neural_networks = neural_networks
         self.energy_shifter = energy_shifter
         device = self.energy_shifter.self_energies.device
-        self.species_converter = SpeciesConverter(elements).to(device)
+        self.species_converter = SpeciesConverter(symbols).to(device)
 
         self.periodic_table_index = periodic_table_index
-        numbers = torch.tensor([ATOMIC_NUMBERS[e] for e in elements], dtype=torch.long)
+        numbers = torch.tensor([ATOMIC_NUMBERS[e] for e in symbols], dtype=torch.long)
         self.register_buffer("atomic_numbers", numbers)
 
         # checks are performed to make sure all modules passed support the
@@ -225,6 +225,7 @@ class BuiltinModel(torch.nn.Module):
             calculator (:class:`ase.Calculator`): A calculator to be used with ASE
         """
         from torchani.ase import Calculator
+
         return Calculator(
             torch.jit.script(self) if jit else self,
             overwrite=overwrite,
@@ -234,11 +235,11 @@ class BuiltinModel(torch.nn.Module):
 
     def __getitem__(self, index: int) -> tpx.Self:
         return type(self)(
-            self.aev_computer,
-            self.neural_networks.member(index),
-            self.energy_shifter,
-            self.get_chemical_symbols(),
-            self.periodic_table_index,
+            symbols=self.get_chemical_symbols(),
+            aev_computer=self.aev_computer,
+            neural_networks=self.neural_networks.member(index),
+            energy_shifter=self.energy_shifter,
+            periodic_table_index=self.periodic_table_index,
         )
 
     @torch.jit.export
@@ -466,9 +467,21 @@ class BuiltinModel(torch.nn.Module):
 
 class PairPotentialsModel(BuiltinModel):
     def __init__(
-        self, *args, pairwise_potentials: tp.Iterable[PairPotential] = tuple(), **kwargs
+        self,
+        symbols: tp.Sequence[str],
+        aev_computer: AEVComputer,
+        neural_networks: AtomicContainer,
+        energy_shifter: EnergyAdder,
+        pairwise_potentials: tp.Iterable[PairPotential] = tuple(),
+        periodic_table_index: bool = True,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            symbols=symbols,
+            aev_computer=aev_computer,
+            neural_networks=neural_networks,
+            energy_shifter=energy_shifter,
+            periodic_table_index=periodic_table_index,
+        )
         potentials: tp.List[Potential] = list(pairwise_potentials)
         aev_potential = AEVPotential(self.aev_computer, self.neural_networks)
         potentials.append(aev_potential)
@@ -560,16 +573,15 @@ class PairPotentialsModel(BuiltinModel):
             atomic_energies = atomic_energies.mean(dim=0)
         return SpeciesEnergies(species_coordinates[0], atomic_energies)
 
-    # NOTE: members_energies does not need to be overriden, it works correctly as is
     def __getitem__(self, index: int) -> tpx.Self:
         non_aev_potentials = [
             p for p in self.potentials if not isinstance(p, AEVPotential)
         ]
         return type(self)(
+            symbols=self.get_chemical_symbols(),
             aev_computer=self.aev_computer,
             neural_networks=self.neural_networks.member(index),
             energy_shifter=self.energy_shifter,
-            elements=self.get_chemical_symbols(),
             periodic_table_index=self.periodic_table_index,
             pairwise_potentials=non_aev_potentials,
         )
