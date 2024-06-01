@@ -26,23 +26,22 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (with extensions)
         uses: docker/build-push-action@v5
         with:
           context: .
           push: false
+          build-args: BUILD_EXT=1
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Build extensions and run tests
+      - name: Run extension tests
         run: >-
           docker run
           --rm
           --gpus all
           ${{ steps.meta.outputs.tags }}
-          bash -c
-          'pip install -v --no-build-isolation --editable . --global-option="--ext"
-          && pytest ./tests/test_cuaev.py ./tests/test_infer.py'
+          bash -c "pytest ./tests/test_cuaev.py ./tests/test_infer.py"
 
       - name: Remove image
         if: ${{ always() }}
