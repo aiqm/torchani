@@ -50,15 +50,7 @@ jobs:
           ${{ steps.meta.outputs.tags }}
           bash -c "python tools/comp6v1-accuracy-benchmark.py --no-tqdm"
 
-      - name: Training benchmark
-        run: >-
-          docker run
-          --rm
-          --gpus all
-          ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/training-benchmark.py --no-tqdm"
-
-      - name: Training benchmark (Nsight dry run)
+      - name: Training benchmark (with Nsight dry run)
         run: >-
           docker run
           --rm
@@ -66,15 +58,7 @@ jobs:
           ${{ steps.meta.outputs.tags }}
           bash -c "python tools/training-benchmark.py --nvtx --no-tqdm"
 
-      - name: MD benchmark
-        run: >-
-          docker run
-          --rm
-          --gpus all
-          ${{ steps.meta.outputs.tags }}
-          bash -c "python tools/md-benchmark.py --no-tqdm"
-
-      - name: MD benchmark (Nsight dry run)
+      - name: MD benchmark (with Nsight dry run)
         run: >-
           docker run
           --rm
