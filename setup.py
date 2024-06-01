@@ -17,16 +17,15 @@ FAST_BUILD_EXT = '--ext' in sys.argv
 if '--ext' in sys.argv:
     sys.argv.remove('--ext')
 
-# compile cuaev with DEBUG infomation
-CUAEV_DEBUG = '--cuaev-debug' in sys.argv
-if CUAEV_DEBUG:
-    sys.argv.remove('--cuaev-debug')
+# Compile extensions with DEBUG infomation
+TORCHANI_DEBUG = '--debug' in sys.argv
+if TORCHANI_DEBUG:
+    sys.argv.remove('--debug')
 
-# compile cuaev with optimizations: e.g. intrinsics functions and use_fast_math flag
-# CUAEV_OPT = '--cuaev-opt' in sys.argv
-# if CUAEV_OPT:
-#     sys.argv.remove('--cuaev-opt')
-CUAEV_OPT = True
+# Compile optimized extensions (intrinsic math fns and -use_fast_math nvcc flag)
+TORCHANI_OPT = '--no-opt' not in sys.argv  # True by default
+if not TORCHANI_OPT:
+    sys.argv.remove('--no-opt')
 
 if not BUILD_EXT_ALL_SM and not FAST_BUILD_EXT:
     log.warning("Will not install cuaev")
@@ -84,9 +83,8 @@ def cuda_extension(build_all=False):
                 SMs.append(sm)
 
     nvcc_args = ['--expt-extended-lambda']
-    if CUAEV_OPT:
+    if TORCHANI_OPT:
         nvcc_args.append('-use_fast_math')
-    # nvcc_args.append('-Xptxas=-v')
 
     # use cub in a safe manner, see:
     # https://github.com/pytorch/pytorch/pull/55292
@@ -115,9 +113,9 @@ def cuda_extension(build_all=False):
             nvcc_args.append("-gencode=arch=compute_80,code=sm_80")
         if cuda_version >= 11.1:
             nvcc_args.append("-gencode=arch=compute_86,code=sm_86")
-    if CUAEV_DEBUG:
+    if TORCHANI_DEBUG:
         nvcc_args.append('-DTORCHANI_DEBUG')
-    if CUAEV_OPT:
+    if TORCHANI_OPT:
         nvcc_args.append('-DTORCHANI_OPT')
     print("nvcc_args: ", nvcc_args)
     print('-' * 75)
@@ -132,7 +130,7 @@ def cuda_extension(build_all=False):
 def mnp_extension():
     from torch.utils.cpp_extension import CUDAExtension
     cxx_args = ['-std=c++17', '-fopenmp']
-    if CUAEV_DEBUG:
+    if TORCHANI_DEBUG:
         cxx_args.append('-DTORCHANI_DEBUG')
     return CUDAExtension(
         name='torchani.mnp',
