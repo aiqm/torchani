@@ -1,16 +1,19 @@
 #pragma once
 
-#include <ATen/cuda/Exceptions.h>
+#include <c10/cuda/CUDACachingAllocator.h>
+#include <c10/cuda/CUDAException.h>
+#include <cuda_runtime_api.h>
 #include <cub/cub.cuh>
 
-// handle the temporary storage and 'twice' calls for cub API
+// Handle the temporary storage and 'twice' calls for cub API
+// C10_CUDA_CHECK defined in c10/cuda/Exception.h
 #define CUB_WRAPPER(func, ...)                                   \
   do {                                                           \
     size_t temp_storage_bytes = 0;                               \
     func(nullptr, temp_storage_bytes, __VA_ARGS__);              \
     auto temp_storage = allocator->allocate(temp_storage_bytes); \
     func(temp_storage.get(), temp_storage_bytes, __VA_ARGS__);   \
-    AT_CUDA_CHECK(cudaGetLastError());                           \
+    C10_CUDA_CHECK(cudaGetLastError());                          \
   } while (false)
 
 inline int get_num_bits(uint64_t max_key) {

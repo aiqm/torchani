@@ -1,7 +1,8 @@
 #pragma once
 
-#include <c10/cuda/CUDACachingAllocator.h>
+#include <cuda_runtime_api.h>
 #include <torch/extension.h>
+
 using torch::Tensor;
 using torch::autograd::AutogradContext;
 using torch::autograd::tensor_list;

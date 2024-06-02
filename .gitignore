@@ -68,3 +68,6 @@ dist
 examples/dataset.pkl
 examples/batched_dataset_1x/*
 /tests/.hypothesis
+
+# Compile database for IDEs
+compile_commands.json
