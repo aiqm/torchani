@@ -1354,7 +1354,6 @@ void launch_postProcessNbrList2_kernel(
   // constants
   const int n_molecules = species_t.size(0);
   const int max_natoms_per_mol = species_t.size(1);
-  int total_atoms = n_molecules * max_natoms_per_mol;
   int max_numj_per_i_in_Rcr = min(max_natoms_per_mol, MAX_NUMJ_PER_I_IN_RCR);
 
   // TODO make startIdx as a parameter so that the scan result can be cached in the ANI model,
