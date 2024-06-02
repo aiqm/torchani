@@ -49,6 +49,7 @@ Untitled.ipynb
 /docs/src/sg_execution_times.rst
 # Build output of CUDA / C++ extensions
 /build/
+/torchani/csrc/build/
 # Data downloaded with download.sh
 /download/
 
