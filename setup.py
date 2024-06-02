@@ -140,22 +140,15 @@ def mnp_extension():
 
 def ext_kwargs():
     if not BUILD_EXT_ALL_SM and not FAST_BUILD_EXT:
-        return dict(
-            provides=['torchani']
-        )
+        return dict()
     from torch.utils.cpp_extension import BuildExtension
     kwargs = dict(
-        provides=[
-            'torchani',
-            'torchani.cuaev',
-            'torchani.mnp',
-        ],
         ext_modules=[
             cuda_extension(BUILD_EXT_ALL_SM),
             mnp_extension()
         ],
         cmdclass={
-            'build_ext': BuildExtension,
+            'build_ext': BuildExtension.with_options(no_python_abi_suffix=True),
         })
     return kwargs
 

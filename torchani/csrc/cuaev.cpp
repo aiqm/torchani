@@ -292,5 +292,3 @@ TORCH_LIBRARY_IMPL(cuaev, Autograd, m) {
   m.impl("run_with_half_nbrlist", run_with_half_nbrlist_autograd);
   m.impl("run_with_full_nbrlist", run_with_full_nbrlist_autograd);
 }
-
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {}

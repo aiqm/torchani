@@ -20,11 +20,6 @@ from torchani.aev.terms import (
 from torchani.csrc import CUAEV_IS_INSTALLED
 
 
-if CUAEV_IS_INSTALLED:
-    # We need to import torchani.cuaev to tell PyTorch to initialize torch.ops.cuaev
-    from .. import cuaev  # type: ignore # noqa: F401
-
-
 def jit_unused_if_no_cuaev():
     def decorator(func):
         if CUAEV_IS_INSTALLED:

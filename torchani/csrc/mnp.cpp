@@ -278,5 +278,3 @@ TORCH_LIBRARY(mnp, m) {
 TORCH_LIBRARY_IMPL(mnp, Autograd, m) {
   m.impl("run", run_autograd);
 }
-
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {}

@@ -10,11 +10,6 @@ from torchani.csrc import MNP_IS_INSTALLED
 from torchani.atomics import AtomicContainer
 
 
-if MNP_IS_INSTALLED:
-    # We need to import torchani.mnp to tell PyTorch to initialize torch.ops.mnp
-    from . import mnp  # type: ignore # noqa: F401
-
-
 def jit_unused_if_no_mnp():
     def decorator(func):
         if MNP_IS_INSTALLED:

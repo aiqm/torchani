@@ -21,9 +21,10 @@ __pycache__/
 *.zip
 a.out
 
-# Mypy and pytest cache
+# Mypy, pytest and clangd cache
 .mypy_cache/
 .pytest_cache/
+.cache/
 
 # Ninja
 *.ninja

@@ -1,14 +1,23 @@
+from pathlib import Path
 import os
 import warnings
-import importlib.metadata
 
-CUAEV_IS_INSTALLED = "torchani.cuaev" in importlib.metadata.metadata(
-    __package__.split(".")[0]
-).get_all("Provides", [])
+import torch
 
-MNP_IS_INSTALLED = "torchani.mnp" in importlib.metadata.metadata(
-    __package__.split(".")[0]
-).get_all("Provides", [])
+_CUAEV_PATH = str(Path(__file__).resolve().parent.parent / "cuaev.so")
+_MNP_PATH = str(Path(__file__).resolve().parent.parent / "mnp.so")
+
+try:
+    torch.ops.load_library(_CUAEV_PATH)
+    CUAEV_IS_INSTALLED = True
+except Exception:
+    CUAEV_IS_INSTALLED = False
+
+try:
+    torch.ops.load_library(_MNP_PATH)
+    MNP_IS_INSTALLED = True
+except Exception:
+    MNP_IS_INSTALLED = False
 
 # This env var is meant to be used by developers to manually disable extensions
 # for testing purposes
