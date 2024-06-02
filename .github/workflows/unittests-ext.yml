@@ -31,17 +31,17 @@ jobs:
         with:
           context: .
           push: false
-          build-args: BUILD_EXT=1
+          build-args: BUILD_EXT=sm75
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Run extension tests
+      - name: Run extension GPU tests (Quadro RTX 5000, SM75)
         run: >-
           docker run
           --rm
-          --gpus all
+          --gpus '"device=3"'
           ${{ steps.meta.outputs.tags }}
-          bash -c "pytest ./tests/test_cuaev.py ./tests/test_infer.py"
+          bash -c "nvidia-smi && pytest ./tests/test_cuaev.py ./tests/test_infer.py"
 
       - name: Remove image
         if: ${{ always() }}

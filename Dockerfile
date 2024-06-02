@@ -26,12 +26,16 @@ RUN pip install -r dev_requirements.txt
 # Copy all other necessary repo files
 COPY . /torchani_sandbox
 
-# Install torchani + core requirements (+ extensions if "ext" build arg is provided)
+# Install torchani + core requirements (+ extensions if BUILD_EXT build arg is provided)
+# Usage:
+# BUILD_EXT=0 -> Don't build extensions
+# BUILD_EXT=all-sms -> Build extensions for all sms
+# BUILD_EXT=smMajorMinor (e.g. BUILD_EXT=sm86)-> Build for specific Major.Minor SM
 ARG BUILD_EXT=0
 RUN \
 if [ "$BUILD_EXT" = "0" ]; then \
     pip install -v --no-build-isolation --editable . ; \
 else \
     pip install -v --no-build-isolation --editable . && \
-    pip install -v --no-build-isolation --editable . --global-option="--ext"; \
+    pip install -v --no-build-isolation --editable . --global-option="--ext-${BUILD_EXT}"; \
 fi

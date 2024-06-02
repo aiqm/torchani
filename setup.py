@@ -1,3 +1,4 @@
+import typing as tp
 import os
 import subprocess
 import sys
@@ -9,44 +10,62 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("setup")
 
 
-BUILD_EXT_ALL_SM = '--ext-all-sms' in sys.argv
-if '--ext-all-sms' in sys.argv:
-    sys.argv.remove('--ext-all-sms')
+def collect_all_sms() -> tp.Set[str]:
+    import torch
 
-FAST_BUILD_EXT = '--ext' in sys.argv
-if '--ext' in sys.argv:
-    sys.argv.remove('--ext')
+    print("-" * 75)
+    print("Will add all SMs torch supports")
+    sms = {"60", "61", "70"}
+    _torch_cuda = torch.version.cuda
+    cuda_version = float(_torch_cuda) if _torch_cuda is not None else 0
+    if cuda_version >= 10:
+        sms.add("75")
+    if cuda_version >= 11:
+        sms.add("80")
+    if cuda_version >= 11.1:
+        sms.add("86")
+    print("-" * 75)
+    print()
+    return sms
 
-# Compile extensions with DEBUG infomation
-TORCHANI_DEBUG = '--debug' in sys.argv
-if TORCHANI_DEBUG:
-    sys.argv.remove('--debug')
 
-# Compile optimized extensions (intrinsic math fns and -use_fast_math nvcc flag)
-TORCHANI_OPT = '--no-opt' not in sys.argv  # True by default
-if not TORCHANI_OPT:
-    sys.argv.remove('--no-opt')
+def collect_compatible_sms() -> tp.Set[str]:
+    import torch
 
-if not BUILD_EXT_ALL_SM and not FAST_BUILD_EXT:
-    log.warning("Will not install cuaev")
+    print("-" * 75)
+    print("Will try to find compatible CUDA devices visible to torch")
+    devices = torch.cuda.device_count()
+    sms: tp.Set[str] = set()
+    for i in range(devices):
+        sm_tuple = torch.cuda.get_device_capability(i)
+        if sm_tuple >= (5, 0):
+            print("Found compatible device:")
+            print(f'{i}: {torch.cuda.get_device_name(f"cuda:{i}")}')
+            print(f"   {torch.cuda.get_device_properties(i)}")
+            sms.add(f"{sm_tuple[0]}{sm_tuple[1]}")
+    if not sms:
+        print("No compatible devices found")
+        sms = collect_all_sms()
+    print("-" * 75)
+    print()
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+    return sms
 
 
 def maybe_download_cub():
     import torch
+
     dirs = torch.utils.cpp_extension.include_paths(cuda=True)
     for d in dirs:
-        cubdir = os.path.join(d, 'cub')
-        log.info(f'Searching for cub at {cubdir}...')
+        cubdir = os.path.join(d, "cub")
+        log.info(f"Searching for cub at {cubdir}...")
         if os.path.isdir(cubdir):
-            log.info(f'Found cub in {cubdir}')
+            log.info(f"Found cub in {cubdir}")
             return []
     # if no cub, download it to include dir from github
-    if not os.path.isdir('./include/cub'):
-        if not os.path.exists('./include'):
-            os.makedirs('include')
+    if not os.path.isdir("./include/cub"):
+        if not os.path.exists("./include"):
+            os.makedirs("include")
         commands = """
         echo "Downloading CUB library";
         wget -q https://github.com/NVIDIA/cub/archive/main.zip;
@@ -60,121 +79,144 @@ def maybe_download_cub():
     return [os.path.abspath("./include")]
 
 
-def cuda_extension(build_all=False):
-    import torch
+def cuda_extension(sms: tp.Set[str], debug: bool, opt: bool):
     from torch.utils.cpp_extension import CUDAExtension
-    SMs = []
-    print('-' * 75)
-    if not build_all:
-        devices = torch.cuda.device_count()
-        print('FAST_BUILD_EXT: ON')
-        print(
-            'This build will only support the following devices'
-            ' (or devices with same cuda capability): '
-        )
-        for i in range(devices):
-            d = 'cuda:{}'.format(i)
-            _sm = torch.cuda.get_device_capability(i)
-            sm = int(f'{_sm[0]}{_sm[1]}')
-            if sm >= 50:
-                print('{}: {}'.format(i, torch.cuda.get_device_name(d)))
-                print('   {}'.format(torch.cuda.get_device_properties(i)))
-            if sm not in SMs and sm >= 50:
-                SMs.append(sm)
 
-    nvcc_args = ['--expt-extended-lambda']
-    if TORCHANI_OPT:
-        nvcc_args.append('-use_fast_math')
+    print("-" * 75)
+    print(f"Will build cuAEV with support for SMs: {', '.join(sms)}")
 
-    # use cub in a safe manner, see:
+    nvcc_args = ["--expt-extended-lambda"]
+    # The following defs are required to use CUB safely. For details see:
     # https://github.com/pytorch/pytorch/pull/55292
     # https://github.com/pytorch/pytorch/pull/66219
-    nvcc_args += [
-        '-DCUB_NS_QUALIFIER=::cuaev::cub',
-        '-DCUB_NS_PREFIX=namespace cuaev {',
-        '-DCUB_NS_POSTFIX=}',
-    ]
-    if SMs:
-        for sm in SMs:
-            nvcc_args.append(f"-gencode=arch=compute_{sm},code=sm_{sm}")
-    else:  # no gpu detected
-        print('Will build for all SMs')
-        nvcc_args.append("-gencode=arch=compute_60,code=sm_60")
-        nvcc_args.append("-gencode=arch=compute_61,code=sm_61")
-        nvcc_args.append("-gencode=arch=compute_70,code=sm_70")
-        _torch_cuda_version = torch.version.cuda
-        if _torch_cuda_version is not None:
-            cuda_version = float(_torch_cuda_version)
-        else:
-            cuda_version = 0
-        if cuda_version >= 10:
-            nvcc_args.append("-gencode=arch=compute_75,code=sm_75")
-        if cuda_version >= 11:
-            nvcc_args.append("-gencode=arch=compute_80,code=sm_80")
-        if cuda_version >= 11.1:
-            nvcc_args.append("-gencode=arch=compute_86,code=sm_86")
-    if TORCHANI_DEBUG:
-        nvcc_args.append('-DTORCHANI_DEBUG')
-    if TORCHANI_OPT:
-        nvcc_args.append('-DTORCHANI_OPT')
-    print("nvcc_args: ", nvcc_args)
-    print('-' * 75)
+    nvcc_args.extend(
+        [
+            "-DCUB_NS_QUALIFIER=::cuaev::cub",
+            "-DCUB_NS_PREFIX=namespace cuaev {",
+            "-DCUB_NS_POSTFIX=}",
+        ]
+    )
+    if debug:
+        nvcc_args.append("-DTORCHANI_DEBUG")
+    if opt:
+        nvcc_args.extend(["-DTORCHANI_OPT", "-use_fast_math"])
+    nvcc_args.extend([f"-gencode=arch=compute_{sm},code=sm_{sm}" for sm in sms])
+    print("NVCC compiler args:")
+    for arg in nvcc_args:
+        print(f"    {arg}")
+
+    cxx_args = ["-std=c++17"]
+    print("C++ compiler args:")
+    for arg in cxx_args:
+        print(f"    {arg}")
+
+    print("-" * 75)
+    print()
     include_dirs = [*maybe_download_cub(), os.path.abspath("torchani/csrc/")]
     return CUDAExtension(
-        name='torchani.cuaev',
+        name="torchani.cuaev",
         sources=["torchani/csrc/cuaev.cpp", "torchani/csrc/aev.cu"],
         include_dirs=include_dirs,
-        extra_compile_args={'cxx': ['-std=c++17'], 'nvcc': nvcc_args})
+        extra_compile_args={"cxx": cxx_args, "nvcc": nvcc_args},
+    )
 
 
-def mnp_extension():
+def mnp_extension(debug: bool):
+    print("-" * 75)
+    print("Will build MNP")
+
+    # This extension doesn't need nvcc to be compiled, but it still uses torch
+    # CUDA libraries. This means CUDAExtension is needed
     from torch.utils.cpp_extension import CUDAExtension
-    cxx_args = ['-std=c++17', '-fopenmp']
-    if TORCHANI_DEBUG:
-        cxx_args.append('-DTORCHANI_DEBUG')
+
+    cxx_args = ["-std=c++17", "-fopenmp"]
+    if debug:
+        cxx_args.append("-DTORCHANI_DEBUG")
+
+    print("C++ compiler args:")
+    for arg in cxx_args:
+        print(f"    {arg}")
+    print("-" * 75)
+    print()
     return CUDAExtension(
-        name='torchani.mnp',
+        name="torchani.mnp",
         sources=["torchani/csrc/mnp.cpp"],
-        extra_compile_args={'cxx': cxx_args})
+        extra_compile_args={"cxx": cxx_args},
+    )
 
 
-def ext_kwargs():
-    if not BUILD_EXT_ALL_SM and not FAST_BUILD_EXT:
-        return dict()
+# Flags for requiresting specific SMs
+sms: tp.Set[str] = set()
+for sm in {"60", "61", "70", "75", "80", "86"}:
+    if f"--ext-sm{sm}" in sys.argv:
+        sys.argv.remove(f"--ext-sm{sm}")
+        sms.add(sm)
+# Flag for requesting compatible SMs detection
+if "--ext" in sys.argv:
+    sys.argv.remove("--ext")
+    sms.update(collect_compatible_sms())
+# Flag for requesting all sms
+if "--ext-all-sms" in sys.argv:
+    sys.argv.remove("--ext-all-sms")
+    sms.update(collect_all_sms())
+
+# Compile extensions with DEBUG infomation
+debug = False
+if "--debug" in sys.argv:
+    sys.argv.remove("--debug")
+    debug = True
+
+# Compile optimized extensions (intrinsic math fns and -use_fast_math nvcc flag)
+opt = True
+if "--no-opt" in sys.argv:
+    sys.argv.remove("--no-opt")
+    opt = False
+
+
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+
+# At least 1 sm is always added to this set if extensions need to be built
+if not sms:
+    log.warning("Will not install TorchANI extensions")
+    ext_kwargs = dict()
+else:
     from torch.utils.cpp_extension import BuildExtension
-    kwargs = dict(
-        ext_modules=[
-            cuda_extension(BUILD_EXT_ALL_SM),
-            mnp_extension()
+
+    ext_kwargs = {
+        "ext_modules": [
+            cuda_extension(sms, debug=debug, opt=opt),
+            mnp_extension(debug=debug),
         ],
-        cmdclass={
-            'build_ext': BuildExtension.with_options(no_python_abi_suffix=True),
-        })
-    return kwargs
+        "cmdclass": {
+            "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
+        },
+    }
 
 
 setup(
-    name='torchani',
-    description='PyTorch implementation of ANI',
+    name="torchani",
+    description="PyTorch implementation of ANI",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/aiqm/torchani',
-    author='Xiang Gao',
-    author_email='qasdfgtyuiop@gmail.com',
-    license='MIT',
+    url="https://github.com/aiqm/torchani",
+    author="Xiang Gao",
+    author_email="qasdfgtyuiop@gmail.com",
+    license="MIT",
     packages=find_packages(),
     include_package_data=True,
     use_scm_version={"fallback_version": "0.0.0"},
-    setup_requires=["setuptools>=61", 'setuptools_scm>=8'],
+    setup_requires=["setuptools>=61", "setuptools_scm>=8"],
     install_requires=[
-        'numpy>=1.24',
-        'torch==2.3',
-        'typing_extensions>=4.0.0',
-        'h5py',
-        'tqdm',
+        "numpy>=1.24",
+        "torch==2.3",
+        "typing_extensions>=4.0.0",
+        "h5py",
+        "tqdm",
     ],
     entry_points={
-        'console_scripts': ['torchani = torchani.cli:main'],
+        "console_scripts": ["torchani = torchani.cli:main"],
     },
-    **ext_kwargs()
+    **ext_kwargs,
 )
