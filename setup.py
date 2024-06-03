@@ -126,8 +126,10 @@ def strip_argv():
 
 def setup_kwargs() -> tp.Dict[str, tp.Any]:
     # setuptools executes this file:
-    # - 3 times in case of build-isolation mode (egg_info, dist_info, [editable_]wheel)
-    # - 2 times in case of no-build-isolation mode (dist_info, [editable_]wheel)
+    # - 3 times in case of build-isolation mode
+    #   (egg_info, dist_info, (editable|bdist)_wheel)
+    # - 2 times in case of no-build-isolation mode
+    #   (dist_info, (editable|bdist)_wheel)
     #
     # Extensions may only be built when building the actual wheel,
     # In other cases executing this file is a no-op.
