@@ -67,7 +67,7 @@ def cuaev_extension_kwargs(
     for arg in cxx_args:
         print(f"    {arg}")
     return dict(
-        name="cuaev",
+        name="torchani.cuaev",
         sources=["torchani/csrc/cuaev.cpp", "torchani/csrc/aev.cu"],
         include_dirs=[os.path.abspath("torchani/csrc/")],
         extra_compile_args={"cxx": cxx_args, "nvcc": nvcc_args},
@@ -86,7 +86,7 @@ def mnp_extension_kwargs(debug: bool) -> tp.Dict[str, tp.Any]:
     for arg in cxx_args:
         print(f"    {arg}")
     return dict(
-        name="mnp",
+        name="torchani.mnp",
         sources=["torchani/csrc/mnp.cpp"],
         extra_compile_args={"cxx": cxx_args},
     )
