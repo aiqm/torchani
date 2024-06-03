@@ -22,7 +22,8 @@ dependencies:
   # Optional dependencies follow:
   # For building the extensions, the cuda libraries speciefied by the pytorch-cuda
   # metapackage are not enough, we need the *-dev versions with the headers.
-  # We also need nvcc-11.8 to use as a compiler
+  # Also need to pin the version of nvcc, otherwise torch refuses to compile
+  # Also need to pin the version of cccl due to torch's usage of thrust
   - nvidia::cuda-libraries-dev=11.8
   - nvidia::cuda-cccl=11.8
   - nvidia::cuda-nvcc=11.8
