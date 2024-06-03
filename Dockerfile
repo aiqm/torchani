@@ -31,9 +31,10 @@ COPY . /torchani_sandbox
 RUN \
     git config --global user.email "user@domain.com" \
     && git config --global user.name "User" \
-    && git init \
+    && git config --global init.defaultBranch "main" \
+    && git init > /dev/null \
     && git add . \
-    && git commit -m "Initial commit"
+    && git commit -m "Initial commit" > /dev/null
 
 # Install torchani + core requirements (+ extensions if BUILD_EXT build arg is provided)
 # Usage:
