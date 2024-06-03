@@ -4,6 +4,9 @@ __pycache__/
 .eggs
 *.egg-info/
 
+# setuptools-scm version file
+_version.py
+
 # Vscode
 /.vscode
 

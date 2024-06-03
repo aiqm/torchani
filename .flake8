@@ -1,7 +1,3 @@
-[tool:pytest]
-filterwarnings =
-    ignore:.*distutils Version classes are deprecated.*:DeprecationWarning
-
 [flake8]
 # W503 is line-break-before-binary-operator which in PEP8 is the exact opposite
 # of what flake8 enforces
@@ -16,8 +12,3 @@ exclude =
     torchani.egg-info,
     docs/examples
     tools/dump_dispersion_constants.py
-
-[mypy]
-ignore_missing_imports = True
-check_untyped_defs = True
-exclude = (tests/.*|tools/.*|torchani/data/.*|docs/src/examples/.*|docs/build/.*)

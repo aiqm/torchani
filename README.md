@@ -1,6 +1,6 @@
 # <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo1.png width=180/>  Accurate Neural Network Potential on PyTorch
 
-Metrics: (UNTRACKED FOR PRIVATE REPO)
+Metrics: (UNTRACKED FOR PRIVATE)
 
 ![PyPI](https://img.shields.io/pypi/v/torchani.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchani.svg)
@@ -43,9 +43,10 @@ TorchANI is tested against the (usually) latest PyTorch version
 
 ## Install TorchANI
 
-### From Anaconda, using conda (BROKEN)
+NOTE: Currently only building from source (with either pip or conda) works
+other installation procedures are broken.
 
-**TODO**: Support this again (currently only building from source works)
+### From Anaconda, using conda (BROKEN)
 
 To install TorchANI using conda run:
 
@@ -54,11 +55,10 @@ conda create -n ani python=3.10
 conda activate ani
 # The following command is all one line
 conda install \
-    -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville \
     -c pytorch \
     -c nvidia \
-    -c defaults \
     -c conda-forge \
+    -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville \
     sandbox
 ```
 
@@ -73,11 +73,11 @@ Notes:
 
 ### From PyPI, using pip (BROKEN)
 
-**TODO**: Support this again (currently only building from source works)
+TODO
 
-### From source, using conda
+### From source, using conda or pip
 
-To build install TorchANI directly from the GitHub repo run the following:
+To build and install TorchANI directly from the GitHub repo do the following:
 
 ```bash
 # Clone the repo and cd to the directory
@@ -86,17 +86,38 @@ cd ./torchani_sandbox
 
 # Create a conda (or mamba) environment
 # Note that dev_environment.yaml contains many optional dependencies needed to
-# build the extensions, build the documentation, and run tests and tools
+# build the compiled extensions, build the documentation, and run tests and tools
 # You can comment these out if you are not planning to do that
 conda env create -f ./dev_environment.yaml
+```
 
-# Install torchani
-pip install -v --no-deps --no-build-isolation -e .
+Instead of using a `conda` (or `mamba`) environment you can use a python `venv`,
+and install the torchani optional dependencies
+running `pip install -r dev_requirements.txt`.
 
-# Install CUDA and C++ extensions (optional)
-# Use the "--ext-all-sms" flag instead of "--ext" if you want to build for all GPUs
-pip install -v --no-deps --no-build-isolation -e . --global-option="--ext"
+Now you have two options, depending on whether you want to install the torchani
+compiled extensions. To install torchani with no compiled extensions run:
 
+```bash
+pip install -v .
+```
+
+To install torchani with the cuAEV and MNP compiled extensions run instead:
+
+```bash
+# Use 'ext-all-sms' instead of 'ext' if you want to build for all possible GPUs
+pip install --config-settings=--global-option=ext --no-build-isolation -v .
+```
+
+In both cases you can add the editable, `-e`, flag after the verbose, `-v`,
+flag if you want an editable install (for developers). The `-v` flag can of
+course be omitted, but it is sometimes handy to have some extra information
+about the installation process.
+
+After this you can perform some optional steps if you installed the required
+dev dependencies:
+
+```bash
 # Download files needed for testing and building the docs (optional)
 bash ./download.sh
 
@@ -108,31 +129,10 @@ cd ./tests
 pytest -v .
 ```
 
-Usually this process works for most use cases, but for more details regarding
-building the CUDA and C++ extensions refer to [TorchANI CSRC](torchani/csrc).
+This process works for most use cases, but for more details regarding building
+the CUDA and C++ extensions refer to [TorchANI CSRC](torchani/csrc).
 
-### From source, using pip
-
-Note: please use a venv if you are installing torchani using `pip`
-
-```bash
-# Clone the repo and cd to the directory
-git clone https://github.com/roitberg-group/torchani_sandbox.git
-cd ./torchani_sandbox
-
-# TODO: create a venv
-pip install -r ./dev_requirements.txt
-pip install -v --no-build-isolation -e .
-
-# In this case you will need to manually download the CUDA Toolkit to build
-# the extensions.
-
-pip install -v --no-build-isolation -e . --global-option="--ext"
-
-# All the same optional steps as with conda are possible ...
-```
-
-## CUDA / C++ extensions
+## CUDA and C++ extensions
 
 A CUDA extension for speeding up AEV calculations and a C++ extension for
 parallelizing networks (MNP or Multi Net Parallel) using OpenMP are compiled by

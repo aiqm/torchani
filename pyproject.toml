@@ -1,0 +1,61 @@
+[project]
+name = "torchani"
+authors = [
+    {name = "Ignacio Pickering", email = "ign.pickering@gmail.com"},
+    {name = "Xiang Gao", email = "qasdfgtyuiop@gmail.com"},
+    {name = "Jinze Xue", email = "jinzexue@chem.ufl.edu"},
+]
+description = "PyTorch implementation of the ANI neural network potential family"
+readme = "README.md"
+keywords = [
+    "machine-learning",
+    "neural-networks",
+    "deep-learning",
+    "chemistry",
+    "torch",
+    "energy",
+]
+classifiers = ["License :: OSI Approved :: MIT License"]
+requires-python = ">=3.8"
+dependencies = [
+    "torch==2.3",
+    "numpy>=1.24",
+    "typing_extensions>=4.0.0",
+    "h5py",
+    "tqdm",
+]
+dynamic = ["version"]
+
+[project.urls]
+repository = "https://github.com/aiqm/torchani"
+
+# NOTE: If installed with build isolation torch can't be accessed and
+# the CUDA and C++ extensions can't be compiled
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+torchani = "torchani.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["torchani*"]
+
+[tool.setuptools_scm]
+version_file = "torchani/_version.py"
+fallback_version="0.0.0"
+
+[tool.mypy]
+ignore_missing_imports = true
+check_untyped_defs = true
+exclude = "(tests/.*|tools/.*|torchani/data/.*|docs/src/examples/.*|docs/build/.*)"
+
+[tool.pytest.ini_options]
+filterwarnings = "ignore:.*distutils Version classes are deprecated.*:DeprecationWarning"
+
+[project.optional-dependencies]
+ase = ["ase"]
+neurochem = ["lark-parser"]
+data = ["zarr", "pandas", "pyarrow"]
+all = ["ase", "lark-parser", "zarr", "pandas", "pyarrow"]
