@@ -11,15 +11,8 @@ jobs:
     runs-on: [self-hosted, ipickering]
     permissions:
       contents: read
-      packages: write
 
     steps:
-      - name: Checkout torchani
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PAT }}
-          submodules: recursive
-
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -29,7 +22,6 @@ jobs:
       - name: Build and push Docker image (with extensions)
         uses: docker/build-push-action@v5
         with:
-          context: .
           push: false
           build-args: BUILD_EXT=sm75
           tags: ${{ steps.meta.outputs.tags }}
