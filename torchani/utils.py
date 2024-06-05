@@ -520,7 +520,7 @@ def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
         for k in keys:
             if "neural_networks" not in k:
                 continue
-            new_key = k.replace("neural_networks", "neural_networks.{j}")
+            new_key = k.replace("neural_networks", f"neural_networks.{j}")
             value = state_dict.pop(k)
             state_dict[new_key] = value
 
