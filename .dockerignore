@@ -52,8 +52,6 @@ Untitled.ipynb
 *.nsys-rep
 report*.sqlite
 
-# Repo objects
-.git/
 # Workflows and github-specific stuff
 .github/
 

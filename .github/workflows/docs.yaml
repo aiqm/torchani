@@ -1,13 +1,9 @@
-name: unittests
+name: docs
 
 on: pull_request
 
-env:
-  REGISTRY: ${{ github.repository }}
-  IMAGE_NAME: 'unittests-ext'
-
 jobs:
-  cpu-tests:
+  docs:
     runs-on: [self-hosted, ipickering]
     permissions:
       contents: read
@@ -17,22 +13,23 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ github.repository }}/docs
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
-          push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
 
-      - name: Run unit tests (CPU)
+      - name: Build extensions and run tests
         run: >-
           docker run
           --rm
           --gpus '"device=none"'
           ${{ steps.meta.outputs.tags }}
-          bash -c "pytest ."
+          bash -c
+          "sphinx-build docs/src docs/build"
 
       - name: Remove image
         if: ${{ always() }}
@@ -40,5 +37,5 @@ jobs:
         run: docker image rm ${{ steps.meta.outputs.tags }}
 
 concurrency:
-  group: unittests-${{ github.event.pull_request.number || github.sha }}
+  group: docs-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

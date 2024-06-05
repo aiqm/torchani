@@ -7,18 +7,18 @@ Metrics: (UNTRACKED FOR PRIVATE)
 
 CI:
 
-[![unittests workflow](
-    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittests.yml/badge.svg
-)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittests.yml)
-[![unittests-ext workflow](
-    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittests-ext.yml/badge.svg
-)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/unittests-ext.yml)
+[![tests workflow](
+    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tests.yaml/badge.svg
+)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tests.yaml)
+[![tests-ext workflow](
+    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tests-ext.yaml/badge.svg
+)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tests-ext.yaml)
 [![lint workflow](
-    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yml/badge.svg
-)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yml)
+    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yaml/badge.svg
+)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yaml)
 [![tools workflow](
-        https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yml/badge.svg
-)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yml)
+        https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yaml/badge.svg
+)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yaml)
 
 Deployment: (STOPPED FOR PRIVATE REPO)
 
@@ -177,9 +177,66 @@ development, and only keeps the latest push. The CI runing for other pull
 requests might overwrite this repository. You could rerun the `docs` check to
 overwrite this repo to your build.
 
-## Notes to developers
+## Notes for developers
 
 - Never commit to the master branch directly. If you need to change something,
   create a new branch and submit a PR on GitHub.
 - All the tests on GitHub must pass before your PR can be merged.
 - Code review is required before merging a pull request.
+
+### Building the TorchANI conda package
+
+The conda package can be built using the recipe in `./recipe`, by running:
+
+```bash
+cd ./torchani_sandbox
+# "anaconda-client" is needed only if you want to upload the built pkg to anaconda.org
+conda install conda-build conda-verify anaconda-client
+# This dir must exist before running conda build
+mkdir ./conda-pkgs/
+conda build \
+    -c pytorch -c nvidia -c conda-forge \
+    --no-anaconda-upload \
+    --output-folder ./conda-pkgs/ \
+    ./recipe
+```
+
+The `meta.yaml` in the recipe assumes that the extensions are built using the
+system's CUDA Toolkit, located in `/usr/local/cuda`. If this is not possible
+then add the following dependencies to the `host` environment:
+
+- `nvidia::cuda-libraries-dev={{ cuda }}`
+- `nvidia::cuda-nvcc={{ cuda }}`
+- `nvidia::cuda-cccl={{ cuda }}`
+
+and remove `cuda_home=/usr/local/cuda` from the build script. note that adding
+these necessary CUDA Toolkit libraries to the `host` env significantly
+increases build time.
+
+To upload the built package to the group's internal server run:
+
+```bash
+chown -R 1003:1003 ./conda-pkgs/
+rsync --archive --verbose --delete \
+    -e "ssh -p $SERVER_PORT -o StrictHostKeyChecking=no" \
+    ./conda-pkgs/ \
+    "$SERVER_USERNAME@roitberg.chem.ufl.edu:/home/statics/conda-packages/"
+```
+
+with the appropriate `SERVER_USERNAME` and `SERVER_PORT`. To upload the built package to
+`anaconda.org` instead (WARNING: This is a public release!) run:
+
+```bash
+anaconda \
+    --token "$CONDA_TOKEN" \
+    upload \
+        --user roitberg-group \
+        --force "./conda-pkgs/linux-64/torchani-<version>-<build-str>.tar.gz"
+```
+
+where `CONDA_TOKEN` is the group's `anaconda` account token.
+
+Note that the CI (GitHub Actions Workflow) that tests the conda pkg runs only:
+
+- on pull requests that contain the word 'conda' in the branch name
+- on the default branch, at 00:00:00 every day

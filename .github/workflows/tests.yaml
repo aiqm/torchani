@@ -1,13 +1,9 @@
-name: unittests-ext
+name: tests
 
 on: pull_request
 
-env:
-  REGISTRY: ${{ github.repository }}
-  IMAGE_NAME: 'unittests'
-
 jobs:
-  gpu-tests-ext:
+  cpu-tests:
     runs-on: [self-hosted, ipickering]
     permissions:
       contents: read
@@ -17,23 +13,22 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ github.repository }}/tests
 
-      - name: Build and push Docker image (with extensions)
+      - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
-          push: false
-          build-args: BUILD_EXT=sm75
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
 
-      - name: Run extension GPU tests (Quadro RTX 5000, SM75)
+      - name: Run unit tests (CPU)
         run: >-
           docker run
           --rm
-          --gpus '"device=3"'
+          --gpus '"device=none"'
           ${{ steps.meta.outputs.tags }}
-          bash -c "nvidia-smi && pytest ./tests/test_cuaev.py ./tests/test_infer.py"
+          bash -c "pytest ."
 
       - name: Remove image
         if: ${{ always() }}
@@ -41,5 +36,5 @@ jobs:
         run: docker image rm ${{ steps.meta.outputs.tags }}
 
 concurrency:
-  group: unittests-ext-${{ github.event.pull_request.number || github.sha }}
+  group: tests-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true

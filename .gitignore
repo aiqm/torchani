@@ -55,6 +55,8 @@ Untitled.ipynb
 /torchani/csrc/build/
 # Data downloaded with download.sh
 /download/
+# Dest dir of built conda pkgs
+/conda-pkgs/
 
 # Nvidia Nsight Systems profiling
 *.qdrep

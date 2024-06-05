@@ -9,7 +9,7 @@ jobs:
   mypy:
     runs-on: [self-hosted, ipickering]
     steps:
-    - name: Checkout torchani
+    - name: Checkout repo
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.PAT }}
@@ -27,7 +27,7 @@ jobs:
   flake8:
     runs-on: [self-hosted, ipickering]
     steps:
-    - name: Checkout torchani
+    - name: Checkout repo
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.PAT }}
@@ -45,7 +45,7 @@ jobs:
   clang-format:
     runs-on: [self-hosted, ipickering]
     steps:
-    - name: Checkout torchani
+    - name: Checkout repo
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.PAT }}

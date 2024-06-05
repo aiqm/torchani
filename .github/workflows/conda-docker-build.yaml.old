@@ -8,7 +8,7 @@ on:
       - 'torchani/aev/**'
       - 'ci/**'
       - 'test/test_cuaev.py'
-      - Dockerfile*
+      - '*Dockerfile'
   push:
     branches:
       - master
@@ -18,7 +18,7 @@ on:
       - 'torchani/aev/**'
       - 'ci/**'
       - 'test/test_cuaev.py'
-      - Dockerfile*
+      - '*Dockerfile'
 
 env:
   REGISTRY: ghcr.io
@@ -62,7 +62,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: Dockerfile.conda
+          file: conda.Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}_conda:latest
           labels: ${{ steps.meta.outputs.labels }}

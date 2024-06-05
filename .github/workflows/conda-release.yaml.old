@@ -31,13 +31,23 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Conda && Release
-        run: >
-          docker run --rm -v $PWD:/examples --gpus all ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}_conda:latest bash -c
-          "mkdir -p ~/.ssh && echo \"${{ secrets.SERVER_PUBKEY }}\" > ~/.ssh/id_rsa.pub && echo \"${{ secrets.SERVER_PRIKEY }}\" > ~/.ssh/id_rsa && chmod 400 ~/.ssh/id_rsa &&
-          nvidia-smi && cd /examples &&
-          export PYTHON_VERSION=3.8 && export CONDA_TOKEN=${{ secrets.CONDA_TOKEN }} && export SERVER_USERNAME=${{ secrets.SERVER_USERNAME }} && export SERVER_PORT=${{ secrets.SERVER_PORT }} &&
-          ./conda/build_conda.sh release &&
-          rm ~/.ssh/id_rsa.pub && rm ~/.ssh/id_rsa"
+        run: >-
+          docker run
+          --rm
+          --gpus all
+          -v $PWD:/examples
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}_conda:latest
+          bash -c
+          "mkdir -p ~/.ssh
+          && echo \"${{ secrets.SERVER_PUBKEY }}\" > ~/.ssh/id_rsa.pub && echo \"${{ secrets.SERVER_PRIKEY }}\" > ~/.ssh/id_rsa && chmod 400 ~/.ssh/id_rsa
+          && nvidia-smi
+          && cd /examples
+          && export PYTHON_VERSION=3.10
+          && export CONDA_TOKEN=${{ secrets.CONDA_TOKEN }}
+          && export SERVER_USERNAME=${{ secrets.SERVER_USERNAME }}
+          && export SERVER_PORT=${{ secrets.SERVER_PORT }}
+          && ./conda/build_conda.sh release
+          && rm ~/.ssh/id_rsa.pub && rm ~/.ssh/id_rsa"
 
 concurrency:
   group: conda-release

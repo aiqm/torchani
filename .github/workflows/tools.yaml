@@ -2,10 +2,6 @@ name: tools
 
 on: pull_request
 
-env:
-  REGISTRY: ${{ github.repository }}
-  IMAGE_NAME: 'tools'
-
 jobs:
   tools:
     runs-on: [self-hosted, ipickering]
@@ -17,14 +13,14 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ github.repository }}/tools
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
-          push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
 
       - name: Inference benchmark
         run: >-

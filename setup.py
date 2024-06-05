@@ -236,7 +236,9 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
     return {
         "ext_modules": [CUDAExtension(**cuaev_kwargs), CUDAExtension(**mnp_kwargs)],
         "cmdclass": {
-            "build_ext": BuildExtension.with_options(no_python_abi_suffix=True)
+            "build_ext": BuildExtension.with_options(
+                no_python_abi_suffix=True,
+            )
         },
     }
 

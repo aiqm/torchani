@@ -1,0 +1,58 @@
+name: conda
+
+# This workflow runs
+# - on pull_requests that contain the word 'conda' in the branch name
+# - on the default branch, at 00:00:00 every day
+on:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  build-pkg:
+    if: ${{ contains(github.head_ref, 'conda') || github.event_name == 'schedule' }}
+    runs-on: [self-hosted, ipickering]
+    permissions:
+      contents: read
+
+    steps:
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ github.repository }}/conda-pkg
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
+          file: conda.Dockerfile
+          shm-size: 2g
+          ulimit: |
+            memlock=-1
+            stack=67108864
+
+      - name: Build pkg locally
+        run: >-
+          docker run
+          --rm
+          --gpus '"device=all"'
+          --shm-size=2g
+          --ulimit memlock=-1
+          --ulimit stack=67108864
+          ${{ steps.meta.outputs.tags }}
+          bash -c "mkdir ./conda-pkgs/
+          && source /opt/conda/etc/profile.d/conda.sh
+          && conda activate
+          && conda build -c nvidia -c pytorch -c conda-forge --no-anaconda-upload --output-folder ./conda-pkgs/ ./recipe"
+
+      - name: Remove image
+        if: ${{ always() }}
+        continue-on-error: true
+        run: docker image rm ${{ steps.meta.outputs.tags }}
+
+concurrency:
+  group: conda-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true

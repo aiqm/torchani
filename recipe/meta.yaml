@@ -1,0 +1,48 @@
+package:
+  name: torchani
+  version: {{ GIT_DESCRIBE_TAG }}.{{ GIT_BUILD_STR }}
+
+source:
+  # git_url only captures committed code
+  git_url: ../
+
+build:
+  number: 0
+  string: py{{ python }}_torch{{ pytorch }}_cuda{{ cuda }}
+  script: "CUDA_HOME=/usr/local/cuda {{ PYTHON }} -m pip install --config-settings=--global-option=ext-all-sms --no-build-isolation -v ."
+  entry_points:
+    - torchani = torchani.cli:main
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    # For source.git_url
+    - conda-forge::git=2.34
+  #Specifying versions in the host section helps conda solve env faster
+  host:
+    - conda-forge::python={{ python }}
+    - conda-forge::typing_extensions=4.11
+    - conda-forge::pip=24.0
+    - conda-forge::setuptools=69.5.1
+    - conda-forge::setuptools_scm=8.1.0
+    - pytorch::pytorch={{ pytorch }}
+    - pytorch::pytorch-cuda={{ cuda }}
+  run:
+    - conda-forge::python={{ python }}
+    - conda-forge::typing_extensions>=4.0.0
+    - conda-forge::numpy>=1.24
+    - conda-forge::h5py
+    - conda-forge::tqdm
+    - pytorch::pytorch={{ pytorch }}
+    - pytorch::pytorch-cuda={{ cuda }}
+
+test:
+  imports:
+    - torchani
+
+about:
+  home: https://roitberg.chem.ufl.edu
+  license: MIT
+  license_file: LICENSE
+  summary: Roiberg Group Sandbox
