@@ -5,14 +5,14 @@ from torch import Tensor
 from torch.jit import Final
 
 from torchani.units import ANGSTROM_TO_BOHR
-from torchani.utils import ATOMIC_NUMBERS
 from torchani.neighbors import NeighborData, NeighborlistArg
 from torchani.cutoffs import CutoffArg
+from torchani.constants import ATOMIC_NUMBER
 from torchani.potentials.wrapper import PotentialWrapper
 from torchani.potentials.core import PairPotential
 from torchani.potentials._repulsion_constants import alpha_constants, y_eff_constants
 
-_ELEMENTS_NUM = len(ATOMIC_NUMBERS)
+_ELEMENTS_NUM = len(ATOMIC_NUMBER)
 
 
 class RepulsionXTB(PairPotential):

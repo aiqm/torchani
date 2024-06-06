@@ -12,7 +12,7 @@ import torch
 from torch import Tensor
 import torch.utils.data
 
-from torchani.constants import ATOMIC_MASSES
+from torchani.constants import MASS, ATOMIC_NUMBER, PERIODIC_TABLE
 from torchani.tuples import SpeciesEnergies
 
 
@@ -24,7 +24,7 @@ __all__ = [
     "get_atomic_masses",
     "GSAES",
     "PERIODIC_TABLE",
-    "ATOMIC_NUMBERS",
+    "ATOMIC_NUMBER",
 ]
 
 
@@ -231,7 +231,7 @@ def pad_atomic_properties(
         for n, x in zip(num_molecules, properties):
             original_size = x[k].shape[1]
             # here x[k] is implicitly cast to long if it has another integer type
-            output[k][index0:index0 + n, 0:original_size, ...] = x[k]
+            output[k][index0: index0 + n, 0:original_size, ...] = x[k]
             index0 += n
     return output
 
@@ -359,7 +359,7 @@ class ChemicalSymbolsToAtomicNumbers(torch.nn.Module):
     def __init__(self, atomic_numbers: tp.Optional[tp.Dict[str, int]] = None):
         super().__init__()
         if atomic_numbers is None:
-            atomic_numbers = ATOMIC_NUMBERS
+            atomic_numbers = ATOMIC_NUMBER
         self.atomics_dict = atomic_numbers
         # dummy tensor to hold output device
         self.register_buffer("_dummy", torch.empty(0), persistent=False)
@@ -419,13 +419,6 @@ class ChemicalSymbolsToInts(torch.nn.Module):
 class AtomicNumbersToMasses(torch.nn.Module):
     r"""Convert a tensor of atomic numbers into a tensor of atomic masses
 
-    Atomic masses supported are the first 119 elements, and are taken from:
-
-    Atomic weights of the elements 2013 (IUPAC Technical Report). Meija, J.,
-    Coplen, T., Berglund, M., et al. (2016). Pure and Applied Chemistry, 88(3), pp.
-    265-291. Retrieved 30 Nov. 2016, from doi:10.1515/pac-2015-0305
-
-    They are all consistent with those used in ASE
 
     Arguments:
         atomic_numbers (:class:`torch.Tensor`): tensor with atomic numbers
@@ -437,11 +430,13 @@ class AtomicNumbersToMasses(torch.nn.Module):
 
     def __init__(
         self,
-        masses: tp.Iterable[float] = ATOMIC_MASSES,
+        masses: tp.Iterable[float] = (),
         device: tp.Union[torch.device, tp.Literal["cpu", "cuda"]] = "cpu",
         dtype: torch.dtype = torch.float,
     ) -> None:
         super().__init__()
+        if not masses:
+            masses = MASS
         self.register_buffer(
             "atomic_masses",
             torch.tensor(masses, device=device, dtype=dtype),
@@ -449,7 +444,7 @@ class AtomicNumbersToMasses(torch.nn.Module):
 
     def forward(self, atomic_numbers: Tensor) -> Tensor:
         assert not (atomic_numbers == 0).any(), "Input should be atomic numbers"
-        mask = (atomic_numbers == -1)
+        mask = atomic_numbers == -1
         masses = self.atomic_masses[atomic_numbers]
         masses.masked_fill_(mask, 0.0)
         return masses
@@ -472,24 +467,6 @@ def atomic_numbers_to_masses(
 # Alias for bw compatibility
 get_atomic_masses = atomic_numbers_to_masses
 
-# This constant, when indexed with the corresponding atomic number, gives the
-# element associated with it. Note that there is no element with atomic number
-# 0, so 'Dummy' returned in this case.
-PERIODIC_TABLE = (
-    ["Dummy"]
-    + """
-    H                                                                                                                           He
-    Li  Be                                                                                                  B   C   N   O   F   Ne
-    Na  Mg                                                                                                  Al  Si  P   S   Cl  Ar
-    K   Ca  Sc                                                          Ti  V   Cr  Mn  Fe  Co  Ni  Cu  Zn  Ga  Ge  As  Se  Br  Kr
-    Rb  Sr  Y                                                           Zr  Nb  Mo  Tc  Ru  Rh  Pd  Ag  Cd  In  Sn  Sb  Te  I   Xe
-    Cs  Ba  La  Ce  Pr  Nd  Pm  Sm  Eu  Gd  Tb  Dy  Ho  Er  Tm  Yb  Lu  Hf  Ta  W   Re  Os  Ir  Pt  Au  Hg  Tl  Pb  Bi  Po  At  Rn
-    Fr  Ra  Ac  Th  Pa  U   Np  Pu  Am  Cm  Bk  Cf  Es  Fm  Md  No  Lr  Rf  Db  Sg  Bh  Hs  Mt  Ds  Rg  Cn  Nh  Fl  Mc  Lv  Ts  Og
-    """.strip().split()  # noqa
-)
-
-ATOMIC_NUMBERS = {symbol: z for z, symbol in enumerate(PERIODIC_TABLE)}
-
 
 def sort_by_element(it: tp.Iterable[str]) -> tp.Tuple[str, ...]:
     r"""
@@ -497,7 +474,7 @@ def sort_by_element(it: tp.Iterable[str]) -> tp.Tuple[str, ...]:
     """
     if isinstance(it, str):
         it = (it,)
-    return tuple(sorted(it, key=lambda x: ATOMIC_NUMBERS[x]))
+    return tuple(sorted(it, key=lambda x: ATOMIC_NUMBER[x]))
 
 
 def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:

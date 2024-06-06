@@ -38,8 +38,8 @@ import torch
 from torch import Tensor
 
 from torchani.grad import energies_and_forces
-from torchani.utils import ATOMIC_NUMBERS
 from torchani.nn import SpeciesConverter
+from torchani.constants import ATOMIC_NUMBER
 from torchani.potentials import (
     PotentialWrapper,
     StandaloneEnergyAdder,
@@ -180,7 +180,7 @@ class AtomicNumbersToIndices(Transform):
     def __init__(self, symbols: tp.Sequence[str]):
         super().__init__()
         self.atomic_numbers = torch.tensor(
-            [ATOMIC_NUMBERS[s] for s in symbols],
+            [ATOMIC_NUMBER[s] for s in symbols],
             dtype=torch.long,
         )
         self.converter = SpeciesConverter(symbols)

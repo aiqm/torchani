@@ -1,7 +1,8 @@
 import unittest
+
 import torch
 
-from torchani.calc import DipoleComputer
+from torchani.electro import DipoleComputer
 from torchani.testing import ANITest, expand
 
 

@@ -67,10 +67,7 @@ from torchani.tuples import (
 )
 from torchani.atomics import AtomicContainer
 from torchani.nn import SpeciesConverter
-from torchani.utils import (
-    PERIODIC_TABLE,
-    ATOMIC_NUMBERS,
-)
+from torchani.constants import PERIODIC_TABLE, ATOMIC_NUMBER
 from torchani.aev import AEVComputer
 from torchani.potentials import (
     AEVPotential,
@@ -104,7 +101,7 @@ class BuiltinModel(torch.nn.Module):
         self.species_converter = SpeciesConverter(symbols).to(device)
 
         self.periodic_table_index = periodic_table_index
-        numbers = torch.tensor([ATOMIC_NUMBERS[e] for e in symbols], dtype=torch.long)
+        numbers = torch.tensor([ATOMIC_NUMBER[e] for e in symbols], dtype=torch.long)
         self.register_buffer("atomic_numbers", numbers)
 
         # checks are performed to make sure all modules passed support the

@@ -1,0 +1,716 @@
+{
+    "": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": null,
+        "znumber": 0
+    },
+    "H": {
+        "electronegativity": 7.18,
+        "hardness": 12.84,
+        "mass": 1.008,
+        "znumber": 1
+    },
+    "He": {
+        "electronegativity": 12.27,
+        "hardness": 24.59,
+        "mass": 4.002602,
+        "znumber": 2
+    },
+    "Li": {
+        "electronegativity": 3.0,
+        "hardness": 4.77,
+        "mass": 6.94,
+        "znumber": 3
+    },
+    "Be": {
+        "electronegativity": 4.66,
+        "hardness": 9.32,
+        "mass": 9.0121831,
+        "znumber": 4
+    },
+    "B": {
+        "electronegativity": 4.29,
+        "hardness": 8.02,
+        "mass": 10.81,
+        "znumber": 5
+    },
+    "C": {
+        "electronegativity": 6.26,
+        "hardness": 10.0,
+        "mass": 12.011,
+        "znumber": 6
+    },
+    "N": {
+        "electronegativity": 7.27,
+        "hardness": 14.53,
+        "mass": 14.007,
+        "znumber": 7
+    },
+    "O": {
+        "electronegativity": 7.54,
+        "hardness": 12.16,
+        "mass": 15.999,
+        "znumber": 8
+    },
+    "F": {
+        "electronegativity": 10.41,
+        "hardness": 14.02,
+        "mass": 18.99840316,
+        "znumber": 9
+    },
+    "Ne": {
+        "electronegativity": 10.78,
+        "hardness": 21.56,
+        "mass": 20.1797,
+        "znumber": 10
+    },
+    "Na": {
+        "electronegativity": 2.84,
+        "hardness": 4.59,
+        "mass": 22.98976928,
+        "znumber": 11
+    },
+    "Mg": {
+        "electronegativity": 3.82,
+        "hardness": 7.65,
+        "mass": 24.305,
+        "znumber": 12
+    },
+    "Al": {
+        "electronegativity": 3.21,
+        "hardness": 5.55,
+        "mass": 26.9815385,
+        "znumber": 13
+    },
+    "Si": {
+        "electronegativity": 4.77,
+        "hardness": 6.67,
+        "mass": 28.085,
+        "znumber": 14
+    },
+    "P": {
+        "electronegativity": 5.62,
+        "hardness": 9.74,
+        "mass": 30.973762,
+        "znumber": 15
+    },
+    "S": {
+        "electronegativity": 6.22,
+        "hardness": 8.28,
+        "mass": 32.06,
+        "znumber": 16
+    },
+    "Cl": {
+        "electronegativity": 8.29,
+        "hardness": 9.35,
+        "mass": 35.45,
+        "znumber": 17
+    },
+    "Ar": {
+        "electronegativity": 7.88,
+        "hardness": 15.76,
+        "mass": 39.948,
+        "znumber": 18
+    },
+    "K": {
+        "electronegativity": 2.42,
+        "hardness": 3.84,
+        "mass": 39.0983,
+        "znumber": 19
+    },
+    "Ca": {
+        "electronegativity": 3.07,
+        "hardness": 6.09,
+        "mass": 40.078,
+        "znumber": 20
+    },
+    "Sc": {
+        "electronegativity": 3.38,
+        "hardness": 6.37,
+        "mass": 44.955908,
+        "znumber": 21
+    },
+    "Ti": {
+        "electronegativity": 3.45,
+        "hardness": 6.75,
+        "mass": 47.867,
+        "znumber": 22
+    },
+    "V": {
+        "electronegativity": 3.64,
+        "hardness": 6.22,
+        "mass": 50.9415,
+        "znumber": 23
+    },
+    "Cr": {
+        "electronegativity": 3.72,
+        "hardness": 6.09,
+        "mass": 51.9961,
+        "znumber": 24
+    },
+    "Mn": {
+        "electronegativity": 3.72,
+        "hardness": 7.43,
+        "mass": 54.938044,
+        "znumber": 25
+    },
+    "Fe": {
+        "electronegativity": 4.03,
+        "hardness": 7.75,
+        "mass": 55.845,
+        "znumber": 26
+    },
+    "Co": {
+        "electronegativity": 4.27,
+        "hardness": 7.22,
+        "mass": 58.933194,
+        "znumber": 27
+    },
+    "Ni": {
+        "electronegativity": 4.4,
+        "hardness": 6.48,
+        "mass": 58.6934,
+        "znumber": 28
+    },
+    "Cu": {
+        "electronegativity": 4.48,
+        "hardness": 6.39,
+        "mass": 63.546,
+        "znumber": 29
+    },
+    "Zn": {
+        "electronegativity": 4.7,
+        "hardness": 9.39,
+        "mass": 65.38,
+        "znumber": 30
+    },
+    "Ga": {
+        "electronegativity": 3.21,
+        "hardness": 5.57,
+        "mass": 69.723,
+        "znumber": 31
+    },
+    "Ge": {
+        "electronegativity": 4.57,
+        "hardness": 6.67,
+        "mass": 72.63,
+        "znumber": 32
+    },
+    "As": {
+        "electronegativity": 5.3,
+        "hardness": 8.98,
+        "mass": 74.921595,
+        "znumber": 33
+    },
+    "Se": {
+        "electronegativity": 5.88,
+        "hardness": 7.73,
+        "mass": 78.971,
+        "znumber": 34
+    },
+    "Br": {
+        "electronegativity": 7.59,
+        "hardness": 8.45,
+        "mass": 79.904,
+        "znumber": 35
+    },
+    "Kr": {
+        "electronegativity": 7.0,
+        "hardness": 14.0,
+        "mass": 83.798,
+        "znumber": 36
+    },
+    "Rb": {
+        "electronegativity": 2.33,
+        "hardness": 3.69,
+        "mass": 85.4678,
+        "znumber": 37
+    },
+    "Sr": {
+        "electronegativity": 2.88,
+        "hardness": 5.64,
+        "mass": 87.62,
+        "znumber": 38
+    },
+    "Y": {
+        "electronegativity": 3.27,
+        "hardness": 5.91,
+        "mass": 88.90584,
+        "znumber": 39
+    },
+    "Zr": {
+        "electronegativity": 3.53,
+        "hardness": 6.21,
+        "mass": 91.224,
+        "znumber": 40
+    },
+    "Nb": {
+        "electronegativity": 3.83,
+        "hardness": 5.86,
+        "mass": 92.90637,
+        "znumber": 41
+    },
+    "Mo": {
+        "electronegativity": 3.92,
+        "hardness": 6.35,
+        "mass": 95.95,
+        "znumber": 42
+    },
+    "Tc": {
+        "electronegativity": 3.91,
+        "hardness": 6.73,
+        "mass": 97.90721,
+        "znumber": 43
+    },
+    "Ru": {
+        "electronegativity": 4.22,
+        "hardness": 6.28,
+        "mass": 101.07,
+        "znumber": 44
+    },
+    "Rh": {
+        "electronegativity": 4.3,
+        "hardness": 6.32,
+        "mass": 102.9055,
+        "znumber": 45
+    },
+    "Pd": {
+        "electronegativity": 4.44,
+        "hardness": 7.77,
+        "mass": 106.42,
+        "znumber": 46
+    },
+    "Ag": {
+        "electronegativity": 4.44,
+        "hardness": 6.27,
+        "mass": 107.8682,
+        "znumber": 47
+    },
+    "Cd": {
+        "electronegativity": 4.5,
+        "hardness": 8.99,
+        "mass": 112.414,
+        "znumber": 48
+    },
+    "In": {
+        "electronegativity": 3.09,
+        "hardness": 5.4,
+        "mass": 114.818,
+        "znumber": 49
+    },
+    "Sn": {
+        "electronegativity": 4.23,
+        "hardness": 6.23,
+        "mass": 118.71,
+        "znumber": 50
+    },
+    "Sb": {
+        "electronegativity": 4.82,
+        "hardness": 7.56,
+        "mass": 121.76,
+        "znumber": 51
+    },
+    "Te": {
+        "electronegativity": 5.49,
+        "hardness": 7.04,
+        "mass": 127.6,
+        "znumber": 52
+    },
+    "I": {
+        "electronegativity": 6.75,
+        "hardness": 7.39,
+        "mass": 126.90447,
+        "znumber": 53
+    },
+    "Xe": {
+        "electronegativity": 6.07,
+        "hardness": 12.13,
+        "mass": 131.293,
+        "znumber": 54
+    },
+    "Cs": {
+        "electronegativity": 2.18,
+        "hardness": 3.42,
+        "mass": 132.90545196,
+        "znumber": 55
+    },
+    "Ba": {
+        "electronegativity": 2.68,
+        "hardness": 5.07,
+        "mass": 137.327,
+        "znumber": 56
+    },
+    "La": {
+        "electronegativity": 3.03,
+        "hardness": 5.11,
+        "mass": 138.90547,
+        "znumber": 57
+    },
+    "Ce": {
+        "electronegativity": 3.09,
+        "hardness": 4.91,
+        "mass": 140.116,
+        "znumber": 58
+    },
+    "Pr": {
+        "electronegativity": 3.22,
+        "hardness": 4.51,
+        "mass": 140.90766,
+        "znumber": 59
+    },
+    "Nd": {
+        "electronegativity": 2.85,
+        "hardness": 5.36,
+        "mass": 144.242,
+        "znumber": 60
+    },
+    "Pm": {
+        "electronegativity": 2.86,
+        "hardness": 5.45,
+        "mass": 144.91276,
+        "znumber": 61
+    },
+    "Sm": {
+        "electronegativity": 2.91,
+        "hardness": 5.48,
+        "mass": 150.36,
+        "znumber": 62
+    },
+    "Eu": {
+        "electronegativity": 2.9,
+        "hardness": 5.55,
+        "mass": 151.964,
+        "znumber": 63
+    },
+    "Gd": {
+        "electronegativity": 3.15,
+        "hardness": 6.01,
+        "mass": 157.25,
+        "znumber": 64
+    },
+    "Tb": {
+        "electronegativity": 3.15,
+        "hardness": 5.43,
+        "mass": 158.92535,
+        "znumber": 65
+    },
+    "Dy": {
+        "electronegativity": 3.15,
+        "hardness": 5.59,
+        "mass": 162.5,
+        "znumber": 66
+    },
+    "Ho": {
+        "electronegativity": 3.18,
+        "hardness": 5.68,
+        "mass": 164.93033,
+        "znumber": 67
+    },
+    "Er": {
+        "electronegativity": 3.21,
+        "hardness": 5.8,
+        "mass": 167.259,
+        "znumber": 68
+    },
+    "Tm": {
+        "electronegativity": 3.1,
+        "hardness": 6.17,
+        "mass": 168.93422,
+        "znumber": 69
+    },
+    "Yb": {
+        "electronegativity": 3.13,
+        "hardness": 6.25,
+        "mass": 173.054,
+        "znumber": 70
+    },
+    "Lu": {
+        "electronegativity": 2.88,
+        "hardness": 5.09,
+        "mass": 174.9668,
+        "znumber": 71
+    },
+    "Hf": {
+        "electronegativity": 3.47,
+        "hardness": 6.71,
+        "mass": 178.49,
+        "znumber": 72
+    },
+    "Ta": {
+        "electronegativity": 3.94,
+        "hardness": 7.23,
+        "mass": 180.94788,
+        "znumber": 73
+    },
+    "W": {
+        "electronegativity": 4.35,
+        "hardness": 7.05,
+        "mass": 183.84,
+        "znumber": 74
+    },
+    "Re": {
+        "electronegativity": 4.0,
+        "hardness": 7.68,
+        "mass": 186.207,
+        "znumber": 75
+    },
+    "Os": {
+        "electronegativity": 4.76,
+        "hardness": 7.36,
+        "mass": 190.23,
+        "znumber": 76
+    },
+    "Ir": {
+        "electronegativity": 5.27,
+        "hardness": 7.4,
+        "mass": 192.217,
+        "znumber": 77
+    },
+    "Pt": {
+        "electronegativity": 5.54,
+        "hardness": 6.83,
+        "mass": 195.084,
+        "znumber": 78
+    },
+    "Au": {
+        "electronegativity": 5.77,
+        "hardness": 6.92,
+        "mass": 196.966569,
+        "znumber": 79
+    },
+    "Hg": {
+        "electronegativity": 5.22,
+        "hardness": 10.44,
+        "mass": 200.592,
+        "znumber": 80
+    },
+    "Tl": {
+        "electronegativity": 3.24,
+        "hardness": 5.73,
+        "mass": 204.38,
+        "znumber": 81
+    },
+    "Pb": {
+        "electronegativity": 3.88,
+        "hardness": 7.05,
+        "mass": 207.2,
+        "znumber": 82
+    },
+    "Bi": {
+        "electronegativity": 4.12,
+        "hardness": 6.34,
+        "mass": 208.9804,
+        "znumber": 83
+    },
+    "Po": {
+        "electronegativity": 5.15,
+        "hardness": 6.51,
+        "mass": 208.98243,
+        "znumber": 84
+    },
+    "At": {
+        "electronegativity": 6.05,
+        "hardness": 6.52,
+        "mass": 209.98715,
+        "znumber": 85
+    },
+    "Rn": {
+        "electronegativity": 5.38,
+        "hardness": 10.75,
+        "mass": 222.01758,
+        "znumber": 86
+    },
+    "Fr": {
+        "electronegativity": 2.28,
+        "hardness": 3.59,
+        "mass": 223.01974,
+        "znumber": 87
+    },
+    "Ra": {
+        "electronegativity": 2.69,
+        "hardness": 5.18,
+        "mass": 226.02541,
+        "znumber": 88
+    },
+    "Ac": {
+        "electronegativity": 2.76,
+        "hardness": 4.82,
+        "mass": 227.02775,
+        "znumber": 89
+    },
+    "Th": {
+        "electronegativity": 3.35,
+        "hardness": 5.94,
+        "mass": 232.0377,
+        "znumber": 90
+    },
+    "Pa": {
+        "electronegativity": 3.14,
+        "hardness": 5.51,
+        "mass": 231.03588,
+        "znumber": 91
+    },
+    "U": {
+        "electronegativity": 3.29,
+        "hardness": 5.82,
+        "mass": 238.02891,
+        "znumber": 92
+    },
+    "Np": {
+        "electronegativity": 3.29,
+        "hardness": 5.95,
+        "mass": 237.04817,
+        "znumber": 93
+    },
+    "Pu": {
+        "electronegativity": 3.07,
+        "hardness": 5.94,
+        "mass": 244.06421,
+        "znumber": 94
+    },
+    "Am": {
+        "electronegativity": 3.03,
+        "hardness": 5.9,
+        "mass": 243.06138,
+        "znumber": 95
+    },
+    "Cm": {
+        "electronegativity": 3.16,
+        "hardness": 5.67,
+        "mass": 247.07035,
+        "znumber": 96
+    },
+    "Bk": {
+        "electronegativity": 3.12,
+        "hardness": 6.17,
+        "mass": 247.07031,
+        "znumber": 97
+    },
+    "Cf": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 251.07959,
+        "znumber": 98
+    },
+    "Es": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 252.083,
+        "znumber": 99
+    },
+    "Fm": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 257.09511,
+        "znumber": 100
+    },
+    "Md": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 258.09843,
+        "znumber": 101
+    },
+    "No": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 259.101,
+        "znumber": 102
+    },
+    "Lr": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 262.11,
+        "znumber": 103
+    },
+    "Rf": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 267.122,
+        "znumber": 104
+    },
+    "Db": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 268.126,
+        "znumber": 105
+    },
+    "Sg": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 271.134,
+        "znumber": 106
+    },
+    "Bh": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 270.133,
+        "znumber": 107
+    },
+    "Hs": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 269.1338,
+        "znumber": 108
+    },
+    "Mt": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 278.156,
+        "znumber": 109
+    },
+    "Ds": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 281.165,
+        "znumber": 110
+    },
+    "Rg": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 281.166,
+        "znumber": 111
+    },
+    "Cn": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 285.177,
+        "znumber": 112
+    },
+    "Nh": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 286.182,
+        "znumber": 113
+    },
+    "Fl": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 289.19,
+        "znumber": 114
+    },
+    "Mc": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 289.194,
+        "znumber": 115
+    },
+    "Lv": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 293.204,
+        "znumber": 116
+    },
+    "Ts": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 293.208,
+        "znumber": 117
+    },
+    "Og": {
+        "electronegativity": null,
+        "hardness": null,
+        "mass": 294.214,
+        "znumber": 118
+    }
+}

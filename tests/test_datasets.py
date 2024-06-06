@@ -18,7 +18,7 @@ from torchani.transforms import (
 )
 from torchani import datasets
 from torchani.sae import calculate_saes
-from torchani.utils import PERIODIC_TABLE, ATOMIC_NUMBERS
+from torchani.constants import PERIODIC_TABLE, ATOMIC_NUMBER
 from torchani.testing import TestCase
 from torchani.datasets import (
     download_builtin_dataset,
@@ -1340,7 +1340,7 @@ class TestANIDatasetPandas(TestANIDatasetZarr):
             tmp_df = pandas.DataFrame()
             tmp_df["group"] = pandas.Series([k] * num_conformations)
             tmp_df["species"] = pandas.Series(
-                np.vectorize(lambda x: ATOMIC_NUMBERS[x])(
+                np.vectorize(lambda x: ATOMIC_NUMBER[x])(
                     g["species"].astype(str)
                 ).tolist()
             )

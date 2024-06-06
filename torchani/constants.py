@@ -1,126 +1,117 @@
-r"""
-Atomic constants
+r"""Atomic constants
+
+Values for electronegativity and hardness for elements H-Bk, all for neutral
+atoms, and are taken from Table 3 of
+
+Carlos Cardenas et. al. Benchmark Values of Chemical Potential and Chemical
+Hardness for Atoms and Atomic Ions (Including Unstable Ions) from the Energies
+of Isoelectronic Series.
+
+DOI: 10.1039/C6CP04533B
+
+Atomic masses supported are the first 119 elements, and are taken from:
+
+Atomic weights of the elements 2013 (IUPAC Technical Report). Meija, J.,
+Coplen, T., Berglund, M., et al. (2016). Pure and Applied Chemistry, 88(3), pp.
+265-291. Retrieved 30 Nov. 2016, from doi:10.1515/pac-2015-0305
+
+They are all consistent with those used in ASE
 """
+import json
+from pathlib import Path
+import typing as tp
+import math
+
+__all__ = [
+    "ATOMIC_CONSTANTS",
+    "ATOMIC_NUMBER",
+    "ATOMIC_MASS",
+    "ATOMIC_HARDNESS",
+    "ATOMIC_ELECTRONEGATIVITY",
+    "MASS",
+    "HARDNESS",
+    "ELECTRONEGATIVITY",
+    "PERIODIC_TABLE",
+]
+
+with open(Path(__file__).parent / "atomic_constants.json", mode="rt") as f:
+    ATOMIC_CONSTANTS = json.load(f)
 
 
-ATOMIC_MASSES = (
-    0.0,
-    1.008,
-    4.002602,
-    6.94,
-    9.0121831,
-    10.81,
-    12.011,
-    14.007,
-    15.999,
-    18.99840316,
-    20.1797,
-    22.98976928,
-    24.305,
-    26.9815385,
-    28.085,
-    30.973762,
-    32.06,
-    35.45,
-    39.948,
-    39.0983,
-    40.078,
-    44.955908,
-    47.867,
-    50.9415,
-    51.9961,
-    54.938044,
-    55.845,
-    58.933194,
-    58.6934,
-    63.546,
-    65.38,
-    69.723,
-    72.63,
-    74.921595,
-    78.971,
-    79.904,
-    83.798,
-    85.4678,
-    87.62,
-    88.90584,
-    91.224,
-    92.90637,
-    95.95,
-    97.90721,
-    101.07,
-    102.9055,
-    106.42,
-    107.8682,
-    112.414,
-    114.818,
-    118.71,
-    121.76,
-    127.6,
-    126.90447,
-    131.293,
-    132.90545196,
-    137.327,
-    138.90547,
-    140.116,
-    140.90766,
-    144.242,
-    144.91276,
-    150.36,
-    151.964,
-    157.25,
-    158.92535,
-    162.5,
-    164.93033,
-    167.259,
-    168.93422,
-    173.054,
-    174.9668,
-    178.49,
-    180.94788,
-    183.84,
-    186.207,
-    190.23,
-    192.217,
-    195.084,
-    196.966569,
-    200.592,
-    204.38,
-    207.2,
-    208.9804,
-    208.98243,
-    209.98715,
-    222.01758,
-    223.01974,
-    226.02541,
-    227.02775,
-    232.0377,
-    231.03588,
-    238.02891,
-    237.04817,
-    244.06421,
-    243.06138,
-    247.07035,
-    247.07031,
-    251.07959,
-    252.083,
-    257.09511,
-    258.09843,
-    259.101,
-    262.11,
-    267.122,
-    268.126,
-    271.134,
-    270.133,
-    269.1338,
-    278.156,
-    281.165,
-    281.166,
-    285.177,
-    286.182,
-    289.19,
-    289.194,
-    293.204,
-    293.208,
-    294.214,
+# Populate convenience variables here
+ATOMIC_NUMBER: tp.Dict[str, int] = {}
+ATOMIC_HARDNESS: tp.Dict[str, float] = {}
+ATOMIC_ELECTRONEGATIVITY: tp.Dict[str, float] = {}
+ATOMIC_MASS: tp.Dict[str, float] = {}
+
+for symbol, values in ATOMIC_CONSTANTS.items():
+    if not symbol:
+        continue
+    znumber = values.get("znumber")
+    hardness = values.get("hardness")
+    electroneg = values.get("electronegativity")
+    mass = values.get("mass")
+    if znumber is not None:
+        ATOMIC_NUMBER[symbol] = int(znumber)
+    if hardness is not None:
+        ATOMIC_HARDNESS[symbol] = float(hardness)
+    if electroneg is not None:
+        ATOMIC_ELECTRONEGATIVITY[symbol] = float(electroneg)
+    if mass is not None:
+        ATOMIC_MASS[symbol] = float(mass)
+
+# When indexed with the corresponding atomic number, PERIODIC_TABLE gives the
+# element associated with it. Note that there is no element with atomic number
+# 0, so an empty string is returned in this case.
+PERIODIC_TABLE = ("",) + tuple(
+    kv[0] for kv in sorted(ATOMIC_NUMBER.items(), key=lambda x: x[1])
 )
+
+
+def mapping_to_znumber_indexed_seq(
+    symbols_map: tp.Mapping[str, float]
+) -> tp.Tuple[float, ...]:
+    r"""
+    Sort the values of {symbol: value} mapping by atomic number and output a
+    tuple with the sorted values.
+
+    All elements up to the highest present atomic number element must in the mapping.
+
+    The first element (index 0) of the output will be NaN. Example:
+
+    .. code-block:: python
+        mapping = {"H": 3.0, "Li": 1.0, "He": 0.5 }
+        znumber_indexed_seq = mapping_to_znumber_indexed_seq(mapping)
+        # znumber_indexed_seq will be (NaN, 3.0, 0.5, 1.0)
+    """
+    _symbols_map = dict(symbols_map)
+    seq = [math.nan] * (len(symbols_map) + 1)
+    try:
+        for k, v in _symbols_map.items():
+            seq[ATOMIC_NUMBER[k]] = v
+    except IndexError:
+        raise ValueError(f"There are missing elements in {symbols_map}") from None
+    return tuple(seq)
+
+
+def znumber_indexed_seq_to_mapping(
+    seq: tp.Sequence[float],
+) -> tp.Dict[str, float]:
+    r"""
+    Inverse of mapping_to_znumber_indexed_list. The first element of the input
+    must be NaN. Example:
+
+    .. code-block:: python
+        znumber_indexed_seq = (math.nan, 3.0, 0.5, 1.0)
+        mapping = znumber_indexed_seq_to_mapping(znumber_indexed_seq)
+        # mapping will be {"H": 3.0, "Li": 1.0, "He": 0.5 }
+    """
+    if not math.isnan(seq[0]):
+        raise ValueError("The first element of the input iterable must be NaN")
+    return {PERIODIC_TABLE[j]: v for j, v in enumerate(seq) if j != 0}
+
+
+# Create convenience tuples
+MASS = mapping_to_znumber_indexed_seq(ATOMIC_MASS)
+ELECTRONEGATIVITY = mapping_to_znumber_indexed_seq(ATOMIC_ELECTRONEGATIVITY)
+HARDNESS = mapping_to_znumber_indexed_seq(ATOMIC_HARDNESS)

@@ -10,11 +10,7 @@ import torch
 from torchani.testing import TestCase
 from torchani.neighbors import FullPairwise
 from torchani.nn import SpeciesConverter
-from torchani.utils import (
-    ChemicalSymbolsToInts,
-    pad_atomic_properties,
-    map_to_central,
-)
+from torchani.utils import ChemicalSymbolsToInts, pad_atomic_properties, map_to_central
 from torchani.aev import AEVComputer, StandardAngular, StandardRadial
 from torchani.io import read_xyz
 from torchani.neighbors import CellList
@@ -144,9 +140,7 @@ class TestIsolated(TestCase):
         try:
             _, _ = self.aev_computer((species, coordinates))
         except IndexError:
-            self.fail(
-                f"\n\n{traceback.format_exc()}\nFailure on lone atom\n"
-            )
+            self.fail(f"\n\n{traceback.format_exc()}\nFailure on lone atom\n")
 
 
 class TestAEV(_TestAEVBase):

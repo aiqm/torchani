@@ -1,4 +1,4 @@
-from torchani.utils import PERIODIC_TABLE
+from torchani.constants import PERIODIC_TABLE
 # data extracted from Grimme et. al. paper
 # https://pubs.acs.org/doi/10.1021/acs.jctc.8b01176
 _data = """H 0.405771 0.08 2.213717 1.105388 0.0556389 0.00027431 1.4 1.0

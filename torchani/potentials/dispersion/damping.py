@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.jit import Final
 
-from torchani.utils import ATOMIC_NUMBERS
+from torchani.constants import ATOMIC_NUMBER
 from torchani.units import ANGSTROM_TO_BOHR
 from torchani.potentials.dispersion import constants
 
@@ -34,7 +34,7 @@ class Damp(torch.nn.Module):
         super().__init__()
         self._order = order
         self.atomic_numbers = torch.tensor(
-            [ATOMIC_NUMBERS[e] for e in symbols],
+            [ATOMIC_NUMBER[e] for e in symbols],
             dtype=torch.long
         )
 

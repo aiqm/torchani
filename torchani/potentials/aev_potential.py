@@ -4,7 +4,7 @@ from torch import Tensor
 
 from torchani.neighbors import NeighborData
 from torchani.atomics import AtomicContainer
-from torchani.utils import PERIODIC_TABLE
+from torchani.constants import PERIODIC_TABLE
 from torchani.aev.computer import AEVComputer
 from torchani.potentials.core import Potential
 
@@ -12,12 +12,12 @@ from torchani.potentials.core import Potential
 # Adaptor to use the aev computer as a three body potential
 class AEVPotential(Potential):
     def __init__(self, aev_computer: AEVComputer, neural_networks: AtomicContainer):
-        # Fetch the symbols or "Dummy" if they are not actually elements
+        # Fetch the symbols or "?" if they are not actually elements
         # NOTE: symbols that are not elements is supported for backwards
         # compatibility, since ANIModel supports arbitrary ordered dicts
         # as inputs.
         symbols = tuple(
-            k if k in PERIODIC_TABLE else "Dummy"
+            k if k in PERIODIC_TABLE else "?"
             for k in neural_networks.member(0).atomics
         )
         super().__init__(cutoff=aev_computer.radial_terms.cutoff, symbols=symbols)

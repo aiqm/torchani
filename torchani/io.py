@@ -5,7 +5,8 @@ from pathlib import Path
 import torch
 from torch import Tensor
 
-from torchani.utils import ATOMIC_NUMBERS, pad_atomic_properties
+from torchani.constants import ATOMIC_NUMBER
+from torchani.utils import pad_atomic_properties
 
 
 class TorchaniIOError(IOError):
@@ -65,8 +66,8 @@ def read_xyz(
             for _ in range(num):
                 line = next(lines)
                 s, x, y, z = line.split()
-                if s in ATOMIC_NUMBERS:
-                    species.append(ATOMIC_NUMBERS[s])
+                if s in ATOMIC_NUMBER:
+                    species.append(ATOMIC_NUMBER[s])
                 else:
                     species.append(int(s))
                 coordinates.append([float(x), float(y), float(z)])

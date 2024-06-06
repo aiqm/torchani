@@ -4,7 +4,7 @@ from collections import OrderedDict
 import torch
 from torch import Tensor
 
-from torchani.utils import PERIODIC_TABLE
+from torchani.constants import PERIODIC_TABLE
 from torchani.tuples import SpeciesCoordinates, SpeciesEnergies
 from torchani.atomics import AtomicContainer
 from torchani.infer import BmmEnsemble, InferModel

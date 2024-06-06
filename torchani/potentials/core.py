@@ -3,7 +3,7 @@ import typing as tp
 import torch
 from torch import Tensor
 
-from torchani.utils import ATOMIC_NUMBERS, PERIODIC_TABLE
+from torchani.constants import ATOMIC_NUMBER, PERIODIC_TABLE
 from torchani.cutoffs import parse_cutoff_fn, CutoffArg
 from torchani.neighbors import NeighborData
 
@@ -27,7 +27,7 @@ class Potential(torch.nn.Module):
     ):
         super().__init__()
         self.atomic_numbers = torch.tensor(
-            [ATOMIC_NUMBERS[e] for e in symbols], dtype=torch.long
+            [ATOMIC_NUMBER[e] for e in symbols], dtype=torch.long
         )
         self.cutoff = cutoff
 
