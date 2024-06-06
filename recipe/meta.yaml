@@ -19,7 +19,6 @@ requirements:
     - {{ compiler('cxx') }}
     # For source.git_url
     - conda-forge::git
-  #Specifying versions in the host section helps conda solve env faster
   host:
     - conda-forge::python={{ python }}
     - conda-forge::typing_extensions>=4.0.0
