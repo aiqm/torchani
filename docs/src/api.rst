@@ -77,9 +77,7 @@ Dataset Transforms
 .. automodule:: torchani.transforms
 .. autoclass:: torchani.transforms.Transform
     :members:
-.. autoclass:: torchani.transforms.SubtractEnergy
-    :members:
-.. autoclass:: torchani.transforms.SubtractForce
+.. autoclass:: torchani.transforms.SubtractEnergyAndForce
     :members:
 .. autoclass:: torchani.transforms.SubtractRepulsionXTB
     :members:
@@ -132,11 +130,15 @@ General Utilities
 .. autoclass:: torchani.SpeciesConverter
     :members:
 
-Hessian, Normal Modes, Vibrations
-=================================
+Forces, Hessians, Normal Modes
+==============================
 
-.. autofunction:: torchani.utils.hessian
-.. autofunction:: torchani.utils.vibrational_analysis
+.. automodule:: torchani.grad
+.. autofunction:: torchani.grad.forces
+.. autofunction:: torchani.grad.hessians
+.. autofunction:: torchani.grad.energies_and_forces
+.. autofunction:: torchani.grad.energies_forces_and_hessians
+.. autofunction:: torchani.grad.vibrational_analysis
 
 Optimizing Models for Inference
 ===============================
@@ -149,8 +151,6 @@ Optimizing Models for Inference
 .. autoclass:: torchani.infer.BmmLinear
     :members:
 .. autoclass:: torchani.infer.InferModel
-    :members:
-.. autoclass:: torchani.infer.MultiNetFunction
     :members:
 
 ASE Interface
