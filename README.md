@@ -209,7 +209,7 @@ then add the following dependencies to the `host` environment:
 - `nvidia::cuda-nvcc={{ cuda }}`
 - `nvidia::cuda-cccl={{ cuda }}`
 
-and remove `cuda_home=/usr/local/cuda` from the build script. note that adding
+and remove `cuda_home=/usr/local/cuda` from the build script. Note that adding
 these necessary CUDA Toolkit libraries to the `host` env significantly
 increases build time.
 
