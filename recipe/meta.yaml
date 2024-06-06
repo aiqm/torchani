@@ -18,16 +18,17 @@ requirements:
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
     # For source.git_url
-    - conda-forge::git=2.34
+    - conda-forge::git
   #Specifying versions in the host section helps conda solve env faster
   host:
     - conda-forge::python={{ python }}
-    - conda-forge::typing_extensions=4.11
-    - conda-forge::pip=24.0
-    - conda-forge::setuptools=69.5.1
-    - conda-forge::setuptools_scm=8.1.0
+    - conda-forge::typing_extensions>=4.0.0
+    - conda-forge::pip
+    - conda-forge::setuptools>=64
+    - conda-forge::setuptools_scm>=8
     - pytorch::pytorch={{ pytorch }}
     - pytorch::pytorch-cuda={{ cuda }}
+    - conda-forge::numpy>=1.24
   run:
     - conda-forge::python={{ python }}
     - conda-forge::typing_extensions>=4.0.0
