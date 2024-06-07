@@ -5,15 +5,13 @@ from copy import deepcopy
 import torch
 from torch import Tensor
 
-from torchani.tuples import SpeciesEnergies
-
 
 class AtomicContainer(torch.nn.Module):
     r"""Base class for ANI modules that contain atomic neural networks"""
     num_networks: int
     num_species: int
 
-    def __init__(self) -> None:
+    def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
         super().__init__()
         self.num_networks = 0
         self.num_species = 0
@@ -23,7 +21,7 @@ class AtomicContainer(torch.nn.Module):
         species_aev: tp.Tuple[Tensor, Tensor],
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-    ) -> SpeciesEnergies:
+    ) -> tp.Tuple[Tensor, Tensor]:
         raise NotImplementedError()
 
     def member(self, idx: int) -> "AtomicContainer":
@@ -178,6 +176,31 @@ def like_dr(
     dims_for_atoms = {
         "H": (feat_dim, 256, 192, 160),
         "C": (feat_dim, 256, 192, 160),
+        "N": (feat_dim, 192, 160, 128),
+        "O": (feat_dim, 192, 160, 128),
+        "S": (feat_dim, 160, 128, 96),
+        "F": (feat_dim, 160, 128, 96),
+        "Cl": (feat_dim, 160, 128, 96),
+    }
+    return standard(
+        dims_for_atoms[atom],
+        activation=activation,
+        bias=bias,
+        classifier_out=classifier_out,
+    )
+
+
+def like_mbis_charges(
+    atom: str = "H",
+    feat_dim: int = 1008,
+    activation: tp.Optional[torch.nn.Module] = None,
+    bias: bool = False,
+    classifier_out: int = 2,
+):
+    r"""Makes an atomic network. The defaults are the ones used in the ANI-dr model"""
+    dims_for_atoms = {
+        "H": (feat_dim, 256, 192, 160),
+        "C": (feat_dim, 224, 192, 160),
         "N": (feat_dim, 192, 160, 128),
         "O": (feat_dim, 192, 160, 128),
         "S": (feat_dim, 160, 128, 96),

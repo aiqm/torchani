@@ -2,7 +2,7 @@ from torchani.potentials.core import (
     Potential,
     PairPotential,
 )
-from torchani.potentials.aev_potential import AEVPotential
+from torchani.potentials.nn_potential import NNPotential, SeparateChargesNNPotential
 from torchani.potentials.repulsion import (
     RepulsionXTB,
     StandaloneRepulsionXTB,
@@ -11,7 +11,7 @@ from torchani.potentials.dispersion import (
     TwoBodyDispersionD3,
     StandaloneTwoBodyDispersionD3,
 )
-from torchani.potentials.elemental import (
+from torchani.potentials.shifter import (
     EnergyAdder,
     StandaloneEnergyAdder,
 )
@@ -26,7 +26,8 @@ __all__ = [
     "StandaloneRepulsionXTB",
     "StandaloneTwoBodyDispersionD3",
     "PotentialWrapper",
-    "AEVPotential",
+    "NNPotential",
+    "SeparateChargesNNPotential",
     "Potential",
     "PairPotential",
 ]

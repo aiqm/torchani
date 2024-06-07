@@ -18,6 +18,7 @@ from torchani.aev.terms import (
     AngularTermArg,
 )
 from torchani.csrc import CUAEV_IS_INSTALLED
+from torchani.tuples import NeighborData
 
 
 def jit_unused_if_no_cuaev():
@@ -185,12 +186,7 @@ class AEVComputer(torch.nn.Module):
             neighbors = self.neighborlist(
                 species, coordinates, self.radial_terms.cutoff, cell, pbc
             )
-            aev = self._compute_aev(
-                element_idxs=species,
-                neighbor_idxs=neighbors.indices,
-                distances=neighbors.distances,
-                diff_vectors=neighbors.diff_vectors,
-            )
+            aev = self._compute_aev(element_idxs=species, neighbors=neighbors)
             return SpeciesAEV(species, aev)
 
         # cuAEV code path:
@@ -201,13 +197,7 @@ class AEVComputer(torch.nn.Module):
             neighbors = self.neighborlist(
                 species, coordinates, self.radial_terms.cutoff, cell, pbc
             )
-            aev = self._compute_cuaev_with_half_nbrlist(
-                species,
-                coordinates,
-                neighbors.indices,
-                neighbors.diff_vectors,
-                neighbors.distances,
-            )
+            aev = self._compute_cuaev_with_half_nbrlist(species, coordinates, neighbors)
         else:
             assert (pbc is None) or (
                 not pbc.any()
@@ -218,10 +208,11 @@ class AEVComputer(torch.nn.Module):
     def _compute_aev(
         self,
         element_idxs: Tensor,  # shape (C, A)
-        neighbor_idxs: Tensor,  # shape (2, P)
-        distances: Tensor,  # shape (P,)
-        diff_vectors: Tensor,  # shape (P, 3)
+        neighbors: NeighborData,
     ) -> Tensor:
+        neighbor_idxs = neighbors.indices  # shape (2, P)
+        distances = neighbors.distances  # shape (P,)
+        diff_vectors = neighbors.diff_vectors  # shape (P, 3)
         num_molecules, num_atoms = element_idxs.shape
         # shape (2, P)
         neighbor_element_idxs = element_idxs.view(-1)[neighbor_idxs]
@@ -457,24 +448,19 @@ class AEVComputer(torch.nn.Module):
         self,
         species: Tensor,
         coordinates: Tensor,
-        atom_index12: Tensor,
-        diff_vector: Tensor,
-        distances: Tensor,
+        neighbors: NeighborData,
     ) -> Tensor:
-        species = species.to(torch.int32)
-        atom_index12 = atom_index12.to(torch.int32)
         # The coordinates will not be used in forward calculation, but it's
         # gradient (force) will still be calculated in cuaev kernel, so it's
         # important to have coordinates passed as an argument.
-        aev = torch.ops.cuaev.run_with_half_nbrlist(
+        return torch.ops.cuaev.run_with_half_nbrlist(
             coordinates,
-            species,
-            atom_index12,
-            diff_vector,
-            distances,
+            species.to(torch.int32),
+            neighbors.indices.to(torch.int32),
+            neighbors.diff_vectors,
+            neighbors.distances,
             self.cuaev_computer,
         )
-        return aev
 
     @jit_unused_if_no_cuaev()
     def _compute_cuaev_with_full_nbrlist(

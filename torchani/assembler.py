@@ -1,4 +1,6 @@
-r"""
+r""" WARNING: The assembler is currently experimental and it is not considered stable
+API, modify under your own risk
+
 The assembler's responsibility is to build an ANI-style model from the
 different necessary parts, in such a way that all the parts of the model
 interact in the correct way and there are no compatibility issues among them.
@@ -6,10 +8,10 @@ interact in the correct way and there are no compatibility issues among them.
 An energy-predicting ANI-style model consists of:
 
 - Featurizer (typically an AEVComputer, or subclass)
-- Container for atomic networks (typically ANIModel)
+- Container for atomic networks (typically ANIModel or subclass)
 - Atomic Networks Dict {"H": torch.nn.Module(), "C": torch.nn.Module, ...}
 - Self Energies Dict (In Ha) {"H": -12.0, "C": -75.0, ...}
-- Shifter (typically EnergyAdder, or subclass)
+- Shifter (typically EnergyAdder)
 
 One or more PairPotentials (Typically RepulsionXTB, TwoBodyDispersion)
 TBA, VDW potential, Coulombic
@@ -34,7 +36,11 @@ import torch
 from torch import Tensor
 
 from torchani import atomics
-from torchani.models import BuiltinModel, PairPotentialsModel
+from torchani.models import (
+    BuiltinModel,
+    PairPotentialsModel,
+    PairPotentialsChargesModel,
+)
 from torchani.neighbors import parse_neighborlist, NeighborlistArg
 from torchani.cutoffs import parse_cutoff_fn, Cutoff, CutoffArg
 from torchani.potentials import (
@@ -50,6 +56,7 @@ from torchani.aev.terms import (
     parse_radial_term,
     parse_angular_term,
 )
+from torchani.electro import ChargeNormalizer, _AdaptedChargesContainer
 from torchani.nn import ANIModel, Ensemble
 from torchani.atomics import AtomicContainer
 from torchani.utils import GSAES, sort_by_element
@@ -58,8 +65,7 @@ from torchani.storage import STATE_DICTS_DIR
 ModelType = tp.Type[BuiltinModel]
 FeaturizerType = tp.Type[AEVComputer]
 PairPotentialType = tp.Type[PairPotential]
-ContainerType = tp.Type[ANIModel]
-ShifterType = tp.Type[EnergyAdder]
+ContainerType = tp.Type[AtomicContainer]
 
 SFCl: tp.Tuple[str, ...] = ("S", "F", "Cl")
 ELEMENTS_1X: tp.Tuple[str, ...] = ("H", "C", "N", "O")
@@ -102,7 +108,6 @@ class Assembler:
         ensemble_size: int = 1,
         symbols: tp.Sequence[str] = (),
         container_type: ContainerType = ANIModel,
-        shifter_type: ShifterType = EnergyAdder,
         model_type: ModelType = BuiltinModel,
         featurizer: tp.Optional[FeaturizerWrapper] = None,
         neighborlist: NeighborlistArg = "full_pairwise",
@@ -117,11 +122,15 @@ class Assembler:
         # This part of the assembler organizes the self-energies, the
         # symbols and the atomic networks
         self._self_energies: tp.Dict[str, float] = {}
-        self._fn_for_networks: tp.Optional[
+        self._fn_for_atomics: tp.Optional[
             tp.Callable[[str, int], torch.nn.Module]
         ] = None
-        self._shifter_type: ShifterType = shifter_type
+        self._fn_for_charges: tp.Optional[
+            tp.Callable[[str, int], torch.nn.Module]
+        ] = None
         self._container_type: ContainerType = container_type
+        self._charge_container_type: tp.Optional[ContainerType] = None
+        self._charge_normalizer: tp.Optional[ChargeNormalizer] = None
         self._symbols: tp.Tuple[str, ...] = tuple(symbols)
         self._ensemble_size: int = ensemble_size
 
@@ -166,11 +175,21 @@ class Assembler:
         else:
             self._symbols = tuple(symbols)
 
-    def set_atomic_maker(
-        self,
-        fn: tp.Callable[[str, int], torch.nn.Module],
-    ) -> None:
-        self._fn_for_networks = fn
+    @property
+    def fn_for_atomics(self) -> tp.Callable[[str, int], torch.nn.Module]:
+        if self._fn_for_atomics is None:
+            raise RuntimeError(
+                "fn for atomics is not set, please call 'set_atomic_networks'"
+            )
+        return self._fn_for_atomics
+
+    @property
+    def fn_for_charges(self) -> tp.Callable[[str, int], torch.nn.Module]:
+        if self._fn_for_charges is None:
+            raise RuntimeError(
+                "fn for charges is not set, please call 'set_charge_networks'"
+            )
+        return self._fn_for_charges
 
     @property
     def self_energies(self) -> tp.Dict[str, float]:
@@ -207,14 +226,29 @@ class Assembler:
         gsaes = GSAES[lot.lower()]
         self.self_energies = {s: gsaes[s] for s in self.symbols}
 
-    def set_shifter(self, shifter_type: ShifterType) -> None:
-        self._shifter_type = shifter_type
-
-    def set_container(
+    def set_atomic_networks(
         self,
         container_type: ContainerType,
+        fn: tp.Callable[[str, int], torch.nn.Module],
     ) -> None:
         self._container_type = container_type
+        self._fn_for_atomics = fn
+
+    def set_charge_networks(
+        self,
+        container_type: ContainerType,
+        fn: tp.Callable[[str, int], torch.nn.Module],
+        normalizer: tp.Optional[ChargeNormalizer] = None,
+    ) -> None:
+        if self._model_type in (BuiltinModel, PairPotentialsModel):
+            self._model_type = PairPotentialsChargesModel
+        elif not issubclass(self._model_type, PairPotentialsChargesModel):
+            raise ValueError(
+                "The model class must support charges to add a charge maker"
+            )
+        self._charge_container_type = container_type
+        self._charge_normalizer = normalizer
+        self._fn_for_charges = fn
 
     def set_featurizer(
         self,
@@ -255,10 +289,10 @@ class Assembler:
             # Override the model if it is exactly equal to this class
             if self._model_type == BuiltinModel:
                 self._model_type = PairPotentialsModel
-            else:
-                raise ValueError(
-                    "The model class must support pair potentials to add potentials"
-                )
+        elif not issubclass(self._model_type, PairPotentialsModel):
+            raise ValueError(
+                "The model class must support pair potentials to add potentials"
+            )
         self._pairwise_potentials.append(
             PairPotentialWrapper(
                 pair_type,
@@ -269,15 +303,11 @@ class Assembler:
         )
 
     def build_atomic_networks(
-        self, in_dim: int
+        self,
+        fn_for_networks: tp.Callable[[str, int], torch.nn.Module],
+        in_dim: int,
     ) -> tp.OrderedDict[str, torch.nn.Module]:
-        if self._fn_for_networks is None:
-            raise RuntimeError(
-                "Atomic Network Maker not set. Call 'set_atomic_maker' before assembly"
-            )
-        return OrderedDict(
-            [(s, self._fn_for_networks(s, in_dim)) for s in self.symbols]
-        )
+        return OrderedDict([(s, fn_for_networks(s, in_dim)) for s in self.symbols])
 
     def assemble(self) -> BuiltinModel:
         if not self.symbols:
@@ -311,20 +341,29 @@ class Assembler:
             for j in range(self.ensemble_size):
                 containers.append(
                     self._container_type(
-                        self.build_atomic_networks(featurizer.aev_length)
+                        self.build_atomic_networks(
+                            self.fn_for_atomics, featurizer.aev_length
+                        )
                     )
                 )
             neural_networks = Ensemble(containers)
         else:
             neural_networks = self._container_type(
-                self.build_atomic_networks(featurizer.aev_length)
+                self.build_atomic_networks(self.fn_for_atomics, featurizer.aev_length)
             )
+
+        charge_networks: tp.Optional[AtomicContainer] = None
+        if self._charge_container_type is not None:
+            charge_networks = self._charge_container_type(
+                self.build_atomic_networks(self.fn_for_charges, featurizer.aev_length)
+            )
+
         self_energies = self.self_energies
-        shifter = self._shifter_type(
+        shifter = EnergyAdder(
             symbols=self.symbols,
             self_energies=tuple(self_energies[k] for k in self.symbols),
         )
-
+        kwargs: tp.Dict[str, tp.Any] = {}
         if self._pairwise_potentials:
             potentials = []
             for pot in self._pairwise_potentials:
@@ -346,9 +385,16 @@ class Assembler:
                         **pot_kwargs,
                     )
                 )
-            kwargs = {"pairwise_potentials": potentials}
-        else:
-            kwargs = {}
+            kwargs.update({"pairwise_potentials": potentials})
+
+        if charge_networks is not None:
+            kwargs.update(
+                {
+                    "charge_networks": charge_networks,
+                    "charge_normalizer": self._charge_normalizer,
+                }
+            )
+
         return self._model_type(
             symbols=self.symbols,
             aev_computer=featurizer,
@@ -382,7 +428,7 @@ def ANI1x(
     """
     asm = Assembler(ensemble_size=8, periodic_table_index=periodic_table_index)
     asm.set_symbols(ELEMENTS_1X, auto_sort=False)
-    asm.set_atomic_maker(atomics.like_1x)
+    asm.set_atomic_networks(ANIModel, atomics.like_1x)
     asm.set_global_cutoff_fn("cosine")
     asm.set_featurizer(
         AEVComputer,
@@ -435,7 +481,7 @@ def ANI1ccx(
             "use_cuaev_interface": use_cuaev_interface,
         },
     )
-    asm.set_atomic_maker(atomics.like_1ccx)
+    asm.set_atomic_networks(ANIModel, atomics.like_1ccx)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("ccsd(t)star-cbs")
     model = asm.assemble()
@@ -477,12 +523,72 @@ def ANI2x(
             "use_cuaev_interface": use_cuaev_interface,
         },
     )
-    asm.set_atomic_maker(atomics.like_2x)
+    asm.set_atomic_networks(ANIModel, atomics.like_2x)
     asm.set_neighborlist(neighborlist)
+    # The self energies are overwritten by the state dict
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble()
     if pretrained:
         model.load_state_dict(fetch_state_dict("ani2x_state_dict.pt", private=False))
+    return model if model_index is None else model[model_index]
+
+
+def ANImbis(
+    model_index: tp.Optional[int] = None,
+    pretrained: bool = True,
+    neighborlist: NeighborlistArg = "full_pairwise",
+    use_cuda_ops: bool = False,
+    periodic_table_index: bool = True,
+) -> BuiltinModel:
+    r"""ANI-2x model with MBIS experimental charges"""
+    asm = Assembler(
+        ensemble_size=8,
+        periodic_table_index=periodic_table_index,
+        model_type=PairPotentialsChargesModel,
+    )
+    asm.set_symbols(ELEMENTS_2X, auto_sort=False)
+    asm.set_global_cutoff_fn("cosine")
+    asm.set_featurizer(
+        AEVComputer,
+        radial_terms=StandardRadial.like_2x(),
+        angular_terms=StandardAngular.like_2x(),
+        extra={
+            "use_cuda_extension": use_cuda_ops,
+            "use_cuaev_interface": use_cuda_ops,
+        },
+    )
+    asm.set_atomic_networks(ANIModel, atomics.like_2x)
+    asm.set_charge_networks(
+        _AdaptedChargesContainer,
+        atomics.like_mbis_charges,
+        normalizer=ChargeNormalizer.from_electronegativity_and_hardness(
+            asm.symbols, scale_weights_by_charges_squared=True
+        ),
+    )
+    asm.set_neighborlist(neighborlist)
+    # The self energies are overwritten by the state dict
+    asm.set_gsaes_as_self_energies("wb97x-631gd")
+    model = asm.assemble()
+    if pretrained:
+        ani2x_state_dict = fetch_state_dict("ani2x_state_dict.pt")
+        energy_nn_state_dict = {
+            k.replace("neural_networks.", ""): v
+            for k, v in ani2x_state_dict.items()
+            if k.endswith("weight") or k.endswith("bias")
+        }
+        aev_state_dict = {
+            k.replace("aev_computer.", ""): v
+            for k, v in ani2x_state_dict.items()
+            if k.startswith("aev_computer")
+        }
+        shifter_state_dict = {
+            "self_energies": ani2x_state_dict["energy_shifter.self_energies"]
+        }
+        charge_nn_state_dict = fetch_state_dict("charge_nn_state_dict.pt", private=True)
+        model.energy_shifter.load_state_dict(shifter_state_dict)
+        model.charges_nnp.aev_computer.load_state_dict(aev_state_dict)
+        model.charges_nnp.neural_networks.load_state_dict(energy_nn_state_dict)
+        model.charges_nnp.charge_networks.load_state_dict(charge_nn_state_dict)
     return model if model_index is None else model[model_index]
 
 
@@ -509,7 +615,7 @@ def ANIala(
             "use_cuaev_interface": use_cuaev_interface,
         },
     )
-    asm.set_atomic_maker(atomics.like_ala)
+    asm.set_atomic_networks(ANIModel, atomics.like_ala)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble()
@@ -540,7 +646,7 @@ def ANIdr(
         radial_terms=StandardRadial.like_2x(),
         extra={"use_cuda_extension": use_cuda_ops, "use_cuaev_interface": use_cuda_ops},
     )
-    asm.set_atomic_maker(atomics.like_dr)
+    asm.set_atomic_networks(ANIModel, atomics.like_dr)
     asm.add_pairwise_potential(
         RepulsionXTB,
         cutoff=5.3,
@@ -612,7 +718,7 @@ def FlexANI(
         activation=atomics._parse_activation(activation),
         bias=bias,
     )
-    asm.set_atomic_maker(_atomic_maker)
+    asm.set_atomic_networks(ANIModel, _atomic_maker)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies(lot)
     if repulsion:

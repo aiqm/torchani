@@ -66,6 +66,22 @@ class SpeciesEnergies(tp.NamedTuple):
     energies: Tensor
 
 
+class SpeciesEnergiesAtomicCharges(tp.NamedTuple):
+    species: Tensor
+    energies: Tensor
+    atomic_charges: Tensor
+
+
+class EnergiesAtomicCharges(tp.NamedTuple):
+    energies: Tensor
+    atomic_charges: Tensor
+
+
+class SpeciesAtomicCharges(tp.NamedTuple):
+    energies: Tensor
+    atomic_charges: Tensor
+
+
 class SpeciesEnergiesQBC(tp.NamedTuple):
     '''
     Tuple used in output from energies_qbcs function.

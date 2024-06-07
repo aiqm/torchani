@@ -38,16 +38,17 @@ class TwoBodyDispersionD3(PairPotential):
 
     def __init__(
         self,
-        *args,
+        symbols: tp.Sequence[str],
         damp_fn_6: Damp,
         damp_fn_8: Damp,
         s6: float,
         s8: float,
         cutoff_fn: CutoffArg = "dummy",
         cutoff=math.inf,
-        **kwargs,
     ):
-        super().__init__(*args, cutoff=cutoff, cutoff_fn=cutoff_fn, **kwargs)
+        super().__init__(
+            symbols=symbols, cutoff=cutoff, is_trainable=False, cutoff_fn=cutoff_fn,
+        )
 
         self._damp_fn_6 = damp_fn_6
         self._damp_fn_8 = damp_fn_8

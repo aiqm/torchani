@@ -3,7 +3,7 @@ import unittest
 import torch
 
 from torchani.testing import ANITest, expand
-from torchani.models import ANI1x, ANI2x
+from torchani.models import ANI1x, ANI2x, ANImbis
 from torchani.datasets import create_batched_dataset, TestData
 
 
@@ -33,18 +33,38 @@ class TestBuiltinModels(ANITest):
         _, e2 = torch.jit.script(model)(input_)
         self.assertEqual(e, e2)
 
+    def _test_ensemble_charges(self, ensemble):
+        self._test_model_charges(ensemble)
+        for m in ensemble:
+            self._test_model_charges(m)
+
+    def _test_model_charges(self, model):
+        properties = next(iter(self.ds))
+        input_ = (
+            properties["species"].to(self.device),
+            properties["coordinates"].to(self.device, dtype=torch.float),
+        )
+        _, e, q = model.energies_and_atomic_charges(input_)
+        _, e2, q2 = torch.jit.script(model).energies_and_atomic_charges(input_)
+        self.assertEqual(e, e2)
+        self.assertEqual(q, q2)
+
     def _test_ensemble(self, ensemble):
         self._test_model(ensemble)
         for m in ensemble:
             self._test_model(m)
 
     def testANI1x(self):
-        ani1x = ANI1x().to(self.device)
-        self._test_ensemble(ani1x)
+        self._test_ensemble(ANI1x().to(self.device))
 
     def testANI2x(self):
-        ani1ccx = ANI2x().to(self.device)
-        self._test_ensemble(ani1ccx)
+        self._test_ensemble(ANI2x().to(self.device))
+
+    def testANImbis(self):
+        self._test_ensemble(ANImbis().to(self.device))
+
+    def testANImbis_charges(self):
+        self._test_ensemble_charges(ANImbis().to(self.device))
 
 
 if __name__ == "__main__":

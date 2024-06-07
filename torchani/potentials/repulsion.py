@@ -38,7 +38,7 @@ class RepulsionXTB(PairPotential):
         cutoff_fn: CutoffArg = "smooth",
         **pairwise_kwargs,
     ):
-        super().__init__(cutoff_fn=cutoff_fn, **pairwise_kwargs)
+        super().__init__(cutoff_fn=cutoff_fn, is_trainable=False, **pairwise_kwargs)
 
         if not alpha:
             _alpha = torch.tensor(alpha_constants)[self.atomic_numbers]
