@@ -506,6 +506,15 @@ class PairPotentialsModel(BuiltinModel):
         potentials = sorted(potentials, key=lambda x: x.cutoff, reverse=True)
         self.potentials = torch.nn.ModuleList(potentials)
 
+    # unfortunately this is an UGLY workaround to a torchscript bug
+    @torch.jit.export
+    def _recast_long_buffers(self) -> None:
+        self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(
+            dtype=torch.long
+        )
+        self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
+        self.aev_computer.neighborlist._recast_long_buffers()
+
     def forward(
         self,
         species_coordinates: tp.Tuple[Tensor, Tensor],
@@ -578,16 +587,13 @@ class PairPotentialsModel(BuiltinModel):
         return SpeciesEnergies(species_coordinates[0], atomic_energies)
 
     def __getitem__(self, index: int) -> tpx.Self:
-        non_nn_potentials = [
-            p for p in self.potentials if not isinstance(p, NNPotential)
-        ]
         return type(self)(
             symbols=self.get_chemical_symbols(),
             aev_computer=self.aev_computer,
             neural_networks=self.neural_networks.member(index),
             energy_shifter=self.energy_shifter,
             periodic_table_index=self.periodic_table_index,
-            pairwise_potentials=non_nn_potentials,
+            pairwise_potentials=[p for p in self.potentials if not p.is_trainable],
         )
 
 
@@ -623,11 +629,13 @@ class PairPotentialsChargesModel(PairPotentialsModel):
             pairwise_potentials=pairwise_potentials,
             periodic_table_index=periodic_table_index,
         )
-        self.charges_nnp = SeparateChargesNNPotential(
-            aev_computer,
-            neural_networks,
-            charge_networks,
-            charge_normalizer,
+        self.charge_networks = charge_networks
+        self.charge_normalizer = charge_normalizer
+        charges_nnp = SeparateChargesNNPotential(
+            self.aev_computer,
+            self.neural_networks,
+            self.charge_networks,
+            self.charge_normalizer,
         )
         # Check which index has the NNPotential
         potentials = [pot for pot in self.potentials]
@@ -635,7 +643,7 @@ class PairPotentialsChargesModel(PairPotentialsModel):
             if pot.is_trainable:
                 break
         # Replace with the ChargesNNPotential
-        potentials[j] = self.charges_nnp
+        potentials[j] = charges_nnp
         # Re-register the ModuleList
         self.potentials = torch.nn.ModuleList(potentials)
 
@@ -680,18 +688,15 @@ class PairPotentialsChargesModel(PairPotentialsModel):
         )
 
     def __getitem__(self, index: int) -> tpx.Self:
-        non_nn_potentials = [
-            p for p in self.potentials if not isinstance(p, NNPotential)
-        ]
         return type(self)(
             symbols=self.get_chemical_symbols(),
-            aev_computer=self.charges_nnp.aev_computer,
-            neural_networks=self.charges_nnp.neural_networks.member(index),
-            charge_networks=self.charges_nnp.charge_networks,
-            charge_normalizer=self.charges_nnp.charge_normalizer,
+            aev_computer=self.aev_computer,
+            neural_networks=self.neural_networks.member(index),
+            charge_networks=self.charge_networks,
+            charge_normalizer=self.charge_normalizer,
             energy_shifter=self.energy_shifter,
             periodic_table_index=self.periodic_table_index,
-            pairwise_potentials=non_nn_potentials,
+            pairwise_potentials=[p for p in self.potentials if not p.is_trainable],
         )
 
 
