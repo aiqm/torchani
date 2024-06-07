@@ -282,10 +282,11 @@ class AEVComputer(torch.nn.Module):
             (num_molecules * num_atoms * self.num_species_pairs, self.angular_sublength)
         )
         # shape (T,)
-        index = (
-            central_idx * self.num_species_pairs
-            + self.triu_index[triple_element_side_idxs[0], triple_element_side_idxs[1]]
-        )
+        # TODO: This gets cast to double in TorchScript,
+        # the issue should be investigated
+        index = central_idx * self.num_species_pairs + self.triu_index[
+            triple_element_side_idxs[0], triple_element_side_idxs[1]
+        ].to(torch.long)
         angular_aev.index_add_(0, index, terms)
         # shape (C, A, SpxZ)
         return angular_aev.reshape(num_molecules, num_atoms, self.angular_length)
