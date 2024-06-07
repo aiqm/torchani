@@ -41,41 +41,43 @@ a pull request.
 
 TorchANI is tested against the (usually) latest PyTorch version
 
-## Install TorchANI
+## Installation
 
-NOTE: Currently only building from source (with either pip or conda) works
-other installation procedures are broken.
+### From the internal Roitberg Group servers, using conda or pip
 
-### From Anaconda, using conda (BROKEN)
-
-To install TorchANI using conda run:
+To install the internal version of TorchANI, hosted in the internal
+roitberg-group servers using conda run:
 
 ```bash
 conda create -n ani python=3.10
 conda activate ani
-# The following command is all one line
+# The following command is all one line, and channels must be specified in that order
 conda install \
+    -c http://moria.chem.ufl.edu/conda-pkgs \
     -c pytorch \
     -c nvidia \
     -c conda-forge \
-    -c https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville \
-    sandbox
+    torchani
 ```
 
-Notes:
+Note that this installation currently includes the compiled extensions by default,
+but it doesn't include either the neurochem or ase modules, to use those also run:
 
-- The conda package is hosted at
-  https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville only for
-  internal use
-- In the case where multiple updates were released within the same day, you may
-  need to add a `--force-reinstall` flag instead of waiting for the next
-  nightly update.
+```bash
+conda install -c conda-forge lark-parser ase
+```
 
-### From PyPI, using pip (BROKEN)
+To install using pip: currently unavailable
 
-TODO
+#### From Anaconda.org, using conda
 
-### From source, using conda or pip
+Currently unavailable
+
+### From PyPI, using pip
+
+Currently unavailable
+
+### From source (GitHub repo), using conda or pip
 
 To build and install TorchANI directly from the GitHub repo do the following:
 
