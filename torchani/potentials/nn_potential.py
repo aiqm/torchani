@@ -37,6 +37,7 @@ class NNPotential(Potential):
         aevs = self.aev_computer._compute_aev(element_idxs, neighbors)
         return self.neural_networks((element_idxs, aevs))[1]
 
+    @torch.jit.export
     def atomic_energies(
         self,
         element_idxs: Tensor,

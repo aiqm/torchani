@@ -672,17 +672,17 @@ class PairPotentialsChargesModel(PairPotentialsModel):
             if cutoff < previous_cutoff:
                 neighbor_data = rescreen(cutoff, neighbor_data)
                 previous_cutoff = cutoff
-                if pot.is_trainable:
-                    output = pot.energies_and_atomic_charges(
-                        element_idxs,
-                        neighbor_data,
-                        ghost_flags=None,
-                        total_charge=total_charge,
-                    )
-                    energies += output.energies
-                    atomic_charges += output.atomic_charges
-                else:
-                    energies += pot(element_idxs, neighbor_data)
+            if pot.is_trainable:
+                output = pot.energies_and_atomic_charges(
+                    element_idxs,
+                    neighbor_data,
+                    ghost_flags=None,
+                    total_charge=total_charge,
+                )
+                energies += output.energies
+                atomic_charges += output.atomic_charges
+            else:
+                energies += pot(element_idxs, neighbor_data)
         return SpeciesEnergiesAtomicCharges(
             element_idxs, energies + self.energy_shifter(element_idxs), atomic_charges
         )
