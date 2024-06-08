@@ -60,8 +60,8 @@ class AEVComputer(torch.nn.Module):
         self.num_species = num_species
         self.num_species_pairs = num_species * (num_species + 1) // 2
 
-        self.angular_terms = parse_angular_term(angular_terms)
         self.radial_terms = parse_radial_term(radial_terms)
+        self.angular_terms = parse_angular_term(angular_terms)
         if not (self.angular_terms.cutoff_fn.is_same(self.radial_terms.cutoff_fn)):
             raise ValueError("Cutoff fn must be the same for angular and radial terms")
         if self.angular_terms.cutoff > self.radial_terms.cutoff:
@@ -116,6 +116,19 @@ class AEVComputer(torch.nn.Module):
                 raise ValueError(
                     "For non default neighborlists set 'use_cuaev_interface=True'"
                 )
+
+    def extra_repr(self) -> str:
+        radial_perc = f"{self.radial_length / self.aev_length * 100:.2f}% of features"
+        angular_perc = f"{self.angular_length / self.aev_length * 100:.2f}% of features"
+        parts = [
+            r"#  "f"aev_length={self.aev_length}",
+            r"#  "f"radial_length={self.radial_length} ({radial_perc})",
+            r"#  "f"angular_length={self.angular_length} ({angular_perc})",
+            f"num_species={self.num_species},",
+            f"use_cuda_extension={self.use_cuda_extension},",
+            f"use_cuaev_interface={self.use_cuaev_interface},",
+        ]
+        return " \n".join(parts)
 
     @staticmethod
     def _calculate_triu_index(num_species: int) -> Tensor:
@@ -379,12 +392,12 @@ class AEVComputer(torch.nn.Module):
         self.cuaev_computer = torch.classes.cuaev.CuaevComputer(
             self.radial_terms.cutoff,
             self.angular_terms.cutoff,
-            self.radial_terms.EtaR.flatten(),
-            self.radial_terms.ShfR.flatten(),
-            self.angular_terms.EtaA.flatten(),
-            self.angular_terms.Zeta.flatten(),
-            self.angular_terms.ShfA.flatten(),
-            self.angular_terms.ShfZ.flatten(),
+            self.radial_terms.eta,
+            self.radial_terms.shifts,
+            self.angular_terms.eta,
+            self.angular_terms.zeta,
+            self.angular_terms.shifts,
+            self.angular_terms.angle_sections,
             self.num_species,
             (self._cuaev_cutoff_fn == "cosine"),
         )
@@ -502,14 +515,14 @@ class AEVComputer(torch.nn.Module):
     @classmethod
     def from_constants(
         cls,
-        Rcr: float,
-        Rca: float,
-        EtaR: Tensor,
-        ShfR: Tensor,
-        EtaA: Tensor,
-        Zeta: Tensor,
-        ShfA: Tensor,
-        ShfZ: Tensor,
+        radial_cutoff: float,
+        angular_cutoff: float,
+        radial_eta: float,
+        radial_shifts: tp.Sequence[float],
+        angular_eta: float,
+        angular_zeta: float,
+        angular_shifts: tp.Sequence[float],
+        angle_sections: tp.Sequence[float],
         num_species: int,
         use_cuda_extension: bool = False,
         use_cuaev_interface: bool = False,
@@ -519,21 +532,21 @@ class AEVComputer(torch.nn.Module):
         r"""Initialize the AEV computer from the following constants:
 
         Arguments:
-            Rcr (float): :math:`R_C` in equation (2) when used at equation (3)
+            radial_cutoff (float): :math:`R_C` in equation (2) when used at equation (3)
                 in the `ANI paper`_.
             Rca (float): :math:`R_C` in equation (2) when used at equation (4)
                 in the `ANI paper`_.
-            EtaR (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
+            radial_eta (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
                 equation (3) in the `ANI paper`_.
-            ShfR (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
+            radial_shifts (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
                 equation (3) in the `ANI paper`_.
-            EtaA (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
+            angluar_eta (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
                 equation (4) in the `ANI paper`_.
-            Zeta (:class:`torch.Tensor`): The 1D tensor of :math:`\zeta` in
+            angular_zeta (:class:`torch.Tensor`): The 1D tensor of :math:`\zeta` in
                 equation (4) in the `ANI paper`_.
-            ShfA (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
+            angular_shifts (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
                 equation (4) in the `ANI paper`_.
-            ShfZ (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
+            angle_sections (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
                 equation (4) in the `ANI paper`_.
             num_species (int): Number of supported atom types.
             use_cuda_extension (bool): Whether to use cuda extension for faster
@@ -544,17 +557,17 @@ class AEVComputer(torch.nn.Module):
         """
         return cls(
             radial_terms=StandardRadial(
-                EtaR,
-                ShfR,
-                Rcr,
+                radial_eta,
+                radial_shifts,
+                radial_cutoff,
                 cutoff_fn=cutoff_fn,
             ),
             angular_terms=StandardAngular(
-                EtaA,
-                Zeta,
-                ShfA,
-                ShfZ,
-                Rca,
+                angular_eta,
+                angular_zeta,
+                angular_shifts,
+                angle_sections,
+                angular_cutoff,
                 cutoff_fn=cutoff_fn,
             ),
             num_species=num_species,
@@ -564,7 +577,7 @@ class AEVComputer(torch.nn.Module):
         )
 
     @classmethod
-    def style_1x(
+    def like_1x(
         cls,
         num_species: int = 4,
         use_cuda_extension: bool = False,
@@ -608,7 +621,7 @@ class AEVComputer(torch.nn.Module):
         )
 
     @classmethod
-    def style_2x(
+    def like_2x(
         cls,
         num_species: int = 7,
         use_cuda_extension: bool = False,
@@ -616,12 +629,12 @@ class AEVComputer(torch.nn.Module):
         cutoff_fn: CutoffArg = "cosine",
         neighborlist: NeighborlistArg = "full_pairwise",
         # Radial args
-        radial_start: float = 0.9,
-        radial_cutoff: float = 5.2,
+        radial_start: float = 0.8,
+        radial_cutoff: float = 5.1,
         radial_eta: float = 19.7,
         radial_num_shifts: int = 16,
         # Angular args
-        angular_start: float = 0.9,
+        angular_start: float = 0.8,
         angular_cutoff: float = 3.5,
         angular_eta: float = 12.5,
         angular_zeta: float = 14.1,
@@ -646,54 +659,6 @@ class AEVComputer(torch.nn.Module):
                 cutoff_fn=cutoff_fn,
             ),
             num_species=num_species,
-            use_cuda_extension=use_cuda_extension,
-            use_cuaev_interface=use_cuaev_interface,
-            neighborlist=neighborlist,
-        )
-
-    @classmethod
-    def like_1x(
-        cls,
-        use_cuda_extension: bool = False,
-        use_cuaev_interface: bool = False,
-        neighborlist: NeighborlistArg = "full_pairwise",
-    ) -> tpx.Self:
-        return cls(
-            angular_terms="ani1x",
-            radial_terms="ani1x",
-            num_species=4,
-            use_cuda_extension=use_cuda_extension,
-            use_cuaev_interface=use_cuaev_interface,
-            neighborlist=neighborlist,
-        )
-
-    @classmethod
-    def like_1ccx(
-        cls,
-        use_cuda_extension: bool = False,
-        use_cuaev_interface: bool = False,
-        neighborlist: NeighborlistArg = "full_pairwise",
-    ) -> tpx.Self:
-        return cls(
-            angular_terms="ani1ccx",
-            radial_terms="ani1ccx",
-            num_species=4,
-            use_cuda_extension=use_cuda_extension,
-            use_cuaev_interface=use_cuaev_interface,
-            neighborlist=neighborlist,
-        )
-
-    @classmethod
-    def like_2x(
-        cls,
-        use_cuda_extension: bool = False,
-        use_cuaev_interface: bool = False,
-        neighborlist: NeighborlistArg = "full_pairwise",
-    ) -> tpx.Self:
-        return cls(
-            angular_terms="ani2x",
-            radial_terms="ani2x",
-            num_species=7,
             use_cuda_extension=use_cuda_extension,
             use_cuaev_interface=use_cuaev_interface,
             neighborlist=neighborlist,

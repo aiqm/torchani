@@ -1,7 +1,7 @@
 r"""Tools for interfacing with legacy NeuroChem files"""
 from torchani.neurochem.neurochem import (
     load_aev_computer_and_symbols,
-    load_constants,
+    load_aev_constants_and_symbols,
     load_sae,
     load_energy_adder,
     load_atomic_network,
@@ -18,7 +18,7 @@ from torchani.neurochem.files import (
 
 __all__ = [
     "load_aev_computer_and_symbols",
-    "load_constants",
+    "load_aev_constants_and_symbols",
     "load_sae",
     "load_energy_adder",
     "load_model",

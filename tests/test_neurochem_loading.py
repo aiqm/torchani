@@ -75,7 +75,7 @@ class TestAEVLoader(ANITest):
         aev_1ccx_nc, _ = load_aev_computer_and_symbols(
             const_file_1ccx
         )
-        aev_1ccx = AEVComputer.like_1ccx()
+        aev_1ccx = AEVComputer.like_1x()
         self._compare_constants(aev_1ccx_nc, aev_1ccx)
 
     def _compare_constants(self, aev_computer, aev_computer_alt):

@@ -85,9 +85,7 @@ cuaev_computer = torchani.AEVComputer.from_constants(
     Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=True,
 )
 # or
-cuaev_computer = torchani.AEVComputer.like_1x(use_cuda_extension=True)
-# or
-cuaev_computer = torchani.AEVComputer.style_1x(
+cuaev_computer = torchani.AEVComputer.like_1x(
     cutoff_fn="smooth", use_cuda_extension=True,
 )
 ```

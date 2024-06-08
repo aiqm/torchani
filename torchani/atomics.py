@@ -52,7 +52,7 @@ def _parse_activation(module: tp.Union[str, torch.nn.Module]) -> torch.nn.Module
 def _parse_atomics(
     module: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]],
 ) -> tp.Callable[[str, int], torch.nn.Module]:
-    if module == "ani1x":
+    if module in ["ani1x", "ani1ccx"]:
         return like_1x
     elif module == "ani2x":
         return like_2x
@@ -60,8 +60,6 @@ def _parse_atomics(
         return like_dr
     elif module == "aniala":
         return like_ala
-    elif module == "ani1ccx":
-        return like_1ccx
     assert not isinstance(module, str)  # mypy
     return module
 
@@ -213,6 +211,3 @@ def like_mbis_charges(
         bias=bias,
         classifier_out=classifier_out,
     )
-
-
-like_1ccx = like_1x

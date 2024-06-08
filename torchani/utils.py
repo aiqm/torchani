@@ -146,6 +146,11 @@ def sorted_gsaes(
     return [gsaes[e] for e in elements]
 
 
+# Pure python linspace to ensure reproducibility
+def linspace(start: float, stop: float, steps: int) -> tp.Tuple[float, ...]:
+    return tuple(start + ((stop - start) / steps) * j for j in range(steps))
+
+
 def check_openmp_threads(verbose: bool = True) -> None:
     if "OMP_NUM_THREADS" not in os.environ:
         warnings.warn(

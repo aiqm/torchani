@@ -3,7 +3,7 @@ import os
 import torch
 from torchani.aev import AEVComputer
 
-aev = AEVComputer.style_1x()
+aev = AEVComputer.like_1x()
 
 # This test only runs as a conda test, and only if there is a cuda device
 if torch.cuda.is_available() and (os.environ.get("CONDA_BUILD_STATE", None) == "TEST"):
@@ -21,7 +21,7 @@ if torch.cuda.is_available() and (os.environ.get("CONDA_BUILD_STATE", None) == "
     )
     species = torch.tensor([[1, 0, 0, 0, 0]], device="cuda")
     aev = aev.cuda()
-    cuaev = AEVComputer.style_1x(use_cuda_extension=True).cuda()
+    cuaev = AEVComputer.like_1x(use_cuda_extension=True).cuda()
     aevs_cu = cuaev((species, coordinates)).aevs
     aevs_py = aev((species, coordinates)).aevs
     assert ((aevs_cu - aevs_py) < 1e-4).all()

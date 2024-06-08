@@ -1,4 +1,5 @@
 from pathlib import Path
+from dataclasses import dataclass
 import typing as tp
 import struct
 import bz2
@@ -39,25 +40,52 @@ def load_aev_computer_and_symbols(
     neighborlist: NeighborlistArg = "full_pairwise",
     cutoff_fn: CutoffArg = "cosine",
 ) -> tp.Tuple[AEVComputer, tp.Tuple[str, ...]]:
-    aev_consts, aev_cutoffs, symbols = load_constants(consts_file)
+    consts, symbols = load_aev_constants_and_symbols(consts_file)
     aev_computer = AEVComputer.from_constants(
-        Rcr=aev_cutoffs["Rcr"],
-        Rca=aev_cutoffs["Rca"],
+        radial_cutoff=consts.radial_cutoff,
+        angular_cutoff=consts.angular_cutoff,
+        radial_eta=consts.radial_eta,
+        radial_shifts=consts.radial_shifts,
+        angular_eta=consts.angular_eta,
+        angular_zeta=consts.angular_zeta,
+        angular_shifts=consts.angular_shifts,
+        angle_sections=consts.angle_sections,
         num_species=len(symbols),
-        cutoff_fn=cutoff_fn,
-        neighborlist=neighborlist,
         use_cuda_extension=use_cuda_extension,
         use_cuaev_interface=use_cuaev_interface,
-        **aev_consts,
+        cutoff_fn=cutoff_fn,
+        neighborlist=neighborlist,
     )
     return aev_computer, symbols
 
 
-def load_constants(
+@dataclass
+class AEVConstants:
+    radial_cutoff: float
+    radial_eta: float
+    radial_shifts: tp.Tuple[float, ...]
+    angular_cutoff: float
+    angular_eta: float
+    angular_zeta: float
+    angular_shifts: tp.Tuple[float, ...]
+    angle_sections: tp.Tuple[float, ...]
+
+
+def load_aev_constants_and_symbols(
     consts_file: tp.Union[Path, str]
-) -> tp.Tuple[tp.Dict[str, Tensor], tp.Dict[str, float], tp.Tuple[str, ...]]:
-    aev_consts: tp.Dict[str, Tensor] = {}
-    aev_cutoffs: tp.Dict[str, float] = {}
+) -> tp.Tuple[AEVConstants, tp.Tuple[str, ...]]:
+    aev_floats: tp.Dict[str, float] = {}
+    aev_seqs: tp.Dict[str, tp.Tuple[float, ...]] = {}
+    file_name_mapping = {
+        "Rcr": "radial_cutoff",
+        "Rca": "angular_cutoff",
+        "EtaR": "radial_eta",
+        "ShfR": "radial_shifts",
+        "ShfA": "angular_shifts",
+        "ShfZ": "angle_sections",
+        "EtaA": "angular_eta",
+        "Zeta": "angular_zeta",
+    }
     with open(consts_file) as f:
         for i in f:
             try:
@@ -65,23 +93,38 @@ def load_constants(
                 name = line[0]
                 value = line[1]
                 if name in ["Rcr", "Rca"]:
-                    aev_cutoffs[name] = float(value)
+                    aev_floats[file_name_mapping[name]] = float(value)
                 elif name in ["EtaR", "ShfR", "Zeta", "ShfZ", "EtaA", "ShfA"]:
-                    float_values = [
+                    float_values = tuple(
                         float(x.strip())
                         for x in value.replace("[", "").replace("]", "").split(",")
-                    ]
-                    aev_consts[name] = torch.tensor(float_values)
+                    )
+                    if name in ["EtaR", "Zeta", "EtaA"]:
+                        assert len(float_values) == 1
+                        aev_floats[file_name_mapping[name]] = float_values[0]
+                    else:
+                        aev_seqs[file_name_mapping[name]] = float_values
                 elif name == "Atyp":
                     symbols = tuple(
                         x.strip()
                         for x in value.replace("[", "").replace("]", "").split(",")
                     )
             except Exception:
+                breakpoint()
                 raise NeurochemParseError(
                     f"Unable to parse const file {consts_file}"
                 ) from None
-    return aev_consts, aev_cutoffs, symbols
+    constants = AEVConstants(
+        radial_cutoff=aev_floats["radial_cutoff"],
+        angular_cutoff=aev_floats["angular_cutoff"],
+        radial_eta=aev_floats["radial_eta"],
+        angular_eta=aev_floats["angular_eta"],
+        angular_zeta=aev_floats["angular_zeta"],
+        radial_shifts=aev_seqs["radial_shifts"],
+        angular_shifts=aev_seqs["angular_shifts"],
+        angle_sections=aev_seqs["angle_sections"],
+    )
+    return constants, symbols
 
 
 def load_energy_adder(filename: tp.Union[Path, str]) -> EnergyAdder:
@@ -328,7 +371,7 @@ def load_model_ensemble(
 
 
 __all__ = [
-    "load_constants",
+    "load_aev_constants_and_symbols",
     "load_aev_computer_and_symbols",
     "load_sae",
     "load_energy_adder",

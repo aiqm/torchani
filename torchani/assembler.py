@@ -474,14 +474,14 @@ def ANI1ccx(
     asm.set_global_cutoff_fn("cosine")
     asm.set_featurizer(
         AEVComputer,
-        radial_terms=StandardRadial.like_1ccx(),
-        angular_terms=StandardAngular.like_1ccx(),
+        radial_terms=StandardRadial.like_1x(),
+        angular_terms=StandardAngular.like_1x(),
         extra={
             "use_cuda_extension": use_cuda_extension,
             "use_cuaev_interface": use_cuaev_interface,
         },
     )
-    asm.set_atomic_networks(ANIModel, atomics.like_1ccx)
+    asm.set_atomic_networks(ANIModel, atomics.like_1x)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("ccsd(t)star-cbs")
     model = asm.assemble()

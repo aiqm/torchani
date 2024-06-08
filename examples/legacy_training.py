@@ -52,7 +52,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #   Besides defining these hyperparameters programmatically,
 #   `torchani.neurochem` provide tools to read them from neurochem style files file.
 
-aev_computer = torchani.AEVComputer.style_1x()
+aev_computer = torchani.AEVComputer.like_1x()
 energy_shifter = torchani.utils.EnergyShifter(None)
 
 ###############################################################################

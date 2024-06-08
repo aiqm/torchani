@@ -37,32 +37,19 @@ class _TestAEVBase(TestCase):
 
 
 class TestAEVConstructor(TestCase):
-    # Test that checks that inexact friendly constructor
-    # reproduces the values from ANI1x with the correct parameters
-    def testTerms1x(self):
-        style_angular = StandardAngular.style_1x()
-        style_radial = StandardRadial.style_1x()
-        exact_angular = StandardAngular.like_1x()
-        exact_radial = StandardRadial.like_1x()
-        self._compare_constants(exact_angular, style_angular)
-        self._compare_constants(exact_radial, style_radial)
-
     def testTerms2x(self):
-        style_angular = StandardAngular.style_2x()
-        style_radial = StandardRadial.style_2x()
         exact_angular = StandardAngular.like_2x()
         exact_radial = StandardRadial.like_2x()
-        self._compare_constants(exact_angular, style_angular)
-        self._compare_constants(exact_radial, style_radial)
+        computer = AEVComputer(exact_radial, exact_angular, num_species=7)
+        computer_alt = AEVComputer.like_2x()
+        self._compare_constants(computer, computer_alt)
 
-    def testTerms1ccx(self):
-        # Note that 1ccx should be the same as 1x, exactly
-        style_angular = StandardAngular.style_1x()
-        style_radial = StandardRadial.style_1x()
-        exact_angular = StandardAngular.like_1ccx()
-        exact_radial = StandardRadial.like_1ccx()
-        self._compare_constants(exact_angular, style_angular)
-        self._compare_constants(exact_radial, style_radial)
+    def testTerms1x(self):
+        exact_angular = StandardAngular.like_1x()
+        exact_radial = StandardRadial.like_1x()
+        computer = AEVComputer(exact_radial, exact_angular, num_species=4)
+        computer_alt = AEVComputer.like_1x()
+        self._compare_constants(computer, computer_alt)
 
     def _compare_constants(self, aev_computer, aev_computer_alt, rtol=1e-7, atol=1e-7):
         alt_state_dict = aev_computer_alt.state_dict()
