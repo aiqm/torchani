@@ -11,7 +11,21 @@ from torchani.utils import (
     ChemicalSymbolsToAtomicNumbers,
     # GSAES
     sorted_gsaes,
+    # Torch utils
+    nonzero_in_chunks,
 )
+
+
+@expand()
+class TestTorchUtils(ANITest):
+    def testNonzeroInChunks(self):
+        tensor = torch.tensor([1, 0, 0, 1, 5], device=self.device)
+        f = nonzero_in_chunks
+        if self.jit:
+            f = torch.jit.script(nonzero_in_chunks)
+        result = f(tensor, chunk_size=2)
+        expected = torch.tensor([0, 3, 4], device=self.device)
+        self.assertEqual(result, expected)
 
 
 @expand()

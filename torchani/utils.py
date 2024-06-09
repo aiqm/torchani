@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import typing as tp
+import math
 import os
 import warnings
 import itertools
@@ -194,6 +195,41 @@ def cumsum_from_zero(input_: Tensor) -> Tensor:
     cumsum = torch.zeros_like(input_)
     torch.cumsum(input_[:-1], dim=0, out=cumsum[1:])
     return cumsum
+
+
+def nonzero_in_chunks(tensor: Tensor, chunk_size: int = 2**31 - 1):
+    r"""Flattens a tensor and applies nonzero in chunks of a given size
+
+    This is a workaround for a limitation in PyTorch's nonzero function, which
+    fails with a `RuntimeError` when applied to tensors with more than INT_MAX
+    elements.
+
+    The issue is documented in PyTorch's GitHub repository:
+    https://github.com/pytorch/pytorch/issues/51871
+    """
+    tensor = tensor.view(-1)
+    num_splits = math.ceil(tensor.numel() / chunk_size)
+
+    if num_splits <= 1:
+        return tensor.nonzero().view(-1)
+
+    # Split tensor into chunks, and for each chunk find nonzero elements and
+    # adjust the indices in each chunk to account for their original position
+    # in the tensor. Finally collect the results
+    offset = 0
+    nonzero_chunks: tp.List[Tensor] = []
+    for chunk in torch.chunk(tensor, num_splits):
+        nonzero_chunks.append(chunk.nonzero() + offset)
+        offset += chunk.shape[0]
+    return torch.cat(nonzero_chunks).view(-1)
+
+
+def fast_masked_select(x: Tensor, mask: Tensor, idx: int) -> Tensor:
+    # x.index_select(0, tensor.view(-1).nonzero().view(-1)) is EQUIVALENT to:
+    # torch.masked_select(x, tensor) but FASTER
+    # nonzero_in_chunks calls tensor.view(-1).nonzero().view(-1)
+    # but support very large tensors, with numel > INT_MAX
+    return x.index_select(idx, nonzero_in_chunks(mask))
 
 
 def pad_atomic_properties(

@@ -4,7 +4,7 @@ import math
 import torch
 from torch import Tensor
 
-from torchani.utils import map_to_central, cumsum_from_zero
+from torchani.utils import map_to_central, cumsum_from_zero, fast_masked_select
 from torchani.tuples import NeighborData
 
 
@@ -507,7 +507,7 @@ class CellList(Neighborlist):
         # 5) Get the necessary shifts. If no PBC is needed also get rid of the
         # image_pairs_between that need wrapping
         if not pbc.any():
-            _image_pairs_between = _masked_select(
+            _image_pairs_between = fast_masked_select(
                 _image_pairs_between,
                 (shift_idxs_between == 0).all(dim=-1),
                 1,
@@ -719,7 +719,7 @@ def image_pairs_within(
 
     # 4) Screen the incorrect, unneeded pairs.
     # shape (2, H*cp-max) -> (2, W)
-    return _masked_select(_image_pairs_within, mask, 1)
+    return fast_masked_select(_image_pairs_within, mask, 1)
 
 
 def lower_image_pairs_between(
@@ -751,16 +751,9 @@ def lower_image_pairs_between(
 
     # Apply the mask
     # Both shapes (B,)
-    lower_between = _masked_select(padded_atom_neighbors.view(-1), mask, 0)
-    shift_idxs_between = _masked_select(shift_idxs_between.view(-1, 3), mask, 0)
+    lower_between = fast_masked_select(padded_atom_neighbors.view(-1), mask, 0)
+    shift_idxs_between = fast_masked_select(shift_idxs_between.view(-1, 3), mask, 0)
     return lower_between, shift_idxs_between
-
-
-def _masked_select(x: Tensor, mask: Tensor, idx: int) -> Tensor:
-    # x.index_select(0, mask.view(-1).nonzero().view(-1)) is EQUIVALENT to:
-    # torch.masked_select(x, mask) but FASTER
-    # view(-1)...view(-1) is used to avoid reshape (not sure if that is faster)
-    return x.index_select(idx, mask.view(-1).nonzero().view(-1))
 
 
 # TODO: Currently broken
