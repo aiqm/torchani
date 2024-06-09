@@ -1,6 +1,5 @@
 r"""Utilities for working with systems that have explicit electrostatic interactions"""
 import typing as tp
-from collections import OrderedDict
 
 import torch
 from torch import Tensor
@@ -9,6 +8,9 @@ import typing_extensions as tpx
 from torchani.geometry import Displacer, Reference
 from torchani.atomics import AtomicContainer
 from torchani.constants import ELECTRONEGATIVITY, HARDNESS, ATOMIC_NUMBER
+# Needed for _AdaptedChargesContainer hack
+from torchani.nn import ANIModel
+from torchani.tuples import SpeciesEnergies
 
 __all__ = ["DipoleComputer", "compute_dipole", "ChargeNormalizer"]
 
@@ -145,46 +147,34 @@ def compute_dipole(
 
 # Hack: Grab a network with "bad energies", discard them and only outputs the
 # charges
-class _AdaptedChargesContainer(AtomicContainer):
+class _AdaptedChargesContainer(ANIModel):
+    @torch.jit.export
+    def _atomic_energies(
+        self,
+        species_aev: tp.Tuple[Tensor, Tensor],
+    ) -> Tensor:
+        species, aev = species_aev
+        assert species.shape == aev.shape[:-1]
 
-    # Needed for bw compatibility
-    def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:
-        old_keys = list(state_dict.keys())
-        for k in old_keys:
-            suffix = k.split(prefix)[-1] if prefix else k
-            if not suffix.startswith("atomics."):
-                state_dict["".join((prefix, "atomics.", suffix))] = state_dict.pop(k)
-        super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
-
-    @staticmethod
-    def ensureOrderedDict(modules):
-        if isinstance(modules, OrderedDict):
-            return modules
-        od = OrderedDict()
-        for i, m in enumerate(modules):
-            od[str(i)] = m
-        return od
-
-    def __init__(self, modules):
-        super().__init__()
-        self.atomics = torch.nn.ModuleDict(self.ensureOrderedDict(modules))
-        self.num_species = len(self.atomics)
-        self.num_networks = 1
+        species_ = species.flatten()
+        aev = aev.flatten(0, 1)
+        output = aev.new_zeros(species_.shape)
+        for i, m in enumerate(self.atomics.values()):
+            midx = (species_ == i).nonzero().view(-1)
+            if midx.shape[0] > 0:
+                input_ = aev.index_select(0, midx)
+                output.index_add_(0, midx, m(input_)[:, 1].view(-1))
+        output = output.view_as(species)
+        return output.unsqueeze(0)
 
     def forward(
         self,
-        species_aevs: tp.Tuple[Tensor, Tensor],
+        species_aev: tp.Tuple[Tensor, Tensor],
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-    ) -> tp.Tuple[Tensor, Tensor]:
-        element_idxs, aevs = species_aevs
-        element_idxs_ = element_idxs.flatten()
-        aevs = aevs.flatten(0, 1)
-        output = aevs.new_zeros(element_idxs_.shape)
-        for i, module in enumerate(self.atomics.values()):
-            selected_idx = (element_idxs_ == i).nonzero().view(-1)
-            if selected_idx.shape[0] > 0:
-                input_ = aevs.index_select(0, selected_idx)
-                output.index_add_(0, selected_idx, module(input_)[:, 1].view(-1))
-        atomic_charges = output.view_as(element_idxs)
-        return element_idxs, atomic_charges
+    ) -> SpeciesEnergies:
+        atomic_energies = self._atomic_energies(species_aev).squeeze(0)
+        return SpeciesEnergies(species_aev[0], atomic_energies)
+
+    def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
+        return self

@@ -6,7 +6,7 @@ from torch import Tensor
 
 from torchani.constants import PERIODIC_TABLE
 from torchani.tuples import SpeciesCoordinates, SpeciesEnergies
-from torchani.atomics import AtomicContainer
+from torchani.atomics import AtomicContainer, AtomicNetwork
 from torchani.infer import BmmEnsemble, InferModel
 
 
@@ -37,10 +37,22 @@ class ANIModel(AtomicContainer):
     # Needed for bw compatibility
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:
         old_keys = list(state_dict.keys())
+        even = list(range(0, 10, 2))
         for k in old_keys:
             suffix = k.split(prefix)[-1] if prefix else k
+            new_key = k
             if not suffix.startswith("atomics."):
-                state_dict["".join((prefix, "atomics.", suffix))] = state_dict.pop(k)
+                new_key = "".join((prefix, "atomics.", suffix))
+            if "layers" not in k:
+                parts = new_key.split(".")
+                if int(parts[-2]) == 6:
+                    parts[-2] = "final_layer"
+                else:
+                    parts.insert(-2, "layers")
+                    parts[-2] = str(even.index(int(parts[-2])))
+                new_key = ".".join(parts)
+
+            state_dict[new_key] = state_dict.pop(k)
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
     @staticmethod
@@ -52,7 +64,7 @@ class ANIModel(AtomicContainer):
             od[str(i)] = m
         return od
 
-    def __init__(self, modules):
+    def __init__(self, modules: tp.Mapping[str, AtomicNetwork]):
         super().__init__()
         self.atomics = torch.nn.ModuleDict(self.ensureOrderedDict(modules))
         self.num_species = len(self.atomics)

@@ -58,7 +58,7 @@ from torchani.aev.terms import (
 )
 from torchani.electro import ChargeNormalizer, _AdaptedChargesContainer
 from torchani.nn import ANIModel, Ensemble
-from torchani.atomics import AtomicContainer
+from torchani.atomics import AtomicContainer, AtomicNetwork, AtomicMakerArg, AtomicMaker
 from torchani.utils import GSAES, sort_by_element
 from torchani.storage import STATE_DICTS_DIR
 
@@ -122,12 +122,8 @@ class Assembler:
         # This part of the assembler organizes the self-energies, the
         # symbols and the atomic networks
         self._self_energies: tp.Dict[str, float] = {}
-        self._fn_for_atomics: tp.Optional[
-            tp.Callable[[str, int], torch.nn.Module]
-        ] = None
-        self._fn_for_charges: tp.Optional[
-            tp.Callable[[str, int], torch.nn.Module]
-        ] = None
+        self._fn_for_atomics: tp.Optional[AtomicMaker] = None
+        self._fn_for_charges: tp.Optional[AtomicMaker] = None
         self._container_type: ContainerType = container_type
         self._charge_container_type: tp.Optional[ContainerType] = None
         self._charge_normalizer: tp.Optional[ChargeNormalizer] = None
@@ -176,7 +172,7 @@ class Assembler:
             self._symbols = tuple(symbols)
 
     @property
-    def fn_for_atomics(self) -> tp.Callable[[str, int], torch.nn.Module]:
+    def fn_for_atomics(self) -> AtomicMaker:
         if self._fn_for_atomics is None:
             raise RuntimeError(
                 "fn for atomics is not set, please call 'set_atomic_networks'"
@@ -184,7 +180,7 @@ class Assembler:
         return self._fn_for_atomics
 
     @property
-    def fn_for_charges(self) -> tp.Callable[[str, int], torch.nn.Module]:
+    def fn_for_charges(self) -> AtomicMaker:
         if self._fn_for_charges is None:
             raise RuntimeError(
                 "fn for charges is not set, please call 'set_charge_networks'"
@@ -229,7 +225,7 @@ class Assembler:
     def set_atomic_networks(
         self,
         container_type: ContainerType,
-        fn: tp.Callable[[str, int], torch.nn.Module],
+        fn: AtomicMaker,
     ) -> None:
         self._container_type = container_type
         self._fn_for_atomics = fn
@@ -237,7 +233,7 @@ class Assembler:
     def set_charge_networks(
         self,
         container_type: ContainerType,
-        fn: tp.Callable[[str, int], torch.nn.Module],
+        fn: AtomicMaker,
         normalizer: tp.Optional[ChargeNormalizer] = None,
     ) -> None:
         if self._model_type in (BuiltinModel, PairPotentialsModel):
@@ -304,9 +300,9 @@ class Assembler:
 
     def build_atomic_networks(
         self,
-        fn_for_networks: tp.Callable[[str, int], torch.nn.Module],
+        fn_for_networks: AtomicMaker,
         in_dim: int,
-    ) -> tp.OrderedDict[str, torch.nn.Module]:
+    ) -> tp.OrderedDict[str, AtomicNetwork]:
         return OrderedDict([(s, fn_for_networks(s, in_dim)) for s in self.symbols])
 
     def assemble(self) -> BuiltinModel:
@@ -615,7 +611,7 @@ def ANIala(
             "use_cuaev_interface": use_cuaev_interface,
         },
     )
-    asm.set_atomic_networks(ANIModel, atomics.like_ala)
+    asm.set_atomic_networks(ANIModel, atomics.like_2x)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble()
@@ -681,7 +677,7 @@ def FlexANI(
     neighborlist: NeighborlistArg,
     dispersion: bool,
     repulsion: bool,
-    atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]],
+    atomic_maker: AtomicMakerArg,
     activation: tp.Union[str, torch.nn.Module],
     bias: bool,
     use_cuda_ops: bool,
@@ -713,12 +709,12 @@ def FlexANI(
         ),
         extra={"use_cuda_extension": use_cuda_ops, "use_cuaev_interface": use_cuda_ops},
     )
-    _atomic_maker = functools.partial(
-        atomics._parse_atomics(atomic_maker),
-        activation=atomics._parse_activation(activation),
+    atomic_maker = functools.partial(
+        atomics.parse_atomics(atomic_maker),
+        activation=atomics.parse_activation(activation),
         bias=bias,
     )
-    asm.set_atomic_networks(ANIModel, _atomic_maker)
+    asm.set_atomic_networks(ANIModel, atomic_maker)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies(lot)
     if repulsion:
@@ -751,7 +747,7 @@ def FlexANI1(
     neighborlist: NeighborlistArg = "full_pairwise",
     dispersion: bool = False,
     repulsion: bool = True,
-    atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]] = "ani1x",
+    atomic_maker: AtomicMakerArg = "ani1x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
     use_cuda_ops: bool = False,
@@ -793,14 +789,14 @@ def FlexANI2(
     radial_shifts: int = 16,
     angular_shifts: int = 8,
     angle_sections: int = 4,
-    angular_precision: float = 12.5,
     radial_precision: float = 19.7,
+    angular_precision: float = 12.5,
     angular_zeta: float = 14.1,
     cutoff_fn: CutoffArg = "smooth2",
     neighborlist: NeighborlistArg = "full_pairwise",
     dispersion: bool = False,
     repulsion: bool = True,
-    atomic_maker: tp.Union[str, tp.Callable[[str, int], torch.nn.Module]] = "ani2x",
+    atomic_maker: AtomicMakerArg = "ani2x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
     use_cuda_ops: bool = False,

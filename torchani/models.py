@@ -117,8 +117,8 @@ class BuiltinModel(torch.nn.Module):
         """Convert the neural networks module of the model into a module
         optimized for inference.
 
-        Currently this function assumes that the atomic networks consist of
-        an MLP with CELU activation functions, all with the same alpha.
+        Assumes that the atomic networks consist of an MLP with
+        torchani.utils.TightCELU activation functions.
         """
         self.neural_networks = self.neural_networks.to_infer_model(use_mnp=use_mnp)
         return self

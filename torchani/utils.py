@@ -26,6 +26,7 @@ __all__ = [
     "GSAES",
     "PERIODIC_TABLE",
     "ATOMIC_NUMBER",
+    "TightCELU",
 ]
 
 
@@ -130,6 +131,11 @@ GSAES: tp.Dict[str, tp.Dict[str, float]] = {
         "S": -398.1079973,
     },
 }
+
+
+class TightCELU(torch.nn.Module):
+    def forward(self, x: Tensor) -> Tensor:
+        return torch.nn.functional.celu(x, alpha=0.1)
 
 
 def sorted_gsaes(

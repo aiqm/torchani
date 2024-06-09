@@ -1,3 +1,4 @@
+import itertools
 from pathlib import Path
 from dataclasses import dataclass
 import typing as tp
@@ -27,6 +28,8 @@ from torchani.neighbors import NeighborlistArg
 from torchani.potentials import EnergyAdder
 from torchani.tuples import SpeciesEnergies
 from torchani.neurochem.utils import model_dir_from_prefix
+from torchani.utils import TightCELU
+from torchani.atomics import AtomicNetwork
 
 
 class NeurochemParseError(RuntimeError):
@@ -168,14 +171,12 @@ def load_sae(filename: tp.Union[Path, str]):
     return EnergyShifter(load_energy_adder(filename))
 
 
-def _get_activation(activation_index: int) -> tp.Optional[torch.nn.Module]:
+def _get_activation(activation_index: int) -> torch.nn.Module:
     # Activation defined in:
     # https://github.com/Jussmith01/NeuroChem/blob
     #   /stable1/src-atomicnnplib/cunetwork/cuannlayer_t.cu#L920
-    if activation_index == 6:
-        return None
-    elif activation_index == 9:  # CELU
-        return torch.nn.CELU(alpha=0.1)
+    if activation_index == 9:  # CELU
+        return TightCELU()
     elif activation_index == 5:  # Gaussian
         raise NeurochemParseError(
             "Activation index 5 corresponds to a Gaussian which is not supported"
@@ -183,7 +184,7 @@ def _get_activation(activation_index: int) -> tp.Optional[torch.nn.Module]:
     raise NeurochemParseError(f"Unsupported activation index {activation_index}")
 
 
-def load_atomic_network(filename: tp.Union[Path, str]) -> torch.nn.Sequential:
+def load_atomic_network(filename: tp.Union[Path, str]) -> AtomicNetwork:
     """Returns an instance of :class:`torch.nn.Sequential` with hyperparameters
     and parameters loaded from NeuroChem's .nnf, .wparam and .bparam files."""
     filename = Path(filename).resolve()
@@ -285,53 +286,75 @@ def load_atomic_network(filename: tp.Union[Path, str]) -> torch.nn.Sequential:
         layer_setups = TreeExec().transform(tree)
         return layer_setups
 
-    def load_param_file(linear: torch.nn.Linear, in_size: int, out_size: int, wfn, bfn):
+    def load_param_file(
+        linear: torch.nn.Linear, in_size: int, out_size: int, wfn, bfn
+    ) -> None:
         """Load `.wparam` and `.bparam` files"""
-        wsize = in_size * out_size
-        with open(wfn, mode="rb") as fw:
-            _w = struct.unpack("{}f".format(wsize), fw.read())
-            w = torch.tensor(_w).view(out_size, in_size)
-            linear.weight.data = w
-        with open(bfn, mode="rb") as fb:
-            _b = struct.unpack("{}f".format(out_size), fb.read())
-            b = torch.tensor(_b).view(out_size)
-            linear.bias.data = b
 
     with open(filename, "rb") as f:
         buffer_ = f.read()
-        buffer_ = decompress_nnf(buffer_)
-        layer_setups = parse_nnf(buffer_)
 
-        layers: tp.List[torch.nn.Module] = []
-        network_dir = str(filename.parent)
-        for s in layer_setups:
-            # construct linear layer and load parameters
-            in_size = s["blocksize"]
-            out_size = s["nodes"]
-            wfn, wsz = s["weights"]
-            bfn, bsz = s["biases"]
-            if in_size * out_size != wsz:
-                raise NeurochemParseError(
-                    f"Bad parameter shape in {filename}:"
-                    f" in_size * out_size=({in_size} * {out_size})"
-                    f" should be equal to wsz={wsz}"
-                )
-            if out_size != bsz:
-                raise NeurochemParseError(
-                    f"Bad parameter shape in {filename}:"
-                    f" out_size={out_size}"
-                    f" should be equal to bsz={bsz}"
-                )
-            layer = torch.nn.Linear(in_size, out_size)
-            wfn = os.path.join(network_dir, wfn)
-            bfn = os.path.join(network_dir, bfn)
-            load_param_file(layer, in_size, out_size, wfn, bfn)
-            layers.append(layer)
-            activation = _get_activation(s["activation"])
-            if activation is not None:
-                layers.append(activation)
+    buffer_ = decompress_nnf(buffer_)
+    layer_specs = parse_nnf(buffer_)
 
-        return torch.nn.Sequential(*layers)
+    network_dir = str(filename.parent)
+    activations: tp.List[int] = []
+    layer_dims: tp.List[int] = []
+    weight_files: tp.List[str] = []
+    bias_files: tp.List[str] = []
+
+    for j, s in enumerate(layer_specs):
+        # construct linear layer and load parameters
+        _in = s["blocksize"]
+        _out = s["nodes"]
+        weight_filename, weights_numel = s["weights"]
+        bias_filename, biases_numel = s["biases"]
+        if _in * _out != weights_numel:
+            raise NeurochemParseError(
+                f"Bad parameter shape in {filename}:"
+                f" blocksize * nodes=({_in} * {_out})"
+                f" should be equal to weights_numel={weights_numel}"
+            )
+        if _out != biases_numel:
+            raise NeurochemParseError(
+                f"Bad parameter shape in {filename}:"
+                f" nodes={_out}"
+                f" should be equal to biases_numel={biases_numel}"
+            )
+        if j == 0:
+            layer_dims.extend([_in, _out])
+        else:
+            if layer_dims[-1] != _in:
+                raise NeurochemParseError(f"Bad layer dimension in {filename}")
+            layer_dims.append(_out)
+
+        weight_files.append(os.path.join(network_dir, weight_filename))
+        bias_files.append(os.path.join(network_dir, bias_filename))
+        activations.append(s["activation"])
+
+    assert activations[-1] == 6, "Last activation must have index 6"
+    assert len(set(activations[:-1])) == 1, "All activations must be equal"
+
+    network = AtomicNetwork(
+        layer_dims,
+        activation=_get_activation(activations[0]),
+        bias=True,
+    )
+
+    # Load pretrained parameters
+    for linear, wfile, bfile in zip(
+        itertools.chain(network.layers, [network.final_layer]), weight_files, bias_files
+    ):
+        _in = linear.in_features
+        _out = linear.out_features
+        with open(wfile, mode="rb") as wf:
+            _w = struct.unpack("{}f".format(_in * _out), wf.read())
+            linear.weight.data = torch.tensor(_w).view(_out, _in)
+        with open(bfile, mode="rb") as bf:
+            _b = struct.unpack("{}f".format(_out), bf.read())
+            linear.bias.data = torch.tensor(_b).view(_out)
+
+    return network
 
 
 def load_model(symbols: tp.Sequence[str], model_dir: tp.Union[Path, str]) -> ANIModel:

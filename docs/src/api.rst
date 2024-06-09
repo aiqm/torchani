@@ -36,15 +36,18 @@ Neighborlists
     :members:
 
 Atomic Networks and Containers
-====================================
+==============================
 
 .. autoclass:: torchani.nn.ANIModel
     :members:
 .. autoclass:: torchani.nn.Ensemble
     :members:
 .. automodule:: torchani.atomics
+.. autoclass:: torchani.atomics.AtomicContainer
+    :members:
+.. autoclass:: torchani.atomics.AtomicNetwork
+    :members:
 .. autofunction:: torchani.atomics.like_1x
-.. autofunction:: torchani.atomics.like_1ccx
 .. autofunction:: torchani.atomics.like_2x
 .. autofunction:: torchani.atomics.like_dr
 
@@ -59,6 +62,8 @@ Built-in Models
 .. autoclass:: torchani.models.ANI2x
     :members:
 .. autoclass:: torchani.models.ANIdr
+    :members:
+.. autoclass:: torchani.models.ANImbis
     :members:
 
 Datasets
@@ -107,8 +112,8 @@ Potentials
 .. autoclass:: torchani.potentials.wrapper.PotentialWrapper
     :members:
 
-Creation of 3D Geometries
-=========================
+3D Geometry
+===========
 
 .. automodule:: torchani.geometry
 .. autofunction:: torchani.geometry.displace
@@ -150,8 +155,8 @@ Forces, Hessians, Normal Modes
 .. autofunction:: torchani.grad.energies_forces_and_hessians
 .. autofunction:: torchani.grad.vibrational_analysis
 
-Optimizing Models for Inference
-===============================
+Optimizations for Inference
+===========================
 
 .. automodule:: torchani.infer
 .. autoclass:: torchani.infer.BmmEnsemble
