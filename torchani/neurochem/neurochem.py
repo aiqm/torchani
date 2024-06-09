@@ -4,22 +4,10 @@ from dataclasses import dataclass
 import typing as tp
 import struct
 import bz2
-import math
-import os
 from collections import OrderedDict
 
 import torch
 from torch import Tensor
-
-try:
-    import lark
-except ImportError:
-    raise ImportError(
-        "Error when trying to import 'torchani.neurochem':"
-        " The 'lark-parser' package could not be found. 'torchani.neurochem'"
-        " won't be available. Please install 'lark-parser' if you want to use it."
-        " ('conda install lark-parser' or 'pip install lark-parser')"
-    ) from None
 
 from torchani.aev import AEVComputer
 from torchani.nn import ANIModel, Ensemble
@@ -34,6 +22,27 @@ from torchani.atomics import AtomicNetwork
 
 class NeurochemParseError(RuntimeError):
     pass
+
+
+@dataclass
+class NeurochemLayerSpec:
+    nodes: int
+    activation: int
+    kind: int
+    blocksize: int
+    dropout: int
+    dropset: float
+    maskupdate: float
+    maxnorm: int
+    norm: float
+    normupdate: float
+    l2norm: int
+    l2value: float
+    batchnorm: int
+    weights: str
+    weight_numel: int
+    biases: str
+    bias_numel: int
 
 
 def load_aev_computer_and_symbols(
@@ -113,7 +122,6 @@ def load_aev_constants_and_symbols(
                         for x in value.replace("[", "").replace("]", "").split(",")
                     )
             except Exception:
-                breakpoint()
                 raise NeurochemParseError(
                     f"Unable to parse const file {consts_file}"
                 ) from None
@@ -184,131 +192,67 @@ def _get_activation(activation_index: int) -> torch.nn.Module:
     raise NeurochemParseError(f"Unsupported activation index {activation_index}")
 
 
+def _decompress_nnf(buffer_: bytes) -> str:
+    while buffer_[0] != ord("="):
+        buffer_ = buffer_[1:]
+    buffer_ = buffer_[2:]
+    return bz2.decompress(buffer_)[:-1].decode("ascii").strip()
+
+
+def _parse_nnf(nnf_str: str) -> tp.List[NeurochemLayerSpec]:
+    # Hack: replace tokens so the file can be evale'd as a list of python dicts
+    # This is unsafe and hacky but since neurochem is legacy it is not a problem
+    layers = [
+        layer.strip()
+        for layer in nnf_str.replace("\n", "")
+        .replace("$", "")
+        .replace("FILE:", "'")
+        .replace("];]", ")")
+        .replace("]", "")
+        .replace(";", ",")
+        .replace("wparam[", "wparam',weight_numel=")
+        .replace("bparam[", "bparam',bias_numel=")
+        .replace("type", "kind")
+        .replace("l2valu", "l2value")
+        .replace("btchnorm", "batchnorm")
+        .replace("[", "dict(")
+        .replace("=-nan", "=float('nan')")
+        .replace("=nan", "=float('nan')")
+        .split("layer")[1:]
+    ]
+    return [NeurochemLayerSpec(**eval(layer)) for layer in layers]
+
+
 def load_atomic_network(filename: tp.Union[Path, str]) -> AtomicNetwork:
     """Returns an instance of :class:`torch.nn.Sequential` with hyperparameters
     and parameters loaded from NeuroChem's .nnf, .wparam and .bparam files."""
     filename = Path(filename).resolve()
 
-    def decompress_nnf(buffer_):
-        while buffer_[0] != b"="[0]:
-            buffer_ = buffer_[1:]
-        buffer_ = buffer_[2:]
-        return bz2.decompress(buffer_)[:-1].decode("ascii").strip()
-
-    def parse_nnf(nnf_file):
-        # parse input file
-        parser = lark.Lark(
-            r"""
-        identifier : CNAME
-
-        inputsize : "inputsize" "=" INT ";"
-
-        assign : identifier "=" value ";"
-
-        layer : "layer" "[" assign * "]"
-
-        atom_net : "atom_net" WORD "$" layer * "$"
-
-        start: inputsize atom_net
-
-        nans: "-"?"nan"
-
-        value : SIGNED_INT
-              | SIGNED_FLOAT
-              | nans
-              | "FILE" ":" FILENAME "[" INT "]"
-
-        FILENAME : ("_"|"-"|"."|LETTER|DIGIT)+
-
-        %import common.SIGNED_NUMBER
-        %import common.LETTER
-        %import common.WORD
-        %import common.DIGIT
-        %import common.INT
-        %import common.SIGNED_INT
-        %import common.SIGNED_FLOAT
-        %import common.CNAME
-        %import common.WS
-        %ignore WS
-        """,
-            parser="lalr",
-        )
-        tree = parser.parse(nnf_file)
-
-        # execute parse tree
-        class TreeExec(lark.Transformer):
-            def identifier(self, v):
-                v = v[0].value
-                return v
-
-            def value(self, v):
-                if len(v) == 1:
-                    v = v[0]
-                    if isinstance(v, lark.tree.Tree):
-                        assert v.data == "nans"
-                        return math.nan
-                    assert isinstance(v, lark.lexer.Token)
-                    if v.type == "FILENAME":
-                        v = v.value
-                    elif v.type == "SIGNED_INT" or v.type == "INT":
-                        v = int(v.value)
-                    elif v.type == "SIGNED_FLOAT" or v.type == "FLOAT":
-                        v = float(v.value)
-                    else:
-                        raise NeurochemParseError(
-                            f"Type should be one of"
-                            " [SIGNED]_INT, [SIGNED]_FLOAT or FILENAME"
-                            f" but found {v.type} in file {nnf_file}"
-                        )
-                elif len(v) == 2:
-                    v = self.value([v[0]]), self.value([v[1]])
-                else:
-                    raise NeurochemParseError(
-                        f"len(value) should be 1 or 2 but found {len(v)} in {nnf_file}"
-                    )
-                return v
-
-            def assign(self, v):
-                name = v[0]
-                value = v[1]
-                return name, value
-
-            def layer(self, v):
-                return dict(v)
-
-            def atom_net(self, v):
-                layers = v[1:]
-                return layers
-
-            def start(self, v):
-                return v[1]
-
-        layer_setups = TreeExec().transform(tree)
-        return layer_setups
-
-    def load_param_file(
-        linear: torch.nn.Linear, in_size: int, out_size: int, wfn, bfn
-    ) -> None:
-        """Load `.wparam` and `.bparam` files"""
-
     with open(filename, "rb") as f:
-        buffer_ = f.read()
+        nnf_compressed_buffer = f.read()
 
-    buffer_ = decompress_nnf(buffer_)
-    layer_specs = parse_nnf(buffer_)
+    try:
+        nnf_str = _decompress_nnf(nnf_compressed_buffer)
+    except Exception:
+        raise NeurochemParseError(f"Could not decompress nnf file {filename}") from None
 
-    network_dir = str(filename.parent)
+    try:
+        layer_specs = _parse_nnf(nnf_str)
+    except Exception:
+        raise NeurochemParseError(f"Could not parse nnf file {filename}") from None
+
     activations: tp.List[int] = []
     layer_dims: tp.List[int] = []
-    weight_files: tp.List[str] = []
-    bias_files: tp.List[str] = []
-
-    for j, s in enumerate(layer_specs):
+    weight_files: tp.List[Path] = []
+    bias_files: tp.List[Path] = []
+    for j, spec in enumerate(layer_specs):
         # construct linear layer and load parameters
-        _in = s["blocksize"]
-        _out = s["nodes"]
-        weight_filename, weights_numel = s["weights"]
-        bias_filename, biases_numel = s["biases"]
+        _in = spec.blocksize
+        _out = spec.nodes
+        weight_filename = spec.weights
+        weights_numel = spec.weight_numel
+        bias_filename = spec.biases
+        biases_numel = spec.bias_numel
         if _in * _out != weights_numel:
             raise NeurochemParseError(
                 f"Bad parameter shape in {filename}:"
@@ -327,10 +271,9 @@ def load_atomic_network(filename: tp.Union[Path, str]) -> AtomicNetwork:
             if layer_dims[-1] != _in:
                 raise NeurochemParseError(f"Bad layer dimension in {filename}")
             layer_dims.append(_out)
-
-        weight_files.append(os.path.join(network_dir, weight_filename))
-        bias_files.append(os.path.join(network_dir, bias_filename))
-        activations.append(s["activation"])
+        weight_files.append(filename.parent / weight_filename)
+        bias_files.append(filename.parent / bias_filename)
+        activations.append(spec.activation)
 
     assert activations[-1] == 6, "Last activation must have index 6"
     assert len(set(activations[:-1])) == 1, "All activations must be equal"

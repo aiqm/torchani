@@ -1,14 +1,5 @@
-import warnings
 import unittest
 import os
-
-from torchani import NEUROCHEM_IS_AVAILABLE
-
-if not NEUROCHEM_IS_AVAILABLE:
-    warnings.warn("Skipping all neurochem tests, install 'lark-parser' to run them")
-    raise unittest.SkipTest(
-        "neurochem submodule is not available, skipping all neurochem tests."
-    )
 
 from torchani.testing import ANITest, expand
 from torchani.models import ANI1x, ANI2x, ANI1ccx

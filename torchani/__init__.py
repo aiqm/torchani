@@ -54,8 +54,9 @@ from torchani import (
     grad,
     data,  # TODO: Get rid of this
     io,
+    neurochem,
 )
-# NOTE: ase and neurochem are optional dependencies so we don't import those here
+# NOTE: ase is an optional dependency so don't import here
 
 try:
     __version__ = version("torchani")
@@ -85,6 +86,7 @@ __all__ = [
     "sae",
     "infer",
     "constants",
+    "neurochem",
     'data',  # TODO: Get rid of this
 ]
 
@@ -105,17 +107,10 @@ if torch.cuda.is_available():
             " To suppress warning set the env var TORCHANI_NO_WARN_TF32 to any value"
         )
 
-# Optional submodules, depend on 'ase' and 'lark-parser' being available
+# Optional submodule, depends on 'ase' being available
 try:
     from . import ase  # noqa: F401
     __all__.append('ase')
     ASE_IS_AVAILABLE = True
 except ImportError:
     ASE_IS_AVAILABLE = False
-
-try:
-    from . import neurochem  # noqa: F401
-    __all__.append('neurochem')
-    NEUROCHEM_IS_AVAILABLE = True
-except ImportError:
-    NEUROCHEM_IS_AVAILABLE = False

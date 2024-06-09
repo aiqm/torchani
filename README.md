@@ -61,10 +61,10 @@ conda install \
 ```
 
 Note that this installation currently includes the compiled extensions by default,
-but it doesn't include either the neurochem or ase modules, to use those also run:
+but it doesn't include either the ase module, to use it run also:
 
 ```bash
-conda install -c conda-forge lark-parser ase
+conda install -c conda-forge ase
 ```
 
 To install using pip: currently unavailable

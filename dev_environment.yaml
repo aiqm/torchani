@@ -31,9 +31,6 @@ dependencies:
   # Optional ASE interface, needed for dynamics and for tests/tools/docs:
   - ase
 
-  # Optional legacy Neurochem model loader
-  - lark-parser
-
   # Tests:
   - coverage  # code coverage
   - black  # formatter

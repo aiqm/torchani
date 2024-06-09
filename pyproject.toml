@@ -56,6 +56,5 @@ filterwarnings = "ignore:.*distutils Version classes are deprecated.*:Deprecatio
 
 [project.optional-dependencies]
 ase = ["ase"]
-neurochem = ["lark-parser"]
 data = ["zarr", "pandas", "pyarrow"]
-all = ["ase", "lark-parser", "zarr", "pandas", "pyarrow"]
+all = ["ase", "zarr", "pandas", "pyarrow"]
