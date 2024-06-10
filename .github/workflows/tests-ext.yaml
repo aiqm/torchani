@@ -20,9 +20,7 @@ jobs:
         with:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            BUILD_EXT=sm75
-            BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
+          build-args: BUILD_EXT=sm75
 
       - name: Run extension GPU tests (Quadro RTX 5000, SM75)
         run: >-

@@ -26,9 +26,13 @@ RUN pip install -r dev_requirements.txt
 # Copy all other necessary repo files
 COPY . /repo
 
-# Create dummy tag for setuptools scm
-RUN git config --global user.email "user@domain.com" \
+# Initialize a git repo and create dummy tag for setuptools scm
+RUN \
+    git config --global user.email "user@domain.com" \
     && git config --global user.name "User" \
+    && git init \
+    && git add . \
+    && git commit -m "Initial commit" \
     && git tag -a "v2.3" -m "Version v2.3"
 
 # Install torchani + core requirements (+ extensions if BUILD_EXT build arg is provided)

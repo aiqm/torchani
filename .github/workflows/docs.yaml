@@ -20,7 +20,6 @@ jobs:
         with:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
 
       - name: Build extensions and run tests
         run: >-

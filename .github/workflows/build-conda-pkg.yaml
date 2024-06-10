@@ -22,31 +22,24 @@ jobs:
         with:
           images: ${{ github.repository }}/conda-pkg
 
-      - name: Build Docker image
+      - name: Build conda pkg in Docker image, release if needed
         uses: docker/build-push-action@v5
         with:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: BUILDKIT_CONTEXT_KEEP_GIT_DIR=1
+          build-args: |
+            INTERNAL_RELEASE=${{ contains(github.head_ref, 'release') || github.event_name == 'schedule' }}
+            PUBLIC_RELEASE=0
           file: conda.Dockerfile
           shm-size: 2g
           ulimit: |
             memlock=-1
             stack=67108864
-
-      - name: Build pkg locally
-        run: >-
-          docker run
-          --rm
-          --gpus '"device=all"'
-          --shm-size=2g
-          --ulimit memlock=-1
-          --ulimit stack=67108864
-          ${{ steps.meta.outputs.tags }}
-          bash -c "mkdir ./conda-pkgs/
-          && source /opt/conda/etc/profile.d/conda.sh
-          && conda activate
-          && conda build -c nvidia -c pytorch -c conda-forge --no-anaconda-upload --output-folder ./conda-pkgs/ ./recipe"
+          # DOCKER_PVTKEY is needed to upload to internal server
+          # CONDA_TOKEN is needed to upload to anaconda.org
+          secrets: |
+            "DOCKER_PVTKEY=${{ secrets.DOCKER_PVTKEY }}"
+            "CONDA_TOKEN=${{ secrets.CONDA_TOKEN }}"
 
       - name: Remove image
         if: ${{ always() }}
