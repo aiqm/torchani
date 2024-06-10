@@ -31,8 +31,17 @@ repos:
       - id: autoflake
         stages: [push]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+  - repo: local
     hooks:
       - id: mypy
+        name: mypy
+        entry: "mypy --ignore-missing ."
+        # Don't generate a venv for the exe
+        language: system
+        types: [python]
+        # Pass no files but run regardless
+        files: $^
+        always_run: true
+        # Print output on success
+        verbose: true
         stages: [push]

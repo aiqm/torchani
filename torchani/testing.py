@@ -65,7 +65,7 @@ class ANITest(TestCase):
     def _setup(self, model: _T) -> _T:
         model = model.to(self.device)
         if self.jit:
-            return torch.jit.script(model)
+            return tp.cast(_T, torch.jit.script(model))
         return model
 
 
