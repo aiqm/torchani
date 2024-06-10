@@ -54,6 +54,12 @@ report*.sqlite
 
 # Workflows and github-specific stuff
 .github/
+# No git objects if using a path context
+.git/
 
 # logos and compressed downloads
 *.png
+
+# Dockerfiles
+conda.Dockerfile
+Dockerfile
