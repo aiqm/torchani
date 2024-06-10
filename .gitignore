@@ -49,6 +49,7 @@ Untitled.ipynb
 /include/
 # Build output of Sphinx docs
 /docs/build/
+/docs/src/examples_autogen/
 /docs/src/sg_execution_times.rst
 # Build output of CUDA / C++ extensions
 /build/
