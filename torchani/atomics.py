@@ -1,4 +1,7 @@
-r"""Factory methods that create atomic networks of different kinds"""
+r"""
+Atomic Networks, Atomic Network Containers and factory methods with
+useful defaults for them
+"""
 import typing as tp
 
 import torch
