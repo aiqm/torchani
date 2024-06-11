@@ -26,7 +26,7 @@ ds = ANIDataset('../dataset/ani-1x/sample.h5')
 
 # We prebatch the dataset to train with memory efficiency, keeping a good
 # performance.
-batched_dataset_path = Path('./batched_dataset_1x').resolve()
+batched_dataset_path = Path('./batched_dataset').resolve()
 if not batched_dataset_path.exists():
     torchani.datasets.create_batched_dataset(
         ds,

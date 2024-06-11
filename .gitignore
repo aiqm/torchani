@@ -10,7 +10,7 @@ _version.py
 # Vscode
 /.vscode
 
-# Vim
+# Vim swap files
 *.swp
 *.swo
 
@@ -22,6 +22,7 @@ _version.py
 *.so
 *.pckl
 *.zip
+*.dat
 a.out
 
 # Mypy, pytest and clangd cache
@@ -33,7 +34,7 @@ a.out
 *.ninja
 *.ninja_log
 
-# Code coverage
+# Code coverage through coverage.py
 .coverage
 htmlcov/
 
@@ -41,21 +42,32 @@ htmlcov/
 .ipynb_checkpoints
 Untitled.ipynb
 
-# Full directories relative to project root
+# Output of tests
 /tests/runs/
+/tests/.hypothesis
+
+# Output of tools
 /tools/plots/
 /tools/benchmark/
+
+# Output of examples
+examples/batched_dataset/
+
 # Used for CUB when building CUDA / C++ extensions
 /include/
+
 # Build output of Sphinx docs
 /docs/build/
 /docs/src/examples_autogen/
 /docs/src/sg_execution_times.rst
+
 # Build output of CUDA / C++ extensions
 /build/
 /torchani/csrc/build/
+
 # Data downloaded with download.sh
 /download/
+
 # Dest dir of built conda pkgs
 /conda-pkgs/
 
@@ -65,17 +77,5 @@ Untitled.ipynb
 *.nsys-rep
 report*.sqlite
 
+# line profiler
 *.prof
-*checkpoint*
-/*.ipt
-/*.params
-/*.dat
-/tmp
-datacache
-dist
-examples/dataset.pkl
-examples/batched_dataset_1x/*
-/tests/.hypothesis
-
-# Compile database for IDEs
-compile_commands.json
