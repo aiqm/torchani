@@ -3,15 +3,14 @@ import time
 import argparse
 import gc
 import os
-import pickle
 
 import torch
 import pynvml
 from tqdm import tqdm
 
-import torchani
 from torchani.models import ANI1x
 from torchani.units import hartree2kcalpermol
+from torchani.datasets import batch_all_in_ram
 from tool_utils import time_functions
 
 summary = ""
@@ -36,10 +35,10 @@ def checkgpu(device=None):
     pynvml.nvmlInit()
     h = pynvml.nvmlDeviceGetHandleByIndex(real_i)
     info = pynvml.nvmlDeviceGetMemoryInfo(h)
-    name = pynvml.nvmlDeviceGetName(h)
+    _name = pynvml.nvmlDeviceGetName(h)
     print(
         "   GPU Memory Used (nvidia-smi): {:7.1f}MB / {:.1f}MB ({})".format(
-            info.used / 1024 / 1024, info.total / 1024 / 1024, name.decode()
+            info.used / 1024 / 1024, info.total / 1024 / 1024, _name.decode()
         )
     )
     return f"{(info.used / 1024 / 1024):.1f}MB"
@@ -110,8 +109,8 @@ def benchmark(args, dataset, use_cuda_extension, force_train=False):
 
     print("=> start training")
     start = time.time()
-    loss_time = 0
-    force_time = 0
+    loss_time = 0.0
+    force_time = 0.0
 
     for epoch in range(0, args.num_epochs):
         print("Epoch: %d/%d" % (epoch + 1, args.num_epochs))
@@ -258,23 +257,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print("=> loading dataset...")
-    if args.pickle:
-        f = open(args.dataset_path, "rb")
-        dataset_shuffled = pickle.load(f)
-        f.close()
-    else:
-        shifter = torchani.EnergyShifter(None)
-        dataset = (
-            torchani.data.load(args.dataset_path, additional_properties=("forces",))
-            .subtract_self_energies(shifter)
-            .species_to_indices()
-        )
-        print("=> Caching shuffled dataset...")
-        dataset_shuffled = list(dataset.shuffle().collate(args.batch_size))
-        # use f2 so mypy does not complain
-        f2 = open(f"{args.dataset_path}.pickle", "wb")
-        pickle.dump(dataset_shuffled, f2)
-        f2.close()
+    dataset = batch_all_in_ram(
+        args.dataset_path,
+        properties=("species", "coordinates", "forces"),
+        batch_size=args.batch_size,
+    )
 
     print("=> CUDA info:")
     devices = torch.cuda.device_count()
@@ -286,13 +273,13 @@ if __name__ == "__main__":
         checkgpu(i)
 
     # Warming UP
-    if len(dataset_shuffled) < 100:
+    if len(dataset) < 100:
         runcounter = -1
         args.runname = "Warning UP"
         print(f"\n\n=> Test 0: {args.runname}")
         torch.cuda.empty_cache()
         gc.collect()
-        benchmark(args, dataset_shuffled, use_cuda_extension=True, force_train=False)
+        benchmark(args, dataset, use_cuda_extension=True, force_train=False)
 
     if args.nsight:
         torch.cuda.profiler.start()
@@ -301,25 +288,25 @@ if __name__ == "__main__":
     print(f"\n\n=> Test 1: {args.runname}")
     torch.cuda.empty_cache()
     gc.collect()
-    benchmark(args, dataset_shuffled, use_cuda_extension=True, force_train=False)
+    benchmark(args, dataset, use_cuda_extension=True, force_train=False)
 
     args.runname = "py Energy train"
     print(f"\n\n=> Test 2: {args.runname}")
     torch.cuda.empty_cache()
     gc.collect()
-    benchmark(args, dataset_shuffled, use_cuda_extension=False, force_train=False)
+    benchmark(args, dataset, use_cuda_extension=False, force_train=False)
     try:
         args.runname = "cu Energy + Force train"
         print(f"\n\n=> Test 3: {args.runname}")
         torch.cuda.empty_cache()
         gc.collect()
-        benchmark(args, dataset_shuffled, use_cuda_extension=True, force_train=True)
+        benchmark(args, dataset, use_cuda_extension=True, force_train=True)
 
         args.runname = "py Energy + Force train"
         print(f"\n\n=> Test 4: {args.runname}")
         torch.cuda.empty_cache()
         gc.collect()
-        benchmark(args, dataset_shuffled, use_cuda_extension=False, force_train=True)
+        benchmark(args, dataset, use_cuda_extension=False, force_train=True)
     except AttributeError:
         print(
             "Skipping force training benchmark. A dataset without forces was provided"

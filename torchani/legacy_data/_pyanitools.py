@@ -1,3 +1,5 @@
+# type: ignore
+# This file is legacy, it should not be type-checked
 # Written by Roman Zubatyuk and Justin S. Smith
 import os
 

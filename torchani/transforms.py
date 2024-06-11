@@ -22,12 +22,12 @@ Example::
 
     # Transforms will be applied automatically when iterating over the datasets
     training = ANIBatchedDataset(
-        '/path/to/database/',
+        '/path/to/batched-dataset/',
         transform=transform,
         split='training',
     )
     validation = ANIBatchedDataset(
-        '/path/to/database/',
+        '/path/to/batched-dataset/',
         transform=transform,
         split='validation',
     )
@@ -66,12 +66,15 @@ class Transform(torch.nn.Module):
 
 
 class Identity(Transform):
-    def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self.atomic_numbers = None
 
     def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
         return properties
+
+
+identity = Identity()
 
 
 class SubtractEnergyAndForce(Transform):

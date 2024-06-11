@@ -308,7 +308,7 @@ from torchani.datasets._annotations import StrPath
 from torchani.storage import DATASETS_DIR
 
 _BASE_URL = "http://moria.chem.ufl.edu/animodel/ground_truth_data/"
-_DATASETS_JSON_PATH = Path(__file__).parent / "builtin-datasets.json"
+_DATASETS_JSON_PATH = Path(__file__).parent / "builtin_datasets.json"
 
 with open(_DATASETS_JSON_PATH, mode="rt", encoding="utf-8") as f:
     _BUILTIN_DATASETS_SPEC = json.load(f)

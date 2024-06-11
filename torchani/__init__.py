@@ -42,6 +42,7 @@ from torchani import (
     models,
     units,
     datasets,
+    legacy_data,
     transforms,
     cli,
     geometry,
@@ -52,7 +53,6 @@ from torchani import (
     infer,
     constants,
     grad,
-    data,  # TODO: Get rid of this
     io,
     neurochem,
 )
@@ -77,6 +77,7 @@ __all__ = [
     'neighbors',
     'cutoffs',
     'datasets',
+    'legacy_data',
     'transforms',
     'cli',
     'io',
@@ -87,7 +88,6 @@ __all__ = [
     "infer",
     "constants",
     "neurochem",
-    'data',  # TODO: Get rid of this
 ]
 
 # Disable TF32 since it catastrophically degrades accuracy

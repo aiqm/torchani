@@ -6,12 +6,12 @@ import torch
 from torch import Tensor
 from torch.utils.data import DataLoader
 
-from torchani.datasets import ANIBatchedDataset
+from torchani.datasets import BatchedDataset
 from torchani.transforms import AtomicNumbersToIndices
 
 
 def calculate_saes(
-    dataset: tp.Union[DataLoader, ANIBatchedDataset],
+    dataset: tp.Union[DataLoader, BatchedDataset],
     elements: tp.Sequence[str],
     mode: str = "sgd",
     fraction: float = 1.0,
@@ -30,11 +30,11 @@ def calculate_saes(
     if mode not in ["sgd", "exact"]:
         raise ValueError("'mode' must be one of ['sgd', 'exact']")
     if isinstance(dataset, DataLoader):
-        assert isinstance(dataset.dataset, ANIBatchedDataset)
+        assert isinstance(dataset.dataset, BatchedDataset)
         old_transform = dataset.dataset.transform
         dataset.dataset.transform = AtomicNumbersToIndices(elements)
     else:
-        assert isinstance(dataset, ANIBatchedDataset)
+        assert isinstance(dataset, BatchedDataset)
         old_transform = dataset.transform
         dataset.transform = AtomicNumbersToIndices(elements)
 
@@ -71,10 +71,10 @@ def calculate_saes(
         )
 
     if isinstance(dataset, DataLoader):
-        assert isinstance(dataset.dataset, ANIBatchedDataset)
+        assert isinstance(dataset.dataset, BatchedDataset)
         dataset.dataset.transform = old_transform
     else:
-        assert isinstance(dataset, ANIBatchedDataset)
+        assert isinstance(dataset, BatchedDataset)
         dataset.transform = old_transform
     return m_out, b_out
 

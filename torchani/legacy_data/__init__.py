@@ -129,7 +129,7 @@ import torch
 from tqdm import tqdm
 
 from torchani import utils
-from torchani.data._pyanitools import anidataloader
+from torchani.legacy_data._pyanitools import anidataloader
 
 verbose = True
 

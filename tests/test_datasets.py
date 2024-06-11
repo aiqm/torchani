@@ -1,3 +1,4 @@
+import typing as tp
 import os
 from pathlib import Path
 import json
@@ -100,6 +101,7 @@ class TestDatasetUtils(TestCase):
             delete_inplace=True,
             verbose=False,
         )
+        assert out is not None
         self.assertEqual(len(out[0]), 1)
         self.assertEqual(len(out[0][0]["coordinates"]), 1)
 
@@ -361,13 +363,13 @@ class TestFineGrainedShuffle(TestCase):
     def _check_disjoint_and_nonduplicates(self, name1, name2):
         train = ANIBatchedDataset(self.tmp_dir_batched.name, split=name1)
         valid = ANIBatchedDataset(self.tmp_dir_batched.name, split=name2)
-        all_train_energies = []
-        all_valid_energies = []
+        _all_train_energies = []
+        _all_valid_energies = []
         for b, b_valid in zip(train, valid):
-            all_train_energies.append(b["energies"])
-            all_valid_energies.append(b_valid["energies"])
-        all_train_energies = torch.cat(all_train_energies)
-        all_valid_energies = torch.cat(all_valid_energies)
+            _all_train_energies.append(b["energies"])
+            _all_valid_energies.append(b_valid["energies"])
+        all_train_energies = torch.cat(_all_train_energies)
+        all_valid_energies = torch.cat(_all_valid_energies)
 
         all_train_list = [e.item() for e in all_train_energies]
         all_train_set = set(all_train_list)
@@ -577,12 +579,12 @@ class TestANIBatchedDataset(TestCase):
         self.valid = ANIBatchedDataset(self.tmp_dir_batched.name, split="validation")
 
     def testInit(self):
-        self.assertTrue(self.train.split == "training")
-        self.assertTrue(self.valid.split == "validation")
+        self.assertTrue(self.train.div == "training")
+        self.assertTrue(self.valid.div == "validation")
         self.assertEqual(len(self.train), 3)
         self.assertEqual(len(self.valid), 3)
-        self.assertEqual(self.train.batch_size(0), self.batch_size)
-        self.assertEqual(self.valid.batch_size(0), self.batch_size)
+        self.assertEqual(self.train._batch_size(self.train[0]), self.batch_size)
+        self.assertEqual(self.valid._batch_size(self.valid[0]), self.batch_size)
         # transform does nothing if no transform was passed
         self.assertTrue(self.train.transform(None) is None)
 
@@ -595,8 +597,12 @@ class TestANIBatchedDataset(TestCase):
         )
         self.assertEqual(len(train_drop_last), 2)
         self.assertEqual(len(valid_drop_last), 2)
-        self.assertEqual(train_drop_last.batch_size(-1), self.batch_size)
-        self.assertEqual(valid_drop_last.batch_size(-1), self.batch_size)
+        self.assertEqual(
+            train_drop_last._batch_size(train_drop_last[-1]), self.batch_size
+        )
+        self.assertEqual(
+            valid_drop_last._batch_size(valid_drop_last[-1]), self.batch_size
+        )
         for b in train_drop_last:
             self.assertTrue(len(b["coordinates"]), self.batch_size)
         for b in valid_drop_last:
@@ -611,10 +617,10 @@ class TestANIBatchedDataset(TestCase):
     def testNumConformers(self):
         # check that the number of conformers is consistent
         h5 = ANIDataset(dataset_path)
-        num_conformers_batched = [len(b["species"]) for b in self.train] + [
+        _num_conformers_batched = [len(b["species"]) for b in self.train] + [
             len(b["species"]) for b in self.valid
         ]
-        num_conformers_batched = sum(num_conformers_batched)
+        num_conformers_batched = sum(_num_conformers_batched)
         self.assertEqual(h5.num_conformers, num_conformers_batched)
 
     def testShuffle(self):
@@ -914,23 +920,23 @@ class TestANIDataset(TestCase):
         for k, v in conformers.items():
             ds.append_conformers(k, v)
 
-        keys = {}
+        keys: tp.Set[str] = set()
         coords = []
         for k, _, v in ds.chunked_numpy_items(max_size=10):
             coords.append(torch.from_numpy(v["coordinates"]))
-            keys.update({k})
+            keys.add(k)
 
-        keys_large = {}
+        keys_large: tp.Set[str] = set()
         coords_large = []
         for k, _, v in ds.chunked_numpy_items(max_size=100000):
             coords_large.append(torch.from_numpy(v["coordinates"]))
-            keys_large.update({k})
+            keys_large.add(k)
 
-        keys_expect = {}
+        keys_expect: tp.Set[str] = set()
         coords_expect = []
         for k, v in ds.numpy_items():
             coords_expect.append(torch.from_numpy(v["coordinates"]))
-            keys_expect.update({k})
+            keys_expect.add(k)
         self.assertEqual(keys_expect, keys)
         self.assertEqual(torch.cat(coords_expect), torch.cat(coords))
         self.assertEqual(keys_expect, keys_large)

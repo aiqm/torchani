@@ -5,6 +5,8 @@ from torchani.datasets import utils
 from torchani.datasets.builtin import *  # noqa:F403
 from torchani.datasets.builtin import _BUILTIN_DATASETS, _BUILTIN_DATASETS_LOT
 from torchani.datasets.batching import (
+    BatchedDataset,
+    ANIBatchedInMemoryDataset,
     ANIBatchedDataset,
     Batcher,
     create_batched_dataset,
@@ -13,7 +15,9 @@ from torchani.datasets.batching import (
 
 
 __all__ = [
+    "BatchedDataset",
     "ANIBatchedDataset",
+    "ANIBatchedInMemoryDataset",
     "ANIDataset",
     "Batcher",
     "create_batched_dataset",
