@@ -145,12 +145,13 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
         return self._properties
 
     @property
-    def tensor_properties(self) -> tp.Set[str]:
-        return {
+    def tensor_properties(self) -> tp.Tuple[str, ...]:
+        set_ = {
             p
             for p in self._properties
             if not any(re.match(pattern, p) for pattern in _ALWAYS_STRING_PATTERNS)
         }
+        return tuple(sorted(set_))
 
     @property
     def num_conformers(self) -> int:
@@ -219,8 +220,7 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
             splitted_conformers: NumpyConformers = dict()
             for k in keys_copy:
                 if getter == "get_conformers":
-                    # TODO: unnecessary cast in current pytorch
-                    splits = tuple(torch.split(conformers.pop(k), max_size))
+                    splits = torch.split(conformers.pop(k), max_size)
                 else:
                     splits = tuple(
                         conformers[k][j:j + max_size]

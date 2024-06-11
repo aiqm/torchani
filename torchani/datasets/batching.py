@@ -1,21 +1,22 @@
 r"""Functions for creating batched datasets"""
+from dataclasses import dataclass
+import typing_extensions as tpx
 import typing as tp
-import warnings
 import math
 import json
 import datetime
 from pathlib import Path
-from collections import OrderedDict
 
 import h5py
 import torch
 from torch import Tensor
 from tqdm import tqdm
 
-from torchani.utils import pad_atomic_properties, cumsum_from_zero, PADDING
+from torchani.utils import pad_atomic_properties, PADDING
 from torchani.datasets.datasets import ANIDataset
 from torchani.transforms import Transform, Identity
 from torchani.datasets._annotations import Conformers, StrPath
+from torchani.storage import DATASETS_DIR
 
 
 class ANIBatchedDataset(torch.utils.data.Dataset[Conformers]):
@@ -160,416 +161,440 @@ class ANIBatchedDataset(torch.utils.data.Dataset[Conformers]):
         return self._len
 
 
-# TODO a batcher class would make this code much more clear
-def create_batched_dataset(
-    locations: tp.Union[tp.Collection[StrPath], StrPath, ANIDataset],
-    dest_path: tp.Optional[StrPath] = None,
-    shuffle: bool = True,
-    shuffle_seed: tp.Optional[int] = None,
-    properties: tp.Iterable[str] = (),
-    batch_size: int = 2560,
-    max_batches_per_packet: int = 350,
-    padding: tp.Optional[tp.Dict[str, float]] = None,
-    splits: tp.Optional[tp.Dict[str, float]] = None,
-    folds: tp.Optional[int] = None,
-    transform: tp.Optional[Transform] = None,
-    direct_cache: bool = False,
-    verbose: bool = True,
-) -> tp.Dict[str, ANIBatchedDataset]:
-    if folds is not None and splits is not None:
-        raise ValueError('Only one of ["folds", "splits"] should be specified')
+@dataclass
+class Div:
+    name: str
+    indices: Tensor  # dtype=torch.long, shape=(num-conformers, 2)
+    path: Path
 
-    if direct_cache and dest_path is not None:
-        raise ValueError("Destination path not needed for direct cache")
-    transform = Identity() if transform is None else transform
 
-    # NOTE: All the tensor manipulation in this function is handled in CPU
-    if dest_path is None:
-        dest_path = Path.cwd() / "batched_dataset_hdf5"
-    else:
-        dest_path = Path(dest_path).resolve()
+class Batcher:
+    def __init__(
+        self,
+        dest_root: tp.Union[Path, tp.Literal["ram"]] = DATASETS_DIR,
+        max_batches_per_packet: int = 350,
+        verbose: bool = False,
+    ) -> None:
+        self.max_batches_per_packet = max_batches_per_packet
+        self.verbose = verbose
+        self.store_on_disk = dest_root != "ram"
+        if not self.store_on_disk:
+            if max_batches_per_packet != 350:
+                raise ValueError(
+                    "max_batches_per_packet can't be provided if saving in ram"
+                )
+            max_batches_per_packet = 2**31  # arbitrarily high number
+        self._dest_root = Path("/tmp") if dest_root == "ram" else dest_root
+        self._shuffle = True
 
-    if isinstance(locations, ANIDataset):
-        dataset = locations
-    else:
-        dataset = ANIDataset(locations)
+    # Used only for debugging
+    def _no_shuffle(self) -> None:
+        self._shuffle = False
 
-    if isinstance(properties, str):
-        properties = (properties,)
-    if not properties:
-        properties = tuple(dataset.tensor_properties)
-    properties = tuple(sorted(properties))
-    padding = PADDING if padding is None else padding
-    assert padding is not None  # mypy
+    @classmethod
+    def in_ram(cls, verbose: bool = False) -> tpx.Self:
+        return cls("ram", verbose=verbose)
 
-    # (1) Get all indices and shuffle them if needed
-    #
-    # These are pairs of indices that index first the group and then the
-    # specific conformer, it is possible to just use one index for
-    # everything but this is simpler at the cost of slightly more memory.
-    # First we get all group sizes for all datasets concatenated in a tensor,
-    # in the same
-    # order as h5_map
-    group_sizes_values = torch.tensor(
-        tuple(dataset.group_sizes.values()), dtype=torch.long
-    )
-    conformer_indices = torch.cat(
-        [
-            torch.stack(
-                (
-                    torch.full(size=(s.item(),), fill_value=j, dtype=torch.long),
-                    (torch.arange(0, s.item(), dtype=torch.long)),
-                ),
-                dim=-1,
+    def divide_and_batch(
+        self,
+        src: tp.Union[tp.Iterable[StrPath], StrPath, ANIDataset],
+        dest_dir: str = "",
+        # Dataset modifications and options
+        splits: tp.Optional[tp.Dict[str, float]] = None,
+        folds: tp.Optional[int] = None,
+        batch_size: int = 2560,
+        padding: tp.Optional[tp.Dict[str, float]] = None,
+        transform: tp.Optional[Transform] = None,
+        properties: tp.Iterable[str] = (),
+        # rng seeds
+        divs_seed: tp.Optional[int] = None,
+        batch_seed: tp.Optional[int] = None,
+    ) -> tp.Dict[str, ANIBatchedDataset]:
+        padding = PADDING if padding is None else padding
+        transform = Identity() if transform is None else transform
+        if (not self.store_on_disk) and dest_dir:
+            raise ValueError("dest_dir can't be passed if saving in ram")
+
+        if not dest_dir:
+            dest_dir = "batched_dataset"
+
+        dest_path = self._dest_root / dest_dir
+
+        if not self._shuffle and divs_seed is not None or batch_seed is not None:
+            raise ValueError("Seeds must be None if not shuffling")
+        dataset = src if isinstance(src, ANIDataset) else ANIDataset(src)
+
+        if not properties:
+            properties = dataset.tensor_properties
+        elif isinstance(properties, str):
+            properties = [properties]
+        else:
+            properties = sorted(properties)
+
+        if splits is None and folds is None:
+            splits = {"training": 1.0}
+        if splits is not None and folds is not None:
+            raise ValueError("'splits' and 'folds' can't be simultaneously specified")
+
+        divs_rng = torch.Generator()
+        if divs_seed is None:
+            divs_seed = divs_rng.seed()
+        else:
+            divs_rng.manual_seed(divs_seed)
+
+        batch_rng = torch.Generator()
+        if batch_seed is None:
+            batch_seed = divs_rng.seed()
+        else:
+            batch_rng.manual_seed(batch_seed)
+
+        # (1) Get all indices and shuffle them
+        #
+        # These are pairs of indices that index first the group and then the
+        # specific conformer, it is possible to just use one index for
+        # everything but this is simpler at the cost of slightly more memory.
+        #
+        # First get all group sizes for all datasets concatenated in a tensor,
+        # in the same
+        # order as h5_map
+        sizes = torch.tensor(tuple(dataset.group_sizes.values()), dtype=torch.long)
+        # conformer_idxs holds pairs [group-idx, conformer-idx]
+        pad_idxs = torch.arange(max(sizes), dtype=torch.long).repeat(len(sizes), 1)
+        mask = pad_idxs < sizes.view(-1, 1)
+        indices = torch.masked_select(pad_idxs, mask).view(-1, 1)
+        repeat_sizes = torch.repeat_interleave(sizes).view(-1, 1)
+        # shape (num_conformers, 2)
+        conformer_idxs = torch.cat((repeat_sizes, indices), dim=1)
+        # Shuffle divisions
+        if self._shuffle:
+            shuffle_idxs = torch.randperm(dataset.num_conformers, generator=divs_rng)
+            conformer_idxs = conformer_idxs[shuffle_idxs]
+
+        if splits is not None:
+            if not math.isclose(sum(list(splits.values())), 1.0):
+                raise ValueError("The sum of the split fractions must add up to one")
+            divs = self._divide_in_splits(conformer_idxs, splits, dest_path)
+        else:
+            assert folds is not None  # mypy
+            if not folds > 1:
+                raise ValueError("Folds must be an integer > 1")
+            divs = self._divide_in_folds(conformer_idxs, folds, dest_path)
+
+        if self.store_on_disk:
+            for div in divs:
+                div.path.mkdir(parents=True, exist_ok=False)
+
+        if self.verbose:
+            print("Divisions will have sizes:")
+            for div in divs:
+                print(f"    {div.name}: {len(div.indices)}")
+
+        # Shuffle batches inside divisions
+        if self._shuffle:
+            for div in divs:
+                shuffle_idxs = torch.randperm(len(div.indices), generator=batch_rng)
+                div.indices = div.indices[shuffle_idxs]
+
+        batched_datasets = self._batch_and_save_divisions(
+            dest_path,
+            dataset,
+            divs,
+            batch_size,
+            padding,
+            transform,
+            properties,
+        )
+
+        if self.store_on_disk:
+            self._log_creation_data(
+                dest_path,
+                dataset,
+                batch_size,
+                divs_seed,
+                batch_seed,
+                padding,
+                splits,
+                folds,
+                properties,
             )
-            for j, s in enumerate(group_sizes_values)
-        ]
-    )
-    rng = _get_random_generator(shuffle, shuffle_seed)
-    conformer_indices = _maybe_shuffle_indices(conformer_indices, rng)
 
-    # (2) Split shuffled indices according to requested dataset splits or folds
-    # by defaults we use splits, if folds or splits is specified we
-    # do the specified operation
-    if folds is not None:
-        conformer_splits, split_paths = _divide_into_folds(
-            conformer_indices,
-            dest_path,
-            folds,
-            rng,
-            direct_cache,
-            verbose,
-        )
-    else:
-        if splits is None:
-            splits = {"training": 0.8, "validation": 0.2}
+        return batched_datasets
 
-        if not math.isclose(sum(list(splits.values())), 1.0):
-            raise ValueError("The sum of the split fractions has to add up to one")
+    def _divide_in_splits(
+        self,
+        conformer_idxs: Tensor,
+        splits: tp.Dict[str, float],
+        dest_path: Path,
+    ) -> tp.List[Div]:
+        if self.verbose:
+            print(f"Dividing dataset in splits with fractions {splits}")
 
-        conformer_splits, split_paths = _divide_into_splits(
-            conformer_indices,
-            dest_path,
-            splits,
-            direct_cache,
-            verbose,
-        )
+        # Sort alphabetically and divide into "names" and "sizes"
+        num_conformers = len(conformer_idxs)
+        split_names: tp.List[str] = []
+        split_sizes: tp.List[int] = []
+        for k, v in sorted(splits.items(), key=lambda kv: kv[0]):
+            split_names.append(k)
+            split_sizes.append(int(v * num_conformers))
 
-    # (3) Compute the batch indices for each split and save the conformers to disk
-    batched_datasets = _save_splits_into_batches(
-        split_paths,
-        conformer_splits,
-        transform,
-        properties,
-        dataset,
-        padding,
-        batch_size,
-        max_batches_per_packet,
-        direct_cache,
-        verbose,
-    )
-    # log creation data
-    if not direct_cache:
-        try:
-            symbols = dataset.symbols
-        except ValueError:
-            symbols = ("?",)  # legacy grouping, symbols can't be determined
+        # Slightly modify the first split if the fractions don't span the
+        # dataset perfectly. This automatically takes care of the cases
+        # leftover > 0 and leftover < 0
+        leftover = num_conformers - sum(split_sizes)
+        if leftover != 0:
+            split_sizes[0] += leftover
+
+        assert sum(split_sizes) == num_conformers
+
+        conformer_splits = torch.split(conformer_idxs, split_sizes)
+        divs: tp.List[Div] = []
+        for name, idxs in zip(split_names, conformer_splits):
+            divs.append(Div(name=name, indices=idxs, path=dest_path / name))
+        return divs
+
+    def _divide_in_folds(
+        self,
+        conformer_idxs: Tensor,
+        folds: int,
+        dest_path: Path,
+    ) -> tp.List[Div]:
+        if self.verbose:
+            print(f"Dividing dataset in {folds} folds (for CV or ensemble training)")
+
+        # First divide into "blocks" of shape (num_conformers / folds, 2)
+        # For the ith fold take the ith block (always a different one) and assign it
+        # to division "ith-validation", and the rest to "ith-training".
+        divs: tp.List[Div] = []
+        conformer_blocks = torch.chunk(conformer_idxs, folds)
+        for i in range(folds):
+            ith_valid_div = conformer_blocks[i]
+            ith_train_div = torch.cat(conformer_blocks[:i] + conformer_blocks[i + 1:])
+            train = f"training{i}"
+            valid = f"validation{i}"
+            divs.extend(
+                (
+                    Div(name=train, indices=ith_train_div, path=dest_path / train),
+                    Div(name=valid, indices=ith_valid_div, path=dest_path / valid),
+                )
+            )
+        return divs
+
+    # Select some batches (a "packet"), scan the dataset to find the conformers
+    # needed to create them and keep them in RAM. Save the batches in the
+    # packet, and fetch the next packet.
+    #
+    # It is important to select a good number of batches-per-packet
+    # in order to batch the dataset fast and with an acceptable RAM cost, since:
+    #
+    # - Doing this for 1-batch-per-packet is very slow. The number of slow
+    # reads to the files on disk is approx batches * conformer_groups * 3
+    # For example for the ANI1x dataset this is approx 9M reads.
+    #
+    # - Doing it for all batches at the same time is (reasonably) fast, ~9000
+    # reads, but it requires keeping a huge part of the dataset in memory,
+    # which is not feasible for large datasets.
+    def _batch_and_save_divisions(
+        self,
+        dest_path: Path,
+        dataset: ANIDataset,
+        divs: tp.List[Div],
+        batch_size: int,
+        padding: tp.Dict[str, float],
+        transform: Transform,
+        properties: tp.Sequence[str],
+    ) -> tp.Dict[str, ANIBatchedDataset]:
+        group_names = list(dataset.keys())
+        batched_datasets: tp.Dict[str, ANIBatchedDataset] = dict()
+        with dataset.keep_open() as readonly_ds:
+            for div in divs:
+                # Attach a batch index to each batch of the split div indices
+                # Each batch has shape (batch_size, 3)
+                # where 0: group_idx, 1: conformer_idx in the group, 2: batch_idx
+                batches: tp.List[Tensor] = []
+                for j, b in enumerate(torch.split(div.indices, batch_size)):
+                    batches.append(
+                        torch.cat(
+                            (b, torch.full((b.shape[0], 1), j, dtype=torch.long)), dim=1
+                        )
+                    )
+                num_batches = len(batches)
+
+                # Combine batches into packets.
+                # Each packet has shape (packet_size, 3)
+                # where 0: group_idx, 1: conformer_idx in the group, 2: batch_idx
+                packets: tp.List[Tensor] = []
+                step = self.max_batches_per_packet
+                for j in range(0, num_batches, step):
+                    packets.append(
+                        torch.cat(
+                            batches[j:j + step],
+                            dim=0,
+                        )
+                    )
+                num_packets = len(packets)
+
+                in_memory_batches: tp.List[Conformers] = []
+                for i, packet in enumerate(packets):
+                    packet_unique_group_idxs = torch.unique(packet[:, 0])
+                    packet_unique_batch_idxs = torch.unique(packet[:, 2])
+
+                    packet_conformers_list: tp.List[Conformers] = []
+                    packet_batch_idx_list: tp.List[Tensor] = []
+                    for group_idx in packet_unique_group_idxs:
+                        conformer_is_in_packet = packet[:, 0] == group_idx
+                        conformers = readonly_ds.get_conformers(
+                            group_names[group_idx.item()],
+                            packet[conformer_is_in_packet, 1],
+                            properties=properties,
+                        )
+                        packet_batch_idx_list.append(packet[conformer_is_in_packet, 2])
+                        packet_conformers_list.append(conformers)
+
+                    # Dict of properties, each of shape (packet_size, ...)
+                    packet_conformers = pad_atomic_properties(
+                        packet_conformers_list, padding
+                    )
+                    #  packet_batch_idxs is the same as packet[:, 2] but sorted
+                    #  in the group-idx order instead of batch-idx order. shape
+                    #  (packet_size,) This is useful to index the
+                    #  packet_conformers, since they are fetched from the
+                    #  dataset in the group-idx order, in order to fetch all
+                    #  conformers of the same group at the same time.
+                    packet_batch_idxs = torch.cat(packet_batch_idx_list, dim=0)
+                    for batch_idx in tqdm(
+                        packet_unique_batch_idxs,
+                        desc=f"{div.name}: Saving packet {i + 1}/{num_packets}",
+                        disable=not self.verbose,
+                        leave=False,
+                        total=len(packet_unique_batch_idxs),
+                    ):
+                        batch = {
+                            k: v[packet_batch_idxs == batch_idx]
+                            for k, v in packet_conformers.items()
+                        }
+                        # TODO: remove redundant padding here!
+                        batch = transform(batch)
+                        if self.store_on_disk:
+                            # The batch file names are e.g. 00034_batch.h5
+                            max_digits = len(str(num_batches))
+                            pre = str(batch_idx.item()).zfill(max_digits)
+                            with h5py.File(
+                                (dest_path / div.name) / f"{pre}_batch.h5", "w-"
+                            ) as f:
+                                for k, v in batch.items():
+                                    f.create_dataset(k, data=v.numpy())
+                        else:
+                            in_memory_batches.append(batch)
+                if self.store_on_disk:
+                    batched_ds = ANIBatchedDataset(
+                        store_dir=div.path.parent, split=div.name
+                    )
+                else:
+                    batched_ds = ANIBatchedDataset(
+                        batches=in_memory_batches, split=div.name
+                    ).cache(verbose=False, pin_memory=torch.cuda.is_available())
+                batched_datasets[div.name] = batched_ds
+        return batched_datasets
+
+    def _log_creation_data(
+        self,
+        dest_path: Path,
+        dataset: ANIDataset,
+        batch_size: int,
+        divs_seed: int,
+        batch_seed: int,
+        padding: tp.Dict[str, float],
+        splits: tp.Optional[tp.Dict[str, float]],
+        folds: tp.Optional[int],
+        properties: tp.Sequence[str],
+    ) -> None:
         creation_log = {
             "datetime_created": str(datetime.datetime.now()),
             "splits": splits,
             "folds": folds,
-            "padding": padding,
-            "shuffle": shuffle,
-            "shuffle_seed": shuffle_seed,
-            "properties": properties,
+            "divs_seed": divs_seed,
+            "batch_seed": batch_seed,
             "batch_size": batch_size,
+            "padding": padding,
+            "shuffle": self._shuffle,
+            "symbols": dataset.symbols if dataset.grouping != "legacy" else ("?",),
+            "properties": properties,
             "store_locations": dataset.store_locations,
-            "symbols": symbols,
             "num_conformers": dataset.num_conformers,
         }
-        with open(dest_path.joinpath("creation_log.json"), "w") as logfile:
+        with open(dest_path / "creation_log.json", "wt") as logfile:
             json.dump(creation_log, logfile, indent=1)
-    return batched_datasets
 
 
-def _get_random_generator(
-    shuffle: bool = False, shuffle_seed: tp.Optional[int] = None
-) -> tp.Optional[torch.Generator]:
-    if shuffle_seed is not None:
-        assert shuffle
-        seed = shuffle_seed
-    else:
-        seed = torch.random.seed()
-
-    if shuffle:
-        return torch.random.manual_seed(seed)
-    return None
-
-
-def _maybe_shuffle_indices(
-    conformer_indices: Tensor, rng: tp.Optional[torch.Generator] = None
-) -> Tensor:
-    total_num_conformers = len(conformer_indices)
-    if rng is not None:
-        shuffle_indices = torch.randperm(total_num_conformers, generator=rng)
-        conformer_indices = conformer_indices[shuffle_indices]
-    else:
-        warnings.warn(
-            "Dataset will not be shuffled, this should only be used for debugging"
-        )
-    return conformer_indices
-
-
-def _divide_into_folds(
-    conformer_indices: Tensor,
-    dest_path: Path,
-    folds: int,
-    rng: tp.Optional[torch.Generator] = None,
+# Kept for bw compat
+def create_batched_dataset(
+    src: tp.Union[tp.Collection[StrPath], StrPath, ANIDataset],
+    dest_path: tp.Optional[StrPath] = None,
+    # Dataset modifications and options
+    batch_size: int = 2560,
+    properties: tp.Iterable[str] = (),
+    padding: tp.Optional[tp.Dict[str, float]] = None,
+    splits: tp.Optional[tp.Dict[str, float]] = None,
+    folds: tp.Optional[int] = None,
+    transform: tp.Optional[Transform] = None,
+    # rng seeds
+    divs_seed: tp.Optional[int] = None,
+    batch_seed: tp.Optional[int] = None,
+    # Performance
     direct_cache: bool = False,
+    max_batches_per_packet: int = 350,
+    # Verbosity
     verbose: bool = True,
-) -> tp.Tuple[tp.Tuple[Tensor, ...], tp.OrderedDict[str, Path]]:
-    # the idea here is to work with "blocks" of size num_conformers / folds
-    # cast to list for mypy
-    conformer_blocks = list(torch.chunk(conformer_indices, folds))
-    conformer_splits: tp.List[Tensor] = []
-    split_paths_list: tp.List[tp.Tuple[str, Path]] = []
-    if verbose:
-        print(f"Generating {folds} folds for cross validation or ensemble training")
-    for f in range(folds):
-        # the first shuffle is necessary so that validation splits are shuffled
-        validation_split = conformer_blocks[f]
-
-        training_split = torch.cat(conformer_blocks[:f] + conformer_blocks[f + 1:])
-        # afterwards all training folds are reshuffled to get different
-        # batching for different models in the ensemble / cross validation
-        # process (it is technically redundant to reshuffle the first one but
-        # it is done for simplicity)
-        training_split = _maybe_shuffle_indices(training_split, rng)
-        conformer_splits.extend([training_split, validation_split])
-        split_paths_list.extend(
-            [
-                (f"training{f}", dest_path.joinpath(f"training{f}")),
-                (f"validation{f}", dest_path.joinpath(f"validation{f}")),
-            ]
-        )
-    split_paths = OrderedDict(split_paths_list)
-    if not direct_cache:
-        _create_split_paths(split_paths)
-
-    return tuple(conformer_splits), split_paths
-
-
-def _divide_into_splits(
-    conformer_indices: Tensor,
-    dest_path: Path,
-    splits: tp.Dict[str, float],
-    direct_cache: bool = False,
-    verbose: bool = True,
-) -> tp.Tuple[tp.Tuple[Tensor, ...], tp.OrderedDict[str, Path]]:
-    total_num_conformers = len(conformer_indices)
-    split_sizes = OrderedDict(
-        [(k, int(total_num_conformers * v)) for k, v in splits.items()]
-    )
-    split_paths = OrderedDict([(k, dest_path.joinpath(k)) for k in split_sizes.keys()])
-    if not direct_cache:
-        _create_split_paths(split_paths)
-
-    leftover = total_num_conformers - sum(split_sizes.values())
-    if leftover != 0:
-        # We slightly modify a random section if the fractions don't split
-        # the dataset perfectly. This also automatically takes care of the
-        # cases leftover > 0 and leftover < 0
-        any_key = list(split_sizes.keys())[0]
-        split_sizes[any_key] += leftover
-        assert sum(split_sizes.values()) == total_num_conformers
-    # TODO: Unnecessary cast in current pytorch
-    conformer_splits = tuple(torch.split(conformer_indices, list(split_sizes.values())))
-    assert len(conformer_splits) == len(split_sizes.values())
-    if verbose:
-        print(
-            f"Splits have number of conformers: {dict(split_sizes)}."
-            f" The requested percentages were: {splits}"
-        )
-    return conformer_splits, split_paths
-
-
-def _create_split_paths(split_paths: tp.OrderedDict[str, Path]) -> None:
-    for p in split_paths.values():
-        if p.is_dir():
-            subdirs = [d for d in p.iterdir()]
-            if subdirs:
-                raise ValueError(
-                    "The dest_path provided already has files"
-                    " or directories, please provide"
-                    " a different path"
-                )
-        else:
-            if p.is_file():
-                raise ValueError("The dest_path is a file, it should be a directory")
-            p.mkdir(parents=True)
-
-
-def _save_splits_into_batches(
-    split_paths: tp.OrderedDict[str, Path],
-    conformer_splits: tp.Tuple[Tensor, ...],
-    transform: Transform,
-    properties: tp.Sequence[str],
-    dataset: ANIDataset,
-    padding: tp.Dict[str, float],
-    batch_size: int,
-    max_batches_per_packet: int,
-    direct_cache: bool,
-    verbose: bool,
+    _shuffle: bool = True,
 ) -> tp.Dict[str, ANIBatchedDataset]:
-    # NOTE: Explanation for following logic, please read
-    #
-    # This sets up a given number of batches (packet) to keep in memory and
-    # then scans the dataset and find the conformers needed for the packet. It
-    # then saves the batches and fetches the next packet.
-    #
-    # A "packet" is a list that has tensors, each of which
-    # has batch indices, for instance [tensor([[0, 0, 1, 1, 2], [1, 2, 3, 5]]),
-    #                                  tensor([[3, 5, 5, 5], [1, 2, 3, 3]])]
-    # would be a "packet" of 2 batch_indices, each of which has in the first
-    # row the index for the group, and in the second row the index for the
-    # conformer
-    #
-    # It is important to do this with a packet and not only 1 batch.  The
-    # number of reads to the h5 file is batches x conformer_groups x 3 for 1x
-    # (factor of 3 from energies, species, coordinates), which means ~ 2000 x
-    # 3000 x 3 = 9M reads, this is a bad bottleneck and very slow, even if we
-    # fetch all necessary molecules from each conformer group simultaneously.
-    #
-    # Doing it for all batches at the same time is (reasonably) fast, ~ 9000
-    # reads, but in this case it means we will have to put all, or almost all
-    # the dataset into memory at some point, which is not feasible for larger
-    # datasets.
+    dest_root: tp.Union[Path, tp.Literal["ram"]]
 
-    # get all group keys concatenated in a list, with the associated file indexes
-    key_list = list(dataset.keys())
+    if direct_cache:
+        dest_root = "ram"
+        if dest_path is not None:
+            raise ValueError("dest_path can't be passed if saving in ram")
+        dest_dir = ""
+    else:
+        if dest_path is None:
+            dest_root = Path.cwd()
+            dest_dir = "batched_dataset"
+        else:
+            dest_path = Path(dest_path).resolve()
+            dest_root = dest_path.parent
+            dest_dir = dest_path.name
 
-    # Important: to prevent possible bugs / errors, that may happen
-    # due to incorrect conversion to indices, species is **always*
-    # converted to atomic numbers when saving the batched dataset.
-    batched_datasets: tp.Dict[str, ANIBatchedDataset] = dict()
-    with dataset.keep_open() as ro_dataset:
-        for (split_name, split_path), indices_of_split in zip(
-            split_paths.items(), conformer_splits
-        ):
-            all_batch_indices = torch.split(indices_of_split, batch_size)
-
-            all_batch_indices_packets = [
-                all_batch_indices[j:j + max_batches_per_packet]
-                for j in range(0, len(all_batch_indices), max_batches_per_packet)
-            ]
-            num_batch_indices_packets = len(all_batch_indices_packets)
-
-            overall_batch_idx = 0
-            if direct_cache:
-                in_memory_batches: tp.List[Conformers] = []
-            for j, batch_indices_packet in enumerate(all_batch_indices_packets):
-                num_batches_in_packet = len(batch_indices_packet)
-                # Now first we cat and sort according to the first index in order to
-                # fetch all conformers of the same group simultaneously
-                batch_indices_cat = torch.cat(batch_indices_packet, 0)
-                indices_to_sort_batch_indices_cat = torch.argsort(
-                    batch_indices_cat[:, 0]
-                )
-                sorted_batch_indices_cat = batch_indices_cat[
-                    indices_to_sort_batch_indices_cat
-                ]
-                uniqued_idxs_cat, counts_cat = torch.unique_consecutive(
-                    sorted_batch_indices_cat[:, 0], return_counts=True
-                )
-                cumcounts_cat = cumsum_from_zero(counts_cat)
-
-                # batch_sizes and indices_to_unsort are needed for the
-                # reverse operation once the conformers have been
-                # extracted
-                batch_sizes = [
-                    len(batch_indices) for batch_indices in batch_indices_packet
-                ]
-                indices_to_unsort_batch_cat = torch.argsort(
-                    indices_to_sort_batch_indices_cat
-                )
-                assert len(batch_sizes) <= max_batches_per_packet
-
-                all_conformers: tp.List[Conformers] = []
-                end_idxs = counts_cat + cumcounts_cat
-                groups_slices = zip(uniqued_idxs_cat, cumcounts_cat, end_idxs)
-                if direct_cache:
-                    desc = (
-                        f"Saving batch packet {j + 1} of {num_batch_indices_packets} "
-                        f"of split {split_path.name} into memory"
-                    )
-                else:
-                    desc = (
-                        f"Saving batch packet {j + 1} of {num_batch_indices_packets} "
-                        f"of split {split_path.name}"
-                    )
-                for step, group_slice in tqdm(
-                    enumerate(groups_slices),
-                    total=len(counts_cat),
-                    desc=desc,
-                    disable=not verbose,
-                    leave=False,
-                ):
-                    group_idx, start, end = group_slice
-                    # select the specific group from the whole list of files
-                    # and get a slice with the indices to extract the necessary
-                    # conformers from the group for all batches in pack.
-                    selected_indices = sorted_batch_indices_cat[start:end, 1]
-                    assert selected_indices.dim() == 1
-                    conformers = ro_dataset.get_conformers(
-                        key_list[group_idx.item()],
-                        selected_indices,
-                        properties=properties,
-                    )
-                    all_conformers.append(conformers)
-                batches_cat = pad_atomic_properties(all_conformers, padding)
-                # Now we need to reassign the conformers to the specified
-                # batches. Since to get here we cat'ed and sorted, to
-                # reassign we need to unsort and split.
-                # The format of this is {'species': (batch1, batch2, ...),
-                # 'coordinates': (batch1, batch2, ...)}
-                batch_packet_dict = {
-                    k: torch.split(t[indices_to_unsort_batch_cat], batch_sizes)
-                    for k, t in batches_cat.items()
-                }
-                for packet_batch_idx in range(num_batches_in_packet):
-                    batch = {
-                        k: v[packet_batch_idx] for k, v in batch_packet_dict.items()
-                    }
-                    batch = transform(batch)
-                    if direct_cache:
-                        in_memory_batches.append(batch)
-                    else:
-                        _save_batch(
-                            split_path,
-                            overall_batch_idx,
-                            batch,
-                            len(all_batch_indices),
-                        )
-                    overall_batch_idx += 1
-            if direct_cache:
-                split_ds = ANIBatchedDataset(
-                    batches=in_memory_batches, split=split_name
-                )
-                split_ds = split_ds.cache(
-                    verbose=False, pin_memory=torch.cuda.is_available()
-                )
-                batched_datasets[split_name] = split_ds
-            else:
-                batched_datasets[split_name] = ANIBatchedDataset(
-                    store_dir=split_path.parent, split=split_name
-                )
-    return batched_datasets
+    batcher = Batcher(
+        dest_root,
+        max_batches_per_packet,
+        verbose,
+    )
+    if not _shuffle:
+        batcher._no_shuffle()
+    return batcher.divide_and_batch(
+        src,
+        dest_dir,
+        splits,
+        folds,
+        batch_size,
+        padding,
+        transform,
+        properties,
+    )
 
 
-def _save_batch(path: Path, idx: int, batch: Conformers, total_batches: int) -> None:
-    batch = {k: v.numpy() for k, v in batch.items()}
-    # The batch names are e.g. 00034_batch.h5
-    batch_path = path / f"{str(idx).zfill(len(str(total_batches)))}_batch"
-    with h5py.File(batch_path.with_suffix(".h5"), "w-") as f:
-        for k, v in batch.items():
-            f.create_dataset(k, data=v)
+def batch_all_in_ram(
+    src: tp.Union[tp.Collection[StrPath], StrPath, ANIDataset],
+    batch_size: int = 2560,
+    properties: tp.Iterable[str] = (),
+    padding: tp.Optional[tp.Dict[str, float]] = None,
+    transform: tp.Optional[Transform] = None,
+    # rng seeds
+    divs_seed: tp.Optional[int] = None,
+    batch_seed: tp.Optional[int] = None,
+    verbose: bool = True,
+) -> ANIBatchedDataset:
+    batcher = Batcher.in_ram(verbose)
+    splits = batcher.divide_and_batch(
+        src, padding=padding, transform=transform, properties=properties
+    )
+    return splits["training"]

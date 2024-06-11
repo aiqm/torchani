@@ -1,3 +1,4 @@
+import typing as tp
 import sys
 import argparse
 
@@ -6,8 +7,8 @@ from tqdm import tqdm
 from rich.console import Console
 
 from torchani import datasets
-from torchani.datasets import create_batched_dataset
-from torchani.models import ANI1x
+from torchani.datasets import batch_all_in_ram
+from torchani.models import ANI1x, BuiltinModel
 from tool_utils import Timer, Opt
 
 console = Console()
@@ -31,7 +32,7 @@ def main(
     detail = (opt is Opt.NONE) and detail
     model = ANI1x(model_index=0).to(device)
     if opt is Opt.JIT:
-        model = torch.jit.script(model)
+        model = tp.cast(BuiltinModel, torch.jit.script(model))
     optimizer = torch.optim.Adam(model.parameters(), lr=0.000001)
     mse = torch.nn.MSELoss(reduction="none")
 
@@ -39,16 +40,8 @@ def main(
         ds = getattr(datasets, args.dataset)(verbose=False)
     except AttributeError:
         raise RuntimeError(f"Dataset {args.dataset} could not be found")
-    splits = create_batched_dataset(
-        ds,
-        splits={"training": 1.0},
-        direct_cache=True,
-        batch_size=args.batch_size,
-        verbose=False,
-    )
-    train = torch.utils.data.DataLoader(
-        splits["training"], batch_size=None, shuffle=True
-    )
+    batched_ds = batch_all_in_ram(ds, args.batch_size, verbose=False)
+    train = torch.utils.data.DataLoader(batched_ds, batch_size=None, shuffle=True)
 
     counter = 0
     timer = Timer(

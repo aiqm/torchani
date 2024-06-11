@@ -74,7 +74,10 @@ Datasets
     :members:
 .. autoclass:: torchani.datasets.ANIBatchedDataset
     :members:
+.. autoclass:: torchani.datasets.Batcher
+    :members:
 .. autofunction:: torchani.datasets.create_batched_dataset
+.. autofunction:: torchani.datasets.batch_all_in_ram
 
 Dataset Transforms
 ==================
