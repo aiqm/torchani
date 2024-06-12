@@ -12,6 +12,8 @@ import torch
 import numpy as np
 
 from torchani.datasets import ANIDataset
+from torchani.datasets.utils import concatenate
+from torchani.datasets.utils import filter_by_high_force
 
 ###############################################################################
 # Again for the purposes of this example we will copy and modify two files
@@ -181,7 +183,6 @@ print(len(ds))
 #
 # Multiple datasets can be concatenated into one h5 file, optionally deleting the
 # original h5 files if the concatenation is successful.
-from torchani.datasets.utils import concatenate  # noqa
 
 concat_path = Path.cwd() / "concat.h5"
 ds = concatenate(ds, concat_path, delete_originals=True)
@@ -222,7 +223,6 @@ for c in new_ds.iter_conformers():
 # Another useful feature is deleting inplace all conformers with force
 # magnitude above a given threshold, we will exemplify this by introducing some
 # conformers with extremely large forces
-from torchani.datasets.utils import filter_by_high_force  # noqa
 
 bad_conformers = {
     "species": np.array([["H", "H", "N", "N"], ["H", "H", "N", "N"]]),

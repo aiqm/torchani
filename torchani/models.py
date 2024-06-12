@@ -701,36 +701,30 @@ class PairPotentialsChargesModel(PairPotentialsModel):
 
 
 def ANI1x(**kwargs) -> BuiltinModel:
-    from . import assembler  # noqa
-
-    return assembler.ANI1x(**kwargs)
+    from torchani.assembler import ANI1x as build
+    return build(**kwargs)
 
 
 def ANI1ccx(**kwargs) -> BuiltinModel:
-    from . import assembler  # noqa
-
-    return assembler.ANI1ccx(**kwargs)
+    from torchani.assembler import ANI1ccx as build
+    return build(**kwargs)
 
 
 def ANI2x(**kwargs) -> BuiltinModel:
-    from . import assembler  # noqa
-
-    return assembler.ANI2x(**kwargs)
+    from torchani.assembler import ANI2x as build
+    return build(**kwargs)
 
 
 def ANIala(**kwargs) -> BuiltinModel:
-    from . import assembler  # noqa
-
-    return assembler.ANIala(**kwargs)
+    from torchani.assembler import ANIala as build
+    return build(**kwargs)
 
 
 def ANIdr(**kwargs) -> BuiltinModel:
-    from . import assembler  # noqa
-
-    return assembler.ANIdr(**kwargs)
+    from torchani.assembler import ANIdr as build
+    return build(**kwargs)
 
 
 def ANImbis(**kwargs) -> BuiltinModel:
-    from . import assembler  # noqa
-
-    return assembler.ANImbis(**kwargs)
+    from torchani.assembler import ANImbis as build
+    return build(**kwargs)
