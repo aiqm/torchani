@@ -13,11 +13,11 @@ import torch
 from torch import Tensor
 from tqdm import tqdm
 
+from torchani.storage import DATASETS_DIR
+from torchani.annotations import Conformers, StrPath
 from torchani.utils import pad_atomic_properties, PADDING
 from torchani.datasets.datasets import ANIDataset
 from torchani.transforms import Transform, identity
-from torchani.datasets._annotations import Conformers, StrPath
-from torchani.storage import DATASETS_DIR
 
 
 class BatchedDataset(torch.utils.data.Dataset[Conformers]):

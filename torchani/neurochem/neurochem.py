@@ -15,9 +15,14 @@ from torchani.cutoffs import CutoffArg
 from torchani.neighbors import NeighborlistArg
 from torchani.potentials import EnergyAdder
 from torchani.tuples import SpeciesEnergies
-from torchani.neurochem.utils import model_dir_from_prefix
 from torchani.utils import TightCELU
 from torchani.atomics import AtomicNetwork
+from torchani.annotations import StrPath
+
+
+def model_dir_from_prefix(prefix: Path, idx: int) -> Path:
+    network_path = (prefix.parent / f"{prefix.name}{idx}") / "networks"
+    return network_path
 
 
 class NeurochemParseError(RuntimeError):
@@ -46,7 +51,7 @@ class NeurochemLayerSpec:
 
 
 def load_aev_computer_and_symbols(
-    consts_file: tp.Union[str, Path],
+    consts_file: StrPath,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     neighborlist: NeighborlistArg = "full_pairwise",
@@ -84,7 +89,7 @@ class AEVConstants:
 
 
 def load_aev_constants_and_symbols(
-    consts_file: tp.Union[Path, str]
+    consts_file: StrPath
 ) -> tp.Tuple[AEVConstants, tp.Tuple[str, ...]]:
     aev_floats: tp.Dict[str, float] = {}
     aev_seqs: tp.Dict[str, tp.Tuple[float, ...]] = {}
@@ -138,7 +143,7 @@ def load_aev_constants_and_symbols(
     return constants, symbols
 
 
-def load_energy_adder(filename: tp.Union[Path, str]) -> EnergyAdder:
+def load_energy_adder(filename: StrPath) -> EnergyAdder:
     """Returns an object of :class:`EnergyAdder` with self energies from
     NeuroChem sae file"""
     _self_energies = []
@@ -173,7 +178,7 @@ class EnergyShifter(torch.nn.Module):
 
 
 # This function is kept for backwards compatibility
-def load_sae(filename: tp.Union[Path, str]):
+def load_sae(filename: StrPath):
     """Returns an object of :class:`EnergyShifter` with self energies from
     NeuroChem sae file"""
     return EnergyShifter(load_energy_adder(filename))
@@ -223,7 +228,7 @@ def _parse_nnf(nnf_str: str) -> tp.List[NeurochemLayerSpec]:
     return [NeurochemLayerSpec(**eval(layer)) for layer in layers]
 
 
-def load_atomic_network(filename: tp.Union[Path, str]) -> AtomicNetwork:
+def load_atomic_network(filename: StrPath) -> AtomicNetwork:
     """Returns an instance of :class:`torch.nn.Sequential` with hyperparameters
     and parameters loaded from NeuroChem's .nnf, .wparam and .bparam files."""
     filename = Path(filename).resolve()
@@ -300,7 +305,7 @@ def load_atomic_network(filename: tp.Union[Path, str]) -> AtomicNetwork:
     return network
 
 
-def load_model(symbols: tp.Sequence[str], model_dir: tp.Union[Path, str]) -> ANIModel:
+def load_model(symbols: tp.Sequence[str], model_dir: StrPath) -> ANIModel:
     """Returns an instance of :class:`torchani.nn.ANIModel` loaded from
     NeuroChem's network directory.
 
@@ -318,7 +323,7 @@ def load_model(symbols: tp.Sequence[str], model_dir: tp.Union[Path, str]) -> ANI
 
 
 def load_model_ensemble(
-    symbols: tp.Sequence[str], prefix: tp.Union[Path, str], count: int
+    symbols: tp.Sequence[str], prefix: StrPath, count: int
 ) -> Ensemble:
     """Returns an instance of :class:`torchani.nn.Ensemble` loaded from
     NeuroChem's network directories beginning with the given prefix.

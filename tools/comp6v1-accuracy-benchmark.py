@@ -1,4 +1,3 @@
-import typing as tp
 import sys
 import argparse
 from pathlib import Path
@@ -7,6 +6,7 @@ import torch
 from tqdm import tqdm
 from rich.console import Console
 
+from torchani.annotations import Device
 from torchani.models import ANI1x
 from torchani import datasets
 from torchani.datasets import ANIDataset
@@ -19,9 +19,10 @@ console = Console()
 def main(
     subset: str,
     max_size: int,
-    device: tp.Literal["cpu", "cuda"],
+    device: Device,
     no_tqdm: bool,
 ) -> int:
+    device = torch.device(device)
     ds = getattr(datasets, "COMP6v1")(verbose=False)
     locations = [
         Path(p)
@@ -31,7 +32,7 @@ def main(
     if not len(locations) == 1:
         raise ValueError(f"Subset {subset} could not be found")
     console.print(
-        f"Benchmarking on subset {subset} on device {device.upper()}"
+        f"Benchmarking on subset {subset} on device {device.type.upper()}"
     )
     ds = ANIDataset(locations=locations)
     model = ANI1x().to(device)

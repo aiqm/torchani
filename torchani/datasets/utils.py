@@ -8,7 +8,7 @@ from tqdm import tqdm
 from torchani.units import hartree2kcalpermol
 from torchani.models import BuiltinModel
 from torchani.nn import Ensemble
-from torchani.datasets._annotations import Conformers, StrPath
+from torchani.annotations import Conformers, StrPath
 from torchani.datasets.datasets import ANIDataset
 from torchani.datasets.backends import TemporaryLocation
 

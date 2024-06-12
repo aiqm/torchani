@@ -8,6 +8,7 @@ import torch
 from rich.table import Table
 from rich.console import Console
 
+from torchani.annotations import Device
 from torchani.io import read_xyz
 from torchani.csrc import CUAEV_IS_INSTALLED, MNP_IS_INSTALLED
 from torchani.models import ANI2x
@@ -25,13 +26,14 @@ def _build_ani2x(
     mnp: bool = False,
     infer: bool = False,
     jit: bool = False,
-    device: tp.Literal["cpu", "cuda"] = "cpu",
+    device: Device = "cpu",
 ):
-    use_cuaev = (device == "cuda") and CUAEV_IS_INSTALLED
+    device = torch.device(device)
+    use_cuaev = (device.type == "cuda") and CUAEV_IS_INSTALLED
     model = ANI2x(model_index=idx, use_cuda_extension=use_cuaev)
     if infer:
         model = model.to_infer_model(mnp)
-    model = model.to(torch.device(device))
+    model = model.to(device)
     if jit:
         model = torch.jit.script(model)
     return model
@@ -40,7 +42,7 @@ def _build_ani2x(
 def benchmark(
     table: Table,
     jit: bool = False,
-    device: tp.Literal["cuda", "cpu"] = "cpu",
+    device: Device = "cpu",
     idx: tp.Optional[int] = None,
 ) -> None:
     """
@@ -52,6 +54,7 @@ def benchmark(
         run_ani2x                          : 756.459 ms/step
         run_ani2x_infer                    : 32.482 ms/step
     """
+    device = torch.device(device)
 
     def _run(model, file):
         species, coordinates, _ = read_xyz(
@@ -61,7 +64,7 @@ def benchmark(
         )
         _, _ = energies_and_forces(model, species, coordinates)
 
-    steps = 10 if device == "cpu" else 30
+    steps = 10 if device.type == "cpu" else 30
 
     def run():
         _run(ani2x, "small.xyz")
@@ -69,10 +72,10 @@ def benchmark(
     ani2x = _build_ani2x(idx=idx, device=device, jit=jit)
     time_ms_ref = timeit(run, steps=steps, verbose=False)
     table.add_row(
-        device,
+        device.type,
         "--",
         str(jit),
-        str((device == "cuda") and CUAEV_IS_INSTALLED),
+        str((device.type == "cuda") and CUAEV_IS_INSTALLED),
         f"{time_ms_ref:.5f}",
         "--",
     )
@@ -88,10 +91,10 @@ def benchmark(
         time_ms = timeit(run_infer, steps=steps, verbose=False)
         color = "green" if time_ms < time_ms_ref else "red"
         table.add_row(
-            device,
+            device.type,
             "pyMNP" if idx is not None else "BMM",
             str(jit),
-            str((device == "cuda") and CUAEV_IS_INSTALLED),
+            str((device.type == "cuda") and CUAEV_IS_INSTALLED),
             f"{time_ms:.5f}",
             f"[{color}]{((time_ms_ref / time_ms) - 1) * 100:.2f}[/{color}]",
         )
@@ -105,19 +108,13 @@ def benchmark(
     time_ms = timeit(run_infer_mnp, steps=steps, verbose=False)
     color = "green" if time_ms < time_ms_ref else "red"
     table.add_row(
-        device,
+        device.type,
         "cppMNP" if idx is not None else "cppMNP+BMM",
         str(jit),
-        str((device == "cuda") and CUAEV_IS_INSTALLED),
+        str((device.type == "cuda") and CUAEV_IS_INSTALLED),
         f"{time_ms:.5f}",
         f"[{color}]{((time_ms_ref / time_ms) - 1) * 100:.2f}[/{color}]",
     )
-
-
-devices: tp.Tuple[tp.Literal["cpu", "cuda"], tp.Literal["cpu", "cuda"]] = (
-    "cpu",
-    "cuda",
-)
 
 
 def main() -> int:
@@ -148,19 +145,19 @@ def main() -> int:
         table.add_column("speedup (%)")
     for jit, device in itertools.product(
         (True, False),
-        devices,
+        (torch.device("cpu"), torch.device("cuda")),
     ):
-        console.print(f"Profiling Ensemble in {device}, JIT: {jit}")
+        console.print(f"Profiling Ensemble in {device.type}, JIT: {jit}")
         benchmark(ensemble_table, jit, device, idx=None)
     console.print(ensemble_table)
     console.print()
 
     for jit, device in itertools.product(
         (True, False),
-        devices,
+        (torch.device("cpu"), torch.device("cuda")),
     ):
         console.print(
-            f"Profiling Single Model in {device}, JIT: {jit}"
+            f"Profiling Single Model in {device.type}, JIT: {jit}"
         )
         benchmark(single_table, jit, device, idx=0)
     console.print(single_table)

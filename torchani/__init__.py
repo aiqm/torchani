@@ -55,6 +55,7 @@ from torchani import (
     grad,
     io,
     neurochem,
+    annotations,
 )
 # NOTE: ase is an optional dependency so don't import here
 
@@ -71,6 +72,7 @@ __all__ = [
     'grad',
     'SpeciesConverter',
     'utils',
+    'annotations',
     'models',
     'units',
     'potentials',

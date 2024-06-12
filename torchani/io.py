@@ -5,6 +5,7 @@ from pathlib import Path
 import torch
 from torch import Tensor
 
+from torchani.annotations import StrPath, Device
 from torchani.constants import ATOMIC_NUMBER
 from torchani.utils import pad_atomic_properties
 
@@ -14,9 +15,9 @@ class TorchaniIOError(IOError):
 
 
 def read_xyz(
-    path: tp.Union[str, Path],
+    path: StrPath,
     dtype: torch.dtype = torch.float,
-    device: tp.Union[torch.device, tp.Literal["cpu", "cuda"]] = "cpu",
+    device: Device = "cpu",
 ) -> tp.Tuple[Tensor, Tensor, tp.Optional[Tensor]]:
     r"""
     Read an xyz file with possibly many coordinates and species and return a

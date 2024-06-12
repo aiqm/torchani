@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 from torchani import geometry
+from torchnai.annotation import StrPath
 from torchani.models import ANI1x, ANI2x, ANI1ccx
 from torchani.ase import Calculator
 from torchani.io import read_xyz
@@ -220,7 +221,7 @@ if __name__ == "__main__":
     show = args.no_show
     assert args.box_repeats > 3
 
-    path_to_xyz: tp.Union[Path, str]
+    path_to_xyz: StrPath
     if args.xyz is not None:
         path_to_xyz = Path(args.xyz).resolve()
     else:
@@ -357,7 +358,7 @@ if __name__ == "__main__":
                 dyn = Langevin(molecule, 1 * units.fs, 300 * units.kB, 0.2)
                 start = time.perf_counter()
                 dyn.run(args.steps)
-                end = time.perf_conter()
+                end = time.perf_counter()
 
                 times.append((end - start) * 1e6 / args.steps / (3600 * 24))
                 timers_list.append(copy.deepcopy(timers))

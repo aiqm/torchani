@@ -4,6 +4,7 @@ import typing as tp
 import torch
 from torch import Tensor
 
+from torchani.annotations import Device
 from torchani.utils import AtomicNumbersToMasses
 
 Reference = tp.Literal["center_of_mass", "center_of_geometry", "origin"]
@@ -21,7 +22,7 @@ class Displacer(torch.nn.Module):
         self,
         masses: tp.Iterable[float] = (),
         reference: Reference = "center_of_mass",
-        device: tp.Union[torch.device, tp.Literal["cpu", "cuda"]] = "cpu",
+        device: Device = "cpu",
         dtype: torch.dtype = torch.float,
     ) -> None:
         super().__init__()

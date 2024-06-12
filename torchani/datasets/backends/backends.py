@@ -1,7 +1,7 @@
 import typing as tp
 from pathlib import Path
 
-from torchani.datasets._annotations import StrPath
+from torchani.annotations import StrPath
 from torchani.datasets.backends.interface import _StoreWrapper
 from torchani.datasets.backends.h5py_impl import _H5Store, _H5TemporaryLocation
 from torchani.datasets.backends.zarr_impl import (

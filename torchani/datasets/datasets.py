@@ -17,19 +17,19 @@ from tqdm import tqdm
 
 from torchani.constants import ATOMIC_NUMBER, PERIODIC_TABLE
 from torchani.utils import species_to_formula, sort_by_element, PADDING
+from torchani.annotations import (
+    Conformers,
+    NumpyConformers,
+    MixedConformers,
+    StrPath,
+    IdxLike,
+)
 from torchani.datasets.backends import (
     _StoreWrapper,
     StoreFactory,
     TemporaryLocation,
     _ConformerWrapper,
     _SUFFIXES,
-)
-from torchani.datasets._annotations import (
-    Conformers,
-    NumpyConformers,
-    MixedConformers,
-    StrPath,
-    IdxLike,
 )
 
 # About _ELEMENT_KEYS:

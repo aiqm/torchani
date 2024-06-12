@@ -9,7 +9,7 @@ from collections import OrderedDict
 import numpy as np
 import typing_extensions as tpx
 
-from torchani.datasets._annotations import StrPath
+from torchani.annotations import StrPath
 from torchani.datasets.backends.interface import (
     _StoreWrapper,
     _ConformerGroup,

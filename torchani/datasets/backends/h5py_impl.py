@@ -9,7 +9,7 @@ import numpy as np
 from tqdm import tqdm
 import typing_extensions as tpx
 
-from torchani.datasets._annotations import StrPath
+from torchani.annotations import StrPath
 from torchani.datasets.backends.interface import (
     _ConformerGroup,
     _ConformerWrapper,

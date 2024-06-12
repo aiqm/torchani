@@ -7,17 +7,18 @@ import zipfile
 import shutil
 from pathlib import Path
 
+from torchani.annotations import StrPath
 from torchani.aev import AEVComputer
 from torchani.atomics import AtomicContainer
 from torchani.models import BuiltinModel
 from torchani.storage import NEUROCHEM_DIR
 from torchani.potentials import EnergyAdder
-from torchani.neurochem.utils import model_dir_from_prefix
 from torchani.neurochem.neurochem import (
     load_aev_computer_and_symbols,
     load_model_ensemble,
     load_model,
     load_energy_adder,
+    model_dir_from_prefix,
 )
 
 
@@ -173,7 +174,7 @@ def modules_from_info_file(
 
 
 def load_builtin_from_info_file(
-    info_file: tp.Union[Path, str],
+    info_file: StrPath,
     model_index: tp.Optional[int] = None,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,

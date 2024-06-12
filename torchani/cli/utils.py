@@ -6,12 +6,13 @@ import typing as tp
 import json
 from pathlib import Path
 
+from torchani.annotations import StrPath
 from torchani.datasets import ANIDataset
 from torchani.datasets.builtin import _DATASETS_JSON_PATH
 from torchani.datasets.download import _CHUNK_SIZE
 
 
-def h5info(path: tp.Union[str, Path]) -> None:
+def h5info(path: StrPath) -> None:
     path_ = Path(path)
     assert path_.exists(), f"{str(path_)} does not exist"
     if path_.is_file():

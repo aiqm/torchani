@@ -6,18 +6,22 @@ import torch
 from parameterized import parameterized_class
 from torch.testing._internal.common_utils import TestCase, make_tensor  # noqa: F401
 
+from torchani.annotations import Device
+
 
 def _get_cls_name(cls: type, idx: int, params: tp.Dict[str, tp.Any]) -> str:
-    return f"{cls.__name__}_{params['_device']}{'_jit' if params['_jit'] else ''}"
+    return f"{cls.__name__}_{params['_device'].type}{'_jit' if params['_jit'] else ''}"
 
 
 def expand(
-    device: tp.Optional[tp.Literal["cpu", "cuda"]] = None,
+    device: tp.Optional[Device] = None,
     jit: tp.Optional[bool] = None,
 ):
-    if device not in (None, "cpu", "cuda"):
-        raise ValueError("Device must be None or one of 'cpu', 'cuda'")
-    _device = ("cpu", "cuda") if device is None else (device,)
+    _device: tp.Tuple[torch.device, ...]
+    if device is None:
+        _device = (torch.device("cpu"), torch.device("cuda"))
+    else:
+        _device = (torch.device(device),)
     _jit = (False, True) if jit is None else (jit,)
     decorator = parameterized_class(
         ("_device", "_jit"),
@@ -44,12 +48,12 @@ _T = tp.TypeVar("_T", bound=torch.nn.Module)
 
 @expand()
 class ANITest(TestCase):
-    _device: tp.Literal["cpu", "cuda"]
+    _device: torch.device
     _jit: bool
 
     @property
-    def device(self) -> tp.Literal["cpu", "cuda"]:
-        return getattr(self, "_device", "cpu")
+    def device(self) -> torch.device:
+        return getattr(self, "_device", torch.device("cpu"))
 
     @property
     def jit(self) -> bool:
@@ -57,7 +61,9 @@ class ANITest(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if (getattr(cls, "_device", "cpu") == "cuda") and not torch.cuda.is_available():
+        if (
+            getattr(cls, "_device", torch.device("cpu")).type == "cuda"
+        ) and not torch.cuda.is_available():
             raise unittest.SkipTest("CUDA is not available")
 
     # jit-scripting should for the most part be transparent to users, so we

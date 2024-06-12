@@ -1,4 +1,3 @@
-import typing as tp
 import sys
 from pathlib import Path
 import argparse
@@ -7,6 +6,7 @@ import torch
 from rich.console import Console
 from tqdm import tqdm
 
+from torchani.annotations import Device
 from torchani.models import ANI1x
 from torchani.grad import energies_and_forces
 from torchani.io import read_xyz
@@ -23,14 +23,15 @@ def main(
     nvtx: bool,
     sync: bool,
     no_tqdm: bool,
-    device: tp.Literal["cpu", "cuda"],
+    device: Device,
     detail: bool,
     num_warm_up: int,
     num_profile: int,
 ) -> int:
+    device = torch.device(device)
     detail = (opt is Opt.NONE) and detail
     console.print(
-        f"Profiling with optimization={opt.value}, on device: {device.upper()}"
+        f"Profiling with optimization={opt.value}, on device: {device.type.upper()}"
     )
     if not file:
         xyz_file_path = Path(ROOT, "tests", "test_data", "CH4-5.xyz")

@@ -302,10 +302,10 @@ from collections import OrderedDict
 
 from tqdm import tqdm
 
+from torchani.storage import DATASETS_DIR
+from torchani.annotations import StrPath
 from torchani.datasets.download import _download_and_extract_archive, _check_integrity
 from torchani.datasets.datasets import ANIDataset
-from torchani.datasets._annotations import StrPath
-from torchani.storage import DATASETS_DIR
 
 _BASE_URL = "http://moria.chem.ufl.edu/animodel/ground_truth_data/"
 _DATASETS_JSON_PATH = Path(__file__).parent / "builtin_datasets.json"
