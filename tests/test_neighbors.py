@@ -1,9 +1,11 @@
+from pathlib import Path
 import unittest
 
 import torch
 from torch import Tensor
 
 import torchani
+from torchani.io import read_xyz
 from torchani.testing import TestCase, expand, ANITest
 from torchani.aev import AEVComputer
 from torchani.neighbors import (
@@ -15,37 +17,26 @@ from torchani.neighbors import (
     image_pairs_within,
     count_atoms_in_buckets,
 )
-from torchani.geometry import tile_into_tight_cell
 
 
 class TestCellList(TestCase):
     def setUp(self):
         self.device = torch.device("cpu")
-
         self.cutoff = 5.2
         self.cell_size = self.cutoff * 3 + 0.1
-        # The length of the box is ~ 3 * cutoff this so that
+        # The length of the box is ~ (3 * 5.2 + 0.1) this so that
         # 3 buckets in each direction are needed to cover it, if one uses
         # a cutoff of 5.2 and a bucket length of 5.200001
-        coordinates = torch.full(
-            (1, 2, 3), self.cutoff / 2, dtype=torch.float, device=self.device
-        )
-        coordinates[:, 1, :] += 0.1
-        species = torch.ones((1, 2), dtype=torch.long, device=self.device)
-        self.species, self.coordinates, _ = tile_into_tight_cell(
-            (species, coordinates),
-            fixed_displacement_size=self.cutoff,
-            make_coordinates_positive=False,
-        )
-        assert self.species.shape == (1, 54)
-        assert self.coordinates.shape == (1, 54, 3)
-
         # first bucket is 0 - 5.2, in 3 directions, and subsequent buckets
         # are on top of that
+        self.species, self.coordinates, cell = read_xyz(
+            (Path(__file__).resolve().parent / "test_data") / "tight_cell.xyz"
+        )
         self.pbc = torch.tensor(
             [True, True, True], dtype=torch.bool, device=self.device
         )
-        self.cell = torch.eye(3, dtype=torch.float, device=self.device) * self.cell_size
+        assert cell is not None
+        self.cell = cell
         self.clist = CellList()
 
     def testInit(self):
@@ -74,9 +65,7 @@ class TestCellList(TestCase):
             self.cell,
             self.cutoff,
         )
-        atom_grid_idx3 = coords_to_grid_idx3(
-            self.coordinates, self.cell, grid_shape
-        )
+        atom_grid_idx3 = coords_to_grid_idx3(self.coordinates, self.cell, grid_shape)
         self.assertTrue(atom_grid_idx3.shape == (1, 54, 3))
         self.assertEqual(atom_grid_idx3, atom_grid_idx3_expect)
 
@@ -101,7 +90,8 @@ class TestCellList(TestCase):
         atom_grid_idx = flatten_idx3(atom_grid_idx3_expect, grid_shape)
         self.assertEqual(int(grid_shape.prod()), grid_numel_expect)
         grid_count, grid_cumcount = count_atoms_in_buckets(
-            atom_grid_idx, grid_shape,
+            atom_grid_idx,
+            grid_shape,
         )
         # these are all 2
         self.assertEqual(grid_count.shape, (grid_numel_expect,))
@@ -114,12 +104,11 @@ class TestCellList(TestCase):
             self.cell,
             self.cutoff,
         )
-        atom_grid_idx3 = coords_to_grid_idx3(
-            self.coordinates, self.cell, grid_shape
-        )
+        atom_grid_idx3 = coords_to_grid_idx3(self.coordinates, self.cell, grid_shape)
         atom_grid_idx = flatten_idx3(atom_grid_idx3, grid_shape)
         grid_count, grid_cumcount = count_atoms_in_buckets(
-            atom_grid_idx, grid_shape,
+            atom_grid_idx,
+            grid_shape,
         )
         within = image_pairs_within(
             grid_count,
@@ -172,21 +161,11 @@ class TestCellList(TestCase):
         self._check_neighborlists_match(self.coordinates)
 
     def testCellListMatchesFullPairwiseRandomNoise(self):
-        cut = self.cutoff
         for j in range(100):
-            coordinates = torch.tensor(
-                [
-                    [cut / 2, cut / 2, cut / 2],
-                    [cut / 2 + 0.1, cut / 2 + 0.1, cut / 2 + 0.1],
-                ]
-            ).unsqueeze(0)
-            species = torch.tensor([[1, 1]], dtype=torch.long)
-            _, coordinates, _ = tile_into_tight_cell(
-                (species, coordinates),
-                fixed_displacement_size=cut,
-                noise=0.1,
-                make_coordinates_positive=False,
-            )
+            noise = 0.1
+            coordinates = self.coordinates + torch.empty(
+                self.coordinates.shape, device="cpu"
+            ).uniform_(-noise, noise)
             self._check_neighborlists_match(coordinates)
 
     def testCellListMatchesFullPairwiseRandomNormal(self):

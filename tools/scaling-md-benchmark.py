@@ -1,7 +1,6 @@
 import typing as tp
 from pathlib import Path
 import time
-import math
 import pickle
 import copy
 
@@ -15,23 +14,9 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-from torchani import geometry
-from torchnai.annotation import StrPath
 from torchani.models import ANI1x, ANI2x, ANI1ccx
 from torchani.ase import Calculator
 from torchani.io import read_xyz
-
-
-def make_water(device=None, eq_bond=0.957582, eq_angle=104.485):
-    if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    d = eq_bond
-    t = (math.pi / 180) * eq_angle  # convert to radians
-    coordinates = torch.tensor(
-        [[d, 0, 0], [d * math.cos(t), d * math.sin(t), 0], [0, 0, 0]], device=device
-    ).double()
-    species = torch.tensor([[1, 1, 8]], device=device, dtype=torch.long)
-    return species, coordinates.double()
 
 
 def plot_file(file_path, comment, show=False):
@@ -220,12 +205,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     show = args.no_show
     assert args.box_repeats > 3
-
-    path_to_xyz: StrPath
-    if args.xyz is not None:
-        path_to_xyz = Path(args.xyz).resolve()
-    else:
-        path_to_xyz = ""
+    if args.xyz is None:
+        raise ValueError("xyz is a required argument")
+    path_to_xyz = Path(args.xyz).resolve()
 
     # the output file name is the model name by default
     if args.cell_list:
@@ -253,25 +235,16 @@ if __name__ == "__main__":
     else:
         device = torch.device(args.device)
         sizes_list: tp.List[int] = []
-        if not path_to_xyz:
-            num_atoms = 3  # for water
-            sizes_list = (
-                (num_atoms * torch.arange(4, args.box_repeats + 1) ** 3)
-                .numpy()
-                .tolist()
-            )
-        else:
-            assert isinstance(path_to_xyz, Path)
-            xyz_files: tp.Union[tp.List[Path], NDArray[tp.Any]]
+        xyz_files: tp.Union[tp.List[Path], NDArray[tp.Any]]
 
-            xyz_files = [p for p in path_to_xyz.iterdir() if ".xyz" == p.suffix]
-            for f in xyz_files:
-                sizes_list.append(read_xyz(f)[0].shape[1])
-            sizes = np.asarray(sizes_list)
-            xyz_files = np.asarray(xyz_files)
-            idx = np.argsort(sizes)
-            sizes = sizes[idx]
-            xyz_files = xyz_files[idx].tolist()
+        xyz_files = sorted(path_to_xyz.rglob("*.xyz"))
+        for f in xyz_files:
+            sizes_list.append(read_xyz(f)[0].shape[1])
+        sizes = np.asarray(sizes_list)
+        xyz_files = np.asarray(xyz_files)
+        idx = np.argsort(sizes)
+        sizes = sizes[idx]
+        xyz_files = xyz_files[idx].tolist()
 
         print_info(device, args.steps, sizes)
         model = get_model(
@@ -314,25 +287,14 @@ if __name__ == "__main__":
         for j in range(args.trials):
             times = []
             raw_times = []
-            if path_to_xyz:
-                it = tqdm(xyz_files)
-            else:
-                it = tqdm(range(3, args.box_repeats))
-
-            for r in it:
+            for r in tqdm(xyz_files):
                 # reset timers
                 timers = {k: 0.0 for k in timers}
                 try:
                     model.aev_computer.neighborlist.reset_cached_values()
                 except AttributeError:
                     pass
-                if not path_to_xyz:
-                    species, coordinates = make_water(device)
-                    species, coordinates, cell = geometry.tile_into_tight_cell(
-                        (species, coordinates), density=0.0923, noise=0.1, repeats=r + 1
-                    )
-                else:
-                    species, coordinates, cell = read_xyz(r)
+                species, coordinates, cell = read_xyz(r)
 
                 coordinates.requires_grad_()
                 calc = model.ase()
@@ -350,6 +312,7 @@ if __name__ == "__main__":
                 }
 
                 if not args.no_pbc:
+                    assert cell is not None
                     atoms_args.update({"cell": cell.cpu().numpy(), "pbc": True})
 
                 molecule = ase.Atoms(**atoms_args)
