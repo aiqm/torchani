@@ -2,8 +2,8 @@ name: ani
 channels:
   - nodefaults
   - https://conda.anaconda.org/pytorch
-  - https://conda.anaconda.org/conda-forge
   - https://conda.anaconda.org/nvidia
+  - https://conda.anaconda.org/conda-forge
 dependencies:
   # General
   - setuptools>=64
@@ -39,6 +39,7 @@ dependencies:
   - flake8  # linter
   - mypy  # type checking
   - pytest  # tests runner
+  - pre_commit  # run pre commit hooks
   - parameterized  # parametrize test classes
   - expecttest  # indirect dependency of torch.testing
   # Extra data backends for tests:

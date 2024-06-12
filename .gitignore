@@ -8,7 +8,7 @@ __pycache__/
 _version.py
 
 # Vscode
-/.vscode
+.vscode
 
 # Vim swap files
 *.swp
@@ -51,7 +51,8 @@ Untitled.ipynb
 /tools/benchmark/
 
 # Output of examples
-examples/batched_dataset/
+/examples/batched_dataset/
+/examples/runs/
 
 # Used for CUB when building CUDA / C++ extensions
 /include/

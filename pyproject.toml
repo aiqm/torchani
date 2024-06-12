@@ -49,7 +49,7 @@ fallback_version="0.0.0"
 [tool.mypy]
 ignore_missing_imports = true
 check_untyped_defs = true
-exclude = "(tests/.*|tools/.*|torchani/data/.*|docs/src/examples/.*|docs/build/.*)"
+exclude = "(build/.*|tests/.*|tools/.*|docs/src/examples/.*|docs/build/.*)"
 
 [tool.pytest.ini_options]
 filterwarnings = "ignore:.*distutils Version classes are deprecated.*:DeprecationWarning"
