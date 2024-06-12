@@ -24,6 +24,8 @@ dependencies:
   # metapackage are not enough, we need the *-dev versions with the headers.
   # Also need to pin the version of nvcc, otherwise torch refuses to compile
   # Also need to pin the version of cccl due to torch's usage of thrust
+  - gxx_linux-64=11.4
+  - gcc_linux-64=11.4
   - nvidia::cuda-libraries-dev=11.8
   - nvidia::cuda-cccl=11.8
   - nvidia::cuda-nvcc=11.8
