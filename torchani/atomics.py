@@ -138,6 +138,32 @@ def like_2x(
     )
 
 
+# NOTE: Same as 2x, but C layer has 196 instead of 192 nodes
+def like_ala(
+    symbol: str,
+    in_dim: int = 1008,
+    out_dim: int = 1,
+    activation: tp.Union[str, torch.nn.Module] = "celu",
+    bias: bool = True,
+) -> AtomicNetwork:
+    r"""Makes an atomic network. Defaults are the ones in the ANI-ala  model"""
+    dims = {
+        "H": (256, 192, 160),
+        "C": (224, 196, 160),
+        "N": (192, 160, 128),
+        "O": (192, 160, 128),
+        "S": (160, 128, 96),
+        "F": (160, 128, 96),
+        "Cl": (160, 128, 96),
+    }
+    layer_dims = (in_dim,) + dims[symbol] + (out_dim,)
+    return AtomicNetwork(
+        layer_dims=layer_dims,
+        activation=activation,
+        bias=bias,
+    )
+
+
 def like_dr(
     symbol: str,
     in_dim: int = 1008,
@@ -190,8 +216,10 @@ AtomicMakerArg = tp.Union[str, AtomicMaker]
 def parse_atomics(module: AtomicMakerArg) -> AtomicMaker:
     if module in ["ani1x", "ani1ccx"]:
         return like_1x
-    elif module in ["ani2x", "aniala"]:
+    elif module == "ani2x":
         return like_2x
+    elif module == "aniala":
+        return like_ala
     elif module == "anidr":
         return like_dr
     assert not isinstance(module, str)  # mypy

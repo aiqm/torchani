@@ -35,7 +35,7 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-        entry: "mypy --ignore-missing . --exclude='(build/.*|tests/.*|tools/.*|docs/src/examples/.*|docs/build/.*)'"
+        entry: "mypy --ignore-missing . --exclude='(build/.*|tests/.*|tools/.*|docs/src/examples_autogen/.*|docs/build/.*)'"
         # Don't generate a venv for the exe
         language: system
         types: [python]
