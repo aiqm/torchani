@@ -30,6 +30,9 @@ __all__ = [
     "TightCELU",
 ]
 
+SYMBOLS_1X = ("H", "C", "N", "O")
+SYMBOLS_2X = ("H", "C", "N", "O", "S", "F", "Cl")
+
 
 PADDING = {
     "species": -1,

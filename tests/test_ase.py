@@ -55,6 +55,7 @@ class TestASE(ANITest):
         model_cell = self._setup(
             ANI1x(model_index=0, neighborlist="cell_list").double()
         )
+        symbols = model_cell.get_chemical_symbols()
         model_pair = self._setup(
             PairPotentialsModel(
                 aev_computer=model_cell.aev_computer,
@@ -62,9 +63,9 @@ class TestASE(ANITest):
                 energy_shifter=model_cell.energy_shifter,
                 symbols=model_cell.get_chemical_symbols(),
                 pairwise_potentials=[
-                    PairPotential(cutoff=6.4),
-                    PairPotential(cutoff=5.2),
-                    PairPotential(cutoff=3.0),
+                    PairPotential(symbols=symbols, cutoff=6.4),
+                    PairPotential(symbols=symbols, cutoff=5.2),
+                    PairPotential(symbols=symbols, cutoff=3.0),
                 ],
             ).double()
         )

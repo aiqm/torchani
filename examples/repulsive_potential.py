@@ -11,9 +11,8 @@ import torch
 from torchani.potentials import StandaloneRepulsionXTB
 from torchani.grad import energies_and_forces
 
-# This is an example of how to use the repulsion interactions coded in torchani
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-rep = StandaloneRepulsionXTB().to(device)
+rep = StandaloneRepulsionXTB(cutoff=5.2, symbols=("H", "C", "N", "O")).to(device)
 
 coordinates = torch.tensor(
     [
@@ -32,7 +31,7 @@ rep_energy, force = energies_and_forces(rep, znumbers, coordinates)
 print("Repulsion Energy:", rep_energy)
 print("Force:", force.squeeze())
 
-# repulsion can also be calculated for batches of coordinates
+# Repulsion can also be calculated for batches of coordinates
 # (here we just repeat the methanes as an example, but different molecules
 # can be passed by using dummy "-1" atoms in the species)
 r = 4
@@ -42,10 +41,11 @@ rep_energy, force = energies_and_forces(rep, znumbers, coordinates)
 print("Repulsion Energy:", rep_energy)
 print("Force:", force.squeeze())
 
-# By default the supported species are H C N O, but different supported species
-# can also be passed down to the constructor
-rep = StandaloneRepulsionXTB(symbols=("H", "C", "N", "O", "S", "Fe")).to(device)
-# here I changed the species a bit to make a nonesense molecules
+# Different supported species can be passed down to the constructor
+rep = StandaloneRepulsionXTB(cutoff=5.2, symbols=("H", "C", "N", "O", "S", "Fe")).to(
+    device
+)
+# Here we change the species a bit to make a nonesense molecule
 coordinates = torch.tensor(
     [
         [

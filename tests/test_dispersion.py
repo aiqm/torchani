@@ -1,8 +1,10 @@
+import math
 import unittest
 
 import torch
 
 from torchani import units
+from torchani.utils import SYMBOLS_1X
 from torchani.aev import AEVComputer
 from torchani.potentials import TwoBodyDispersionD3, StandaloneTwoBodyDispersionD3
 from torchani.potentials.dispersion import constants
@@ -40,11 +42,15 @@ class TestDispersion(ANITest):
         units.HARTREE_TO_KCALPERMOL = self.old_hartree_to_kcalpermol
 
     def testConstructor(self):
-        disp = self._setup(TwoBodyDispersionD3.from_functional())
+        disp = self._setup(
+            TwoBodyDispersionD3.from_functional(functional="wB97X", symbols=SYMBOLS_1X)
+        )
         self.assertTrue(disp._s6 == torch.tensor(1.0, device=self.device))
 
     def testMethaneCoordinationNums(self):
-        disp = self._setup(TwoBodyDispersionD3.from_functional())
+        disp = self._setup(
+            TwoBodyDispersionD3.from_functional(functional="wB97X", symbols=SYMBOLS_1X)
+        )
         neighbors = self.aev_computer.neighborlist(
             self.species,
             self.coordinates,
@@ -72,7 +78,9 @@ class TestDispersion(ANITest):
         )
 
     def testPrecomputedC6(self):
-        disp = self._setup(TwoBodyDispersionD3.from_functional())
+        disp = self._setup(
+            TwoBodyDispersionD3.from_functional(functional="wB97X", symbols=SYMBOLS_1X)
+        )
         diags = {
             "H": torch.diag(disp.precalc_coeff6[0, 0]),
             "C": torch.diag(disp.precalc_coeff6[1, 1]),
@@ -141,7 +149,9 @@ class TestDispersion(ANITest):
         self.assertEqual(expect_c6_carbon, c6_constants[6, 6])
 
     def testMethaneC6(self):
-        disp = self._setup(TwoBodyDispersionD3.from_functional())
+        disp = self._setup(
+            TwoBodyDispersionD3.from_functional(functional="wB97X", symbols=SYMBOLS_1X)
+        )
         neighbors = self.aev_computer.neighborlist(
             self.species,
             self.coordinates,
@@ -181,7 +191,9 @@ class TestDispersion(ANITest):
         self.assertEqual(order6_coeffs, expect_order6)
 
     def testMethaneEnergy(self):
-        disp = self._setup(TwoBodyDispersionD3.from_functional())
+        disp = self._setup(
+            TwoBodyDispersionD3.from_functional(functional="wB97X", symbols=SYMBOLS_1X)
+        )
         neighbors = self.aev_computer.neighborlist(
             self.species,
             self.coordinates,
@@ -199,7 +211,9 @@ class TestDispersion(ANITest):
     def testMethaneStandalone(self):
         disp = self._setup(
             StandaloneTwoBodyDispersionD3(
+                symbols=SYMBOLS_1X,
                 cutoff=8.0,
+                functional="wB97X",
             )
         )
         energy = disp((self.atomic_numbers, self.coordinates)).energies
@@ -214,7 +228,9 @@ class TestDispersion(ANITest):
     def testMethaneStandaloneBatch(self):
         disp = self._setup(
             StandaloneTwoBodyDispersionD3(
+                symbols=SYMBOLS_1X,
                 cutoff=8.0,
+                functional="wB97X",
             )
         )
         r = 2
@@ -234,7 +250,9 @@ class TestDispersion(ANITest):
     def testDispersionBatches(self):
         rep = self._setup(
             StandaloneTwoBodyDispersionD3(
+                symbols=SYMBOLS_1X,
                 cutoff=8.0,
+                functional="wB97X",
             )
         )
         coordinates1 = torch.tensor(
@@ -264,7 +282,13 @@ class TestDispersion(ANITest):
         self.assertEqual(energies, energies_cat)
 
     def testForce(self):
-        model = self._setup(StandaloneTwoBodyDispersionD3())
+        model = self._setup(
+            StandaloneTwoBodyDispersionD3(
+                symbols=SYMBOLS_1X,
+                cutoff=math.inf,
+                functional="wB97X",
+            )
+        )
         _, forces = energies_and_forces(model, self.atomic_numbers, self.coordinates)
         grad = -forces / units.ANGSTROM_TO_BOHR
         # compare with analytical gradient from Grimme's DFTD3 (DFTD3 gives

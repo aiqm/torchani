@@ -96,7 +96,7 @@ class ANIBatchedInMemoryDataset(BatchedDataset):
         pin_memory: tp.Optional[bool] = None,
         shuffle: bool = True,
     ) -> torch.utils.data.DataLoader:
-        if num_workers is not None:
+        if num_workers not in (None, 0):
             raise ValueError("multiprocessing not supported for in-memory datasets")
         if pin_memory is None:
             pin_memory = torch.cuda.is_available()

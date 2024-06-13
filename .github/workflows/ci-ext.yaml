@@ -1,0 +1,33 @@
+name: ci-ext
+
+on: pull_request
+
+env:
+  TAG: ani-ci-ext:${{ github.sha }}
+
+jobs:
+  build-image:
+    runs-on: [self-hosted, ipickering]
+    steps:
+      - name: Build Docker image (with extensions, for SM75)
+        uses: docker/build-push-action@v5
+        with:
+          tags: ${{ env.TAG }}
+          build-args: BUILD_EXT=sm75
+  tests:
+    needs: [build-image]
+    runs-on: [self-hosted, ipickering]
+    steps:
+      - name: Test extensions on GPU (Quadro RTX 5000, SM75)
+        run: docker run --rm --gpus '"device=3"' --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 ${{ env.TAG }} bash -c "nvidia-smi && pytest ./tests/test_cuaev.py ./tests/test_infer.py"
+
+  remove-image:
+    if: ${{ always() }}
+    needs: [build-image, tests]
+    runs-on: [self-hosted, ipickering]
+    steps:
+      - run: docker image rm --force ${{ env.TAG }}
+
+concurrency:
+  group: ani-ci-ext-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true

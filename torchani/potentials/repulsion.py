@@ -12,8 +12,6 @@ from torchani.potentials.wrapper import PotentialWrapper
 from torchani.potentials.core import PairPotential
 from torchani.potentials._repulsion_constants import alpha_constants, y_eff_constants
 
-_ELEMENTS_NUM = len(ATOMIC_NUMBER)
-
 
 class RepulsionXTB(PairPotential):
     r"""Calculates the xTB repulsion energy terms for a given molecule
@@ -32,13 +30,15 @@ class RepulsionXTB(PairPotential):
 
     def __init__(
         self,
+        symbols: tp.Sequence[str],
+        cutoff: float,
         alpha: tp.Sequence[float] = (),
         y_eff: tp.Sequence[float] = (),
-        k_rep_ab: tp.Optional[Tensor] = None,
         cutoff_fn: CutoffArg = "smooth",
-        **pairwise_kwargs,
     ):
-        super().__init__(cutoff_fn=cutoff_fn, is_trainable=False, **pairwise_kwargs)
+        super().__init__(
+            symbols=symbols, cutoff=cutoff, is_trainable=False, cutoff_fn=cutoff_fn
+        )
 
         if not alpha:
             _alpha = torch.tensor(alpha_constants)[self.atomic_numbers]
@@ -49,15 +49,12 @@ class RepulsionXTB(PairPotential):
         else:
             _y_eff = torch.tensor(y_eff)
 
-        if k_rep_ab is None:
-            k_rep_ab = torch.full((_ELEMENTS_NUM + 1, _ELEMENTS_NUM + 1), 1.5)
-            k_rep_ab[1, 1] = 1.0
-            k_rep_ab = k_rep_ab[self.atomic_numbers, :][:, self.atomic_numbers]
+        _ELEMENTS_NUM = len(ATOMIC_NUMBER)
+        k_rep_ab = torch.full((_ELEMENTS_NUM + 1, _ELEMENTS_NUM + 1), 1.5)
+        k_rep_ab[1, 1] = 1.0
+        k_rep_ab = k_rep_ab[self.atomic_numbers, :][:, self.atomic_numbers]
 
         # Validation
-        assert k_rep_ab is not None
-        assert k_rep_ab.shape[0] == len(self.atomic_numbers)
-        assert k_rep_ab.shape[1] == len(self.atomic_numbers)
         assert len(_y_eff) == len(self.atomic_numbers)
         assert len(_alpha) == len(self.atomic_numbers)
 
@@ -94,11 +91,10 @@ class RepulsionXTB(PairPotential):
 
 
 def StandaloneRepulsionXTB(
-    cutoff: float = 5.2,
+    symbols: tp.Sequence[str],
+    cutoff: float,
     alpha: tp.Sequence[float] = (),
     y_eff: tp.Sequence[float] = (),
-    k_rep_ab: tp.Optional[Tensor] = None,
-    symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
     cutoff_fn: CutoffArg = "smooth",
     neighborlist: NeighborlistArg = "full_pairwise",
     periodic_table_index: bool = True,
@@ -106,7 +102,6 @@ def StandaloneRepulsionXTB(
     module = RepulsionXTB(
         alpha=alpha,
         y_eff=y_eff,
-        k_rep_ab=k_rep_ab,
         cutoff=cutoff,
         symbols=symbols,
         cutoff_fn=cutoff_fn,

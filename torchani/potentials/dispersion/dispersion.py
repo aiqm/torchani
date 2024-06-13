@@ -44,7 +44,7 @@ class TwoBodyDispersionD3(PairPotential):
         s6: float,
         s8: float,
         cutoff_fn: CutoffArg = "dummy",
-        cutoff=math.inf,
+        cutoff: float = math.inf,
     ):
         super().__init__(
             symbols=symbols, cutoff=cutoff, is_trainable=False, cutoff_fn=cutoff_fn,
@@ -95,11 +95,11 @@ class TwoBodyDispersionD3(PairPotential):
     @classmethod
     def from_functional(
         cls,
-        symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
-        functional: str = "wB97X",
-        modified_damp: bool = False,
+        symbols: tp.Sequence[str],
+        functional: str,
         damp_fn: str = "bj",
-        **kwargs,
+        cutoff_fn: CutoffArg = "dummy",
+        cutoff: float = math.inf,
     ) -> "TwoBodyDispersionD3":
         d = constants.get_functional_constants()[functional.lower()]
         DampCls = _parse_damp_fn_cls(damp_fn)
@@ -110,7 +110,8 @@ class TwoBodyDispersionD3(PairPotential):
             damp_fn_6=DampCls.from_functional(functional, symbols=symbols, order=6),
             damp_fn_8=DampCls.from_functional(functional, symbols=symbols, order=8),
             symbols=symbols,
-            **kwargs,
+            cutoff_fn=cutoff_fn,
+            cutoff=cutoff,
         )
 
     def pair_energies(
@@ -210,8 +211,8 @@ class TwoBodyDispersionD3(PairPotential):
 
 
 def StandaloneTwoBodyDispersionD3(
-    functional: str = "wB97X",
-    symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
+    symbols: tp.Sequence[str],
+    functional: str,
     cutoff_fn: CutoffArg = "dummy",
     damp_fn: str = "bj",
     cutoff: float = math.inf,
@@ -219,11 +220,11 @@ def StandaloneTwoBodyDispersionD3(
     neighborlist: NeighborlistArg = "full_pairwise",
 ) -> PotentialWrapper:
     module = TwoBodyDispersionD3.from_functional(
+        symbols=symbols,
         functional=functional,
         cutoff=cutoff,
         cutoff_fn=cutoff_fn,
         damp_fn=damp_fn,
-        symbols=symbols,
     )
     return PotentialWrapper(
         potential=module,

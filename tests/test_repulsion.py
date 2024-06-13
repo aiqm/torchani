@@ -5,6 +5,7 @@ import torch
 from torch import Tensor
 
 import torchani
+from torchani.utils import SYMBOLS_1X
 from torchani.testing import ANITest, expand
 from torchani.potentials import RepulsionXTB, StandaloneRepulsionXTB
 from torchani.neighbors import NeighborData
@@ -13,8 +14,10 @@ from torchani.neighbors import NeighborData
 @expand()
 class TestRepulsion(ANITest):
     def setUp(self):
-        self.rep = self._setup(RepulsionXTB(cutoff=5.2))
-        self.sa_rep = self._setup(StandaloneRepulsionXTB(cutoff=5.2))
+        self.rep = self._setup(RepulsionXTB(symbols=SYMBOLS_1X, cutoff=5.2))
+        self.sa_rep = self._setup(
+            StandaloneRepulsionXTB(symbols=SYMBOLS_1X, cutoff=5.2)
+        )
 
     def testPotential(self):
         element_idxs = torch.tensor([[0, 0]], device=self.device)

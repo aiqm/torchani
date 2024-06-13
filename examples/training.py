@@ -45,13 +45,13 @@ valid_ds: BatchedDataset = ANIBatchedDataset(batched_dataset_path, split="valida
 # NOTE: CACHE saves all data in memory. It is very memory intensive but faster.
 # Also, pin_memory is automatically performed by ANIBatchedDataset in the CACHE
 # case, so it should be set to False for the DataLoader.
-CACHE: bool = False
+CACHE: bool = True
 if CACHE:
     train_ds = train_ds.cache()
     valid_ds = valid_ds.cache()
 
-training = train_ds.as_dataloader()
-validation = valid_ds.as_dataloader()
+training = train_ds.as_dataloader(num_workers=0)
+validation = valid_ds.as_dataloader(num_workers=0)
 
 # We can use the transforms module to modify the batches, the API for transforms is
 # very similar to torchvision https://pytorch.org/vision/stable/transforms.html

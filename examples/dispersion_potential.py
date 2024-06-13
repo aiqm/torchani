@@ -7,14 +7,16 @@ interactions. This is meant for using with functionals that are parametrized
 with dispersion in the first place.
 """
 # To begin with, let's import the modules we will use:
+import math
 import torch
 
 from torchani.potentials import StandaloneTwoBodyDispersionD3
 from torchani.grad import energies_and_forces
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# By default the dispersion interactions have no cutoff
-disp = StandaloneTwoBodyDispersionD3().to(device)
+disp = StandaloneTwoBodyDispersionD3(
+    functional="b973c", cutoff=math.inf, symbols=("H", "C", "N", "O")
+).to(device)
 
 coordinates = torch.tensor(
     [
@@ -43,10 +45,11 @@ disp_energy, force = energies_and_forces(disp, znumbers, coordinates)
 print("Dispersion Energy:", disp_energy)
 print("Force:", force.squeeze())
 
-# By default the supported species are H C N O, but different supported species
-# can also be passed down to the constructor
-disp = StandaloneTwoBodyDispersionD3(symbols=("H", "C", "N", "O", "S", "Fe")).to(device)
-# Here I changed the species a bit to make a nonesense molecules
+# Different supported species can be passed down to the constructor
+disp = StandaloneTwoBodyDispersionD3(
+    functional="b973c", cutoff=math.inf, symbols=("H", "C", "N", "O", "S", "Fe")
+).to(device)
+# Here we change the species a bit to make a nonesense molecule
 coordinates = torch.tensor(
     [
         [

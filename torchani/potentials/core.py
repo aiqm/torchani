@@ -26,8 +26,8 @@ class Potential(torch.nn.Module):
 
     def __init__(
         self,
-        symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
-        cutoff: float = 5.2,
+        symbols: tp.Sequence[str],
+        cutoff: float,
         is_trainable: bool = False,
     ):
         super().__init__()
@@ -102,9 +102,9 @@ class PairPotential(Potential):
 
     def __init__(
         self,
-        cutoff: float = 5.2,
+        cutoff: float,
+        symbols: tp.Sequence[str],
         is_trainable: bool = False,
-        symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
         cutoff_fn: CutoffArg = "dummy",
     ):
         super().__init__(cutoff=cutoff, is_trainable=is_trainable, symbols=symbols)

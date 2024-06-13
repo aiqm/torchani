@@ -23,7 +23,7 @@ class NNPotential(Potential):
             k if k in PERIODIC_TABLE else "?" for k in neural_networks.member(0).atomics
         )
         super().__init__(
-            cutoff=aev_computer.radial_terms.cutoff, is_trainable=True, symbols=symbols
+            symbols=symbols, cutoff=aev_computer.radial_terms.cutoff, is_trainable=True,
         )
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks

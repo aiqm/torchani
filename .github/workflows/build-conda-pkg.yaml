@@ -8,6 +8,9 @@ on:
   schedule:
     - cron: '0 0 * * *'
 
+env:
+  TAG: torchani-nightly/conda-pkg:${{ github.sha }}
+
 jobs:
   build-pkg:
     if: ${{ contains(github.head_ref, 'conda') || github.event_name == 'schedule' }}
@@ -16,22 +19,15 @@ jobs:
       contents: read
 
     steps:
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ github.repository }}/conda-pkg
-
       - name: Build conda pkg in Docker image, release if needed
         uses: docker/build-push-action@v5
         with:
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.TAG }}
           build-args: |
             INTERNAL_RELEASE=${{ contains(github.head_ref, 'release') || github.event_name == 'schedule' }}
             PUBLIC_RELEASE=0
           file: conda.Dockerfile
-          shm-size: 2g
+          shm-size: 1g
           ulimit: |
             memlock=-1
             stack=67108864
@@ -40,11 +36,11 @@ jobs:
           secrets: |
             "DOCKER_PVTKEY=${{ secrets.DOCKER_PVTKEY }}"
             "CONDA_TOKEN=${{ secrets.CONDA_TOKEN }}"
+        continue-on-error: true
 
       - name: Remove image
         if: ${{ always() }}
-        continue-on-error: true
-        run: docker image rm ${{ steps.meta.outputs.tags }}
+        run: docker image rm --force ${{ env.TAG }}
 
 concurrency:
   group: conda-${{ github.event.pull_request.number || github.sha }}
