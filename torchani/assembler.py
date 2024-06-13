@@ -611,7 +611,7 @@ def ANIala(
             "use_cuaev_interface": use_cuaev_interface,
         },
     )
-    asm.set_atomic_networks(ANIModel, atomics.like_2x)
+    asm.set_atomic_networks(ANIModel, atomics.like_ala)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble()
