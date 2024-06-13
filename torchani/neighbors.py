@@ -42,8 +42,10 @@ class Neighborlist(torch.nn.Module):
         self.diff_vectors = torch.empty(0)
 
     @torch.jit.export
-    def _compute_bounding_cell(
-        self, coordinates: Tensor, eps: float
+    def compute_bounding_cell(
+        self,
+        coordinates: Tensor,
+        eps: float = 1e-3,
     ) -> tp.Tuple[Tensor, Tensor]:
         # this works but its not needed for this naive implementation
         # This should return a bounding cell
@@ -68,6 +70,7 @@ class Neighborlist(torch.nn.Module):
         input_neighbor_indices: Tensor,
         shift_values: tp.Optional[Tensor] = None,
         mask: tp.Optional[Tensor] = None,
+        return_shift_values: bool = False,
     ) -> NeighborData:
         # passing an infinite cutoff will only work for non pbc conditions
         # (shift values must be None)
@@ -144,6 +147,50 @@ class Neighborlist(torch.nn.Module):
             indices=screened_neighbor_indices,
             distances=screened_distances,
             diff_vectors=screened_diff_vectors,
+            shift_values=shift_values if return_shift_values else None,
+        )
+
+    @torch.jit.export
+    def process_external_input(
+        self,
+        species: Tensor,
+        coordinates: Tensor,
+        neighbor_idxs: Tensor,
+        shift_values: Tensor,
+        cutoff: float = 0.0,
+        input_needs_screening: bool = True,
+    ) -> NeighborData:
+        # Check shapes
+        num_pairs = neighbor_idxs.shape[1]
+        assert neighbor_idxs.shape == (2, num_pairs)
+        assert shift_values.shape == (num_pairs, 3)
+
+        if input_needs_screening:
+            # First screen the input neighbors in case some of the
+            # values are at distances larger than the radial cutoff, or some of
+            # the values are masked with dummy atoms. The first may happen if
+            # the neighborlist uses some sort of skin value to rebuild itself
+            # (as in Loup Verlet lists), which is common in MD programs.
+            return self._screen_with_cutoff(
+                cutoff,
+                coordinates,
+                neighbor_idxs,
+                shift_values,
+                (species == -1),
+            )
+        # If the input neighbor idxs are pre screened then
+        # directly calculate the distances and diff_vectors from them
+        coordinates = coordinates.view(-1, 3)
+        coords0 = coordinates.index_select(0, neighbor_idxs[0])
+        coords1 = coordinates.index_select(0, neighbor_idxs[1])
+        diff_vectors = coords0 - coords1 + shift_values
+        distances = diff_vectors.norm(2, -1)
+
+        # Store diff vectors internally for calculation of stress
+        self.diff_vectors = diff_vectors
+
+        return NeighborData(
+            indices=neighbor_idxs, distances=distances, diff_vectors=diff_vectors
         )
 
     def get_diff_vectors(self):
@@ -173,6 +220,7 @@ class FullPairwise(Neighborlist):
         cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
+        return_shift_values: bool = False,
     ) -> NeighborData:
         """
         Arguments:
@@ -199,11 +247,15 @@ class FullPairwise(Neighborlist):
             # if there is no pbc
             coordinates = map_to_central(coordinates, cell, pbc)
             return self._screen_with_cutoff(
-                cutoff, coordinates, atom_index12, shift_values, mask
+                cutoff,
+                coordinates,
+                atom_index12,
+                shift_values,
+                mask,
+                return_shift_values=return_shift_values,
             )
         else:
-            num_molecules = species.shape[0]
-            num_atoms = species.shape[1]
+            num_molecules, num_atoms = species.shape
             # Create a pairwise neighborlist for all molecules and all atoms,
             # assuming that there are no atoms at all. Dummy species will be
             # screened later
@@ -217,7 +269,11 @@ class FullPairwise(Neighborlist):
                 ).view(1, -1, 1)
                 atom_index12 = atom_index12.view(-1).view(2, -1)
             return self._screen_with_cutoff(
-                cutoff, coordinates, atom_index12, shift_values=None, mask=mask
+                cutoff,
+                coordinates,
+                atom_index12,
+                shift_values=None,
+                mask=mask,
             )
 
     def _full_pairwise_pbc(
@@ -351,6 +407,7 @@ class CellList(Neighborlist):
         cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
+        return_shift_values: bool = False,
     ) -> NeighborData:
         assert cutoff >= 0.0, "Cutoff must be a positive float"
         assert coordinates.shape[0] == 1, "Cell list doesn't support batches"
@@ -385,7 +442,12 @@ class CellList(Neighborlist):
             # same as with a full pairwise calculation
             coordinates = map_to_central(coordinates, cell.detach(), pbc)
             return self._screen_with_cutoff(
-                cutoff, coordinates, atom_pairs, shift_values, (species == -1)
+                cutoff,
+                coordinates,
+                atom_pairs,
+                shift_values,
+                (species == -1),
+                return_shift_values=return_shift_values,
             )
         return self._screen_with_cutoff(
             cutoff, coordinates, atom_pairs, None, (species == -1)
@@ -408,8 +470,8 @@ class CellList(Neighborlist):
         if cell is None:
             if pbc.any():
                 raise ValueError("Cell must be provided if PBC is required")
-            displaced_coordinates, cell = self._compute_bounding_cell(
-                coordinates.detach(), eps=1e-3
+            displaced_coordinates, cell = self.compute_bounding_cell(
+                coordinates.detach(), eps=1e-3,
             )
             return displaced_coordinates, cell, pbc
 
@@ -801,6 +863,7 @@ class VerletCellList(CellList):
         cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
+        return_shift_values: bool = False,
     ) -> NeighborData:
         assert cutoff >= 0.0, "Cutoff must be a positive float"
         assert coordinates.shape[0] == 1, "Cell list doesn't support batches"
@@ -836,7 +899,12 @@ class VerletCellList(CellList):
             shift_values = shift_indices.to(cell.dtype) @ cell
             coordinates = map_to_central(coordinates, cell.detach(), pbc)
             return self._screen_with_cutoff(
-                cutoff, coordinates, atom_pairs, shift_values, (species == -1)
+                cutoff,
+                coordinates,
+                atom_pairs,
+                shift_values,
+                (species == -1),
+                return_shift_values=return_shift_values,
             )
         return self._screen_with_cutoff(
             cutoff, coordinates, atom_pairs, None, (species == -1)

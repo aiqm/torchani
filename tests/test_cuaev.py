@@ -698,7 +698,7 @@ class TestCUAEV(TestCase):
 
             coordinates = coordinates.clone().detach()
             coordinates.requires_grad_()
-            atom_index12, _, _ = self.cuaev_computer_2x_use_interface.neighborlist(
+            atom_index12, _, _, _ = self.cuaev_computer_2x_use_interface.neighborlist(
                 species, coordinates, self.cutoff_2x
             )
             if not self.cuaev_computer_2x_use_interface.cuaev_is_initialized:
@@ -739,7 +739,7 @@ class TestCUAEV(TestCase):
         coordinates = coordinates.clone().detach()
         coordinates.requires_grad_()
 
-        atom_index12, _, _ = self.cuaev_computer_2x_use_interface.neighborlist(
+        atom_index12, _, _, _ = self.cuaev_computer_2x_use_interface.neighborlist(
             species, coordinates, self.cutoff_2x
         )
         if not self.cuaev_computer_2x_use_interface.cuaev_is_initialized:

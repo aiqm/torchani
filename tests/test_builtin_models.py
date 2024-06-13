@@ -3,8 +3,57 @@ import unittest
 import torch
 
 from torchani.testing import ANITest, expand
-from torchani.models import ANI1x, ANI2x, ANImbis
-from torchani.datasets import create_batched_dataset, TestData
+from torchani.models import ANI1x, ANI2x, ANIdr, ANImbis
+from torchani.datasets import batch_all_in_ram, TestData
+
+
+@expand()
+class TestExternalEntryPoints(ANITest):
+    def setUp(self):
+        # in general self energies should be subtracted, and shuffle should be
+        # performed, but for these tests this is not important
+        self.ds = batch_all_in_ram(
+            TestData(verbose=False, skip_check=True),
+            batch_size=256,
+            verbose=False,
+        )
+
+    def testANI1x(self) -> None:
+        self._test_model(self._setup(ANI1x()))
+
+    def testANIdr(self) -> None:
+        self._test_model(self._setup(ANIdr()))
+
+    def testANImbis(self) -> None:
+        self._test_model(self._setup(ANImbis()), charges=True)
+
+    def _test_model(self, model, charges: bool = False):
+        properties = next(iter(self.ds))
+        species = properties["species"].to(self.device)
+        coords = properties["coordinates"].to(self.device, dtype=torch.float)
+        coords, cell = model.aev_computer.neighborlist.compute_bounding_cell(
+            coords.detach(), eps=1e-3,
+        )
+        pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
+        if hasattr(model, "potentials"):
+            cutoff = model.potentials[0].cutoff
+        else:
+            cutoff = model.aev_computer.radial_terms.cutoff
+        neighbors = model.aev_computer.neighborlist(
+            species, coords, cutoff, cell, pbc, return_shift_values=True
+        )
+        if not charges:
+            _, e = model((species, coords), cell, pbc)
+            _, e2 = model.from_neighborlist(
+                (species, coords), neighbors.indices, neighbors.shift_values
+            )
+        else:
+            _, e, q = model.energies_and_atomic_charges((species, coords), cell, pbc)
+            _, e2, q2 = model.energies_and_atomic_charges_from_neighborlist(
+                (species, coords), neighbors.indices, neighbors.shift_values
+            )
+            self.assertEqual(q, q2)
+        self.assertEqual(e, e2)
 
 
 @expand(jit=True, device="cpu")
@@ -15,13 +64,11 @@ class TestBuiltinModels(ANITest):
     def setUp(self):
         # in general self energies should be subtracted, and shuffle should be
         # performed, but for these tests this is not important
-        self.ds = create_batched_dataset(
+        self.ds = batch_all_in_ram(
             TestData(verbose=False, skip_check=True),
-            splits={"training": 1.0},
-            direct_cache=True,
             batch_size=256,
             verbose=False,
-        )["training"]
+        )
 
     def _test_model(self, model):
         properties = next(iter(self.ds))

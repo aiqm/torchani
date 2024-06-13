@@ -5,7 +5,7 @@ from torch import Tensor
 from torch.jit import Final
 import typing_extensions as tpx
 
-from torchani.tuples import SpeciesAEV
+from torchani.tuples import SpeciesAEV, NeighborData
 from torchani.utils import cumsum_from_zero
 from torchani.neighbors import parse_neighborlist, NeighborlistArg, FullPairwise
 from torchani.cutoffs import CutoffArg
@@ -18,7 +18,6 @@ from torchani.aev.terms import (
     AngularTermArg,
 )
 from torchani.csrc import CUAEV_IS_INSTALLED
-from torchani.tuples import NeighborData
 
 
 def jit_unused_if_no_cuaev():

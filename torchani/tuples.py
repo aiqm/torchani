@@ -47,6 +47,7 @@ class NeighborData(tp.NamedTuple):
     indices: Tensor
     distances: Tensor
     diff_vectors: Tensor
+    shift_values: tp.Optional[Tensor] = None
 
 
 class SpeciesCoordinates(tp.NamedTuple):
