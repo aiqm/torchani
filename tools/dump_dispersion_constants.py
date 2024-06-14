@@ -1,3 +1,25 @@
+r"""
+Notes about data parsing and preparation
+
+This script is used to dump pickle
+files with the constants needed for dispersion D3 calculations.
+
+The pickle files are loaded directly by the DispersionD3 module through the
+"constants" module, which parses the raw pickle lists into manageable
+structures. the C6 coefs are dump into a h5 file instead
+
+The actual calculation of the dispersion interaction is handled in
+potentials/dispersion.
+"""
+
+import h5py
+import typing as tp
+import pickle
+from pathlib import Path
+
+import torch
+from torch import Tensor
+
 # cutoff radii are in angstroms, and used for the zero-damping D3 only
 cutoff_radii = [
     2.1823, 1.8547, 1.7347, 2.9086, 2.5732, 3.4956, 2.3550, 2.5095, 2.9802,
@@ -32919,6 +32941,66 @@ c6_unraveled = [0.30267000E+01,0.100E+01,0.100E+01,0.91180000E+00,0.91180000E+00
      ,0.45528540E+03,0.482E+03,0.482E+03,0.39098000E+01,0.39098000E+01]
 
 
+def _decode_atomic_numbers(a: int, b: int) -> tp.Tuple[int, int, int, int]:
+    # Translated from Grimme et. al. Fortran code this is "limit" in Fortran
+    # a_ref and b_ref give the conformation's ref (?) if a or b are greater
+    # than 100 this means the conformation ref has to be moved by +1 an easier
+    # way to do this is with divmod
+    a_ref, a = divmod(a, 100)
+    b_ref, b = divmod(b, 100)
+    return a, b, a_ref, b_ref
+
+def _dump_c6_constants() -> tp.Tuple[Tensor, Tensor, Tensor]:
+    # Hardcoded in Grimme's et. al. D3 Fortran code
+    total_records = 161925
+    num_lines = 32385
+    records_per_line = 5
+    max_refs = 5
+    path = Path(__file__).parent.joinpath('c6_unraveled.pkl').resolve()
+    with open(path, 'rb') as f:
+        c6_unraveled = pickle.load(f)
+        c6_unraveled = torch.tensor(c6_unraveled).reshape(-1, records_per_line)
+    assert c6_unraveled.numel() == total_records
+    assert c6_unraveled.shape[0] == num_lines
+
+    # Element 0 is actually a dummy element
+    el = SUPPORTED_D3_ELEMENTS
+    # nonexistent values are filled with -1, in order to mask them,
+    # same as in Grimme et. al. code
+    c6_constants = torch.full((el + 1, el + 1, max_refs, max_refs), -1.0)
+    c6_coordination_a = torch.full((el + 1, el + 1, max_refs, max_refs), -1.0)
+    c6_coordination_b = torch.full((el + 1, el + 1, max_refs, max_refs), -1.0)
+    if not ((c6_constants == -1.0) == (c6_coordination_a == -1.0)).all():
+        raise RuntimeError("All missing parameters are not equal")
+    if not ((c6_coordination_a == -1.0) == (c6_coordination_b == -1.0)).all():
+        raise RuntimeError("All missing parameters are not equal")
+
+    # every "line" in the unraveled c6 list has:
+    # 0 1 2 3 4
+    # C6, a, b, CNa, CNb
+    # in that order
+    # translated from Grimme et. al. Fortran code
+    for line in c6_unraveled:
+        constant, a, b, cn_a, cn_b = line.cpu().numpy().tolist()
+        # a and b are the atomic numbers
+        a, b, a_ref, b_ref = _decode_atomic_numbers(int(a), int(b))
+        # get values for C6 and CNa, CNb
+        c6_constants[a, b, a_ref, b_ref] = constant
+        c6_coordination_a[a, b, a_ref, b_ref] = cn_a
+        c6_coordination_b[a, b, a_ref, b_ref] = cn_b
+        # symmetrize values
+        c6_constants[b, a, b_ref, a_ref] = constant
+        # these have to be inverted (cn_a given to b and cn_b given to a)
+        c6_coordination_a[b, a, b_ref, a_ref] = cn_b
+        c6_coordination_b[b, a, b_ref, a_ref] = cn_a
+    # shape (elements, elements, 5, 5) for the 3 of them
+    with h5py.File("c6.h5", "w") as f:
+        f.create_dataset("all/constants", data=c6_constants.numpy())
+        f.create_dataset("all/coordnums_a", data=c6_coordination_a.numpy())
+        f.create_dataset("all/coordnums_b", data=c6_coordination_b.numpy())
+    return c6_constants, c6_coordination_a, c6_coordination_b
+
+
 if __name__ == "__main__":
     import pickle
     from pathlib import Path
@@ -32936,3 +33018,4 @@ if __name__ == "__main__":
 
     with open(root / 'cutoff_radii.pkl', 'wb') as f:
         pickle.dump(cutoff_radii, f)
+    _dump_c6_constants()

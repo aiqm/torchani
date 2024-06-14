@@ -6,7 +6,7 @@ from torch import Tensor
 import typing_extensions as tpx
 
 from torchani.annotations import Device
-from torchani.geometry import Displacer, Reference
+from torchani.utils import AtomicNumbersToMasses
 from torchani.atomics import AtomicContainer
 from torchani.constants import ELECTRONEGATIVITY, HARDNESS, ATOMIC_NUMBER
 # Needed for _AdaptedChargesContainer hack
@@ -14,6 +14,9 @@ from torchani.nn import ANIModel
 from torchani.tuples import SpeciesEnergies
 
 __all__ = ["DipoleComputer", "compute_dipole", "ChargeNormalizer"]
+
+
+Reference = tp.Literal["center_of_mass", "center_of_geometry", "origin"]
 
 
 class ChargeNormalizer(torch.nn.Module):
@@ -96,6 +99,7 @@ class DipoleComputer(torch.nn.Module):
 
     Arguments:
         species (torch.Tensor): (M, N), species must be atomic numbers.
+            padding atoms with pad = -1 can be included.
         coordinates (torch.Tensor): (M, N, 3), unit should be Angstrom.
         charges (torch.Tensor): (M, N), unit should be e.
         center_of_mass (Bool): When calculating dipole for charged molecule,
@@ -103,7 +107,6 @@ class DipoleComputer(torch.nn.Module):
     Returns:
         dipoles (torch.Tensor): (M, 3)
     """
-
     def __init__(
         self,
         masses: tp.Iterable[float] = (),
@@ -112,17 +115,35 @@ class DipoleComputer(torch.nn.Module):
         dtype: torch.dtype = torch.float,
     ) -> None:
         super().__init__()
-        self._displacer = Displacer(
-            masses,
-            reference,
-            device,
-            dtype,
-        )
+
+        self._atomic_masses: Tensor = torch.tensor(masses, device=device, dtype=dtype)
+        self._center_of_mass = (reference == "center_of_mass")
+        self._skip = (reference == "origin")
+        self._converter = AtomicNumbersToMasses(masses, dtype=dtype, device=device)
+
+    def _displace_to_reference(self, species: Tensor, coordinates: Tensor) -> Tensor:
+        # Do nothing if reference is origin
+        if self._skip:
+            return coordinates
+        mask = species == -1
+        if self._center_of_mass:
+            masses = self._converter(species)
+            mass_sum = masses.unsqueeze(-1).sum(dim=1, keepdim=True)
+            weights = masses.unsqueeze(-1) / mass_sum
+        else:
+            is_not_dummy = ~mask
+            not_dummy_sum = is_not_dummy.unsqueeze(-1).sum(dim=1, keepdim=True)
+            weights = is_not_dummy.unsqueeze(-1) / not_dummy_sum
+        com_coordinates = coordinates * weights
+        com_coordinates = com_coordinates.sum(dim=1, keepdim=True)
+        centered_coordinates = coordinates - com_coordinates
+        centered_coordinates[mask, :] = 0.0
+        return centered_coordinates
 
     def forward(self, species: Tensor, coordinates: Tensor, charges: Tensor) -> Tensor:
         assert species.shape == charges.shape == coordinates.shape[:-1]
         charges = charges.unsqueeze(-1)
-        coordinates = self._displacer(species, coordinates)
+        coordinates = self._displace_to_reference(species, coordinates)
         dipole = torch.sum(charges * coordinates, dim=1)
         return dipole
 

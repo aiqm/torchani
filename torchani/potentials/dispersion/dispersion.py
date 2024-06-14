@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.jit import Final
 import typing_extensions as tpx
 
-from torchani.constants import ATOMIC_NUMBER
+from torchani.constants import ATOMIC_NUMBER, FUNCTIONAL_D3BJ_CONSTANTS
 from torchani.units import ANGSTROM_TO_BOHR
 from torchani.cutoffs import CutoffArg
 from torchani.neighbors import NeighborData, NeighborlistArg
@@ -68,7 +68,7 @@ class BeckeJohnsonDamp(torch.nn.Module):
         symbols: tp.Sequence[str],
         functional: str,
     ) -> tpx.Self:
-        d = constants.get_functional_constants()[functional.lower()]
+        d = FUNCTIONAL_D3BJ_CONSTANTS[functional.lower()]
         return cls(symbols=symbols, a1=d["a1"], a2=d["a2"])
 
     def forward(
@@ -185,10 +185,10 @@ class TwoBodyDispersionD3(PairPotential):
         cutoff_fn: CutoffArg = "dummy",
         cutoff: float = math.inf,
     ) -> tpx.Self:
-        d = constants.get_functional_constants()[functional.lower()]
+        d = FUNCTIONAL_D3BJ_CONSTANTS[functional.lower()]
         return cls(
-            s6=d["s6_bj"],
-            s8=d["s8_bj"],
+            s6=d["s6"],
+            s8=d["s8"],
             damp_a1=d["a1"],
             damp_a2=d["a2"],
             symbols=symbols,

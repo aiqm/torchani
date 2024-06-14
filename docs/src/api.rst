@@ -117,13 +117,6 @@ Potentials
 .. autoclass:: torchani.potentials.wrapper.PotentialWrapper
     :members:
 
-3D Geometry
-===========
-
-.. automodule:: torchani.geometry
-.. autoclass:: torchani.geometry.Displacer
-    :members:
-
 Electrostatics
 ==============
 
