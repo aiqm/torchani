@@ -68,8 +68,8 @@ class Neighborlist(torch.nn.Module):
         cutoff: float,
         coordinates: Tensor,
         input_neighbor_indices: Tensor,
+        mask: Tensor,
         shift_values: tp.Optional[Tensor] = None,
-        mask: tp.Optional[Tensor] = None,
         return_shift_values: bool = False,
     ) -> NeighborData:
         # passing an infinite cutoff will only work for non pbc conditions
@@ -88,17 +88,16 @@ class Neighborlist(torch.nn.Module):
         # First we check if there are any dummy atoms in species, if there are
         # we get rid of those pairs to prevent wasting resources in calculation
         # of dummy distances
-        if mask is not None:
-            if mask.any():
-                mask = mask.view(-1)[input_neighbor_indices.view(-1)].view(2, -1)
-                non_dummy_pairs = (~torch.any(mask, dim=0)).nonzero().flatten()
-                input_neighbor_indices = input_neighbor_indices.index_select(
-                    1, non_dummy_pairs
-                )
-                # shift_values can be None when there are no pbc conditions to prevent
-                # torch from launching kernels with only zeros
-                if shift_values is not None:
-                    shift_values = shift_values.index_select(0, non_dummy_pairs)
+        if mask.any():
+            mask = mask.view(-1)[input_neighbor_indices.view(-1)].view(2, -1)
+            non_dummy_pairs = (~torch.any(mask, dim=0)).nonzero().flatten()
+            input_neighbor_indices = input_neighbor_indices.index_select(
+                1, non_dummy_pairs
+            )
+            # shift_values can be None when there are no pbc conditions to prevent
+            # torch from launching kernels with only zeros
+            if shift_values is not None:
+                shift_values = shift_values.index_select(0, non_dummy_pairs)
 
         coordinates = coordinates.view(-1, 3)
         # Difference vector and distances could be obtained for free when
@@ -123,9 +122,7 @@ class Neighborlist(torch.nn.Module):
             if shift_values is not None:
                 shift_values = shift_values.index_select(0, in_cutoff)
         else:
-            assert (
-                shift_values is None
-            ), "PBC can't be implemented with an infinite cutoff"
+            assert shift_values is None, "PBC can't use an infinite cutoff"
             screened_neighbor_indices = input_neighbor_indices
 
         coords0 = coordinates.index_select(0, screened_neighbor_indices[0])
@@ -175,8 +172,8 @@ class Neighborlist(torch.nn.Module):
                 cutoff,
                 coordinates,
                 neighbor_idxs,
-                shift_values,
-                (species == -1),
+                mask=(species == -1),
+                shift_values=shift_values,
             )
         # If the input neighbor idxs are pre screened then
         # directly calculate the distances and diff_vectors from them
@@ -202,17 +199,8 @@ class Neighborlist(torch.nn.Module):
 
 
 class FullPairwise(Neighborlist):
-    default_shift_values: Tensor
-
-    def __init__(self):
-        """Compute pairs of atoms that are neighbors, uses pbc depending on
-        weather pbc.any() is True or not
-        """
-        super().__init__()
-        self.register_buffer(
-            "default_shift_values", torch.tensor(0.0), persistent=False
-        )
-
+    """Compute pairs of atoms that are neighbors, uses pbc depending on
+    wether pbc.any() is True or not"""
     def forward(
         self,
         species: Tensor,
@@ -250,8 +238,8 @@ class FullPairwise(Neighborlist):
                 cutoff,
                 coordinates,
                 atom_index12,
-                shift_values,
-                mask,
+                mask=mask,
+                shift_values=shift_values,
                 return_shift_values=return_shift_values,
             )
         else:
@@ -272,8 +260,8 @@ class FullPairwise(Neighborlist):
                 cutoff,
                 coordinates,
                 atom_index12,
-                shift_values=None,
                 mask=mask,
+                shift_values=None,
             )
 
     def _full_pairwise_pbc(
@@ -445,12 +433,12 @@ class CellList(Neighborlist):
                 cutoff,
                 coordinates,
                 atom_pairs,
-                shift_values,
-                (species == -1),
+                mask=(species == -1),
+                shift_values=shift_values,
                 return_shift_values=return_shift_values,
             )
         return self._screen_with_cutoff(
-            cutoff, coordinates, atom_pairs, None, (species == -1)
+            cutoff, coordinates, atom_pairs, mask=(species == -1), shift_values=None,
         )
 
     def _validate_and_parse_cell_and_pbc(
@@ -902,12 +890,12 @@ class VerletCellList(CellList):
                 cutoff,
                 coordinates,
                 atom_pairs,
-                shift_values,
-                (species == -1),
+                mask=(species == -1),
+                shift_values=shift_values,
                 return_shift_values=return_shift_values,
             )
         return self._screen_with_cutoff(
-            cutoff, coordinates, atom_pairs, None, (species == -1)
+            cutoff, coordinates, atom_pairs, mask=(species == -1), shift_values=None,
         )
 
     def _cache_values(
