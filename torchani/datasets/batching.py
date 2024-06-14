@@ -265,7 +265,9 @@ class Batcher:
 
         dest_path = self._dest_root / dest_dir
 
-        if not self._shuffle and divs_seed is not None or batch_seed is not None:
+        if (not self._shuffle) and (
+            (divs_seed is not None) or (batch_seed is not None)
+        ):
             raise ValueError("Seeds must be None if not shuffling")
         dataset = src if isinstance(src, ANIDataset) else ANIDataset(src)
 
@@ -289,9 +291,11 @@ class Batcher:
 
         batch_rng = torch.Generator()
         if batch_seed is None:
-            batch_seed = divs_rng.seed()
+            batch_seed = batch_rng.seed()
         else:
             batch_rng.manual_seed(batch_seed)
+        print(batch_rng.initial_seed())
+        print(divs_rng.initial_seed())
 
         # (1) Get all indices and shuffle them
         #
@@ -620,14 +624,16 @@ def create_batched_dataset(
     if not _shuffle:
         batcher._no_shuffle()
     return batcher.divide_and_batch(
-        src,
-        dest_dir,
-        splits,
-        folds,
-        batch_size,
-        padding,
-        transform,
-        properties,
+        src=src,
+        dest_dir=dest_dir,
+        splits=splits,
+        folds=folds,
+        batch_size=batch_size,
+        padding=padding,
+        transform=transform,
+        properties=properties,
+        divs_seed=divs_seed,
+        batch_seed=batch_seed,
     )
 
 
@@ -644,6 +650,12 @@ def batch_all_in_ram(
 ) -> ANIBatchedInMemoryDataset:
     batcher = Batcher.in_ram(verbose)
     splits = batcher.divide_and_batch(
-        src, padding=padding, transform=transform, properties=properties
+        src=src,
+        padding=padding,
+        transform=transform,
+        properties=properties,
+        batch_seed=batch_seed,
+        divs_seed=divs_seed,
+        batch_size=batch_size,
     )
     return tp.cast(ANIBatchedInMemoryDataset, splits["training"])
