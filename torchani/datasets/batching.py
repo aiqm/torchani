@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from torchani.storage import DATASETS_DIR
 from torchani.annotations import Conformers, StrPath
-from torchani.utils import pad_atomic_properties, PADDING
+from torchani.utils import pad_atomic_properties, strip_redundant_padding, PADDING
 from torchani.datasets.datasets import ANIDataset
 from torchani.transforms import Transform, identity
 
@@ -218,14 +218,14 @@ class Batcher:
     def __init__(
         self,
         dest_root: tp.Union[Path, tp.Literal["ram"]] = DATASETS_DIR,
-        max_batches_per_packet: int = 350,
+        max_batches_per_packet: int = 200,
         verbose: bool = False,
     ) -> None:
         self.max_batches_per_packet = max_batches_per_packet
         self.verbose = verbose
         self.store_on_disk = dest_root != "ram"
         if not self.store_on_disk:
-            if max_batches_per_packet != 350:
+            if max_batches_per_packet != 200:
                 raise ValueError(
                     "max_batches_per_packet can't be provided if saving in ram"
                 )
@@ -294,8 +294,6 @@ class Batcher:
             batch_seed = batch_rng.seed()
         else:
             batch_rng.manual_seed(batch_seed)
-        print(batch_rng.initial_seed())
-        print(divs_rng.initial_seed())
 
         # (1) Get all indices and shuffle them
         #
@@ -489,7 +487,13 @@ class Batcher:
 
                     packet_conformers_list: tp.List[Conformers] = []
                     packet_batch_idx_list: tp.List[Tensor] = []
-                    for group_idx in packet_unique_group_idxs:
+                    for group_idx in tqdm(
+                        packet_unique_group_idxs,
+                        desc=f"{div.name}: Collecting packet {i + 1}/{num_packets}",
+                        disable=not self.verbose,
+                        leave=False,
+                        total=len(packet_unique_group_idxs),
+                    ):
                         conformer_is_in_packet = packet[:, 0] == group_idx
                         conformers = readonly_ds.get_conformers(
                             group_names[group_idx.item()],
@@ -521,7 +525,7 @@ class Batcher:
                             k: v[packet_batch_idxs == batch_idx]
                             for k, v in packet_conformers.items()
                         }
-                        # TODO: remove redundant padding here!
+                        batch = strip_redundant_padding(batch)
                         batch = transform(batch)
                         if self.store_on_disk:
                             # The batch file names are e.g. 00034_batch.h5
@@ -561,22 +565,31 @@ class Batcher:
         folds: tp.Optional[int],
         properties: tp.Sequence[str],
     ) -> None:
+        split_names = sorted(splits) if splits is not None else None
+        split_fracs = (
+            [splits[k] for k in split_names]
+            if (splits is not None and split_names is not None)
+            else None
+        )
+        padded_properties = sorted(k for k in padding if k in properties)
+        padded_values = [padding[k] for k in padded_properties]
         creation_log = {
             "datetime_created": str(datetime.datetime.now()),
-            "splits": splits,
+            "split_names": split_names,
+            "split_fractions": split_fracs,
             "folds": folds,
             "divs_seed": divs_seed,
-            "batch_seed": batch_seed,
-            "batch_size": batch_size,
-            "padding": padding,
-            "shuffle": self._shuffle,
+            "batch_seed": batch_seed if self._shuffle else None,
+            "batch_size": batch_size if self._shuffle else None,
+            "padded_properties": padded_properties,
+            "padded_values": padded_values,
             "symbols": dataset.symbols if dataset.grouping != "legacy" else ("?",),
             "properties": properties,
             "store_locations": dataset.store_locations,
             "num_conformers": dataset.num_conformers,
         }
         with open(dest_path / "creation_log.json", "wt") as logfile:
-            json.dump(creation_log, logfile, indent=1)
+            json.dump(creation_log, logfile, indent=4)
 
 
 # Kept for bw compat
@@ -595,7 +608,7 @@ def create_batched_dataset(
     batch_seed: tp.Optional[int] = None,
     # Performance
     direct_cache: bool = False,
-    max_batches_per_packet: int = 350,
+    max_batches_per_packet: int = 200,
     # Verbosity
     verbose: bool = True,
     _shuffle: bool = True,

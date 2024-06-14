@@ -6,6 +6,7 @@ from torchani.testing import ANITest, expand
 from torchani.utils import (
     # Padding
     pad_atomic_properties,
+    strip_redundant_padding,
     # Converters
     ChemicalSymbolsToInts,
     ChemicalSymbolsToAtomicNumbers,
@@ -66,6 +67,33 @@ class TestGSAES(ANITest):
 # TODO: For now this is non-jit only, it may need to be adapted
 @expand(jit=False)
 class TestPaddingUtils(ANITest):
+    def testStripRedundantPadding(self):
+        expect = torch.tensor(
+            [
+                [0, 2, 3, 1, -1],
+                [0, 2, 3, 1, 0],
+                [0, 2, 3, 1, -1],
+                [0, 2, 3, 1, -1],
+                [0, 2, 3, 1, 3],
+            ],
+            device=self.device,
+        )
+        species = torch.tensor(
+            [
+                [0, 2, 3, 1, -1, -1],
+                [0, 2, 3, 1, 0, -1],
+                [0, 2, 3, 1, -1, -1],
+                [0, 2, 3, 1, -1, -1],
+                [0, 2, 3, 1, 3, -1],
+            ],
+            device=self.device,
+        )
+        coords = torch.zeros(5, 6, 3, device=self.device)
+        props = {"species": species, "coordinates": coords}
+        props = strip_redundant_padding(props)
+        self.assertEqual(props["species"], expect)
+        self.assertEqual(props["coordinates"], torch.zeros(5, 5, 3, device=self.device))
+
     def testPadAtomicProperties(self):
         coordinates1 = torch.zeros(5, 4, 3, device=self.device)
         species1 = torch.tensor([[0, 2, 3, 1]], device=self.device).repeat(

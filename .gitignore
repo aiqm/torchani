@@ -80,3 +80,6 @@ report*.sqlite
 
 # line profiler
 *.prof
+
+# memory profiler
+mprofile_*

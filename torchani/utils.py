@@ -19,6 +19,7 @@ from torchani.tuples import SpeciesEnergies
 
 
 __all__ = [
+    "strip_redundant_padding",
     "pad_atomic_properties",
     "ChemicalSymbolsToInts",
     "ChemicalSymbolsToAtomicNumbers",
@@ -29,6 +30,19 @@ __all__ = [
     "ATOMIC_NUMBER",
     "TightCELU",
 ]
+
+# The second dimension of these keys can be assumed to be "number of atoms"
+ATOMIC_KEYS = (
+    "species",
+    "numbers",
+    "atomic_numbers",
+    "coordinates",
+    "forces",
+    "coefficients",  # atomic density coefficients
+    "atomic_charges",
+    "atomic_dipoles",
+    "atomic_polarizabilities",
+)
 
 SYMBOLS_1X = ("H", "C", "N", "O")
 SYMBOLS_2X = ("H", "C", "N", "O", "S", "F", "Cl")
@@ -282,9 +296,22 @@ def pad_atomic_properties(
         for n, x in zip(num_molecules, properties):
             original_size = x[k].shape[1]
             # here x[k] is implicitly cast to long if it has another integer type
-            output[k][index0: index0 + n, 0:original_size, ...] = x[k]
+            output[k][index0:index0 + n, 0:original_size, ...] = x[k]
             index0 += n
     return output
+
+
+def strip_redundant_padding(
+    properties: tp.Dict[str, Tensor],
+    atomic_properties: tp.Iterable[str] = ATOMIC_KEYS,
+) -> tp.Dict[str, Tensor]:
+    # NOTE: Assume that the padding value is -1
+    species = properties["species"]
+    non_padding = (species >= 0).any(dim=0).nonzero().squeeze()
+    for k in atomic_properties:
+        if k in properties:
+            properties[k] = properties[k].index_select(1, non_padding)
+    return properties
 
 
 def map_to_central(coordinates: Tensor, cell: Tensor, pbc: Tensor) -> Tensor:

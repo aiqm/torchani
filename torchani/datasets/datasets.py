@@ -16,7 +16,7 @@ from numpy.typing import DTypeLike, NDArray
 from tqdm import tqdm
 
 from torchani.constants import ATOMIC_NUMBER, PERIODIC_TABLE
-from torchani.utils import species_to_formula, sort_by_element, PADDING
+from torchani.utils import species_to_formula, sort_by_element, PADDING, ATOMIC_KEYS
 from torchani.annotations import (
     Conformers,
     NumpyConformers,
@@ -54,17 +54,6 @@ _ALWAYS_STRING_PATTERNS = {
 # user to delete them in a warning
 _LEGACY_BROKEN_KEYS = {"coordinatesHE", "energiesHE", "smiles"}
 # The second dimension of these keys is the number of atoms in the structure
-_ATOMIC_KEYS = (
-    "species",
-    "numbers",
-    "atomic_numbers",
-    "coordinates",
-    "forces",
-    "coefficients",  # atomic density coefficients
-    "atomic_charges",
-    "atomic_dipoles",
-    "atomic_polarizabilities",
-)
 
 
 # Helper functions
@@ -1151,7 +1140,7 @@ class ANIDataset(_ANIDatasetBase):
     def auto_append_conformers(
         self,
         conformers: MixedConformers,
-        atomic_properties: tp.Iterable[str] = _ATOMIC_KEYS,
+        atomic_properties: tp.Iterable[str] = ATOMIC_KEYS,
         padding: int = int(PADDING["numbers"]),
     ) -> "ANIDataset":
         assert (
