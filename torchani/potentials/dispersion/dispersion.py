@@ -4,17 +4,82 @@ import typing as tp
 import torch
 from torch import Tensor
 from torch.jit import Final
+import typing_extensions as tpx
 
+from torchani.constants import ATOMIC_NUMBER
 from torchani.units import ANGSTROM_TO_BOHR
 from torchani.cutoffs import CutoffArg
 from torchani.neighbors import NeighborData, NeighborlistArg
 from torchani.potentials.core import PairPotential
 from torchani.potentials.wrapper import PotentialWrapper
 from torchani.potentials.dispersion import constants
-from torchani.potentials.dispersion.damping import (
-    Damp,
-    _parse_damp_fn_cls,
-)
+
+
+class BeckeJohnsonDamp(torch.nn.Module):
+    r"""Implementation of Becke-Johnson style damping
+
+    Damp functions are like cutoff functions, but modulate potentials close to
+    zero.
+
+    For modulating potentials of different "order" (e.g. 1 / r ** 6 => order 6),
+    different parameters may be needed.
+
+    For BJ damping style, the cutoff radii are by default calculated directly
+    from the order 8 and order 6 coeffs, via the square root of the effective
+    charges. Note that the cutoff radii is a matrix of T x T where T are the
+    possible atom types and that these cutoff radii are in AU (Bohr)
+    """
+    cutoff_radii: Tensor
+    _a1: Final[float]
+    _a2: Final[float]
+
+    def __init__(
+        self,
+        symbols: tp.Sequence[str],
+        a1: float,
+        a2: float,
+        sqrt_damp_q: tp.Sequence[float] = (),
+    ):
+        super().__init__()
+        self.atomic_numbers = torch.tensor(
+            [ATOMIC_NUMBER[e] for e in symbols], dtype=torch.long
+        )
+        if not sqrt_damp_q:
+            _sqrt_damp_q = constants.get_sqrt_empirical_charge()
+            z = self.atomic_numbers
+            outer = torch.outer(_sqrt_damp_q, _sqrt_damp_q)
+            self.register_buffer("cutoff_radii", torch.sqrt(3 * outer)[:, z][z, :])
+        else:
+            if len(sqrt_damp_q) != len(symbols):
+                raise ValueError(
+                    "len(sqrt_damp_q), if provided, must match len(symbols)"
+                )
+            _sqrt_damp_q = torch.tensor(sqrt_damp_q, dtype=torch.float)
+            outer = torch.outer(_sqrt_damp_q, _sqrt_damp_q)
+            self.register_buffer("cutoff_radii", torch.sqrt(3 * outer))
+        # Sanity check
+        assert self.cutoff_radii.shape == (len(symbols), len(symbols))
+        self._a1 = a1
+        self._a2 = a2
+
+    @classmethod
+    def from_functional(
+        cls,
+        symbols: tp.Sequence[str],
+        functional: str,
+    ) -> tpx.Self:
+        d = constants.get_functional_constants()[functional.lower()]
+        return cls(symbols=symbols, a1=d["a1"], a2=d["a2"])
+
+    def forward(
+        self,
+        species12: Tensor,
+        distances: Tensor,
+        order: int,
+    ) -> Tensor:
+        cutoff_radii = self.cutoff_radii[species12[0], species12[1]]
+        damp_term = (self._a1 * cutoff_radii + self._a2).pow(order)
+        return distances.pow(order) + damp_term
 
 
 class TwoBodyDispersionD3(PairPotential):
@@ -36,22 +101,41 @@ class TwoBodyDispersionD3(PairPotential):
     _k2: Final[float]
     _k3: Final[int]
 
+    # Needed for bw compatibility
+    def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:
+        old_keys = list(state_dict.keys())
+        for k in old_keys:
+            if "damp_fn_6" in k:
+                state_dict.pop(k)
+                continue
+            if "damp_fn_8" in k:
+                new_key = k.replace("damp_fn_8", "damp_fn")
+            else:
+                new_key = k
+            state_dict[new_key] = state_dict.pop(k)
+        super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
+
     def __init__(
         self,
         symbols: tp.Sequence[str],
-        damp_fn_6: Damp,
-        damp_fn_8: Damp,
         s6: float,
         s8: float,
+        # For damping fn
+        damp_a1: float,
+        damp_a2: float,
         cutoff_fn: CutoffArg = "dummy",
         cutoff: float = math.inf,
+        # For damping fn
+        sqrt_damp_q: tp.Sequence[float] = (),
     ):
         super().__init__(
-            symbols=symbols, cutoff=cutoff, is_trainable=False, cutoff_fn=cutoff_fn,
+            symbols=symbols,
+            cutoff=cutoff,
+            is_trainable=False,
+            cutoff_fn=cutoff_fn,
         )
 
-        self._damp_fn_6 = damp_fn_6
-        self._damp_fn_8 = damp_fn_8
+        self._damp_fn = BeckeJohnsonDamp(symbols, damp_a1, damp_a2, sqrt_damp_q)
         self.ANGSTROM_TO_BOHR = ANGSTROM_TO_BOHR
         self._s6 = s6
         self._s8 = s8
@@ -100,15 +184,13 @@ class TwoBodyDispersionD3(PairPotential):
         damp_fn: str = "bj",
         cutoff_fn: CutoffArg = "dummy",
         cutoff: float = math.inf,
-    ) -> "TwoBodyDispersionD3":
+    ) -> tpx.Self:
         d = constants.get_functional_constants()[functional.lower()]
-        DampCls = _parse_damp_fn_cls(damp_fn)
-
         return cls(
-            s6=d[f"s6_{damp_fn}"],
-            s8=d[f"s8_{damp_fn}"],
-            damp_fn_6=DampCls.from_functional(functional, symbols=symbols, order=6),
-            damp_fn_8=DampCls.from_functional(functional, symbols=symbols, order=8),
+            s6=d["s6_bj"],
+            s8=d["s8_bj"],
+            damp_a1=d["a1"],
+            damp_a2=d["a2"],
             symbols=symbols,
             cutoff_fn=cutoff_fn,
             cutoff=cutoff,
@@ -131,17 +213,15 @@ class TwoBodyDispersionD3(PairPotential):
             num_molecules, num_atoms, species12, neighbors.indices, distances
         )
 
-        # Order 6 and 8 coefs
-        order6_coeffs = self._interpolate_coeff6(
-            species12, coordnums, neighbors.indices
-        )
-        order8_coeffs = (
-            3 * order6_coeffs * self.sqrt_charge_ab[species12[0], species12[1]]
+        # Order 6 and 8 coeff
+        order6_coeff = self._interpolate_coeff6(species12, coordnums, neighbors.indices)
+        order8_coeff = (
+            3 * order6_coeff * self.sqrt_charge_ab[species12[0], species12[1]]
         )
 
         # Order 6 and 8 energies
-        order6_energy = self._s6 * order6_coeffs / self._damp_fn_6(species12, distances)
-        order8_energy = self._s8 * order8_coeffs / self._damp_fn_8(species12, distances)
+        order6_energy = self._s6 * order6_coeff / self._damp_fn(species12, distances, 6)
+        order8_energy = self._s8 * order8_coeff / self._damp_fn(species12, distances, 8)
         return -(order6_energy + order8_energy)
 
     # Use the coordination numbers and the internal precalc C6's and
