@@ -7,30 +7,22 @@ Metrics: (UNTRACKED FOR PRIVATE)
 
 CI:
 
-[![tests workflow](
-    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tests.yaml/badge.svg
-)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tests.yaml)
-[![tests-ext workflow](
-    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tests-ext.yaml/badge.svg
-)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tests-ext.yaml)
-[![lint workflow](
-    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yaml/badge.svg
-)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/lint.yaml)
-[![tools workflow](
-        https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yaml/badge.svg
-)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/tools.yaml)
+[![ci workflow](
+    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml/badge.svg
+)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml)
+
+[![build-conda-pkg workflow](
+    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml/badge.svg
+)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml)
 
 Deployment: (STOPPED FOR PRIVATE REPO)
 
+TODO: Deploy PyPI badge
+TODO: Deploy anaconda badge
+TODO: Deploy docs badge
 [![Custom conda badge, link to page](
         https://img.shields.io/badge/conda--package-page-blue
 )](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
-[![deploy-docs workflow](
-    https://github.com/aiqm/torchani/workflows/deploy-docs/badge.svg
-)](https://github.com/aiqm/torchani/actions)
-[![deploy-pypi workflow](
-    https://github.com/aiqm/torchani/workflows/deploy-pypi/badge.svg
-)](https://github.com/aiqm/torchani/actions)
 
 TorchANI is a pytorch implementation of ANI. It is currently under alpha
 release, which means, the API is not stable yet. If you find a bug of TorchANI,
