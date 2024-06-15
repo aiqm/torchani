@@ -4,6 +4,7 @@ on: pull_request
 
 env:
   TAG: ani-ci:${{ github.sha }}
+  EXT_TAG: ani-ci-with-ext:${{ github.sha }}
 
 jobs:
   build-image:
@@ -13,6 +14,21 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           tags: ${{ env.TAG }}
+  build-image-ext:
+    needs: [build-image]
+    runs-on: [self-hosted, ipickering]
+    steps:
+      - name: Build Docker image (with extensions, for SM75)
+        uses: docker/build-push-action@v5
+        with:
+          tags: ${{ env.EXT_TAG }}
+          build-args: BUILD_EXT=sm75
+  tests-ext:
+    needs: [build-image-ext]
+    runs-on: [self-hosted, ipickering]
+    steps:
+      - name: Test extensions on GPU (Quadro RTX 5000, SM75)
+        run: docker run --rm --gpus '"device=3"' --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 ${{ env.EXT_TAG }} bash -c "nvidia-smi && pytest ./tests/test_cuaev.py ./tests/test_infer.py"
   tools:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
@@ -56,6 +72,12 @@ jobs:
     runs-on: [self-hosted, ipickering]
     steps:
       - run: docker image rm --force ${{ env.TAG }}
+  remove-image-ext:
+    if: ${{ always() }}
+    needs: [build-image-ext, tests-ext]
+    runs-on: [self-hosted, ipickering]
+    steps:
+      - run: docker image rm --force ${{ env.EXT_TAG }}
 
 concurrency:
   group: ani-ci-${{ github.event.pull_request.number || github.sha }}
