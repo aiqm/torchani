@@ -16,9 +16,9 @@ CI:
 
 Deployment: (STOPPED FOR PRIVATE REPO)
 
-(TODO: Deploy PyPI)
-(TODO: Deploy anaconda.org)
-(TODO: Deploy docs)
+(TODO: PyPI)
+(TODO: anaconda.org)
+(TODO: docs)
 [![Custom conda badge, link to page](
         https://img.shields.io/badge/conda--package-page-blue
 )](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
