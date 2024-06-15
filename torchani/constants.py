@@ -27,6 +27,17 @@ https://aip.scitation.org/doi/pdf/10.1063/1.5012601
 
 And for wB97X taken from
 TODO: where?
+
+Covalent radii are in angstroms, and are are used for the
+calculation of coordination numbers in DR. Taken
+directly from Grimme et. al. dftd3 source code, in turn taken from Pyykko
+and Atsumi, Chem. Eur. J. 15, 2009, 188-197
+Values for metals decreased by 10 % with respect to Pyykko et. al.
+
+Empirical Q in atomic units, correspond to sqrt(0.5 * sqrt(Z) * <r**2>/<r**4>).
+In Grimme's code these are "r2r4", and are used to calculate the C8 values.
+These are precalculated values. For details on their calculation consult the
+DFTD3 papers
 """
 import json
 from pathlib import Path
@@ -38,8 +49,12 @@ __all__ = [
     "ATOMIC_NUMBER",
     "ATOMIC_MASS",
     "ATOMIC_HARDNESS",
+    "ATOMIC_COVALENT_RADIUS",
+    "ATOMIC_SQRT_EMPIRICAL_CHARGE",
     "ATOMIC_ELECTRONEGATIVITY",
     "MASS",
+    "COVALENT_RADIUS",
+    "SQRT_EMPIRICAL_CHARGE",
     "HARDNESS",
     "ELECTRONEGATIVITY",
     "PERIODIC_TABLE",
@@ -58,6 +73,8 @@ ATOMIC_NUMBER: tp.Dict[str, int] = {}
 ATOMIC_HARDNESS: tp.Dict[str, float] = {}
 ATOMIC_ELECTRONEGATIVITY: tp.Dict[str, float] = {}
 ATOMIC_MASS: tp.Dict[str, float] = {}
+ATOMIC_SQRT_EMPIRICAL_CHARGE: tp.Dict[str, float] = {}
+ATOMIC_COVALENT_RADIUS: tp.Dict[str, float] = {}
 
 for symbol, values in ATOMIC_CONSTANTS.items():
     if not symbol:
@@ -66,6 +83,8 @@ for symbol, values in ATOMIC_CONSTANTS.items():
     hardness = values.get("hardness")
     electroneg = values.get("electronegativity")
     mass = values.get("mass")
+    sqrt_empirical_charge = values.get("sqrt_empirical_charge")
+    covalent_radius = values.get("covalent_radius")
     if znumber is not None:
         ATOMIC_NUMBER[symbol] = int(znumber)
     if hardness is not None:
@@ -74,6 +93,10 @@ for symbol, values in ATOMIC_CONSTANTS.items():
         ATOMIC_ELECTRONEGATIVITY[symbol] = float(electroneg)
     if mass is not None:
         ATOMIC_MASS[symbol] = float(mass)
+    if covalent_radius is not None:
+        ATOMIC_COVALENT_RADIUS[symbol] = float(covalent_radius)
+    if sqrt_empirical_charge is not None:
+        ATOMIC_SQRT_EMPIRICAL_CHARGE[symbol] = float(sqrt_empirical_charge)
 
 # When indexed with the corresponding atomic number, PERIODIC_TABLE gives the
 # element associated with it. Note that there is no element with atomic number
@@ -130,3 +153,5 @@ def znumber_indexed_seq_to_mapping(
 MASS = mapping_to_znumber_indexed_seq(ATOMIC_MASS)
 ELECTRONEGATIVITY = mapping_to_znumber_indexed_seq(ATOMIC_ELECTRONEGATIVITY)
 HARDNESS = mapping_to_znumber_indexed_seq(ATOMIC_HARDNESS)
+COVALENT_RADIUS = mapping_to_znumber_indexed_seq(ATOMIC_COVALENT_RADIUS)
+SQRT_EMPIRICAL_CHARGE = mapping_to_znumber_indexed_seq(ATOMIC_SQRT_EMPIRICAL_CHARGE)

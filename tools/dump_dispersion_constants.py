@@ -12,6 +12,7 @@ The actual calculation of the dispersion interaction is handled in
 potentials/dispersion.
 """
 
+import math
 import h5py
 import typing as tp
 import pickle
@@ -19,6 +20,9 @@ from pathlib import Path
 
 import torch
 from torch import Tensor
+
+
+SUPPORTED_D3_ELEMENTS = 94
 
 # cutoff radii are in angstroms, and used for the zero-damping D3 only
 cutoff_radii = [
@@ -32999,6 +33003,68 @@ def _dump_c6_constants() -> tp.Tuple[Tensor, Tensor, Tensor]:
         f.create_dataset("all/coordnums_a", data=c6_coordination_a.numpy())
         f.create_dataset("all/coordnums_b", data=c6_coordination_b.numpy())
     return c6_constants, c6_coordination_a, c6_coordination_b
+
+
+def get_covalent_radii() -> Tensor:
+    path = Path(__file__).parent.joinpath("covalent_radii.pkl").resolve()
+    with open(path, "rb") as f:
+        covalent_radii = torch.tensor(pickle.load(f))
+    assert len(covalent_radii) == SUPPORTED_D3_ELEMENTS
+    # element 0 is a dummy element
+    covalent_radii = torch.cat((torch.tensor([math.nan]), covalent_radii))
+    return covalent_radii
+
+
+def get_sqrt_empirical_charge() -> Tensor:
+    path = Path(__file__).parent.joinpath("sqrt_empirical_charge.pkl").resolve()
+    with open(path, "rb") as f:
+        sqrt_empirical_charge = torch.tensor(pickle.load(f))
+    assert len(sqrt_empirical_charge) == SUPPORTED_D3_ELEMENTS
+    # element 0 is a dummy element
+    sqrt_empirical_charge = torch.cat((torch.tensor([math.nan]), sqrt_empirical_charge))
+    return sqrt_empirical_charge
+
+
+def _make_symmetric(x: Tensor) -> Tensor:
+    assert x.ndim == 1
+    size = (math.sqrt(1 + 8 * len(x)) - 1) / 2
+    if not size.is_integer():
+        raise ValueError(
+            "Input tensor must be of size x * (x + 1) / 2 where x is an integer"
+        )
+    size = int(size)
+    x_symmetric = torch.zeros((size, size))
+    _lower_diagonal_mask = torch.tril(torch.ones((size, size), dtype=torch.bool))
+    x_symmetric.masked_scatter_(_lower_diagonal_mask, x)
+    for j in range(size):
+        for i in range(size):
+            x_symmetric[j, i] = x_symmetric[i, j]
+    return x_symmetric
+
+
+def get_cutoff_radii() -> Tensor:
+    # cutoff radii are in angstroms
+    num_cutoff_radii = SUPPORTED_D3_ELEMENTS * (SUPPORTED_D3_ELEMENTS + 1) / 2
+    path = Path(__file__).parent.joinpath("cutoff_radii.pkl").resolve()
+    with open(path, "rb") as f:
+        cutoff_radii = torch.tensor(pickle.load(f))
+    assert len(cutoff_radii) == num_cutoff_radii
+    cutoff_radii = _make_symmetric(cutoff_radii)
+    cutoff_radii = torch.cat(
+        (
+            torch.zeros(len(cutoff_radii), dtype=cutoff_radii.dtype).unsqueeze(0),
+            cutoff_radii,
+        ),
+        dim=0,
+    )
+    cutoff_radii = torch.cat(
+        (
+            torch.zeros(cutoff_radii.shape[0], dtype=cutoff_radii.dtype).unsqueeze(1),
+            cutoff_radii,
+        ),
+        dim=1,
+    )
+    return cutoff_radii
 
 
 if __name__ == "__main__":

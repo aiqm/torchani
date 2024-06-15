@@ -7,7 +7,7 @@ from torchani import units
 from torchani.utils import SYMBOLS_1X
 from torchani.aev import AEVComputer
 from torchani.potentials import TwoBodyDispersionD3, StandaloneTwoBodyDispersionD3
-from torchani.potentials.dispersion import constants
+from torchani.potentials.dispersion import _load_c6_constants
 from torchani.testing import ANITest, expand
 from torchani.grad import energies_and_forces
 
@@ -134,7 +134,7 @@ class TestDispersion(ANITest):
             self.assertEqual(diags[k], expect_diags[k])
 
     def testAllCarbonConstants(self):
-        c6_constants, _, _ = constants.get_c6_constants()
+        c6_constants, _, _ = _load_c6_constants()
         c6_constants = c6_constants.to(self.device)
         expect_c6_carbon = torch.tensor(
             [

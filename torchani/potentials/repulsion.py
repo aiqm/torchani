@@ -24,9 +24,6 @@ class RepulsionXTB(PairPotential):
     """
 
     ANGSTROM_TO_BOHR: Final[float]
-    y_ab: Tensor
-    sqrt_alpha_ab: Tensor
-    k_rep_ab: Tensor
 
     def __init__(
         self,
