@@ -1,6 +1,6 @@
 # <img src=https://raw.githubusercontent.com/aiqm/torchani/master/logo1.png width=180/>  Accurate Neural Network Potential on PyTorch
 
-Metrics: (UNTRACKED FOR PRIVATE)
+Metrics: (UNTRACKED FOR PRIVATE REPO)
 
 ![PyPI](https://img.shields.io/pypi/v/torchani.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchani.svg)
@@ -10,16 +10,15 @@ CI:
 [![ci workflow](
     https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml/badge.svg
 )](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml)
-
 [![build-conda-pkg workflow](
     https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml/badge.svg
 )](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml)
 
 Deployment: (STOPPED FOR PRIVATE REPO)
 
-TODO: Deploy PyPI badge
-TODO: Deploy anaconda badge
-TODO: Deploy docs badge
+(TODO: Deploy PyPI)
+(TODO: Deploy anaconda.org)
+(TODO: Deploy docs)
 [![Custom conda badge, link to page](
         https://img.shields.io/badge/conda--package-page-blue
 )](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
