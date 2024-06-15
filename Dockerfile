@@ -11,7 +11,8 @@ ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 # Get the program version from version control (git, needed by setuptools-scm)
 # Download test data and maybe CUB (wget, unzip)
 # Build C++/CUDA extensions faster (ninja-build)
-RUN apt update && apt install -y wget git unzip ninja-build rsync
+# C++/C/CUDA coda formatting (clang-format)
+RUN apt update && apt install -y wget git unzip ninja-build rsync clang-format
 
 # Download test data
 COPY ./download.sh .

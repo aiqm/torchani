@@ -34,22 +34,22 @@ jobs:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
     steps:
-      - run: docker run --rm --gpus all --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 ${{ env.TAG }} bash -c "nvidia-smi && sphinx-build -W docs/src docs/build"
+      - run: docker run --rm --gpus '"device=none"' --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 ${{ env.TAG }} bash -c "sphinx-build -W docs/src docs/build"
   mypy:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
     steps:
-      - run: docker run --rm --gpus '"device=none"' ${{ env.TAG }} bash -c "pip install --upgrade mypy && mypy --install-types --non-interactive ."
+      - run: docker run --rm --gpus '"device=none"' ${{ env.TAG }} bash -c "mypy --install-types --non-interactive ."
   flake8:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
     steps:
-      - run: docker run --rm --gpus '"device=none"' ${{ env.TAG }} bash -c "pip install --upgrade flake8 && flake8 ."
+      - run: docker run --rm --gpus '"device=none"' ${{ env.TAG }} bash -c "flake8 ."
   clang-format:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
     steps:
-      - run: docker run --rm --gpus '"device=none"' ${{ env.TAG }} bash -c "apt install -y clang-format && cd ./torchani/csrc && clang-format -Werror -n *.cpp *.cuh *.h *.cu"
+      - run: docker run --rm --gpus '"device=none"' ${{ env.TAG }} bash -c "cd ./torchani/csrc && clang-format -Werror -n *.cpp *.cuh *.h *.cu"
   remove-image:
     if: ${{ always() }}
     needs: [build-image, tools, tests, mypy, clang-format, flake8, docs]
