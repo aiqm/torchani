@@ -5,7 +5,9 @@ on: pull_request
 env:
   TAG: ani-ci:${{ github.sha }}
   EXT_TAG: ani-ci-with-ext:${{ github.sha }}
-  DOCKER_ARGS: --rm --ipc=host --ulimit memlock=-1 --ulimit stack=67108864
+  DOCKER_CPU: --gpus '"device=none"' --rm --ipc=host --ulimit memlock=-1 --ulimit stack=67108864
+  DOCKER_GPU: --gpus all --rm --ipc=host --ulimit memlock=-1 --ulimit stack=67108864
+  DOCKER_COMMON: --rm --ipc=host --ulimit memlock=-1 --ulimit stack=67108864
 
 jobs:
   build-image:
@@ -29,44 +31,44 @@ jobs:
     runs-on: [self-hosted, ipickering]
     steps:
       - name: Test extensions on GPU (Quadro RTX 5000, SM75)
-        run: docker run --gpus '"device=3"' ${{ env.DOCKER_ARGS }}  ${{ env.EXT_TAG }} bash -c "nvidia-smi && pytest ./tests/test_cuaev.py ./tests/test_infer.py"
+        run: docker run --gpus '"device=3"' ${{ env.DOCKER_COMMON }}  ${{ env.EXT_TAG }} bash -c "nvidia-smi && pytest ./tests/test_cuaev.py ./tests/test_infer.py"
   tools:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
     steps:
       - name: Inference benchmark
-        run: docker run --gpus all ${{ env.DOCKER_ARGS }} ${{ env.TAG }} bash -c "python tools/inference-benchmark.py --no-tqdm"
+        run: docker run ${{ env.DOCKER_GPU }} ${{ env.TAG }} bash -c "python tools/inference-benchmark.py --no-tqdm"
       - name: COMP6v1 accuracy benchmark
-        run: docker run --gpus all ${{ env.DOCKER_ARGS }} ${{ env.TAG }} bash -c "python tools/comp6v1-accuracy-benchmark.py --no-tqdm"
+        run: docker run ${{ env.DOCKER_GPU }} ${{ env.TAG }} bash -c "python tools/comp6v1-accuracy-benchmark.py --no-tqdm"
       - name: Training benchmark (with Nsight dry run)
-        run: docker run --gpus all ${{ env.DOCKER_ARGS }} ${{ env.TAG }} bash -c "python tools/training-benchmark.py --nvtx --no-tqdm"
+        run: docker run ${{ env.DOCKER_GPU }} ${{ env.TAG }} bash -c "python tools/training-benchmark.py --nvtx --no-tqdm"
       - name: MD Benchmark (with Nsight dry run)
-        run: docker run --gpus all ${{ env.DOCKER_ARGS }} ${{ env.TAG }} bash -c "python tools/md-benchmark.py --nvtx --no-tqdm"
+        run: docker run ${{ env.DOCKER_GPU }} ${{ env.TAG }} bash -c "python tools/md-benchmark.py --nvtx --no-tqdm"
   tests:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
     steps:
-      - run: docker run --gpus '"device=none"' ${{ env.DOCKER_ARGS }} ${{ env.TAG }} bash -c "pytest ."
+      - run: docker run ${{ env.DOCKER_CPU }} ${{ env.TAG }} bash -c "pytest ."
   docs:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
     steps:
-      - run: docker run --gpus '"device=none"' ${{ env.DOCKER_ARGS }} ${{ env.TAG }} bash -c "sphinx-build -W docs/src docs/build"
+      - run: docker run ${{ env.DOCKER_CPU }} ${{ env.TAG }} bash -c "sphinx-build -W docs/src docs/build"
   mypy:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
     steps:
-      - run: docker run --gpus '"device=none"' ${{ env.DOCKER_ARGS }} ${{ env.TAG }} bash -c "mypy --install-types --non-interactive ."
+      - run: docker run ${{ env.DOCKER_CPU }} ${{ env.TAG }} bash -c "mypy --install-types --non-interactive ."
   flake8:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
     steps:
-      - run: docker run --gpus '"device=none"' ${{ env.DOCKER_ARGS }} ${{ env.TAG }} bash -c "flake8 ."
+      - run: docker run ${{ env.DOCKER_CPU }} ${{ env.TAG }} bash -c "flake8 ."
   clang-format:
     needs: [build-image]
     runs-on: [self-hosted, ipickering]
     steps:
-      - run: docker run --gpus '"device=none"' ${{ env.DOCKER_ARGS }} ${{ env.TAG }} bash -c "cd ./torchani/csrc && clang-format -Werror -n *.cpp *.cuh *.h *.cu"
+      - run: docker run ${{ env.DOCKER_CPU }} ${{ env.TAG }} bash -c "cd ./torchani/csrc && clang-format -Werror -n *.cpp *.cuh *.h *.cu"
   remove-image:
     if: ${{ always() }}
     needs: [build-image, tools, tests, mypy, clang-format, flake8, docs]
