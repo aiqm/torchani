@@ -7,10 +7,9 @@ from torch.jit import Final
 from torchani.units import ANGSTROM_TO_BOHR
 from torchani.neighbors import NeighborData, NeighborlistArg
 from torchani.cutoffs import CutoffArg
-from torchani.constants import ATOMIC_NUMBER
+from torchani.constants import XTB_REPULSION_ALPHA, XTB_REPULSION_YEFF
 from torchani.potentials.wrapper import PotentialWrapper
 from torchani.potentials.core import PairPotential
-from torchani.potentials._repulsion_constants import alpha_constants, y_eff_constants
 
 
 class RepulsionXTB(PairPotential):
@@ -19,8 +18,11 @@ class RepulsionXTB(PairPotential):
     Potential used is as in work by Grimme:
     https://pubs.acs.org/doi/10.1021/acs.jctc.8b01176
 
-    By default alpha, y_eff and krep parameters are taken from Grimme et. al.
-    pairwise_kwargs are passed to PairPotential
+    By default `alpha`, `yeff` and `krep` parameters are taken from Grimme et. al.
+    pairwise_kwargs are passed to `PairPotential`
+
+    `krep_hydrogen` is only used for H-H repulsive interaction. All other
+    interactions use `krep`
     """
 
     ANGSTROM_TO_BOHR: Final[float]
@@ -29,34 +31,39 @@ class RepulsionXTB(PairPotential):
         self,
         symbols: tp.Sequence[str],
         cutoff: float,
+        krep_hydrogen: float = 1.0,
+        krep: float = 1.5,
         alpha: tp.Sequence[float] = (),
-        y_eff: tp.Sequence[float] = (),
+        yeff: tp.Sequence[float] = (),
         cutoff_fn: CutoffArg = "smooth",
     ):
         super().__init__(
             symbols=symbols, cutoff=cutoff, is_trainable=False, cutoff_fn=cutoff_fn
         )
+        num_elements = len(symbols)
 
         if not alpha:
-            _alpha = torch.tensor(alpha_constants)[self.atomic_numbers]
-        else:
-            _alpha = torch.tensor(alpha)
-        if not y_eff:
-            _y_eff = torch.tensor(y_eff_constants)[self.atomic_numbers]
-        else:
-            _y_eff = torch.tensor(y_eff)
+            alpha = [
+                XTB_REPULSION_ALPHA[j] for j in self.atomic_numbers
+            ]
+        if not len(alpha) == num_elements:
+            raise ValueError("len(alpha) should be equal to len(symbols) if provided")
+        if not yeff:
+            yeff = [
+                XTB_REPULSION_YEFF[j] for j in self.atomic_numbers
+            ]
+        if not len(yeff) == num_elements:
+            raise ValueError("len(yeff) should be equal to len(symbols) if provided")
 
-        _ELEMENTS_NUM = len(ATOMIC_NUMBER)
-        k_rep_ab = torch.full((_ELEMENTS_NUM + 1, _ELEMENTS_NUM + 1), 1.5)
-        k_rep_ab[1, 1] = 1.0
-        k_rep_ab = k_rep_ab[self.atomic_numbers, :][:, self.atomic_numbers]
-
-        # Validation
-        assert len(_y_eff) == len(self.atomic_numbers)
-        assert len(_alpha) == len(self.atomic_numbers)
+        k_rep_ab = torch.full((num_elements, num_elements), krep)
+        if 1 in self.atomic_numbers:
+            hydrogen_idx = (self.atomic_numbers == 1).nonzero().view(-1)
+            k_rep_ab[hydrogen_idx, hydrogen_idx] = krep_hydrogen
 
         # Pre-calculate pairwise parameters for efficiency
-        self.register_buffer("y_ab", torch.outer(_y_eff, _y_eff))
+        _yeff = torch.tensor(yeff)
+        self.register_buffer("y_ab", torch.outer(_yeff, _yeff))
+        _alpha = torch.tensor(alpha)
         self.register_buffer("sqrt_alpha_ab", torch.sqrt(torch.outer(_alpha, _alpha)))
         self.register_buffer("k_rep_ab", k_rep_ab)
         self.ANGSTROM_TO_BOHR = ANGSTROM_TO_BOHR
@@ -90,15 +97,19 @@ class RepulsionXTB(PairPotential):
 def StandaloneRepulsionXTB(
     symbols: tp.Sequence[str],
     cutoff: float,
+    krep_hydrogen: float = 1.0,
+    krep: float = 1.5,
     alpha: tp.Sequence[float] = (),
-    y_eff: tp.Sequence[float] = (),
+    yeff: tp.Sequence[float] = (),
     cutoff_fn: CutoffArg = "smooth",
     neighborlist: NeighborlistArg = "full_pairwise",
     periodic_table_index: bool = True,
 ) -> PotentialWrapper:
     module = RepulsionXTB(
         alpha=alpha,
-        y_eff=y_eff,
+        yeff=yeff,
+        krep_hydrogen=krep_hydrogen,
+        krep=krep,
         cutoff=cutoff,
         symbols=symbols,
         cutoff_fn=cutoff_fn,

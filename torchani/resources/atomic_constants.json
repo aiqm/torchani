@@ -5,7 +5,9 @@
         "mass": null,
         "znumber": 0,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "H": {
         "electronegativity": 7.18,
@@ -13,7 +15,9 @@
         "mass": 1.008,
         "znumber": 1,
         "sqrt_empirical_charge": 2.0073490142822266,
-        "covalent_radius": 0.3199999928474426
+        "covalent_radius": 0.3199999928474426,
+        "xtb_repulsion_alpha": 2.213717,
+        "xtb_repulsion_yeff": 1.105388
     },
     "He": {
         "electronegativity": 12.27,
@@ -21,7 +25,9 @@
         "mass": 4.002602,
         "znumber": 2,
         "sqrt_empirical_charge": 1.5663713216781616,
-        "covalent_radius": 0.46000000834465027
+        "covalent_radius": 0.46000000834465027,
+        "xtb_repulsion_alpha": 3.60467,
+        "xtb_repulsion_yeff": 1.094283
     },
     "Li": {
         "electronegativity": 3.0,
@@ -29,7 +35,9 @@
         "mass": 6.94,
         "znumber": 3,
         "sqrt_empirical_charge": 5.019869327545166,
-        "covalent_radius": 1.2000000476837158
+        "covalent_radius": 1.2000000476837158,
+        "xtb_repulsion_alpha": 0.475307,
+        "xtb_repulsion_yeff": 1.289367
     },
     "Be": {
         "electronegativity": 4.66,
@@ -37,7 +45,9 @@
         "mass": 9.0121831,
         "znumber": 4,
         "sqrt_empirical_charge": 3.853790283203125,
-        "covalent_radius": 0.9399999976158142
+        "covalent_radius": 0.9399999976158142,
+        "xtb_repulsion_alpha": 0.939696,
+        "xtb_repulsion_yeff": 4.221216
     },
     "B": {
         "electronegativity": 4.29,
@@ -45,7 +55,9 @@
         "mass": 10.81,
         "znumber": 5,
         "sqrt_empirical_charge": 3.644465923309326,
-        "covalent_radius": 0.7699999809265137
+        "covalent_radius": 0.7699999809265137,
+        "xtb_repulsion_alpha": 1.373856,
+        "xtb_repulsion_yeff": 7.192431
     },
     "C": {
         "electronegativity": 6.26,
@@ -53,7 +65,9 @@
         "mass": 12.011,
         "znumber": 6,
         "sqrt_empirical_charge": 3.1049282550811768,
-        "covalent_radius": 0.75
+        "covalent_radius": 0.75,
+        "xtb_repulsion_alpha": 1.247655,
+        "xtb_repulsion_yeff": 4.231078
     },
     "N": {
         "electronegativity": 7.27,
@@ -61,7 +75,9 @@
         "mass": 14.007,
         "znumber": 7,
         "sqrt_empirical_charge": 2.711752414703369,
-        "covalent_radius": 0.7099999785423279
+        "covalent_radius": 0.7099999785423279,
+        "xtb_repulsion_alpha": 1.682689,
+        "xtb_repulsion_yeff": 5.242592
     },
     "O": {
         "electronegativity": 7.54,
@@ -69,7 +85,9 @@
         "mass": 15.999,
         "znumber": 8,
         "sqrt_empirical_charge": 2.5936167240142822,
-        "covalent_radius": 0.6299999952316284
+        "covalent_radius": 0.6299999952316284,
+        "xtb_repulsion_alpha": 2.165712,
+        "xtb_repulsion_yeff": 5.784415
     },
     "F": {
         "electronegativity": 10.41,
@@ -77,7 +95,9 @@
         "mass": 18.99840316,
         "znumber": 9,
         "sqrt_empirical_charge": 2.3882524967193604,
-        "covalent_radius": 0.6399999856948853
+        "covalent_radius": 0.6399999856948853,
+        "xtb_repulsion_alpha": 2.421394,
+        "xtb_repulsion_yeff": 7.021486
     },
     "Ne": {
         "electronegativity": 10.78,
@@ -85,7 +105,9 @@
         "mass": 20.1797,
         "znumber": 10,
         "sqrt_empirical_charge": 2.2152252197265625,
-        "covalent_radius": 0.6700000166893005
+        "covalent_radius": 0.6700000166893005,
+        "xtb_repulsion_alpha": 3.318479,
+        "xtb_repulsion_yeff": 11.041068
     },
     "Na": {
         "electronegativity": 2.84,
@@ -93,7 +115,9 @@
         "mass": 22.98976928,
         "znumber": 11,
         "sqrt_empirical_charge": 6.585855484008789,
-        "covalent_radius": 1.399999976158142
+        "covalent_radius": 1.399999976158142,
+        "xtb_repulsion_alpha": 0.572728,
+        "xtb_repulsion_yeff": 5.244917
     },
     "Mg": {
         "electronegativity": 3.82,
@@ -101,7 +125,9 @@
         "mass": 24.305,
         "znumber": 12,
         "sqrt_empirical_charge": 5.4629597663879395,
-        "covalent_radius": 1.25
+        "covalent_radius": 1.25,
+        "xtb_repulsion_alpha": 0.917975,
+        "xtb_repulsion_yeff": 18.083164
     },
     "Al": {
         "electronegativity": 3.21,
@@ -109,7 +135,9 @@
         "mass": 26.9815385,
         "znumber": 13,
         "sqrt_empirical_charge": 5.652166843414307,
-        "covalent_radius": 1.1299999952316284
+        "covalent_radius": 1.1299999952316284,
+        "xtb_repulsion_alpha": 0.876623,
+        "xtb_repulsion_yeff": 17.867328
     },
     "Si": {
         "electronegativity": 4.77,
@@ -117,7 +145,9 @@
         "mass": 28.085,
         "znumber": 14,
         "sqrt_empirical_charge": 4.882849216461182,
-        "covalent_radius": 1.0399999618530273
+        "covalent_radius": 1.0399999618530273,
+        "xtb_repulsion_alpha": 1.187323,
+        "xtb_repulsion_yeff": 40.001111
     },
     "P": {
         "electronegativity": 5.62,
@@ -125,7 +155,9 @@
         "mass": 30.973762,
         "znumber": 15,
         "sqrt_empirical_charge": 4.297275543212891,
-        "covalent_radius": 1.100000023841858
+        "covalent_radius": 1.100000023841858,
+        "xtb_repulsion_alpha": 1.143343,
+        "xtb_repulsion_yeff": 19.683502
     },
     "S": {
         "electronegativity": 6.22,
@@ -133,7 +165,9 @@
         "mass": 32.06,
         "znumber": 16,
         "sqrt_empirical_charge": 4.041089057922363,
-        "covalent_radius": 1.0199999809265137
+        "covalent_radius": 1.0199999809265137,
+        "xtb_repulsion_alpha": 1.214553,
+        "xtb_repulsion_yeff": 14.99509
     },
     "Cl": {
         "electronegativity": 8.29,
@@ -141,7 +175,9 @@
         "mass": 35.45,
         "znumber": 17,
         "sqrt_empirical_charge": 3.729323625564575,
-        "covalent_radius": 0.9900000095367432
+        "covalent_radius": 0.9900000095367432,
+        "xtb_repulsion_alpha": 1.577144,
+        "xtb_repulsion_yeff": 17.353134
     },
     "Ar": {
         "electronegativity": 7.88,
@@ -149,7 +185,9 @@
         "mass": 39.948,
         "znumber": 18,
         "sqrt_empirical_charge": 3.446772813796997,
-        "covalent_radius": 0.9599999785423279
+        "covalent_radius": 0.9599999785423279,
+        "xtb_repulsion_alpha": 0.896198,
+        "xtb_repulsion_yeff": 7.266606
     },
     "K": {
         "electronegativity": 2.42,
@@ -157,7 +195,9 @@
         "mass": 39.0983,
         "znumber": 19,
         "sqrt_empirical_charge": 7.977627754211426,
-        "covalent_radius": 1.7599999904632568
+        "covalent_radius": 1.7599999904632568,
+        "xtb_repulsion_alpha": 0.482206,
+        "xtb_repulsion_yeff": 10.439482
     },
     "Ca": {
         "electronegativity": 3.07,
@@ -165,7 +205,9 @@
         "mass": 40.078,
         "znumber": 20,
         "sqrt_empirical_charge": 7.076239585876465,
-        "covalent_radius": 1.5399999618530273
+        "covalent_radius": 1.5399999618530273,
+        "xtb_repulsion_alpha": 0.683051,
+        "xtb_repulsion_yeff": 14.786701
     },
     "Sc": {
         "electronegativity": 3.38,
@@ -173,7 +215,9 @@
         "mass": 44.955908,
         "znumber": 21,
         "sqrt_empirical_charge": 6.608440399169922,
-        "covalent_radius": 1.3300000429153442
+        "covalent_radius": 1.3300000429153442,
+        "xtb_repulsion_alpha": 0.574299,
+        "xtb_repulsion_yeff": 8.004267
     },
     "Ti": {
         "electronegativity": 3.45,
@@ -181,7 +225,9 @@
         "mass": 47.867,
         "znumber": 22,
         "sqrt_empirical_charge": 6.287913799285889,
-        "covalent_radius": 1.2200000286102295
+        "covalent_radius": 1.2200000286102295,
+        "xtb_repulsion_alpha": 0.723104,
+        "xtb_repulsion_yeff": 12.036336
     },
     "V": {
         "electronegativity": 3.64,
@@ -189,7 +235,9 @@
         "mass": 50.9415,
         "znumber": 23,
         "sqrt_empirical_charge": 6.077287197113037,
-        "covalent_radius": 1.2100000381469727
+        "covalent_radius": 1.2100000381469727,
+        "xtb_repulsion_alpha": 0.928532,
+        "xtb_repulsion_yeff": 15.677873
     },
     "Cr": {
         "electronegativity": 3.72,
@@ -197,7 +245,9 @@
         "mass": 51.9961,
         "znumber": 24,
         "sqrt_empirical_charge": 5.546431064605713,
-        "covalent_radius": 1.100000023841858
+        "covalent_radius": 1.100000023841858,
+        "xtb_repulsion_alpha": 0.966993,
+        "xtb_repulsion_yeff": 19.517914
     },
     "Mn": {
         "electronegativity": 3.72,
@@ -205,7 +255,9 @@
         "mass": 54.938044,
         "znumber": 25,
         "sqrt_empirical_charge": 5.8049116134643555,
-        "covalent_radius": 1.0700000524520874
+        "covalent_radius": 1.0700000524520874,
+        "xtb_repulsion_alpha": 1.0711,
+        "xtb_repulsion_yeff": 18.760605
     },
     "Fe": {
         "electronegativity": 4.03,
@@ -213,7 +265,9 @@
         "mass": 55.845,
         "znumber": 26,
         "sqrt_empirical_charge": 5.584156036376953,
-        "covalent_radius": 1.0399999618530273
+        "covalent_radius": 1.0399999618530273,
+        "xtb_repulsion_alpha": 1.113422,
+        "xtb_repulsion_yeff": 20.360089
     },
     "Co": {
         "electronegativity": 4.27,
@@ -221,7 +275,9 @@
         "mass": 58.933194,
         "znumber": 27,
         "sqrt_empirical_charge": 5.413745403289795,
-        "covalent_radius": 1.0
+        "covalent_radius": 1.0,
+        "xtb_repulsion_alpha": 1.241717,
+        "xtb_repulsion_yeff": 27.127744
     },
     "Ni": {
         "electronegativity": 4.4,
@@ -229,7 +285,9 @@
         "mass": 58.6934,
         "znumber": 28,
         "sqrt_empirical_charge": 5.284972190856934,
-        "covalent_radius": 0.9900000095367432
+        "covalent_radius": 0.9900000095367432,
+        "xtb_repulsion_alpha": 1.077516,
+        "xtb_repulsion_yeff": 10.533269
     },
     "Cu": {
         "electronegativity": 4.48,
@@ -237,7 +295,9 @@
         "mass": 63.546,
         "znumber": 29,
         "sqrt_empirical_charge": 5.22592830657959,
-        "covalent_radius": 1.0099999904632568
+        "covalent_radius": 1.0099999904632568,
+        "xtb_repulsion_alpha": 0.998768,
+        "xtb_repulsion_yeff": 9.913846
     },
     "Zn": {
         "electronegativity": 4.7,
@@ -245,7 +305,9 @@
         "mass": 65.38,
         "znumber": 30,
         "sqrt_empirical_charge": 5.098171234130859,
-        "covalent_radius": 1.090000033378601
+        "covalent_radius": 1.090000033378601,
+        "xtb_repulsion_alpha": 1.160262,
+        "xtb_repulsion_yeff": 22.099503
     },
     "Ga": {
         "electronegativity": 3.21,
@@ -253,7 +315,9 @@
         "mass": 69.723,
         "znumber": 31,
         "sqrt_empirical_charge": 6.121496677398682,
-        "covalent_radius": 1.1200000047683716
+        "covalent_radius": 1.1200000047683716,
+        "xtb_repulsion_alpha": 1.122923,
+        "xtb_repulsion_yeff": 31.14675
     },
     "Ge": {
         "electronegativity": 4.57,
@@ -261,7 +325,9 @@
         "mass": 72.63,
         "znumber": 32,
         "sqrt_empirical_charge": 5.540837287902832,
-        "covalent_radius": 1.090000033378601
+        "covalent_radius": 1.090000033378601,
+        "xtb_repulsion_alpha": 1.222349,
+        "xtb_repulsion_yeff": 42.100144
     },
     "As": {
         "electronegativity": 5.3,
@@ -269,7 +335,9 @@
         "mass": 74.921595,
         "znumber": 33,
         "sqrt_empirical_charge": 5.06696891784668,
-        "covalent_radius": 1.149999976158142
+        "covalent_radius": 1.149999976158142,
+        "xtb_repulsion_alpha": 1.249372,
+        "xtb_repulsion_yeff": 39.147587
     },
     "Se": {
         "electronegativity": 5.88,
@@ -277,7 +345,9 @@
         "mass": 78.971,
         "znumber": 34,
         "sqrt_empirical_charge": 4.87005090713501,
-        "covalent_radius": 1.100000023841858
+        "covalent_radius": 1.100000023841858,
+        "xtb_repulsion_alpha": 1.230284,
+        "xtb_repulsion_yeff": 27.426779
     },
     "Br": {
         "electronegativity": 7.59,
@@ -285,7 +355,9 @@
         "mass": 79.904,
         "znumber": 35,
         "sqrt_empirical_charge": 4.5908966064453125,
-        "covalent_radius": 1.1399999856948853
+        "covalent_radius": 1.1399999856948853,
+        "xtb_repulsion_alpha": 1.296174,
+        "xtb_repulsion_yeff": 32.845361
     },
     "Kr": {
         "electronegativity": 7.0,
@@ -293,7 +365,9 @@
         "mass": 83.798,
         "znumber": 36,
         "sqrt_empirical_charge": 4.311762809753418,
-        "covalent_radius": 1.1699999570846558
+        "covalent_radius": 1.1699999570846558,
+        "xtb_repulsion_alpha": 0.908074,
+        "xtb_repulsion_yeff": 17.363803
     },
     "Rb": {
         "electronegativity": 2.33,
@@ -301,7 +375,9 @@
         "mass": 85.4678,
         "znumber": 37,
         "sqrt_empirical_charge": 9.554616928100586,
-        "covalent_radius": 1.8899999856948853
+        "covalent_radius": 1.8899999856948853,
+        "xtb_repulsion_alpha": 0.574054,
+        "xtb_repulsion_yeff": 44.338211
     },
     "Sr": {
         "electronegativity": 2.88,
@@ -309,7 +385,9 @@
         "mass": 87.62,
         "znumber": 38,
         "sqrt_empirical_charge": 8.67396068572998,
-        "covalent_radius": 1.6699999570846558
+        "covalent_radius": 1.6699999570846558,
+        "xtb_repulsion_alpha": 0.697345,
+        "xtb_repulsion_yeff": 34.365525
     },
     "Y": {
         "electronegativity": 3.27,
@@ -317,7 +395,9 @@
         "mass": 88.90584,
         "znumber": 39,
         "sqrt_empirical_charge": 7.972102165222168,
-        "covalent_radius": 1.4700000286102295
+        "covalent_radius": 1.4700000286102295,
+        "xtb_repulsion_alpha": 0.706172,
+        "xtb_repulsion_yeff": 17.326237
     },
     "Zr": {
         "electronegativity": 3.53,
@@ -325,7 +405,9 @@
         "mass": 91.224,
         "znumber": 40,
         "sqrt_empirical_charge": 7.434399127960205,
-        "covalent_radius": 1.3899999856948853
+        "covalent_radius": 1.3899999856948853,
+        "xtb_repulsion_alpha": 0.681106,
+        "xtb_repulsion_yeff": 24.263093
     },
     "Nb": {
         "electronegativity": 3.83,
@@ -333,7 +415,9 @@
         "mass": 92.90637,
         "znumber": 41,
         "sqrt_empirical_charge": 6.587118625640869,
-        "covalent_radius": 1.3200000524520874
+        "covalent_radius": 1.3200000524520874,
+        "xtb_repulsion_alpha": 0.865552,
+        "xtb_repulsion_yeff": 30.562732
     },
     "Mo": {
         "electronegativity": 3.92,
@@ -341,7 +425,9 @@
         "mass": 95.95,
         "znumber": 42,
         "sqrt_empirical_charge": 6.195362091064453,
-        "covalent_radius": 1.2400000095367432
+        "covalent_radius": 1.2400000095367432,
+        "xtb_repulsion_alpha": 1.034519,
+        "xtb_repulsion_yeff": 48.312796
     },
     "Tc": {
         "electronegativity": 3.91,
@@ -349,7 +435,9 @@
         "mass": 97.90721,
         "znumber": 43,
         "sqrt_empirical_charge": 6.015172958374023,
-        "covalent_radius": 1.149999976158142
+        "covalent_radius": 1.149999976158142,
+        "xtb_repulsion_alpha": 1.019565,
+        "xtb_repulsion_yeff": 44.779882
     },
     "Ru": {
         "electronegativity": 4.22,
@@ -357,7 +445,9 @@
         "mass": 101.07,
         "znumber": 44,
         "sqrt_empirical_charge": 5.816234111785889,
-        "covalent_radius": 1.1299999952316284
+        "covalent_radius": 1.1299999952316284,
+        "xtb_repulsion_alpha": 1.031669,
+        "xtb_repulsion_yeff": 28.070247
     },
     "Rh": {
         "electronegativity": 4.3,
@@ -365,7 +455,9 @@
         "mass": 102.9055,
         "znumber": 45,
         "sqrt_empirical_charge": 5.657104015350342,
-        "covalent_radius": 1.1299999952316284
+        "covalent_radius": 1.1299999952316284,
+        "xtb_repulsion_alpha": 1.094599,
+        "xtb_repulsion_yeff": 38.035941
     },
     "Pd": {
         "electronegativity": 4.44,
@@ -373,7 +465,9 @@
         "mass": 106.42,
         "znumber": 46,
         "sqrt_empirical_charge": 5.526406764984131,
-        "covalent_radius": 1.0800000429153442
+        "covalent_radius": 1.0800000429153442,
+        "xtb_repulsion_alpha": 1.092745,
+        "xtb_repulsion_yeff": 28.6747
     },
     "Ag": {
         "electronegativity": 4.44,
@@ -381,7 +475,9 @@
         "mass": 107.8682,
         "znumber": 47,
         "sqrt_empirical_charge": 5.442633152008057,
-        "covalent_radius": 1.149999976158142
+        "covalent_radius": 1.149999976158142,
+        "xtb_repulsion_alpha": 0.678344,
+        "xtb_repulsion_yeff": 6.493286
     },
     "Cd": {
         "electronegativity": 4.5,
@@ -389,7 +485,9 @@
         "mass": 112.414,
         "znumber": 48,
         "sqrt_empirical_charge": 5.5828537940979,
-        "covalent_radius": 1.2300000190734863
+        "covalent_radius": 1.2300000190734863,
+        "xtb_repulsion_alpha": 0.936236,
+        "xtb_repulsion_yeff": 26.226628
     },
     "In": {
         "electronegativity": 3.09,
@@ -397,7 +495,9 @@
         "mass": 114.818,
         "znumber": 49,
         "sqrt_empirical_charge": 7.020819187164307,
-        "covalent_radius": 1.2799999713897705
+        "covalent_radius": 1.2799999713897705,
+        "xtb_repulsion_alpha": 1.024007,
+        "xtb_repulsion_yeff": 63.85424
     },
     "Sn": {
         "electronegativity": 4.23,
@@ -405,7 +505,9 @@
         "mass": 118.71,
         "znumber": 50,
         "sqrt_empirical_charge": 6.468155384063721,
-        "covalent_radius": 1.2599999904632568
+        "covalent_radius": 1.2599999904632568,
+        "xtb_repulsion_alpha": 1.139959,
+        "xtb_repulsion_yeff": 80.053438
     },
     "Sb": {
         "electronegativity": 4.82,
@@ -413,7 +515,9 @@
         "mass": 121.76,
         "znumber": 51,
         "sqrt_empirical_charge": 5.980891227722168,
-        "covalent_radius": 1.2599999904632568
+        "covalent_radius": 1.2599999904632568,
+        "xtb_repulsion_alpha": 1.122937,
+        "xtb_repulsion_yeff": 77.05756
     },
     "Te": {
         "electronegativity": 5.49,
@@ -421,7 +525,9 @@
         "mass": 127.6,
         "znumber": 52,
         "sqrt_empirical_charge": 5.816866397857666,
-        "covalent_radius": 1.2300000190734863
+        "covalent_radius": 1.2300000190734863,
+        "xtb_repulsion_alpha": 1.000712,
+        "xtb_repulsion_yeff": 48.614745
     },
     "I": {
         "electronegativity": 6.75,
@@ -429,7 +535,9 @@
         "mass": 126.90447,
         "znumber": 53,
         "sqrt_empirical_charge": 5.5332183837890625,
-        "covalent_radius": 1.3200000524520874
+        "covalent_radius": 1.3200000524520874,
+        "xtb_repulsion_alpha": 1.017946,
+        "xtb_repulsion_yeff": 63.319176
     },
     "Xe": {
         "electronegativity": 6.07,
@@ -437,7 +545,9 @@
         "mass": 131.293,
         "znumber": 54,
         "sqrt_empirical_charge": 5.254770278930664,
-        "covalent_radius": 1.309999942779541
+        "covalent_radius": 1.309999942779541,
+        "xtb_repulsion_alpha": 1.012036,
+        "xtb_repulsion_yeff": 51.188398
     },
     "Cs": {
         "electronegativity": 2.18,
@@ -445,7 +555,9 @@
         "mass": 132.90545196,
         "znumber": 55,
         "sqrt_empirical_charge": 11.022045135498047,
-        "covalent_radius": 2.0899999141693115
+        "covalent_radius": 2.0899999141693115,
+        "xtb_repulsion_alpha": 0.585257,
+        "xtb_repulsion_yeff": 67.249039
     },
     "Ba": {
         "electronegativity": 2.68,
@@ -453,7 +565,9 @@
         "mass": 137.327,
         "znumber": 56,
         "sqrt_empirical_charge": 10.156795501708984,
-        "covalent_radius": 1.7599999904632568
+        "covalent_radius": 1.7599999904632568,
+        "xtb_repulsion_alpha": 0.716259,
+        "xtb_repulsion_yeff": 46.984607
     },
     "La": {
         "electronegativity": 3.03,
@@ -461,7 +575,9 @@
         "mass": 138.90547,
         "znumber": 57,
         "sqrt_empirical_charge": 9.351677894592285,
-        "covalent_radius": 1.6200000047683716
+        "covalent_radius": 1.6200000047683716,
+        "xtb_repulsion_alpha": 0.737643,
+        "xtb_repulsion_yeff": 50.927529
     },
     "Ce": {
         "electronegativity": 3.09,
@@ -469,7 +585,9 @@
         "mass": 140.116,
         "znumber": 58,
         "sqrt_empirical_charge": 9.069260597229004,
-        "covalent_radius": 1.4700000286102295
+        "covalent_radius": 1.4700000286102295,
+        "xtb_repulsion_alpha": 0.72995,
+        "xtb_repulsion_yeff": 48.676714
     },
     "Pr": {
         "electronegativity": 3.22,
@@ -477,7 +595,9 @@
         "mass": 140.90766,
         "znumber": 59,
         "sqrt_empirical_charge": 8.972411155700684,
-        "covalent_radius": 1.5800000429153442
+        "covalent_radius": 1.5800000429153442,
+        "xtb_repulsion_alpha": 0.734624,
+        "xtb_repulsion_yeff": 47.669448
     },
     "Nd": {
         "electronegativity": 2.85,
@@ -485,7 +605,9 @@
         "mass": 144.242,
         "znumber": 60,
         "sqrt_empirical_charge": 8.900928497314453,
-        "covalent_radius": 1.5700000524520874
+        "covalent_radius": 1.5700000524520874,
+        "xtb_repulsion_alpha": 0.739299,
+        "xtb_repulsion_yeff": 46.662183
     },
     "Pm": {
         "electronegativity": 2.86,
@@ -493,7 +615,9 @@
         "mass": 144.91276,
         "znumber": 61,
         "sqrt_empirical_charge": 8.859848022460938,
-        "covalent_radius": 1.559999942779541
+        "covalent_radius": 1.559999942779541,
+        "xtb_repulsion_alpha": 0.743973,
+        "xtb_repulsion_yeff": 45.654917
     },
     "Sm": {
         "electronegativity": 2.91,
@@ -501,7 +625,9 @@
         "mass": 150.36,
         "znumber": 62,
         "sqrt_empirical_charge": 8.817368507385254,
-        "covalent_radius": 1.5499999523162842
+        "covalent_radius": 1.5499999523162842,
+        "xtb_repulsion_alpha": 0.748648,
+        "xtb_repulsion_yeff": 44.647651
     },
     "Eu": {
         "electronegativity": 2.9,
@@ -509,7 +635,9 @@
         "mass": 151.964,
         "znumber": 63,
         "sqrt_empirical_charge": 8.793176651000977,
-        "covalent_radius": 1.5099999904632568
+        "covalent_radius": 1.5099999904632568,
+        "xtb_repulsion_alpha": 0.753322,
+        "xtb_repulsion_yeff": 43.640385
     },
     "Gd": {
         "electronegativity": 3.15,
@@ -517,7 +645,9 @@
         "mass": 157.25,
         "znumber": 64,
         "sqrt_empirical_charge": 7.899696350097656,
-        "covalent_radius": 1.5199999809265137
+        "covalent_radius": 1.5199999809265137,
+        "xtb_repulsion_alpha": 0.757996,
+        "xtb_repulsion_yeff": 42.63312
     },
     "Tb": {
         "electronegativity": 3.15,
@@ -525,7 +655,9 @@
         "mass": 158.92535,
         "znumber": 65,
         "sqrt_empirical_charge": 8.80588436126709,
-        "covalent_radius": 1.5099999904632568
+        "covalent_radius": 1.5099999904632568,
+        "xtb_repulsion_alpha": 0.762671,
+        "xtb_repulsion_yeff": 41.625854
     },
     "Dy": {
         "electronegativity": 3.15,
@@ -533,7 +665,9 @@
         "mass": 162.5,
         "znumber": 66,
         "sqrt_empirical_charge": 8.424391746520996,
-        "covalent_radius": 1.5
+        "covalent_radius": 1.5,
+        "xtb_repulsion_alpha": 0.767345,
+        "xtb_repulsion_yeff": 40.618588
     },
     "Ho": {
         "electronegativity": 3.18,
@@ -541,7 +675,9 @@
         "mass": 164.93033,
         "znumber": 67,
         "sqrt_empirical_charge": 8.542892456054688,
-        "covalent_radius": 1.4900000095367432
+        "covalent_radius": 1.4900000095367432,
+        "xtb_repulsion_alpha": 0.77202,
+        "xtb_repulsion_yeff": 39.611322
     },
     "Er": {
         "electronegativity": 3.21,
@@ -549,7 +685,9 @@
         "mass": 167.259,
         "znumber": 68,
         "sqrt_empirical_charge": 8.475833892822266,
-        "covalent_radius": 1.4900000095367432
+        "covalent_radius": 1.4900000095367432,
+        "xtb_repulsion_alpha": 0.776694,
+        "xtb_repulsion_yeff": 38.604057
     },
     "Tm": {
         "electronegativity": 3.1,
@@ -557,7 +695,9 @@
         "mass": 168.93422,
         "znumber": 69,
         "sqrt_empirical_charge": 8.450908660888672,
-        "covalent_radius": 1.4800000190734863
+        "covalent_radius": 1.4800000190734863,
+        "xtb_repulsion_alpha": 0.781368,
+        "xtb_repulsion_yeff": 37.596791
     },
     "Yb": {
         "electronegativity": 3.13,
@@ -565,7 +705,9 @@
         "mass": 173.054,
         "znumber": 70,
         "sqrt_empirical_charge": 8.473393440246582,
-        "covalent_radius": 1.5299999713897705
+        "covalent_radius": 1.5299999713897705,
+        "xtb_repulsion_alpha": 0.786043,
+        "xtb_repulsion_yeff": 36.589525
     },
     "Lu": {
         "electronegativity": 2.88,
@@ -573,7 +715,9 @@
         "mass": 174.9668,
         "znumber": 71,
         "sqrt_empirical_charge": 7.835256576538086,
-        "covalent_radius": 1.4600000381469727
+        "covalent_radius": 1.4600000381469727,
+        "xtb_repulsion_alpha": 0.790717,
+        "xtb_repulsion_yeff": 35.582259
     },
     "Hf": {
         "electronegativity": 3.47,
@@ -581,7 +725,9 @@
         "mass": 178.49,
         "znumber": 72,
         "sqrt_empirical_charge": 8.20702838897705,
-        "covalent_radius": 1.3700000047683716
+        "covalent_radius": 1.3700000047683716,
+        "xtb_repulsion_alpha": 0.852852,
+        "xtb_repulsion_yeff": 40.186772
     },
     "Ta": {
         "electronegativity": 3.94,
@@ -589,7 +735,9 @@
         "mass": 180.94788,
         "znumber": 73,
         "sqrt_empirical_charge": 7.705590724945068,
-        "covalent_radius": 1.309999942779541
+        "covalent_radius": 1.309999942779541,
+        "xtb_repulsion_alpha": 0.990234,
+        "xtb_repulsion_yeff": 54.666156
     },
     "W": {
         "electronegativity": 4.35,
@@ -597,7 +745,9 @@
         "mass": 183.84,
         "znumber": 74,
         "sqrt_empirical_charge": 7.327559947967529,
-        "covalent_radius": 1.2300000190734863
+        "covalent_radius": 1.2300000190734863,
+        "xtb_repulsion_alpha": 1.018805,
+        "xtb_repulsion_yeff": 55.899801
     },
     "Re": {
         "electronegativity": 4.0,
@@ -605,7 +755,9 @@
         "mass": 186.207,
         "znumber": 75,
         "sqrt_empirical_charge": 7.038873672485352,
-        "covalent_radius": 1.1799999475479126
+        "covalent_radius": 1.1799999475479126,
+        "xtb_repulsion_alpha": 1.170412,
+        "xtb_repulsion_yeff": 80.410086
     },
     "Os": {
         "electronegativity": 4.76,
@@ -613,7 +765,9 @@
         "mass": 190.23,
         "znumber": 76,
         "sqrt_empirical_charge": 6.6897873878479,
-        "covalent_radius": 1.159999966621399
+        "covalent_radius": 1.159999966621399,
+        "xtb_repulsion_alpha": 1.221937,
+        "xtb_repulsion_yeff": 62.809871
     },
     "Ir": {
         "electronegativity": 5.27,
@@ -621,7 +775,9 @@
         "mass": 192.217,
         "znumber": 77,
         "sqrt_empirical_charge": 6.054500579833984,
-        "covalent_radius": 1.1100000143051147
+        "covalent_radius": 1.1100000143051147,
+        "xtb_repulsion_alpha": 1.197148,
+        "xtb_repulsion_yeff": 56.045639
     },
     "Pt": {
         "electronegativity": 5.54,
@@ -629,7 +785,9 @@
         "mass": 195.084,
         "znumber": 78,
         "sqrt_empirical_charge": 5.8875203132629395,
-        "covalent_radius": 1.1200000047683716
+        "covalent_radius": 1.1200000047683716,
+        "xtb_repulsion_alpha": 1.204081,
+        "xtb_repulsion_yeff": 53.881425
     },
     "Au": {
         "electronegativity": 5.77,
@@ -637,7 +795,9 @@
         "mass": 196.966569,
         "znumber": 79,
         "sqrt_empirical_charge": 5.706614971160889,
-        "covalent_radius": 1.1299999952316284
+        "covalent_radius": 1.1299999952316284,
+        "xtb_repulsion_alpha": 0.91921,
+        "xtb_repulsion_yeff": 14.711475
     },
     "Hg": {
         "electronegativity": 5.22,
@@ -645,7 +805,9 @@
         "mass": 200.592,
         "znumber": 80,
         "sqrt_empirical_charge": 5.784506797790527,
-        "covalent_radius": 1.3200000524520874
+        "covalent_radius": 1.3200000524520874,
+        "xtb_repulsion_alpha": 1.13736,
+        "xtb_repulsion_yeff": 51.577544
     },
     "Tl": {
         "electronegativity": 3.24,
@@ -653,7 +815,9 @@
         "mass": 204.38,
         "znumber": 81,
         "sqrt_empirical_charge": 7.797807216644287,
-        "covalent_radius": 1.2999999523162842
+        "covalent_radius": 1.2999999523162842,
+        "xtb_repulsion_alpha": 1.399312,
+        "xtb_repulsion_yeff": 58.801614
     },
     "Pb": {
         "electronegativity": 3.88,
@@ -661,7 +825,9 @@
         "mass": 207.2,
         "znumber": 82,
         "sqrt_empirical_charge": 7.264438629150391,
-        "covalent_radius": 1.2999999523162842
+        "covalent_radius": 1.2999999523162842,
+        "xtb_repulsion_alpha": 1.179922,
+        "xtb_repulsion_yeff": 102.368258
     },
     "Bi": {
         "electronegativity": 4.12,
@@ -669,7 +835,9 @@
         "mass": 208.9804,
         "znumber": 83,
         "sqrt_empirical_charge": 6.781519889831543,
-        "covalent_radius": 1.3600000143051147
+        "covalent_radius": 1.3600000143051147,
+        "xtb_repulsion_alpha": 1.13086,
+        "xtb_repulsion_yeff": 132.896832
     },
     "Po": {
         "electronegativity": 5.15,
@@ -677,7 +845,9 @@
         "mass": 208.98243,
         "znumber": 84,
         "sqrt_empirical_charge": 6.678831577301025,
-        "covalent_radius": 1.309999942779541
+        "covalent_radius": 1.309999942779541,
+        "xtb_repulsion_alpha": 0.957939,
+        "xtb_repulsion_yeff": 52.301232
     },
     "At": {
         "electronegativity": 6.05,
@@ -685,7 +855,9 @@
         "mass": 209.98715,
         "znumber": 85,
         "sqrt_empirical_charge": 6.390243053436279,
-        "covalent_radius": 1.3799999952316284
+        "covalent_radius": 1.3799999952316284,
+        "xtb_repulsion_alpha": 0.963878,
+        "xtb_repulsion_yeff": 81.771063
     },
     "Rn": {
         "electronegativity": 5.38,
@@ -693,7 +865,9 @@
         "mass": 222.01758,
         "znumber": 86,
         "sqrt_empirical_charge": 6.095279693603516,
-        "covalent_radius": 1.4199999570846558
+        "covalent_radius": 1.4199999570846558,
+        "xtb_repulsion_alpha": 0.965577,
+        "xtb_repulsion_yeff": 128.13358
     },
     "Fr": {
         "electronegativity": 2.28,
@@ -701,7 +875,9 @@
         "mass": 223.01974,
         "znumber": 87,
         "sqrt_empirical_charge": 11.791561126708984,
-        "covalent_radius": 2.009999990463257
+        "covalent_radius": 2.009999990463257,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Ra": {
         "electronegativity": 2.69,
@@ -709,7 +885,9 @@
         "mass": 226.02541,
         "znumber": 88,
         "sqrt_empirical_charge": 11.109976768493652,
-        "covalent_radius": 1.809999942779541
+        "covalent_radius": 1.809999942779541,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Ac": {
         "electronegativity": 2.76,
@@ -717,7 +895,9 @@
         "mass": 227.02775,
         "znumber": 89,
         "sqrt_empirical_charge": 9.513777732849121,
-        "covalent_radius": 1.6699999570846558
+        "covalent_radius": 1.6699999570846558,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Th": {
         "electronegativity": 3.35,
@@ -725,7 +905,9 @@
         "mass": 232.0377,
         "znumber": 90,
         "sqrt_empirical_charge": 8.67197036743164,
-        "covalent_radius": 1.5800000429153442
+        "covalent_radius": 1.5800000429153442,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Pa": {
         "electronegativity": 3.14,
@@ -733,7 +915,9 @@
         "mass": 231.03588,
         "znumber": 91,
         "sqrt_empirical_charge": 8.771407127380371,
-        "covalent_radius": 1.5199999809265137
+        "covalent_radius": 1.5199999809265137,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "U": {
         "electronegativity": 3.29,
@@ -741,7 +925,9 @@
         "mass": 238.02891,
         "znumber": 92,
         "sqrt_empirical_charge": 8.654026985168457,
-        "covalent_radius": 1.5299999713897705
+        "covalent_radius": 1.5299999713897705,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Np": {
         "electronegativity": 3.29,
@@ -749,7 +935,9 @@
         "mass": 237.04817,
         "znumber": 93,
         "sqrt_empirical_charge": 8.53923511505127,
-        "covalent_radius": 1.5399999618530273
+        "covalent_radius": 1.5399999618530273,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Pu": {
         "electronegativity": 3.07,
@@ -757,7 +945,9 @@
         "mass": 244.06421,
         "znumber": 94,
         "sqrt_empirical_charge": 8.850247383117676,
-        "covalent_radius": 1.5499999523162842
+        "covalent_radius": 1.5499999523162842,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Am": {
         "electronegativity": 3.03,
@@ -765,7 +955,9 @@
         "mass": 243.06138,
         "znumber": 95,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Cm": {
         "electronegativity": 3.16,
@@ -773,7 +965,9 @@
         "mass": 247.07035,
         "znumber": 96,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Bk": {
         "electronegativity": 3.12,
@@ -781,7 +975,9 @@
         "mass": 247.07031,
         "znumber": 97,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Cf": {
         "electronegativity": null,
@@ -789,7 +985,9 @@
         "mass": 251.07959,
         "znumber": 98,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Es": {
         "electronegativity": null,
@@ -797,7 +995,9 @@
         "mass": 252.083,
         "znumber": 99,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Fm": {
         "electronegativity": null,
@@ -805,7 +1005,9 @@
         "mass": 257.09511,
         "znumber": 100,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Md": {
         "electronegativity": null,
@@ -813,7 +1015,9 @@
         "mass": 258.09843,
         "znumber": 101,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "No": {
         "electronegativity": null,
@@ -821,7 +1025,9 @@
         "mass": 259.101,
         "znumber": 102,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Lr": {
         "electronegativity": null,
@@ -829,7 +1035,9 @@
         "mass": 262.11,
         "znumber": 103,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Rf": {
         "electronegativity": null,
@@ -837,7 +1045,9 @@
         "mass": 267.122,
         "znumber": 104,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Db": {
         "electronegativity": null,
@@ -845,7 +1055,9 @@
         "mass": 268.126,
         "znumber": 105,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Sg": {
         "electronegativity": null,
@@ -853,7 +1065,9 @@
         "mass": 271.134,
         "znumber": 106,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Bh": {
         "electronegativity": null,
@@ -861,7 +1075,9 @@
         "mass": 270.133,
         "znumber": 107,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Hs": {
         "electronegativity": null,
@@ -869,7 +1085,9 @@
         "mass": 269.1338,
         "znumber": 108,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Mt": {
         "electronegativity": null,
@@ -877,7 +1095,9 @@
         "mass": 278.156,
         "znumber": 109,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Ds": {
         "electronegativity": null,
@@ -885,7 +1105,9 @@
         "mass": 281.165,
         "znumber": 110,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Rg": {
         "electronegativity": null,
@@ -893,7 +1115,9 @@
         "mass": 281.166,
         "znumber": 111,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Cn": {
         "electronegativity": null,
@@ -901,7 +1125,9 @@
         "mass": 285.177,
         "znumber": 112,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Nh": {
         "electronegativity": null,
@@ -909,7 +1135,9 @@
         "mass": 286.182,
         "znumber": 113,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Fl": {
         "electronegativity": null,
@@ -917,7 +1145,9 @@
         "mass": 289.19,
         "znumber": 114,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Mc": {
         "electronegativity": null,
@@ -925,7 +1155,9 @@
         "mass": 289.194,
         "znumber": 115,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Lv": {
         "electronegativity": null,
@@ -933,7 +1165,9 @@
         "mass": 293.204,
         "znumber": 116,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Ts": {
         "electronegativity": null,
@@ -941,7 +1175,9 @@
         "mass": 293.208,
         "znumber": 117,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     },
     "Og": {
         "electronegativity": null,
@@ -949,6 +1185,8 @@
         "mass": 294.214,
         "znumber": 118,
         "sqrt_empirical_charge": null,
-        "covalent_radius": null
+        "covalent_radius": null,
+        "xtb_repulsion_alpha": null,
+        "xtb_repulsion_yeff": null
     }
 }

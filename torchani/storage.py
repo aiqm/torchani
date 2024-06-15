@@ -12,3 +12,4 @@ LOCAL_DIR.mkdir(exist_ok=True, parents=True)
 STATE_DICTS_DIR.mkdir(exist_ok=True, parents=True)
 DATASETS_DIR.mkdir(exist_ok=True, parents=True)
 NEUROCHEM_DIR.mkdir(exist_ok=True, parents=True)
+RESOURCES_DIR = Path(__file__).resolve().parent / "resources"
