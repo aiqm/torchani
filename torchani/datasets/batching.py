@@ -13,7 +13,7 @@ import torch
 from torch import Tensor
 from tqdm import tqdm
 
-from torchani.storage import DATASETS_DIR
+from torchani.paths import DATASETS
 from torchani.annotations import Conformers, StrPath
 from torchani.utils import pad_atomic_properties, strip_redundant_padding, PADDING
 from torchani.datasets.datasets import ANIDataset
@@ -217,7 +217,7 @@ class Div:
 class Batcher:
     def __init__(
         self,
-        dest_root: tp.Union[Path, tp.Literal["ram"]] = DATASETS_DIR,
+        dest_root: tp.Union[Path, tp.Literal["ram"]] = DATASETS,
         max_batches_per_packet: int = 200,
         verbose: bool = False,
     ) -> None:

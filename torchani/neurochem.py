@@ -13,7 +13,7 @@ import torch
 from torch import Tensor
 import typing_extensions as tpx
 
-from torchani.storage import NEUROCHEM_DIR
+from torchani.paths import NEUROCHEM
 from torchani.models import BuiltinModel
 from torchani.aev import AEVComputer
 from torchani.nn import ANIModel, Ensemble
@@ -369,11 +369,11 @@ class NeurochemInfo:
             ensemble_prefix_reldir, ensemble_prefix_name = _ensemble_prefix.split("/")
 
             const_file_path: Path = (
-                NEUROCHEM_DIR / const_file_reldir
+                NEUROCHEM / const_file_reldir
             ) / const_file_name
-            sae_file_path: Path = (NEUROCHEM_DIR / sae_file_reldir) / sae_file_name
+            sae_file_path: Path = (NEUROCHEM / sae_file_reldir) / sae_file_name
             ensemble_prefix: Path = (
-                NEUROCHEM_DIR / ensemble_prefix_reldir
+                NEUROCHEM / ensemble_prefix_reldir
             ) / ensemble_prefix_name
         return cls(sae_file_path, const_file_path, ensemble_prefix, ensemble_size)
 
@@ -385,7 +385,7 @@ class NeurochemInfo:
                 f" supported models are: {SUPPORTED_MODELS}",
             )
         suffix = model_name.replace("ani", "")
-        info_file_path = NEUROCHEM_DIR / f"ani-{suffix}_8x.info"
+        info_file_path = NEUROCHEM / f"ani-{suffix}_8x.info"
         if not info_file_path.is_file():
             download_model_parameters()
         info = cls.from_info_file(info_file_path)
@@ -396,7 +396,7 @@ def download_model_parameters(
     root: tp.Optional[Path] = None, verbose: bool = True
 ) -> None:
     if root is None:
-        root = NEUROCHEM_DIR
+        root = NEUROCHEM
     zip_path = root / "neurochem-builtins.zip"
     if any(root.iterdir()):
         if verbose:

@@ -47,7 +47,7 @@ import json
 import typing as tp
 import math
 
-from torchani.storage import RESOURCES_DIR
+from torchani.paths import RESOURCES
 
 __all__ = [
     "ATOMIC_CONSTANTS",
@@ -70,10 +70,10 @@ __all__ = [
     "FUNCTIONAL_D3BJ_CONSTANTS",
 ]
 
-with open(RESOURCES_DIR / "atomic_constants.json", mode="rt") as f:
+with open(RESOURCES / "atomic_constants.json", mode="rt") as f:
     ATOMIC_CONSTANTS = json.load(f)
 
-with open(RESOURCES_DIR / "functional_d3bj_constants.json", mode="rt") as f:
+with open(RESOURCES / "functional_d3bj_constants.json", mode="rt") as f:
     FUNCTIONAL_D3BJ_CONSTANTS = json.load(f)
 
 

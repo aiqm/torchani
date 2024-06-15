@@ -10,7 +10,7 @@ This tutorial illustrates how to manually load model from `NeuroChem files`_.
 # To begin with, let's first import the modules we will use:
 import torch
 
-from torchani.storage import NEUROCHEM_DIR
+from torchani.paths import NEUROCHEM
 from torchani.grad import energies_and_forces
 from torchani.neurochem import (
     download_model_parameters,
@@ -23,8 +23,8 @@ from torchani.neurochem import (
 
 ###############################################################################
 # First lets download all model parameters, by default they will be loaded into
-# torchani.storage.NEUROCHEM_DIR, which is ~/.local/torchani/Neurochem.
-root = NEUROCHEM_DIR
+# torchani.paths.NEUROCHEM, which is ~/.local/torchani/Neurochem.
+root = NEUROCHEM
 download_model_parameters()
 
 ###############################################################################

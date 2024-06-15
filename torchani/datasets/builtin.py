@@ -1,5 +1,3 @@
-import json
-
 r"""Torchani Builtin Datasets
 
 This module provides access to the following datasets, calculated with specific
@@ -295,6 +293,7 @@ of GDB-10to13 were recalculated using ORCA 5.0 instead of 4.2 so the
 integration grids may be slightly different, but the difference should not be
 significant.
 """
+import json
 import typing as tp
 import sys
 from pathlib import Path
@@ -302,7 +301,7 @@ from collections import OrderedDict
 
 from tqdm import tqdm
 
-from torchani.storage import DATASETS_DIR
+from torchani.paths import DATASETS
 from torchani.annotations import StrPath
 from torchani.datasets.download import _download_and_extract_archive, _check_integrity
 from torchani.datasets.datasets import ANIDataset
@@ -437,7 +436,7 @@ def _register_dataset_builder(name: str) -> None:
             ) from None
         suffix = ".h5"
 
-        _root = root or DATASETS_DIR / archive.replace(".tar.gz", "")
+        _root = root or DATASETS / archive.replace(".tar.gz", "")
         _root = Path(_root).resolve()
 
         _files_and_md5s = OrderedDict([(k, _MD5S[k]) for k in data[lot]["files"]])

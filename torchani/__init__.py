@@ -55,6 +55,7 @@ from torchani import (
     io,
     neurochem,
     annotations,
+    paths,
 )
 # NOTE: ase is an optional dependency so don't import here
 
@@ -72,6 +73,7 @@ __all__ = [
     'SpeciesConverter',
     'utils',
     'annotations',
+    'paths',
     'models',
     'units',
     'potentials',
