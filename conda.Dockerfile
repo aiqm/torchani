@@ -31,7 +31,7 @@ RUN \
     && git init \
     && git add . \
     && git commit -m "Initial commit" \
-    && git tag -a "v2.3" -m "Version v2.3"
+    && git tag -a "3.1" -m "Version 3.1"
 
 # Build conda pkg locally
 RUN \
