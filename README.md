@@ -7,24 +7,20 @@ Metrics: (UNTRACKED FOR PRIVATE REPO)
 
 CI:
 
-[![ci workflow](
-https://github.com/roitberg-group/torchani_sandbox/actions/workflows/
+[![ci workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/
 ci.yaml/badge.svg
 )](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml)
-[![build-conda-pkg workflow](
-https://github.com/roitberg-group/torchani_sandbox/actions/workflows/
+[![conda workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/
 build-conda-pkg.yaml/badge.svg
 )](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/
-build-conda-pkg.yaml
-)
+build-conda-pkg.yaml)
 
 Deployment: (STOPPED FOR PRIVATE REPO)
 
 (TODO: PyPI)
 (TODO: anaconda.org)
 (TODO: docs)
-[![Custom conda badge, link to page](
-https://img.shields.io/badge/conda--package-page-blue
+[![conda page](https://img.shields.io/badge/conda--package-page-blue
 )](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
 
 TorchANI is a pytorch implementation of ANI. It is currently under alpha
