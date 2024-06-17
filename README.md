@@ -7,21 +7,18 @@ Metrics: (UNTRACKED FOR PRIVATE REPO)
 
 CI:
 
-[![ci workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/
-ci.yaml/badge.svg
-)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml)
-[![conda workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/
-build-conda-pkg.yaml/badge.svg
-)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/
-build-conda-pkg.yaml)
+[![ci workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml/badge.svg)](
+    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml)
+[![conda workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml/badge.svg)](
+    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml)
 
 Deployment: (STOPPED FOR PRIVATE REPO)
 
 (TODO: PyPI)
 (TODO: anaconda.org)
 (TODO: docs)
-[![conda page](https://img.shields.io/badge/conda--package-page-blue
-)](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
+[![conda page](https://img.shields.io/badge/conda--package-page-blue)](
+    https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
 
 TorchANI is a pytorch implementation of ANI. It is currently under alpha
 release, which means, the API is not stable yet. If you find a bug of TorchANI,
@@ -145,12 +142,11 @@ Please cite the following paper if you use TorchANI:
   Adrian E. Roitberg. *TorchANI: A Free and Open Source PyTorch Based Deep
   Learning Implementation of the ANI Neural Network Potentials*. Journal of
   Chemical Information and Modeling 2020 60 (7), 3408-3415,
-  [![DOI for Citing](https://img.shields.io/badge/
-  DOI-10.1021%2Facs.jcim.0c00451-green.svg)](https://doi.org/10.1021/acs.jcim.0c00451)
+  [![DOI for Citing](https://img.shields.io/badge/DOI-10.1021%2Facs.jcim.0c00451-green.svg)](
+    https://doi.org/10.1021/acs.jcim.0c00451)
 
-[![JCIM Cover](https://pubs.acs.org/na101/home/literatum/publisher/achs/journals/
-content/jcisd8/2020/jcisd8.2020.60.issue-7/jcisd8.2020.60.issue-7/
-20200727/jcisd8.2020.60.issue-7.largecover.jpg)](https://pubs.acs.org/toc/jcisd8/60/7)
+[![JCIM Cover](https://pubs.acs.org/na101/home/literatum/publisher/achs/journals/content/jcisd8/2020/jcisd8.2020.60.issue-7/jcisd8.2020.60.issue-7/20200727/jcisd8.2020.60.issue-7.largecover.jpg)](
+    https://pubs.acs.org/toc/jcisd8/60/7)
 
 - Refer to [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI) for ANI model
   references.
