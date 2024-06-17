@@ -145,7 +145,7 @@ Please cite the following paper if you use TorchANI:
   [![DOI for Citing](https://img.shields.io/badge/DOI-10.1021%2Facs.jcim.0c00451-green.svg)](
     https://doi.org/10.1021/acs.jcim.0c00451)
 
-[![JCIM Cover](https://pubs.acs.org/na101/home/literatum/publisher/achs/journals/content/jcisd8/2020/jcisd8.2020.60.issue-7/jcisd8.2020.60.issue-7/20200727/jcisd8.2020.60.issue-7.largecover.jpg)](
+[![JCIM Cover](https://pubs.acs.org/cms/10.1021/jcisd8.2020.60.issue-7/asset/17a630cf-2b17-630c-a2b1-a630cfa2b17a/jcisd8.2020.60.issue-7.largecover.jpg)](
     https://pubs.acs.org/toc/jcisd8/60/7)
 
 - Refer to [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI) for ANI model
