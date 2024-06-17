@@ -8,11 +8,15 @@ Metrics: (UNTRACKED FOR PRIVATE REPO)
 CI:
 
 [![ci workflow](
-    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml/badge.svg
+https://github.com/roitberg-group/torchani_sandbox/actions/workflows/
+ci.yaml/badge.svg
 )](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml)
 [![build-conda-pkg workflow](
-    https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml/badge.svg
-)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml)
+https://github.com/roitberg-group/torchani_sandbox/actions/workflows/
+build-conda-pkg.yaml/badge.svg
+)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/
+build-conda-pkg.yaml
+)
 
 Deployment: (STOPPED FOR PRIVATE REPO)
 
@@ -20,7 +24,7 @@ Deployment: (STOPPED FOR PRIVATE REPO)
 (TODO: anaconda.org)
 (TODO: docs)
 [![Custom conda badge, link to page](
-        https://img.shields.io/badge/conda--package-page-blue
+https://img.shields.io/badge/conda--package-page-blue
 )](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
 
 TorchANI is a pytorch implementation of ANI. It is currently under alpha
@@ -145,21 +149,15 @@ Please cite the following paper if you use TorchANI:
   Adrian E. Roitberg. *TorchANI: A Free and Open Source PyTorch Based Deep
   Learning Implementation of the ANI Neural Network Potentials*. Journal of
   Chemical Information and Modeling 2020 60 (7), 3408-3415,
-  [
-    ![DOI for Citing](
-        https://img.shields.io/badge/DOI-10.1021%2Facs.jcim.0c00451-green.svg
-    )
-](https://doi.org/10.1021/acs.jcim.0c00451)
+  [![DOI for Citing](https://img.shields.io/badge/
+  DOI-10.1021%2Facs.jcim.0c00451-green.svg)](https://doi.org/10.1021/acs.jcim.0c00451)
 
-[
-    ![JCIM Cover](
-        https://pubs.acs.org/na101/home/literatum/publisher/achs/journals/content/jcisd8/2020/jcisd8.2020.60.issue-7/jcisd8.2020.60.issue-7/20200727/jcisd8.2020.60.issue-7.largecover.jpg)
-    ](
-        https://pubs.acs.org/toc/jcisd8/60/7
-    )
+[![JCIM Cover](https://pubs.acs.org/na101/home/literatum/publisher/achs/journals/
+content/jcisd8/2020/jcisd8.2020.60.issue-7/jcisd8.2020.60.issue-7/
+20200727/jcisd8.2020.60.issue-7.largecover.jpg)](https://pubs.acs.org/toc/jcisd8/60/7)
 
-- Please refer to [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI) for ANI
-  model references.
+- Refer to [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI) for ANI model
+  references.
 
 ## Documentation (ONLY APPLIES TO PUBLIC REPO)
 
@@ -179,14 +177,12 @@ overwrite this repo to your build.
 
 ### Building the TorchANI conda package
 
-The conda package can be built using the recipe in `./recipe`, by running:
+The conda package can be built locally using the recipe in `./recipe`, by running:
 
 ```bash
 cd ./torchani_sandbox
-# "anaconda-client" is needed only if you want to upload the built pkg to anaconda.org
-conda install conda-build conda-verify anaconda-client
-# This dir must exist before running conda build
-mkdir ./conda-pkgs/
+conda install conda-build conda-verify
+mkdir ./conda-pkgs/  # This dir must exist before running conda-build
 conda build \
     -c pytorch -c nvidia -c conda-forge \
     --no-anaconda-upload \
@@ -195,41 +191,23 @@ conda build \
 ```
 
 The `meta.yaml` in the recipe assumes that the extensions are built using the
-system's CUDA Toolkit, located in `/usr/local/cuda`. If this is not possible
-then add the following dependencies to the `host` environment:
+system's CUDA Toolkit, located in `/usr/local/cuda`. If this is not possible,
+add the following dependencies to the `host` environment:
 
 - `nvidia::cuda-libraries-dev={{ cuda }}`
 - `nvidia::cuda-nvcc={{ cuda }}`
 - `nvidia::cuda-cccl={{ cuda }}`
 
-and remove `cuda_home=/usr/local/cuda` from the build script. Note that adding
-these necessary CUDA Toolkit libraries to the `host` env significantly
-increases build time.
+and remove `cuda_home=/usr/local/cuda` from the build script. Note that doing
+this may significantly increase build time.
 
-To upload the built package to the group's internal server run:
+The CI (GitHub Actions Workflow) that tests that the conda pkg builds correctly
+runs only:
 
-```bash
-chown -R 1003:1003 ./conda-pkgs/
-rsync --archive --verbose --delete \
-    -e "ssh -p $SERVER_PORT -o StrictHostKeyChecking=no" \
-    ./conda-pkgs/ \
-    "$SERVER_USERNAME@roitberg.chem.ufl.edu:/home/statics/conda-packages/"
-```
+- on pull requests that contain the string `conda` in the branch name.
 
-with the appropriate `SERVER_USERNAME` and `SERVER_PORT`. To upload the built package to
-`anaconda.org` instead (WARNING: This is a public release!) run:
+The workflow that deploys the conda pkg to the internal server runs only:
 
-```bash
-anaconda \
-    --token "$CONDA_TOKEN" \
-    upload \
-        --user roitberg-group \
-        --force "./conda-pkgs/linux-64/torchani-<version>-<build-str>.tar.gz"
-```
-
-where `CONDA_TOKEN` is the group's `anaconda` account token.
-
-Note that the CI (GitHub Actions Workflow) that tests the conda pkg runs only:
-
-- on pull requests that contain the word 'conda' in the branch name
 - on the default branch, at 00:00:00 every day
+- on pull requests that contain both the strings `conda` and `release` in the
+  branch name
