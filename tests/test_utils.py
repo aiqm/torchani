@@ -8,6 +8,8 @@ from torchani.utils import (
     pad_atomic_properties,
     strip_redundant_padding,
     # Converters
+    AtomicNumbersToChemicalSymbols,
+    IntsToChemicalSymbols,
     ChemicalSymbolsToInts,
     ChemicalSymbolsToAtomicNumbers,
     # GSAES
@@ -44,6 +46,20 @@ class TestConverters(ANITest):
         atomic_nums = symbols_to_atomic_nums(["H", "H", "C", "Cl", "N", "H"])
         self.assertEqual(
             atomic_nums, torch.tensor([1, 1, 6, 17, 7, 1], dtype=torch.long)
+        )
+
+    def testAtomicNumbersToSymbols(self):
+        atomic_nums_to_symbols = self._setup(AtomicNumbersToChemicalSymbols())
+        symbols = atomic_nums_to_symbols(torch.tensor([6, 1, 1, 1, -1, -1, -1]))
+        self.assertEqual(
+            symbols, ['C', 'H', 'H', 'H']
+        )
+
+    def testIdxsToSymbols(self):
+        i2str = self._setup(IntsToChemicalSymbols(["A", "B", "C", "D", "E", "F"]))
+        symbols = i2str(torch.tensor([5, 1, 1, 1, -1, -1, -1]))
+        self.assertEqual(
+            symbols, ['F', 'B', 'B', 'B']
         )
 
 
