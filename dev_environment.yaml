@@ -10,7 +10,7 @@ dependencies:
   - pip>=24.0
 
   # Required dependencies:
-  - numpy>=1.24
+  - numpy=1.26
   - pytorch::pytorch=2.3
   - pytorch::pytorch-cuda=11.8
   - typing_extensions>=4.0.0

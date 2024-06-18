@@ -27,11 +27,11 @@ requirements:
     - conda-forge::setuptools_scm>=8
     - pytorch::pytorch={{ pytorch }}
     - pytorch::pytorch-cuda={{ cuda }}
-    - conda-forge::numpy>=1.24
+    - conda-forge::numpy=1.26
   run:
     - conda-forge::python={{ python }}
     - conda-forge::typing_extensions>=4.0.0
-    - conda-forge::numpy>=1.24
+    - conda-forge::numpy=1.26
     - conda-forge::h5py
     - conda-forge::tqdm
     - pytorch::pytorch={{ pytorch }}
