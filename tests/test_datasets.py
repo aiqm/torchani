@@ -1265,7 +1265,7 @@ class TestANIDatasetZarr(TestANIDataset):
 
     def _testConvert(self, backend):
         ds = ANIDataset(self.tmp_store_three_groups.name)
-        ds.to_backend("h5py", inplace=True)
+        ds.to_backend("hdf5", inplace=True)
         for d in ds.values():
             self.assertEqual(set(d.keys()), {"species", "coordinates", "energies"})
             self.assertEqual(d["coordinates"].shape[-1], 3)
@@ -1302,7 +1302,8 @@ class TestANIDatasetPandas(TestANIDatasetZarr):
         f3 = pandas.DataFrame()
         attrs = {
             "grouping": "by_formula",
-            "extra_dims": {"coordinates": (3,)},
+            "dims": {"coordinates": (3,)},
+            "units": {},
             "dtypes": {
                 "coordinates": np.dtype(np.float32).name,
                 "species": np.dtype(np.int64).name,
@@ -1310,15 +1311,13 @@ class TestANIDatasetPandas(TestANIDatasetZarr):
             },
         }
         with open(
-            Path(self.tmp_store_one_group.name)
-            / Path(self.tmp_store_one_group.name).with_suffix(".json").name,
+            Path(self.tmp_store_one_group.name) / "meta.json",
             "x",
         ) as f:
             json.dump(attrs, f)
 
         with open(
-            Path(self.tmp_store_three_groups.name)
-            / Path(self.tmp_store_three_groups.name).with_suffix(".json").name,
+            Path(self.tmp_store_three_groups.name) / "meta.json",
             "x",
         ) as f:
             json.dump(attrs, f)
@@ -1340,17 +1339,11 @@ class TestANIDatasetPandas(TestANIDatasetZarr):
             frames.append(tmp_df)
         f3 = pandas.concat(frames)
         f1 = frames[0]
-        f1.to_parquet(
-            Path(self.tmp_store_one_group.name)
-            / Path(self.tmp_store_one_group.name).with_suffix(".pq").name
-        )
-        f3.to_parquet(
-            Path(self.tmp_store_three_groups.name)
-            / Path(self.tmp_store_three_groups.name).with_suffix(".pq").name
-        )
+        f1.to_parquet(Path(self.tmp_store_one_group.name) / "data.pq")
+        f3.to_parquet(Path(self.tmp_store_three_groups.name) / "data.pq")
 
     def testConvert(self):
-        self._testConvert("pq")
+        self._testConvert("pandas")
 
 
 if __name__ == "__main__":

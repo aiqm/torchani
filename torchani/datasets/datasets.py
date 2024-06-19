@@ -19,17 +19,17 @@ from torchani.constants import ATOMIC_NUMBER, PERIODIC_TABLE
 from torchani.utils import species_to_formula, sort_by_element, PADDING, ATOMIC_KEYS
 from torchani.annotations import (
     Conformers,
+    Backend,
+    Grouping,
     NumpyConformers,
     MixedConformers,
     StrPath,
     IdxLike,
 )
 from torchani.datasets.backends import (
-    _StoreWrapper,
-    StoreFactory,
-    TemporaryLocation,
+    _Store,
+    Store,
     _ConformerWrapper,
-    _SUFFIXES,
 )
 
 # About _ELEMENT_KEYS:
@@ -151,7 +151,7 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
         return len(self._group_sizes.keys())
 
     @property
-    def grouping(self) -> str:
+    def grouping(self) -> tp.Union[Grouping, tp.Literal["legacy"]]:
         raise NotImplementedError
 
     def __getitem__(self, key: str) -> Conformers:
@@ -306,12 +306,10 @@ class _ANISubdataset(_ANIDatasetBase):
     def __init__(
         self,
         store_location: StrPath,
-        grouping: tp.Optional[str] = None,
-        backend: tp.Optional[str] = None,
+        grouping: tp.Optional[Grouping] = None,
+        backend: tp.Optional[Backend] = None,
         verbose: bool = True,
         dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
-        use_cudf: bool = False,
-        _force_overwrite: bool = False,
     ):
         # dummy_properties must be a dict of the form {'name': {'dtype': dtype,
         # 'is_atomic': is_atomic, 'extra_dims': extra_dims, 'fill_value':
@@ -319,16 +317,13 @@ class _ANISubdataset(_ANIDatasetBase):
         # created on the fly only if they are not present in the dataset
         # already.
         super().__init__()
-        self._store = StoreFactory(
+        self._store = Store(
             store_location,
             backend,
             grouping,
             dummy_properties,
-            use_cudf=use_cudf,
-            _force_overwrite=_force_overwrite,
         )
         # StoreFactory monkey patches all stores with "backend" attribute
-        self._backend = self._store.backend  # type: ignore
         self._possible_nonbatch_properties: tp.Set[str]
 
         if self.grouping not in ["by_formula", "by_num_atoms", "legacy"]:
@@ -355,12 +350,6 @@ class _ANISubdataset(_ANIDatasetBase):
                     " *delete them* using dataset.delete_properties"
                 )
 
-    def open(self, mode: str = "r") -> None:
-        self._store.open(mode)
-
-    def close(self) -> None:
-        self._store.close()
-
     @contextmanager
     def keep_open(self, mode: str = "r") -> tp.Iterator["_ANISubdataset"]:
         r"""Context manager to keep dataset open while iterating over it
@@ -380,28 +369,31 @@ class _ANISubdataset(_ANIDatasetBase):
         is open and are only executed once it is closed, so calling append_conformers
         inside a "keep_open" should be done with care.
         """
-        self._store.open(mode)
         try:
+            self._store.open_meta_and_data(mode)
             yield self
         finally:
-            self._store.close()
+            self._store.close_meta_and_data()
 
     # This trick makes methods fetch the open file directly
     # if they are being called from inside a "keep_open" context
     def _get_open_store(
-        self, stack: ExitStack, mode: str = "r", only_attrs: bool = False
-    ) -> "_StoreWrapper":
+        self, stack: ExitStack, mode: str = "r", only_meta_needed: bool = False
+    ) -> _Store:
         if mode not in ["r+", "r"]:
             raise ValueError(f"Unsupported mode {mode}")
 
-        if self._store.is_open:
-            if mode == "r+" and self._store.mode == "r":
-                raise RuntimeError(
-                    'Tried to open a store with mode "r+" but'
-                    ' the store open with mode "r"'
-                )
-            return self._store
-        return stack.enter_context(self._store.open(mode, only_attrs))
+        try:
+            _, store_mode = self._store.get_data()
+        except Exception:
+            return stack.enter_context(self._store.open(mode, only_meta_needed))
+
+        if mode == "r+" and store_mode == "r":
+            raise RuntimeError(
+                'Tried to open a store with mode "r+" but'
+                ' the store open with mode "r"'
+            )
+        return self._store
 
     def _update_cache(
         self, check_properties: bool = False, verbose: bool = True
@@ -413,7 +405,7 @@ class _ANISubdataset(_ANIDatasetBase):
             )
 
     def __str__(self) -> str:
-        str_ = f"ANI {self._backend} store:\n"
+        str_ = f"ANI {self._store.backend} store:\n"
         d: tp.Dict[str, tp.Any] = {"Conformers": f"{self.num_conformers:,}"}
         d.update({"Conformer groups": self.num_conformer_groups})
         d.update({"Properties": sorted(self.properties)})
@@ -477,7 +469,7 @@ class _ANISubdataset(_ANIDatasetBase):
         Tensor}, where properties are strings"""
         numpy_conformers = self.get_numpy_conformers(group_name, idx, properties)
         return {
-            k: torch.tensor(numpy_conformers[k])
+            k: torch.as_tensor(numpy_conformers[k])
             for k in set(numpy_conformers.keys())
             if not any(re.match(pattern, k) for pattern in _ALWAYS_STRING_PATTERNS)
         }
@@ -669,56 +661,47 @@ class _ANISubdataset(_ANIDatasetBase):
                     )
         return self
 
-    def _make_empty_copy(
-        self,
-        location: StrPath,
-        grouping: str,
-        backend: str,
-    ) -> "_ANISubdataset":
-        return _ANISubdataset(
-            location,
-            backend=backend,
-            grouping=grouping,
-            verbose=False,
-            _force_overwrite=True,
-        )
-
     def _attach_dummy_properties(self, dummy_properties: tp.Dict[str, tp.Any]) -> None:
         with ExitStack() as stack:
-            f = self._get_open_store(stack, "r+", only_attrs=True)
+            f = self._get_open_store(stack, "r+", only_meta_needed=True)
             f._dummy_properties = dummy_properties
 
     @property
     def _dummy_properties(self) -> tp.Dict[str, tp.Any]:
         with ExitStack() as stack:
-            dummy = self._get_open_store(stack, "r+", only_attrs=True)._dummy_properties
+            dummy = self._get_open_store(
+                stack, "r+", only_meta_needed=True
+            )._dummy_properties
         return dummy
 
     @_broadcast
     @_needs_cache_update
     def to_backend(
         self,
-        backend: tp.Optional[str] = None,
+        backend: tp.Optional[Backend] = None,
         dest_root: tp.Optional[StrPath] = None,
         verbose: bool = True,
         inplace: bool = False,
     ) -> "_ANISubdataset":
         r"""Transforms underlying store into a different format"""
+        self._check_correct_grouping()
+
         if backend is None:
-            backend = self._backend
+            backend = self._store.backend
 
         if inplace:
             assert dest_root is None
         elif dest_root is None:
             dest_root = Path(self._store.location.root).parent
 
-        self._check_correct_grouping()
-        if self._backend == backend and backend != "h5py":
+        if self._store.backend == backend and backend != "h5py":
             return self
-        with TemporaryLocation(backend) as location:
-            new_ds = self._make_empty_copy(
-                location, grouping=self.grouping, backend=backend
-            )
+
+        grouping: Grouping = (
+            "by_num_atoms" if self.grouping == "legacy" else self.grouping
+        )
+        new_ds = _ANISubdataset("tmp", grouping, backend, verbose=False)
+        try:
             with new_ds.keep_open("r+") as rwds:
                 for group_name, conformers in tqdm(
                     self.numpy_items(exclude_dummy=True),
@@ -735,15 +718,19 @@ class _ANISubdataset(_ANIDatasetBase):
                         conformers,
                     )
             new_ds._attach_dummy_properties(self._dummy_properties)
-            if inplace:
-                self._store.location.transfer_to(new_ds._store)
-                return new_ds
-            else:
-                new_parent = Path(tp.cast(StrPath, dest_root)).resolve()
-                new_ds._store.location.root = (
-                    new_parent / self._store.location.root.with_suffix("").name
-                )
-                return self
+        except Exception:
+            new_ds._store.location.clear()
+            raise
+
+        if inplace:
+            new_ds._store.overwrite(self._store)
+            return new_ds
+
+        new_parent = Path(tp.cast(StrPath, dest_root)).resolve()
+        new_ds._store.location.root = (
+            new_parent / self._store.location.root.with_suffix("").name
+        )
+        return self
 
     @_broadcast
     @_needs_cache_update
@@ -774,10 +761,8 @@ class _ANISubdataset(_ANIDatasetBase):
         explanation of that argument.
         """
         self._check_unique_element_key()
-        with TemporaryLocation(self._backend) as location:
-            new_ds = self._make_empty_copy(
-                location, grouping="by_formula", backend=self._backend
-            )
+        new_ds = _ANISubdataset("tmp", "by_formula", self._store.backend, verbose=False)
+        try:
             with new_ds.keep_open("r+") as rwds:
                 for group_name, conformers in tqdm(
                     self.numpy_items(exclude_dummy=True),
@@ -803,7 +788,11 @@ class _ANISubdataset(_ANIDatasetBase):
                             selected_conformers,
                         )
             new_ds._attach_dummy_properties(self._dummy_properties)
-            self._store.location.transfer_to(new_ds._store)
+        except Exception:
+            new_ds._store.location.clear()
+            raise
+
+        new_ds._store.overwrite(self._store)
         if repack:
             new_ds._update_cache()
             return new_ds.repack.__wrapped__(new_ds, verbose=verbose)  # type: ignore
@@ -822,10 +811,13 @@ class _ANISubdataset(_ANIDatasetBase):
         for an explanation of that argument.
         """
         self._check_unique_element_key()
-        with TemporaryLocation(self._backend) as location:
-            new_ds = self._make_empty_copy(
-                location, grouping="by_num_atoms", backend=self._backend
-            )
+        new_ds = _ANISubdataset(
+            "tmp",
+            "by_num_atoms",
+            self._store.backend,
+            verbose=False
+        )
+        try:
             with new_ds.keep_open("r+") as rwds:
                 for group_name, conformers in tqdm(
                     self.numpy_items(exclude_dummy=True),
@@ -842,7 +834,11 @@ class _ANISubdataset(_ANIDatasetBase):
                         conformers,
                     )
             new_ds._attach_dummy_properties(self._dummy_properties)
-            self._store.location.transfer_to(new_ds._store)
+        except Exception:
+            new_ds._store.location.clear()
+            raise
+
+        new_ds._store.overwrite(self._store)
         if repack:
             new_ds._update_cache()
             return new_ds.repack.__wrapped__(new_ds, verbose=verbose)  # type: ignore
@@ -907,14 +903,14 @@ class _ANISubdataset(_ANIDatasetBase):
         return self
 
     @property
-    def grouping(self) -> str:
+    def grouping(self) -> tp.Union[Grouping, tp.Literal["legacy"]]:
         r"""Get the dataset grouping
 
         Grouping is a string that describes how conformers are grouped in
         hierarchical datasets. Can be one of 'by_formula', 'by_num_atoms', 'legacy'.
         """
         with ExitStack() as stack:
-            grouping = self._get_open_store(stack, "r", only_attrs=True).grouping
+            grouping = self._get_open_store(stack, "r", only_meta_needed=True).grouping
         return grouping
 
     def _check_unique_element_key(
@@ -1085,30 +1081,23 @@ class ANIDataset(_ANIDatasetBase):
         self._update_cache()
 
     @classmethod
-    def from_dir(cls, dir_: StrPath, only_backend: tp.Optional[str] = "h5py", **kwargs):
-        r"""Reads all files in a given directory, if there are multiple files
-        with the same name only one of them will be considered"""
+    def from_dir(cls, dir_: StrPath, **kwargs):
+        r"""
+        Initializes datasets from all files in a given directory
+
+        File backends are inferred from the suffixes. All files must have
+        different names.
+        """
         dir_ = Path(dir_).resolve()
         if not dir_.is_dir():
             raise ValueError("Input should be a directory")
         locations = sorted([p for p in dir_.iterdir() if p.suffix != ".tar.gz"])
-        if only_backend is not None:
-            suffix = _SUFFIXES[only_backend]
-            locations = [loc for loc in locations if loc.suffix == suffix]
         names = [p.stem for p in locations]
         return cls(locations=locations, names=names, **kwargs)
 
     @property
-    def grouping(self) -> str:
+    def grouping(self) -> tp.Union[Grouping, tp.Literal["legacy"]]:
         return self._first_subds.grouping
-
-    def open(self, mode: str = "r") -> None:
-        for ds in self._datasets.values():
-            ds.open(mode)
-
-    def close(self) -> None:
-        for ds in self._datasets.values():
-            ds.close()
 
     @contextmanager
     def keep_open(self, mode: str = "r") -> tp.Iterator["ANIDataset"]:

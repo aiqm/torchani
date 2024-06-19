@@ -1,7 +1,12 @@
+import tempfile
+from dataclasses import dataclass
 import shutil
+
+# import tempfile
+# import types
 import typing as tp
+from contextlib import contextmanager
 from itertools import chain
-from os import fspath
 from abc import ABC, abstractmethod
 from pathlib import Path
 from collections import OrderedDict
@@ -9,12 +14,23 @@ from collections import OrderedDict
 import numpy as np
 import typing_extensions as tpx
 
-from torchani.annotations import NumpyConformers, StrPath
+from torchani.annotations import NumpyConformers, StrPath, Grouping, Backend
+
+
+RootKind = tp.Literal["dir", "file"]
+
+
+class UnsetDataError(Exception):
+    pass
+
+
+class UnsetMetadataError(Exception):
+    pass
 
 
 # Keeps track of variables that must be updated each time the datasets get
 # modified or the first time they are read from disk
-class CacheHolder:
+class Cache:
     group_sizes: tp.OrderedDict[str, int]
     properties: tp.Set[str]
 
@@ -29,15 +45,14 @@ class NamedMapping(tp.Mapping):
 
 _MutMapSubtype = tp.TypeVar("_MutMapSubtype", bound=tp.MutableMapping[str, np.ndarray])
 
-# _ConformerGroup and _StoreWrapper are abstract classes from which all backends
+# _ConformerGroup and _Store are abstract classes from which all backends
 # should inherit in order to correctly interact with ANIDataset. Adding
 # support for a new backend can be done just by coding these classes and
 # adding the support for the backend inside interface.py
 
 
-# This is kind of like a dict, but with the extra functionality that you can
-# directly "append" to it, and rename its keys, it can also create dummy
-# properties on the fly.
+# This is like a dict, but supports "append", and rename keys, it can also
+# create dummy properties on the fly.
 class _ConformerGroup(tp.MutableMapping[str, np.ndarray], ABC):
     def __init__(
         self,
@@ -92,9 +107,7 @@ class _ConformerGroup(tp.MutableMapping[str, np.ndarray], ABC):
         except KeyError:
             species = self._getitem_impl("numbers")
         if species.ndim != 2:
-            raise RuntimeError(
-                "Dummy properties are not supported for legacy grouping"
-            )
+            raise RuntimeError("Dummy properties are not supported for legacy grouping")
         shape: tp.Tuple[int, ...] = (species.shape[0],)
         if is_atomic:
             shape += (species.shape[1],)
@@ -139,9 +152,7 @@ class _ConformerWrapper(_ConformerGroup, tp.Generic[_MutMapSubtype]):
         del self._data[p]
 
     def _getitem_impl(self, p: str) -> np.ndarray:
-        array = self._data[p][()]
-        assert isinstance(array, np.ndarray)
-        return array
+        return self._data[p][...]
 
     def _len_impl(self) -> int:
         return len(self._data)
@@ -156,189 +167,353 @@ class _ConformerWrapper(_ConformerGroup, tp.Generic[_MutMapSubtype]):
         self._data[p] = np.append(self._data[p], v, axis=0)
 
 
-# Base location manager for datasets that use either directories or files as
-# locations
-class _FileOrDirLocation:
-    def __init__(self, root: StrPath, suffix: str = "", kind: str = "file"):
-        if kind not in ["file", "dir"]:
-            raise ValueError("Kind must be one of 'file' or 'dir'")
-        self._kind = kind
+# Base location manager for datasets that use either a single file or a structure
+# of a directory with some files
+class Location:
+    def __init__(self, root: StrPath, suffix: str = ""):
+        self._root: tp.Optional[Path] = None
         self._suffix = suffix
-        self._root_location: tp.Optional[Path] = None
-        self.root = root
+        self.root = Path(root).resolve()
 
     @property
-    def root(self) -> StrPath:
-        root = self._root_location
-        if root is None:
-            raise ValueError("Location is invalid")
-        return root
+    def root(self) -> Path:
+        if self._root is None:
+            raise ValueError("Tried to access an empty location")
+        return self._root
 
     @root.setter
-    def root(self, value: StrPath) -> None:
-        value = Path(value).resolve()
+    def root(self, value: Path) -> None:
         if value.suffix == "":
             value = value.with_suffix(self._suffix)
         if value.suffix != self._suffix:
             raise ValueError(f"Incorrect location {value}")
-        if self._root_location is not None:
-            # pathlib.rename() may fail if src and dst are in different filesystems
-            shutil.move(fspath(self._root_location), fspath(value))
-        self._root_location = Path(value).resolve()
-        self._validate()
 
-    @root.deleter
-    def root(self) -> None:
-        if self._root_location is not None:
-            if self._kind == "file":
-                self._root_location.unlink()
-            else:
-                shutil.rmtree(self._root_location)
-        self._root_location = None
+        if self._root is not None:
+            # pathlib.rename() fails if src and dest are in different filesystems
+            shutil.move(self.root, value)
+        self._root = value
 
-    def transfer_to(self, other_store: "_StoreWrapper") -> None:
-        root = Path(self.root).with_suffix("")
-        del self.root
-        other_store.location.root = root
-
-    def _validate(self) -> None:
-        root = Path(self.root)
-        _kind = self._kind
-        if (
-            _kind == "dir"
-            and not root.is_dir()
-            or _kind == "file"
-            and not root.is_file()
-        ):
-            raise FileNotFoundError(f"The store in {root} could not be found")
+    def clear(self) -> None:
+        if self._root is None:
+            return
+        if self.root.is_dir():
+            shutil.rmtree(self.root)
+        else:
+            self.root.unlink()
+        self._root = None
 
 
-# mypy expects a Protocol here, which specifies that _T must
+# mypy expects a Protocol here, which specifies that Data must
 # support Mapping and ContextManager methods, and also 'close' and 'create_group'
 # and have 'mode' and 'attr' attributes
 # this is similar to C++20 concepts and it is currently very verbose, so we avoid it
-_T = tp.TypeVar("_T", bound=tp.Any)
+Data = tp.TypeVar("Data", bound=tp.Any)
 
 
-# A store that wraps another store class (e.g. Zarr, Exedir, HDF5, DataFrame)
-# Wrapped store must have a "mode" and "attr" attributes, it may implement close()
-# __exit__, __enter__, , __delitem__
-class _StoreWrapper(
-    tp.ContextManager["_StoreWrapper"],
+@dataclass
+class Metadata:
+    units: tp.Dict[str, str]
+    dtypes: tp.Dict[str, str]
+    dims: tp.Dict[str, tp.Tuple[int, ...]]
+    grouping: tp.Union[Grouping, tp.Literal["legacy"]]
+    info: str = ""
+
+
+# Wrap a data format (e.g. Zarr, Exedir, HDF5, Parquet)
+# Wrapped data must have:
+#
+# The wrapped data provides some sort of conformer data, which is provided by
+# the _Store as a "_ConformerGroup" through __getitem__ and deleted through __delitem__
+
+# Overridable methods are:
+#
+#  - init_new (required)
+#  Initializes an empty instance of the wrapped data and metadata from a "root
+#  path" and a "grouping"
+#
+# - setup (required)
+#   All init routines needed by the wrapped data format must be performed here
+#   (e.g. opening files, aquiring locks, etc)
+#   `set_data(data, mode)` must be called by this method. `set_meta(meta, mode)`
+#   can also be called here if access to the metadata is not costly, or it can't
+#   be done independently from the actual data.
+#   If `set_meta` is not called, metadata setup and teardown must be independently
+#   implemented in `setup_meta, teardown_meta`
+#
+# - teardown (required)
+#   All finalization routines needed by the wrapped data format must be performed here
+#   If metadata was setup by `setup_meta` then, finalization routines for `meta`
+#   must be performed in `teardown_meta`
+#  (e.g. closing files, etc)
+#
+# - setup_meta, teardown_meta (optional)
+#   Sometimes the data setup procedure is costly, and for performance reasons it
+#   may be a good idea to implement access to the metadata only. If this is the
+#   case then the following methods can be implemented:
+#   All init routines needed by the wrapped metadata can be performed in this
+#   pair of methods. If one is implemented the other must be implemented too
+
+
+class _Store(
     tp.MutableMapping[str, "_ConformerGroup"],
+    tp.Generic[Data],
     ABC,
-    tp.Generic[_T],
 ):
-    location: tp.Any
+    root_kind: RootKind
+    suffix: str = ""
+    backend: Backend
+    BACKEND_AVAILABLE: bool = False
 
+    # Root must be a path to an already existing dataset
     def __init__(
         self,
-        *args,
+        root: StrPath,
         dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
-        **kwargs,
+        grouping: tp.Optional[Grouping] = None,
     ):
+        if not self.BACKEND_AVAILABLE:
+            raise ValueError(f"{self.backend} could not be found")
+
         self._dummy_properties = (
             dict() if dummy_properties is None else dummy_properties
         )
-        self._store_obj: tp.Any = None
+
+        self._meta: tp.Optional[Metadata] = None
+        self._meta_mode: tp.Optional[str] = None
+
+        self._data: tp.Optional[Data] = None
+        self._data_mode: tp.Optional[str] = None
+
+        self.location = self._build_location(root, self.suffix)
+
+        with self.open(mode="r", only_meta_needed=True) as open_self:
+            if grouping is not None and open_self.grouping != grouping:
+                raise RuntimeError(
+                    f"Attempted to open a dataset with grouping {grouping},"
+                    f" but found grouping {open_self.grouping} in provided root path"
+                )
+
+    # Overridable
+    @staticmethod
+    @abstractmethod
+    def init_new(
+        root: Path,
+        grouping: Grouping,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def update_cache(
+        self, check_properties: bool = False, verbose: bool = True
+    ) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
+        pass
+
+    @abstractmethod
+    def setup(self, root: Path, mode: str) -> None:
+        pass
+
+    @abstractmethod
+    def teardown(self) -> None:
+        pass
+
+    def setup_meta(self, root: Path, mode: str) -> None:
+        raise NotImplementedError
+
+    def teardown_meta(self) -> None:
+        raise NotImplementedError
+    # End overridable
+
+    def _build_location(self, location: StrPath, suffix: str) -> Location:
+        return Location(location, suffix)
+
+    def overwrite(self, other: "_Store") -> None:
+        root = Path(other.location.root).with_suffix("")
+        other.location.clear()
+        self.location.root = root
 
     @property
     def dummy_properties(self) -> tp.Dict[str, tp.Any]:
         return self._dummy_properties.copy()
 
     @classmethod
-    @abstractmethod
-    def make_empty(
-        cls, store_location: StrPath, grouping: str = "by_num_atoms", **kwargs
+    def make_tmp(
+        cls,
+        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        grouping: tp.Optional[Grouping] = None,
     ) -> tpx.Self:
-        pass
+        if grouping is None:
+            grouping = "by_num_atoms"
+        if grouping not in ("by_num_atoms", "by_formula"):
+            raise RuntimeError(f"Invalid grouping for new dataset: {grouping}")
 
-    @abstractmethod
-    def update_cache(
-        self, check_properties: bool = False, verbose: bool = True
-    ) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
-        pass
+        if cls.root_kind == "file":
+            _, _tmp_root = tempfile.mkstemp(suffix=cls.suffix)
+        elif cls.root_kind == "dir":
+            _tmp_root = tempfile.mkdtemp(suffix=cls.suffix)
+        else:
+            raise ValueError(f"Unknown root kind {cls.root_kind}")
+
+        tmp_root = Path(_tmp_root).resolve()
+        cls.init_new(tmp_root, grouping)
+        return cls(tmp_root, dummy_properties, grouping)
+
+    @classmethod
+    def make_new(
+        cls,
+        root: StrPath,
+        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        grouping: tp.Optional[Grouping] = None,
+    ) -> tpx.Self:
+        if grouping is None:
+            grouping = "by_num_atoms"
+        if grouping not in ("by_num_atoms", "by_formula"):
+            raise RuntimeError(f"Invalid grouping for new dataset: {grouping}")
+        root = Path(root).resolve()
+        if root.suffix != cls.suffix:
+            raise ValueError(
+                f"Unexpected root suffix {root.suffix}."
+                f" For backend {cls.backend} expecting {cls.suffix}"
+            )
+
+        if cls.root_kind == "file":
+            root.touch(exist_ok=False)
+        elif cls.root_kind == "dir":
+            root.mkdir(exist_ok=False)
+        else:
+            raise ValueError(f"Unknown root kind {cls.root_kind}")
+
+        cls.init_new(root, grouping)
+        return cls(root, dummy_properties, grouping)
+
+    def set_data(self, data: Data, mode: str) -> None:
+        self._data = data
+        self._data_mode = mode
 
     @property
-    def _store(self) -> _T:
-        if self._store_obj is None:
-            raise RuntimeError("Can't access store")
-        return self._store_obj
+    def data(self) -> Data:
+        data, _ = self.get_data()
+        return data
 
-    @abstractmethod
-    def open(self, mode: str = "r", only_attrs: bool = False) -> tpx.Self:
-        pass
+    @property
+    def meta(self) -> Metadata:
+        meta, _ = self.get_meta()
+        return meta
 
-    def close(self) -> tpx.Self:
+    # Getter for "data" guarantees that "data, data_mode" are set up
+    def get_data(self) -> tp.Tuple[Data, str]:
+        if self._data is None:
+            raise UnsetDataError("Data not set")
+        if self._data_mode is None:
+            raise UnsetDataError("Data mode not set")
+        return self._data, self._data_mode
+
+    def set_meta(self, meta: Metadata, mode: str) -> None:
+        self._meta = meta
+        self._meta_mode = mode
+
+    # Getter for "meta" guarantees that "meta, meta_mode" are set up
+    def get_meta(self) -> tp.Tuple[Metadata, str]:
+        if self._meta is None:
+            raise UnsetMetadataError("Metadata not set")
+        if self._meta_mode is None:
+            raise UnsetMetadataError("Metadata mode not set")
+        return self._meta, self._meta_mode
+
+    @contextmanager
+    def open(self, mode: str, only_meta_needed: bool = False) -> tp.Iterator[tpx.Self]:
         try:
-            self._store.close()
-        except AttributeError:
+            if only_meta_needed:
+                try:
+                    self.try_open_only_meta(mode)
+                except NotImplementedError:
+                    self.open_meta_and_data(mode)
+            else:
+                self.open_meta_and_data(mode)
+            yield self
+        finally:
+            self.close_meta_and_data()
+
+    def try_open_only_meta(self, mode: str) -> None:
+        # In case of reentry this is a no-op
+        try:
+            meta, current_mode = self.get_meta()
+            if current_mode != mode:
+                raise RuntimeError(f"Metadata already open in mode {current_mode}")
+            return
+        except UnsetMetadataError:
             pass
-        self._store_obj = None
-        return self
 
-    @property
-    def is_open(self) -> bool:
+        # Try to setup the metadata only, if not implemented then setup
+        # everything
         try:
-            self._store
+            self.setup_meta(self.location.root, mode)
+        except NotImplementedError:
+            raise
+
+        try:
+            self.get_meta()
         except RuntimeError:
-            return False
-        return True
+            raise RuntimeError("Metadata not correctly set in setup_meta") from None
+
+    def open_meta_and_data(self, mode: str) -> None:
+        # In case of reentry this is a no-op, unless mode is incompatible
+        try:
+            data, current_mode = self.get_data()
+            if current_mode != mode:
+                raise RuntimeError(f"Data already open in mode {current_mode}")
+            return
+        except UnsetDataError:
+            pass
+
+        self.setup(self.location.root, mode)
+        try:
+            self.setup_meta(self.location.root, mode)
+        except NotImplementedError:
+            pass
+
+        try:
+            self.get_data()
+            self.get_meta()
+        except UnsetDataError:
+            raise RuntimeError("Data not correctly set in `setup`") from None
+        except UnsetMetadataError:
+            raise RuntimeError(
+                "Metadata not correctly set `setup` or `setup_meta`"
+            ) from None
+
+    def close_meta_and_data(self):
+        try:
+            self.get_data()  # can raise UnsetDataError
+            self.teardown()
+        except UnsetDataError:
+            pass
+
+        self._data_mode = None
+        self._data = None
+        try:
+            self.get_meta()  # can raise UnsetMetadataError
+            self.teardown_meta()
+        except (UnsetMetadataError, NotImplementedError):
+            pass
+
+        self._meta_mode = None
+        self._meta = None
 
     @property
-    def mode(self) -> str:
-        return tp.cast(str, self._store.mode)
-
-    def __enter__(self) -> tpx.Self:
-        try:
-            self._store.__enter__()
-        except AttributeError:
-            pass
-        return self
-
-    @property
-    def grouping(self) -> str:
-        # This detects Roman's formatting style which doesn't have a
-        # 'grouping' key but is still grouped by num atoms.
-        try:
-            self._store.attrs["readme"]
-            return "by_num_atoms"
-        except (KeyError, OSError):
-            pass
-        try:
-            g = self._store.attrs["grouping"]
-            return tp.cast(str, g)
-        except (KeyError, OSError):
-            return "legacy"
-
-    def __exit__(self, *args) -> None:
-        try:
-            self._store.__exit__(*args)
-        except AttributeError:
-            pass
-        self._store_obj = None
+    def grouping(self) -> tp.Union[Grouping, tp.Literal["legacy"]]:
+        return self.meta.grouping
 
 
-# A store that wraps another hierarchical store (e.g. Zarr, Exedir, HDF5)
-# Wrapped store must implement:
+# Wrap a hierarchical data format (e.g. Zarr, Exedir, HDF5)
+# Wrapped data must implement:
 # __exit__, __enter__, create_group, __len__, __iter__ -> Iterator[str], __delitem__
 # and have a "mode" and "attr" attributes
-class _HierarchicalStoreWrapper(_StoreWrapper[_T]):
-    def __init__(
-        self,
-        store_location: StrPath,
-        suffix="",
-        kind="",
-        dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
-    ):
-        super().__init__(dummy_properties=dummy_properties)
-        self.location = _FileOrDirLocation(store_location, suffix, kind)
-
+class _HierarchicalStore(_Store[Data]):
     def update_cache(
         self, check_properties: bool = False, verbose: bool = True
     ) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
-        cache = CacheHolder()
-        for k, g in self._store.items():
+        cache = Cache()
+        for k, g in self.data.items():
             self._update_properties_cache(cache, g, check_properties)
             self._update_groups_cache(cache, g)
         if list(cache.group_sizes) != sorted(cache.group_sizes):
@@ -350,7 +525,7 @@ class _HierarchicalStoreWrapper(_StoreWrapper[_T]):
 
     def _update_properties_cache(
         self,
-        cache: CacheHolder,
+        cache: Cache,
         conformers: NamedMapping,
         check_properties: bool = False,
     ) -> None:
@@ -365,7 +540,7 @@ class _HierarchicalStoreWrapper(_StoreWrapper[_T]):
 
     # updates "group_sizes" which holds the batch dimension (number of
     # molecules) of all groups in the dataset.
-    def _update_groups_cache(self, cache: CacheHolder, group: NamedMapping) -> None:
+    def _update_groups_cache(self, cache: Cache, group: NamedMapping) -> None:
         present_keys = {"coordinates", "coord", "energies"}.intersection(
             set(group.keys())
         )
@@ -378,14 +553,14 @@ class _HierarchicalStoreWrapper(_StoreWrapper[_T]):
         cache.group_sizes.update({group.name[1:]: group[any_key].shape[0]})
 
     def __delitem__(self, k: str) -> None:
-        del self._store[k]
+        del self.data[k]
 
     def __setitem__(self, name: str, conformers: "_ConformerGroup") -> None:
-        self._store.create_group(name)
+        self.data.create_group(name)
         self[name].update(conformers)
 
     def __len__(self) -> int:
-        return len(self._store)
+        return len(self.data)
 
     def __iter__(self) -> tp.Iterator[str]:
-        return iter(self._store)
+        return iter(self.data)

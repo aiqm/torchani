@@ -1,4 +1,5 @@
 r"""Utilities for working with ANI Datasets"""
+from pathlib import Path
 import typing as tp
 
 import torch
@@ -8,9 +9,8 @@ from tqdm import tqdm
 from torchani.units import hartree2kcalpermol
 from torchani.models import BuiltinModel
 from torchani.nn import Ensemble
-from torchani.annotations import Conformers, StrPath
+from torchani.annotations import Conformers, StrPath, Backend
 from torchani.datasets.datasets import ANIDataset
-from torchani.datasets.backends import TemporaryLocation
 
 
 __all__ = ["filter_by_high_force", "filter_by_high_energy_error", "concatenate"]
@@ -20,14 +20,16 @@ def concatenate(
     source: ANIDataset,
     dest_location: StrPath,
     verbose: bool = True,
+    backend: Backend = "hdf5",
     delete_originals: bool = False,
 ) -> ANIDataset:
     r"""Combine all the backing stores in a given ANIDataset into one"""
+    dest_location = Path(dest_location).resolve()
     if source.grouping not in ["by_formula", "by_num_atoms"]:
         raise ValueError("Please regroup your dataset before concatenating")
 
-    with TemporaryLocation(source._first_subds._backend) as tmp_location:
-        dest = ANIDataset(tmp_location, grouping=source.grouping, verbose=False)
+    dest = ANIDataset("tmp", backend=backend, grouping=source.grouping, verbose=False)
+    try:
         for k, v in tqdm(
             source.numpy_items(),
             desc="Concatenating datasets",
@@ -35,17 +37,18 @@ def concatenate(
             disable=not verbose,
         ):
             dest.append_conformers(k.split("/")[-1], v)
-        dest._first_subds._store.location.root = dest_location
-    # TODO this depends on the original stores being files, it should be
-    # changed for generality
+    except Exception:
+        dest._first_subds._store.location.clear()
+
+    dest._first_subds._store.location.root = dest_location
     if delete_originals:
         for subds in tqdm(
             source._datasets.values(),
-            desc="Deleting original store",
+            desc="Deleting original stores",
             total=source.num_stores,
             disable=not verbose,
         ):
-            del subds._store.location.root
+            subds._store.location.clear()
     return dest
 
 

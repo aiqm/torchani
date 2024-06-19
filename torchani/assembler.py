@@ -532,7 +532,10 @@ def ANImbis(
     use_cuda_ops: bool = False,
     periodic_table_index: bool = True,
 ) -> BuiltinModel:
-    r"""ANI-2x model with MBIS experimental charges"""
+    r"""
+    ANI-2x model with MBIS experimental charges. Note: will be removed in the
+    future.
+    """
     asm = Assembler(
         ensemble_size=8,
         periodic_table_index=periodic_table_index,

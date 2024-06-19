@@ -17,5 +17,10 @@ NumberOrStrArray = tp.Union[NDArray[np.int_], NDArray[np.float_], NDArray[np.str
 NumpyConformers = tp.MutableMapping[str, NumberOrStrArray]
 MixedConformers = tp.MutableMapping[str, tp.Union[Tensor, NumberOrStrArray]]
 
+
 # mimic typeshed
 StrPath = tp.Union[str, Path]
+
+# Datasets
+Grouping = tp.Literal["by_num_atoms", "by_formula"]
+Backend = tp.Literal["hdf5", "zarr", "pandas", "cudf"]
