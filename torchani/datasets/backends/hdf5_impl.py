@@ -3,7 +3,7 @@ from pathlib import Path
 from functools import partial
 
 import h5py
-import numpy as np
+from numpy.typing import NDArray
 from tqdm import tqdm
 
 from torchani.annotations import StrPath, Grouping, Backend
@@ -17,7 +17,7 @@ from torchani.datasets.backends.interface import (
 )
 
 
-class _HDF5Store(_HierarchicalStore[h5py.File]):
+class _HDF5Store(_HierarchicalStore):
     suffix: str = ".h5"
     root_kind: RootKind = "file"
     backend: Backend = "hdf5"
@@ -191,7 +191,7 @@ class _HDF5ConformerGroup(_ConformerWrapper[h5py.Group]):
     def _is_resizable(self) -> bool:
         return all(ds.maxshape[0] is None for ds in self._data.values())
 
-    def _append_to_property(self, p: str, v: np.ndarray) -> None:
+    def _append_to_property(self, p: str, v: NDArray[tp.Any]) -> None:
         h5_dataset = self._data[p]
         h5_dataset.resize(h5_dataset.shape[0] + v.shape[0], axis=0)
         try:
@@ -199,7 +199,7 @@ class _HDF5ConformerGroup(_ConformerWrapper[h5py.Group]):
         except TypeError:
             h5_dataset[-v.shape[0]:] = v.astype(bytes)
 
-    def __setitem__(self, p: str, data: np.ndarray) -> None:
+    def __setitem__(self, p: str, data: NDArray[tp.Any]) -> None:
         # This correctly handles strings and make the first axis resizable
         maxshape = (None,) + data.shape[1:]
         try:

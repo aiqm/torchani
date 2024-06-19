@@ -5,10 +5,11 @@ from collections import OrderedDict
 from dataclasses import asdict
 
 import numpy as np
+from numpy.typing import NDArray
 
 from torchani.annotations import StrPath, Grouping, Backend
 from torchani.datasets.backends.interface import (
-    _Store,
+    Store,
     _ConformerGroup,
     Cache,
     RootKind,
@@ -32,10 +33,7 @@ except ImportError:
     _CUDF_AVAILABLE = False
 
 
-DataFrame = tp.Union["pandas.DataFrame", "cudf.DataFrame"]
-
-
-class _PandasStore(_Store[DataFrame]):
+class _PandasStore(Store):
     root_kind: RootKind = "dir"
     suffix: str = ".pqdir"
     backend: Backend = "pandas"
@@ -48,7 +46,7 @@ class _PandasStore(_Store[DataFrame]):
         grouping: tp.Optional[Grouping] = None,
     ):
         super().__init__(root, dummy_properties, grouping)
-        self._queued_appends: tp.List[DataFrame] = []
+        self._append_ops: tp.List[tp.Union["pandas.DataFrame", "cudf.DataFrame"]] = []
         self._engine = pandas
         self._data_is_dirty = False
 
@@ -174,15 +172,15 @@ class _PandasStore(_Store[DataFrame]):
                 assert np.dtype(v.dtype).name == dtype, "Bad dtype in appended property"
             else:
                 self.meta.dtypes[k] = np.dtype(v.dtype).name
-        self._queued_appends.append(tmp_df)
+        self._append_ops.append(tmp_df)
 
     def execute_all_queued_append_ops(self) -> None:
-        if not self._queued_appends:
+        if not self._append_ops:
             return
         data, mode = self.get_data()
-        data = self._engine.concat([data] + self._queued_appends)
+        data = self._engine.concat([data] + self._append_ops)
         self.set_data(data, mode)
-        self._queued_appends = []
+        self._append_ops = []
         self._data_is_dirty = True
 
     def __delitem__(self, name: str) -> None:
@@ -254,7 +252,7 @@ class _CudfStore(_PandasStore):
 
 
 class _ParquetConformerGroup(_ConformerGroup):
-    def __init__(self, group_obj, dummy_properties, store_ref: _Store):
+    def __init__(self, group_obj, dummy_properties, store_ref: Store):
         super().__init__(dummy_properties=dummy_properties)
         self._group_obj = group_obj
         self._store_ref = store_ref
@@ -263,7 +261,7 @@ class _ParquetConformerGroup(_ConformerGroup):
     def _is_resizable(self) -> bool:
         return False
 
-    def _append_to_property(self, p: str, data: np.ndarray) -> None:
+    def _append_to_property(self, p: str, data: NDArray[tp.Any]) -> None:
         raise ValueError("Not implemented for pq groups")
 
     def move(self, src: str, dest: str) -> None:
@@ -272,10 +270,10 @@ class _ParquetConformerGroup(_ConformerGroup):
     def __delitem__(self, k: str) -> None:
         raise ValueError("Not implemented for pq groups")
 
-    def __setitem__(self, p: str, v: np.ndarray) -> None:
+    def __setitem__(self, p: str, v: NDArray[tp.Any]) -> None:
         raise ValueError("Not implemented for pq groups")
 
-    def _getitem_impl(self, p: str) -> np.ndarray:
+    def _getitem_impl(self, p: str) -> NDArray[tp.Any]:
         # mypy doesn't understand monkey patching
         series = self._group_obj[p]
         _series: "pandas.Series" = (

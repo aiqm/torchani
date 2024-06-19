@@ -1,6 +1,7 @@
+import typing as tp
 from pathlib import Path
 
-import numpy as np
+from numpy.typing import NDArray
 
 from torchani.annotations import Grouping, Backend
 from torchani.datasets.backends.interface import (
@@ -19,7 +20,7 @@ except ImportError:
     _ZARR_AVAILABLE = False
 
 
-class _ZarrStore(_HierarchicalStore["zarr.Group"]):
+class _ZarrStore(_HierarchicalStore):
     root_kind: RootKind = "dir"
     suffix: str = ".zarr"
     backend: Backend = "zarr"
@@ -57,7 +58,7 @@ class _ZarrConformerGroup(_ConformerWrapper["zarr.Group"]):
     def __init__(self, data: "zarr.Group", dummy_properties):
         super().__init__(data=data, dummy_properties=dummy_properties)
 
-    def _append_to_property(self, p: str, v: np.ndarray) -> None:
+    def _append_to_property(self, p: str, v: NDArray[tp.Any]) -> None:
         try:
             self._data[p].append(v, axis=0)
         except TypeError:

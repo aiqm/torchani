@@ -27,8 +27,8 @@ from torchani.annotations import (
     IdxLike,
 )
 from torchani.datasets.backends import (
-    _Store,
     Store,
+    create_store,
     _ConformerWrapper,
 )
 
@@ -317,7 +317,7 @@ class _ANISubdataset(_ANIDatasetBase):
         # created on the fly only if they are not present in the dataset
         # already.
         super().__init__()
-        self._store = Store(
+        self._store = create_store(
             store_location,
             backend,
             grouping,
@@ -379,7 +379,7 @@ class _ANISubdataset(_ANIDatasetBase):
     # if they are being called from inside a "keep_open" context
     def _get_open_store(
         self, stack: ExitStack, mode: str = "r", only_meta_needed: bool = False
-    ) -> _Store:
+    ) -> Store:
         if mode not in ["r+", "r"]:
             raise ValueError(f"Unsupported mode {mode}")
 
@@ -439,7 +439,7 @@ class _ANISubdataset(_ANIDatasetBase):
             present.update(conformers[element_key].ravel())
         return tuple(sorted(present))
 
-    def _parse_index(self, idx: IdxLike) -> tp.Optional[np.ndarray]:
+    def _parse_index(self, idx: IdxLike) -> tp.Optional[NDArray[np.int64]]:
         # internally, idx_ is always a numpy array or None, idx can be a tensor
         # or a list or other iterable, which is must be castable to a numpy int
         # array of ndim 1
@@ -546,7 +546,7 @@ class _ANISubdataset(_ANIDatasetBase):
                 _array = mixed_conformers[k].detach().cpu().numpy()  # type: ignore
                 numpy_conformers[k] = _array
             except AttributeError:
-                numpy_conformers[k] = tp.cast(np.ndarray, mixed_conformers[k])
+                numpy_conformers[k] = tp.cast(NDArray[tp.Any], mixed_conformers[k])
         for k in properties & _ELEMENT_KEYS:
             # try to interpret as numeric, failure means we should convert to ints
             try:

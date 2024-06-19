@@ -1,3 +1,4 @@
+from numpy.typing import NDArray
 import tempfile
 from dataclasses import dataclass
 import shutil
@@ -43,9 +44,11 @@ class NamedMapping(tp.Mapping):
     name: str
 
 
-_MutMapSubtype = tp.TypeVar("_MutMapSubtype", bound=tp.MutableMapping[str, np.ndarray])
+_MutMapSubtype = tp.TypeVar(
+    "_MutMapSubtype", bound=tp.MutableMapping[str, NDArray[tp.Any]]
+)
 
-# _ConformerGroup and _Store are abstract classes from which all backends
+# _ConformerGroup and Store are abstract classes from which all backends
 # should inherit in order to correctly interact with ANIDataset. Adding
 # support for a new backend can be done just by coding these classes and
 # adding the support for the backend inside interface.py
@@ -53,7 +56,7 @@ _MutMapSubtype = tp.TypeVar("_MutMapSubtype", bound=tp.MutableMapping[str, np.nd
 
 # This is like a dict, but supports "append", and rename keys, it can also
 # create dummy properties on the fly.
-class _ConformerGroup(tp.MutableMapping[str, np.ndarray], ABC):
+class _ConformerGroup(tp.MutableMapping[str, NDArray[tp.Any]], ABC):
     def __init__(
         self,
         *args,
@@ -80,7 +83,7 @@ class _ConformerGroup(tp.MutableMapping[str, np.ndarray], ABC):
                 "Can't append conformers, conformer group is not resizable"
             )
 
-    def __getitem__(self, p: str) -> np.ndarray:
+    def __getitem__(self, p: str) -> NDArray[tp.Any]:
         try:
             array = self._getitem_impl(p)
         except KeyError:
@@ -91,7 +94,6 @@ class _ConformerGroup(tp.MutableMapping[str, np.ndarray], ABC):
             # filled with value 0.0
             params = self._dummy_properties[p]
             array = self._make_dummy_property(**params)
-        assert isinstance(array, np.ndarray)
         return array
 
     # creates a dummy property on the fly
@@ -120,11 +122,11 @@ class _ConformerGroup(tp.MutableMapping[str, np.ndarray], ABC):
         yield from chain(self._iter_impl(), self._dummy_properties.keys())
 
     @abstractmethod
-    def _append_to_property(self, p: str, v: np.ndarray) -> None:
+    def _append_to_property(self, p: str, v: NDArray[tp.Any]) -> None:
         pass
 
     @abstractmethod
-    def _getitem_impl(self, p: str) -> np.ndarray:
+    def _getitem_impl(self, p: str) -> NDArray[tp.Any]:
         pass
 
     @abstractmethod
@@ -145,13 +147,13 @@ class _ConformerWrapper(_ConformerGroup, tp.Generic[_MutMapSubtype]):
         super().__init__(**kwargs)
         self._data = data
 
-    def __setitem__(self, p: str, v: np.ndarray) -> None:
+    def __setitem__(self, p: str, v: NDArray[tp.Any]) -> None:
         self._data[p] = v
 
     def __delitem__(self, p: str) -> None:
         del self._data[p]
 
-    def _getitem_impl(self, p: str) -> np.ndarray:
+    def _getitem_impl(self, p: str) -> NDArray[tp.Any]:
         return self._data[p][...]
 
     def _len_impl(self) -> int:
@@ -163,7 +165,7 @@ class _ConformerWrapper(_ConformerGroup, tp.Generic[_MutMapSubtype]):
     def move(self, src_p: str, dest_p: str) -> None:
         self._data[dest_p] = self._data.pop(src_p)
 
-    def _append_to_property(self, p: str, v: np.ndarray) -> None:
+    def _append_to_property(self, p: str, v: NDArray[tp.Any]) -> None:
         self._data[p] = np.append(self._data[p], v, axis=0)
 
 
@@ -203,11 +205,9 @@ class Location:
         self._root = None
 
 
-# mypy expects a Protocol here, which specifies that Data must
-# support Mapping and ContextManager methods, and also 'close' and 'create_group'
-# and have 'mode' and 'attr' attributes
-# this is similar to C++20 concepts and it is currently very verbose, so we avoid it
-Data = tp.TypeVar("Data", bound=tp.Any)
+# TODO: Not 100% sure how to type this. Currently Data is an unknown object that
+# subclasses decide on and manipulate however they like
+Data = tp.Any
 
 
 @dataclass
@@ -223,7 +223,7 @@ class Metadata:
 # Wrapped data must have:
 #
 # The wrapped data provides some sort of conformer data, which is provided by
-# the _Store as a "_ConformerGroup" through __getitem__ and deleted through __delitem__
+# the Store as a "_ConformerGroup" through __getitem__ and deleted through __delitem__
 
 # Overridable methods are:
 #
@@ -254,11 +254,7 @@ class Metadata:
 #   pair of methods. If one is implemented the other must be implemented too
 
 
-class _Store(
-    tp.MutableMapping[str, "_ConformerGroup"],
-    tp.Generic[Data],
-    ABC,
-):
+class Store(tp.MutableMapping[str, "_ConformerGroup"], ABC):
     root_kind: RootKind
     suffix: str = ""
     backend: Backend
@@ -321,12 +317,13 @@ class _Store(
 
     def teardown_meta(self) -> None:
         raise NotImplementedError
+
     # End overridable
 
     def _build_location(self, location: StrPath, suffix: str) -> Location:
         return Location(location, suffix)
 
-    def overwrite(self, other: "_Store") -> None:
+    def overwrite(self, other: "Store") -> None:
         root = Path(other.location.root).with_suffix("")
         other.location.clear()
         self.location.root = root
@@ -506,9 +503,8 @@ class _Store(
 
 # Wrap a hierarchical data format (e.g. Zarr, Exedir, HDF5)
 # Wrapped data must implement:
-# __exit__, __enter__, create_group, __len__, __iter__ -> Iterator[str], __delitem__
-# and have a "mode" and "attr" attributes
-class _HierarchicalStore(_Store[Data]):
+# create_group, __len__, __iter__ -> Iterator[str], __delitem__, items(), __getitem__
+class _HierarchicalStore(Store):
     def update_cache(
         self, check_properties: bool = False, verbose: bool = True
     ) -> tp.Tuple[tp.OrderedDict[str, int], tp.Set[str]]:
