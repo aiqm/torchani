@@ -1,5 +1,7 @@
 from collections import OrderedDict
 import typing as tp
+import tarfile
+import zipfile
 import math
 import os
 import warnings
@@ -19,6 +21,7 @@ from torchani.tuples import SpeciesEnergies
 
 
 __all__ = [
+    "download_and_extract",
     "strip_redundant_padding",
     "pad_atomic_properties",
     "AtomicNumbersToChemicalSymbols",
@@ -156,6 +159,34 @@ GSAES: tp.Dict[str, tp.Dict[str, float]] = {
 class TightCELU(torch.nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         return torch.nn.functional.celu(x, alpha=0.1)
+
+
+def download_and_extract(
+    url: str,
+    file_name: str,
+    dest_dir: Path,
+    verbose: bool = False,
+) -> None:
+    dest_dir.mkdir(exist_ok=True)
+    r"""
+    Download and extract a .tar.gz or .zip file form a given url
+    """
+    # Download
+    dest_path = dest_dir / file_name
+    if verbose:
+        print(f"Downloading {file_name}...")
+    torch.hub.download_url_to_file(
+        url, str(dest_path), progress=verbose
+    )
+    # Extract
+    if file_name.endswith(".tar.gz"):
+        with tarfile.open(dest_path, "r:gz") as f:
+            f.extractall(dest_dir)
+    elif file_name.endswith(".zip"):
+        with zipfile.ZipFile(dest_path) as zf:
+            zf.extractall(dest_path.parent)
+    # Delete
+    dest_path.unlink()
 
 
 def sorted_gsaes(

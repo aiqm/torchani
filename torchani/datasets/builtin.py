@@ -297,14 +297,13 @@ import json
 import typing as tp
 import sys
 from pathlib import Path
-import tarfile
 import hashlib
 from collections import OrderedDict
 
-import torch
 from tqdm import tqdm
 
 from torchani.paths import DATASETS
+from torchani.utils import download_and_extract
 from torchani.annotations import StrPath
 from torchani.datasets.datasets import ANIDataset
 
@@ -339,31 +338,6 @@ def _calc_file_md5(file_path: Path) -> str:
         for chunk in iter(lambda: f.read(_CHUNK_SIZE), b""):
             hasher.update(chunk)
     return hasher.hexdigest()
-
-
-# expects a .tar.gz file
-def _download_and_extract_archive(
-    base_url: str,
-    file_name: str,
-    dest_dir: Path,
-    verbose: bool = False,
-) -> None:
-    dest_dir.mkdir(exist_ok=True)
-
-    # download
-    ar_file_path = dest_dir / file_name
-    if verbose:
-        print(f"Downloading {file_name}...")
-    torch.hub.download_url_to_file(
-        f"{base_url}{file_name}", str(ar_file_path), progress=verbose
-    )
-
-    # extract
-    with tarfile.open(ar_file_path, "r:gz") as f:
-        f.extractall(dest_dir)
-
-    # delete
-    ar_file_path.unlink()
 
 
 def download_builtin_dataset(dataset: str, lot: str, root=None, verbose: bool = True):
@@ -479,8 +453,8 @@ def _register_dataset_builder(name: str) -> None:
 
         # If the dataset is not found we download it
         if download and ((not _root.is_dir()) or (not any(_root.glob(f"*{suffix}")))):
-            _download_and_extract_archive(
-                base_url=_BASE_URL,
+            download_and_extract(
+                url=f"{_BASE_URL}{archive}",
                 file_name=archive,
                 dest_dir=_root,
                 verbose=verbose,

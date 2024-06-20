@@ -5,7 +5,6 @@ from dataclasses import dataclass
 import typing as tp
 import struct
 import bz2
-import zipfile
 import shutil
 from collections import OrderedDict
 
@@ -21,7 +20,7 @@ from torchani.cutoffs import CutoffArg
 from torchani.neighbors import NeighborlistArg
 from torchani.potentials import EnergyAdder
 from torchani.tuples import SpeciesEnergies
-from torchani.utils import TightCELU
+from torchani.utils import TightCELU, download_and_extract
 from torchani.atomics import AtomicNetwork, AtomicContainer
 from torchani.annotations import StrPath
 
@@ -397,7 +396,6 @@ def download_model_parameters(
 ) -> None:
     if root is None:
         root = NEUROCHEM
-    zip_path = root / "neurochem-builtins.zip"
     if any(root.iterdir()):
         if verbose:
             print("Found existing files in directory, assuming params already present")
@@ -406,12 +404,7 @@ def download_model_parameters(
     tag = "ani-2x"
     extracted_dirname = f"{repo}-{tag}"
     url = f"https://github.com/aiqm/{repo}/archive/{tag}.zip"
-    if verbose:
-        print("Downloading ANI model parameters ...")
-    torch.hub.download_url_to_file(url, str(zip_path), progress=verbose)
-    with zipfile.ZipFile(zip_path) as zf:
-        zf.extractall(root)
-    zip_path.unlink()
+    download_and_extract(url, "neurochem-builtins.zip", root, verbose=verbose)
     extracted_dir = Path(root) / extracted_dirname
     for f in (extracted_dir / "resources").iterdir():
         shutil.move(str(f), root / f.name)
