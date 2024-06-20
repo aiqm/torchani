@@ -69,7 +69,7 @@ class TestInfer(ANITest):
             if self.device == "cpu" and file.startswith("6W8H"):
                 continue
             species, coordinates, _ = read_xyz(
-                (Path(__file__).parent / "test_data") / file,
+                (Path(__file__).parent / "resources") / file,
                 device=self.device,
                 dtype=torch.float,
             )

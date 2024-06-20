@@ -26,7 +26,7 @@ class TestTorchNumericalCheck(ANITest):
         self.model = self._setup(
             torchani.models.ANI1x(model_index=0, periodic_table_index=False).double()
         )
-        datafile = os.path.join(path, "test_data/NIST/all")
+        datafile = os.path.join(path, "resources/NIST/all")
         # Some small molecules are selected to make the tests faster
         with open(datafile, mode="rb") as fb:
             data = pickle.load(fb)[1243:1250]

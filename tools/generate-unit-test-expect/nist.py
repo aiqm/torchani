@@ -27,6 +27,6 @@ with open(os.path.join(path, 'nist-dataset/result.json')) as f:
         mol_count += 1
 
     dumpfile = os.path.join(
-        path, '../../tests/test_data/NIST/all')
+        path, '../../tests/resources/NIST/all')
     with open(dumpfile, 'wb') as bf:
         pickle.dump(pickle_objects, bf)

@@ -427,7 +427,7 @@ class TestCUAEV(TestCase):
 
     def testTripeptideMD(self):
         for i in range(100):
-            datafile = os.path.join(path, f"test_data/tripeptide-md/{i}.dat")
+            datafile = os.path.join(path, f"resources/tripeptide-md/{i}.dat")
             with open(datafile, "rb") as f:
                 coordinates, species, *_ = pickle.load(f)
                 coordinates = (
@@ -443,7 +443,7 @@ class TestCUAEV(TestCase):
 
     def testTripeptideMDBackward(self):
         for i in range(100):
-            datafile = os.path.join(path, f"test_data/tripeptide-md/{i}.dat")
+            datafile = os.path.join(path, f"resources/tripeptide-md/{i}.dat")
             with open(datafile, "rb") as f:
                 coordinates, species, *_ = pickle.load(f)
                 coordinates = (
@@ -472,7 +472,7 @@ class TestCUAEV(TestCase):
         self._skip_if_not_cosine()
 
         for i in range(100):
-            datafile = os.path.join(path, f"test_data/tripeptide-md/{i}.dat")
+            datafile = os.path.join(path, f"resources/tripeptide-md/{i}.dat")
             with open(datafile, "rb") as f:
                 coordinates, species, *_ = pickle.load(f)
                 coordinates = (
@@ -490,7 +490,7 @@ class TestCUAEV(TestCase):
         self._skip_if_not_cosine()
         self._skip_if_double()
 
-        datafile = os.path.join(path, "test_data/NIST/all")
+        datafile = os.path.join(path, "resources/NIST/all")
         with open(datafile, "rb") as f:
             data = pickle.load(f)
             for coordinates, species, _, _, _, _ in data:
@@ -506,7 +506,7 @@ class TestCUAEV(TestCase):
         self._skip_if_not_cosine()
         self._skip_if_double()
 
-        datafile = os.path.join(path, "test_data/NIST/all")
+        datafile = os.path.join(path, "resources/NIST/all")
         with open(datafile, "rb") as f:
             data = pickle.load(f)
             for coordinates, species, _, _, _, _ in data[:10]:
@@ -535,7 +535,7 @@ class TestCUAEV(TestCase):
         self._skip_if_not_cosine()
         self._skip_if_double()
 
-        datafile = os.path.join(path, "test_data/NIST/all")
+        datafile = os.path.join(path, "resources/NIST/all")
         with open(datafile, "rb") as f:
             data = pickle.load(f)
             for coordinates, species, _, _, _, _ in data[:3]:
@@ -555,7 +555,7 @@ class TestCUAEV(TestCase):
         https://github.com/aiqm/torchani/pull/555
         """
         for i in range(5):
-            datafile = os.path.join(path, f"test_data/tripeptide-md/{i}.dat")
+            datafile = os.path.join(path, f"resources/tripeptide-md/{i}.dat")
             with open(datafile, "rb") as f:
                 coordinates, species, *_ = pickle.load(f)
                 # change angstrom coordinates to 10 times smaller
@@ -569,7 +569,7 @@ class TestCUAEV(TestCase):
 
     def testVeryDenseMoleculeBackward(self):
         for i in range(5):
-            datafile = os.path.join(path, f"test_data/tripeptide-md/{i}.dat")
+            datafile = os.path.join(path, f"resources/tripeptide-md/{i}.dat")
             with open(datafile, "rb") as f:
                 coordinates, species, *_ = pickle.load(f)
                 # change angstrom coordinates to 10 times smaller
@@ -597,7 +597,7 @@ class TestCUAEV(TestCase):
         files = ["small.xyz", "1hz5.xyz", "6W8H.xyz"]
         for file in files:
             species, coordinates, _ = read_xyz(
-                (Path(__file__).parent / "test_data") / file,
+                (Path(__file__).parent / "resources") / file,
                 device=self.device,
                 dtype=self.dtype,
             )
@@ -610,7 +610,7 @@ class TestCUAEV(TestCase):
         files = ["small.xyz", "1hz5.xyz", "6W8H.xyz"]
         for file in files:
             species, coordinates, _ = read_xyz(
-                (Path(__file__).parent / "test_data") / file,
+                (Path(__file__).parent / "resources") / file,
                 device=self.device,
                 dtype=self.dtype,
             )
@@ -635,7 +635,7 @@ class TestCUAEV(TestCase):
         files = ["small.xyz", "1hz5.xyz", "6W8H.xyz"]
         for file in files:
             species, coordinates, _ = read_xyz(
-                (Path(__file__).parent / "test_data") / file,
+                (Path(__file__).parent / "resources") / file,
                 device=self.device,
                 dtype=self.dtype,
             )
@@ -658,7 +658,7 @@ class TestCUAEV(TestCase):
 
     def testWithHalfNbrList_pbc(self):
         species, coordinates, cell = read_xyz(
-            (Path(__file__).parent / "test_data") / "water-0.8nm.xyz",
+            (Path(__file__).parent / "resources") / "water-0.8nm.xyz",
             device=self.device,
             dtype=self.dtype,
         )
@@ -685,7 +685,7 @@ class TestCUAEV(TestCase):
         files = ["small.xyz", "1hz5.xyz", "6W8H.xyz"]
         for file in files:
             species, coordinates, _ = read_xyz(
-                (Path(__file__).parent / "test_data") / file,
+                (Path(__file__).parent / "resources") / file,
                 device=self.device,
                 dtype=self.dtype,
             )
@@ -725,7 +725,7 @@ class TestCUAEV(TestCase):
 
     def testWithFullNbrList_pbc(self):
         species, coordinates, cell = read_xyz(
-            (Path(__file__).parent / "test_data") / "water-0.8nm.xyz",
+            (Path(__file__).parent / "resources") / "water-0.8nm.xyz",
             device=self.device,
             dtype=self.dtype,
         )

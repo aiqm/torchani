@@ -35,7 +35,7 @@ def main(
         f" with {neighborlist.upper()}"
     )
     if not file:
-        xyz_file_path = Path(ROOT, "tests", "test_data", "small.xyz")
+        xyz_file_path = Path(ROOT, "tests", "resources", "small.xyz")
     elif file.startswith("/"):
         xyz_file_path = Path(file)
     else:

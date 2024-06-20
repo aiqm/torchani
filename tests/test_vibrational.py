@@ -15,7 +15,7 @@ class TestVibrational(ANITest):
     def testWater(self):
         model = self._setup(ANI1x().double())
         # Expected results
-        data_path = (Path(__file__).parent / "test_data") / "water-vib-expect.npz"
+        data_path = (Path(__file__).parent / "resources") / "water-vib-expect.npz"
         with np.load(data_path) as data:
             coordinates = torch.tensor(
                 np.expand_dims(data["coordinates"], 0),

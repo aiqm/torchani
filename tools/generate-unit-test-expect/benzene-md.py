@@ -33,7 +33,7 @@ dyn = ase.md.verlet.VelocityVerlet(
 )
 
 counter = 0
-data_dir = os.path.join(path, "../../tests/test_data/benzene-md/")
+data_dir = os.path.join(path, "../../tests/resources/benzene-md/")
 
 
 def dump_neurochem_data(molecule=molecule):

@@ -7,9 +7,9 @@ from torchani.aev import AEVComputer
 from torchani.neurochem import load_builtin_from_name, load_aev_computer_and_symbols
 
 path = os.path.dirname(os.path.realpath(__file__))
-const_file_1x = os.path.join(path, "test_data/rHCNO-5.2R_16-3.5A_a4-8.params")
-const_file_1ccx = os.path.join(path, "test_data/rHCNO-5.2R_16-3.5A_a4-8.params")
-const_file_2x = os.path.join(path, "test_data/rHCNOSFCl-5.1R_16-3.5A_a8-4.params")
+const_file_1x = os.path.join(path, "resources/rHCNO-5.2R_16-3.5A_a4-8.params")
+const_file_1ccx = os.path.join(path, "resources/rHCNO-5.2R_16-3.5A_a4-8.params")
+const_file_2x = os.path.join(path, "resources/rHCNOSFCl-5.1R_16-3.5A_a8-4.params")
 
 
 @expand(device="cpu", jit=False)

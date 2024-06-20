@@ -30,6 +30,6 @@ with open(os.path.join(path, 'nist-dataset/result.json')) as f:
         mol_count += 1
 
     dumpfile = os.path.join(
-        path, '../../tests/test_data/NeuroChemOptimized/all')
+        path, '../../tests/resources/NeuroChemOptimized/all')
     with open(dumpfile, 'wb') as bf:
         pickle.dump(pickle_objects, bf)

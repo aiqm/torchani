@@ -163,7 +163,7 @@ class TestAEV(_TestAEVBase):
 
     def testIsomers(self):
         for i in range(N):
-            datafile = os.path.join(path, f"test_data/ANI1_subset/{i}")
+            datafile = os.path.join(path, f"resources/ANI1_subset/{i}")
             with open(datafile, "rb") as f:
                 (
                     coordinates,
@@ -188,7 +188,7 @@ class TestAEV(_TestAEVBase):
         self.assertFalse(torch.isnan(aev).any())
 
     def testBoundingCell(self):
-        datafile = os.path.join(path, "test_data/ANI1_subset/10")
+        datafile = os.path.join(path, "resources/ANI1_subset/10")
         with open(datafile, "rb") as f:
             coordinates, species, _, _, _, _ = pickle.load(f)
             coordinates = torch.from_numpy(coordinates)
@@ -204,7 +204,7 @@ class TestAEV(_TestAEVBase):
         species_coordinates = []
         radial_angular = []
         for i in range(N):
-            datafile = os.path.join(path, f"test_data/ANI1_subset/{i}")
+            datafile = os.path.join(path, f"resources/ANI1_subset/{i}")
             with open(datafile, "rb") as f:
                 coordinates, species, radial, angular, _, _ = pickle.load(f)
                 coordinates = torch.from_numpy(coordinates)
@@ -407,7 +407,7 @@ class TestAEVOnBenzenePBC(TestCase):
     def setUp(self):
         self.aev_computer = AEVComputer.like_1x()
         species, coordinates, cell = read_xyz(
-            (Path(__file__).parent / "test_data") / "benzene.xyz"
+            (Path(__file__).parent / "resources") / "benzene.xyz"
         )
         assert cell is not None
         self.cell = cell
@@ -457,7 +457,7 @@ class TestAEVOnBenzenePBC(TestCase):
 
 class TestAEVNIST(_TestAEVBase):
     def testNIST(self):
-        datafile = os.path.join(path, "test_data/NIST/all")
+        datafile = os.path.join(path, "resources/NIST/all")
         with open(datafile, "rb") as f:
             data = pickle.load(f)
             # only use first 100 data points to make test take an
@@ -474,7 +474,7 @@ class TestAEVNIST(_TestAEVBase):
 class TestDynamicsAEV(_TestAEVBase):
     def testBenzene(self):
         for i in [2, 8]:
-            datafile = os.path.join(path, f"test_data/benzene-md/{i}.dat")
+            datafile = os.path.join(path, f"resources/benzene-md/{i}.dat")
             with open(datafile, "rb") as f:
                 (
                     coordinates,
@@ -499,7 +499,7 @@ class TestDynamicsAEV(_TestAEVBase):
 
     def testBenzeneCellList(self):
         for i in [2, 8]:
-            datafile = os.path.join(path, f"test_data/benzene-md/{i}.dat")
+            datafile = os.path.join(path, f"resources/benzene-md/{i}.dat")
             self.aev_computer.neighborlist = CellList()
             with open(datafile, "rb") as f:
                 (
@@ -525,7 +525,7 @@ class TestDynamicsAEV(_TestAEVBase):
 
     def testTripeptide(self):
         for i in range(100):
-            datafile = os.path.join(path, f"test_data/tripeptide-md/{i}.dat")
+            datafile = os.path.join(path, f"resources/tripeptide-md/{i}.dat")
             with open(datafile, "rb") as f:
                 (
                     coordinates,

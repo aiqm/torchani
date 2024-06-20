@@ -34,7 +34,7 @@ def main(
         f"Profiling with optimization={opt.value}, on device: {device.type.upper()}"
     )
     if not file:
-        xyz_file_path = Path(ROOT, "tests", "test_data", "CH4-5.xyz")
+        xyz_file_path = Path(ROOT, "tests", "resources", "CH4-5.xyz")
     elif file.startswith("/"):
         xyz_file_path = Path(file)
     else:

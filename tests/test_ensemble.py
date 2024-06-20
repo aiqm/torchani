@@ -16,7 +16,7 @@ class TestEnsemble(ANITest):
         self.ensemble = self._setup(model)
         self.model_list = [self._setup(model[j]) for j in range(len(model))]
         self.num_conformers = 10
-        self.file_path = (Path(__file__).resolve().parent / "test_data") / "ANI1_subset"
+        self.file_path = (Path(__file__).resolve().parent / "resources") / "ANI1_subset"
 
     def testGDB(self):
         for i in range(self.num_conformers):

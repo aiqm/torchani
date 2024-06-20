@@ -143,7 +143,7 @@ class TestASE(ANITest):
         # Note that there are 4 benzene molecules, thus, 48 atoms in
         # Benzene.xyz
         species, coordinates, cell = read_xyz(
-            (Path(__file__).parent / "test_data") / "benzene.xyz"
+            (Path(__file__).parent / "resources") / "benzene.xyz"
         )
         assert cell is not None
         benzene = Atoms(
@@ -183,7 +183,7 @@ class TestVibrationsASE(ANITest):
 
     def testWater(self) -> None:
         model = ANI1x().double()
-        data_path = Path(Path(__file__).parent, "test_data", "water-vib-expect.npz")
+        data_path = Path(Path(__file__).parent, "resources", "water-vib-expect.npz")
         with np.load(data_path) as data:
             coordinates = data["coordinates"]
             species = data["species"]
@@ -219,7 +219,7 @@ class TestOptimizationASE(ANITest):
         self.calculator = self._setup(ANI1x(model_index=0)).ase()
 
     def testCoordsRMSE(self):
-        path_parts = ["test_data", "NeuroChemOptimized", "all"]
+        path_parts = ["resources", "NeuroChemOptimized", "all"]
         data_file = Path(Path(__file__).parent, *path_parts).resolve()
         with open(data_file, "rb") as f:
             systems = pickle.load(f)

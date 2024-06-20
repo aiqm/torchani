@@ -123,7 +123,7 @@ class TestEnergies(ANITest):
     def setUp(self):
         self.model = self._setup(ANI1x(model_index=0, periodic_table_index=False))
         self.num_conformers = 50
-        self.file_path = (Path(__file__).resolve().parent / "test_data") / "ANI1_subset"
+        self.file_path = (Path(__file__).resolve().parent / "resources") / "ANI1_subset"
 
     def testIsomers(self):
         for i in range(self.num_conformers):

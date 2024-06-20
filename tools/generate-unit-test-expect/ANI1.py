@@ -17,7 +17,7 @@ for i in [1, 2, 3, 4]:
         coordinates = data['coordinates'][:10, :]
         pickleobj = neurochem(coordinates, data['species'])
         dumpfile = os.path.join(
-            path, '../../tests/test_data/ANI1_subset/{}'.format(mol_count))
+            path, '../../tests/resources/ANI1_subset/{}'.format(mol_count))
         with open(dumpfile, 'wb') as f:
             pickle.dump(pickleobj, f)
         mol_count += 1

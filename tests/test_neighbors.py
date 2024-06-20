@@ -30,7 +30,7 @@ class TestCellList(TestCase):
         # first bucket is 0 - 5.2, in 3 directions, and subsequent buckets
         # are on top of that
         self.species, self.coordinates, cell = read_xyz(
-            (Path(__file__).resolve().parent / "test_data") / "tight_cell.xyz"
+            (Path(__file__).resolve().parent / "resources") / "tight_cell.xyz"
         )
         self.pbc = torch.tensor(
             [True, True, True], dtype=torch.bool, device=self.device
