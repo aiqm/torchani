@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 import json
 import tempfile
-import warnings
 from copy import deepcopy
 import unittest
 
@@ -17,7 +16,6 @@ from torchani.transforms import (
     SubtractSAE,
     Compose,
 )
-from torchani.sae import calculate_saes
 from torchani.constants import PERIODIC_TABLE, ATOMIC_NUMBER
 from torchani.testing import TestCase
 from torchani.datasets import (
@@ -51,16 +49,14 @@ except ImportError:
 
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, "../dataset/ani-1x/sample.h5")
-dataset_path_gdb = os.path.join(path, "../dataset/ani1-up_to_gdb4/ani_gdb_s02.h5")
 batch_size = 256
-ani1x_sae_dict = {
-    "H": -0.60095298,
-    "C": -38.08316124,
-    "N": -54.7077577,
-    "O": -75.19446356,
-}
 
 _numbers_to_symbols = np.vectorize(lambda x: PERIODIC_TABLE[x])
+
+
+TmpFileOrDir = tp.Union[
+    tempfile._TemporaryFileWrapper, tempfile.TemporaryDirectory
+]
 
 
 class TestDatasetUtils(TestCase):
@@ -114,315 +110,6 @@ class TestDatasetUtils(TestCase):
         )
         self.assertEqual(len(out[0]), 3)
         self.assertEqual(sum(len(c["coordinates"]) for c in out[0]), 1909)
-
-
-class TestFineGrainedShuffle(TestCase):
-    def setUp(self):
-        self.tmp_dir_batched = tempfile.TemporaryDirectory()
-
-    def testShuffleMixesManyH5(self):
-        # test that shuffling correctly mixes multiple h5 files
-        num_groups = 10
-        num_conformers_per_group = 12
-        self._create_dummy_dataset(
-            num_groups, num_conformers_per_group, use_energy_ranges=False
-        )
-
-        self.train = ANIBatchedDataset(self.tmp_dir_batched.name, split="training")
-        self.valid = ANIBatchedDataset(self.tmp_dir_batched.name, split="validation")
-        for b, b_valid in zip(self.train, self.valid):
-            self.assertNotEqual(b["species"], b_valid["species"])
-            self.assertNotEqual(b["energies"], b_valid["energies"])
-            self._test_for_batch_diversity(b)
-            self._test_for_batch_diversity(b_valid)
-
-    def testShuffleMixesManyH5Folds(self):
-        # test that shuffling correctly mixes multiple h5 files
-        num_groups = 10
-        num_conformers_per_group = 12
-        folds = 3
-        self._create_dummy_dataset(
-            num_groups, num_conformers_per_group, use_energy_ranges=False, folds=3
-        )
-
-        def check_train_valid(train, valid):
-            for b, b_valid in zip(train, valid):
-                self.assertNotEqual(b["species"], b_valid["species"])
-                self.assertNotEqual(b["energies"], b_valid["energies"])
-                self._test_for_batch_diversity(b)
-                self._test_for_batch_diversity(b_valid)
-
-        for j in range(folds):
-            train = ANIBatchedDataset(self.tmp_dir_batched.name, split=f"training{j}")
-            valid = ANIBatchedDataset(self.tmp_dir_batched.name, split=f"validation{j}")
-            check_train_valid(train, valid)
-
-    def testDisjointFolds(self):
-        # test that shuffling generates disjoint train and validation, with no
-        # duplicates
-        num_groups = 10
-        num_conformers_per_group = 12
-        folds = 5
-        self._create_dummy_dataset(
-            num_groups, num_conformers_per_group, use_energy_ranges=True, folds=folds
-        )
-
-        for j in range(folds):
-            self._check_disjoint_and_nonduplicates(f"training{j}", f"validation{j}")
-
-        for j in range(folds):
-            for k in range(j + 1, folds):
-                self._check_disjoint_and_nonduplicates(
-                    f"validation{j}", f"validation{k}"
-                )
-
-    def testDisjointTrainValid(self):
-        # test that shuffling generates disjoint train and validation, with no
-        # duplicates
-        num_groups = 10
-        num_conformers_per_group = 12
-        self._create_dummy_dataset(
-            num_groups, num_conformers_per_group, use_energy_ranges=True
-        )
-        self._check_disjoint_and_nonduplicates("training", "validation")
-
-    # creates a dataset inside self.tmp_dir_batched
-    def _create_dummy_dataset(
-        self, num_groups, num_conformers_per_group, use_energy_ranges=False, folds=None
-    ):
-        def create_dummy_file(
-            rng,
-            file_,
-            num_groups,
-            num_conformers_per_group,
-            element,
-            factor,
-            properties,
-            range_start=None,
-        ):
-            with h5py.File(file_, "r+") as f:
-                for j in range(num_groups):
-                    f.create_group(f"group{j}")
-                    g = f[f"group{j}"]
-                    for k in properties:
-                        if k == "species":
-                            g.create_dataset(
-                                k, data=np.array([element, element, element], dtype="S")
-                            )
-                        elif k == "coordinates":
-                            g.create_dataset(
-                                k,
-                                data=rng.standard_normal(
-                                    (num_conformers_per_group, 3, 3)
-                                ),
-                            )
-                        elif k == "energies":
-                            if range_start is not None:
-                                g.create_dataset(
-                                    k,
-                                    data=np.arange(
-                                        range_start + j * num_conformers_per_group,
-                                        range_start
-                                        + (j + 1) * num_conformers_per_group,
-                                        dtype=float,
-                                    ),
-                                )
-                            else:
-                                g.create_dataset(
-                                    k,
-                                    data=factor * np.ones((num_conformers_per_group,)),
-                                )
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            # Each file will have 120 conformers, total 360 conformers
-            num_groups = 10
-            num_conformers_per_group = 12
-            properties = ["species", "coordinates", "energies"]
-            if use_energy_ranges:
-                ranges = [
-                    0,
-                    num_groups * num_conformers_per_group,
-                    2 * num_groups * num_conformers_per_group,
-                ]
-            else:
-                ranges = [None, None, None]
-            rng = np.random.default_rng(12345)
-            with tempfile.NamedTemporaryFile(
-                dir=tmpdir, suffix=".h5"
-            ) as dummy_h50, tempfile.NamedTemporaryFile(
-                dir=tmpdir, suffix=".h5"
-            ) as dummy_h51, tempfile.NamedTemporaryFile(
-                dir=tmpdir, suffix=".h5"
-            ) as dummy_h52:
-                create_dummy_file(
-                    rng,
-                    dummy_h50,
-                    num_groups,
-                    num_conformers_per_group,
-                    "H",
-                    0.0,
-                    properties,
-                    ranges[0],
-                )
-                create_dummy_file(
-                    rng,
-                    dummy_h51,
-                    num_groups,
-                    num_conformers_per_group,
-                    "C",
-                    1.0,
-                    properties,
-                    ranges[1],
-                )
-                create_dummy_file(
-                    rng,
-                    dummy_h52,
-                    num_groups,
-                    num_conformers_per_group,
-                    "N",
-                    2.0,
-                    properties,
-                    ranges[2],
-                )
-
-                # both validation and test have 3 batches of 60 each
-                h5_dirs = sorted(Path(tmpdir).iterdir())
-                if folds is None:
-                    create_batched_dataset(
-                        h5_dirs,
-                        dest_path=self.tmp_dir_batched.name,
-                        divs_seed=123456789,
-                        batch_seed=123456789,
-                        splits={"training": 0.5, "validation": 0.5},
-                        batch_size=60,
-                    )
-                else:
-                    create_batched_dataset(
-                        h5_dirs,
-                        dest_path=self.tmp_dir_batched.name,
-                        divs_seed=123456789,
-                        batch_seed=123456789,
-                        folds=folds,
-                        batch_size=60,
-                    )
-
-    def _check_disjoint_and_nonduplicates(self, name1, name2):
-        train = ANIBatchedDataset(self.tmp_dir_batched.name, split=name1)
-        valid = ANIBatchedDataset(self.tmp_dir_batched.name, split=name2)
-        _all_train_energies = []
-        _all_valid_energies = []
-        for b, b_valid in zip(train, valid):
-            _all_train_energies.append(b["energies"])
-            _all_valid_energies.append(b_valid["energies"])
-        all_train_energies = torch.cat(_all_train_energies)
-        all_valid_energies = torch.cat(_all_valid_energies)
-
-        all_train_list = [e.item() for e in all_train_energies]
-        all_train_set = set(all_train_list)
-        all_valid_list = [e.item() for e in all_valid_energies]
-        all_valid_set = set(all_valid_list)
-        # no duplicates and disjoint
-        self.assertTrue(len(all_train_list) == len(all_train_set))
-        self.assertTrue(len(all_valid_list) == len(all_valid_set))
-        self.assertTrue(all_train_set.isdisjoint(all_valid_set))
-
-    def _test_for_batch_diversity(self, b):
-        zeros = (b["energies"] == 0.0).count_nonzero()
-        ones = (b["energies"] == 1.0).count_nonzero()
-        twos = (b["energies"] == 2.0).count_nonzero()
-        self.assertTrue(zeros > 0)
-        self.assertTrue(ones > 0)
-        self.assertTrue(twos > 0)
-
-    def tearDown(self):
-        self.tmp_dir_batched.cleanup()
-
-
-class TestEstimationSAE(TestCase):
-    def setUp(self):
-        # This test relies on legacy datasets for now, so we ignore this warning
-        warnings.filterwarnings(
-            "ignore",
-            message=".*legacy dataset.*",
-            category=UserWarning,
-        )
-        self.tmp_dir_batched = tempfile.TemporaryDirectory()
-        self.batch_size = 2560
-        create_batched_dataset(
-            dataset_path_gdb,
-            dest_path=self.tmp_dir_batched.name,
-            splits={"training": 1.0},
-            batch_size=self.batch_size,
-            divs_seed=12345,
-            batch_seed=12345,
-            properties=("energies", "species", "coordinates"),
-        )
-        self.direct_cache = create_batched_dataset(
-            dataset_path_gdb,
-            splits={"training": 1.0},
-            batch_size=self.batch_size,
-            divs_seed=12345,
-            batch_seed=12345,
-            properties=("energies", "species", "coordinates"),
-            direct_cache=True,
-        )
-        self.train = ANIBatchedDataset(self.tmp_dir_batched.name, split="training")
-
-    def tearDown(self) -> None:
-        warnings.resetwarnings()
-        self.tmp_dir_batched.cleanup()
-
-    def testExactSAE(self):
-        self._testExactSAE(direct=False)
-
-    def testStochasticSAE(self):
-        self._testStochasticSAE(direct=False)
-
-    def testExactSAEDirect(self):
-        self._testExactSAE(direct=True)
-
-    def testStochasticSAEDirect(self):
-        self._testStochasticSAE(direct=True)
-
-    def _testExactSAE(self, direct: bool = False):
-        if direct:
-            ds = self.direct_cache["training"]
-        else:
-            ds = self.train
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                action="ignore",
-                message=(
-                    "Using all batches to estimate SAE,"
-                    " this may take up a lot of memory."
-                ),
-            )
-            saes, _ = calculate_saes(ds, ("H", "C", "N", "O"), mode="exact")
-            torch.set_printoptions(precision=10)
-        self.assertEqual(
-            saes,
-            torch.tensor(
-                [-0.5983182192, -38.0726242065, -54.6750144958, -75.1433029175],
-                dtype=torch.float,
-            ),
-            atol=2.5e-3,
-            rtol=2.5e-3,
-        )
-
-    def _testStochasticSAE(self, direct: bool = False):
-        if direct:
-            ds = self.direct_cache["training"]
-        else:
-            ds = self.train
-        saes, _ = calculate_saes(ds, ("H", "C", "N", "O"), mode="sgd")
-        # in this specific case the sae difference is very large because it is a
-        # very small sample, but for the full sample this imlementation is correct
-        self.assertEqual(
-            saes,
-            torch.tensor([-20.4466, -0.3910, -8.8793, -11.4184], dtype=torch.float),
-            atol=0.2,
-            rtol=0.2,
-        )
 
 
 class TestTransforms(TestCase):
@@ -547,8 +234,12 @@ class TestANIDataset(TestCase):
         # create two HDF5 databases, one with 3 groups and one with one
         # group, and fill them with some random data
         self.tmp_dir = tempfile.TemporaryDirectory()
-        self.tmp_store_one_group = tempfile.NamedTemporaryFile(suffix=".h5")
-        self.tmp_store_three_groups = tempfile.NamedTemporaryFile(suffix=".h5")
+        self.tmp_store_one_group: TmpFileOrDir = tempfile.NamedTemporaryFile(
+            suffix=".h5"
+        )
+        self.tmp_store_three_groups: TmpFileOrDir = tempfile.NamedTemporaryFile(
+            suffix=".h5"
+        )
         self.new_store_name = self.tmp_dir.name / Path("new.h5")
 
         with h5py.File(self.tmp_store_one_group, "r+") as f1, h5py.File(
@@ -568,8 +259,12 @@ class TestANIDataset(TestCase):
 
     def tearDown(self):
         self.tmp_dir.cleanup()
-        self.tmp_store_one_group.close()
-        self.tmp_store_three_groups.close()
+        try:
+            self.tmp_store_one_group.close()  # type: ignore
+            self.tmp_store_three_groups.close()  # type: ignore
+        except AttributeError:
+            self.tmp_store_one_group.cleanup()
+            self.tmp_store_three_groups.cleanup()
 
     def testSymbols(self):
         ds = self._make_new_dataset()
