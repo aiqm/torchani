@@ -17,7 +17,7 @@ from torchani.paths import DATASETS
 from torchani.annotations import Conformers, StrPath
 from torchani.utils import pad_atomic_properties, strip_redundant_padding, PADDING
 from torchani.transforms import Transform, identity
-from torchani.datasets.datasets import ANIDataset
+from torchani.datasets.anidataset import ANIDataset
 
 
 class BatchedDataset(torch.utils.data.Dataset[Conformers]):

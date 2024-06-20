@@ -1,9 +1,9 @@
-from torchani.datasets.datasets import ANIDataset
 from torchani.datasets import utils
 
 # Some attrs are created programmatically, so a star import is needed
 from torchani.datasets.builtin import *  # noqa:F403
 from torchani.datasets.builtin import _BUILTIN_DATASETS, _BUILTIN_DATASETS_LOT
+from torchani.datasets.anidataset import ANIDataset
 from torchani.datasets.batching import (
     BatchedDataset,
     ANIBatchedInMemoryDataset,

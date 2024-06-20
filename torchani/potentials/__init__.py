@@ -2,7 +2,7 @@ from torchani.potentials.core import (
     Potential,
     PairPotential,
 )
-from torchani.potentials.nn_potential import NNPotential, SeparateChargesNNPotential
+from torchani.potentials.nnp import NNPotential, SeparateChargesNNPotential
 from torchani.potentials.repulsion import (
     RepulsionXTB,
     StandaloneRepulsionXTB,

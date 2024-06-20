@@ -10,7 +10,7 @@ from torchani.units import hartree2kcalpermol
 from torchani.models import BuiltinModel
 from torchani.nn import Ensemble
 from torchani.annotations import Conformers, StrPath, Backend
-from torchani.datasets.datasets import ANIDataset
+from torchani.datasets.anidataset import ANIDataset
 
 
 __all__ = ["filter_by_high_force", "filter_by_high_energy_error", "concatenate"]
