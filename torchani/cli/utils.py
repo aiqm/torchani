@@ -1,5 +1,4 @@
 import tarfile
-import hashlib
 import re
 import csv
 import typing as tp
@@ -8,8 +7,7 @@ from pathlib import Path
 
 from torchani.annotations import StrPath
 from torchani.datasets import ANIDataset
-from torchani.datasets.builtin import _DATASETS_JSON_PATH
-from torchani.datasets.download import _CHUNK_SIZE
+from torchani.datasets.builtin import _DATASETS_JSON_PATH, _calc_file_md5
 
 
 def h5info(path: StrPath) -> None:
@@ -201,13 +199,8 @@ def h5pack(
                 )
                 arcname = f"{new_stem}{f.suffix}"
                 archive.add(f, arcname=arcname)
-                hasher = hashlib.md5()
-                with open(f, "rb") as h5file:
-                    for chunk in iter(lambda: h5file.read(_CHUNK_SIZE), b""):
-                        hasher.update(chunk)
-
+                md5 = _calc_file_md5(f)
                 data_dict[ds_name]["lot"][lot]["files"].append(arcname)
-                md5 = hasher.hexdigest()
                 if (arcname, md5) not in registered_md5s:
                     writer.writerow([arcname, md5])
                     registered_md5s.add((arcname, md5))

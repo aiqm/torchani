@@ -297,13 +297,15 @@ import json
 import typing as tp
 import sys
 from pathlib import Path
+import tarfile
+import hashlib
 from collections import OrderedDict
 
+import torch
 from tqdm import tqdm
 
 from torchani.paths import DATASETS
 from torchani.annotations import StrPath
-from torchani.datasets.download import _download_and_extract_archive, _check_integrity
 from torchani.datasets.datasets import ANIDataset
 
 _BASE_URL = "http://moria.chem.ufl.edu/animodel/ground_truth_data/"
@@ -328,6 +330,40 @@ _BUILTIN_DATASETS_LOT: tp.List[str] = list(
         for lot in _BUILTIN_DATASETS_SPEC[name]["lot"]
     }
 )
+
+
+def _calc_file_md5(file_path: Path) -> str:
+    _CHUNK_SIZE = 1024 * 32
+    hasher = hashlib.md5()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(_CHUNK_SIZE), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+# expects a .tar.gz file
+def _download_and_extract_archive(
+    base_url: str,
+    file_name: str,
+    dest_dir: Path,
+    verbose: bool = False,
+) -> None:
+    dest_dir.mkdir(exist_ok=True)
+
+    # download
+    ar_file_path = dest_dir / file_name
+    if verbose:
+        print(f"Downloading {file_name}...")
+    torch.hub.download_url_to_file(
+        f"{base_url}{file_name}", str(ar_file_path), progress=verbose
+    )
+
+    # extract
+    with tarfile.open(ar_file_path, "r:gz") as f:
+        f.extractall(dest_dir)
+
+    # delete
+    ar_file_path.unlink()
 
 
 def download_builtin_dataset(dataset: str, lot: str, root=None, verbose: bool = True):
@@ -391,7 +427,7 @@ def _check_files_integrity(
         disable=not verbose,
         leave=False,
     ):
-        if not _check_integrity(f, files_and_md5s[f.name]):
+        if _calc_file_md5(f) != files_and_md5s[f.name]:
             raise RuntimeError(
                 f"All expected files for dataset {name}"
                 f" were found but file {f.name} failed integrity check,"
@@ -444,10 +480,13 @@ def _register_dataset_builder(name: str) -> None:
         # If the dataset is not found we download it
         if download and ((not _root.is_dir()) or (not any(_root.glob(f"*{suffix}")))):
             _download_and_extract_archive(
-                base_url=_BASE_URL, file_name=archive, dest_dir=_root
+                base_url=_BASE_URL,
+                file_name=archive,
+                dest_dir=_root,
+                verbose=verbose,
             )
 
-        # Check for corruption
+        # Check for corruption and missing files
         _check_files_integrity(
             _files_and_md5s,
             _root,
