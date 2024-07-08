@@ -103,7 +103,7 @@ class BuiltinModel(torch.nn.Module):
         if species_coordinates[0].ge(self.aev_computer.num_species).any():
             raise ValueError(f'Unknown species found in {species_coordinates[0]}')
 
-        species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
+        species_aevs = self.aev_computer(species_coordinates, cell, pbc)
         species_energies = self.neural_networks(species_aevs)
         return self.energy_shifter(species_energies)
 
@@ -135,7 +135,7 @@ class BuiltinModel(torch.nn.Module):
         """
         if self.periodic_table_index:
             species_coordinates = self.species_converter(species_coordinates)
-        species, aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
+        species, aevs = self.aev_computer(species_coordinates, cell, pbc)
         atomic_energies = self.neural_networks._atomic_energies((species, aevs))
         self_energies = self.energy_shifter.self_energies.clone().to(species.device)
         self_energies = self_energies[species]
@@ -236,7 +236,7 @@ class BuiltinEnsemble(BuiltinModel):
         """
         if self.periodic_table_index:
             species_coordinates = self.species_converter(species_coordinates)
-        species, aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
+        species, aevs = self.aev_computer(species_coordinates, cell, pbc)
         members_list = []
         for nnp in self.neural_networks:
             members_list.append(nnp._atomic_energies((species, aevs)).unsqueeze(0))
@@ -322,7 +322,7 @@ class BuiltinEnsemble(BuiltinModel):
         """
         if self.periodic_table_index:
             species_coordinates = self.species_converter(species_coordinates)
-        species, aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
+        species, aevs = self.aev_computer(species_coordinates, cell, pbc)
         member_outputs = []
         for nnp in self.neural_networks:
             unshifted_energies = nnp((species, aevs)).energies
