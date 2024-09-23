@@ -476,11 +476,12 @@ def ANI1xnr(
     device: Device = None,
     dtype: DType = None,
 ) -> ANI:
-    r"""The ANI-1nxr model as in `ANI2x Paper`_ and `ANI2x Results on GitHub`_. The
-    ANI-1xnr model is an ensemble of 8 networks that was trained on the ANI-1xnr dataset
-    dataset. The target level of theory is BLYP/TZV2P. It is a reactive potential that
-    predicts energies on HCNO elements exclusively. It shouldn't be used with other atom
-    types.
+    r"""The ANI-1nxr model as in `ani-1xnr Paper`_ and `ani-1xnr on GitHub`_
+
+    The ANI-1nxr model as in `ani-1xnr Paper`_ and `ani-1xnr on GitHub`_. This model
+    model is an ensemble of 8 networks that was trained on the ANI-1xnr dataset dataset.
+    The target level of theory is BLYP/TZV2P. It is a reactive potential that predicts
+    energies on HCNO elements exclusively. It shouldn't be used with other atom types.
 
     .. _ani-1xnr on GitHub:
         https://github.com/atomistic-ml/ani-1xnr/
