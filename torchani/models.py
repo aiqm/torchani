@@ -451,7 +451,7 @@ def ANI2x(periodic_table_index=False, model_index=None):
     return BuiltinModel._from_neurochem_resources(info_file, periodic_table_index, model_index)
 
 def ANI1xnr(periodic_table_index=False, model_index=None):
-    """The ANI-1nxr model as in `ANI2x Paper`_ and `ANI2x Results on GitHub`_.
+    """The ANI-1nxr model as in `ani-1xnr Paper`_ and `ani-1xnr on GitHub`_.
 
     The ANI-1xnr model is an ensemble of 8 networks that was trained on the
     ANI-1xnr dataset dataset. The target level of theory is BLYP/TZV2P.
