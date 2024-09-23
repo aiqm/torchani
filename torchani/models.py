@@ -449,3 +449,22 @@ def ANI2x(periodic_table_index=False, model_index=None):
     if model_index is None:
         return BuiltinEnsemble._from_neurochem_resources(info_file, periodic_table_index)
     return BuiltinModel._from_neurochem_resources(info_file, periodic_table_index, model_index)
+
+def ANI1xnr(periodic_table_index=False, model_index=None):
+    """The ANI-1nxr model as in `ANI2x Paper`_ and `ANI2x Results on GitHub`_.
+
+    The ANI-1xnr model is an ensemble of 8 networks that was trained on the
+    ANI-1xnr dataset dataset. The target level of theory is BLYP/TZV2P.
+    It is a reactive potential that predicts energies on HCNO elements 
+    exclusively. It shouldn't be used with other atom types.
+
+    .. _ani-1xnr on GitHub:
+        https://github.com/atomistic-ml/ani-1xnr/
+
+    .. _ani-1xnr Paper:
+        https://www.nature.com/articles/s41557-023-01427-3
+    """
+    info_file = 'ani-1xnr.info'
+    if model_index is None:
+        return BuiltinEnsemble._from_neurochem_resources(info_file, periodic_table_index)
+    return BuiltinModel._from_neurochem_resources(info_file, periodic_table_index, model_index)
