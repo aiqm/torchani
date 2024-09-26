@@ -1,4 +1,6 @@
-r"""Functions for creating batched datasets"""
+r"""
+Functions and classes for creating batched datasets
+"""
 import os
 from dataclasses import dataclass
 import typing_extensions as tpx

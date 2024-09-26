@@ -1,5 +1,5 @@
-"""Tools for interfacing with the atomic simulation environment `ASE`_.
-
+r"""
+Tools for interfacing with the atomic simulation environment `ASE`_.
 
 .. _ASE:
     https://wiki.fysik.dtu.dk/ase

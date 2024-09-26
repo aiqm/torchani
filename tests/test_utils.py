@@ -12,8 +12,6 @@ from torchani.utils import (
     IntsToChemicalSymbols,
     ChemicalSymbolsToInts,
     ChemicalSymbolsToAtomicNumbers,
-    # GSAES
-    sorted_gsaes,
     # Torch utils
     nonzero_in_chunks,
 )
@@ -61,23 +59,6 @@ class TestConverters(ANITest):
         self.assertEqual(
             symbols, ['F', 'B', 'B', 'B']
         )
-
-
-@expand(device="cpu", jit=False)
-class TestGSAES(ANITest):
-    def testGSAES(self):
-        gsaes = sorted_gsaes(("H", "C", "S"), "wB97X", "631Gd")
-        self.assertEqual(gsaes, [-0.4993213, -37.8338334, -398.0814169])
-
-        gsaes = sorted_gsaes(("H", "S", "C"), "wB97X", "631Gd")
-        self.assertEqual(gsaes, [-0.4993213, -398.0814169, -37.8338334])
-
-        # test case insensitivity
-        gsaes = sorted_gsaes(("H", "S", "C"), "Wb97x", "631GD")
-        self.assertEqual(gsaes, [-0.4993213, -398.0814169, -37.8338334])
-
-        with self.assertRaises(KeyError):
-            sorted_gsaes("wB97X", "631Gd", ("Pu"))
 
 
 # TODO: For now this is non-jit only, it may need to be adapted

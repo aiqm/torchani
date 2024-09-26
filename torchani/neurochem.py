@@ -1,4 +1,12 @@
-r"""Tools for interfacing with legacy NeuroChem files"""
+r"""
+This submodule is considered *legacy*. Its not recommended for use with new
+models, and should only be used if needed to interface with previously trained
+ANI models. It contains tools for loading NeuroChem files, which were the original
+file format used in the first `ANI`_ article.
+
+.. _ANI:
+    http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
+"""
 import itertools
 from pathlib import Path
 from dataclasses import dataclass

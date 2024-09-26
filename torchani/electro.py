@@ -1,5 +1,7 @@
-r"""Contains various utilities for working with systems that have explicit
-electrostatic interactions"""
+r"""
+Various utilities for working with systems that have charges and explicit
+electrostatic interactions.
+"""
 import typing as tp
 
 import torch

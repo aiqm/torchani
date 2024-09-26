@@ -1,4 +1,5 @@
-r"""Torchani Builtin Datasets
+r"""
+TorchANI Builtin Datasets
 
 This module provides access to the following datasets, calculated with specific
 levels of theory (LoT) which are combinations functional/basis_set or

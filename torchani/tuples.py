@@ -1,5 +1,5 @@
 r"""
-Location of data classes for use in ANI built-in models.
+Named Tuples used as outputs of some ANI functions
 """
 import typing as tp
 

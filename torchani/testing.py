@@ -1,3 +1,7 @@
+r"""
+This module is internal and considered an implementation detail. Functions and
+classes are subject to change at any point.
+"""
 import typing as tp
 import unittest
 from itertools import product

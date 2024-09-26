@@ -4,12 +4,29 @@ import warnings
 
 import torch
 
-from torchani.testing import TestCase
-from torchani.sae import calculate_saes
+from torchani.testing import TestCase, ANITest, expand
+from torchani.sae import calculate_saes, sorted_gsaes
 from torchani.datasets import create_batched_dataset, ANIBatchedDataset
 
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path_gdb = os.path.join(path, "../dataset/ani1-up_to_gdb4/ani_gdb_s02.h5")
+
+
+@expand(device="cpu", jit=False)
+class TestGSAES(ANITest):
+    def testGSAES(self):
+        gsaes = sorted_gsaes(("H", "C", "S"), "wB97X", "631Gd")
+        self.assertEqual(gsaes, [-0.4993213, -37.8338334, -398.0814169])
+
+        gsaes = sorted_gsaes(("H", "S", "C"), "wB97X", "631Gd")
+        self.assertEqual(gsaes, [-0.4993213, -398.0814169, -37.8338334])
+
+        # test case insensitivity
+        gsaes = sorted_gsaes(("H", "S", "C"), "Wb97x", "631GD")
+        self.assertEqual(gsaes, [-0.4993213, -398.0814169, -37.8338334])
+
+        with self.assertRaises(KeyError):
+            sorted_gsaes("wB97X", "631Gd", ("Pu"))
 
 
 class TestEstimationSAE(TestCase):

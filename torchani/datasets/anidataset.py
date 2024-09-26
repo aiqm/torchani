@@ -1,3 +1,6 @@
+r"""
+ANIDataset class: Frontend for HDF5, Apache Parquet or Zarr stores.
+"""
 import typing as tp
 import inspect
 import math

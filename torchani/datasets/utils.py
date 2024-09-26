@@ -1,4 +1,6 @@
-r"""Utilities for working with ANI Datasets"""
+r"""
+Miscellaneous utilities for working with Datasets.
+"""
 from pathlib import Path
 import typing as tp
 

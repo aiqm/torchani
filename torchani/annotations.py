@@ -1,6 +1,5 @@
-r"""Type aliases
-
-Common annotations used throughout the TorchANI code
+r"""
+Type aliases, common annotations used throughout the TorchANI code
 """
 import torch
 import typing as tp

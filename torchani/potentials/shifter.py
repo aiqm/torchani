@@ -3,14 +3,14 @@ import typing as tp
 import torch
 from torch import Tensor
 
+from torchani.sae import sorted_gsaes
 from torchani.neighbors import NeighborData
-from torchani.utils import sorted_gsaes
 from torchani.potentials.core import Potential
 from torchani.potentials.wrapper import PotentialWrapper
 
 
 class EnergyAdder(Potential):
-    """Adds atomic energies that depend only on the atom types
+    """Adds constant atomic energies that depend only on the atom types
 
     Arguments:
         symbols: (:class:``list[str]``): Sequence of symbols corresponding to the
