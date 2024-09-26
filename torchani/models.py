@@ -1,9 +1,18 @@
 """The ANI model zoo that stores public ANI models.
 
-Currently the model zoo has three models: ANI-1x, ANI-1ccx, and ANI-2x.  The
-parameters of these models are stored in `ani-model-zoo`_ repository and will
-be automatically downloaded the first time any of these models are
-instantiated.
+The ANI "Model Zoo" stores all published ANI models as built-in models. Some of
+the ANI models have been published in specific articles, and some have been
+published in TorchANI 2.0.
+
+If you use a built-in model in your work please cite the corresponding article.
+If you discover any problem, be it a bug, a performance problem, or incorrect
+behavior in some region of chemical space, please post an issue in GitHub. The
+TorchANI developers will attempt to address issues and document problematic
+behavior for of the models.
+
+The parameters for the models are automatically downloaded the first time they
+are used. If this is an issue for your application we recommend you
+pre-download the parameters by instantiating the models before use.
 
 To use the models just instantiate them and either directly calculate energies
 by calling them, or cast them to an ASE calculator.
@@ -20,20 +29,14 @@ together with two optional tensors, `cell` and `pbc`.
 `coordinates` and `cell` should be in units of Angstroms,
 and the output energies are always in Hartrees
 
-example usage:
-
-.. _ani-model-zoo:
-    https://github.com/aiqm/ani-model-zoo
+For more detailed example of usage consult the examples documentation
 
 .. code-block:: python
+    import torchani
 
-    ani1x = torchani.models.ANI1x()
-
-    # compute energy using ANI-1x model ensemble
+    model = torchani.models.ANI1x()
+    # compute energy using a model ensemble
     _, energies = ani1x((species, coordinates))
-
-    # get an ASE Calculator using this ensemble
-    ani1x_calc = ani1x.ase()
 
     # output shape of energies is (M, C), where M is the number of ensemble members
     _, members_energies = ani1x.members_energies((species, coordinates))

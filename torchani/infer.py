@@ -1,3 +1,8 @@
+r"""
+Inference-optimized versions of Ensemble and AtomicNetwork, recommended for
+single-point calculations of single molecules, molecular dynamics and geometry
+optimizations.
+"""
 import itertools
 import typing as tp
 from itertools import accumulate

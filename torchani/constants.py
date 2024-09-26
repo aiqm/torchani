@@ -1,4 +1,4 @@
-r"""Atomic and Density Functional constants
+r"""Atomic constants, and Density Functional constants
 
 Values for electronegativity and hardness for elements H-Bk, all for neutral
 atoms, and are taken from Table 3 of
@@ -9,15 +9,13 @@ of Isoelectronic Series.
 
 DOI: 10.1039/C6CP04533B
 
-Atomic masses supported are the first 119 elements, and are taken from:
+Atomic masses supported are the first 119 elements (consistent with ASE) are taken from:
 
 Atomic weights of the elements 2013 (IUPAC Technical Report). Meija, J.,
 Coplen, T., Berglund, M., et al. (2016). Pure and Applied Chemistry, 88(3), pp.
 265-291. Retrieved 30 Nov. 2016, from doi:10.1515/pac-2015-0305
 
-They are all consistent with those used in ASE
-
-D3BJ constants for different density functionals taken from the psi4 source
+DFT-D3(BJ) constants for different density functionals taken from the psi4 source
 code, citations:
 A. Najib, L. Goerigk, J. Comput. Theory Chem., 14 5725, 2018)
 N. Mardirossian, M. Head-Gordon, Phys. Chem. Chem. Phys, 16, 9904, 2014
@@ -28,17 +26,15 @@ https://aip.scitation.org/doi/pdf/10.1063/1.5012601
 And for wB97X taken from
 TODO: where?
 
-Covalent radii are in angstroms, and are are used for the
-calculation of coordination numbers in DR. Taken
-directly from Grimme et. al. dftd3 source code, in turn taken from Pyykko
-and Atsumi, Chem. Eur. J. 15, 2009, 188-197
+Covalent radii are in angstroms, and are are used for the calculation of
+coordination numbers in DR. Taken directly from Grimme et. al. dftd3 source
+code, in turn taken from Pyykko and Atsumi, Chem. Eur. J. 15, 2009, 188-197
 Values for metals decreased by 10 % with respect to Pyykko et. al.
 
 Empirical Q in atomic units, correspond to sqrt(0.5 * sqrt(Z) * <r**2>/<r**4>).
 In Grimme's code these are "r2r4", and are used to calculate the C8 values.
 These are precalculated values. For details on their calculation consult the
-DFTD3 papers
-
+DFT-D3 papers
 
 XTB repulsion data extracted from Grimme et. al. paper
 https://pubs.acs.org/doi/10.1021/acs.jctc.8b01176

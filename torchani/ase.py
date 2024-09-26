@@ -1,4 +1,5 @@
-"""Tools for interfacing with `ASE`_.
+"""Tools for interfacing with the atomic simulation environment `ASE`_.
+
 
 .. _ASE:
     https://wiki.fysik.dtu.dk/ase
@@ -25,16 +26,26 @@ from torchani.utils import map_to_central
 class Calculator(ase.calculators.calculator.Calculator):
     """TorchANI calculator for ASE
 
+    ANI models can be converted to their ASE Calculator form by calling the
+    ``ANI.ase()`` method.
+
+    .. code-block:: python
+
+        import torchani
+        model = torchani.models.ANI1x()
+        calc = model.ase()  # Convert model into its ASE Calculator form
+
     Arguments:
         model (:class:`torch.nn.Module`): neural network potential model
             that convert coordinates into energies.
         overwrite (bool): After wrapping atoms into central box, whether
             to replace the original positions stored in :class:`ase.Atoms`
             object with the wrapped positions.
-        stress_partial_fdotr (bool): whether to use partial_fdotr approach to
+        stress_partial_fdotr (bool): Whether to use partial_fdotr approach to
             calculate stress. This approach does not need the cell's box
-            information and could be used for multiple domians when running
-            parallel on multi-GPUs using lammps. Default as False.
+            information and can be used for multiple domians when running
+            parallel on multi-GPUs. Default as False.
+        stress_numerical (bool): Whether to calculate numerical stress
     """
 
     implemented_properties = ["energy", "forces", "stress", "free_energy"]

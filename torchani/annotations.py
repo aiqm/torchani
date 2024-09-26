@@ -1,4 +1,7 @@
-r"""Type aliases"""
+r"""Type aliases
+
+Common annotations used throughout the TorchANI code
+"""
 import torch
 import typing as tp
 from pathlib import Path

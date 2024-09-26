@@ -1,3 +1,7 @@
+r"""
+Collection of Cutoff functions, which can be used to smoothly limit the range
+of PairPotential and AEVComputer.
+"""
 import typing as tp
 import math
 
@@ -18,8 +22,7 @@ class Cutoff(torch.nn.Module):
 
     @torch.jit.unused
     def is_same(self, other: object) -> bool:
-        # This is a hack since I can't figure out how to safely override __eq__ int
-        # torch.nn.Module
+        # This is a hack since __eq__ can't be safely overriden in torch.nn.Module
         if not isinstance(other, Cutoff):
             return False
         if type(self) is not type(other):

@@ -1,6 +1,6 @@
 r"""
-Atomic Networks, Atomic Network Containers and factory methods with
-useful defaults for them
+Atomic Networks, Atomic Network Containers and factory methods with useful
+defaults
 """
 import typing as tp
 
@@ -11,7 +11,7 @@ from torchani.utils import TightCELU
 
 
 class AtomicContainer(torch.nn.Module):
-    r"""Base class for ANI modules that contain atomic neural networks"""
+    r"""Base class for ANI modules that contain Atomic Neural Networks"""
     num_networks: int
     num_species: int
 
@@ -98,7 +98,8 @@ def like_1x(
     activation: tp.Union[str, torch.nn.Module] = "celu",
     bias: bool = True,
 ) -> AtomicNetwork:
-    r"""Makes an atomic network. Defaults are the ones in the ANI-1x (and 1ccx) model"""
+    r"""Makes an atomic network. Defaults are the ones in the ANI-1x (and 1ccx)
+    model"""
     dims = {
         "H": (160, 128, 96),
         "C": (144, 112, 96),
@@ -120,7 +121,7 @@ def like_2x(
     activation: tp.Union[str, torch.nn.Module] = "celu",
     bias: bool = True,
 ) -> AtomicNetwork:
-    r"""Makes an atomic network. Defaults are the ones in the ANI-2x  model"""
+    r"""Makes an atomic network. Defaults are the ones in the ANI-2x model"""
     dims = {
         "H": (256, 192, 160),
         "C": (224, 192, 160),

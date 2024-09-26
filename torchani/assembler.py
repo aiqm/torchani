@@ -1,30 +1,28 @@
 r""" WARNING: The assembler is currently experimental and it is not considered stable
 API, modify under your own risk
 
-The assembler's responsibility is to build an ANI-style model from the
-different necessary parts, in such a way that all the parts of the model
-interact in the correct way and there are no compatibility issues among them.
+The assembler responsibility is to build an ANI-style model from the different
+necessary parts, in such a way that all the parts of the model interact in the
+correct way and there are no compatibility issues among them.
 
 An energy-predicting ANI-style model consists of:
 
-- Featurizer (typically an AEVComputer, or subclass)
+- Featurizer (typically a AEVComputer, which supports custom cuda ops, or subclass)
 - Container for atomic networks (typically ANIModel or subclass)
 - Atomic Networks Dict {"H": torch.nn.Module(), "C": torch.nn.Module, ...}
 - Self Energies Dict (In Ha) {"H": -12.0, "C": -75.0, ...}
 - Shifter (typically EnergyAdder)
 
-One or more PairPotentials (Typically RepulsionXTB, TwoBodyDispersion)
-TBA, VDW potential, Coulombic
+An energy-predicting model may have PairPotentials (RepulsionXTB,
+TwoBodyDispersion, VDW potential, Coulombic, etc.)
 
-Each of the potentials will have their own cutoff, and the Featurizer has two
-cutoffs, an angular and a radial cutoff (the radial cutoff must be larger than
+Each of the potentials has their own cutoff, and the Featurizer has two
+cutoffs, an angular and a radial ona (the radial cutoff must be larger than
 the angular cutoff, and it is recommended that the angular cutoff is kept
-small, roughly 3.5 Ang or less).
+small, 3.5 Ang or less).
 
 These pieces are assembled into a Model, which is a subclass of BuiltinModel
 (or PairPotentialsModel if it has PairPotentials).
-
-Some of the Featurizers support custom made cuda operators that accelerate them
 """
 import functools
 import math

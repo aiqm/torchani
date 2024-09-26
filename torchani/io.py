@@ -1,3 +1,6 @@
+r"""
+Convenience functions for reading and writing molecules in ".xyz" format
+"""
 import shlex
 import typing as tp
 from pathlib import Path
