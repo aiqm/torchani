@@ -9,7 +9,7 @@ import typing as tp
 import torch
 from torch import Tensor
 
-from torchani.models import BuiltinModel
+from torchani.models import ANI
 from torchani.potentials import PotentialWrapper
 from torchani.units import mhessian2fconst, sqrt_mhessian2invcm, sqrt_mhessian2milliev
 from torchani.tuples import (
@@ -19,7 +19,7 @@ from torchani.tuples import (
     ForcesHessians,
 )
 
-Model = tp.Union[BuiltinModel, PotentialWrapper]
+Model = tp.Union[ANI, PotentialWrapper]
 
 
 def energies_forces_and_hessians(

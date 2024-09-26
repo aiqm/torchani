@@ -18,10 +18,10 @@ import torchani
 from torchani.grad import hessians, forces
 
 ###############################################################################
-# Scripting builtin model directly
+# Scripting an ANI model directly
 # --------------------------------
 #
-# Let's now load the built-in ANI-1ccx models. The builtin ANI-2x contains 8
+# Let's now load the built-in ANI-1ccx models. The ANI-2x model contains 8
 # models trained with diffrent initialization and on different splits of a dataset
 model = torchani.models.ANI2x()
 

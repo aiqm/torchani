@@ -21,8 +21,8 @@ cutoffs, an angular and a radial ona (the radial cutoff must be larger than
 the angular cutoff, and it is recommended that the angular cutoff is kept
 small, 3.5 Ang or less).
 
-These pieces are assembled into a Model, which is a subclass of BuiltinModel
-(or PairPotentialsModel if it has PairPotentials).
+These pieces are assembled into a subclass of ANI (or PairPotentialsModel if it
+has PairPotentials).
 """
 import functools
 import math
@@ -35,7 +35,7 @@ from torch import Tensor
 
 from torchani import atomics
 from torchani.models import (
-    BuiltinModel,
+    ANI,
     PairPotentialsModel,
     PairPotentialsChargesModel,
 )
@@ -60,7 +60,6 @@ from torchani.atomics import AtomicContainer, AtomicNetwork, AtomicMakerArg, Ato
 from torchani.utils import GSAES, sort_by_element, SYMBOLS_1X, SYMBOLS_2X
 from torchani.paths import STATE_DICTS
 
-ModelType = tp.Type[BuiltinModel]
 FeaturizerType = tp.Type[AEVComputer]
 PairPotentialType = tp.Type[PairPotential]
 ContainerType = tp.Type[AtomicContainer]
@@ -102,7 +101,7 @@ class Assembler:
         ensemble_size: int = 1,
         symbols: tp.Sequence[str] = (),
         container_type: ContainerType = ANIModel,
-        model_type: ModelType = BuiltinModel,
+        model_type: tp.Type[ANI] = ANI,
         featurizer: tp.Optional[FeaturizerWrapper] = None,
         neighborlist: NeighborlistArg = "full_pairwise",
         periodic_table_index: bool = True,
@@ -125,7 +124,7 @@ class Assembler:
         self._ensemble_size: int = ensemble_size
 
         # This is the general container for all the parts of the model
-        self._model_type: ModelType = model_type
+        self._model_type: tp.Type[ANI] = model_type
 
         # This is a deprecated feature, it should probably not be used
         self.periodic_table_index = periodic_table_index
@@ -230,7 +229,7 @@ class Assembler:
         fn: AtomicMaker,
         normalizer: tp.Optional[ChargeNormalizer] = None,
     ) -> None:
-        if self._model_type in (BuiltinModel, PairPotentialsModel):
+        if self._model_type in (ANI, PairPotentialsModel):
             self._model_type = PairPotentialsChargesModel
         elif not issubclass(self._model_type, PairPotentialsChargesModel):
             raise ValueError(
@@ -277,7 +276,7 @@ class Assembler:
     ) -> None:
         if not issubclass(self._model_type, PairPotentialsModel):
             # Override the model if it is exactly equal to this class
-            if self._model_type == BuiltinModel:
+            if self._model_type == ANI:
                 self._model_type = PairPotentialsModel
         elif not issubclass(self._model_type, PairPotentialsModel):
             raise ValueError(
@@ -299,7 +298,7 @@ class Assembler:
     ) -> tp.OrderedDict[str, AtomicNetwork]:
         return OrderedDict([(s, fn_for_networks(s, in_dim)) for s in self.symbols])
 
-    def assemble(self) -> BuiltinModel:
+    def assemble(self) -> ANI:
         if not self.symbols:
             raise RuntimeError("Symbols not set. Call 'set_symbols' before assembly")
         if self._featurizer is None:
@@ -402,7 +401,7 @@ def ANI1x(
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
-) -> BuiltinModel:
+) -> ANI:
     """The ANI-1x model as in `ani-1x_8x on GitHub`_ and `Active Learning Paper`_.
 
     The ANI-1x model is an ensemble of 8 networks that was trained using
@@ -444,7 +443,7 @@ def ANI1ccx(
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
-) -> BuiltinModel:
+) -> ANI:
     """The ANI-1ccx model as in `ani-1ccx_8x on GitHub`_ and `Transfer Learning Paper`_.
 
     The ANI-1ccx model is an ensemble of 8 networks that was trained
@@ -487,7 +486,7 @@ def ANI2x(
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
-) -> BuiltinModel:
+) -> ANI:
     """The ANI-2x model as in `ANI2x Paper`_ and `ANI2x Results on GitHub`_.
 
     The ANI-2x model is an ensemble of 8 networks that was trained on the
@@ -529,7 +528,7 @@ def ANImbis(
     neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_ops: bool = False,
     periodic_table_index: bool = True,
-) -> BuiltinModel:
+) -> ANI:
     r"""
     ANI-2x model with MBIS experimental charges. Note: will be removed in the
     future.
@@ -592,7 +591,7 @@ def ANIala(
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
-) -> BuiltinModel:
+) -> ANI:
     r"""Experimental Model fine tuned to solvated frames of Ala dipeptide"""
     if model_index is not None:
         raise ValueError("Model index is not supported for ANIala")
@@ -623,7 +622,7 @@ def ANIdr(
     neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_ops: bool = False,
     periodic_table_index: bool = True,
-) -> BuiltinModel:
+) -> ANI:
     """ANI model trained with both dispersion and repulsion
 
     The level of theory is B973c, it is an ensemble of 7 models.
@@ -679,7 +678,7 @@ def FlexANI(
     bias: bool,
     use_cuda_ops: bool,
     periodic_table_index: bool,
-) -> BuiltinModel:
+) -> ANI:
     r"""
     Flexible builder to create ANI-style models
     """
@@ -708,8 +707,8 @@ def FlexANI(
     )
     atomic_maker = functools.partial(
         atomics.parse_atomics(atomic_maker),
-        activation=atomics.parse_activation(activation),
-        bias=bias,
+        atomics.parse_activation(activation),
+        bias,
     )
     asm.set_atomic_networks(ANIModel, atomic_maker)
     asm.set_neighborlist(neighborlist)
@@ -749,7 +748,7 @@ def FlexANI1(
     bias: bool = False,
     use_cuda_ops: bool = False,
     periodic_table_index: bool = True,
-) -> BuiltinModel:
+) -> ANI:
     r"""
     Builder that uses defaults similar to ANI1x
     """
@@ -798,9 +797,9 @@ def FlexANI2(
     bias: bool = False,
     use_cuda_ops: bool = False,
     periodic_table_index: bool = True,
-) -> BuiltinModel:
+) -> ANI:
     r"""
-    Builder that uses defaults similar to ANI2x
+    Builder that uses defaults similar to ANI-2x
     """
     return FlexANI(
         lot=lot,

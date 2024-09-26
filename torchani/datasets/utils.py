@@ -7,7 +7,7 @@ from torch import Tensor
 from tqdm import tqdm
 
 from torchani.units import hartree2kcalpermol
-from torchani.models import BuiltinModel
+from torchani.models import ANI
 from torchani.nn import Ensemble
 from torchani.annotations import Conformers, StrPath, Backend
 from torchani.datasets.anidataset import ANIDataset
@@ -106,7 +106,7 @@ def filter_by_high_force(
 
 def filter_by_high_energy_error(
     dataset: ANIDataset,
-    model: BuiltinModel,
+    model: ANI,
     threshold: float = 100.0,
     max_split: int = 2560,
     device: str = "cpu",

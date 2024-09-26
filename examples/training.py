@@ -13,7 +13,7 @@ import torch.utils.tensorboard
 from tqdm import tqdm
 
 import torchani
-from torchani.models import BuiltinModel
+from torchani.models import ANI
 from torchani.datasets import ANIDataset, ANIBatchedDataset, BatchedDataset
 from torchani.units import hartree2kcalpermol
 from torchani.assembler import FlexANI2
@@ -111,7 +111,7 @@ model = model.to(device)
 # is better than the best, then save the new best model to a checkpoint
 
 
-def validate(model: BuiltinModel, validation: torch.utils.data.DataLoader) -> float:
+def validate(model: ANI, validation: torch.utils.data.DataLoader) -> float:
     squared_error = 0.0
     count = 0
     model.train(False)

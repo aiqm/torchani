@@ -13,7 +13,7 @@ from torch import Tensor
 import typing_extensions as tpx
 
 from torchani.paths import NEUROCHEM
-from torchani.models import BuiltinModel
+from torchani.models import ANI
 from torchani.aev import AEVComputer
 from torchani.nn import ANIModel, Ensemble
 from torchani.cutoffs import CutoffArg
@@ -377,7 +377,7 @@ class NeurochemInfo:
         return cls(sae_file_path, const_file_path, ensemble_prefix, ensemble_size)
 
     @classmethod
-    def from_builtin_name(cls, model_name: str) -> tpx.Self:
+    def from_model_name(cls, model_name: str) -> tpx.Self:
         if model_name not in SUPPORTED_MODELS:
             raise ValueError(
                 f"Neurochem model {model_name} not supported,"
@@ -444,19 +444,19 @@ def modules_from_info(
     return aev_computer, neural_networks, adder, symbols
 
 
-def modules_from_builtin_name(
+def modules_from_model_name(
     model_name: str,
     model_index: tp.Optional[int] = None,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
 ) -> tp.Tuple[AEVComputer, AtomicContainer, EnergyAdder, tp.Sequence[str]]:
     r"""
-    Creates the necessary modules to generate a pretrained builtin model,
+    Creates the necessary modules to generate a pretrained ANI model,
     parsing the data from legacy neurochem files. and optional arguments to
     modify some modules.
     """
     return modules_from_info(
-        NeurochemInfo.from_builtin_name(model_name),
+        NeurochemInfo.from_model_name(model_name),
         model_index,
         use_cuda_extension,
         use_cuaev_interface,
@@ -482,13 +482,13 @@ def modules_from_info_file(
     )
 
 
-def load_builtin_from_info_file(
+def load_model_from_info_file(
     info_file: StrPath,
     model_index: tp.Optional[int] = None,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
-) -> BuiltinModel:
+) -> ANI:
     info_file = Path(info_file).resolve()
     components = modules_from_info_file(
         info_file,
@@ -497,7 +497,7 @@ def load_builtin_from_info_file(
         use_cuaev_interface,
     )
     aev_computer, neural_networks, energy_adder, symbols = components
-    return BuiltinModel(
+    return ANI(
         symbols,
         aev_computer,
         neural_networks,
@@ -506,21 +506,21 @@ def load_builtin_from_info_file(
     )
 
 
-def load_builtin_from_name(
+def load_model_from_name(
     model_name: str,
     model_index: tp.Optional[int] = None,
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
     periodic_table_index: bool = True,
-) -> BuiltinModel:
-    components = modules_from_builtin_name(
+) -> ANI:
+    components = modules_from_model_name(
         model_name,
         model_index,
         use_cuda_extension,
         use_cuaev_interface,
     )
     aev_computer, neural_networks, energy_adder, symbols = components
-    return BuiltinModel(
+    return ANI(
         symbols,
         aev_computer,
         neural_networks,
@@ -536,9 +536,9 @@ __all__ = [
     "load_energy_adder",
     "load_model",
     "load_model_ensemble",
-    "load_builtin_from_name",
-    "load_builtin_from_info_file",
-    "modules_from_builtin_name",
+    "load_model_from_name",
+    "load_model_from_info_file",
+    "modules_from_model_name",
     "modules_from_info_file",
     "download_model_parameters",
 ]

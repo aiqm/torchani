@@ -84,8 +84,8 @@ from torchani.potentials import (
 from torchani.neighbors import rescreen
 
 
-class BuiltinModel(torch.nn.Module):
-    r"""Private template for the builtin ANI models"""
+class ANI(torch.nn.Module):
+    r"""Base class for all ANI-style atomistic neural network potential models"""
 
     atomic_numbers: Tensor
     periodic_table_index: Final[bool]
@@ -508,7 +508,7 @@ class BuiltinModel(torch.nn.Module):
         return self.neural_networks.num_networks
 
 
-class PairPotentialsModel(BuiltinModel):
+class PairPotentialsModel(ANI):
     def __init__(
         self,
         symbols: tp.Sequence[str],
@@ -822,37 +822,37 @@ class PairPotentialsChargesModel(PairPotentialsModel):
         )
 
 
-def ANI1x(**kwargs) -> BuiltinModel:
+def ANI1x(**kwargs) -> ANI:
     from torchani.assembler import ANI1x as build
 
     return build(**kwargs)
 
 
-def ANI1ccx(**kwargs) -> BuiltinModel:
+def ANI1ccx(**kwargs) -> ANI:
     from torchani.assembler import ANI1ccx as build
 
     return build(**kwargs)
 
 
-def ANI2x(**kwargs) -> BuiltinModel:
+def ANI2x(**kwargs) -> ANI:
     from torchani.assembler import ANI2x as build
 
     return build(**kwargs)
 
 
-def ANIala(**kwargs) -> BuiltinModel:
+def ANIala(**kwargs) -> ANI:
     from torchani.assembler import ANIala as build
 
     return build(**kwargs)
 
 
-def ANIdr(**kwargs) -> BuiltinModel:
+def ANIdr(**kwargs) -> ANI:
     from torchani.assembler import ANIdr as build
 
     return build(**kwargs)
 
 
-def ANImbis(**kwargs) -> BuiltinModel:
+def ANImbis(**kwargs) -> ANI:
     from torchani.assembler import ANImbis as build
 
     return build(**kwargs)

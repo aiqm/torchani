@@ -4,7 +4,7 @@ import os
 from torchani.testing import ANITest, expand
 from torchani.models import ANI1x, ANI2x, ANI1ccx
 from torchani.aev import AEVComputer
-from torchani.neurochem import load_builtin_from_name, load_aev_computer_and_symbols
+from torchani.neurochem import load_model_from_name, load_aev_computer_and_symbols
 
 path = os.path.dirname(os.path.realpath(__file__))
 const_file_1x = os.path.join(path, "resources/rHCNO-5.2R_16-3.5A_a4-8.params")
@@ -18,33 +18,33 @@ class TestModelLoader(ANITest):
     # loaded directly from a state_dict
     def testANI1x(self):
         model = self._setup(ANI1x())
-        model_nc = self._setup(load_builtin_from_name("ani1x"))
+        model_nc = self._setup(load_model_from_name("ani1x"))
         self.assertEqual(model_nc.state_dict(), model.state_dict())
 
     def testANI1xSingle(self):
         for j in range(8):
             model = self._setup(ANI1x(model_index=j))
             model_nc = self._setup(
-                load_builtin_from_name("ani1x", model_index=j)
+                load_model_from_name("ani1x", model_index=j)
             )
             self.assertEqual(model_nc.state_dict(), model.state_dict())
 
     def testANI2x(self):
         model = self._setup(ANI2x())
-        model_nc = self._setup(load_builtin_from_name("ani2x"))
+        model_nc = self._setup(load_model_from_name("ani2x"))
         self.assertEqual(model_nc.state_dict(), model.state_dict())
 
     def testANI2xSingle(self):
         for j in range(8):
             model = self._setup(ANI2x(model_index=j))
             model_nc = self._setup(
-                load_builtin_from_name("ani2x", model_index=j)
+                load_model_from_name("ani2x", model_index=j)
             )
             self.assertEqual(model_nc.state_dict(), model.state_dict())
 
     def testANI1ccx(self):
         model = self._setup(ANI1ccx())
-        model_nc = self._setup(load_builtin_from_name("ani1ccx"))
+        model_nc = self._setup(load_model_from_name("ani1ccx"))
         self.assertEqual(model_nc.state_dict(), model.state_dict())
 
 

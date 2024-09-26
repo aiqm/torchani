@@ -18,7 +18,7 @@ from torchani.neurochem import (
     load_sae,
     load_model_ensemble,
     load_model,
-    load_builtin_from_info_file,
+    load_model_from_info_file,
 )
 
 ###############################################################################
@@ -45,9 +45,9 @@ model_dir = root / "ani-1x_8x/train0/networks"
 single_network = load_model(symbols, model_dir)
 
 ###############################################################################
-# We can also load a full builtin model using neurochem
-ensemble = load_builtin_from_info_file(root / "ani-1x_8x.info")
-single_model = load_builtin_from_info_file(root / "ani-1x_8x.info", model_index=0)
+# We can also load an ANI model using neurochem
+ensemble = load_model_from_info_file(root / "ani-1x_8x.info")
+single_model = load_model_from_info_file(root / "ani-1x_8x.info", model_index=0)
 print(ensemble)
 print(single_model)
 

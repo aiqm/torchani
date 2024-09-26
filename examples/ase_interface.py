@@ -25,7 +25,7 @@ atoms = Diamond(symbol="C", pbc=True)
 print(f"Num atoms in cell: {len(atoms)}")
 
 ###############################################################################
-# Afterwards we create a calculator from builtin models and attach it to our atoms
+# Afterwards we create a calculator from an ANI model and attach it to our atoms
 atoms.calc = torchani.models.ANI2x().ase()
 
 ###############################################################################
