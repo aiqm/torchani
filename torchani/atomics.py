@@ -34,7 +34,7 @@ class AtomicContainer(torch.nn.Module):
         raise IndexError("Only idx=0 supported")
 
     @torch.jit.export
-    def _atomic_energies(
+    def members_atomic_energies(
         self,
         species_aev: tp.Tuple[Tensor, Tensor],
     ) -> Tensor:

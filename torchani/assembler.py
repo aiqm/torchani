@@ -57,7 +57,7 @@ from torchani.aev.terms import (
 from torchani.electro import ChargeNormalizer, _AdaptedChargesContainer
 from torchani.nn import ANIModel, Ensemble
 from torchani.atomics import AtomicContainer, AtomicNetwork, AtomicMakerArg, AtomicMaker
-from torchani.sae import GSAES
+from torchani.constants import GSAES
 from torchani.utils import sort_by_element, SYMBOLS_1X, SYMBOLS_2X
 from torchani.paths import STATE_DICTS
 

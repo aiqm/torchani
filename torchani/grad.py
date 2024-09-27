@@ -2,7 +2,6 @@ r"""
 TorchANI functions that make use of torch.autograd capabilities to compute
 forces and hessians in a straightforward manner.
 """
-
 import math
 import typing as tp
 
@@ -18,6 +17,16 @@ from torchani.tuples import (
     EnergiesForces,
     ForcesHessians,
 )
+
+__all__ = [
+    "energies_and_forces",
+    "energies_forces_and_hessians",
+    "forces",
+    "forces_and_hessians",
+    "forces_for_training",
+    "hessians",
+    "vibrational_analysis",
+]
 
 Model = tp.Union[ANI, PotentialWrapper]
 
@@ -73,7 +82,6 @@ def energies_and_forces(
     return EnergiesForces(energies, _forces)
 
 
-# Note that for training, create_graph=True and retain_graph=True are both needed
 def forces(
     energies: Tensor,
     coordinates: Tensor,
@@ -89,14 +97,19 @@ def forces(
             "'coordinates' passed to `torchani.grad` functions must be a 'leaf' Tensor"
             "(i.e. must not have been modified prior to being used as an input)."
         )
-    _grads = torch.autograd.grad(
+    grads = torch.autograd.grad(
         [energies.sum()],
         [coordinates],
         retain_graph=retain_graph,
         create_graph=create_graph,
     )[0]
-    assert _grads is not None  # JIT
-    return -_grads
+    assert grads is not None  # JIT
+    return -grads
+
+
+# Convenience function, for training create_graph=True and retain_graph=True
+def forces_for_training(energies: Tensor, coordinates: Tensor) -> Tensor:
+    return forces(energies, coordinates, retain_graph=True, create_graph=True)
 
 
 def forces_and_hessians(

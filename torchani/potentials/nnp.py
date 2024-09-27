@@ -23,7 +23,9 @@ class NNPotential(Potential):
             k if k in PERIODIC_TABLE else "?" for k in neural_networks.member(0).atomics
         )
         super().__init__(
-            symbols=symbols, cutoff=aev_computer.radial_terms.cutoff, is_trainable=True,
+            symbols=symbols,
+            cutoff=aev_computer.radial_terms.cutoff,
+            is_trainable=True,
         )
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
@@ -46,7 +48,9 @@ class NNPotential(Potential):
         average: bool = False,
     ) -> Tensor:
         aevs = self.aev_computer._compute_aev(element_idxs, neighbors)
-        atomic_energies = self.neural_networks._atomic_energies((element_idxs, aevs))
+        atomic_energies = self.neural_networks.members_atomic_energies(
+            (element_idxs, aevs)
+        )
         if atomic_energies.dim() == 2:
             atomic_energies = atomic_energies.unsqueeze(0)
         if average:

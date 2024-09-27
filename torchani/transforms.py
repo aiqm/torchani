@@ -1,8 +1,9 @@
 r"""
-Transforms to be applied to properties when training or batching a dataset. The
-usage is the same as transforms in torchvision.
+Transforms are composable functions that can be  applied to properties when
+training or batching a dataset. They are modelled after ``torchvision``
+transforms. An example of their usage:
 
-Example::
+.. code-block:: python
 
     from torchani.transforms import (
         Compose,
@@ -66,6 +67,7 @@ class Transform(torch.nn.Module):
 
 
 class Identity(Transform):
+    r"""Pass-through transform"""
     def __init__(self) -> None:
         super().__init__()
         self.atomic_numbers = None
@@ -80,7 +82,7 @@ identity = Identity()
 class SubtractEnergyAndForce(Transform):
     r"""
     Subtract the energies (and optionally forces) from an arbitrary Wrapper
-    module. This can be coupled with, e.g., an arbitrary pairwise potential.
+    module. This can be coupled with, e.g., a PairwisePotential
     """
 
     def __init__(self, wrapper: PotentialWrapper, subtract_force: bool = True):
@@ -97,7 +99,7 @@ class SubtractEnergyAndForce(Transform):
         if self.subtract_force:
             if torch.jit.is_scripting():
                 raise RuntimeError(
-                    "It is not possible to JIT compile transforms that calculate forces"
+                    "Its not possible to JIT compile transforms that calculate forces"
                 )
             energies, forces = energies_and_forces(self.wrapper, species, coordinates)
             properties["forces"] -= forces
@@ -196,7 +198,7 @@ class AtomicNumbersToIndices(Transform):
         return properties
 
 
-# The Compose code is mostly copied from torchvision, but made JIT scriptable
+# Similar to torchvision.transforms.Compose, but JIT scriptable
 class Compose(Transform):
     r"""Composes several ``Transform`` together.
 

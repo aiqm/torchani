@@ -318,7 +318,7 @@ def load_atomic_network(filename: StrPath) -> AtomicNetwork:
     return network
 
 
-def load_model(symbols: tp.Sequence[str], model_dir: StrPath) -> ANIModel:
+def load_member(symbols: tp.Sequence[str], model_dir: StrPath) -> ANIModel:
     """Returns an instance of :class:`torchani.nn.ANIModel` loaded from
     NeuroChem's network directory.
 
@@ -335,7 +335,7 @@ def load_model(symbols: tp.Sequence[str], model_dir: StrPath) -> ANIModel:
     )
 
 
-def load_model_ensemble(
+def load_ensemble(
     symbols: tp.Sequence[str], prefix: StrPath, count: int
 ) -> Ensemble:
     """Returns an instance of :class:`torchani.nn.Ensemble` loaded from
@@ -350,7 +350,7 @@ def load_model_ensemble(
     """
     prefix = Path(prefix)
     return Ensemble(
-        [load_model(symbols, model_dir_from_prefix(prefix, i)) for i in range(count)]
+        [load_member(symbols, model_dir_from_prefix(prefix, i)) for i in range(count)]
     )
 
 
@@ -434,7 +434,7 @@ def modules_from_info(
 
     neural_networks: AtomicContainer
     if model_index is None:
-        neural_networks = load_model_ensemble(
+        neural_networks = load_ensemble(
             symbols, info.ensemble_prefix, info.ensemble_size
         )
     else:
@@ -442,7 +442,7 @@ def modules_from_info(
             raise ValueError(
                 f"Model index {model_index} should be <= {info.ensemble_size}"
             )
-        neural_networks = load_model(
+        neural_networks = load_member(
             symbols,
             model_dir_from_prefix(
                 info.ensemble_prefix,
@@ -542,8 +542,8 @@ __all__ = [
     "load_aev_computer_and_symbols",
     "load_sae",
     "load_energy_adder",
-    "load_model",
-    "load_model_ensemble",
+    "load_member",
+    "load_ensemble",
     "load_model_from_name",
     "load_model_from_info_file",
     "modules_from_model_name",

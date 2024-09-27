@@ -1,9 +1,6 @@
 r"""
-TorchANI Builtin Datasets
-
-This module provides access to the following datasets, calculated with specific
-levels of theory (LoT) which are combinations functional/basis_set or
-wavefunction_method/basis_set when appropriate.
+(TODO reduce this docstring to nothing)
+TorchANI Built-in Datasets
 
 - ANI-1x, with LoT:
     - wB97X/6-31G(d)
@@ -277,7 +274,6 @@ Iso17 dataset:
     This dataset has "coefficients" which correspond to atomic
     coefficients for the fitting density, and "energies-xc", the
     exchange-correlation energies.
-
 
 Note that the conformations present in datasets with different LoT may be
 different.

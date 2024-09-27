@@ -107,8 +107,11 @@ class StandardRadial(RadialTerm):
         r"""Builds angular terms by linearly subdividing space radially up to a cutoff
 
         "num_shifts" are created, starting from "start" until "cutoff",
-        excluding it. This similar to the way angular and radial shifts were
-        originally created for the ANI models
+        excluding it. This the way angular and radial shifts were originally
+        created in the `ANI paper`_.
+
+        .. _ANI paper:
+            http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
         """
         shifts = linspace(start, cutoff, num_shifts)
         return cls(eta, shifts, cutoff, cutoff_fn)

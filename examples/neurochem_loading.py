@@ -16,8 +16,8 @@ from torchani.neurochem import (
     download_model_parameters,
     load_aev_computer_and_symbols,
     load_sae,
-    load_model_ensemble,
-    load_model,
+    load_member,
+    load_ensemble,
     load_model_from_info_file,
 )
 
@@ -35,20 +35,20 @@ const_file = root / "ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params"
 aev_computer, symbols = load_aev_computer_and_symbols(const_file)
 
 model_prefix = root / "ani-1x_8x/train"
-ensemble_networks = load_model_ensemble(symbols, model_prefix, 8)
+ensemble = load_ensemble(symbols, model_prefix, 8)
 sae_file = root / "ani-1x_8x/sae_linfit.dat"
 energy_shifter = load_sae(sae_file)
 
 ###############################################################################
 # We can also load a single model from the ensemble
 model_dir = root / "ani-1x_8x/train0/networks"
-single_network = load_model(symbols, model_dir)
+member = load_member(symbols, model_dir)
 
 ###############################################################################
 # We can also load an ANI model using neurochem
-ensemble = load_model_from_info_file(root / "ani-1x_8x.info")
+ensemble_model = load_model_from_info_file(root / "ani-1x_8x.info")
 single_model = load_model_from_info_file(root / "ani-1x_8x.info", model_index=0)
-print(ensemble)
+print(ensemble_model)
 print(single_model)
 
 ###############################################################################
@@ -68,7 +68,7 @@ species = torch.tensor([[6, 1, 1, 1, 1]], dtype=torch.long)
 
 ###############################################################################
 # Now let's compute energies using the ensemble directly:
-energies, forces = energies_and_forces(ensemble, species, coordinates)
+energies, forces = energies_and_forces(ensemble_model, species, coordinates)
 print("Energy:", energies.item())
 print("Force:", forces.squeeze())
 

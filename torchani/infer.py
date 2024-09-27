@@ -103,11 +103,11 @@ class BmmEnsemble(AtomicContainer):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesEnergies:
-        atomic_energies = self._atomic_energies(species_aev).squeeze(0)
+        atomic_energies = self.members_atomic_energies(species_aev).squeeze(0)
         return SpeciesEnergies(species_aev[0], torch.sum(atomic_energies, 0, True))
 
     @torch.jit.export
-    def _atomic_energies(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:
+    def members_atomic_energies(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
         assert aev.shape[0] == 1, "BmmEnsemble only supports single-conformer inputs"

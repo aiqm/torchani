@@ -9,6 +9,7 @@ Welcome to TorchANI's documentation!
     :caption: Getting Started
 
     installing
+    migration
     tips
 
 .. toctree::

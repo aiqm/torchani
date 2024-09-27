@@ -17,6 +17,7 @@ from torchani.models import ANI
 from torchani.datasets import ANIDataset, ANIBatchedDataset, BatchedDataset
 from torchani.units import hartree2kcalpermol
 from torchani.assembler import FlexANI2
+from torchani.grad import forces_for_training
 
 # Explanation of how to train an ANI model
 # Device and dataset to run the training
@@ -179,20 +180,8 @@ for epoch in range(scheduler.last_epoch, max_epochs + 1):
         output = model((species, coordinates))
         predicted_energies = output.energies
         if force_training:
-            # Force training:
-            #
-            # We can use torch.autograd.grad to compute force. Remember to
-            # create graph so that the loss of the force can contribute to
-            # the gradient of parameters, and also to retain graph so that
-            # we can backward through it a second time when computing gradient
-            # w.r.t. parameters.
             target_forces = batch["forces"].float()
-            predicted_forces = -torch.autograd.grad(
-                predicted_energies.sum(),
-                coordinates,
-                create_graph=True,
-                retain_graph=True,
-            )[0]
+            predicted_forces = forces_for_training(predicted_energies, coordinates)
             energy_loss = (
                 mse(predicted_energies, target_energies) / num_atoms.sqrt()
             ).mean()

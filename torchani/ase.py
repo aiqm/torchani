@@ -4,7 +4,6 @@ Tools for interfacing with the atomic simulation environment `ASE`_.
 .. _ASE:
     https://wiki.fysik.dtu.dk/ase
 """
-
 import warnings
 
 import torch

@@ -12,6 +12,7 @@ from torchani.annotations import Device
 from torchani.utils import AtomicNumbersToMasses
 from torchani.atomics import AtomicContainer
 from torchani.constants import ELECTRONEGATIVITY, HARDNESS, ATOMIC_NUMBER
+
 # Needed for _AdaptedChargesContainer hack
 from torchani.nn import ANIModel
 from torchani.tuples import SpeciesEnergies
@@ -110,6 +111,7 @@ class DipoleComputer(torch.nn.Module):
     Returns:
         dipoles (torch.Tensor): (M, 3)
     """
+
     def __init__(
         self,
         masses: tp.Iterable[float] = (),
@@ -120,8 +122,8 @@ class DipoleComputer(torch.nn.Module):
         super().__init__()
 
         self._atomic_masses: Tensor = torch.tensor(masses, device=device, dtype=dtype)
-        self._center_of_mass = (reference == "center_of_mass")
-        self._skip = (reference == "origin")
+        self._center_of_mass = reference == "center_of_mass"
+        self._skip = reference == "origin"
         self._converter = AtomicNumbersToMasses(masses, dtype=dtype, device=device)
 
     def _displace_to_reference(self, species: Tensor, coordinates: Tensor) -> Tensor:
@@ -174,7 +176,7 @@ def compute_dipole(
 # charges
 class _AdaptedChargesContainer(ANIModel):
     @torch.jit.export
-    def _atomic_energies(
+    def members_atomic_energies(
         self,
         species_aev: tp.Tuple[Tensor, Tensor],
     ) -> Tensor:
@@ -198,7 +200,7 @@ class _AdaptedChargesContainer(ANIModel):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesEnergies:
-        atomic_energies = self._atomic_energies(species_aev).squeeze(0)
+        atomic_energies = self.members_atomic_energies(species_aev).squeeze(0)
         return SpeciesEnergies(species_aev[0], atomic_energies)
 
     def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:

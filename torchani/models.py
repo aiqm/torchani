@@ -1,8 +1,8 @@
 r"""
 The ``models`` submodule provides access to all published ANI models, which are
 subclasses of ``ANI``. Some models have been published in specific articles,
-and some have been published in TorchANI 2.0. If you use one of these models in
-your work please cite the corresponding article.
+and some have been published in TorchANI 2.0. If you use any of these models in
+your work please cite the corresponding article(s).
 
 If for a given model you discover a bug, performance problem, or incorrect
 behavior in some region of chemical space, please post an issue in GitHub. The
@@ -92,7 +92,7 @@ from torchani.neighbors import rescreen
 
 
 class ANI(torch.nn.Module):
-    r"""ANI-style atomistic neural network interatomic potential"""
+    r"""ANI-style neural network interatomic potential"""
 
     atomic_numbers: Tensor
     periodic_table_index: Final[bool]
@@ -127,8 +127,8 @@ class ANI(torch.nn.Module):
         """Convert the neural networks module of the model into a module
         optimized for inference.
 
-        Assumes that the atomic networks consist of an MLP with
-        torchani.utils.TightCELU activation functions.
+        Assumes that the atomic networks are multi layer perceptrons (MLPs)
+        with torchani.utils.TightCELU activation functions.
         """
         self.neural_networks = self.neural_networks.to_infer_model(use_mnp=use_mnp)
         return self
@@ -228,7 +228,9 @@ class ANI(torch.nn.Module):
         """
         species_coordinates = self._maybe_convert_species(species_coordinates)
         species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
-        atomic_energies = self.neural_networks._atomic_energies(species_aevs)
+        atomic_energies = self.neural_networks.members_atomic_energies(
+            species_aevs
+        )
 
         if shift_energy:
             atomic_energies += self.energy_shifter.atomic_energies(
@@ -425,7 +427,7 @@ class ANI(torch.nn.Module):
         """
         species_coordinates = self._maybe_convert_species(species_coordinates)
         species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
-        atomic_energies = self.neural_networks._atomic_energies(species_aevs)
+        atomic_energies = self.neural_networks.members_atomic_energies(species_aevs)
 
         if shift_energy:
             atomic_energies += self.energy_shifter.atomic_energies(
@@ -533,24 +535,13 @@ class PairPotentialsModel(ANI):
             periodic_table_index=periodic_table_index,
         )
         potentials: tp.List[Potential] = list(pairwise_potentials)
-        aev_potential = NNPotential(self.aev_computer, self.neural_networks)
-        potentials.append(aev_potential)
+        potentials.append(NNPotential(self.aev_computer, self.neural_networks))
 
-        # We want to check the cutoffs of the potentials, and sort them
-        # in order of decreasing cutoffs. this way the potential with the LARGEST
-        # cutoff is computed first, then sequentially things that need smaller
-        # cutoffs are computed.
+        # Sort potentials in order of decresing cutoff. The potential with the
+        # LARGEST cutoff is computed first, then sequentially things that need
+        # SMALLER cutoffs are computed.
         potentials = sorted(potentials, key=lambda x: x.cutoff, reverse=True)
         self.potentials = torch.nn.ModuleList(potentials)
-
-    # unfortunately this is an UGLY workaround to a torchscript bug
-    @torch.jit.export
-    def _recast_long_buffers(self) -> None:
-        self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(
-            dtype=torch.long
-        )
-        self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
-        self.aev_computer.neighborlist._recast_long_buffers()
 
     # TODO: Remove code repetition
     @torch.jit.export
@@ -678,8 +669,7 @@ class PairPotentialsChargesModel(PairPotentialsModel):
     Calculates energies and atomic charges. Charge networks share the input
     features with the energy networks, but are otherwise fully independent from them.
 
-    WARNING: This model is an experimental feature and will probably be removed
-    in the future.
+    WARNING: This model is experimental
     """
 
     def __init__(

@@ -1,9 +1,3 @@
-r"""
-This class wraps potentials so that they can function directly with an
-input of (species_coordinates, cell, pbc). This is useful for testing purposes
-and for some special cases.
-"""
-
 import typing as tp
 
 import torch
@@ -16,6 +10,12 @@ from torchani.potentials.core import Potential
 
 
 class PotentialWrapper(torch.nn.Module):
+    r"""Wraps potentials to expose a direct calculation interface
+
+    Wraps potentials so that they can function directly with an input of
+    (species_coordinates, cell, pbc). This is useful for testing purposes and
+    for some special cases.
+    """
     def __init__(
         self,
         potential: Potential,

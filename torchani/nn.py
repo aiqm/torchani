@@ -1,5 +1,7 @@
+r"""
+Core modules used by the ANI-style models
+"""
 import typing as tp
-from collections import OrderedDict
 
 import torch
 from torch import Tensor
@@ -11,7 +13,7 @@ from torchani.infer import BmmEnsemble, InferModel
 
 
 class ANIModel(AtomicContainer):
-    """ANI model that compute energies from species and AEVs.
+    """Module that compute energies from species and AEVs.
 
     Different atom types might have different modules, when computing
     energies, for each atom, the module for its corresponding atom type will
@@ -27,11 +29,9 @@ class ANIModel(AtomicContainer):
     .. note:: The resulting energies are in Hartree.
 
     Arguments:
-        modules (:class:`collections.abc.Sequence`): Modules for each atom
-            types. Atom types are distinguished by their order in
-            :attr:`modules`, which means, for example ``modules[i]`` must be
-            the module for atom type ``i``. Different atom types can share a
-            module by putting the same reference in :attr:`modules`.
+        modules (Dict[str, AtomicNetwork]): symbol - network pairs for each
+        supported element. Different elements will share networks if the same
+        ref is used for different keys
     """
 
     # Needed for bw compatibility
@@ -55,18 +55,11 @@ class ANIModel(AtomicContainer):
             state_dict[new_key] = state_dict.pop(k)
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
-    @staticmethod
-    def ensureOrderedDict(modules):
-        if isinstance(modules, OrderedDict):
-            return modules
-        od = OrderedDict()
-        for i, m in enumerate(modules):
-            od[str(i)] = m
-        return od
-
-    def __init__(self, modules: tp.Mapping[str, AtomicNetwork]):
+    def __init__(self, modules: tp.Dict[str, AtomicNetwork]):
         super().__init__()
-        self.atomics = torch.nn.ModuleDict(self.ensureOrderedDict(modules))
+        if any(s not in PERIODIC_TABLE for s in modules):
+            raise ValueError("All modules should be mapped to valid chemical symbols")
+        self.atomics = torch.nn.ModuleDict(modules)
         self.num_species = len(self.atomics)
         self.num_networks = 1
 
@@ -76,11 +69,11 @@ class ANIModel(AtomicContainer):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesEnergies:
-        atomic_energies = self._atomic_energies(species_aev).squeeze(0)
+        atomic_energies = self.members_atomic_energies(species_aev).squeeze(0)
         return SpeciesEnergies(species_aev[0], torch.sum(atomic_energies, dim=1))
 
     @torch.jit.export
-    def _atomic_energies(
+    def members_atomic_energies(
         self,
         species_aev: tp.Tuple[Tensor, Tensor],
     ) -> Tensor:
@@ -142,11 +135,11 @@ class Ensemble(AtomicContainer):
         return self.members[idx]
 
     @torch.jit.export
-    def _atomic_energies(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:
+    def members_atomic_energies(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:
         #  Note that the output is of shape (M, C, A)
         members_list = []
         for nnp in self.members:
-            members_list.append(nnp._atomic_energies((species_aev)))
+            members_list.append(nnp.members_atomic_energies((species_aev)))
         members_atomic_energies = torch.cat(members_list, dim=0)
         # out shape is (M, C, A)
         return members_atomic_energies

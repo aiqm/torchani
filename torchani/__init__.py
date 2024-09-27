@@ -1,4 +1,4 @@
-"""
+r"""
 `TorchANI`_ is a PyTorch library for training, development and research of
 `ANI`_ style neural networks, maintained by the `Roitberg group`_.  TorchANI
 contains classes like :class:`AEVComputer`, :class:`ANIModel`, and
