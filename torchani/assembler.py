@@ -708,8 +708,8 @@ def FlexANI(
     )
     atomic_maker = functools.partial(
         atomics.parse_atomics(atomic_maker),
-        atomics.parse_activation(activation),
-        bias,
+        activation=atomics.parse_activation(activation),
+        bias=bias,
     )
     asm.set_atomic_networks(ANIModel, atomic_maker)
     asm.set_neighborlist(neighborlist)

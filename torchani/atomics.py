@@ -2,6 +2,7 @@ r"""
 Atomic Networks, Atomic Network Containers and factory methods with useful
 defaults
 """
+
 import typing as tp
 
 import torch
@@ -12,6 +13,7 @@ from torchani.utils import TightCELU
 
 class AtomicContainer(torch.nn.Module):
     r"""Base class for ANI modules that contain Atomic Neural Networks"""
+
     num_networks: int
     num_species: int
 
@@ -210,7 +212,22 @@ def like_mbis_charges(
     )
 
 
-AtomicMaker = tp.Callable[[str, int], AtomicNetwork]
+class AtomicMaker(tp.Protocol):
+    def __call__(
+        self,
+        symbol: str,
+        in_dim: int,
+        # The following are dummy defaults.
+        # As long as the protocol has something of the correct type as a kwarg,
+        # it will type-check correctly. In reality different AtomicMaker
+        # have different defaults
+        out_dim: int = 1,
+        activation: tp.Union[str, torch.nn.Module] = "celu",
+        bias: bool = True,
+    ) -> AtomicNetwork:
+        pass
+
+
 AtomicMakerArg = tp.Union[str, AtomicMaker]
 
 

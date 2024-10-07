@@ -15,7 +15,7 @@ Device = tp.Union[torch.device, tp.Literal["cpu", "cuda"]]
 IdxLike = tp.Union[Tensor, NDArray[np.int_], None, tp.Iterable[int], int]
 
 Conformers = tp.MutableMapping[str, Tensor]
-NumberOrStrArray = tp.Union[NDArray[np.int_], NDArray[np.float_], NDArray[np.str_]]
+NumberOrStrArray = tp.Union[NDArray[np.int_], NDArray[np.float64], NDArray[np.str_]]
 NumpyConformers = tp.MutableMapping[str, NumberOrStrArray]
 MixedConformers = tp.MutableMapping[str, tp.Union[Tensor, NumberOrStrArray]]
 

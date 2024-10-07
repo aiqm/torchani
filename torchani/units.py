@@ -6,7 +6,7 @@ The ANI models work internally in Hartrees
 
 In some example code and scripts we convert to other more commonly used units.
 Conversion factors are consistent with `CODATA 2014 recommendations`_, which is
-also consistent with the `units used in ASE by default`_. (However, take into
+also consistent with the `units used in ASE`_ by default. (However, take into
 account that ASE uses electronvolt as its base energy unit, so the appropriate
 conversion factors should always be applied when converting from ASE to
 TorchANI) Joule-to-kcal conversion is taken from the `IUPAC Goldbook`_.  All
