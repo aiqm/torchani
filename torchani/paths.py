@@ -1,14 +1,21 @@
 r"""
 Default location for various TorchANI resources
 """
+import os
 from pathlib import Path
 
-LOCAL_DIR = (Path.home() / ".local") / "torchani"
-STATE_DICTS = LOCAL_DIR / "StateDicts"
-DATASETS = LOCAL_DIR / "Datasets"
-NEUROCHEM = LOCAL_DIR / "Neurochem"
+ENV_DATA_DIR = os.getenv("TORCHANI_DATA_DIR")
 
-LOCAL_DIR.mkdir(exist_ok=True, parents=True)
+if ENV_DATA_DIR:
+    DATA_DIR = Path(ENV_DATA_DIR)
+else:
+    DATA_DIR = Path(Path.home(), ".local", "share", "torchani")
+
+STATE_DICTS = DATA_DIR / "StateDicts"
+DATASETS = DATA_DIR / "Datasets"
+NEUROCHEM = DATA_DIR / "Neurochem"
+
+DATA_DIR.mkdir(exist_ok=True, parents=True)
 STATE_DICTS.mkdir(exist_ok=True, parents=True)
 DATASETS.mkdir(exist_ok=True, parents=True)
 NEUROCHEM.mkdir(exist_ok=True, parents=True)

@@ -43,7 +43,7 @@ class ANIModel(AtomicContainer):
             new_key = k
             if not suffix.startswith("atomics."):
                 new_key = "".join((prefix, "atomics.", suffix))
-            if "layers" not in k:
+            if ("layers" not in k) and ("final_layer" not in k):
                 parts = new_key.split(".")
                 if int(parts[-2]) == 6:
                     parts[-2] = "final_layer"

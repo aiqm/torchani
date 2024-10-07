@@ -21,20 +21,20 @@ except Exception:
 
 # This env var is meant to be used by developers to manually disable extensions
 # for testing purposes
-if "TORCHANI_DISABLE_EXTENSIONS" in os.environ:
+if os.getenv("TORCHANI_DISABLE_EXTENSIONS") != "1":
     CUAEV_IS_INSTALLED = False
     MNP_IS_INSTALLED = False
 
-if "TORCHANI_NO_WARN_EXTENSIONS" not in os.environ:
+if os.getenv("TORCHANI_NO_WARN_EXTENSIONS") != "1":
     if not CUAEV_IS_INSTALLED:
         warnings.warn(
             "The AEV CUDA extension is not installed and will not be available."
-            " To suppress warn set the env var TORCHANI_NO_WARN_EXTENSIONS to any value"
+            " To suppress warn set the env var TORCHANI_NO_WARN_EXTENSIONS=1"
         )
     if not MNP_IS_INSTALLED:
         warnings.warn(
             "The MNP C++ extension is not installed and will not be available."
-            " To suppress warn set the env var TORCHANI_NO_WARN_EXTENSIONS to any value"
+            " To suppress warn set the env var TORCHANI_NO_WARN_EXTENSIONS=1"
         )
 
 
