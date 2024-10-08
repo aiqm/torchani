@@ -1,4 +1,8 @@
 from pathlib import Path
+import json
+import tarfile
+import csv
+import re
 import typing as tp
 
 import torch
@@ -10,9 +14,98 @@ from torchani.models import ANI
 from torchani.nn import Ensemble
 from torchani.annotations import Conformers, StrPath, Backend
 from torchani.datasets.anidataset import ANIDataset
+from torchani.datasets.builtin import _calc_file_md5
 
 
-__all__ = ["filter_by_high_force", "filter_by_high_energy_error", "concatenate"]
+__all__ = [
+    "filter_by_high_force",
+    "filter_by_high_energy_error",
+    "concatenate",
+    "datapack",
+]
+
+
+def datapack(
+    src_dir: Path,
+    dest_dir: Path,
+    name: str,
+    lot: str,
+    suffix: str = ".h5",
+) -> None:
+    r"""
+    If passed a directory with .h5 files, generates a corresponding
+    dataset.json, md5.csv, and dataset.tar.gz.
+
+    That this function is interactive by design, it always expects input from a
+    user.
+
+    name: str
+        name of the dataset
+    lot: str
+        Level of Theory of the dataset, in format <method>-<basis>
+    paths: Path | Sequence[Path]
+        Path to a directory with .h5 files, or sequence of paths to .h5 files
+    dest_dir: Path
+        Destination directory for the archive, md5.csv and dataset.json
+    """
+
+    def _validate_label(label: str, label_name: str, lower: bool = False) -> str:
+        while not re.match(r"[0-9A-Za-z_]+", label):
+            print(f"{label} invalid for {label_name}, it should match r'[0-9A-Za-z_]+'")
+            label = input(f"Input {label_name}: ")
+        if lower:
+            return label.lower()
+        return label
+
+    files = sorted(src_dir.glob(f"*{suffix}"))
+
+    print(
+        "Packaging ANI Dataset\n"
+        "When prompted write the requested names\n"
+        "**Only alphanumeric characters or '_' are supported**"
+    )
+    method, basis = lot.split("-")
+    name = _validate_label(name, label_name="data")
+    # lot is case insensitive
+    method = _validate_label(method, label_name="method", lower=True)
+    basis = _validate_label(basis, label_name="basis", lower=True)
+
+    archive_path = dest_dir / f"{'-'.join((name, method, basis))}.tar.gz"
+    csv_path = dest_dir / f"{name}.md5s.csv"
+    json_path = dest_dir / f"{name}.json"
+
+    data_dict: tp.Dict[str, tp.Any] = {
+        name: {
+            "lot": {
+                lot: {
+                    "archive": archive_path.name,
+                    "files": [],
+                }
+            },
+            "default-lot": lot,
+        },
+    }
+
+    # Write csv and tarfile
+    with tarfile.open(archive_path, "w:gz") as archive:
+        with open(csv_path, "w", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile, delimiter=",", quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(["filename", "md5_hash"])
+
+            for f in files:
+                part = input(f"Specific label for file {f.name}?: ")
+                part = _validate_label(part, label_name="file-specific label")
+
+                stem = "-".join((name, part, method, basis))
+                arcname = f"{stem}{f.suffix}"
+                archive.add(f, arcname=arcname)
+                md5 = _calc_file_md5(f)
+                data_dict[name]["lot"][lot]["files"].append(arcname)
+                writer.writerow([arcname, md5])
+
+    # Write json
+    with open(json_path, "wt", encoding="utf-8") as fj:
+        json.dump(data_dict, fj)
 
 
 def concatenate(

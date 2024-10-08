@@ -8,9 +8,10 @@ This tutorial illustrates how to manually load model from `NeuroChem files`_.
     https://github.com/isayev/ASE_ANI/tree/master/ani_models
 """
 # To begin with, let's first import the modules we will use:
+from pathlib import Path
 import torch
 
-from torchani.paths import NEUROCHEM
+from torchani.paths import neurochem_dir
 from torchani.grad import energies_and_forces
 from torchani.neurochem import (
     download_model_parameters,
@@ -24,24 +25,23 @@ from torchani.neurochem import (
 ###############################################################################
 # First lets download all model parameters, by default they will be loaded into
 # torchani.paths.NEUROCHEM, which is ~/.local/torchani/Neurochem.
-root = NEUROCHEM
+root = neurochem_dir()
 download_model_parameters()
 
 ###############################################################################
 # Now let's read constants from constant file and construct AEV computer,
 # The sae's and construct an EnergyShifter,
 # and the networks to construct an ensemble
-const_file = root / "ani-1x_8x/rHCNO-5.2R_16-3.5A_a4-8.params"
+const_file = Path(root, "ani-1x_8x", "rHCNO-5.2R_16-3.5A_a4-8.params")
 aev_computer, symbols = load_aev_computer_and_symbols(const_file)
-
-model_prefix = root / "ani-1x_8x/train"
+model_prefix = Path(root, "ani-1x_8x", "train")
 ensemble = load_ensemble(symbols, model_prefix, 8)
-sae_file = root / "ani-1x_8x/sae_linfit.dat"
+sae_file = Path(root, "ani-1x_8x", "sae_linfit.dat")
 energy_shifter = load_sae(sae_file)
 
 ###############################################################################
 # We can also load a single model from the ensemble
-model_dir = root / "ani-1x_8x/train0/networks"
+model_dir = Path(root, "ani-1x_8x", "train0", "networks")
 member = load_member(symbols, model_dir)
 
 ###############################################################################

@@ -12,7 +12,7 @@ import torch
 from torch import Tensor
 from tqdm import tqdm
 
-from torchani.paths import DATASETS
+from torchani.paths import datasets_dir
 from torchani.annotations import Conformers, StrPath
 from torchani.utils import pad_atomic_properties, strip_redundant_padding, PADDING
 from torchani.transforms import Transform, identity
@@ -216,12 +216,14 @@ class Div:
 class Batcher:
     def __init__(
         self,
-        dest_root: tp.Union[Path, tp.Literal["ram"]] = DATASETS,
+        dest_root: tp.Union[Path, tp.Literal["ram"], tp.Literal["default"]] = "default",
         max_batches_per_packet: int = 200,
         verbose: bool = False,
     ) -> None:
         self.max_batches_per_packet = max_batches_per_packet
         self.verbose = verbose
+        if dest_root == "default":
+            dest_root = datasets_dir()
         self.store_on_disk = dest_root != "ram"
         if not self.store_on_disk:
             if max_batches_per_packet != 200:

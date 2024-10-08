@@ -16,6 +16,8 @@ dependencies:
   - typing_extensions>=4.0.0
   - h5py  # HDF5 backend for datasets
   - tqdm  # progress bar util
+  - typer  # CLI support
+  - rich  # CLI support
 
   # Optional dependencies follow:
 
@@ -54,7 +56,6 @@ dependencies:
   # Tools :
   - matplotlib
   - pynvml
-  - rich
 
   # Docs:
   - sphinx

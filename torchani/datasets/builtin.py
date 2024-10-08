@@ -290,6 +290,8 @@ of GDB-10to13 were recalculated using ORCA 5.0 instead of 4.2 so the
 integration grids may be slightly different, but the difference should not be
 significant.
 """
+
+from enum import Enum
 import json
 import typing as tp
 import sys
@@ -299,9 +301,8 @@ from collections import OrderedDict
 
 from tqdm import tqdm
 
-from torchani.paths import DATASETS
+from torchani.paths import datasets_dir
 from torchani.utils import download_and_extract
-from torchani.annotations import StrPath
 from torchani.datasets.anidataset import ANIDataset
 
 _BASE_URL = "http://moria.chem.ufl.edu/animodel/ground_truth_data/"
@@ -318,13 +319,28 @@ with open(Path(__file__).resolve().parent / "md5s.csv") as f:
         file_, md5 = line.split(",")
         _MD5S[file_.strip()] = md5.strip()
 
-_BUILTIN_DATASETS: tp.List[str] = list(_BUILTIN_DATASETS_SPEC.keys())
 _BUILTIN_DATASETS_LOT: tp.List[str] = list(
     {
         lot
         for name in _BUILTIN_DATASETS_SPEC.keys()
         for lot in _BUILTIN_DATASETS_SPEC[name]["lot"]
     }
+)
+
+# Enums are dynamically created and their names sanitized
+_SANITIZED_NAMES = [k.replace("-", "_").upper() for k in _BUILTIN_DATASETS_SPEC]
+_SANITIZED_LOTS = [k.replace("-", "_").upper() for k in _BUILTIN_DATASETS_LOT]
+
+if len(_SANITIZED_NAMES) != len(_BUILTIN_DATASETS_SPEC):
+    raise RuntimeError("Incorrect builtin dataset name")
+if len(_SANITIZED_LOTS) != len(_BUILTIN_DATASETS_LOT):
+    raise RuntimeError("Incorrect builtin LoT name")
+
+DatasetId = Enum(  # type: ignore
+    "DatasetId", {sn: n for sn, n in zip(_SANITIZED_NAMES, _BUILTIN_DATASETS_SPEC)}
+)
+LotId = Enum(  # type: ignore
+    "LotId", {sn: n for sn, n in zip(_SANITIZED_LOTS, _BUILTIN_DATASETS_LOT)}
 )
 
 
@@ -337,33 +353,51 @@ def _calc_file_md5(file_path: Path) -> str:
     return hasher.hexdigest()
 
 
-def download_builtin_dataset(dataset: str, lot: str, root=None, verbose: bool = True):
-    """
-    Download dataset at specified root folder, or at the default folder:
-    ./datasets/{dataset}-{lot}/
-    """
-    if dataset not in _BUILTIN_DATASETS:
-        raise ValueError(f"{dataset} is not avaiable")
-    if lot not in _BUILTIN_DATASETS_LOT:
-        raise ValueError(f"{lot} is not avaiable")
+def datapull(
+    name: DatasetId,
+    lot: tp.Optional[LotId] = None,
+    verbose: bool = True,
+    skip_check: bool = False,
+):
+    r"""Download a built-in dataset to the default location in disk"""
+    location = (datasets_dir() / f"{name}-{lot}").resolve()
+    if location.exists() and verbose:
+        if skip_check:
+            print("Dataset found locally, skipping integrity check")
+            return
+        print("Dataset found locally, starting files integrity check ...")
+    else:
+        print("Dataset not found locally, starting download...")
+    if lot is None:
+        getattr(sys.modules[__name__], name.value)(download=True)
+        return
+    getattr(sys.modules[__name__], name.value)(
+        download=True, lot=lot.value, skip_check=skip_check
+    )
 
-    parts = lot.split("-")
-    if len(parts) != 2:
-        raise ValueError(f"'lot' format {lot} incorrect. It should be <fnal>-<basis>")
 
-    functional = parts[0]
-    basis_set = parts[1]
-    location = f"./datasets/{dataset}-{lot}/" if root is None else root
-    if Path(location).exists() and verbose:
-        print(
-            f"Found existing dataset at {str(Path(location).resolve())},"
-            f" will check files integraity."
+def datainfo(
+    name: DatasetId, lot: tp.Optional[LotId] = None, skip_check: bool = False
+) -> None:
+    if lot is None:
+        ds = getattr(sys.modules[__name__], name.value)(
+            download=False, skip_check=skip_check
         )
     else:
-        print(f"Will download dataset at {str(Path(location).resolve())}")
-    getattr(sys.modules[__name__], dataset)(
-        location, download=True, functional=functional, basis_set=basis_set
-    )
+        ds = getattr(sys.modules[__name__], name.value)(
+            download=False, lot=lot, skip_check=skip_check
+        )
+    groups = list(ds.keys())
+    conformer = ds.get_numpy_conformers(groups[0], 0)
+    key_max_len = max([len(k) for k in conformer.keys()]) + 3
+    shapes = [str(list(conformer[k].shape)) for k in conformer.keys()]
+    shape_max_len = max([len(s) for s in shapes]) + 3
+    print("\nFirst Conformer Properties (non-batched): ")
+    for i, k in enumerate(conformer.keys()):
+        key = k.ljust(key_max_len)
+        shape = shapes[i].ljust(shape_max_len)
+        dtype = conformer[k].dtype
+        print(f"  {key} shape: {shape} dtype: {dtype}")
 
 
 def _check_files_integrity(
@@ -406,45 +440,41 @@ def _check_files_integrity(
             )
 
 
-# This Function is a Builder Factory that creates builder functions
-# that instantiate builtin ani datasets.
-# Functions are created using a json file as a template, their names are:
-#   - COMP6V1
+# This is a "builder factory" that creates "builder functions"
+# The "builder functions" instantiate dfferent built-in datasets.
+# "builder functions" are created using a .json file as a template, their names are:
+#   - COMP6v1
 #   - ANI1x
 #   - ANI2x
 #   ...
 # Options for the builder functions are:
 #   - root
-#   - functional
-#   - basis_set
+#   - lot
 #   - verbose
 #   - download
 #   - dummy_properties
 def _register_dataset_builder(name: str) -> None:
     data = _BUILTIN_DATASETS_SPEC[name]["lot"]
-    default_fn, default_basis = _BUILTIN_DATASETS_SPEC[name]["default-lot"].split("-")
+    default_lot = _BUILTIN_DATASETS_SPEC[name]["default-lot"]
 
     def builder(
-        root: tp.Optional[StrPath] = None,
-        functional: str = default_fn,
-        basis_set: str = default_basis,
+        lot: str = default_lot,
         verbose: bool = True,
         download: bool = True,
         dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
         skip_check: bool = False,
     ) -> ANIDataset:
-        lot = f"{functional}-{basis_set}".lower()
+        lot = lot.lower()
         try:
             archive = data[lot]["archive"]
         except KeyError:
             raise ValueError(
-                f"Unsupported functional-basis set combination"
+                f"Unsupported level of theory"
                 f" try one of {set(data.keys()) - {'default-lot'}}"
             ) from None
         suffix = ".h5"
 
-        _root = root or DATASETS / archive.replace(".tar.gz", "")
-        _root = Path(_root).resolve()
+        _root = (datasets_dir() / archive.replace(".tar.gz", "")).resolve()
 
         _files_and_md5s = OrderedDict([(k, _MD5S[k]) for k in data[lot]["files"]])
 
@@ -490,6 +520,6 @@ def _register_dataset_builder(name: str) -> None:
     setattr(sys.modules[__name__], name, builder)
 
 
-for name in _BUILTIN_DATASETS:
+for name in _BUILTIN_DATASETS_SPEC:
     if name not in sys.modules[__name__].__dict__:
         _register_dataset_builder(name)

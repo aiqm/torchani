@@ -21,11 +21,19 @@ some are external freely available datasets published elsewhere, that have been
 reformatted to conform to TorchANI's API. If you use any of these datasets in
 your work please cite the relevate article(s).
 """
+
 from torchani.datasets import utils
+from torchani.datasets.utils import datapack
 
 # Some attrs are created programmatically, so a star import is needed
-from torchani.datasets.builtin import *  # noqa:F403
-from torchani.datasets.builtin import _BUILTIN_DATASETS, _BUILTIN_DATASETS_LOT
+from torchani.datasets.builtin import *  # noqa:F403,F401
+from torchani.datasets.builtin import (
+    DatasetId,
+    LotId,
+    datapull,
+    datainfo,
+    _BUILTIN_DATASETS_SPEC,
+)
 from torchani.datasets.anidataset import ANIDataset
 from torchani.datasets.batching import (
     BatchedDataset,
@@ -46,10 +54,12 @@ __all__ = [
     "create_batched_dataset",
     "batch_all_in_ram",
     "utils",
-    "download_builtin_dataset",
-    "_BUILTIN_DATASETS",
-    "_BUILTIN_DATASETS_LOT",
+    "datapull",
+    "datainfo",
+    "datapack",
+    "DatasetId",
+    "LotId",
 ]
 
 # download_builtin_dataset defined from star import
-__all__ += _BUILTIN_DATASETS  # noqa:F405
+__all__ += _BUILTIN_DATASETS_SPEC  # noqa:F405

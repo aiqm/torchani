@@ -59,7 +59,7 @@ from torchani.nn import ANIModel, Ensemble
 from torchani.atomics import AtomicContainer, AtomicNetwork, AtomicMakerArg, AtomicMaker
 from torchani.constants import GSAES
 from torchani.utils import sort_by_element, SYMBOLS_1X, SYMBOLS_2X
-from torchani.paths import STATE_DICTS
+from torchani.paths import state_dicts_dir
 
 FeaturizerType = tp.Type[AEVComputer]
 PairPotentialType = tp.Type[PairPotential]
@@ -846,7 +846,7 @@ def fetch_state_dict(
         url = PUBLIC_ZOO_URL
     dict_ = torch.hub.load_state_dict_from_url(
         f"{url}/{state_dict_file}",
-        model_dir=str(STATE_DICTS),
+        model_dir=str(state_dicts_dir()),
         map_location=torch.device("cpu"),
     )
     # if "energy_shifter.atomic_numbers" not in dict_:

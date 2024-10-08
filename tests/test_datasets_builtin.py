@@ -1,60 +1,52 @@
+import typing as tp
 import tempfile
-from pathlib import Path
 
 from torchani.testing import TestCase
 from torchani import datasets
-from torchani.datasets import (
-    download_builtin_dataset,
-    _BUILTIN_DATASETS,
-)
+from torchani.datasets import datapull, DatasetId, LotId
+from torchani.paths import set_data_dir
 
 
 class TestBuiltinDatasets(TestCase):
+    tmpdir: tp.Any
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmpdir = tempfile.TemporaryDirectory()
+        set_data_dir(cls.tmpdir.name)
+
+    @classmethod
+    def tearDownClass(cls):
+        set_data_dir()
+        cls.tmpdir.cleanup()
+
     def testSmallSample(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            ds = getattr(datasets, "TestData")(tmpdir)
-            self.assertEqual(ds.grouping, "by_num_atoms")
+        ds = datasets.TestData()  # type: ignore
+        self.assertEqual(ds.grouping, "by_num_atoms")
 
     def testDownloadSmallSample(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            download_builtin_dataset("TestData", "wb97x-631gd", tmpdir)
-            num_h5_files = len(list(Path(tmpdir).glob("*.h5")))
-            self.assertGreater(num_h5_files, 0)
+        datapull(DatasetId.TESTDATA, LotId.WB97X_631GD)  # type: ignore
+        files = datasets.TestData().store_locations  # type: ignore
+        self.assertGreater(len(files), 0)
 
     def testBuiltins(self):
         # all these have default levels of theory
-        classes = _BUILTIN_DATASETS
-        for c in classes:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
-                    getattr(datasets, c)(tmpdir, download=False)
+        for ds_id in DatasetId:
+            if ds_id is DatasetId.TESTDATA:
+                continue
+            c = ds_id.value
+            with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
+                getattr(datasets, c)(download=False)
 
         # these also have the B973c/def2mTZVP LoT
         for c in ["ANI1x", "ANI2x", "COMP6v1", "COMP6v2", "AminoacidDimers"]:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
-                    getattr(datasets, c)(
-                        tmpdir,
-                        download=False,
-                        basis_set="def2mTZVP",
-                        functional="B973c",
-                    )
+            with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
+                getattr(datasets, c)(download=False, lot="B973c-def2mTZVP")
 
         # these also have the wB97M-D3BJ/def2TZVPP LoT
         for c in ["ANI1x", "ANI2x", "COMP6v1", "COMP6v2"]:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
-                    getattr(datasets, c)(
-                        tmpdir,
-                        download=False,
-                        basis_set="def2TZVPP",
-                        functional="wB97MD3BJ",
-                    )
-                # Case insensitivity
-                with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
-                    getattr(datasets, c)(
-                        tmpdir,
-                        download=False,
-                        basis_set="DEF2tZvPp",
-                        functional="Wb97md3Bj",
-                    )
+            with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
+                getattr(datasets, c)(download=False, lot="wB97MD3BJ-def2TZVPP")
+            # Case insensitivity
+            with self.assertRaisesRegex(RuntimeError, "Dataset not found"):
+                getattr(datasets, c)(download=False, lot="Wb97md3Bj-DEF2tZvPp")

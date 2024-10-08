@@ -23,6 +23,8 @@ dependencies = [
     "typing_extensions>=4.0.0",
     "h5py",
     "tqdm",
+    "typer",
+    "rich",
 ]
 dynamic = ["version"]
 
@@ -36,7 +38,7 @@ requires = ["setuptools>=64", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]
-torchani = "torchani.cli:main"
+ani = "torchani.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

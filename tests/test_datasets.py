@@ -1,5 +1,4 @@
 import typing as tp
-import os
 from pathlib import Path
 import json
 import tempfile
@@ -28,6 +27,7 @@ from torchani.datasets.utils import (
     filter_by_high_energy_error,
     concatenate,
 )
+from torchani.paths import set_data_dir
 
 # Dynamically created attrs
 from torchani.datasets import TestData  # type: ignore
@@ -47,25 +47,30 @@ try:
 except ImportError:
     PANDAS_AVAILABLE = False
 
-path = os.path.dirname(os.path.realpath(__file__))
-dataset_path = os.path.join(path, "../dataset/ani-1x/sample.h5")
+dataset_path = Path(Path(__file__).parent.parent, "dataset", "ani-1x", "sample.h5")
+dataset_path = dataset_path.resolve()
 batch_size = 256
 
 _numbers_to_symbols = np.vectorize(lambda x: PERIODIC_TABLE[x])
 
 
-TmpFileOrDir = tp.Union[
-    tempfile._TemporaryFileWrapper, tempfile.TemporaryDirectory
-]
+TmpFileOrDir = tp.Union[tempfile._TemporaryFileWrapper, tempfile.TemporaryDirectory]
 
 
 class TestDatasetUtils(TestCase):
     def setUp(self):
         self.tmpdir = tempfile.TemporaryDirectory()
-        self.test_ds = TestData(self.tmpdir.name)
-        self.test_ds_single = ANIDataset(self.tmpdir.name / Path("test_data1.h5"))
+        set_data_dir(self.tmpdir.name)
+        self.test_ds = TestData()
+        locs = [
+            loc
+            for loc in self.test_ds.store_locations
+            if Path(loc).resolve().stem == "test_data1"
+        ]
+        self.test_ds_single = ANIDataset(locs[0])
 
     def tearDown(self):
+        set_data_dir()
         self.tmpdir.cleanup()
 
     def testConcatenate(self):

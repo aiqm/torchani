@@ -18,7 +18,7 @@ from torchani.cutoffs import CutoffArg
 from torchani.neighbors import NeighborData, NeighborlistArg
 from torchani.potentials.core import PairPotential
 from torchani.potentials.wrapper import PotentialWrapper
-from torchani.paths import RESOURCES
+from torchani.paths import resources_dir
 
 
 # NOTE: Precalculated C6 constants for D3
@@ -34,7 +34,7 @@ from torchani.paths import RESOURCES
 # This means for each pair of elements and reference indices there is an
 # associated coordination number for the first and second items.
 def _load_c6_constants() -> tp.Tuple[Tensor, Tensor, Tensor]:
-    with h5py.File(str(RESOURCES / "c6.h5"), "r") as f:
+    with h5py.File(str(resources_dir() / "c6.h5"), "r") as f:
         c6_constants = torch.from_numpy(f["all/constants"][:])
         c6_coordnums_a = torch.from_numpy(f["all/coordnums_a"][:])
         c6_coordnums_b = torch.from_numpy(f["all/coordnums_b"][:])

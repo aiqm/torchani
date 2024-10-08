@@ -7,6 +7,7 @@ file format used in the first `ANI`_ article.
 .. _ANI:
     http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
 """
+
 import itertools
 from pathlib import Path
 from dataclasses import dataclass
@@ -20,7 +21,7 @@ import torch
 from torch import Tensor
 import typing_extensions as tpx
 
-from torchani.paths import NEUROCHEM
+from torchani.paths import neurochem_dir
 from torchani.models import ANI
 from torchani.aev import AEVComputer
 from torchani.nn import ANIModel, Ensemble
@@ -102,7 +103,7 @@ class AEVConstants:
 
 
 def load_aev_constants_and_symbols(
-    consts_file: StrPath
+    consts_file: StrPath,
 ) -> tp.Tuple[AEVConstants, tp.Tuple[str, ...]]:
     aev_floats: tp.Dict[str, float] = {}
     aev_seqs: tp.Dict[str, tp.Tuple[float, ...]] = {}
@@ -335,9 +336,7 @@ def load_member(symbols: tp.Sequence[str], model_dir: StrPath) -> ANIModel:
     )
 
 
-def load_ensemble(
-    symbols: tp.Sequence[str], prefix: StrPath, count: int
-) -> Ensemble:
+def load_ensemble(symbols: tp.Sequence[str], prefix: StrPath, count: int) -> Ensemble:
     """Returns an instance of :class:`torchani.nn.Ensemble` loaded from
     NeuroChem's network directories beginning with the given prefix.
 
@@ -371,17 +370,9 @@ class NeurochemInfo:
             _const_file, _sae_file, _ensemble_prefix, _ensemble_size = lines
 
             ensemble_size: int = int(_ensemble_size)
-            const_file_reldir, const_file_name = _const_file.split("/")
-            sae_file_reldir, sae_file_name = _sae_file.split("/")
-            ensemble_prefix_reldir, ensemble_prefix_name = _ensemble_prefix.split("/")
-
-            const_file_path: Path = (
-                NEUROCHEM / const_file_reldir
-            ) / const_file_name
-            sae_file_path: Path = (NEUROCHEM / sae_file_reldir) / sae_file_name
-            ensemble_prefix: Path = (
-                NEUROCHEM / ensemble_prefix_reldir
-            ) / ensemble_prefix_name
+            const_file_path: Path = Path(neurochem_dir(), *_const_file.split("/"))
+            sae_file_path: Path = Path(neurochem_dir(), *_sae_file.split("/"))
+            ensemble_prefix: Path = Path(neurochem_dir(), *_ensemble_prefix.split("/"))
         return cls(sae_file_path, const_file_path, ensemble_prefix, ensemble_size)
 
     @classmethod
@@ -392,7 +383,7 @@ class NeurochemInfo:
                 f" supported models are: {SUPPORTED_MODELS}",
             )
         suffix = model_name.replace("ani", "")
-        info_file_path = NEUROCHEM / f"ani-{suffix}_8x.info"
+        info_file_path = Path(neurochem_dir(), f"ani-{suffix}_8x.info")
         if not info_file_path.is_file():
             download_model_parameters()
         info = cls.from_info_file(info_file_path)
@@ -402,8 +393,7 @@ class NeurochemInfo:
 def download_model_parameters(
     root: tp.Optional[Path] = None, verbose: bool = True
 ) -> None:
-    if root is None:
-        root = NEUROCHEM
+    root = root or neurochem_dir()
     if any(root.iterdir()):
         if verbose:
             print("Found existing files in directory, assuming params already present")
