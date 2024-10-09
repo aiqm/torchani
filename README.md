@@ -122,6 +122,14 @@ pytest -v .
 This process works for most use cases, but for more details regarding building
 the CUDA and C++ extensions refer to [TorchANI CSRC](torchani/csrc).
 
+## GPU support
+
+TorchANI can be run in CUDA-enabled GPUs. This is **highly recommended** unless
+doing simple debugging or tests. If you don't run TorchANI on a GPU, expect
+highly degraded performance. Note that there is no CUDA support on `macOS`, and
+TorchANI is **untested** with Apple Metal Performance Shaders (MPS) and with
+AMD GPUs (ROCm | HIP).
+
 ## CUDA and C++ extensions
 
 A CUDA extension for speeding up AEV calculations and a C++ extension for
@@ -151,7 +159,14 @@ Please cite the following paper if you use TorchANI:
 - Refer to [isayev/ASE_ANI](https://github.com/isayev/ASE_ANI) for ANI model
   references.
 
-## Documentation (ONLY APPLIES TO PUBLIC REPO)
+## Notes for developers
+
+- Never commit to the master branch directly. If you need to change something,
+  create a new branch and submit a PR on GitHub.
+- All the tests on GitHub must pass before your PR can be merged.
+- Code review is required before merging a pull request.
+
+### Documentation (ONLY APPLIES TO PUBLIC REPO)
 
 If you opened a pull request, you could see your generated documents at
 https://aiqm.github.io/torchani-test-docs/ after you `docs` check succeed. Keep
@@ -160,12 +175,27 @@ development, and only keeps the latest push. The CI runing for other pull
 requests might overwrite this repository. You could rerun the `docs` check to
 overwrite this repo to your build.
 
-## Notes for developers
+### Details on the conda packages needed to build cuAEV and MNP
 
-- Never commit to the master branch directly. If you need to change something,
-  create a new branch and submit a PR on GitHub.
-- All the tests on GitHub must pass before your PR can be merged.
-- Code review is required before merging a pull request.
+The CUDA libraries specified by the pytorch-cuda metapackage are not enough to
+build the extensions; the `*-dev` versions with the headers are required. We
+also pin the version of `nvcc`, since `pytorch` can't directly compile
+extensions with newer `nvcc`. We also pin the version of `cccl` due to torch's
+usage of thrust. Explicitly specifying `setuptools` and `setuptools-scm` is
+required since extensions have to be built with `--no-build-isolation`.
+Finally, `g++` and `gcc` compilers that support `C++17` are required for
+compilation (compiler version is pinned to ensure reproducibility). The
+required conda pkgs are then (sans the version constraints):
+
+```yaml
+  - setuptools
+  - setuptools-scm
+  - gxx_linux-64
+  - gcc_linux-64
+  - nvidia::cuda-libraries-dev
+  - nvidia::cuda-cccl
+  - nvidia::cuda-nvcc
+```
 
 ### Building the TorchANI conda package
 

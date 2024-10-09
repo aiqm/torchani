@@ -5,11 +5,9 @@ channels:
   - https://conda.anaconda.org/nvidia
   - https://conda.anaconda.org/conda-forge
 dependencies:
-  # General
+  ## Required dependencies to run TorchANI ##
   - python=3.10
   - pip>=24.0
-
-  # Required dependencies:
   - numpy=1.26
   - pytorch::pytorch=2.3
   - typing_extensions>=4.0.0
@@ -20,20 +18,18 @@ dependencies:
 
   # Optional dependencies follow:
 
-  # CUDA GPU support (highly recommended unless doing simple debugging or tests):
-  - pytorch::pytorch-cuda=11.8
-  # If not using CUDA GPU support, comment the previous line and uncomment the next:
-  # - pytorch::cpuonly
-  # Note that cuAEV and MNP are not supported with cpu-only pytorch
+  ## ASE interface ##
+  # Used for molecular dynamics and for tests/tools/docs
+  - ase
 
-  # Compiled extensions (cuAEV and MNP):
-  # Needs CUDA GPU support. The CUDA libraries speciefied by the pytorch-cuda
-  # metapackage are not enough, the *-dev versions with the headers are
-  # required. Also required to pin the version of nvcc, otherwise torch refuses
-  # to compile. Also required to pin the version of cccl due to torch's usage
-  # of thrust. Setuptools required since extensions have to be built with
-  # --no-build-isolation. g++ and gcc compilers that support C++17 required
-  # (pin version for repro).
+  ## NVIDIA CUDA GPU support ##
+  - pytorch::pytorch-cuda=11.8
+  # If using **only** CPU, comment prev line and uncomment the next:
+  #- pytorch::cpuonly
+
+  ## cuAEV and MNP ##
+  # For more details consult the "developer notes" section in README.md
+  # If using **only** CPU, comment all lines on this block
   - setuptools>=64
   - setuptools-scm>=8
   - gxx_linux-64=11.4
@@ -42,10 +38,7 @@ dependencies:
   - nvidia::cuda-cccl=11.8
   - nvidia::cuda-nvcc=11.8
 
-  # Optional ASE interface (needed for dynamics and for tests/tools/docs)
-  - ase
-
-  # Tests:
+  ## Running torchani/tests ##
   - coverage  # code coverage
   - black  # formatter
   - flake8  # linter
@@ -59,11 +52,11 @@ dependencies:
   - pyarrow  # Parquet backend
   - zarr  # Zarr backend
 
-  # Tools :
+  ## Running scripts in torchani/tools ##
   - matplotlib
   - pynvml
 
-  # Docs:
+  ## Building torchani/docs ##
   - sphinx
   - sphinx_rtd_theme
   - sphinx-gallery
