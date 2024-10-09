@@ -7,7 +7,6 @@ import os
 from pathlib import Path
 from torchani.annotations import StrPath
 
-
 _RESOURCES = Path(__file__).resolve().parent / "resources"
 
 

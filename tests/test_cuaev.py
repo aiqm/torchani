@@ -734,7 +734,7 @@ class TestCUAEV(TestCase):
         coordinates.requires_grad_(True)
         _, aev = self.aev_computer_2x((species, coordinates), cell, pbc)
         aev.backward(torch.ones_like(aev))
-        aev_grad = coordinates.grad  # noqa: F841
+        aev_grad = coordinates.grad
 
         coordinates = coordinates.clone().detach()
         coordinates.requires_grad_()
@@ -758,9 +758,12 @@ class TestCUAEV(TestCase):
         )
 
         cu_aev.backward(torch.ones_like(cu_aev))
-        cuaev_grad = coordinates.grad  # noqa: F841
-        # print((cu_aev - aev).abs().max())
-        # print((cuaev_grad - aev_grad).abs().max())
+        cuaev_grad = coordinates.grad
+
+        # Debug
+        if False:
+            print((cu_aev - aev).abs().max())
+            print((cuaev_grad - aev_grad).abs().max())
 
         # when pbc is on, full nbrlist converted from half nbrlist is not correct
         # self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)

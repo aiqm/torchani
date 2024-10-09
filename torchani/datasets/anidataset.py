@@ -1244,3 +1244,39 @@ class ANIDataset(_ANIDatasetBase):
         if self.num_stores == 1:
             return self._first_name, "/".join(tokens)
         return tokens[0], "/".join(tokens[1:])
+
+
+def concatenate(
+    source: ANIDataset,
+    dest_location: StrPath,
+    verbose: bool = True,
+    backend: Backend = "hdf5",
+    delete_originals: bool = False,
+) -> ANIDataset:
+    r"""Combine all the backing stores in a given ANIDataset into one"""
+    dest_location = Path(dest_location).resolve()
+    if source.grouping not in ["by_formula", "by_num_atoms"]:
+        raise ValueError("Please regroup your dataset before concatenating")
+
+    dest = ANIDataset("tmp", backend=backend, grouping=source.grouping, verbose=False)
+    try:
+        for k, v in tqdm(
+            source.numpy_items(),
+            desc="Concatenating datasets",
+            total=source.num_conformer_groups,
+            disable=not verbose,
+        ):
+            dest.append_conformers(k.split("/")[-1], v)
+    except Exception:
+        dest._first_subds._store.location.clear()
+
+    dest._first_subds._store.location.root = dest_location
+    if delete_originals:
+        for subds in tqdm(
+            source._datasets.values(),
+            desc="Deleting original stores",
+            total=source.num_stores,
+            disable=not verbose,
+        ):
+            subds._store.location.clear()
+    return dest

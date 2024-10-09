@@ -19,6 +19,21 @@ repos:
       - id: debug-statements  # checks for "breakpoint()" and debugger imports
         stages: [push]
 
+  - repo: local
+    hooks:
+      - id: builtin-datasets-codegen
+        name: builtin-datasets-codegen
+        entry: "python ./tools/builtin-datasets-codegen.py"
+        # Don't generate a venv for the exe
+        language: system
+        types: [python]
+        # Pass no files but run regardless
+        files: $^
+        always_run: true
+        # Print output on success
+        verbose: true
+        stages: [push]
+
   - repo: https://github.com/PyCQA/flake8
     rev: 7.0.0
     hooks:

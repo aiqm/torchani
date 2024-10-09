@@ -11,9 +11,8 @@ from pathlib import Path
 import torch
 import numpy as np
 
-from torchani.datasets import ANIDataset
-from torchani.datasets.utils import concatenate
-from torchani.datasets.utils import filter_by_high_force
+from torchani.datasets import ANIDataset, concatenate
+from torchani.datasets.filters import filter_by_high_force
 
 ###############################################################################
 # Again for the purposes of this example we will copy and modify two files
