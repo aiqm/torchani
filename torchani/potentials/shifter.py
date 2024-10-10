@@ -58,14 +58,14 @@ class EnergyAdder(Potential):
             torch.empty(0), torch.empty(0), torch.empty(0)
         ),
         ghost_flags: tp.Optional[Tensor] = None,
-        average: bool = False,
+        ensemble_average: bool = True,
     ) -> Tensor:
         # Compute atomic self energies for a set of species.
         self_atomic_energies = self.self_energies[element_idxs]
         self_atomic_energies = self_atomic_energies.masked_fill(element_idxs == -1, 0.0)
-        if not average:
-            return self_atomic_energies.unsqueeze(0)
-        return self_atomic_energies
+        if ensemble_average:
+            return self_atomic_energies
+        return self_atomic_energies.unsqueeze(0)
 
     def forward(
         self,
@@ -76,7 +76,7 @@ class EnergyAdder(Potential):
         ghost_flags: tp.Optional[Tensor] = None,
     ) -> Tensor:
         return self.atomic_energies(
-            element_idxs, neighbors, ghost_flags, average=True
+            element_idxs, neighbors, ghost_flags, ensemble_average=True
         ).sum(dim=-1)
 
 

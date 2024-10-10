@@ -25,7 +25,8 @@ from ase.calculators.test import numeric_force
 
 from torchani.io import read_xyz
 from torchani.testing import ANITest, expand
-from torchani.models import ANI1x, ANIdr, PairPotentialsModel
+from torchani.assembly import ANI
+from torchani.models import ANI1x, ANIdr
 from torchani.potentials import PairPotential
 
 
@@ -57,7 +58,7 @@ class TestASE(ANITest):
         )
         symbols = model_cell.get_chemical_symbols()
         model_pair = self._setup(
-            PairPotentialsModel(
+            ANI(
                 aev_computer=model_cell.aev_computer,
                 neural_networks=model_cell.neural_networks,
                 energy_shifter=model_cell.energy_shifter,

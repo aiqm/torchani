@@ -45,7 +45,7 @@ class NNPotential(Potential):
         element_idxs: Tensor,
         neighbors: NeighborData,
         ghost_flags: tp.Optional[Tensor] = None,
-        average: bool = False,
+        ensemble_average: bool = True,
     ) -> Tensor:
         aevs = self.aev_computer._compute_aev(element_idxs, neighbors)
         atomic_energies = self.neural_networks.members_atomic_energies(
@@ -53,7 +53,7 @@ class NNPotential(Potential):
         )
         if atomic_energies.dim() == 2:
             atomic_energies = atomic_energies.unsqueeze(0)
-        if average:
+        if ensemble_average:
             return atomic_energies.sum(0)
         return atomic_energies
 

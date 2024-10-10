@@ -22,7 +22,7 @@ from torch import Tensor
 import typing_extensions as tpx
 
 from torchani.paths import neurochem_dir
-from torchani.models import ANI
+from torchani.assembly import ANI
 from torchani.aev import AEVComputer
 from torchani.nn import ANIModel, Ensemble
 from torchani.cutoffs import CutoffArg

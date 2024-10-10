@@ -8,7 +8,7 @@ import typing as tp
 import torch
 from torch import Tensor
 
-from torchani.models import ANI
+from torchani.assembly import ANI
 from torchani.potentials import PotentialWrapper
 from torchani.units import mhessian2fconst, sqrt_mhessian2invcm, sqrt_mhessian2milliev
 from torchani.tuples import (

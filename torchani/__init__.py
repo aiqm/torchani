@@ -40,7 +40,7 @@ from torchani.utils import EnergyShifter
 from torchani.nn import ANIModel, Ensemble, SpeciesConverter
 from torchani.aev import AEVComputer
 from torchani import (
-    assembler,
+    assembly,
     utils,
     models,
     units,
@@ -88,7 +88,7 @@ __all__ = [
     'cli',
     'io',
     'electro',
-    'assembler',
+    'assembly',
     "sae",
     "infer",
     "constants",

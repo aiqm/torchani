@@ -76,20 +76,20 @@ class Potential(torch.nn.Module):
         element_idxs: Tensor,
         neighbors: NeighborData,
         ghost_flags: tp.Optional[Tensor] = None,
-        average: bool = False,
+        ensemble_average: bool = True,
     ) -> Tensor:
         r"""Outputs "atomic_energies"
 
         All distances are assumed to lie inside self.cutoff (which may be infinite)
 
-        'average' controls whether the atomic energies are averaged over
+        'ensemble_average' controls whether the atomic energies are averaged over
         the ensemble models.
 
         Shape is (M, N, A) if not averaged over the models,
         or (N, A) if averaged over models
 
         Potentials that don't have an ensemble of models output shape (1, N, A)
-        if average=False.
+        if ensemble_average=False.
         """
         return torch.zeros_like(element_idxs, dtype=neighbors.distances.dtype)
 
@@ -178,7 +178,7 @@ class PairPotential(Potential):
         element_idxs: Tensor,
         neighbors: NeighborData,
         ghost_flags: tp.Optional[Tensor] = None,
-        average: bool = False,
+        ensemble_average: bool = True,
     ) -> Tensor:
         pair_energies = self._calculate_pair_energies_wrapper(
             element_idxs,
@@ -196,6 +196,6 @@ class PairPotential(Potential):
         atomic_energies.index_add_(0, neighbors.indices[0], pair_energies / 2)
         atomic_energies.index_add_(0, neighbors.indices[1], pair_energies / 2)
         atomic_energies = atomic_energies.view(molecules_num, atoms_num)
-        if not average:
+        if not ensemble_average:
             return atomic_energies.unsqueeze(0)
         return atomic_energies

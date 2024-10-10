@@ -1,3 +1,8 @@
+r"""
+Filters to remove unwanted structures from datasets (e.g. extremely high
+energies or non-converged structures).
+"""
+
 import typing as tp
 
 import torch
@@ -5,7 +10,7 @@ from torch import Tensor
 from tqdm import tqdm
 
 from torchani.units import hartree2kcalpermol
-from torchani.models import ANI
+from torchani.assembly import ANI
 from torchani.nn import Ensemble
 from torchani.annotations import Conformers
 from torchani.datasets.anidataset import ANIDataset

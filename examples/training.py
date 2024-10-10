@@ -13,10 +13,10 @@ import torch.utils.tensorboard
 from tqdm import tqdm
 
 import torchani
-from torchani.models import ANI
+from torchani.assembly import ANI
 from torchani.datasets import ANIDataset, ANIBatchedDataset, BatchedDataset
 from torchani.units import hartree2kcalpermol
-from torchani.assembler import FlexANI2
+from torchani.assembly import build_basic_ani
 from torchani.grad import forces_for_training
 
 # Explanation of how to train an ANI model
@@ -73,7 +73,7 @@ validation = valid_ds.as_dataloader(num_workers=0)
 # Lets generate a non-pretrained model that we will train afterwards
 # Optionally we could initialize the weights with a custom initialization,
 # But for simplicity we use PyTorch default initialization
-model = FlexANI2(
+model = build_basic_ani(
     lot="wb97x-631gd",
     symbols=("H", "C", "N", "O"),
     repulsion=True,

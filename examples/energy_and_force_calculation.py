@@ -64,7 +64,7 @@ print("Force (Hartree / Å): \n", force)
 _, atomic_energies = model.atomic_energies(
     (species, coordinates),
     shift_energy=True,
-    average=True,
+    ensemble_average=True,
 )
 
 ###############################################################################
@@ -78,7 +78,7 @@ print("Average Atomic energies: \n", atomic_energies)
 _, atomic_energies = model.atomic_energies(
     (species, coordinates),
     shift_energy=True,
-    average=False,
+    ensemble_average=False,
 )
 print("Atomic energies of first model: \n", atomic_energies[0, :, :])
 
@@ -88,6 +88,6 @@ print("Atomic energies of first model: \n", atomic_energies[0, :, :])
 unshifted_atomic_energies = model.atomic_energies(
     (species, coordinates),
     shift_energy=False,
-    average=False,
+    ensemble_average=False,
 ).energies
 print("Atomic energies, before shifting: \n", unshifted_atomic_energies[0])

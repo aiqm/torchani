@@ -97,7 +97,7 @@ class TestRepulsion(ANITest):
                 device=self.device,
             )
             _atomic_energies.append(
-                model.atomic_energies((species, coordinates), average=True)
+                model.atomic_energies((species, coordinates), ensemble_average=True)
                 .energies.sum(-1)
                 .item()
             )
