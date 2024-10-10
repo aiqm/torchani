@@ -55,6 +55,7 @@ dependencies:
   ## Running scripts in torchani/tools ##
   - matplotlib
   - pynvml
+  - jinja2  # Templating engine to build generated code and docs
 
   ## Building torchani/docs ##
   - sphinx

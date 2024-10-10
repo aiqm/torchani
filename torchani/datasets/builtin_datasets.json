@@ -1,5 +1,7 @@
 {
  "TestData": {
+  "default-lot": "wb97x-631gd",
+  "info": "GDB subset, only for debugging and code test purposes",
   "lot": {
    "wb97x-631gd": {
     "archive": "TestData-sample-wb97x-631gd.tar.gz",
@@ -8,10 +10,11 @@
      "test_data2.h5"
     ]
    }
-  },
-  "default-lot": "wb97x-631gd"
+  }
  },
  "TestDataIons": {
+  "default-lot": "b973c-def2mtzvp",
+  "info": "Only for debugging and test purposes, includes forces, dipoles and charges",
   "lot": {
    "b973c-def2mtzvp": {
     "archive": "TestData-ions-b973c-def2mtzvp.tar.gz",
@@ -20,10 +23,11 @@
      "Ions-sample-B973c-def2mTZVP.h5"
     ]
    }
-  },
-  "default-lot": "b973c-def2mtzvp"
+  }
  },
  "TestDataForcesDipoles": {
+  "default-lot": "b973c-def2mtzvp",
+  "info": "Only for debugging and code testing purposes, includes forces and dipoles",
   "lot": {
    "b973c-def2mtzvp": {
     "archive": "TestData-forces_dipoles-b973c-def2mtzvp.tar.gz",
@@ -31,10 +35,11 @@
      "ANI-1x_sample-B973c-def2mTZVP.h5"
     ]
    }
-  },
-  "default-lot": "b973c-def2mtzvp"
+  }
  },
  "IonsVeryHeavy": {
+  "default-lot": "b973c-def2mtzvp",
+  "info": "Dataset that includes ions, with H,C,N,O,F,S,Cl elements and at least one of Si,As,Br,Se,P,B,I (disjoint from LightIons and IonsHeavy) This dataset is not meant to be trained to on its own",
   "lot": {
    "b973c-def2mtzvp": {
     "archive": "Ions-very_heavy-b973c-def2mtzvp.tar.gz",
@@ -42,10 +47,11 @@
      "Ions-very_heavy-B973c-def2mTZVP.h5"
     ]
    }
-  },
-  "default-lot": "b973c-def2mtzvp"
+  }
  },
  "IonsHeavy": {
+  "default-lot": "b973c-def2mtzvp",
+  "info": "WARNING: This dataset may have incorrect energies and/or forces. Dataset that includes ions, with H,C,N,O elements and at least one of F,S,Cl (disjoint from IonsLight) This dataset is not meant to be trained to on its own",
   "lot": {
    "b973c-def2mtzvp": {
     "archive": "Ions-heavy-b973c-def2mtzvp.tar.gz",
@@ -53,10 +59,11 @@
      "Ions-heavy-B973c-def2mTZVP.h5"
     ]
    }
-  },
-  "default-lot": "b973c-def2mtzvp"
+  }
  },
  "IonsLight": {
+  "default-lot": "b973c-def2mtzvp",
+  "info": "WARNING: This dataset may have incorrect energies and/or forces. Dataset that includes ions, with H,C,N,O elements only. Not meant to be trained to on its own",
   "lot": {
    "b973c-def2mtzvp": {
     "archive": "Ions-light-b973c-def2mtzvp.tar.gz",
@@ -64,10 +71,13 @@
      "Ions-light-B973c-def2mTZVP.h5"
     ]
    }
-  },
-  "default-lot": "b973c-def2mtzvp"
+  }
  },
  "ANI1q": {
+  "default-lot": "wb97x-631gd",
+  "doi": "TODO",
+  "article": "TODO",
+  "info": "Very limited subset of ANI-1x for which 'atomic CM5 charges' are available. This dataset is not meant to be trained to on its own",
   "lot": {
    "wb97x-631gd": {
     "archive": "ANI-1q-wb97x-631gd.tar.gz",
@@ -75,10 +85,12 @@
      "ANI-1q-wB97X-631Gd.h5"
     ]
    }
-  },
-  "default-lot": "wb97x-631gd"
+  }
  },
  "ANI2qHeavy": {
+  "info": "Subset of ANI-2x `heavy` for which 'atomic CM5 charges' are available. This dataset is not meant to be trained to on its own",
+  "doi": "TODO",
+  "article": "TODO",
   "lot": {
    "wb97x-631gd": {
     "archive": "ANI-2q_heavy-wb97x-631gd.tar.gz",
@@ -90,6 +102,10 @@
   "default-lot": "wb97x-631gd"
  },
  "ANI1ccx": {
+  "default-lot": "ccsd(t)star-cbs",
+  "doi": "TODO",
+  "article": "TODO",
+  "info": "This dataset also has Hartree Fock (HF) energies, RI-MP2 energies and forces and DPLNO-CCSD(T) energies for different basis sets and PNO settings. This dataset was originally used for transfer learning, not direct training",
   "lot": {
    "ccsd(t)star-cbs": {
     "archive": "ANI-1ccx-ccsd_t_star-cbs.tar.gz",
@@ -97,10 +113,10 @@
      "ANI-1ccx-CCSD_parentheses_T_star-CBS.h5"
     ]
    }
-  },
-  "default-lot": "ccsd(t)star-cbs"
+  }
  },
  "AminoacidDimers": {
+  "info": "Small set of aminoacid dimers. This dataset is not meant to be trained to on its own",
   "lot": {
    "b973c-def2mtzvp": {
     "archive": "Aminoacid-dimers-b973c-def2mtzvp.tar.gz",
@@ -112,6 +128,8 @@
   "default-lot": "b973c-def2mtzvp"
  },
  "ANI1x": {
+  "doi": "TODO",
+  "article": "TODO",
   "lot": {
    "wb97x-631gd": {
     "archive": "ANI-1x-wb97x-631gd.tar.gz",
@@ -147,6 +165,9 @@
   "default-lot": "wb97x-631gd"
  },
  "ANI2x": {
+  "doi": "TODO",
+  "article": "TODO",
+  "info": "In all cases the `v2` and `2x` datasets are supersets of the `v1` and `1x` datasets, so everything that is in the v1/1x datasets is also in the v2/2x datasets, which contain extra structures, except for some wb97X/def2-TZVPP data points for which there are `v1` values but not `v2` values",
   "lot": {
    "wb97x-631gd": {
     "archive": "ANI-2x-wb97x-631gd.tar.gz",
@@ -188,6 +209,9 @@
   "default-lot": "wb97x-631gd"
  },
  "COMP6v1": {
+  "doi": "TODO",
+  "article": "TODO",
+  "info": "Test set, not meant for direct training. In all cases the `v2` and `2x` datasets are supersets of the `v1` and `1x` datasets, so everything that is in the v1/1x datasets is also in the v2/2x datasets, which contain extra structures, except for some wb97X/def2-TZVPP data points for which there are `v1` values but not `v2` values. Note that the ANI-BenchMD, S66x8 and the `13` molecules (with 13 heavy atoms) of GDB-10to13 were recalculated using ORCA 5.0 instead of 4.2, with default integration grids. The numerical difference is not significant for the purposes of training",
   "lot": {
    "wb97x-631gd": {
     "archive": "COMP6-v1-wb97x-631gd.tar.gz",
@@ -238,6 +262,9 @@
   "default-lot": "wb97x-631gd"
  },
  "COMP6v2": {
+  "doi": "TODO",
+  "article": "TODO",
+  "info": "Test set, not meant for direct training. Note that the ANI-BenchMD, S66x8 and the `13` molecules (with 13 heavy atoms) of GDB-10to13 were recalculated using ORCA 5.0 instead of 4.2, with default integration grids. The numerical difference is not significant for the purposes of training",
   "lot": {
    "wb97x-631gd": {
     "archive": "COMP6-v2-wb97x-631gd.tar.gz",
@@ -287,7 +314,10 @@
   "default-lot": "wb97x-631gd"
  },
  "QM9C7O2H10": {
+  "article": "TODO",
+  "doi": "https://doi.org/10.1038/sdata.2014.22",
   "default-lot": "g4mp2-631g_2df_p",
+  "info": "Subset of QM9 with thermal properties recalculated at the higher G4MP2 level of theory. Note that the rest of the properties in this dataset are calculated at the B3LYP/631G_2df_p level of theory. Properties correspond only to conformations of the stoichiometry C7O2H10",
   "lot": {
    "g4mp2-631g_2df_p": {
     "archive": "QM9C7O2H10-g4mp2-631g_2df_p.tar.gz",
@@ -297,8 +327,11 @@
    }
   }
  },
- "QM9Clean": {
+ "QM9": {
+  "article": "TODO",
+  "doi": "https://doi.org/10.1038/sdata.2014.22",
   "default-lot": "b3lyp-631g_2df_p",
+  "info": "Clean version of the QM9 dataset, without structures that failed geometry consistency checks. It has no forces, but contains various other physical quantities. Vibrational freqs, are always 3 A - 5. Linear molecules the `is_linear` flag set. For non linear molecules the last freq is 0.0 and should be discarded. Molecules with a second set of freqs have the `has_alternative_frequencies` flag set. Molecules that don't have this second set have zeros for this field",
   "lot": {
    "b3lyp-631g_2df_p": {
     "archive": "QM9Clean-b3lyp-631g_2df_p.tar.gz",
@@ -308,20 +341,14 @@
    }
   }
  },
- "QM9Dirty": {
-  "default-lot": "b3lyp-631g_2df_p",
-  "lot": {
-   "b3lyp-631g_2df_p": {
-    "archive": "QM9Dirty-b3lyp-631g_2df_p.tar.gz",
-    "files": [
-     "QM9Clean-gdb17_clean-b3lyp-631g_2df_p.h5",
-     "QM9Dirty-gdb17_failed-b3lyp-631g_2df_p.h5"
-    ]
-   }
-  }
+ "Iso17-meta": {
+    "article": "A continuous-filter convolutional neural network for modeling quantum interactions",
+    "doi": "TODO",
+    "info": "MD trajectories using FHI-aims, with a resolution of 1 frame / fs. Dataset has total energies and atomic forces. This is a group of datasets consisting on 5 datasets. EquilibriumSet1, TrainSet1 and TestSet2 contain the same molecules, all with C7O2H10 stoichiometry. TestSet2 and EquilibriumSet2 contain different molecules with the same stoichiometry. Test... and Train... datasets contain trajectories, and Equilibrium... contain optimized geometries"
  },
  "Iso17EquilibriumSet1": {
   "default-lot": "pbe_ts-fhi_aims_numerical",
+  "meta": "Iso17",
   "lot": {
    "pbe_ts-fhi_aims_numerical": {
     "archive": "Iso17EquilibriumSet1-pbe_ts-fhi_aims_numerical.tar.gz",
@@ -333,6 +360,7 @@
  },
  "Iso17EquilibriumSet2": {
   "default-lot": "pbe_ts-fhi_aims_numerical",
+  "meta": "Iso17",
   "lot": {
    "pbe_ts-fhi_aims_numerical": {
     "archive": "Iso17EquilibriumSet2-pbe_ts-fhi_aims_numerical.tar.gz",
@@ -344,6 +372,7 @@
  },
  "Iso17TestSet1": {
   "default-lot": "pbe_ts-fhi_aims_numerical",
+  "meta": "Iso17",
   "lot": {
    "pbe_ts-fhi_aims_numerical": {
     "archive": "Iso17TestSet1-pbe_ts-fhi_aims_numerical.tar.gz",
@@ -355,6 +384,7 @@
  },
  "Iso17TestSet2": {
   "default-lot": "pbe_ts-fhi_aims_numerical",
+  "meta": "Iso17",
   "lot": {
    "pbe_ts-fhi_aims_numerical": {
     "archive": "Iso17TestSet2-pbe_ts-fhi_aims_numerical.tar.gz",
@@ -366,6 +396,7 @@
  },
  "Iso17TrainSet1": {
   "default-lot": "pbe_ts-fhi_aims_numerical",
+  "meta": "Iso17",
   "lot": {
    "pbe_ts-fhi_aims_numerical": {
     "archive": "Iso17TrainSet1-pbe_ts-fhi_aims_numerical.tar.gz",
@@ -376,7 +407,10 @@
   }
  },
  "SN2": {
+  "article": "PhysNet: A Neural Network for Predicting Energies, Forces, Dipole Moments, and Partial Charges",
+  "doi": "10.1021/acs.jctc.9b00181",
   "default-lot": "dsd_blyp_d3bj-def2tzvp",
+  "info": "Used to test accuracy in SN2 type reactions with charges CH3X + X'-- -> CH3X' + X- Note that this dataset has charged species, and contains all possible structures that can be formed in fragmentation reactions: H3X, HX, CHX or CH2X- as well as geometries for H2, CH2, CH3+ and XY All possible combinations are included. It is unclear what the reference point for the dipoles in the dataset are, the units are eA, the reference is most likely the center-of-charge",
   "lot": {
    "dsd_blyp_d3bj-def2tzvp": {
     "archive": "SN2-dsd_blyp_d3bj-def2tzvp.tar.gz",
@@ -387,6 +421,10 @@
   }
  },
  "ANICCScan": {
+  "default-lot": "uwb97x-631gd",
+  "doi": "TODO",
+  "article": "TODO",
+  "info": "Dataset includes relaxed scans of stretching carbon-carbon single bonds for a number of compounds. UwB97x means UKS was used",
   "lot": {
    "b973c-def2mtzvp": {
     "archive": "ANI-ccscan-b973c-def2mtzvp.tar.gz",
@@ -400,10 +438,10 @@
      "ANI-ccscan-Uwb97x-631gd.h5"
     ]
    }
-  },
-  "default-lot": "uwb97x-631gd"
+  }
  },
  "DielsAlder": {
+  "info": "Includes structures sampled in different ways from a diels alder reaction. Among them, from the intrinsic reaction coordinate (IRC), and from specific points of the potential energy surface (PES), in some cases using active learning, with the QBC criteria, and with normal mode sampling. UwB97x means UKS was used",
   "lot": {
    "uwb97x-631gd": {
     "archive": "DielsAlder-Uwb97x-631gd.tar.gz",
@@ -422,6 +460,9 @@
   "default-lot": "uwb97x-631gd"
  },
  "ANI1e": {
+    "article": "ANI-1E: An equilibrium database from the ANI-1 database",
+    "doi": "TODO",
+    "info": "Structures corresponding to all smiles extracted from the ANI-1x dataset, embedded in 3D space and optimized with PM7. This dataset does not have forces, but it has other physical properties: Rotational constants A, B, C (GHz); dipole and polarizability magnitudes (Debye and a_0^3 respectively); energy of HOMO and LUMO, and HOMO-LUMO gap (Ha); average <r^2> (spatial extent, a_0^2); zero point vibrational energies (ZPVE, Ha); zero Kelvin internal energy (Ha); thermal quantities, U, H, G, C_v, at 298.15 K (C_v in cal/K/mol, rest in Ha)",
   "default-lot": "wb97x-631gd",
   "lot": {
    "wb97x-631gd": {
@@ -432,8 +473,14 @@
    }
   }
  },
+ "SPICE-meta": {
+  "article": "SPICE, A Dataset of Drug-like Molecules and Peptides for Training Machine Learning Potentials",
+  "doi": "TODO",
+  "info": "WARNING: currently has serious issues, do not use. This dataset group is split into 7 datasets, some of which have overlapping structures. For more information consult the relevant paper. Note that some molecules in these datasets contain ions or counterions, but there are no structures with net charge. Also: Some of the fields in these sets are missing for some conformations, namely, the MBIS fields and bond-indices are missing for IonPairs and Des370K, and the bond-indices fields only are missing for the PubChem data (except the subset `6`)"
+ },
  "SPICEDes370K": {
   "default-lot": "wb97m_d3bj-def2tzvppd",
+  "meta": "SPICE",
   "lot": {
    "wb97m_d3bj-def2tzvppd": {
     "archive": "SPICEDes370K-wb97m_d3bj-def2tzvppd.tar.gz",
@@ -446,6 +493,7 @@
  },
  "SPICEDesMonomers": {
   "default-lot": "wb97m_d3bj-def2tzvppd",
+  "meta": "SPICE",
   "lot": {
    "wb97m_d3bj-def2tzvppd": {
     "archive": "SPICEDesMonomers-wb97m_d3bj-def2tzvppd.tar.gz",
@@ -457,6 +505,7 @@
  },
  "SPICEDipeptides": {
   "default-lot": "wb97m_d3bj-def2tzvppd",
+  "meta": "SPICE",
   "lot": {
    "wb97m_d3bj-def2tzvppd": {
     "archive": "SPICEDipeptides-wb97m_d3bj-def2tzvppd.tar.gz",
@@ -468,6 +517,7 @@
  },
  "SPICEIonPairs": {
   "default-lot": "wb97m_d3bj-def2tzvppd",
+  "meta": "SPICE",
   "lot": {
    "wb97m_d3bj-def2tzvppd": {
     "archive": "SPICEIonPairs-wb97m_d3bj-def2tzvppd.tar.gz",
@@ -479,6 +529,7 @@
  },
  "SPICEPubChem2xCompatible": {
   "default-lot": "wb97m_d3bj-def2tzvppd",
+  "meta": "SPICE",
   "lot": {
    "wb97m_d3bj-def2tzvppd": {
     "archive": "SPICEPubChem2xCompatible-wb97m_d3bj-def2tzvppd.tar.gz",
@@ -490,6 +541,7 @@
  },
  "SPICEPubChem": {
   "default-lot": "wb97m_d3bj-def2tzvppd",
+  "meta": "SPICE",
   "lot": {
    "wb97m_d3bj-def2tzvppd": {
     "archive": "SPICEPubChem-wb97m_d3bj-def2tzvppd.tar.gz",
@@ -506,6 +558,7 @@
  },
  "SPICESolvatedAminoacids": {
   "default-lot": "wb97m_d3bj-def2tzvppd",
+  "meta": "SPICE",
   "lot": {
    "wb97m_d3bj-def2tzvppd": {
     "archive": "SPICESolvatedAminoacids-wb97m_d3bj-def2tzvppd.tar.gz",
@@ -516,6 +569,9 @@
   }
  },
  "SolvatedProteinFragments": {
+  "article": "PhysNet: A Neural Network for Predicting Energies, Forces, Dipole Moments, and Partial Charges",
+  "doi": "10.1021/acs.jctc.9b00181",
+ "info": "Probes many-body intermolecular interactions between protein fragments and water molecules, which are important for the description of many biologically relevant condensed phase systems. It contains structures for all possible 'amons' (hydrogen-saturated covalently bonded fragments) of up to eight heavy atoms (C, N, O, S) that can be derived from chemical graphs of proteins containing the 20 natural amino acids connected via peptide bonds or disulfide bridges",
   "default-lot": "revpbe_d3bj-def2tzvp",
   "lot": {
    "revpbe_d3bj-def2tzvp": {
@@ -526,7 +582,13 @@
    }
   }
  },
+ "3BPA-meta": {
+    "article": "TODO",
+    "doi": "https://doi.org/10.1021/acs.jctc.1c00647",
+    "info": "Group of datasets consisting on 8 different datasts. Two meant for training and 6 for testing / validation. For more information consult the corresponding article"
+ },
  "Train3BPAMixedT": {
+  "meta": "3BPA",
   "default-lot": "wb97x-631gd",
   "lot": {
    "wb97x-631gd": {
@@ -538,6 +600,7 @@
   }
  },
  "Train3BPA300K": {
+  "meta": "3BPA",
   "default-lot": "wb97x-631gd",
   "lot": {
    "wb97x-631gd": {
@@ -549,6 +612,7 @@
   }
  },
  "Test3BPA300K": {
+  "meta": "3BPA",
   "default-lot": "wb97x-631gd",
   "lot": {
    "wb97x-631gd": {
@@ -560,6 +624,7 @@
   }
  },
  "Test3BPA600K": {
+  "meta": "3BPA",
   "default-lot": "wb97x-631gd",
   "lot": {
    "wb97x-631gd": {
@@ -571,6 +636,7 @@
   }
  },
  "Test3BPA1200K": {
+  "meta": "3BPA",
   "default-lot": "wb97x-631gd",
   "lot": {
    "wb97x-631gd": {
@@ -582,6 +648,7 @@
   }
  },
  "Test3BPADihedral180": {
+  "meta": "3BPA",
   "default-lot": "wb97x-631gd",
   "lot": {
    "wb97x-631gd": {
@@ -593,6 +660,7 @@
   }
  },
  "Test3BPADihedral150": {
+  "meta": "3BPA",
   "default-lot": "wb97x-631gd",
   "lot": {
    "wb97x-631gd": {
@@ -604,6 +672,7 @@
   }
  },
  "Test3BPADihedral120": {
+  "meta": "3BPA",
   "default-lot": "wb97x-631gd",
   "lot": {
    "wb97x-631gd": {
@@ -615,6 +684,7 @@
   }
  },
  "ANIExCorr": {
+  "info": "Has `coefficients` which correspond to atomic coefficients for the fitting density, and `energies-xc`, the exchange-correlation energies",
   "default-lot": "pbe-dzvp",
   "lot": {
    "pbe-dzvp": {

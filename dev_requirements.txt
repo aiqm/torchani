@@ -31,7 +31,7 @@ tensorboard
 # Tools: Utils for running various scripts found in /torchani/tools/
 pynvml
 matplotlib
-rich
+jinja2
 
 # Dev: Utils for linting and type checking
 flake8

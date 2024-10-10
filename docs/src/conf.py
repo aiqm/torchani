@@ -18,7 +18,7 @@ extensions = [
 
 templates_path = ["_templates"]
 
-source_suffix = ".rst"
+source_suffix = {'.rst': 'restructuredtext'}
 master_doc = "index"
 pygments_style = "sphinx"
 html_theme = "sphinx_rtd_theme"
