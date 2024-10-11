@@ -58,6 +58,41 @@ class NNPotential(Potential):
         return atomic_energies
 
 
+# Output of NN is assumed to be of shape (molecules, 2) with
+# out[:, 0] = energies
+# out[:, 1] = charges
+class MergedChargesNNPotential(NNPotential):
+    def __init__(
+        self,
+        aev_computer: AEVComputer,
+        neural_networks: AtomicContainer,
+        charge_normalizer: tp.Optional[ChargeNormalizer] = None,
+    ):
+        super().__init__(aev_computer, neural_networks)
+        if charge_normalizer is None:
+            charge_normalizer = ChargeNormalizer(self.get_chemical_symbols())
+        self.charge_normalizer = charge_normalizer
+
+    @torch.jit.export
+    def energies_and_atomic_charges(
+        self,
+        element_idxs: Tensor,
+        neighbors: NeighborData,
+        ghost_flags: tp.Optional[Tensor] = None,
+        total_charge: float = 0.0,
+    ) -> EnergiesAtomicCharges:
+        aevs = self.aev_computer._compute_aev(element_idxs, neighbors)
+        atomic_energies_and_raw_atomic_charges = torch.sum(
+            self.neural_networks.members_atomic_energies((element_idxs, aevs)), dim=0
+        )  # shape is (M, C, A, 2)
+        energies = torch.sum(atomic_energies_and_raw_atomic_charges[:, :, 0], dim=-1)
+        raw_atomic_charges = atomic_energies_and_raw_atomic_charges[:, :, 1]
+        atomic_charges = self.charge_normalizer(
+            element_idxs, raw_atomic_charges, total_charge
+        )
+        return EnergiesAtomicCharges(energies, atomic_charges)
+
+
 class SeparateChargesNNPotential(NNPotential):
     def __init__(
         self,
@@ -82,7 +117,9 @@ class SeparateChargesNNPotential(NNPotential):
     ) -> EnergiesAtomicCharges:
         aevs = self.aev_computer._compute_aev(element_idxs, neighbors)
         energies = self.neural_networks((element_idxs, aevs))[1]
-        raw_atomic_charges = self.charge_networks((element_idxs, aevs))[1]
+        raw_atomic_charges = torch.sum(
+            self.charge_networks.members_atomic_energies((element_idxs, aevs)), dim=0
+        )  # shape (M, C, A)
         atomic_charges = self.charge_normalizer(
             element_idxs, raw_atomic_charges, total_charge
         )

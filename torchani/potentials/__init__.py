@@ -20,7 +20,11 @@ from torchani.potentials.core import (
     Potential,
     PairPotential,
 )
-from torchani.potentials.nnp import NNPotential, SeparateChargesNNPotential
+from torchani.potentials.nnp import (
+    NNPotential,
+    SeparateChargesNNPotential,
+    MergedChargesNNPotential,
+)
 from torchani.potentials.repulsion import (
     RepulsionXTB,
     StandaloneRepulsionXTB,
@@ -46,6 +50,7 @@ __all__ = [
     "PotentialWrapper",
     "NNPotential",
     "SeparateChargesNNPotential",
+    "MergedChargesNNPotential",
     "Potential",
     "PairPotential",
 ]

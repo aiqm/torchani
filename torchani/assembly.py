@@ -24,6 +24,7 @@ small, 3.5 Ang or less).
 These pieces are assembled into a subclass of ANI
 """
 
+import warnings
 import functools
 import math
 from dataclasses import dataclass
@@ -65,6 +66,7 @@ from torchani.constants import PERIODIC_TABLE, ATOMIC_NUMBER
 from torchani.potentials import (
     NNPotential,
     SeparateChargesNNPotential,
+    MergedChargesNNPotential,
     Potential,
     PairPotential,
     RepulsionXTB,
@@ -316,7 +318,9 @@ class ANI(torch.nn.Module):
             aev_computer=self.aev_computer,
             neural_networks=self.neural_networks.member(index),
             energy_shifter=self.energy_shifter,
-            pairwise_potentials=[p for p in self.potentials if not p.is_trainable],
+            pairwise_potentials=[
+                p for p in self.potentials if not isinstance(p, NNPotential)
+            ],
             periodic_table_index=self.periodic_table_index,
         )
 
@@ -622,19 +626,27 @@ class ANIq(ANI):
             pairwise_potentials=pairwise_potentials,
             periodic_table_index=periodic_table_index,
         )
-        self.charge_networks = charge_networks
-        self.charge_normalizer = charge_normalizer
-        charges_nnp = SeparateChargesNNPotential(
-            self.aev_computer,
-            self.neural_networks,
-            self.charge_networks,
-            self.charge_normalizer,
-        )
+
+        if charge_networks is None:
+            warnings.warn("Merged charges potential is currently untested")
+            nnp = MergedChargesNNPotential(
+                self.aev_computer,
+                self.neural_networks,
+                charge_normalizer,
+            )
+        else:
+            nnp = SeparateChargesNNPotential(
+                self.aev_computer,
+                self.neural_networks,
+                charge_networks,
+                charge_normalizer,
+            )
+
         # Check which index has the NNPotential and replace with ChargesNNPotential
         potentials = [pot for pot in self.potentials]
         for j, pot in enumerate(potentials):
             if isinstance(pot, NNPotential):
-                potentials[j] = charges_nnp
+                potentials[j] = nnp
                 break
         # Re-register the ModuleList
         self.potentials = torch.nn.ModuleList(potentials)
@@ -733,15 +745,23 @@ class ANIq(ANI):
         )
 
     def __getitem__(self, index: int) -> tpx.Self:
+        for p in self.potentials:
+            if isinstance(p, NNPotential):
+                charge_normalizer = getattr(p, "charge_normalizer", None)
+                charge_networks = getattr(p, "charge_networks", None)
+                break
+
         return type(self)(
             symbols=self.get_chemical_symbols(),
             aev_computer=self.aev_computer,
             neural_networks=self.neural_networks.member(index),
-            charge_networks=self.charge_networks,
-            charge_normalizer=self.charge_normalizer,
+            charge_networks=charge_networks,
+            charge_normalizer=charge_normalizer,
             energy_shifter=self.energy_shifter,
+            pairwise_potentials=[
+                p for p in self.potentials if not isinstance(p, NNPotential)
+            ],
             periodic_table_index=self.periodic_table_index,
-            pairwise_potentials=[p for p in self.potentials if not p.is_trainable],
         )
 
 

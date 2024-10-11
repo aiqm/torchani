@@ -192,26 +192,6 @@ def like_dr(
     )
 
 
-def like_mbis_charges(
-    symbol: str,
-    in_dim: int = 1008,
-    out_dim: int = 2,
-    activation: tp.Union[str, torch.nn.Module] = "gelu",
-    bias: bool = False,
-) -> AtomicNetwork:
-    r"""
-    Makes an atomic network.
-    The defaults are the ones used in the charge network of the ANI-mbis model
-    """
-    return like_2x(
-        symbol,
-        in_dim=in_dim,
-        out_dim=out_dim,
-        bias=False,
-        activation=activation,
-    )
-
-
 class AtomicMaker(tp.Protocol):
     def __call__(
         self,

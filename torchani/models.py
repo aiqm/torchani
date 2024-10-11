@@ -64,14 +64,15 @@ For more detailed examples of usage consult the examples documentation
     member = model[0]
 """
 
+from functools import partial
 import typing as tp
 
 from torchani.utils import SYMBOLS_2X, SYMBOLS_1X
 from torchani.aev import AEVComputer, StandardRadial, StandardAngular
-from torchani.electro import ChargeNormalizer, _AdaptedChargesContainer
+from torchani.electro import ChargeNormalizer
 from torchani.assembly import Assembler, ANI, ANIq, fetch_state_dict
 from torchani.neighbors import NeighborlistArg
-from torchani.nn import ANIModel
+from torchani.nn import ANIModel, _ANIModelDiscardFirstScalar
 from torchani import atomics
 from torchani.potentials import TwoBodyDispersionD3, RepulsionXTB
 
@@ -232,9 +233,10 @@ def ANImbis(
         },
     )
     asm.set_atomic_networks(ANIModel, atomics.like_2x)
+
     asm.set_charge_networks(
-        _AdaptedChargesContainer,
-        atomics.like_mbis_charges,
+        _ANIModelDiscardFirstScalar,
+        partial(atomics.like_2x, out_dim=2, bias=False, activation="gelu"),
         normalizer=ChargeNormalizer.from_electronegativity_and_hardness(
             asm.symbols, scale_weights_by_charges_squared=True
         ),
@@ -262,7 +264,7 @@ def ANImbis(
         model.energy_shifter.load_state_dict(shifter_state_dict)
         model.aev_computer.load_state_dict(aev_state_dict)
         model.neural_networks.load_state_dict(energy_nn_state_dict)
-        model.charge_networks.load_state_dict(charge_nn_state_dict)
+        model.potentials[0].charge_networks.load_state_dict(charge_nn_state_dict)
     return model if model_index is None else model[model_index]
 
 

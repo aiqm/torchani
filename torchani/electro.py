@@ -10,12 +10,7 @@ import typing_extensions as tpx
 
 from torchani.annotations import Device
 from torchani.utils import AtomicNumbersToMasses
-from torchani.atomics import AtomicContainer
 from torchani.constants import ELECTRONEGATIVITY, HARDNESS, ATOMIC_NUMBER
-
-# Needed for _AdaptedChargesContainer hack
-from torchani.nn import ANIModel
-from torchani.tuples import SpeciesEnergies
 
 __all__ = ["DipoleComputer", "compute_dipole", "ChargeNormalizer"]
 
@@ -170,38 +165,3 @@ def compute_dipole(
         device=species.device,
         dtype=coordinates.dtype,
     )(species, coordinates, charges)
-
-
-# Hack: Grab a network with "bad energies", discard them and only outputs the
-# charges
-class _AdaptedChargesContainer(ANIModel):
-    @torch.jit.export
-    def members_atomic_energies(
-        self,
-        species_aev: tp.Tuple[Tensor, Tensor],
-    ) -> Tensor:
-        species, aev = species_aev
-        assert species.shape == aev.shape[:-1]
-
-        species_ = species.flatten()
-        aev = aev.flatten(0, 1)
-        output = aev.new_zeros(species_.shape)
-        for i, m in enumerate(self.atomics.values()):
-            midx = (species_ == i).nonzero().view(-1)
-            if midx.shape[0] > 0:
-                input_ = aev.index_select(0, midx)
-                output.index_add_(0, midx, m(input_)[:, 1].view(-1))
-        output = output.view_as(species)
-        return output.unsqueeze(0)
-
-    def forward(
-        self,
-        species_aev: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-    ) -> SpeciesEnergies:
-        atomic_energies = self.members_atomic_energies(species_aev).squeeze(0)
-        return SpeciesEnergies(species_aev[0], atomic_energies)
-
-    def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
-        return self
