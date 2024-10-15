@@ -26,7 +26,7 @@ class TestBuiltinDatasets(TestCase):
         self.assertEqual(ds.grouping, "by_num_atoms")
 
     def testDownloadSmallSample(self):
-        datapull(DatasetId.TESTDATA, LotId.WB97X_631GD)
+        datapull([DatasetId.TESTDATA], [LotId.WB97X_631GD])
         files = datasets.TestData().store_locations
         self.assertGreater(len(files), 0)
 

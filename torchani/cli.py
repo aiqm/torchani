@@ -10,7 +10,12 @@ import re
 
 from torchani.paths import datasets_dir
 import torchani.datasets
-from torchani.datasets.utils import _calc_file_md5
+from torchani.datasets.utils import (
+    _calc_file_md5,
+    _fetch_and_create_builtin_dataset,
+    _available_dataset_lots,
+    _default_dataset_lot,
+)
 from torchani.datasets.builtin import DatasetId, LotId
 
 REPO_BASE_URL = "https://github.com/roitberg-group/torchani_sandbox"
@@ -30,36 +35,94 @@ main = Typer(
 )
 
 
-@main.command(help="Download a built-in dataset")
+@main.command(help="Download one or more built-in datasets.")
 def datapull(
-    name: tpx.Annotated[DatasetId, Argument()],
-    lot: tpx.Annotated[
-        tp.Optional[LotId],
-        Option("-l", "--lot"),
+    names: tpx.Annotated[
+        tp.Optional[tp.List[DatasetId]],
+        Argument(
+            help="Dataset(s) to download. If unspecified all datasets are downloaded"
+        ),
     ] = None,
-    verbose: tpx.Annotated[bool, Option("-v/-V", "--verbose/--no-verbose"),] = True,
+    lots: tpx.Annotated[
+        tp.Optional[tp.List[LotId]],
+        Option(
+            "-l",
+            "--lot",
+            help="LoT for the specified dataset(s)."
+            "'default' (a default dataset-dependent LoT)"
+            " and 'all' (all available LoT for the dataset) are also supported options."
+            " Note that not all datasets support all LoT. To check which LoT"
+            " are available for a given dataset run datainfo <dataset-name>"
+        ),
+    ] = None,
+    ds_dir: tpx.Annotated[
+        tp.Optional[Path],
+        Option(
+            "-d",
+            "--datasets-dir",
+            show_default=False,
+            help="Datasets are downloaded to <datasets-dir>/<dataset-name>",
+        ),
+    ] = None,
+    verbose: tpx.Annotated[
+        bool,
+        Option("-v/-V", "--verbose/--no-verbose"),
+    ] = True,
     skip_check: tpx.Annotated[
         bool,
         Option("-s/-S", "--skip-check/--no-skip-check"),
     ] = False,
 ) -> None:
-    r"""Download a built-in dataset to the default location in disk"""
-    location = (datasets_dir() / f"{name.value}-{lot}").resolve()
-    if location.exists() and verbose:
-        if skip_check:
-            print("Dataset found locally, skipping integrity check")
-            return
-        print("Dataset found locally, starting files integrity check ...")
-    else:
-        print("Dataset not found locally, starting download...")
+    r"""
+    Download a built-in dataset to the default location in disk, or to a
+    custom location
+    """
+    names = names or list(DatasetId)
+    lots = lots or [LotId.DEFAULT]
 
-    getter = getattr(torchani.datasets, name.value)
-    if lot is None:
-        getter(download=True)
-        return
-    getter(
-        download=True, lot=lot.value, skip_check=skip_check
-    )
+    if len(lots) == 1:
+        lots = lots * len(names)
+
+    if len(lots) != len(names):
+        raise ValueError(
+            "Incorrect --lot specification"
+            " When downloading more than one dataset, possible options for --lot are:"
+            " - Unspecified (selects a default LoT depending on the dataset)"
+            " - Specified a single time (applies to all datasets)"
+            " - One LoT specified per dataset (order is the same as dataset order)"
+        )
+
+    processed_lots = []
+    processed_names = []
+    for name, lot in zip(names, lots):
+        if lot is LotId.ALL:
+            all_lots = [LotId(_lot) for _lot in _available_dataset_lots(name.value)]
+            processed_lots.extend(all_lots)
+            processed_names.extend([name] * len(all_lots))
+        else:
+            if lot is LotId.DEFAULT:
+                lot = LotId(_default_dataset_lot(name.value))
+            processed_lots.append(lot)
+            processed_names.append(name)
+
+    root = ds_dir or datasets_dir()
+    for name, lot in zip(processed_names, processed_lots):
+        dest_dir = (root / f"{name.value}-{lot.value}").resolve()
+        if dest_dir.exists() and verbose:
+            if skip_check:
+                print("Dataset found locally, skipping integrity check")
+                return
+            print("Dataset found locally, running integrity check...")
+        else:
+            print("Dataset not found locally, downloading...")
+
+        _fetch_and_create_builtin_dataset(
+            ds_name=name.value,
+            root=root,
+            download=True,
+            lot=lot.value,
+            skip_check=skip_check,
+        )
 
 
 @main.command(help="Display info regarding built-in datasets")
@@ -76,13 +139,9 @@ def datainfo(
 ) -> None:
     getter = getattr(torchani.datasets, name.value)
     if lot is None:
-        ds = getter(
-            download=False, skip_check=skip_check
-        )
+        ds = getter(download=False, skip_check=skip_check)
     else:
-        ds = getter(
-            download=False, lot=lot, skip_check=skip_check
-        )
+        ds = getter(download=False, lot=lot, skip_check=skip_check)
     groups = list(ds.keys())
     conformer = ds.get_numpy_conformers(groups[0], 0)
     key_max_len = max([len(k) for k in conformer.keys()]) + 3
@@ -102,7 +161,10 @@ def datapack(
     dest: tpx.Annotated[tp.Optional[Path], Option("-o")] = None,
     name: tpx.Annotated[str, Option("-n", "--name")] = "",
     lot: tpx.Annotated[str, Option("-l", "--lot")] = "",
-    suffix: tpx.Annotated[str, Option("-s", "--suffix"),] = ".h5",
+    suffix: tpx.Annotated[
+        str,
+        Option("-s", "--suffix"),
+    ] = ".h5",
 ) -> None:
     dest_dir = dest if dest is not None else Path.cwd()
 

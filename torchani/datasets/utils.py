@@ -2,6 +2,7 @@ r"""
 Internal module with utilities, not meant for users
 """
 from pathlib import Path
+import json
 import typing as tp
 import hashlib
 
@@ -9,40 +10,68 @@ from tqdm import tqdm
 
 from torchani.datasets.anidataset import ANIDataset
 from torchani.utils import download_and_extract
-from torchani.paths import datasets_dir
 
 _BASE_URL = "http://moria.chem.ufl.edu/animodel/ground_truth_data/"
+_DATASETS_JSON_PATH = Path(__file__).parent / "builtin_datasets.json"
+
+with open(_DATASETS_JSON_PATH, mode="rt", encoding="utf-8") as f:
+    _DATASETS_SPEC = json.load(f)
+
+# Convert csv file with format "file_name, MD5-hash" into a dictionary
+_MD5S: tp.Dict[str, str] = dict()
+with open(Path(__file__).resolve().parent / "md5s.csv") as f:
+    lines = f.readlines()
+    for line in lines[1:]:
+        file_, md5 = line.split(",")
+        _MD5S[file_.strip()] = md5.strip()
 
 
-# The functions that instantiate datasets, located in the automatically
-# generated _builtin.py file, use _builder, _check_files_integrity and
-# _calc_file_md5
-def _builder(
-    archive: str,
-    files_and_md5s: tp.Dict[str, str],
-    dummy_properties: tp.Optional[tp.Dict[str, tp.Any]],
-    download: bool,
-    verbose: bool,
-    skip_check: bool,
-    name: str,
+def _available_dataset_lots(ds_name: str) -> tp.List[str]:
+    return list(_DATASETS_SPEC[ds_name]["lot"].values())
+
+
+def _default_dataset_lot(ds_name: str) -> str:
+    return _DATASETS_SPEC[ds_name]["default-lot"]
+
+
+# The functions that download and instantiate datasets, located in the
+# automatically generated _builtin.py file, use
+# _fetch_and_create_builtin_dataset, _check_files_integrity and _calc_file_md5
+def _fetch_and_create_builtin_dataset(
+    root: Path,
+    ds_name: str,
+    lot: str = "",
+    verbose: bool = True,
+    download: bool = True,
+    dummy_properties: tp.Optional[tp.Dict[str, tp.Any]] = None,
+    skip_check: bool = False,
     suffix: str = ".h5",
 ) -> ANIDataset:
-    root = (datasets_dir() / archive.replace(".tar.gz", "")).resolve()
+    lot = lot.lower()
+    if not lot:
+        lot = _DATASETS_SPEC[ds_name]["default-lot"]
+    lots = _DATASETS_SPEC[ds_name]["lot"]
+    if lot not in lots:
+        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
+
+    archive = lots[lot]["archive"]
+    files_and_md5s = {k: _MD5S[k] for k in lots[lot]["files"]}
+    dest_dir = (root / archive.replace(".tar.gz", "")).resolve()
     # If the dataset is not found we download it
-    if download and ((not root.is_dir()) or (not any(root.glob(f"*{suffix}")))):
+    if download and ((not dest_dir.is_dir()) or (not any(dest_dir.glob(f"*{suffix}")))):
         download_and_extract(
             url=f"{_BASE_URL}{archive}",
             file_name=archive,
-            dest_dir=root,
+            dest_dir=dest_dir,
             verbose=verbose,
         )
 
     # Check for corruption and missing files
     _check_files_integrity(
         files_and_md5s,
-        root,
+        dest_dir,
         suffix,
-        name,
+        ds_name,
         skip_hash_check=skip_check,
         verbose=verbose,
     )
@@ -52,7 +81,7 @@ def _builder(
         Path(k).stem: j for j, k in enumerate(files_and_md5s.keys())
     }
     filenames_and_paths = sorted(
-        [(p.stem, p) for p in sorted(root.glob(f"*{suffix}"))],
+        [(p.stem, p) for p in sorted(dest_dir.glob(f"*{suffix}"))],
         key=lambda tup: filenames_order[tup[0]],
     )
     ds = ANIDataset(

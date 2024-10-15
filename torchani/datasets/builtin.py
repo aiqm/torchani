@@ -19,25 +19,11 @@ calculations may not properly converge, or may be too costly for some LoT and
 thus are not included.
 """
 import typing as tp
-import json
 from enum import Enum
-from pathlib import Path
 
-from torchani.datasets.utils import _builder
+from torchani.paths import datasets_dir
+from torchani.datasets.utils import _fetch_and_create_builtin_dataset
 from torchani.datasets.anidataset import ANIDataset
-
-_DATASETS_JSON_PATH = Path(__file__).parent / "builtin_datasets.json"
-
-with open(_DATASETS_JSON_PATH, mode="rt", encoding="utf-8") as f:
-    _DATASETS_SPEC = json.load(f)
-
-# Convert csv file with format "file_name, MD5-hash" into a dictionary
-_MD5S: tp.Dict[str, str] = dict()
-with open(Path(__file__).resolve().parent / "md5s.csv") as f:
-    lines = f.readlines()
-    for line in lines[1:]:
-        file_, md5 = line.split(",")
-        _MD5S[file_.strip()] = md5.strip()
 
 
 def TestData(
@@ -50,20 +36,15 @@ def TestData(
     r"""
     GDB subset, only for debugging and code test purposes
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["TestData"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="TestData",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="TestData",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -77,20 +58,15 @@ def TestDataIons(
     r"""
     Only for debugging and test purposes, includes forces, dipoles and charges
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["TestDataIons"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="TestDataIons",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="TestDataIons",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -104,20 +80,15 @@ def TestDataForcesDipoles(
     r"""
     Only for debugging and code testing purposes, includes forces and dipoles
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["TestDataForcesDipoles"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="TestDataForcesDipoles",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="TestDataForcesDipoles",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -133,20 +104,15 @@ def IonsVeryHeavy(
     Si,As,Br,Se,P,B,I (disjoint from LightIons and IonsHeavy) This dataset is not meant
     to be trained to on its own
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["IonsVeryHeavy"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="IonsVeryHeavy",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="IonsVeryHeavy",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -162,20 +128,15 @@ def IonsHeavy(
     includes ions, with H,C,N,O elements and at least one of F,S,Cl (disjoint from
     IonsLight) This dataset is not meant to be trained to on its own
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["IonsHeavy"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="IonsHeavy",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="IonsHeavy",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -190,20 +151,15 @@ def IonsLight(
     WARNING: This dataset may have incorrect energies and/or forces. Dataset that
     includes ions, with H,C,N,O elements only. Not meant to be trained to on its own
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["IonsLight"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="IonsLight",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="IonsLight",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -219,20 +175,15 @@ def ANI1q(
     dataset is not meant to be trained to on its own. Originally published in *TODO*.
     DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["ANI1q"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="ANI1q",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="ANI1q",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -248,20 +199,15 @@ def ANI2qHeavy(
     is not meant to be trained to on its own. Originally published in *TODO*. DOI:
     `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["ANI2qHeavy"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="ANI2qHeavy",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="ANI2qHeavy",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -278,20 +224,15 @@ def ANI1ccx(
     originally used for transfer learning, not direct training. Originally published in
     *TODO*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["ANI1ccx"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="ANI1ccx",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="ANI1ccx",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -305,20 +246,15 @@ def AminoacidDimers(
     r"""
     Small set of aminoacid dimers. This dataset is not meant to be trained to on its own
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["AminoacidDimers"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="AminoacidDimers",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="AminoacidDimers",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -332,20 +268,15 @@ def ANI1x(
     r"""
     Originally published in *TODO*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["ANI1x"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="ANI1x",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="ANI1x",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -363,20 +294,15 @@ def ANI2x(
     there are `v1` values but not `v2` values. Originally published in *TODO*. DOI:
     `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["ANI2x"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="ANI2x",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="ANI2x",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -397,20 +323,15 @@ def COMP6v1(
     grids. The numerical difference is not significant for the purposes of training.
     Originally published in *TODO*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["COMP6v1"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="COMP6v1",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="COMP6v1",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -428,20 +349,15 @@ def COMP6v2(
     significant for the purposes of training. Originally published in *TODO*. DOI:
     `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["COMP6v2"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="COMP6v2",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="COMP6v2",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -459,20 +375,15 @@ def QM9C7O2H10(
     stoichiometry C7O2H10. Originally published in *TODO*. DOI:
     `https://doi.org/10.1038/sdata.2014.22`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["QM9C7O2H10"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="QM9C7O2H10",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="QM9C7O2H10",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -492,20 +403,15 @@ def QM9(
     set. Molecules that don't have this second set have zeros for this field. Originally
     published in *TODO*. DOI: `https://doi.org/10.1038/sdata.2014.22`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["QM9"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="QM9",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="QM9",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -525,20 +431,15 @@ def Iso17EquilibriumSet1(
     Equilibrium... contain optimized geometries. Originally published in *A continuous-
     filter convolutional neural network for modeling quantum interactions*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Iso17EquilibriumSet1"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Iso17EquilibriumSet1",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Iso17EquilibriumSet1",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -558,20 +459,15 @@ def Iso17EquilibriumSet2(
     Equilibrium... contain optimized geometries. Originally published in *A continuous-
     filter convolutional neural network for modeling quantum interactions*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Iso17EquilibriumSet2"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Iso17EquilibriumSet2",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Iso17EquilibriumSet2",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -591,20 +487,15 @@ def Iso17TestSet1(
     Equilibrium... contain optimized geometries. Originally published in *A continuous-
     filter convolutional neural network for modeling quantum interactions*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Iso17TestSet1"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Iso17TestSet1",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Iso17TestSet1",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -624,20 +515,15 @@ def Iso17TestSet2(
     Equilibrium... contain optimized geometries. Originally published in *A continuous-
     filter convolutional neural network for modeling quantum interactions*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Iso17TestSet2"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Iso17TestSet2",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Iso17TestSet2",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -657,20 +543,15 @@ def Iso17TrainSet1(
     Equilibrium... contain optimized geometries. Originally published in *A continuous-
     filter convolutional neural network for modeling quantum interactions*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Iso17TrainSet1"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Iso17TrainSet1",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Iso17TrainSet1",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -691,20 +572,15 @@ def SN2(
     *PhysNet: A Neural Network for Predicting Energies, Forces, Dipole Moments, and
     Partial Charges*. DOI: `10.1021/acs.jctc.9b00181`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["SN2"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="SN2",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="SN2",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -719,20 +595,15 @@ def ANICCScan(
     Dataset includes relaxed scans of stretching carbon-carbon single bonds for a number
     of compounds. UwB97x means UKS was used. Originally published in *TODO*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["ANICCScan"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="ANICCScan",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="ANICCScan",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -749,20 +620,15 @@ def DielsAlder(
     potential energy surface (PES), in some cases using active learning, with the QBC
     criteria, and with normal mode sampling. UwB97x means UKS was used
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["DielsAlder"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="DielsAlder",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="DielsAlder",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -783,20 +649,15 @@ def ANI1e(
     quantities, U, H, G, C_v, at 298.15 K (C_v in cal/K/mol, rest in Ha). Originally
     published in *ANI-1E: An equilibrium database from the ANI-1 database*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["ANI1e"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="ANI1e",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="ANI1e",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -818,20 +679,15 @@ def SPICEDes370K(
     *SPICE, A Dataset of Drug-like Molecules and Peptides for Training Machine Learning
     Potentials*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["SPICEDes370K"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="SPICEDes370K",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="SPICEDes370K",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -853,20 +709,15 @@ def SPICEDesMonomers(
     *SPICE, A Dataset of Drug-like Molecules and Peptides for Training Machine Learning
     Potentials*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["SPICEDesMonomers"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="SPICEDesMonomers",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="SPICEDesMonomers",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -888,20 +739,15 @@ def SPICEDipeptides(
     *SPICE, A Dataset of Drug-like Molecules and Peptides for Training Machine Learning
     Potentials*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["SPICEDipeptides"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="SPICEDipeptides",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="SPICEDipeptides",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -923,20 +769,15 @@ def SPICEIonPairs(
     *SPICE, A Dataset of Drug-like Molecules and Peptides for Training Machine Learning
     Potentials*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["SPICEIonPairs"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="SPICEIonPairs",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="SPICEIonPairs",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -958,20 +799,15 @@ def SPICEPubChem2xCompatible(
     *SPICE, A Dataset of Drug-like Molecules and Peptides for Training Machine Learning
     Potentials*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["SPICEPubChem2xCompatible"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="SPICEPubChem2xCompatible",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="SPICEPubChem2xCompatible",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -993,20 +829,15 @@ def SPICEPubChem(
     *SPICE, A Dataset of Drug-like Molecules and Peptides for Training Machine Learning
     Potentials*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["SPICEPubChem"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="SPICEPubChem",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="SPICEPubChem",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -1028,20 +859,15 @@ def SPICESolvatedAminoacids(
     *SPICE, A Dataset of Drug-like Molecules and Peptides for Training Machine Learning
     Potentials*. DOI: `TODO`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["SPICESolvatedAminoacids"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="SPICESolvatedAminoacids",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="SPICESolvatedAminoacids",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -1062,20 +888,15 @@ def SolvatedProteinFragments(
     *PhysNet: A Neural Network for Predicting Energies, Forces, Dipole Moments, and
     Partial Charges*. DOI: `10.1021/acs.jctc.9b00181`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["SolvatedProteinFragments"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="SolvatedProteinFragments",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="SolvatedProteinFragments",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -1091,20 +912,15 @@ def Train3BPAMixedT(
     for testing / validation. For more information consult the corresponding article.
     Originally published in *TODO*. DOI: `https://doi.org/10.1021/acs.jctc.1c00647`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Train3BPAMixedT"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Train3BPAMixedT",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Train3BPAMixedT",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -1120,20 +936,15 @@ def Train3BPA300K(
     for testing / validation. For more information consult the corresponding article.
     Originally published in *TODO*. DOI: `https://doi.org/10.1021/acs.jctc.1c00647`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Train3BPA300K"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Train3BPA300K",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Train3BPA300K",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -1149,20 +960,15 @@ def Test3BPA300K(
     for testing / validation. For more information consult the corresponding article.
     Originally published in *TODO*. DOI: `https://doi.org/10.1021/acs.jctc.1c00647`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Test3BPA300K"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Test3BPA300K",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Test3BPA300K",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -1178,20 +984,15 @@ def Test3BPA600K(
     for testing / validation. For more information consult the corresponding article.
     Originally published in *TODO*. DOI: `https://doi.org/10.1021/acs.jctc.1c00647`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Test3BPA600K"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Test3BPA600K",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Test3BPA600K",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -1207,20 +1008,15 @@ def Test3BPA1200K(
     for testing / validation. For more information consult the corresponding article.
     Originally published in *TODO*. DOI: `https://doi.org/10.1021/acs.jctc.1c00647`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Test3BPA1200K"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Test3BPA1200K",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Test3BPA1200K",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -1236,20 +1032,15 @@ def Test3BPADihedral180(
     for testing / validation. For more information consult the corresponding article.
     Originally published in *TODO*. DOI: `https://doi.org/10.1021/acs.jctc.1c00647`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Test3BPADihedral180"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Test3BPADihedral180",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Test3BPADihedral180",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -1265,20 +1056,15 @@ def Test3BPADihedral150(
     for testing / validation. For more information consult the corresponding article.
     Originally published in *TODO*. DOI: `https://doi.org/10.1021/acs.jctc.1c00647`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Test3BPADihedral150"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Test3BPADihedral150",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Test3BPADihedral150",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -1294,20 +1080,15 @@ def Test3BPADihedral120(
     for testing / validation. For more information consult the corresponding article.
     Originally published in *TODO*. DOI: `https://doi.org/10.1021/acs.jctc.1c00647`
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["Test3BPADihedral120"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="Test3BPADihedral120",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="Test3BPADihedral120",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -1322,20 +1103,15 @@ def ANIExCorr(
     Has `coefficients` which correspond to atomic coefficients for the fitting density,
     and `energies-xc`, the exchange-correlation energies
     """
-    lot = lot.lower()
-    lots = _DATASETS_SPEC["ANIExCorr"]["lot"]
-    if lot not in lots:
-        raise ValueError(f"Wrong LoT, supported are: {set(lots) - {'default-lot'}}")
-
-    return _builder(
-        archive=lots[lot]["archive"],
-        files_and_md5s={k: _MD5S[k] for k in lots[lot]["files"]},
-        dummy_properties=dummy_properties,
-        download=download,
+    return _fetch_and_create_builtin_dataset(
+        root=datasets_dir(),
+        ds_name="ANIExCorr",
+        lot=lot,
         verbose=verbose,
+        download=download,
+        dummy_properties=dummy_properties,
         skip_check=skip_check,
-        name="ANIExCorr",
-        suffix=".h5"
+        suffix=".h5",
     )
 
 
@@ -1385,6 +1161,8 @@ class DatasetId(Enum):
 
 
 class LotId(Enum):
+    DEFAULT = "default"
+    ALL = "all"
     B3LYP_631G_2DF_P = "b3lyp-631g_2df_p"
     B973C_DEF2MTZVP = "b973c-def2mtzvp"
     CCSD_PTP_STAR_CBS = "ccsd(t)star-cbs"
