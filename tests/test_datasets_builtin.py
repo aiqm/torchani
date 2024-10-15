@@ -3,7 +3,7 @@ import tempfile
 
 from torchani.testing import TestCase
 from torchani import datasets
-from torchani.cli import datapull
+from torchani.cli import data_pull
 from torchani.datasets import DatasetId, LotId
 from torchani.paths import set_data_dir
 
@@ -26,7 +26,7 @@ class TestBuiltinDatasets(TestCase):
         self.assertEqual(ds.grouping, "by_num_atoms")
 
     def testDownloadSmallSample(self):
-        datapull([DatasetId.TESTDATA], [LotId.WB97X_631GD])
+        data_pull([DatasetId.TESTDATA], [LotId.WB97X_631GD])
         files = datasets.TestData().store_locations
         self.assertGreater(len(files), 0)
 

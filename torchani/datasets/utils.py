@@ -27,7 +27,7 @@ with open(Path(__file__).resolve().parent / "md5s.csv") as f:
 
 
 def _available_dataset_lots(ds_name: str) -> tp.List[str]:
-    return list(_DATASETS_SPEC[ds_name]["lot"].values())
+    return list(_DATASETS_SPEC[ds_name]["lot"].keys())
 
 
 def _default_dataset_lot(ds_name: str) -> str:

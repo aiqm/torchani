@@ -1,3 +1,4 @@
+import typer
 import typing as tp
 import json
 import tarfile
@@ -34,9 +35,12 @@ main = Typer(
     """,
 )
 
+data_app = typer.Typer()
+main.add_typer(data_app, name="data", help="Manage TorchANI datasets")
 
-@main.command(help="Download one or more built-in datasets.")
-def datapull(
+
+@data_app.command("pull", help="Download one or more built-in datasets.")
+def data_pull(
     names: tpx.Annotated[
         tp.Optional[tp.List[DatasetId]],
         Argument(
@@ -52,7 +56,7 @@ def datapull(
             "'default' (a default dataset-dependent LoT)"
             " and 'all' (all available LoT for the dataset) are also supported options."
             " Note that not all datasets support all LoT. To check which LoT"
-            " are available for a given dataset run datainfo <dataset-name>"
+            " are available for a given dataset run `ani data info <dataset-name>`",
         ),
     ] = None,
     ds_dir: tpx.Annotated[
@@ -125,8 +129,8 @@ def datapull(
         )
 
 
-@main.command(help="Display info regarding built-in datasets")
-def datainfo(
+@data_app.command("info", help="Display info regarding built-in datasets")
+def data_info(
     name: tpx.Annotated[DatasetId, Argument()],
     lot: tpx.Annotated[
         tp.Optional[LotId],
@@ -155,8 +159,10 @@ def datainfo(
         print(f"  {key} shape: {shape} dtype: {dtype}")
 
 
-@main.command(help="Create .tar.gz, .yaml, and .json files from a dir with .h5 files")
-def datapack(
+@data_app.command(
+    "pack", help="Create .tar.gz, .yaml, and .json files from a dir with .h5 files"
+)
+def data_pack(
     src_dir: tpx.Annotated[Path, Argument()],
     dest: tpx.Annotated[tp.Optional[Path], Option("-o")] = None,
     name: tpx.Annotated[str, Option("-n", "--name")] = "",
