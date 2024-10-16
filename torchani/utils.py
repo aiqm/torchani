@@ -47,6 +47,11 @@ ATOMIC_KEYS = (
     "forces",
     "coefficients",  # atomic density coefficients
     "atomic_charges",
+    "atomic_volumes_mbis",
+    "atomic_charges_mbis",
+    "atomic_dipole_magnitudes_mbis",
+    "atomic_quadrupole_magnitudes_mbis",
+    "atomic_octupole_magnitudes_mbis",
     "atomic_dipoles",
     "atomic_polarizabilities",
 )
