@@ -57,7 +57,7 @@ from torchani.aev.terms import (
 )
 from torchani.neighbors import rescreen, NeighborData
 from torchani.electro import ChargeNormalizer
-from torchani.nn import SpeciesConverter, ANIModel, Ensemble
+from torchani.nn import SpeciesConverter, ANIModel, DummyANIModel, Ensemble
 from torchani.atomics import AtomicContainer, AtomicNetwork, AtomicMakerArg, AtomicMaker
 from torchani.constants import GSAES
 from torchani.utils import sort_by_element
@@ -1123,10 +1123,9 @@ class Assembler:
         )
 
 
-def build_basic_ani(
+def simple_ani(
     lot: str,  # method-basis
     symbols: tp.Sequence[str],
-    ensemble_size: int = 1,
     radial_cutoff: float = 5.2,
     angular_cutoff: float = 3.5,
     radial_shifts: int = 16,
@@ -1136,22 +1135,20 @@ def build_basic_ani(
     angular_precision: float = 12.5,
     angular_zeta: float = 14.1,
     cutoff_fn: CutoffArg = "smooth2",
-    neighborlist: NeighborlistArg = "full_pairwise",
     dispersion: bool = False,
     repulsion: bool = True,
     atomic_maker: AtomicMakerArg = "ani2x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
     use_cuda_ops: bool = False,
-    periodic_table_index: bool = True,
     output_label: str = "energies",
 ) -> ANI:
     r"""
     Flexible builder to create ANI-style models. Defaults are similar to ANI-2x.
     """
     asm = Assembler(
-        ensemble_size=ensemble_size,
-        periodic_table_index=periodic_table_index,
+        ensemble_size=1,
+        periodic_table_index=True,
         output_labels=(output_label,),
     )
     asm.set_symbols(symbols)
@@ -1180,7 +1177,7 @@ def build_basic_ani(
         bias=bias,
     )
     asm.set_atomic_networks(ANIModel, atomic_maker)
-    asm.set_neighborlist(neighborlist)
+    asm.set_neighborlist("full_pairwise")
     asm.set_gsaes_as_self_energies(lot)
     if repulsion:
         asm.add_pairwise_potential(
@@ -1196,10 +1193,9 @@ def build_basic_ani(
     return asm.assemble()
 
 
-def build_basic_aniq(
+def simple_aniq(
     lot: str,  # method-basis
     symbols: tp.Sequence[str],
-    ensemble_size: int = 1,
     radial_cutoff: float = 5.2,
     angular_cutoff: float = 3.5,
     radial_shifts: int = 16,
@@ -1209,7 +1205,6 @@ def build_basic_aniq(
     angular_precision: float = 12.5,
     angular_zeta: float = 14.1,
     cutoff_fn: CutoffArg = "smooth2",
-    neighborlist: NeighborlistArg = "full_pairwise",
     dispersion: bool = False,
     repulsion: bool = True,
     atomic_maker: AtomicMakerArg = "ani2x",
@@ -1218,15 +1213,15 @@ def build_basic_aniq(
     use_cuda_ops: bool = False,
     merge_charge_networks: bool = False,
     scale_charge_normalizer_weights: bool = True,
-    periodic_table_index: bool = True,
+    dummy_energies: bool = False,
     output_label: str = "energies",
     second_output_label: str = "atomic_charges",
 ) -> ANI:
     asm = Assembler(
-        ensemble_size=ensemble_size,
-        periodic_table_index=periodic_table_index,
+        ensemble_size=1,
+        periodic_table_index=True,
         model_type=ANIq,
-        output_labels=(output_label, second_output_label)
+        output_labels=(output_label, second_output_label),
     )
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
@@ -1253,6 +1248,8 @@ def build_basic_aniq(
         scale_weights_by_charges_squared=scale_charge_normalizer_weights,
     )
     if merge_charge_networks:
+        if dummy_energies:
+            raise ValueError("Can't output dummy energies with merged charge network")
         atomic_maker = functools.partial(
             atomics.parse_atomics(atomic_maker),
             out_dim=2,
@@ -1271,15 +1268,20 @@ def build_basic_aniq(
             atomic_maker,
             normalizer=normalizer,
         )
-    asm.set_atomic_networks(ANIModel, atomic_maker)
-    asm.set_neighborlist(neighborlist)
-    asm.set_gsaes_as_self_energies(lot)
-    if repulsion:
+    asm.set_atomic_networks(
+        ANIModel if not dummy_energies else DummyANIModel, atomic_maker
+    )
+    asm.set_neighborlist("full_pairwise")
+    if not dummy_energies:
+        asm.set_gsaes_as_self_energies(lot)
+    else:
+        asm.set_zeros_as_self_energies()
+    if repulsion and not dummy_energies:
         asm.add_pairwise_potential(
             RepulsionXTB,
             cutoff=radial_cutoff,
         )
-    if dispersion:
+    if dispersion and not dummy_energies:
         asm.add_pairwise_potential(
             TwoBodyDispersionD3,
             cutoff=8.0,

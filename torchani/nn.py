@@ -1,6 +1,7 @@
 r"""
 Core modules used by the ANI-style models
 """
+
 import typing as tp
 
 import torch
@@ -207,6 +208,22 @@ class SpeciesConverter(torch.nn.Module):
             raise ValueError(f"Unknown species found in {species}")
 
         return SpeciesCoordinates(converted_species.to(species.device), coordinates)
+
+
+# Model that just returns zeros
+class DummyANIModel(ANIModel):
+    @torch.jit.export
+    def members_atomic_energies(
+        self,
+        species_aev: tp.Tuple[Tensor, Tensor],
+    ) -> Tensor:
+        species, aev = species_aev
+        return torch.zeros(species.shape, device=aev.device, dtype=aev.dtype).unsqueeze(
+            0
+        )
+
+    def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
+        return self
 
 
 # Hack: Grab a network with "bad first scalar", discard it and only outputs 2nd

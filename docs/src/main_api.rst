@@ -59,7 +59,8 @@ Assembly of custom ANI-style Models
     :members:
 .. autoclass:: torchani.assembly.ANIq
     :members:
-.. function:: torchani.assembly.build_basic_ani
+.. function:: torchani.assembly.simple_ani
+.. function:: torchani.assembly.simple_aniq
 
 Built-in ANI-style Models
 =========================
