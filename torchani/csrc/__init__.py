@@ -21,7 +21,7 @@ except Exception:
 
 # This env var is meant to be used by developers to manually disable extensions
 # for testing purposes
-if os.getenv("TORCHANI_DISABLE_EXTENSIONS") != "1":
+if os.getenv("TORCHANI_DISABLE_EXTENSIONS") == "1":
     CUAEV_IS_INSTALLED = False
     MNP_IS_INSTALLED = False
 

@@ -106,10 +106,12 @@ if torch.cuda.is_available():
     max_sm_major = max(
         [torch.cuda.get_device_capability(i)[0] for i in range(num_devices)]
     )
-    if (max_sm_major >= 8) and ("TORCHANI_NO_WARN_TF32" not in os.environ):
+    if (max_sm_major >= 8) and os.getenv("TORCHANI_NO_WARN_TF32") != "1":
         warnings.warn(
-            "Torchani disables TF32 (supported by your GPU) to prevent accuracy loss."
-            " To suppress warning set the env var TORCHANI_NO_WARN_TF32 to any value"
+            "TorchANI disables TF32 (supported by your GPU) to prevent accuracy loss."
+            " To suppress warn set the env var TORCHANI_NO_WARN_TF32=1"
+            " For example, if using bash,"
+            " you may add `export TORCHANI_NO_WARN_TF32=1` to your .bashrc"
         )
 
 # Optional submodule, depends on 'ase' being available
