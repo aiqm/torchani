@@ -1,3 +1,4 @@
+import shutil
 import typer
 import typing as tp
 import json
@@ -12,12 +13,16 @@ import re
 from torchani.paths import datasets_dir
 import torchani.datasets
 from torchani.datasets.utils import (
+    DatasetIntegrityError,
+    _DATASETS_SPEC,
     _calc_file_md5,
     _fetch_and_create_builtin_dataset,
     _available_dataset_lots,
+    _available_archives,
     _default_dataset_lot,
 )
 from torchani.datasets.builtin import DatasetId, LotId
+
 
 REPO_BASE_URL = "https://github.com/roitberg-group/torchani_sandbox"
 
@@ -72,10 +77,10 @@ def data_pull(
         bool,
         Option("-v/-V", "--verbose/--no-verbose"),
     ] = True,
-    skip_check: tpx.Annotated[
+    check: tpx.Annotated[
         bool,
-        Option("-s/-S", "--skip-check/--no-skip-check"),
-    ] = False,
+        Option("-s/-S", "--check/--no-check"),
+    ] = True,
 ) -> None:
     r"""
     Download a built-in dataset to the default location in disk, or to a
@@ -113,9 +118,9 @@ def data_pull(
     for name, lot in zip(processed_names, processed_lots):
         dest_dir = (root / f"{name.value}-{lot.value}").resolve()
         if dest_dir.exists() and verbose:
-            if skip_check:
+            if not check:
                 print("Dataset found locally, skipping integrity check")
-                return
+                continue
             print("Dataset found locally, running integrity check...")
         else:
             print("Dataset not found locally, downloading...")
@@ -125,27 +130,86 @@ def data_pull(
             root=root,
             download=True,
             lot=lot.value,
-            skip_check=skip_check,
+            skip_check=not check,
         )
 
 
-@data_app.command("info", help="Display info regarding built-in datasets")
+@data_app.command("clean", help="Remove datasets with data integrity issues")
+def data_clean() -> None:
+    archives = _available_archives()
+    deleted = 0
+    for d in sorted(datasets_dir().iterdir()):
+        if d.name not in archives:
+            continue
+        name, lot = archives[d.name]
+        try:
+            getattr(torchani.datasets, name)(lot=lot, download=False, verbose=False)
+        except DatasetIntegrityError:
+            data_rm(DatasetId(name), LotId(lot))
+    if deleted == 0:
+        print("No integrity issues found, no datasets deleted")
+
+
+@data_app.command("rm", help="Remove a downloaded dataset")
+def data_rm(
+    name: tpx.Annotated[DatasetId, Argument()],
+    lot: tpx.Annotated[
+        tp.Optional[LotId],
+        Option("-l", "--lot"),
+    ] = None,
+) -> None:
+    if lot is None:
+        dirname = _DATASETS_SPEC[name.value]["default-lot"]["archive"].split(".")[0]
+    else:
+        dirname = _DATASETS_SPEC[name.value]["lot"][lot.value]["archive"].split(".")[0]
+    ds_dir = datasets_dir() / dirname
+    if ds_dir.exists():
+        print(f"Deleting dataset {dirname} ...")
+        shutil.rmtree(ds_dir)
+        print("Done!")
+    else:
+        print(f"Dataset {dirname} not found")
+
+
+@data_app.command("ls", help="List downloaded built-in datasets")
+def data_ls(
+    check: tpx.Annotated[
+        bool,
+        Option("-s/-S", "--check/--no-check"),
+    ] = False,
+) -> None:
+    archives = _available_archives()
+    for d in sorted(datasets_dir().iterdir()):
+        if d.name not in archives:
+            continue
+        name, lot = archives[d.name]
+        if check:
+            try:
+                getattr(torchani.datasets, name)(lot=lot, download=False, verbose=False)
+                print(f"{d.name}, status: OK")
+            except DatasetIntegrityError:
+                print(f"{d.name}, status: Error!")
+        else:
+            print(f"{d.name}, status: Not checked")
+
+
+@data_app.command("info", help="Display info regarding downloaded built-in datasets")
 def data_info(
     name: tpx.Annotated[DatasetId, Argument()],
     lot: tpx.Annotated[
         tp.Optional[LotId],
         Option("-l", "--lot"),
     ] = None,
-    skip_check: tpx.Annotated[
+    check: tpx.Annotated[
         bool,
-        Option("-s/-S", "--skip-check/--no-skip-check"),
-    ] = False,
+        Option("-s/-S", "--check/--no-check"),
+    ] = True,
 ) -> None:
     getter = getattr(torchani.datasets, name.value)
     if lot is None:
-        ds = getter(download=False, skip_check=skip_check)
+        ds = getter(download=False, skip_check=not check)
     else:
-        ds = getter(download=False, lot=lot, skip_check=skip_check)
+        ds = getter(download=False, lot=lot.value, skip_check=not check)
     groups = list(ds.keys())
     conformer = ds.get_numpy_conformers(groups[0], 0)
     key_max_len = max([len(k) for k in conformer.keys()]) + 3

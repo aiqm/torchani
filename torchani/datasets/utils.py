@@ -14,6 +14,11 @@ from torchani.utils import download_and_extract
 _BASE_URL = "http://moria.chem.ufl.edu/animodel/ground_truth_data/"
 _DATASETS_JSON_PATH = Path(__file__).parent / "builtin_datasets.json"
 
+
+class DatasetIntegrityError(RuntimeError):
+    pass
+
+
 with open(_DATASETS_JSON_PATH, mode="rt", encoding="utf-8") as f:
     _DATASETS_SPEC = json.load(f)
 
@@ -24,6 +29,17 @@ with open(Path(__file__).resolve().parent / "md5s.csv") as f:
     for line in lines[1:]:
         file_, md5 = line.split(",")
         _MD5S[file_.strip()] = md5.strip()
+
+
+# TODO clean this up
+def _available_archives() -> tp.Dict[str, tp.Tuple[str, str]]:
+    ars: tp.Dict[str, tp.Tuple[str, str]] = {}
+    for k, v in _DATASETS_SPEC.items():
+        if k.endswith("-meta"):
+            continue
+        for lot in _available_dataset_lots(k):
+            ars[v["lot"][lot]["archive"].split(".")[0]] = (k, lot)
+    return ars
 
 
 def _available_dataset_lots(ds_name: str) -> tp.List[str]:
@@ -113,9 +129,9 @@ def _check_files_integrity(
     expected_file_names = set(files_and_md5s.keys())
     present_file_names = set([f.name for f in present_files])
     if not present_files:
-        raise RuntimeError(f"Dataset not found in path {str(root)}")
+        raise DatasetIntegrityError(f"Dataset not found in path {str(root)}")
     if expected_file_names != present_file_names:
-        raise RuntimeError(
+        raise DatasetIntegrityError(
             f"Wrong files found for dataset {name} in provided path,"
             f" expected {expected_file_names} but found {present_file_names}"
         )
@@ -128,7 +144,7 @@ def _check_files_integrity(
         leave=False,
     ):
         if _calc_file_md5(f) != files_and_md5s[f.name]:
-            raise RuntimeError(
+            raise DatasetIntegrityError(
                 f"All expected files for dataset {name}"
                 f" were found but file {f.name} failed integrity check,"
                 " your dataset is corrupted or has been modified"
