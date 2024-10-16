@@ -204,8 +204,6 @@ class AEVComputer(torch.nn.Module):
                 species, coordinates, self.radial_terms.cutoff, cell, pbc
             )
             aev = self._compute_aev(element_idxs=species, neighbors=neighbors)
-            if self._print_aev_branch:
-                print("Executing branch: pyAEV")
             return SpeciesAEV(species, aev)
 
         # cuAEV code branch:
@@ -217,15 +215,11 @@ class AEVComputer(torch.nn.Module):
                 species, coordinates, self.radial_terms.cutoff, cell, pbc
             )
             aev = self._compute_cuaev_with_half_nbrlist(species, coordinates, neighbors)
-            if self._print_aev_branch:
-                print("Executing branch: cuAEV via interface")
         else:
             assert (pbc is None) or (
                 not pbc.any()
             ), "cuAEV doesn't support PBC when use_cuaev_interface=False"
             aev = self._compute_cuaev(species, coordinates)
-            if self._print_aev_branch:
-                print("Executing branch: cuAEV direct")
         return SpeciesAEV(species, aev)
 
     def _compute_aev(
@@ -233,6 +227,8 @@ class AEVComputer(torch.nn.Module):
         element_idxs: Tensor,  # shape (C, A)
         neighbors: NeighborData,
     ) -> Tensor:
+        if self._print_aev_branch:
+            print("Executing branch: pyAEV")
         neighbor_idxs = neighbors.indices  # shape (2, P)
         distances = neighbors.distances  # shape (P,)
         diff_vectors = neighbors.diff_vectors  # shape (P, 3)
@@ -414,6 +410,8 @@ class AEVComputer(torch.nn.Module):
 
     @jit_unused_if_no_cuaev()
     def _compute_cuaev(self, species: Tensor, coordinates: Tensor) -> Tensor:
+        if self._print_aev_branch:
+            print("Executing branch: FUSED cuAEV")
         species_int = species.to(torch.int32)
         aev = torch.ops.cuaev.run(coordinates, species_int, self.cuaev_computer)
         return aev
@@ -474,6 +472,8 @@ class AEVComputer(torch.nn.Module):
         coordinates: Tensor,
         neighbors: NeighborData,
     ) -> Tensor:
+        if self._print_aev_branch:
+            print("Executing branch: cuAEV")
         # The coordinates will not be used in forward calculation, but it's
         # gradient (force) will still be calculated in cuaev kernel, so it's
         # important to have coordinates passed as an argument.
