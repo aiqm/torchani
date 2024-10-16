@@ -41,6 +41,10 @@ class NNPotential(Potential):
             self.aev_computer.use_cuda_extension
             and self.aev_computer.use_cuaev_interface
         ):
+
+            if not self.aev_computer.cuaev_is_initialized:
+                self.aev_computer._init_cuaev_computer()
+                self.aev_computer.cuaev_is_initialized = True
             assert _coordinates is not None
             return self.aev_computer._compute_cuaev_with_half_nbrlist(
                 element_idxs, _coordinates, neighbors
