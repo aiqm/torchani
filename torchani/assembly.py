@@ -614,10 +614,6 @@ class ANIq(ANI):
         charge_networks: tp.Optional[AtomicContainer] = None,
         charge_normalizer: tp.Optional[ChargeNormalizer] = None,
     ):
-        if charge_networks is None:
-            raise NotImplementedError(
-                "Model with fused charge-energy networks not yet implemented"
-            )
         super().__init__(
             symbols=symbols,
             aev_computer=aev_computer,
@@ -626,9 +622,9 @@ class ANIq(ANI):
             pairwise_potentials=pairwise_potentials,
             periodic_table_index=periodic_table_index,
         )
-
+        nnp: NNPotential
         if charge_networks is None:
-            warnings.warn("Merged charges potential is currently untested")
+            warnings.warn("Merged charges potential is experimental untested")
             nnp = MergedChargesNNPotential(
                 self.aev_computer,
                 self.neural_networks,
@@ -1070,12 +1066,9 @@ class Assembler:
             kwargs.update({"pairwise_potentials": potentials})
 
         if charge_networks is not None:
-            kwargs.update(
-                {
-                    "charge_networks": charge_networks,
-                    "charge_normalizer": self._charge_normalizer,
-                }
-            )
+            kwargs["charge_networks"] = charge_networks
+        if self._charge_normalizer is not None:
+            kwargs["charge_normalizer"] = self._charge_normalizer
 
         return self._model_type(
             symbols=self.symbols,
@@ -1140,6 +1133,95 @@ def build_basic_ani(
         activation=atomics.parse_activation(activation),
         bias=bias,
     )
+    asm.set_atomic_networks(ANIModel, atomic_maker)
+    asm.set_neighborlist(neighborlist)
+    asm.set_gsaes_as_self_energies(lot)
+    if repulsion:
+        asm.add_pairwise_potential(
+            RepulsionXTB,
+            cutoff=radial_cutoff,
+        )
+    if dispersion:
+        asm.add_pairwise_potential(
+            TwoBodyDispersionD3,
+            cutoff=8.0,
+            extra={"functional": lot.split("-")[0]},
+        )
+    return asm.assemble()
+
+
+def build_basic_aniq(
+    lot: str,  # method-basis
+    symbols: tp.Sequence[str],
+    ensemble_size: int = 1,
+    radial_cutoff: float = 5.2,
+    angular_cutoff: float = 3.5,
+    radial_shifts: int = 16,
+    angular_shifts: int = 8,
+    angle_sections: int = 4,
+    radial_precision: float = 19.7,
+    angular_precision: float = 12.5,
+    angular_zeta: float = 14.1,
+    cutoff_fn: CutoffArg = "smooth2",
+    neighborlist: NeighborlistArg = "full_pairwise",
+    dispersion: bool = False,
+    repulsion: bool = True,
+    atomic_maker: AtomicMakerArg = "ani2x",
+    activation: tp.Union[str, torch.nn.Module] = "gelu",
+    bias: bool = False,
+    use_cuda_ops: bool = False,
+    merge_charge_networks: bool = False,
+    scale_charge_normalizer_weights: bool = True,
+    periodic_table_index: bool = True,
+) -> ANI:
+    asm = Assembler(
+        ensemble_size=ensemble_size,
+        periodic_table_index=periodic_table_index,
+        model_type=ANIq,
+    )
+    asm.set_symbols(symbols)
+    asm.set_global_cutoff_fn(cutoff_fn)
+    asm.set_featurizer(
+        AEVComputer,
+        radial_terms=StandardRadial.cover_linearly(
+            start=0.9,
+            cutoff=radial_cutoff,
+            eta=radial_precision,
+            num_shifts=radial_shifts,
+        ),
+        angular_terms=StandardAngular.cover_linearly(
+            start=0.9,
+            eta=angular_precision,
+            zeta=angular_zeta,
+            num_shifts=angular_shifts,
+            num_angle_sections=angle_sections,
+            cutoff=angular_cutoff,
+        ),
+        extra={"use_cuda_extension": use_cuda_ops, "use_cuaev_interface": use_cuda_ops},
+    )
+    normalizer = ChargeNormalizer.from_electronegativity_and_hardness(
+        asm.symbols,
+        scale_weights_by_charges_squared=scale_charge_normalizer_weights,
+    )
+    if merge_charge_networks:
+        atomic_maker = functools.partial(
+            atomics.parse_atomics(atomic_maker),
+            out_dim=2,
+            activation=atomics.parse_activation(activation),
+            bias=bias,
+        )
+    else:
+        atomic_maker = functools.partial(
+            atomics.parse_atomics(atomic_maker),
+            out_dim=1,
+            activation=atomics.parse_activation(activation),
+            bias=bias,
+        )
+        asm.set_charge_networks(
+            ANIModel,
+            atomic_maker,
+            normalizer=normalizer,
+        )
     asm.set_atomic_networks(ANIModel, atomic_maker)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies(lot)
