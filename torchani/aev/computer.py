@@ -1,3 +1,4 @@
+import os
 import typing as tp
 
 import torch
@@ -18,6 +19,9 @@ from torchani.aev.terms import (
     AngularTermArg,
 )
 from torchani.csrc import CUAEV_IS_INSTALLED
+
+# Envvar meant to be used by developers to debug AEV branch
+_PRINT_AEV_BRANCH = os.getenv("TORCHANI_PRINT_AEV_BRANCH") == "1"
 
 
 def jit_unused_if_no_cuaev():
@@ -58,6 +62,7 @@ class AEVComputer(torch.nn.Module):
         self.use_cuaev_interface = use_cuaev_interface
         self.num_species = num_species
         self.num_species_pairs = num_species * (num_species + 1) // 2
+        self._print_aev_branch = _PRINT_AEV_BRANCH
 
         self.radial_terms = parse_radial_term(radial_terms)
         self.angular_terms = parse_angular_term(angular_terms)
@@ -193,15 +198,17 @@ class AEVComputer(torch.nn.Module):
         # into the neighborlist do **not** need to be mapped into the
         # central cell for pbc calculations.
 
-        # pyAEV code path:
+        # pyAEV code branch:
         if not self.use_cuda_extension:
             neighbors = self.neighborlist(
                 species, coordinates, self.radial_terms.cutoff, cell, pbc
             )
             aev = self._compute_aev(element_idxs=species, neighbors=neighbors)
+            if self._print_aev_branch:
+                print("Executing branch: pyAEV")
             return SpeciesAEV(species, aev)
 
-        # cuAEV code path:
+        # cuAEV code branch:
         if not self.cuaev_is_initialized:
             self._init_cuaev_computer()
             self.cuaev_is_initialized = True
@@ -210,11 +217,15 @@ class AEVComputer(torch.nn.Module):
                 species, coordinates, self.radial_terms.cutoff, cell, pbc
             )
             aev = self._compute_cuaev_with_half_nbrlist(species, coordinates, neighbors)
+            if self._print_aev_branch:
+                print("Executing branch: cuAEV via interface")
         else:
             assert (pbc is None) or (
                 not pbc.any()
             ), "cuAEV doesn't support PBC when use_cuaev_interface=False"
             aev = self._compute_cuaev(species, coordinates)
+            if self._print_aev_branch:
+                print("Executing branch: cuAEV direct")
         return SpeciesAEV(species, aev)
 
     def _compute_aev(
