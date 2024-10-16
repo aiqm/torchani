@@ -220,6 +220,7 @@ def ANImbis(
         ensemble_size=8,
         periodic_table_index=periodic_table_index,
         model_type=ANIq,
+        output_labels=("energies", "atomic_charges")
     )
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")
