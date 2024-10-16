@@ -30,11 +30,15 @@ if os.getenv("TORCHANI_NO_WARN_EXTENSIONS") != "1":
         warnings.warn(
             "The AEV CUDA extension is not installed and will not be available."
             " To suppress warn set the env var TORCHANI_NO_WARN_EXTENSIONS=1"
+            " For example, if using bash,"
+            " you may add `export TORCHANI_NO_WARN_EXTENSIONS=1` to your .bashrc"
         )
     if not MNP_IS_INSTALLED:
         warnings.warn(
             "The MNP C++ extension is not installed and will not be available."
             " To suppress warn set the env var TORCHANI_NO_WARN_EXTENSIONS=1"
+            " For example, if using bash,"
+            " you may add `export TORCHANI_NO_WARN_EXTENSIONS=1` to your .bashrc"
         )
 
 

@@ -9,7 +9,7 @@ dependencies:
   - python=3.10
   - pip>=24.0
   - numpy=1.26
-  - pytorch::pytorch=2.3
+  - pytorch::pytorch=2.3  # Modify to 'pytorch::pytorch=2' if installing on macOS
   - typing_extensions>=4.0.0
   - h5py  # HDF5 backend for datasets
   - tqdm  # progress bar util
@@ -23,13 +23,12 @@ dependencies:
   - ase
 
   ## NVIDIA CUDA GPU support ##
-  - pytorch::pytorch-cuda=11.8
-  # If using **only** CPU, comment prev line and uncomment the next:
-  #- pytorch::cpuonly
+  - pytorch::pytorch-cuda=11.8  # Comment this line if installing on macOS, or to **disable** CUDA GPU support in any platform
+  #- pytorch::cpuonly  # Uncomment this line to **disable** CUDA GPU support in Linux
 
   ## cuAEV and MNP ##
   # For more details consult the "developer notes" section in README.md
-  # If using **only** CPU, comment all lines on this block
+  # If installing on macOS, or if CUDA GPU support is **disabled**, comment all lines on this block
   - setuptools>=64
   - setuptools-scm>=8
   - gxx_linux-64=11.4

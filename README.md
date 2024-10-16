@@ -122,13 +122,19 @@ pytest -v .
 This process works for most use cases, but for more details regarding building
 the CUDA and C++ extensions refer to [TorchANI CSRC](torchani/csrc).
 
+#### From source in macOS
+
+Note that there is no CUDA support on `macOS` and TorchANI is **untested** with
+Apple Metal Performance Shaders (MPS). The `dev_environment.yaml` file needs
+slight modifications if installing on `macOS`. Please consult the corresponding
+file and modify it before creating the `conda` environment.
+
 ## GPU support
 
 TorchANI can be run in CUDA-enabled GPUs. This is **highly recommended** unless
 doing simple debugging or tests. If you don't run TorchANI on a GPU, expect
-highly degraded performance. Note that there is no CUDA support on `macOS`, and
-TorchANI is **untested** with Apple Metal Performance Shaders (MPS) and with
-AMD GPUs (ROCm | HIP).
+highly degraded performance. TorchANI is **untested** with AMD GPUs (ROCm |
+HIP).
 
 ## CUDA and C++ extensions
 
