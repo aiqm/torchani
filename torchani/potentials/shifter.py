@@ -57,6 +57,7 @@ class EnergyAdder(Potential):
         neighbors: NeighborData = NeighborData(
             torch.empty(0), torch.empty(0), torch.empty(0)
         ),
+        _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         ensemble_average: bool = True,
     ) -> Tensor:
@@ -73,10 +74,15 @@ class EnergyAdder(Potential):
         neighbors: NeighborData = NeighborData(
             torch.empty(0), torch.empty(0), torch.empty(0)
         ),
+        _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
     ) -> Tensor:
         return self.atomic_energies(
-            element_idxs, neighbors, ghost_flags, ensemble_average=True
+            element_idxs,
+            neighbors,
+            _coordinates=_coordinates,
+            ghost_flags=ghost_flags,
+            ensemble_average=True,
         ).sum(dim=-1)
 
 

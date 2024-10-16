@@ -30,13 +30,31 @@ class NNPotential(Potential):
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
 
+    # TODO: Wrapper that executes the correct _compute_aev call, very dirty
+    def _execute_aev_computer(
+        self,
+        element_idxs: Tensor,
+        neighbors: NeighborData,
+        _coordinates: tp.Optional[Tensor] = None,
+    ) -> Tensor:
+        if (
+            self.aev_computer.use_cuda_extension
+            and self.aev_computer.use_cuaev_interface
+        ):
+            assert _coordinates is not None
+            return self.aev_computer._compute_cuaev_with_half_nbrlist(
+                element_idxs, _coordinates, neighbors
+            )
+        return self.aev_computer._compute_aev(element_idxs, neighbors)
+
     def forward(
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
+        _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
     ) -> Tensor:
-        aevs = self.aev_computer._compute_aev(element_idxs, neighbors)
+        aevs = self._execute_aev_computer(element_idxs, neighbors, _coordinates)
         return self.neural_networks((element_idxs, aevs))[1]
 
     @torch.jit.export
@@ -44,10 +62,11 @@ class NNPotential(Potential):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
+        _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         ensemble_average: bool = True,
     ) -> Tensor:
-        aevs = self.aev_computer._compute_aev(element_idxs, neighbors)
+        aevs = self._execute_aev_computer(element_idxs, neighbors, _coordinates)
         atomic_energies = self.neural_networks.members_atomic_energies(
             (element_idxs, aevs)
         )
@@ -78,10 +97,11 @@ class MergedChargesNNPotential(NNPotential):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
+        _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         total_charge: float = 0.0,
     ) -> EnergiesAtomicCharges:
-        aevs = self.aev_computer._compute_aev(element_idxs, neighbors)
+        aevs = self._execute_aev_computer(element_idxs, neighbors, _coordinates)
         atomic_energies_and_raw_atomic_charges = torch.sum(
             self.neural_networks.members_atomic_energies((element_idxs, aevs)), dim=0
         )  # shape is (M, C, A, 2)
@@ -112,10 +132,11 @@ class SeparateChargesNNPotential(NNPotential):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
+        _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         total_charge: float = 0.0,
     ) -> EnergiesAtomicCharges:
-        aevs = self.aev_computer._compute_aev(element_idxs, neighbors)
+        aevs = self._execute_aev_computer(element_idxs, neighbors, _coordinates)
         energies = self.neural_networks((element_idxs, aevs))[1]
         raw_atomic_charges = torch.sum(
             self.charge_networks.members_atomic_energies((element_idxs, aevs)), dim=0

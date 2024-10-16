@@ -362,7 +362,7 @@ class ANI(torch.nn.Module):
             if cutoff < previous_cutoff:
                 neighbors = rescreen(cutoff, neighbors)
                 previous_cutoff = cutoff
-            energies += pot.atomic_energies(elem_idxs, neighbors)
+            energies += pot.atomic_energies(elem_idxs, neighbors, _coordinates=coords)
         return energies
 
     def _energy_of_pots(
@@ -380,7 +380,7 @@ class ANI(torch.nn.Module):
             if cutoff < previous_cutoff:
                 neighbors = rescreen(cutoff, neighbors)
                 previous_cutoff = cutoff
-            energies += pot(elem_idxs, neighbors)
+            energies += pot(elem_idxs, neighbors, _coordinates=coords)
         return energies
 
     # Needed for bw compatibility
@@ -697,27 +697,27 @@ class ANIq(ANI):
         input_needs_screening: bool = True,
     ) -> SpeciesEnergiesAtomicCharges:
         # This entrypoint supports input from an external neighborlist
-        element_idxs, coordinates = self._maybe_convert_species(species_coordinates)
+        element_idxs, coords = self._maybe_convert_species(species_coordinates)
         # Check shapes
         num_molecules, num_atoms = element_idxs.shape
-        assert coordinates.shape == (num_molecules, num_atoms, 3)
+        assert coords.shape == (num_molecules, num_atoms, 3)
         assert total_charge == 0.0, "Model only supports neutral molecules"
         previous_cutoff = self.potentials[0].cutoff
         neighbors = self.neighborlist.process_external_input(
             element_idxs,
-            coordinates,
+            coords,
             neighbor_idxs,
             shift_values,
             previous_cutoff,
             input_needs_screening,
         )
         energies = torch.zeros(
-            num_molecules, device=element_idxs.device, dtype=coordinates.dtype
+            num_molecules, device=element_idxs.device, dtype=coords.dtype
         )
         atomic_charges = torch.zeros(
             (num_molecules, num_atoms),
             device=element_idxs.device,
-            dtype=coordinates.dtype,
+            dtype=coords.dtype,
         )
         for pot in self.potentials:
             cutoff = pot.cutoff
@@ -728,13 +728,14 @@ class ANIq(ANI):
                 output = pot.energies_and_atomic_charges(
                     element_idxs,
                     neighbors,
+                    _coordinates=coords,
                     ghost_flags=None,
                     total_charge=total_charge,
                 )
                 energies += output.energies
                 atomic_charges += output.atomic_charges
             else:
-                energies += pot(element_idxs, neighbors)
+                energies += pot(element_idxs, neighbors, _coordinates=coords)
         return SpeciesEnergiesAtomicCharges(
             element_idxs, energies + self.energy_shifter(element_idxs), atomic_charges
         )
@@ -748,16 +749,16 @@ class ANIq(ANI):
         total_charge: float = 0.0,
     ) -> SpeciesEnergiesAtomicCharges:
         assert total_charge == 0.0, "Model only supports neutral molecules"
-        element_idxs, coordinates = self._maybe_convert_species(species_coordinates)
+        element_idxs, coords = self._maybe_convert_species(species_coordinates)
         previous_cutoff = self.potentials[0].cutoff
         neighbor_data = self.neighborlist(
-            element_idxs, coordinates, previous_cutoff, cell, pbc
+            element_idxs, coords, previous_cutoff, cell, pbc
         )
         energies = torch.zeros(
-            element_idxs.shape[0], device=element_idxs.device, dtype=coordinates.dtype
+            element_idxs.shape[0], device=element_idxs.device, dtype=coords.dtype
         )
         atomic_charges = torch.zeros(
-            element_idxs.shape, device=element_idxs.device, dtype=coordinates.dtype
+            element_idxs.shape, device=element_idxs.device, dtype=coords.dtype
         )
         for pot in self.potentials:
             cutoff = pot.cutoff
@@ -768,13 +769,14 @@ class ANIq(ANI):
                 output = pot.energies_and_atomic_charges(
                     element_idxs,
                     neighbor_data,
+                    _coordinates=coords,
                     ghost_flags=None,
                     total_charge=total_charge,
                 )
                 energies += output.energies
                 atomic_charges += output.atomic_charges
             else:
-                energies += pot(element_idxs, neighbor_data)
+                energies += pot(element_idxs, neighbor_data, _coordinates=coords)
         return SpeciesEnergiesAtomicCharges(
             element_idxs, energies + self.energy_shifter(element_idxs), atomic_charges
         )

@@ -8,6 +8,9 @@ from torchani.constants import ATOMIC_NUMBER, PERIODIC_TABLE
 from torchani.cutoffs import parse_cutoff_fn, CutoffArg
 from torchani.neighbors import NeighborData
 
+# TODO: The "_coordinates" input is only required due to a quirk of the
+# implementation of the cuAEV
+
 
 class Potential(torch.nn.Module):
     r"""Base class for all atomic potentials
@@ -45,6 +48,7 @@ class Potential(torch.nn.Module):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
+        _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
     ) -> Tensor:
         r"""
@@ -63,10 +67,13 @@ class Potential(torch.nn.Module):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
+        _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         total_charge: float = 0.0,
     ) -> EnergiesAtomicCharges:
-        energies = self(element_idxs, neighbors, ghost_flags)
+        energies = self(
+            element_idxs, neighbors, _coordinates=_coordinates, ghost_flags=ghost_flags
+        )
         atomic_charges = torch.zeros_like(element_idxs, dtype=energies.dtype)
         return EnergiesAtomicCharges(energies, atomic_charges)
 
@@ -75,6 +82,7 @@ class Potential(torch.nn.Module):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
+        _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         ensemble_average: bool = True,
     ) -> Tensor:
@@ -154,6 +162,7 @@ class PairPotential(Potential):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
+        _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
     ) -> Tensor:
         pair_energies = self._calculate_pair_energies_wrapper(
@@ -177,6 +186,7 @@ class PairPotential(Potential):
         self,
         element_idxs: Tensor,
         neighbors: NeighborData,
+        _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         ensemble_average: bool = True,
     ) -> Tensor:
