@@ -1128,6 +1128,9 @@ class Assembler:
 def simple_ani(
     lot: str,  # method-basis
     symbols: tp.Sequence[str],
+    ensemble_size: int = 1,
+    radial_start: float = 0.9,
+    angular_start: float = 0.9,
     radial_cutoff: float = 5.2,
     angular_cutoff: float = 3.5,
     radial_shifts: int = 16,
@@ -1147,9 +1150,15 @@ def simple_ani(
 ) -> ANI:
     r"""
     Flexible builder to create ANI-style models. Defaults are similar to ANI-2x.
+
+    To reproduce the ANI-2x AEV exactly use the following defaults:
+        - cutoff_fn='cosine'
+        - radial_start=0.8
+        - angular_start=0.8
+        - radial_cutoff=5.1
     """
     asm = Assembler(
-        ensemble_size=1,
+        ensemble_size=ensemble_size,
         periodic_table_index=True,
         output_labels=(output_label,),
     )
@@ -1158,13 +1167,13 @@ def simple_ani(
     asm.set_featurizer(
         AEVComputer,
         radial_terms=StandardRadial.cover_linearly(
-            start=0.9,
+            start=radial_start,
             cutoff=radial_cutoff,
             eta=radial_precision,
             num_shifts=radial_shifts,
         ),
         angular_terms=StandardAngular.cover_linearly(
-            start=0.9,
+            start=angular_start,
             eta=angular_precision,
             zeta=angular_zeta,
             num_shifts=angular_shifts,
@@ -1198,6 +1207,9 @@ def simple_ani(
 def simple_aniq(
     lot: str,  # method-basis
     symbols: tp.Sequence[str],
+    ensemble_size: int = 1,
+    radial_start: float = 0.9,
+    angular_start: float = 0.9,
     radial_cutoff: float = 5.2,
     angular_cutoff: float = 3.5,
     radial_shifts: int = 16,
@@ -1219,8 +1231,18 @@ def simple_aniq(
     output_label: str = "energies",
     second_output_label: str = "atomic_charges",
 ) -> ANI:
+    r"""
+    Flexible builder to create ANI-style models with separated or merged charge
+    networks. Defaults are similar to ANI-2x.
+
+    To reproduce the ANI-2x AEV exactly use the following defaults:
+        - cutoff_fn='cosine'
+        - radial_start=0.8
+        - angular_start=0.8
+        - radial_cutoff=5.1
+    """
     asm = Assembler(
-        ensemble_size=1,
+        ensemble_size=ensemble_size,
         periodic_table_index=True,
         model_type=ANIq,
         output_labels=(output_label, second_output_label),
@@ -1230,13 +1252,13 @@ def simple_aniq(
     asm.set_featurizer(
         AEVComputer,
         radial_terms=StandardRadial.cover_linearly(
-            start=0.9,
+            start=radial_start,
             cutoff=radial_cutoff,
             eta=radial_precision,
             num_shifts=radial_shifts,
         ),
         angular_terms=StandardAngular.cover_linearly(
-            start=0.9,
+            start=angular_start,
             eta=angular_precision,
             zeta=angular_zeta,
             num_shifts=angular_shifts,
