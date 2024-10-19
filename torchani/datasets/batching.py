@@ -338,6 +338,8 @@ class Batcher:
                 print(f"    {div.name}: {len(div.indices)}")
 
         # Shuffle batches inside divisions
+        # NOTE: Each division gets a different make-up of batches, so symlinking
+        # is not possible
         if self._shuffle:
             for div in divs:
                 shuffle_idxs = torch.randperm(len(div.indices), generator=batch_rng)
