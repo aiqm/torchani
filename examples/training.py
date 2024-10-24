@@ -70,9 +70,8 @@ validation = valid_ds.as_dataloader(num_workers=0)
 #
 # In this case we wont apply any transform
 
-# Lets generate a non-pretrained model that we will train afterwards
-# Optionally we could initialize the weights with a custom initialization,
-# But for simplicity we use PyTorch default initialization
+# Lets generate a model from scratch. For simplicity we use PyTorch's default random
+# initialization for the weights.
 model = simple_ani(
     lot="wb97x-631gd",
     symbols=("H", "C", "N", "O"),

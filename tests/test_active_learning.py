@@ -13,7 +13,7 @@ class TestActiveLearning(ANITest):
     def setUp(self):
         model = torchani.models.ANI1x().double()
         self.model = self._setup(model)
-        self.num_networks = model.neural_networks.num_networks
+        self.num_networks = model.neural_networks.get_active_members_num()
         self.first_model = self._setup(model[0])
 
         # fully symmetric methane

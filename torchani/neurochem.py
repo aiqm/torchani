@@ -303,7 +303,6 @@ def load_atomic_network(filename: StrPath) -> AtomicNetwork:
         bias=True,
     )
 
-    # Load pretrained parameters
     for linear, wfile, bfile in zip(
         itertools.chain(network.layers, [network.final_layer]), weight_files, bias_files
     ):
@@ -449,8 +448,8 @@ def modules_from_model_name(
     use_cuaev_interface: bool = False,
 ) -> tp.Tuple[AEVComputer, AtomicContainer, EnergyAdder, tp.Sequence[str]]:
     r"""
-    Creates the necessary modules to generate a pretrained ANI model,
-    parsing the data from legacy neurochem files. and optional arguments to
+    Creates the necessary modules to generate a pre-trained ANI model, parsing the data
+    from legacy neurochem files, which are fetched according to the model name.
     modify some modules.
     """
     return modules_from_info(
@@ -468,9 +467,8 @@ def modules_from_info_file(
     use_cuaev_interface: bool = False,
 ) -> tp.Tuple[AEVComputer, AtomicContainer, EnergyAdder, tp.Sequence[str]]:
     r"""
-    Creates the necessary modules to generate a pretrained neurochem model,
-    parsing the data from legacy neurochem files. and optional arguments to
-    modify some modules.
+    Creates the necessary modules to generate a pre-trained ANI model, parsing the data
+    from legacy neurochem files.
     """
     return modules_from_info(
         NeurochemInfo.from_info_file(info_file),

@@ -24,6 +24,7 @@ small, 3.5 Ang or less).
 These pieces are assembled into a subclass of ANI
 """
 
+from copy import deepcopy
 import warnings
 import functools
 import math
@@ -136,12 +137,14 @@ class ANI(torch.nn.Module):
         """Calculate energies for a batch of molecules
 
         Args:
-            species: Elements in the batch, shape (molecules, atoms)
-            coordinates: Coords of molecules
+            species: Int tensor with the atomic numbers of molecules in the batch, shape
+                (molecules, atoms).
+            coordinates: Float tensor with coords of molecules
                 in the batch, shape (molecules, atoms, 3)
-            cell: the cell used in PBC computation, set to None if PBC is not enabled
-            pbc: Tensor that indicates enabled PBC directions. Set
-                to None if PBC is not enabled.
+            cell: Float tensorwith the cell used for PBC computations. Set to None if
+                PBC is not enabled, shape (3, 3)
+            pbc: Boolean tensor that indicates enabled PBC directions. Set
+                to None if PBC is not enabled. shape (3,)
             total_charge: The total charge of the molecules. Only
                 the scalar 0 is currently supported.
             ensemble_average: If True (default), return the average
@@ -153,11 +156,11 @@ class ANI(torch.nn.Module):
                 given configurations
         """
         _, energies = self(
-            (species, coordinates),
-            cell,
-            pbc,
-            total_charge,
-            ensemble_average,
+            species_coordinates=(species, coordinates),
+            cell=cell,
+            pbc=pbc,
+            total_charge=total_charge,
+            ensemble_average=ensemble_average,
         )
         return {self._output_labels[0]: energies}
 
@@ -323,21 +326,18 @@ class ANI(torch.nn.Module):
             [p for p in self.potentials if p.is_trainable]
         )
 
+    # TODO This is confusing, it may be a good idea to deprecate it, or at least warn
     def __len__(self):
-        return self.neural_networks.num_networks
+        return self.neural_networks.get_active_members_num()
 
-    def __getitem__(self, index: int) -> tpx.Self:
-        return type(self)(
-            symbols=self.get_chemical_symbols(),
-            aev_computer=self.aev_computer,
-            neural_networks=self.neural_networks.member(index),
-            energy_shifter=self.energy_shifter,
-            pairwise_potentials=[
-                p for p in self.potentials if not isinstance(p, NNPotential)
-            ],
-            periodic_table_index=self.periodic_table_index,
-            output_labels=self._output_labels,
-        )
+    # TODO This is confusing, it may be a good idea to deprecate it, or at least warn
+    def __getitem__(self, idx: int) -> tpx.Self:
+        model = deepcopy(self)
+        model.neural_networks = self.neural_networks.member(idx)
+        for p in model.potentials:
+            if isinstance(p, NNPotential):
+                p.neural_networks = model.neural_networks
+        return model
 
     def _atomic_energy_of_pots(
         self,
@@ -348,7 +348,7 @@ class ANI(torch.nn.Module):
     ) -> Tensor:
         # Add extra axis, since potentials return atomic E of shape (memb, N, A)
         shape = (
-            self.neural_networks.num_networks,
+            len(self.neural_networks.active_members_idxs),
             elem_idxs.shape[0],
             elem_idxs.shape[1],
         )
@@ -486,7 +486,7 @@ class ANI(torch.nn.Module):
             ensemble_average=False,
         )
 
-        if self.neural_networks.num_networks == 1:
+        if len(self.neural_networks.active_members_idxs) == 1:
             qbc_factors = torch.zeros_like(energies).squeeze(0)
         else:
             # standard deviation is taken across ensemble members
@@ -522,7 +522,7 @@ class ANI(torch.nn.Module):
             ensemble_average=ensemble_average,
         )
 
-        if self.neural_networks.num_networks == 1:
+        if len(self.neural_networks.active_members_idxs) == 1:
             stdev_atomic_energies = torch.zeros_like(atomic_energies).squeeze(0)
         else:
             stdev_atomic_energies = atomic_energies.std(0, unbiased=unbiased)
@@ -583,7 +583,7 @@ class ANI(torch.nn.Module):
         max_magnitudes = magnitudes.max(dim=0).values
         min_magnitudes = magnitudes.min(dim=0).values
 
-        if self.neural_networks.num_networks == 1:
+        if len(self.neural_networks.active_members_idxs) == 1:
             relative_stdev = torch.zeros_like(magnitudes).squeeze(0)
             relative_range = torch.ones_like(magnitudes).squeeze(0)
         else:
@@ -770,27 +770,6 @@ class ANIq(ANI):
                 energies += pot(element_idxs, neighbor_data, _coordinates=coords)
         return SpeciesEnergiesAtomicCharges(
             element_idxs, energies + self.energy_shifter(element_idxs), atomic_charges
-        )
-
-    def __getitem__(self, index: int) -> tpx.Self:
-        for p in self.potentials:
-            if isinstance(p, NNPotential):
-                charge_normalizer = getattr(p, "charge_normalizer", None)
-                charge_networks = getattr(p, "charge_networks", None)
-                break
-
-        return type(self)(
-            symbols=self.get_chemical_symbols(),
-            aev_computer=self.aev_computer,
-            neural_networks=self.neural_networks.member(index),
-            charge_networks=charge_networks,
-            charge_normalizer=charge_normalizer,
-            energy_shifter=self.energy_shifter,
-            pairwise_potentials=[
-                p for p in self.potentials if not isinstance(p, NNPotential)
-            ],
-            periodic_table_index=self.periodic_table_index,
-            output_labels=self._output_labels,
         )
 
 
@@ -1310,7 +1289,6 @@ def fetch_state_dict(
     local: bool = False,
     private: bool = False,
 ) -> tp.OrderedDict[str, Tensor]:
-    # If pretrained=True then load state dict from a remote url or a local path
     # NOTE: torch.hub caches remote state_dicts after first download
     if local:
         dict_ = torch.load(state_dict_file, map_location=torch.device("cpu"))

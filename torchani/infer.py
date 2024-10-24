@@ -79,7 +79,8 @@ class BmmEnsemble(AtomicContainer):
     def __init__(self, ensemble: AtomicContainer):
         super().__init__()
         self._MNP_IS_INSTALLED = MNP_IS_INSTALLED
-        self.num_networks = 1  # Operates as a single ANIModel
+        self.total_members_num = 1  # Operates as a single ANIModel
+        self.active_members_idxs = [0]
         self.num_species = ensemble.num_species
         if not hasattr(ensemble, "members"):
             raise TypeError("BmmEnsemble can only take an Ensemble as an input")
@@ -250,7 +251,8 @@ class InferModel(AtomicContainer):
         warnings.warn(msg, category=DeprecationWarning)
 
         self._MNP_IS_INSTALLED = MNP_IS_INSTALLED
-        self.num_networks = 1
+        self.total_members_num = 1
+        self.active_members_idxs = [0]
         self.num_species = module.num_species
 
         # Detect "ensemble" case via duck typing

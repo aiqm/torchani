@@ -78,7 +78,7 @@ class TestRepulsion(ANITest):
         self.assertEqual(torch.tensor([0.0], device=self.device), energies)
 
     def testAtomicEnergy(self):
-        model = self._setup(torchani.models.ANIdr(model_index=0, pretrained=True))
+        model = self._setup(torchani.models.ANIdr(model_index=0))
         species = torch.tensor([[8, 1, 1]], device=self.device)
         _energies: tp.List[Tensor] = []
         _atomic_energies: tp.List[Tensor] = []

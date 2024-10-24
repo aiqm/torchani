@@ -93,7 +93,7 @@ class TestCUAEVNoGPU(TestCase):
 class TestCUAEV(TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.ani2x = torchani.models.ANI2x(model_index=None)
+        cls.ani2x = torchani.models.ANI2x()
 
     def setUp(self, device="cuda:0"):
         # double precision error is within 5e-13

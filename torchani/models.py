@@ -79,7 +79,6 @@ from torchani.potentials import TwoBodyDispersionD3, RepulsionXTB
 
 def ANI1x(
     model_index: tp.Optional[int] = None,
-    pretrained: bool = True,
     neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
@@ -114,14 +113,12 @@ def ANI1x(
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble()
-    if pretrained:
-        model.load_state_dict(fetch_state_dict("ani1x_state_dict.pt", private=False))
+    model.load_state_dict(fetch_state_dict("ani1x_state_dict.pt", private=False))
     return model if model_index is None else model[model_index]
 
 
 def ANI1ccx(
     model_index: tp.Optional[int] = None,
-    pretrained: bool = True,
     neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
@@ -157,14 +154,12 @@ def ANI1ccx(
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("ccsd(t)star-cbs")
     model = asm.assemble()
-    if pretrained:
-        model.load_state_dict(fetch_state_dict("ani1ccx_state_dict.pt", private=False))
+    model.load_state_dict(fetch_state_dict("ani1ccx_state_dict.pt", private=False))
     return model if model_index is None else model[model_index]
 
 
 def ANI2x(
     model_index: tp.Optional[int] = None,
-    pretrained: bool = True,
     neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
@@ -200,14 +195,12 @@ def ANI2x(
     # The self energies are overwritten by the state dict
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble()
-    if pretrained:
-        model.load_state_dict(fetch_state_dict("ani2x_state_dict.pt", private=False))
+    model.load_state_dict(fetch_state_dict("ani2x_state_dict.pt", private=False))
     return model if model_index is None else model[model_index]
 
 
 def ANImbis(
     model_index: tp.Optional[int] = None,
-    pretrained: bool = True,
     neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_ops: bool = False,
     periodic_table_index: bool = True,
@@ -246,32 +239,31 @@ def ANImbis(
     # The self energies are overwritten by the state dict
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble()
-    if pretrained:
-        ani2x_state_dict = fetch_state_dict("ani2x_state_dict.pt")
-        energy_nn_state_dict = {
-            k.replace("neural_networks.", ""): v
-            for k, v in ani2x_state_dict.items()
-            if k.endswith("weight") or k.endswith("bias")
-        }
-        aev_state_dict = {
-            k.replace("aev_computer.", ""): v
-            for k, v in ani2x_state_dict.items()
-            if k.startswith("aev_computer")
-        }
-        shifter_state_dict = {
-            "self_energies": ani2x_state_dict["energy_shifter.self_energies"]
-        }
-        charge_nn_state_dict = fetch_state_dict("charge_nn_state_dict.pt", private=True)
-        model.energy_shifter.load_state_dict(shifter_state_dict)
-        model.aev_computer.load_state_dict(aev_state_dict)
-        model.neural_networks.load_state_dict(energy_nn_state_dict)
-        model.potentials[0].charge_networks.load_state_dict(charge_nn_state_dict)
+
+    ani2x_state_dict = fetch_state_dict("ani2x_state_dict.pt")
+    energy_nn_state_dict = {
+        k.replace("neural_networks.", ""): v
+        for k, v in ani2x_state_dict.items()
+        if k.endswith("weight") or k.endswith("bias")
+    }
+    aev_state_dict = {
+        k.replace("aev_computer.", ""): v
+        for k, v in ani2x_state_dict.items()
+        if k.startswith("aev_computer")
+    }
+    shifter_state_dict = {
+        "self_energies": ani2x_state_dict["energy_shifter.self_energies"]
+    }
+    charge_nn_state_dict = fetch_state_dict("charge_nn_state_dict.pt", private=True)
+    model.energy_shifter.load_state_dict(shifter_state_dict)
+    model.aev_computer.load_state_dict(aev_state_dict)
+    model.neural_networks.load_state_dict(energy_nn_state_dict)
+    model.potentials[0].charge_networks.load_state_dict(charge_nn_state_dict)
     return model if model_index is None else model[model_index]
 
 
 def ANIala(
     model_index: tp.Optional[int] = None,
-    pretrained: bool = True,
     neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_extension: bool = False,
     use_cuaev_interface: bool = False,
@@ -296,14 +288,12 @@ def ANIala(
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble()
-    if pretrained:
-        model.load_state_dict(fetch_state_dict("aniala_state_dict.pt", private=True))
+    model.load_state_dict(fetch_state_dict("aniala_state_dict.pt", private=True))
     return model
 
 
 def ANIdr(
     model_index: tp.Optional[int] = None,
-    pretrained: bool = True,
     neighborlist: NeighborlistArg = "full_pairwise",
     use_cuda_ops: bool = False,
     periodic_table_index: bool = True,
@@ -337,6 +327,5 @@ def ANIdr(
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("b973c-def2mtzvp")
     model = asm.assemble()
-    if pretrained:
-        model.load_state_dict(fetch_state_dict("anidr_state_dict.pt", private=True))
+    model.load_state_dict(fetch_state_dict("anidr_state_dict.pt", private=True))
     return model if model_index is None else model[model_index]
