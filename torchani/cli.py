@@ -36,7 +36,7 @@ main = Typer(
 
     Datasets and Models are saved in `$TORCHANI_DATA_DIR/Datasets` and
     `$TORCHANI_DATA_DIR/StateDicts` respectively. By default
-    `TORCHANI_DATA_DIR=~/.local/share/torchani`.
+    `TORCHANI_DATA_DIR=~/.local/share/Torchani`.
     """,
 )
 

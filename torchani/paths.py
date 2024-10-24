@@ -39,7 +39,7 @@ def data_dir() -> Path:
     ENV_DATA_DIR = os.getenv("TORCHANI_DATA_DIR")
     if ENV_DATA_DIR:
         return Path(ENV_DATA_DIR)
-    return Path(Path.home(), ".local", "share", "torchani")
+    return Path(Path.home(), ".local", "share", "Torchani")
 
 
 def resources_dir() -> Path:
