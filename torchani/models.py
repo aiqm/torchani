@@ -114,6 +114,7 @@ def ANI1x(
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble()
     model.load_state_dict(fetch_state_dict("ani1x_state_dict.pt", private=False))
+    model.requires_grad_(False)
     return model if model_index is None else model[model_index]
 
 
@@ -155,6 +156,7 @@ def ANI1ccx(
     asm.set_gsaes_as_self_energies("ccsd(t)star-cbs")
     model = asm.assemble()
     model.load_state_dict(fetch_state_dict("ani1ccx_state_dict.pt", private=False))
+    model.requires_grad_(False)
     return model if model_index is None else model[model_index]
 
 
@@ -196,6 +198,7 @@ def ANI2x(
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble()
     model.load_state_dict(fetch_state_dict("ani2x_state_dict.pt", private=False))
+    model.requires_grad_(False)
     return model if model_index is None else model[model_index]
 
 
@@ -259,6 +262,7 @@ def ANImbis(
     model.aev_computer.load_state_dict(aev_state_dict)
     model.neural_networks.load_state_dict(energy_nn_state_dict)
     model.potentials[0].charge_networks.load_state_dict(charge_nn_state_dict)
+    model.requires_grad_(False)
     return model if model_index is None else model[model_index]
 
 
@@ -289,6 +293,7 @@ def ANIala(
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble()
     model.load_state_dict(fetch_state_dict("aniala_state_dict.pt", private=True))
+    model.requires_grad_(False)
     return model
 
 
@@ -328,4 +333,5 @@ def ANIdr(
     asm.set_gsaes_as_self_energies("b973c-def2mtzvp")
     model = asm.assemble()
     model.load_state_dict(fetch_state_dict("anidr_state_dict.pt", private=True))
+    model.requires_grad_(False)
     return model if model_index is None else model[model_index]
