@@ -11,7 +11,6 @@ from tqdm import tqdm
 
 from torchani.units import hartree2kcalpermol
 from torchani.assembly import ANI
-from torchani.nn import Ensemble
 from torchani.annotations import Conformers
 from torchani.datasets.anidataset import ANIDataset
 
@@ -106,13 +105,10 @@ def filter_by_high_energy_error(
         ):
             s = tp.cast(Tensor, group["species"]).to(device)
             c = tp.cast(Tensor, group["coordinates"]).to(device)
-            ta = tp.cast(Tensor, group["energies"]).to(device)
+            targ = tp.cast(Tensor, group["energies"]).to(device)
 
-            if isinstance(model.neural_networks, Ensemble):
-                member_energies = model.members_energies((s, c)).energies
-            else:
-                member_energies = model((s, c)).energies.unsqueeze(0)
-            errors = hartree2kcalpermol((member_energies - ta).abs())
+            energies = model.sp(s, c, ensemble_average=False)["energies"]
+            errors = hartree2kcalpermol((energies - targ).abs())
             # any over individual models of the ensemble
             bad_idxs = (errors > threshold).any(dim=0).nonzero().squeeze()
 
@@ -124,7 +120,7 @@ def filter_by_high_energy_error(
                     _bad_keys_and_idxs[key] = [bad_idxs + cumul_idx]
                 else:
                     _bad_keys_and_idxs[key].append(bad_idxs + cumul_idx)
-            del s, c, ta
+            del s, c, targ
     if _bad_keys_and_idxs:
         bad_keys_and_idxs = {k: torch.cat(v) for k, v in _bad_keys_and_idxs.items()}
         return _fetch_and_delete_conformations(

@@ -103,7 +103,7 @@ class MergedChargesNNPotential(NNPotential):
         neighbors: NeighborData,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
-        total_charge: float = 0.0,
+        total_charge: int = 0,
     ) -> EnergiesAtomicCharges:
         aevs = self._execute_aev_computer(element_idxs, neighbors, _coordinates)
         atomic_energies_and_raw_atomic_charges = torch.sum(
@@ -138,7 +138,7 @@ class SeparateChargesNNPotential(NNPotential):
         neighbors: NeighborData,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
-        total_charge: float = 0.0,
+        total_charge: int = 0,
     ) -> EnergiesAtomicCharges:
         aevs = self._execute_aev_computer(element_idxs, neighbors, _coordinates)
         energies = self.neural_networks((element_idxs, aevs))[1]

@@ -28,7 +28,7 @@ class TestActiveLearning(ANITest):
 
     def testAverageAtomicEnergies(self):
         _, energies = self.model.atomic_energies(
-            (self.species, self.coordinates), shift_energy=True, ensemble_average=True
+            (self.species, self.coordinates), ensemble_average=True
         )
         self.assertEqual(energies.shape, self.coordinates.shape[:-1])
         # energies of all hydrogens should be equal
@@ -42,7 +42,7 @@ class TestActiveLearning(ANITest):
 
     def testAtomicEnergies(self):
         _, energies = self.model.atomic_energies(
-            (self.species, self.coordinates), shift_energy=True, ensemble_average=False
+            (self.species, self.coordinates), ensemble_average=False
         )
         self.assertTrue(energies.shape[1:] == self.coordinates.shape[:-1])
         self.assertTrue(energies.shape[0] == self.num_networks)

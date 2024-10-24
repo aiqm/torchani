@@ -63,7 +63,6 @@ print("Force (Hartree / Å): \n", force)
 # by calling:
 _, atomic_energies = model.atomic_energies(
     (species, coordinates),
-    shift_energy=True,
     ensemble_average=True,
 )
 
@@ -77,17 +76,6 @@ print("Average Atomic energies: \n", atomic_energies)
 # you can access model specific atomic energies by indexing:
 _, atomic_energies = model.atomic_energies(
     (species, coordinates),
-    shift_energy=True,
     ensemble_average=False,
 )
 print("Atomic energies of first model: \n", atomic_energies[0, :, :])
-
-###############################################################################
-# You can also return atomic energy contributions  directly from their atomic
-# NNs before ground state atomic energies are added:
-unshifted_atomic_energies = model.atomic_energies(
-    (species, coordinates),
-    shift_energy=False,
-    ensemble_average=False,
-).energies
-print("Atomic energies, before shifting: \n", unshifted_atomic_energies[0])

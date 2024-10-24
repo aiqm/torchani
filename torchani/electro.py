@@ -25,7 +25,7 @@ class ChargeNormalizer(torch.nn.Module):
     .. code-block::python
 
         normalizer = ChargeNormalizer()
-        total_charge = 0.0
+        total_charge = 0
         element_idxs = torch.tensor([[0, 0, 0, 1, 1]], dtype=torch.long)
         raw_charges = torch.tensor([[0.3, 0.5, -0.5]], dtype=torch.float)
         norm_charges = normalizer(element_idxs, raw_charges, total_charge)
@@ -84,7 +84,7 @@ class ChargeNormalizer(torch.nn.Module):
         self,
         element_idxs: Tensor,
         raw_charges: Tensor,
-        total_charge: float = 0.0,
+        total_charge: int = 0,
     ) -> Tensor:
         total_raw_charge = torch.sum(raw_charges, dim=-1, keepdim=True)
         charge_excess = total_charge - total_raw_charge

@@ -69,8 +69,9 @@ class Potential(torch.nn.Module):
         neighbors: NeighborData,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
-        total_charge: float = 0.0,
+        total_charge: int = 0,
     ) -> EnergiesAtomicCharges:
+        assert total_charge == 0, "Only neutral species supported"
         energies = self(
             element_idxs, neighbors, _coordinates=_coordinates, ghost_flags=ghost_flags
         )

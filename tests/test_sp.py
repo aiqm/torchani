@@ -31,7 +31,7 @@ class TestSinglePointEntry(ANITest):
         properties = next(iter(self.ds))
         species = properties["species"].to(self.device)
         coords = properties["coordinates"].to(self.device, dtype=torch.float)
-        outputs = model.sp((species, coords))
+        outputs = model.sp(species, coords)
         if not charges:
             _, e = model((species, coords))
         else:

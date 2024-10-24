@@ -114,7 +114,7 @@ class TestDatasetUtils(TestCase):
             verbose=False,
         )
         self.assertEqual(len(out[0]), 3)
-        self.assertEqual(sum(len(c["coordinates"]) for c in out[0]), 1909)
+        self.assertEqual(sum(len(c["coordinates"]) for c in out[0]), 1913)
 
 
 class TestTransforms(TestCase):
