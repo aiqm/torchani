@@ -125,6 +125,10 @@ class ANI(torch.nn.Module):
         assert self.neural_networks.num_species == len(self.atomic_numbers)
 
     @torch.jit.export
+    def set_active_members(self, idxs: tp.List[int]) -> None:
+        self.neural_networks.set_active_members(idxs)
+
+    @torch.jit.export
     def sp(
         self,
         species: Tensor,

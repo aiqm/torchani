@@ -30,7 +30,7 @@ class TestActiveModelsPoints(ANITest):
         coords = properties["coordinates"].to(self.device, dtype=torch.float)
         for j, m in enumerate(model):
             _, e = m((species, coords))
-            modifiable_model.neural_networks.set_active_members([j])
+            modifiable_model.set_active_members([j])
             _, e_active = modifiable_model((species, coords))
             self.assertEqual(e, e_active)
 
