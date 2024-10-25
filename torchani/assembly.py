@@ -130,12 +130,9 @@ class ANI(torch.nn.Module):
 
     @torch.jit.export
     def set_compute_strategy(
-        self, use_cuda_extension: bool = False, use_cuaev_interface: bool = False
+        self, strategy: str = "pyaev"
     ) -> None:
-        self.aev_computer.set_compute_strategy(
-            use_cuda_extension=use_cuda_extension,
-            use_cuaev_interface=use_cuaev_interface,
-        )
+        self.aev_computer.set_compute_strategy(strategy)
 
     @torch.jit.export
     def sp(
@@ -800,7 +797,7 @@ class FeaturizerWrapper:
         radial_terms: RadialTermArg,
         angular_terms: AngularTermArg,
         cutoff_fn: CutoffArg = "global",
-        extra: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        compute_strategy: str = "pyaev",
     ) -> None:
         self.cls = cls
         self.cutoff_fn = cutoff_fn
@@ -810,7 +807,7 @@ class FeaturizerWrapper:
             raise ValueError("Angular cutoff must be smaller or equal to radial cutoff")
         if self.angular_terms.cutoff <= 0 or self.radial_terms.cutoff <= 0:
             raise ValueError("Cutoffs must be strictly positive")
-        self.extra = extra
+        self.compute_strategy = compute_strategy
 
 
 @dataclass
@@ -969,14 +966,14 @@ class Assembler:
         angular_terms: AngularTermArg,
         radial_terms: RadialTermArg,
         cutoff_fn: CutoffArg = "global",
-        extra: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        compute_strategy: str = "pyaev",
     ) -> None:
         self._featurizer = FeaturizerWrapper(
             featurizer_type,
             cutoff_fn=cutoff_fn,
             angular_terms=angular_terms,
             radial_terms=radial_terms,
-            extra=extra,
+            compute_strategy=compute_strategy,
         )
 
     def set_neighborlist(
@@ -1028,17 +1025,13 @@ class Assembler:
 
         self._featurizer.angular_terms.cutoff_fn = feat_cutoff_fn
         self._featurizer.radial_terms.cutoff_fn = feat_cutoff_fn
-        feat_kwargs = {}
-        if self._featurizer.extra is not None:
-            feat_kwargs.update(self._featurizer.extra)
-
         featurizer = self._featurizer.cls(
             neighborlist=self._neighborlist,
             cutoff_fn=feat_cutoff_fn,
             angular_terms=self._featurizer.angular_terms,
             radial_terms=self._featurizer.radial_terms,
             num_species=self.elements_num,
-            **feat_kwargs,  # type: ignore
+            compute_strategy=self._featurizer.compute_strategy,
         )
         neural_networks: AtomicContainer
         if self.ensemble_size > 1:
@@ -1128,7 +1121,7 @@ def simple_ani(
     atomic_maker: AtomicMakerArg = "ani2x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
-    use_cuda_ops: bool = False,
+    compute_strategy: str = "pyaev",
     output_label: str = "energies",
 ) -> ANI:
     r"""
@@ -1140,6 +1133,8 @@ def simple_ani(
         - angular_start=0.8
         - radial_cutoff=5.1
     """
+    if compute_strategy not in ["pyaev", "cuaev"]:
+        raise ValueError(f"Unavailable strategy: {compute_strategy}")
     asm = Assembler(
         ensemble_size=ensemble_size,
         periodic_table_index=True,
@@ -1163,7 +1158,7 @@ def simple_ani(
             num_angle_sections=angle_sections,
             cutoff=angular_cutoff,
         ),
-        extra={"use_cuda_extension": use_cuda_ops, "use_cuaev_interface": use_cuda_ops},
+        compute_strategy=compute_strategy,
     )
     atomic_maker = functools.partial(
         atomics.parse_atomics(atomic_maker),
@@ -1207,7 +1202,7 @@ def simple_aniq(
     atomic_maker: AtomicMakerArg = "ani2x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
-    use_cuda_ops: bool = False,
+    compute_strategy: str = "pyaev",
     merge_charge_networks: bool = False,
     scale_charge_normalizer_weights: bool = True,
     dummy_energies: bool = False,
@@ -1224,6 +1219,8 @@ def simple_aniq(
         - angular_start=0.8
         - radial_cutoff=5.1
     """
+    if compute_strategy not in ["pyaev", "cuaev"]:
+        raise ValueError(f"Unavailable strategy: {compute_strategy}")
     asm = Assembler(
         ensemble_size=ensemble_size,
         periodic_table_index=True,
@@ -1248,7 +1245,7 @@ def simple_aniq(
             num_angle_sections=angle_sections,
             cutoff=angular_cutoff,
         ),
-        extra={"use_cuda_extension": use_cuda_ops, "use_cuaev_interface": use_cuda_ops},
+        compute_strategy=compute_strategy,
     )
     normalizer = ChargeNormalizer.from_electronegativity_and_hardness(
         asm.symbols,

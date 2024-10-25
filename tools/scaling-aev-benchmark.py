@@ -131,7 +131,7 @@ def benchmark(
 ):
     global runcounter
     global last_py_speed
-    runname_prefix = "cu" if aev_comp.use_cuda_extension else "py"
+    runname_prefix = aev_comp.compute_strategy.replace("aev", "")
     runname = f"{runname_prefix} aev fd{'+bd' if runbackward else''}"
     items = [
         f"{(runcounter+1):02} {runname}",
@@ -217,7 +217,7 @@ def benchmark(
     others_time = total_time - force_time - forward_time
 
     if verbose:
-        if aev_comp.use_cuda_extension:
+        if aev_comp.compute_strategy == "cuaev-fused":
             if last_py_speed is not None:
                 speed_up = last_py_speed / total_time
                 speed_up = f"{speed_up:.2f}"
@@ -510,10 +510,10 @@ if __name__ == "__main__":
         default=False,
     )
     parser.add_argument(
-        "--use-cuaev-interface",
-        help="Use cuaev interface with externel neighbor list",
-        action="store_true",
-        default=False,
+        "--ref-strategy",
+        help="Reference compute strategy, possible values are 'cuaev' and 'pyaev'",
+        type=str,
+        default="cuaev-fused",
     )
     parser.set_defaults(backward=0)
     parser.set_defaults(run_energy=0)
@@ -532,13 +532,12 @@ if __name__ == "__main__":
     nnp_ref = torchani.models.ANI2x(
         model_index=None,
         neighborlist="cell_list" if args.use_cell_list else "full_pairwise",
-        use_cuaev_interface=args.use_cuaev_interface,
-        use_cuda_extension=args.use_cuaev_interface,
+        compute_strategy=args.reference_strategy,
     ).to(device)
-    nnp_cuaev = torchani.models.ANI2x(model_index=None).to(
-        device
-    )
-    nnp_cuaev.aev_computer.use_cuda_extension = True
+
+    nnp_cuaev = torchani.models.ANI2x(
+        model_index=None, compute_strategy="cuaev-fused"
+    ).to(device)
     maxatoms = [6000, 10000]
 
     if args.nsight:

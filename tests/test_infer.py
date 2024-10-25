@@ -55,8 +55,11 @@ class TestInfer(ANITest):
     ):
         if mnp and not MNP_IS_INSTALLED:
             raise unittest.SkipTest("MNP extension is not available, skipping MNP test")
-        use_cuaev = (self.device == "cuda") and CUAEV_IS_INSTALLED
-        model = ANI2x(model_index=idx, use_cuda_extension=use_cuaev)
+        if self.device == "cuda" and CUAEV_IS_INSTALLED:
+            strat = "cuaev-fused"
+        else:
+            strat = "pyaev"
+        model = ANI2x(model_index=idx, compute_strategy=strat)
         if infer:
             model = model.to_infer_model(mnp)
         model = self._setup(model)

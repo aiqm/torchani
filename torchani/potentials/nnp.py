@@ -37,11 +37,7 @@ class NNPotential(Potential):
         neighbors: NeighborData,
         _coordinates: tp.Optional[Tensor] = None,
     ) -> Tensor:
-        if (
-            self.aev_computer.use_cuda_extension
-            and self.aev_computer.use_cuaev_interface
-        ):
-
+        if self.aev_computer.compute_strategy == "cuaev":
             if not self.aev_computer.cuaev_is_initialized:
                 self.aev_computer._init_cuaev_computer()
                 self.aev_computer.cuaev_is_initialized = True
@@ -49,7 +45,11 @@ class NNPotential(Potential):
             return self.aev_computer._compute_cuaev_with_half_nbrlist(
                 element_idxs, _coordinates, neighbors
             )
-        return self.aev_computer._compute_aev(element_idxs, neighbors)
+        if self.aev_computer.compute_strategy == "pyaev":
+            return self.aev_computer._compute_aev(element_idxs, neighbors)
+        raise ValueError(
+            f"Unsupported compute strategy {self.aev_computer.compute_strategy}"
+        )
 
     def forward(
         self,

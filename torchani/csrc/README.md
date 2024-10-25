@@ -79,14 +79,15 @@ python tests/test_infer.py
 
 ## Usage
 #### CUAEV
-Pass `use_cuda_extension=True` when constructing an aev_computer, for example:
+
+Pass `compute_strategy='cuaev'` or `compute_strategy='cuaev-fused'` when constructing an aev_computer, for example:
 ```python
 cuaev_computer = torchani.AEVComputer.from_constants(
-    Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, use_cuda_extension=True,
+    Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, compute_strategy='cuaev',
 )
 # or
 cuaev_computer = torchani.AEVComputer.like_1x(
-    cutoff_fn="smooth", use_cuda_extension=True,
+    cutoff_fn="smooth", compute_strategy='cuaev-fused',
 )
 ```
 

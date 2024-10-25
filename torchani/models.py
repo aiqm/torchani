@@ -80,8 +80,7 @@ from torchani.potentials import TwoBodyDispersionD3, RepulsionXTB
 def ANI1x(
     model_index: tp.Optional[int] = None,
     neighborlist: NeighborlistArg = "full_pairwise",
-    use_cuda_extension: bool = False,
-    use_cuaev_interface: bool = False,
+    compute_strategy: str = "pyaev",
     periodic_table_index: bool = True,
 ) -> ANI:
     """The ANI-1x model as in `ani-1x_8x on GitHub`_ and `Active Learning Paper`_.
@@ -105,10 +104,7 @@ def ANI1x(
         AEVComputer,
         angular_terms=StandardAngular.like_1x(),
         radial_terms=StandardRadial.like_1x(),
-        extra={
-            "use_cuda_extension": use_cuda_extension,
-            "use_cuaev_interface": use_cuaev_interface,
-        },
+        compute_strategy=compute_strategy,
     )
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
@@ -121,8 +117,7 @@ def ANI1x(
 def ANI1ccx(
     model_index: tp.Optional[int] = None,
     neighborlist: NeighborlistArg = "full_pairwise",
-    use_cuda_extension: bool = False,
-    use_cuaev_interface: bool = False,
+    compute_strategy: str = "pyaev",
     periodic_table_index: bool = True,
 ) -> ANI:
     """The ANI-1ccx model as in `ani-1ccx_8x on GitHub`_ and `Transfer Learning Paper`_.
@@ -146,10 +141,7 @@ def ANI1ccx(
         AEVComputer,
         radial_terms=StandardRadial.like_1x(),
         angular_terms=StandardAngular.like_1x(),
-        extra={
-            "use_cuda_extension": use_cuda_extension,
-            "use_cuaev_interface": use_cuaev_interface,
-        },
+        compute_strategy=compute_strategy,
     )
     asm.set_atomic_networks(ANIModel, atomics.like_1x)
     asm.set_neighborlist(neighborlist)
@@ -163,8 +155,7 @@ def ANI1ccx(
 def ANI2x(
     model_index: tp.Optional[int] = None,
     neighborlist: NeighborlistArg = "full_pairwise",
-    use_cuda_extension: bool = False,
-    use_cuaev_interface: bool = False,
+    compute_strategy: str = "pyaev",
     periodic_table_index: bool = True,
 ) -> ANI:
     """The ANI-2x model as in `ANI2x Paper`_ and `ANI2x Results on GitHub`_.
@@ -187,10 +178,7 @@ def ANI2x(
         AEVComputer,
         radial_terms=StandardRadial.like_2x(),
         angular_terms=StandardAngular.like_2x(),
-        extra={
-            "use_cuda_extension": use_cuda_extension,
-            "use_cuaev_interface": use_cuaev_interface,
-        },
+        compute_strategy=compute_strategy,
     )
     asm.set_atomic_networks(ANIModel, atomics.like_2x)
     asm.set_neighborlist(neighborlist)
@@ -205,13 +193,15 @@ def ANI2x(
 def ANImbis(
     model_index: tp.Optional[int] = None,
     neighborlist: NeighborlistArg = "full_pairwise",
-    use_cuda_ops: bool = False,
+    compute_strategy: str = "pyaev",
     periodic_table_index: bool = True,
 ) -> ANI:
     r"""
     ANI-2x model with MBIS experimental charges. Note: will be removed in the
     future.
     """
+    if compute_strategy not in ["pyaev", "cuaev"]:
+        raise ValueError(f"Unavailable strategy for ANImbis: {compute_strategy}")
     asm = Assembler(
         ensemble_size=8,
         periodic_table_index=periodic_table_index,
@@ -224,10 +214,7 @@ def ANImbis(
         AEVComputer,
         radial_terms=StandardRadial.like_2x(),
         angular_terms=StandardAngular.like_2x(),
-        extra={
-            "use_cuda_extension": use_cuda_ops,
-            "use_cuaev_interface": use_cuda_ops,
-        },
+        compute_strategy=compute_strategy,
     )
     asm.set_atomic_networks(ANIModel, atomics.like_2x)
 
@@ -269,8 +256,7 @@ def ANImbis(
 def ANIala(
     model_index: tp.Optional[int] = None,
     neighborlist: NeighborlistArg = "full_pairwise",
-    use_cuda_extension: bool = False,
-    use_cuaev_interface: bool = False,
+    compute_strategy: str = "pyaev",
     periodic_table_index: bool = True,
 ) -> ANI:
     r"""Experimental Model fine tuned to solvated frames of Ala dipeptide"""
@@ -283,10 +269,7 @@ def ANIala(
         AEVComputer,
         radial_terms=StandardRadial.like_2x(),
         angular_terms=StandardAngular.like_2x(),
-        extra={
-            "use_cuda_extension": use_cuda_extension,
-            "use_cuaev_interface": use_cuaev_interface,
-        },
+        compute_strategy=compute_strategy,
     )
     asm.set_atomic_networks(ANIModel, atomics.like_ala)
     asm.set_neighborlist(neighborlist)
@@ -300,7 +283,7 @@ def ANIala(
 def ANIdr(
     model_index: tp.Optional[int] = None,
     neighborlist: NeighborlistArg = "full_pairwise",
-    use_cuda_ops: bool = False,
+    compute_strategy: str = "pyaev",
     periodic_table_index: bool = True,
 ) -> ANI:
     """ANI model trained with both dispersion and repulsion
@@ -309,6 +292,8 @@ def ANIdr(
     It predicts
     energies on HCNOFSCl elements
     """
+    if compute_strategy not in ["pyaev", "cuaev"]:
+        raise ValueError(f"Unavailable strategy for ANImbis: {compute_strategy}")
     asm = Assembler(ensemble_size=7, periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("smooth2")
@@ -316,7 +301,7 @@ def ANIdr(
         AEVComputer,
         angular_terms=StandardAngular.like_2x(),
         radial_terms=StandardRadial.like_2x(),
-        extra={"use_cuda_extension": use_cuda_ops, "use_cuaev_interface": use_cuda_ops},
+        compute_strategy=compute_strategy,
     )
     asm.set_atomic_networks(ANIModel, atomics.like_dr)
     asm.add_pairwise_potential(

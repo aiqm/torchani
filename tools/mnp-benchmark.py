@@ -11,6 +11,7 @@ from rich.console import Console
 from torchani.annotations import Device
 from torchani.io import read_xyz
 from torchani.csrc import CUAEV_IS_INSTALLED, MNP_IS_INSTALLED
+from torchani.assembly import ANI
 from torchani.models import ANI2x
 from torchani.grad import energies_and_forces
 
@@ -29,13 +30,16 @@ def _build_ani2x(
     device: Device = "cpu",
 ):
     device = torch.device(device)
-    use_cuaev = (device.type == "cuda") and CUAEV_IS_INSTALLED
-    model = ANI2x(model_index=idx, use_cuda_extension=use_cuaev)
+    if device.type == "cuda" and CUAEV_IS_INSTALLED:
+        strat = "cuaev-fused"
+    else:
+        strat = "pyaev"
+    model = ANI2x(model_index=idx, compute_strategy=strat)
     if infer:
         model = model.to_infer_model(mnp)
     model = model.to(device)
     if jit:
-        model = torch.jit.script(model)
+        model = tp.cast(ANI, torch.jit.script(model))
     return model
 
 

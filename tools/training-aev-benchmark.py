@@ -69,14 +69,14 @@ def format_time(t):
     return t
 
 
-def benchmark(args, dataset, use_cuda_extension, force_train=False):
+def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
     global summary
     global runcounter
 
     if args.nsight and runcounter >= 0:
         torch.cuda.nvtx.range_push(args.runname)
     synchronize = True
-    _model = ANI1x(model_index=0, use_cuda_extension=use_cuda_extension)
+    _model = ANI1x(model_index=0, compute_strategy=strat)
     aev_computer = _model.aev_computer
     nn = _model.neural_networks
     model = torch.nn.Sequential(aev_computer, nn).to(args.device)
@@ -279,7 +279,7 @@ if __name__ == "__main__":
         print(f"\n\n=> Test 0: {args.runname}")
         torch.cuda.empty_cache()
         gc.collect()
-        benchmark(args, dataset, use_cuda_extension=True, force_train=False)
+        benchmark(args, dataset, strat="cuaev-fused", force_train=False)
 
     if args.nsight:
         torch.cuda.profiler.start()
@@ -288,25 +288,25 @@ if __name__ == "__main__":
     print(f"\n\n=> Test 1: {args.runname}")
     torch.cuda.empty_cache()
     gc.collect()
-    benchmark(args, dataset, use_cuda_extension=True, force_train=False)
+    benchmark(args, dataset, strat="cuaev-fused", force_train=False)
 
     args.runname = "py Energy train"
     print(f"\n\n=> Test 2: {args.runname}")
     torch.cuda.empty_cache()
     gc.collect()
-    benchmark(args, dataset, use_cuda_extension=False, force_train=False)
+    benchmark(args, dataset, strat="cuaev-fused", force_train=False)
     try:
         args.runname = "cu Energy + Force train"
         print(f"\n\n=> Test 3: {args.runname}")
         torch.cuda.empty_cache()
         gc.collect()
-        benchmark(args, dataset, use_cuda_extension=True, force_train=True)
+        benchmark(args, dataset, strat="cuaev-fused", force_train=True)
 
         args.runname = "py Energy + Force train"
         print(f"\n\n=> Test 4: {args.runname}")
         torch.cuda.empty_cache()
         gc.collect()
-        benchmark(args, dataset, use_cuda_extension=False, force_train=True)
+        benchmark(args, dataset, strat="cuaev-fused", force_train=True)
     except AttributeError:
         print(
             "Skipping force training benchmark. A dataset without forces was provided"

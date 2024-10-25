@@ -44,8 +44,7 @@ class AEVComputer(torch.nn.Module):
     aev_length: Final[int]
 
     triu_index: Tensor
-    use_cuda_extension: bool
-    use_cuaev_interface: bool
+    _compute_strategy: str
     _cuaev_fused_is_avail: bool
     _cuaeve_is_avail: bool
 
@@ -54,16 +53,14 @@ class AEVComputer(torch.nn.Module):
         radial_terms: RadialTermArg,
         angular_terms: AngularTermArg,
         num_species: int,
-        use_cuda_extension: bool = False,
-        use_cuaev_interface: bool = False,
+        compute_strategy: str = "pyaev",
         cutoff_fn: tp.Optional[CutoffArg] = None,
         neighborlist: NeighborlistArg = "full_pairwise",
     ):
         super().__init__()
-        self.use_cuda_extension = use_cuda_extension
-        self.use_cuaev_interface = use_cuaev_interface
         self.num_species = num_species
         self.num_species_pairs = num_species * (num_species + 1) // 2
+        self._compute_strategy = compute_strategy
         self._print_aev_branch = _PRINT_AEV_BRANCH
 
         self.radial_terms = parse_radial_term(radial_terms)
@@ -101,69 +98,58 @@ class AEVComputer(torch.nn.Module):
 
         # If we are using cuAEV then we need to check that the
         # arguments passed to __init__ are supported.
-        if self.use_cuda_extension:
+        if self._compute_strategy == "cuaev":
             self._check_cuaev_avail()
-            if not self.use_cuaev_interface:
-                self._check_cuaev_fused_avail()
+        elif self._compute_strategy == "cuaev-fused":
+            self._check_cuaev_fused_avail()
 
-    # Check if the cuaev strategy is available, if not raise an error
+    @property
+    def compute_strategy(self) -> str:
+        return self._compute_strategy
+
     def _check_cuaev_avail(self, raise_exc: bool = True) -> bool:
-        try:
-            if not CUAEV_IS_INSTALLED:
-                raise ValueError("The AEV CUDA extension is not installed")
-            if not self._cuaev_cutoff_fn:
-                raise ValueError(
-                    f"The AEV CUDA extension doesn't support cutoff fn"
-                    f" {self.angular_terms.cutoff_fn}"
-                    " Only supported fn are cosine and smooth (with default args)"
-                )
-            if type(self.angular_terms) is not StandardAngular:
-                raise ValueError(
-                    "The AEV CUDA extension only supports StandardAngular(...)"
-                    " Custom angular terms are not supported"
-                )
-            if type(self.radial_terms) is not StandardRadial:
-                raise ValueError(
-                    "The AEV CUDA extension only supports StandardRadial(...)"
-                    " Custom angular terms are not supported"
-                )
-        except ValueError as e:
+        if not CUAEV_IS_INSTALLED:
             if raise_exc:
-                raise e from None
+                raise ValueError("cuAEV is not installed")
+            return False
+        if (
+            not self._cuaev_cutoff_fn
+            or type(self.angular_terms) is not StandardAngular
+            or type(self.radial_terms) is not StandardRadial
+        ):
+            if raise_exc:
+                raise ValueError(
+                    "cuAEV only supports StandardAngular and StandardAngular terms, "
+                    "and CosineCutoff or SmoothCutoff functions (with default args)"
+                )
             return False
         return True
 
-    # Check if the cuaev-fused strategy is available, if not raise an error
     def _check_cuaev_fused_avail(self, raise_exc: bool = True) -> bool:
-        try:
-            self._check_cuaev_avail(raise_exc=raise_exc)
-            if not isinstance(self.neighborlist, FullPairwise):
-                raise ValueError(
-                    "For non default neighborlists set 'use_cuaev_interface=True'"
-                )
-        except ValueError as e:
+        avail = self._check_cuaev_avail(raise_exc=raise_exc)
+        if not avail:
+            return False
+        if not isinstance(self.neighborlist, FullPairwise):
             if raise_exc:
-                raise e from None
+                raise ValueError("cuAEV-fused only supports the default neighborlist")
             return False
         return True
 
     @torch.jit.export
     def set_compute_strategy(
-        self, use_cuda_extension: bool = False, use_cuaev_interface: bool = False
+        self,
+        strat: str = "pyaev",
     ) -> None:
         # Check availability of compute strategy
-        if use_cuda_extension:
-            # cuaev-fused
-            if not use_cuaev_interface and not self._cuaev_fused_is_avail:
-                raise ValueError("Cuaev-fused strategy is not available")
-            # cuaev
-            elif not self._cuaev_is_avail:
-                raise ValueError("Cuaev strategy is not available")
-        # pyaev
-        elif use_cuaev_interface:
-            raise ValueError("use_cuaev_interface=True neeeds use_cuda_extension=True")
-        self.use_cuda_extension = use_cuda_extension
-        self.use_cuaev_interface = use_cuaev_interface
+        if strat == "cuaev-fused" and not self._cuaev_fused_is_avail:
+            raise ValueError("Cuaev-fused strategy is not available")
+        elif strat == "cuaev" and not self._cuaev_is_avail:
+            raise ValueError("Cuaev strategy is not available")
+        elif strat == "pyaev":
+            pass
+        else:
+            raise ValueError("Unknown compute strategy")
+        self._compute_strategy = strat
 
     def extra_repr(self) -> str:
         radial_perc = f"{self.radial_length / self.aev_length * 100:.2f}% of features"
@@ -173,8 +159,7 @@ class AEVComputer(torch.nn.Module):
             r"#  " f"radial_length={self.radial_length} ({radial_perc})",
             r"#  " f"angular_length={self.angular_length} ({angular_perc})",
             f"num_species={self.num_species},",
-            f"use_cuda_extension={self.use_cuda_extension},",
-            f"use_cuaev_interface={self.use_cuaev_interface},",
+            f"compute_strategy={self._compute_strategy},",
         ]
         return " \n".join(parts)
 
@@ -242,32 +227,34 @@ class AEVComputer(torch.nn.Module):
         # into the neighborlist do **not** need to be mapped into the
         # central cell for pbc calculations.
 
-        # pyAEV code branch:
-        if not self.use_cuda_extension:
+        # pyAEV branch:
+        if self._compute_strategy == "pyaev":
             neighbors = self.neighborlist(
                 species, coordinates, self.radial_terms.cutoff, cell, pbc
             )
             aev = self._compute_aev(element_idxs=species, neighbors=neighbors)
             return SpeciesAEV(species, aev)
 
+        # cuAEV and cuAEV-fused branch:
         if species.device.type != "cuda" and species.shape[1] != 0:
             raise ValueError(
                 "cuAEV requires inputs in a CUDA device if there is at least 1 atom"
             )
 
-        # cuAEV code branch:
         if not self.cuaev_is_initialized:
             self._init_cuaev_computer()
             self.cuaev_is_initialized = True
-        if self.use_cuaev_interface:
+
+        if self._compute_strategy == "cuaev":
             neighbors = self.neighborlist(
                 species, coordinates, self.radial_terms.cutoff, cell, pbc
             )
             aev = self._compute_cuaev_with_half_nbrlist(species, coordinates, neighbors)
         else:
-            assert (pbc is None) or (
-                not pbc.any()
-            ), "cuAEV doesn't support PBC when use_cuaev_interface=False"
+            assert self._compute_strategy == "cuaev-fused", "Internal assert failed"
+            if pbc is not None:
+                if pbc.any():
+                    raise ValueError("cuAEV-fused doesn't support PBC")
             aev = self._compute_cuaev(species, coordinates)
         return SpeciesAEV(species, aev)
 
@@ -429,12 +416,11 @@ class AEVComputer(torch.nn.Module):
 
     @jit_unused_if_no_cuaev()
     def _register_cuaev_computer(self) -> None:
-        # cuaev_computer is created only when use_cuda_extension is True.
-        # However jit needs to know cuaev_computer's Type even when
-        # use_cuda_extension is False. This 'registration' is only a kind of
-        # "dummy" initialization, it is always necessary to reinitialize in
-        # forward at least once, since some tensors may be on CPU at this
-        # point, but on GPU when forward is called.
+        # cuaev_computer is needed only when using a cuAEV compute strategy. However jit
+        # always needs to register the CuaevComputer type This 'registration' is only a
+        # kind of "dummy" initialization, it is always necessary to reinitialize in
+        # forward at least once, since some tensors may be on CPU at this point, but on
+        # GPU when forward is called.
         empty = torch.empty(0)
         self.cuaev_computer = torch.classes.cuaev.CuaevComputer(
             0.0, 0.0, empty, empty, empty, empty, empty, empty, 1, True
@@ -583,8 +569,7 @@ class AEVComputer(torch.nn.Module):
         angular_shifts: tp.Sequence[float],
         angle_sections: tp.Sequence[float],
         num_species: int,
-        use_cuda_extension: bool = False,
-        use_cuaev_interface: bool = False,
+        compute_strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",
         neighborlist: NeighborlistArg = "full_pairwise",
     ) -> tpx.Self:
@@ -608,8 +593,8 @@ class AEVComputer(torch.nn.Module):
             angle_sections (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
                 equation (4) in the `ANI paper`_.
             num_species (int): Number of supported atom types.
-            use_cuda_extension (bool): Whether to use cuda extension for faster
-                calculation (needs cuaev installed).
+            compute_strategy (str): Compute strategy to use, one of 'pyaev', 'cuaev',
+                'cuaev-fused'
 
         .. _ANI paper:
             http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
@@ -630,8 +615,7 @@ class AEVComputer(torch.nn.Module):
                 cutoff_fn=cutoff_fn,
             ),
             num_species=num_species,
-            use_cuda_extension=use_cuda_extension,
-            use_cuaev_interface=use_cuaev_interface,
+            compute_strategy=compute_strategy,
             neighborlist=neighborlist,
         )
 
@@ -639,8 +623,7 @@ class AEVComputer(torch.nn.Module):
     def like_1x(
         cls,
         num_species: int = 4,
-        use_cuda_extension: bool = False,
-        use_cuaev_interface: bool = False,
+        compute_strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",
         neighborlist: NeighborlistArg = "full_pairwise",
         # Radial args
@@ -674,8 +657,7 @@ class AEVComputer(torch.nn.Module):
                 cutoff_fn=cutoff_fn,
             ),
             num_species=num_species,
-            use_cuda_extension=use_cuda_extension,
-            use_cuaev_interface=use_cuaev_interface,
+            compute_strategy=compute_strategy,
             neighborlist=neighborlist,
         )
 
@@ -683,8 +665,7 @@ class AEVComputer(torch.nn.Module):
     def like_2x(
         cls,
         num_species: int = 7,
-        use_cuda_extension: bool = False,
-        use_cuaev_interface: bool = False,
+        compute_strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",
         neighborlist: NeighborlistArg = "full_pairwise",
         # Radial args
@@ -718,7 +699,6 @@ class AEVComputer(torch.nn.Module):
                 cutoff_fn=cutoff_fn,
             ),
             num_species=num_species,
-            use_cuda_extension=use_cuda_extension,
-            use_cuaev_interface=use_cuaev_interface,
+            compute_strategy=compute_strategy,
             neighborlist=neighborlist,
         )
