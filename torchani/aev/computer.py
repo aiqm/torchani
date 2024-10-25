@@ -43,9 +43,11 @@ class AEVComputer(torch.nn.Module):
     radial_sublength: Final[int]
     aev_length: Final[int]
 
-    use_cuda_extension: Final[bool]
-    use_cuaev_interface: Final[bool]
     triu_index: Tensor
+    use_cuda_extension: bool
+    use_cuaev_interface: bool
+    _cuaev_fused_is_avail: bool
+    _cuaeve_is_avail: bool
 
     def __init__(
         self,
@@ -84,6 +86,10 @@ class AEVComputer(torch.nn.Module):
 
         # The following corresponds to initialization and checks for the cuAEV:
 
+        # Check if the cuaev and the cuaev fused are available for used
+        self._cuaev_fused_is_avail = self._check_cuaev_fused_avail(raise_exc=False)
+        self._cuaev_is_avail = self._check_cuaev_avail(raise_exc=False)
+
         # cuAEV dummy initialization ('registration') happens here, as long as
         # cuAEV is installed, even if it is not used. This is required by JIT
         if CUAEV_IS_INSTALLED:
@@ -96,6 +102,13 @@ class AEVComputer(torch.nn.Module):
         # If we are using cuAEV then we need to check that the
         # arguments passed to __init__ are supported.
         if self.use_cuda_extension:
+            self._check_cuaev_avail()
+            if not self.use_cuaev_interface:
+                self._check_cuaev_fused_avail()
+
+    # Check if the cuaev strategy is available, if not raise an error
+    def _check_cuaev_avail(self, raise_exc: bool = True) -> bool:
+        try:
             if not CUAEV_IS_INSTALLED:
                 raise ValueError("The AEV CUDA extension is not installed")
             if not self._cuaev_cutoff_fn:
@@ -114,20 +127,51 @@ class AEVComputer(torch.nn.Module):
                     "The AEV CUDA extension only supports StandardRadial(...)"
                     " Custom angular terms are not supported"
                 )
-            if not isinstance(self.neighborlist, FullPairwise) and (
-                not use_cuaev_interface
-            ):
+        except ValueError as e:
+            if raise_exc:
+                raise e from None
+            return False
+        return True
+
+    # Check if the cuaev-fused strategy is available, if not raise an error
+    def _check_cuaev_fused_avail(self, raise_exc: bool = True) -> bool:
+        try:
+            self._check_cuaev_avail(raise_exc=raise_exc)
+            if not isinstance(self.neighborlist, FullPairwise):
                 raise ValueError(
                     "For non default neighborlists set 'use_cuaev_interface=True'"
                 )
+        except ValueError as e:
+            if raise_exc:
+                raise e from None
+            return False
+        return True
+
+    @torch.jit.export
+    def set_compute_strategy(
+        self, use_cuda_extension: bool = False, use_cuaev_interface: bool = False
+    ) -> None:
+        # Check availability of compute strategy
+        if use_cuda_extension:
+            # cuaev-fused
+            if not use_cuaev_interface and not self._cuaev_fused_is_avail:
+                raise ValueError("Cuaev-fused strategy is not available")
+            # cuaev
+            elif not self._cuaev_is_avail:
+                raise ValueError("Cuaev strategy is not available")
+        # pyaev
+        elif use_cuaev_interface:
+            raise ValueError("use_cuaev_interface=True neeeds use_cuda_extension=True")
+        self.use_cuda_extension = use_cuda_extension
+        self.use_cuaev_interface = use_cuaev_interface
 
     def extra_repr(self) -> str:
         radial_perc = f"{self.radial_length / self.aev_length * 100:.2f}% of features"
         angular_perc = f"{self.angular_length / self.aev_length * 100:.2f}% of features"
         parts = [
-            r"#  "f"aev_length={self.aev_length}",
-            r"#  "f"radial_length={self.radial_length} ({radial_perc})",
-            r"#  "f"angular_length={self.angular_length} ({angular_perc})",
+            r"#  " f"aev_length={self.aev_length}",
+            r"#  " f"radial_length={self.radial_length} ({radial_perc})",
+            r"#  " f"angular_length={self.angular_length} ({angular_perc})",
             f"num_species={self.num_species},",
             f"use_cuda_extension={self.use_cuda_extension},",
             f"use_cuaev_interface={self.use_cuaev_interface},",

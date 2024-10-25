@@ -129,6 +129,15 @@ class ANI(torch.nn.Module):
         self.neural_networks.set_active_members(idxs)
 
     @torch.jit.export
+    def set_compute_strategy(
+        self, use_cuda_extension: bool = False, use_cuaev_interface: bool = False
+    ) -> None:
+        self.aev_computer.set_compute_strategy(
+            use_cuda_extension=use_cuda_extension,
+            use_cuaev_interface=use_cuaev_interface,
+        )
+
+    @torch.jit.export
     def sp(
         self,
         species: Tensor,
