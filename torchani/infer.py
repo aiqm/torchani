@@ -3,6 +3,7 @@ Inference-optimized versions of Ensemble and AtomicNetwork, recommended for
 single-point calculations of single molecules, molecular dynamics and geometry
 optimizations.
 """
+
 import itertools
 import typing as tp
 from itertools import accumulate
@@ -104,11 +105,13 @@ class BmmEnsemble(AtomicContainer):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesEnergies:
-        atomic_energies = self.members_atomic_energies(species_aev).squeeze(0)
+        atomic_energies = self.atomic_energies(species_aev, ensemble_average=True)
         return SpeciesEnergies(species_aev[0], torch.sum(atomic_energies, 0, True))
 
     @torch.jit.export
-    def members_atomic_energies(self, species_aev: tp.Tuple[Tensor, Tensor]) -> Tensor:
+    def atomic_energies(
+        self, species_aev: tp.Tuple[Tensor, Tensor], ensemble_average: bool = False
+    ) -> Tensor:
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
         assert aev.shape[0] == 1, "BmmEnsemble only supports single-conformer inputs"
@@ -134,8 +137,9 @@ class BmmEnsemble(AtomicContainer):
                 atomic_energies[self._idx_list[i]] = net(input_).flatten()
                 if not torch.jit.is_scripting():
                     torch.cuda.nvtx.range_pop()
-        atomic_energies = atomic_energies.unsqueeze(0)
-        return atomic_energies
+        if ensemble_average:
+            return atomic_energies
+        return atomic_energies.unsqueeze(0)
 
 
 class BmmAtomicNetwork(torch.nn.Module):

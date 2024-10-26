@@ -85,7 +85,7 @@ class Potential(torch.nn.Module):
         neighbors: NeighborData,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
-        ensemble_average: bool = True,
+        ensemble_average: bool = False,
     ) -> Tensor:
         r"""Outputs "atomic_energies"
 
@@ -100,7 +100,10 @@ class Potential(torch.nn.Module):
         Potentials that don't have an ensemble of models output shape (1, N, A)
         if ensemble_average=False.
         """
-        return torch.zeros_like(element_idxs, dtype=neighbors.distances.dtype)
+        energies = torch.zeros_like(element_idxs, dtype=neighbors.distances.dtype)
+        if ensemble_average:
+            return energies
+        return energies.unsqueeze(0)
 
 
 class PairPotential(Potential):
@@ -189,7 +192,7 @@ class PairPotential(Potential):
         neighbors: NeighborData,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
-        ensemble_average: bool = True,
+        ensemble_average: bool = False,
     ) -> Tensor:
         pair_energies = self._calculate_pair_energies_wrapper(
             element_idxs,
@@ -207,6 +210,6 @@ class PairPotential(Potential):
         atomic_energies.index_add_(0, neighbors.indices[0], pair_energies / 2)
         atomic_energies.index_add_(0, neighbors.indices[1], pair_energies / 2)
         atomic_energies = atomic_energies.view(molecules_num, atoms_num)
-        if not ensemble_average:
-            return atomic_energies.unsqueeze(0)
-        return atomic_energies
+        if ensemble_average:
+            return atomic_energies
+        return atomic_energies.unsqueeze(0)

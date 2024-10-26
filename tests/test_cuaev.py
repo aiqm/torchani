@@ -64,6 +64,7 @@ class TestCUAEVStrategy(ANITest):
         self.input = (species, coordinates)
         self.znum_input = (znums, coordinates)
 
+    @skipIfNoCUAEV
     def testModelChangeStrat(self) -> None:
         m = self._setup(ANIdr(compute_strategy="cuaev"))
 
@@ -75,12 +76,14 @@ class TestCUAEVStrategy(ANITest):
 
         self.assertEqual(py, cu, atol=self.tolerance, rtol=self.tolerance)
 
+    @skipIfNoCUAEV
     def testInvalidModelStrat(self) -> None:
         m = self._setup(ANIdr(compute_strategy="cuaev"))
         with self.assertRaises(torch.jit.Error if self.jit else RuntimeError):
             m.set_compute_strategy("cuaev-fused")
             _ = m(self.znum_input)[1]
 
+    @skipIfNoCUAEV
     def testAEVChangeStrat(self) -> None:
         m = self._setup(AEVComputer.like_2x(compute_strategy="cuaev"))
 

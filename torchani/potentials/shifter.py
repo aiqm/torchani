@@ -59,7 +59,7 @@ class EnergyAdder(Potential):
         ),
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
-        ensemble_average: bool = True,
+        ensemble_average: bool = False,
     ) -> Tensor:
         # Compute atomic self energies for a set of species.
         self_atomic_energies = self.self_energies[element_idxs]

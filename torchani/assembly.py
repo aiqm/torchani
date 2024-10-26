@@ -105,9 +105,9 @@ class ANI(torch.nn.Module):
         self.energy_shifter = energy_shifter
         self.species_converter = SpeciesConverter(symbols).to(device)
 
+        self._has_pair_pots = bool(pairwise_potentials)
         potentials: tp.List[Potential] = list(pairwise_potentials)
         potentials.append(NNPotential(self.aev_computer, self.neural_networks))
-        self.potentials_len = len(potentials)
 
         # Sort potentials in order of decresing cutoff. The potential with the
         # LARGEST cutoff is computed first, then sequentially things that need
@@ -186,8 +186,6 @@ class ANI(torch.nn.Module):
         total_charge: int = 0,
         ensemble_average: bool = True,
     ) -> SpeciesEnergies:
-        assert total_charge == 0, "Model only supports neutral molecules"
-
         # Unoptimized path to obtain member energies, and eventually QBC
         if not ensemble_average:
             elem_idxs, energies = self.atomic_energies(
@@ -200,11 +198,16 @@ class ANI(torch.nn.Module):
             return SpeciesEnergies(elem_idxs, energies.sum(-1))
 
         elem_idxs, coords = self._maybe_convert_species(species_coordinates)
-        assert coords.shape[:-1] == elem_idxs.shape
-        assert coords.shape[-1] == 3
+        # Check inputs
+        assert elem_idxs.dim() == 2
+        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
+        assert total_charge == 0, "Model only supports neutral molecules"
 
-        # Optimized path, use merged Neighborlist-AEVomputer
-        if self.potentials_len == 1:
+        # Optimized path, use merged Neighborlist-AEVComputer
+        if (
+            not self._has_pair_pots
+            and self.aev_computer._compute_strategy == "cuaev-fused"
+        ):
             _, energies = self.neural_networks(
                 self.aev_computer((elem_idxs, coords), cell=cell, pbc=pbc)
             )
@@ -271,12 +274,18 @@ class ANI(torch.nn.Module):
         Arguments and return value are the same as that of forward(), but
         the returned energies have shape (molecules, atoms)
         """
-        assert total_charge == 0, "Model only supports neutral molecules"
         elem_idxs, coords = self._maybe_convert_species(species_coordinates)
+        # Check inputs
+        assert elem_idxs.dim() == 2
+        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
+        assert total_charge == 0, "Model only supports neutral molecules"
 
         # Optimized path, go through the merged Neighborlist-AEVomputer only
-        if self.potentials_len == 1:
-            atomic_energies = self.neural_networks.members_atomic_energies(
+        if (
+            not self._has_pair_pots
+            and self.aev_computer._compute_strategy == "cuaev-fused"
+        ):
+            atomic_energies = self.neural_networks.atomic_energies(
                 self.aev_computer((elem_idxs, coords), cell=cell, pbc=pbc)
             )
         # Iterate over all potentials
@@ -531,7 +540,7 @@ class ANI(torch.nn.Module):
         """
         species_coordinates = self._maybe_convert_species(species_coordinates)
         species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
-        atomic_energies = self.neural_networks.members_atomic_energies(species_aevs)
+        atomic_energies = self.neural_networks.atomic_energies(species_aevs)
 
         atomic_energies += self.energy_shifter.atomic_energies(
             species_coordinates[0],
@@ -704,14 +713,14 @@ class ANIq(ANI):
         input_needs_screening: bool = True,
     ) -> SpeciesEnergiesAtomicCharges:
         # This entrypoint supports input from an external neighborlist
-        element_idxs, coords = self._maybe_convert_species(species_coordinates)
-        # Check shapes
-        num_molecules, num_atoms = element_idxs.shape
-        assert coords.shape == (num_molecules, num_atoms, 3)
+        elem_idxs, coords = self._maybe_convert_species(species_coordinates)
+        # Check inputs
+        assert elem_idxs.dim() == 2
+        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
         assert total_charge == 0, "Model only supports neutral molecules"
         previous_cutoff = self.potentials[0].cutoff
         neighbors = self.neighborlist.process_external_input(
-            element_idxs,
+            elem_idxs,
             coords,
             neighbor_idxs,
             shift_values,
@@ -719,11 +728,11 @@ class ANIq(ANI):
             input_needs_screening,
         )
         energies = torch.zeros(
-            num_molecules, device=element_idxs.device, dtype=coords.dtype
+            elem_idxs.shape[0], device=elem_idxs.device, dtype=coords.dtype
         )
         atomic_charges = torch.zeros(
-            (num_molecules, num_atoms),
-            device=element_idxs.device,
+            (elem_idxs.shape[0], elem_idxs.shape[1]),
+            device=elem_idxs.device,
             dtype=coords.dtype,
         )
         for pot in self.potentials:
@@ -733,7 +742,7 @@ class ANIq(ANI):
                 previous_cutoff = cutoff
             if pot.is_trainable:
                 output = pot.energies_and_atomic_charges(
-                    element_idxs,
+                    elem_idxs,
                     neighbors,
                     _coordinates=coords,
                     ghost_flags=None,
@@ -742,9 +751,9 @@ class ANIq(ANI):
                 energies += output.energies
                 atomic_charges += output.atomic_charges
             else:
-                energies += pot(element_idxs, neighbors, _coordinates=coords)
+                energies += pot(elem_idxs, neighbors, _coordinates=coords)
         return SpeciesEnergiesAtomicCharges(
-            element_idxs, energies + self.energy_shifter(element_idxs), atomic_charges
+            elem_idxs, energies + self.energy_shifter(elem_idxs), atomic_charges
         )
 
     @torch.jit.export
@@ -755,17 +764,19 @@ class ANIq(ANI):
         pbc: tp.Optional[Tensor] = None,
         total_charge: int = 0,
     ) -> SpeciesEnergiesAtomicCharges:
+        elem_idxs, coords = self._maybe_convert_species(species_coordinates)
+        # Check inputs
+        assert elem_idxs.dim() == 2
+        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
         assert total_charge == 0, "Model only supports neutral molecules"
-        element_idxs, coords = self._maybe_convert_species(species_coordinates)
+
         previous_cutoff = self.potentials[0].cutoff
-        neighbor_data = self.neighborlist(
-            element_idxs, coords, previous_cutoff, cell, pbc
-        )
+        neighbor_data = self.neighborlist(elem_idxs, coords, previous_cutoff, cell, pbc)
         energies = torch.zeros(
-            element_idxs.shape[0], device=element_idxs.device, dtype=coords.dtype
+            elem_idxs.shape[0], device=elem_idxs.device, dtype=coords.dtype
         )
         atomic_charges = torch.zeros(
-            element_idxs.shape, device=element_idxs.device, dtype=coords.dtype
+            elem_idxs.shape, device=elem_idxs.device, dtype=coords.dtype
         )
         for pot in self.potentials:
             cutoff = pot.cutoff
@@ -774,7 +785,7 @@ class ANIq(ANI):
                 previous_cutoff = cutoff
             if pot.is_trainable:
                 output = pot.energies_and_atomic_charges(
-                    element_idxs,
+                    elem_idxs,
                     neighbor_data,
                     _coordinates=coords,
                     ghost_flags=None,
@@ -783,9 +794,9 @@ class ANIq(ANI):
                 energies += output.energies
                 atomic_charges += output.atomic_charges
             else:
-                energies += pot(element_idxs, neighbor_data, _coordinates=coords)
+                energies += pot(elem_idxs, neighbor_data, _coordinates=coords)
         return SpeciesEnergiesAtomicCharges(
-            element_idxs, energies + self.energy_shifter(element_idxs), atomic_charges
+            elem_idxs, energies + self.energy_shifter(elem_idxs), atomic_charges
         )
 
 

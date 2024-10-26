@@ -52,9 +52,10 @@ class AtomicContainer(torch.nn.Module):
         raise IndexError("Only idx=0 supported")
 
     @torch.jit.export
-    def members_atomic_energies(
+    def atomic_energies(
         self,
         species_aev: tp.Tuple[Tensor, Tensor],
+        ensemble_average: bool = False,
     ) -> Tensor:
         raise NotImplementedError()
 
