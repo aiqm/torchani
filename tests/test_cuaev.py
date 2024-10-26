@@ -1,3 +1,5 @@
+import tempfile
+import typing as tp
 from pathlib import Path
 import os
 import unittest
@@ -6,7 +8,11 @@ import pickle
 import torch
 from parameterized import parameterized_class
 
-import torchani
+from torchani.testing import ANITest, expand
+from torchani.utils import SYMBOLS_2X
+from torchani.nn import SpeciesConverter
+from torchani.aev import AEVComputer
+from torchani.models import ANIdr
 from torchani.io import read_xyz
 from torchani.testing import TestCase, make_tensor
 from torchani.csrc import CUAEV_IS_INSTALLED
@@ -23,6 +29,72 @@ skipIfNoMultiGPU = unittest.skipIf(
 skipIfNoCUAEV = unittest.skipIf(
     not CUAEV_IS_INSTALLED, "only valid when cuaev is installed"
 )
+
+
+@expand(device="cuda")
+class TestCUAEVStrategy(ANITest):
+    def setUp(self) -> None:
+        self.tolerance = 5e-5
+        coordinates = torch.tensor(
+            [
+                [
+                    [0.03192167, 0.00638559, 0.01301679],
+                    [-0.83140486, 0.39370209, -0.26395324],
+                    [-0.66518241, -0.84461308, 0.20759389],
+                    [0.45554739, 0.54289633, 0.81170881],
+                    [0.66091919, -0.16799635, -0.91037834],
+                ],
+                [
+                    [-4.1862600, 0.0575700, -0.0381200],
+                    [-3.1689400, 0.0523700, 0.0200000],
+                    [-4.4978600, 0.8211300, 0.5604100],
+                    [-4.4978700, -0.8000100, 0.4155600],
+                    [0.00000000, -0.00000000, -0.00000000],
+                ],
+            ],
+            device=self.device,
+            dtype=torch.float32,
+        )
+        species = torch.tensor(
+            [[1, 0, 0, 0, 0], [2, 0, 0, 0, -1]], device=self.device, dtype=torch.long
+        )
+        znums = torch.tensor(
+            [[6, 1, 1, 1, 1], [7, 1, 1, 1, -1]], device=self.device, dtype=torch.long
+        )
+        self.input = (species, coordinates)
+        self.znum_input = (znums, coordinates)
+
+    def testModelChangeStrat(self) -> None:
+        m = self._setup(ANIdr(compute_strategy="cuaev"))
+
+        m.set_compute_strategy("cuaev")
+        cu = m(self.znum_input)[1]
+
+        m.set_compute_strategy("pyaev")
+        py = m(self.znum_input)[1]
+
+        self.assertEqual(py, cu, atol=self.tolerance, rtol=self.tolerance)
+
+    def testInvalidModelStrat(self) -> None:
+        m = self._setup(ANIdr(compute_strategy="cuaev"))
+        with self.assertRaises(torch.jit.Error if self.jit else RuntimeError):
+            m.set_compute_strategy("cuaev-fused")
+            _ = m(self.znum_input)[1]
+
+    def testAEVChangeStrat(self) -> None:
+        m = self._setup(AEVComputer.like_2x(compute_strategy="cuaev"))
+
+        m.set_compute_strategy("cuaev")
+        cu = m(self.input)[1]
+
+        m.set_compute_strategy("cuaev-fused")
+        cu_fused = m(self.input)[1]
+
+        m.set_compute_strategy("pyaev")
+        py = m(self.input)[1]
+
+        self.assertEqual(py, cu, atol=self.tolerance, rtol=self.tolerance)
+        self.assertEqual(cu, cu_fused, atol=self.tolerance, rtol=self.tolerance)
 
 
 @skipIfNoCUAEV
@@ -55,28 +127,23 @@ class TestCUAEVNoGPU(TestCase):
             )
             return torch.ops.cuaev.run(coordinates, species, cuaev_computer)
 
-        s = torch.jit.script(f)
-        self.assertIn("cuaev::run", str(s.graph))
+        self.assertIn("cuaev::run", str(torch.jit.script(f).graph))
 
-    def testAEVComputer(self):
-        aev_computer = torchani.AEVComputer.like_1x(compute_strategy="cuaev-fused")
-        s = torch.jit.script(aev_computer)
-        # Computation of AEV using cuaev when there is no atoms does not
-        # require CUDA, and can be run without GPU
+    def testNoAtoms(self):
+        # cuAEV with no atoms does not require CUDA, and can be run without GPU
+        m = torch.jit.script(AEVComputer.like_1x(compute_strategy="cuaev-fused"))
         species = make_tensor((8, 0), device="cpu", dtype=torch.int64, low=-1, high=4)
         coordinates = make_tensor(
             (8, 0, 3), device="cpu", dtype=torch.float32, low=-5, high=5
         )
-        self.assertIn("cuaev::run", str(s.graph_for((species, coordinates))))
+        self.assertIn("cuaev::run", str(m.graph_for((species, coordinates))))
 
     def testPickle(self):
-        aev_computer = torchani.AEVComputer.like_1x(compute_strategy="cuaev-fused")
-        tmpfile = "/tmp/cuaev.pkl"
-        with open(tmpfile, "wb") as file:
-            pickle.dump(aev_computer, file)
-        with open(tmpfile, "rb") as file:
-            aev_computer = pickle.load(file)
-        os.remove(tmpfile)
+        aev_computer = AEVComputer.like_1x(compute_strategy="cuaev-fused")
+        with tempfile.TemporaryFile(mode="wb+") as f:
+            pickle.dump(aev_computer, f)
+            f.seek(0)
+            _ = pickle.load(f)
 
 
 @skipIfNoGPU
@@ -91,53 +158,38 @@ class TestCUAEVNoGPU(TestCase):
     ],
 )
 class TestCUAEV(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.ani2x = torchani.models.ANI2x()
+    dtype: torch.dtype
+    cutoff_fn: tp.Literal["smooth", "cosine"]
 
     def setUp(self, device="cuda:0"):
         # double precision error is within 5e-13
         self.tolerance = 5e-5 if self.dtype == torch.float32 else 5e-13
         self.device = device
-        self.aev_computer_1x = (
-            torchani.AEVComputer.like_1x(cutoff_fn=self.cutoff_fn)
-            .to(self.dtype)
-            .to(self.device)
+        self.aev_computer_1x = AEVComputer.like_1x(cutoff_fn=self.cutoff_fn).to(
+            dtype=self.dtype, device=self.device
         )
-        self.cuaev_computer_1x = (
-            torchani.AEVComputer.like_1x(
-                cutoff_fn=self.cutoff_fn, compute_strategy="cuaev-fused",
-            )
-            .to(self.dtype)
-            .to(self.device)
-        )
-        self.nn = (
-            torch.nn.Sequential(torch.nn.Linear(384, 1, False))
-            .to(self.dtype)
-            .to(self.device)
+        self.cuaev_computer_1x = AEVComputer.like_1x(
+            cutoff_fn=self.cutoff_fn,
+            compute_strategy="cuaev-fused",
+        ).to(dtype=self.dtype, device=self.device)
+        self.nn = torch.nn.Sequential(
+            torch.nn.Linear(384, 1, False, dtype=self.dtype, device=self.device)
         )
 
-        self.aev_computer_2x = (
-            torchani.AEVComputer.like_2x(cutoff_fn=self.cutoff_fn)
-            .to(self.dtype)
-            .to(self.device)
+        self.aev_computer_2x = AEVComputer.like_2x(cutoff_fn=self.cutoff_fn).to(
+            dtype=self.dtype, device=self.device
         )
-        self.cuaev_computer_2x = (
-            torchani.AEVComputer.like_2x(
-                cutoff_fn=self.cutoff_fn, compute_strategy="cuaev-fused",
-            )
-            .to(self.dtype)
-            .to(self.device)
+        self.cuaev_computer_2x = AEVComputer.like_2x(
+            cutoff_fn=self.cutoff_fn,
+            compute_strategy="cuaev-fused",
+        ).to(dtype=self.dtype, device=self.device)
+        self.cuaev_computer_2x_use_interface = AEVComputer.like_2x(
+            cutoff_fn=self.cutoff_fn,
+            compute_strategy="cuaev",
+        ).to(dtype=self.dtype, device=self.device)
+        self.converter = SpeciesConverter(SYMBOLS_2X).to(
+            dtype=self.dtype, device=self.device
         )
-        self.cuaev_computer_2x_use_interface = (
-            torchani.AEVComputer.like_2x(
-                cutoff_fn=self.cutoff_fn,
-                compute_strategy="cuaev",
-            )
-            .to(self.dtype)
-            .to(self.device)
-        )
-        self.ani2x = self.__class__.ani2x.to(self.dtype).to(self.device)
         self.cutoff_2x = self.cuaev_computer_2x.radial_terms.cutoff
         self.cutoff_1x = self.cuaev_computer_1x.radial_terms.cutoff
 
@@ -600,7 +652,7 @@ class TestCUAEV(TestCase):
                 device=self.device,
                 dtype=self.dtype,
             )
-            species, coordinates = self.ani2x.species_converter((species, coordinates))
+            species, coordinates = self.converter((species, coordinates))
             _, aev = self.aev_computer_2x((species, coordinates))
             _, cu_aev = self.cuaev_computer_2x((species, coordinates))
             self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
@@ -613,7 +665,7 @@ class TestCUAEV(TestCase):
                 device=self.device,
                 dtype=self.dtype,
             )
-            species, coordinates = self.ani2x.species_converter((species, coordinates))
+            species, coordinates = self.converter((species, coordinates))
             coordinates.requires_grad_(True)
 
             _, aev = self.aev_computer_2x((species, coordinates))
@@ -638,7 +690,7 @@ class TestCUAEV(TestCase):
                 device=self.device,
                 dtype=self.dtype,
             )
-            species, coordinates = self.ani2x.species_converter((species, coordinates))
+            species, coordinates = self.converter((species, coordinates))
             coordinates.requires_grad_(True)
 
             _, aev = self.aev_computer_2x((species, coordinates))
@@ -661,7 +713,7 @@ class TestCUAEV(TestCase):
             device=self.device,
             dtype=self.dtype,
         )
-        species, coordinates = self.ani2x.species_converter((species, coordinates))
+        species, coordinates = self.converter((species, coordinates))
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         coordinates.requires_grad_(True)
         _, aev = self.aev_computer_2x((species, coordinates), cell, pbc)
@@ -676,9 +728,7 @@ class TestCUAEV(TestCase):
         cu_aev.backward(torch.ones_like(cu_aev))
         cuaev_grad = coordinates.grad
         self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
-        self.assertEqual(
-            cuaev_grad, aev_grad, atol=self.tolerance, rtol=self.tolerance
-        )
+        self.assertEqual(cuaev_grad, aev_grad, atol=self.tolerance, rtol=self.tolerance)
 
     def testWithFullNbrList_nopbc(self):
         files = ["small.xyz", "1hz5.xyz", "6W8H.xyz"]
@@ -688,7 +738,7 @@ class TestCUAEV(TestCase):
                 device=self.device,
                 dtype=self.dtype,
             )
-            species, coordinates = self.ani2x.species_converter((species, coordinates))
+            species, coordinates = self.converter((species, coordinates))
             coordinates.requires_grad_(True)
 
             _, aev = self.aev_computer_2x((species, coordinates))
@@ -700,9 +750,6 @@ class TestCUAEV(TestCase):
             atom_index12, _, _, _ = self.cuaev_computer_2x_use_interface.neighborlist(
                 species, coordinates, self.cutoff_2x
             )
-            if not self.cuaev_computer_2x_use_interface.cuaev_is_initialized:
-                self.cuaev_computer_2x_use_interface._init_cuaev_computer()
-                self.cuaev_computer_2x_use_interface.cuaev_is_initialized = True
             assert species.shape[0] == 1
             (
                 ilist_unique,
@@ -728,7 +775,7 @@ class TestCUAEV(TestCase):
             device=self.device,
             dtype=self.dtype,
         )
-        species, coordinates = self.ani2x.species_converter((species, coordinates))
+        species, coordinates = self.converter((species, coordinates))
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         coordinates.requires_grad_(True)
         _, aev = self.aev_computer_2x((species, coordinates), cell, pbc)
@@ -741,19 +788,14 @@ class TestCUAEV(TestCase):
         atom_index12, _, _, _ = self.cuaev_computer_2x_use_interface.neighborlist(
             species, coordinates, self.cutoff_2x
         )
-        if not self.cuaev_computer_2x_use_interface.cuaev_is_initialized:
-            self.cuaev_computer_2x_use_interface._init_cuaev_computer()
-            self.cuaev_computer_2x_use_interface.cuaev_is_initialized = True
         assert species.shape[0] == 1
         (
             ilist_unique,
             jlist,
             numneigh,
         ) = self.cuaev_computer_2x_use_interface._half_to_full_nbrlist(atom_index12)
-        cu_aev = (
-            self.cuaev_computer_2x_use_interface._compute_cuaev_with_full_nbrlist(
-                species, coordinates, ilist_unique, jlist, numneigh
-            )
+        cu_aev = self.cuaev_computer_2x_use_interface._compute_cuaev_with_full_nbrlist(
+            species, coordinates, ilist_unique, jlist, numneigh
         )
 
         cu_aev.backward(torch.ones_like(cu_aev))

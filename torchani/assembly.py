@@ -127,12 +127,16 @@ class ANI(torch.nn.Module):
     @torch.jit.export
     def set_active_members(self, idxs: tp.List[int]) -> None:
         self.neural_networks.set_active_members(idxs)
+        for p in self.potentials:
+            if hasattr(p, "neural_networks"):
+                p.neural_networks.set_active_members(idxs)
 
     @torch.jit.export
-    def set_compute_strategy(
-        self, strategy: str = "pyaev"
-    ) -> None:
+    def set_compute_strategy(self, strategy: str = "pyaev") -> None:
         self.aev_computer.set_compute_strategy(strategy)
+        for p in self.potentials:
+            if hasattr(p, "aev_computer"):
+                p.aev_computer.set_compute_strategy(strategy)
 
     @torch.jit.export
     def sp(

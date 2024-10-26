@@ -33,23 +33,22 @@ class NNPotential(Potential):
     # TODO: Wrapper that executes the correct _compute_aev call, very dirty
     def _execute_aev_computer(
         self,
-        element_idxs: Tensor,
+        elem_idxs: Tensor,
         neighbors: NeighborData,
-        _coordinates: tp.Optional[Tensor] = None,
+        _coords: tp.Optional[Tensor] = None,
     ) -> Tensor:
-        if self.aev_computer.compute_strategy == "cuaev":
-            if not self.aev_computer.cuaev_is_initialized:
-                self.aev_computer._init_cuaev_computer()
-                self.aev_computer.cuaev_is_initialized = True
-            assert _coordinates is not None
-            return self.aev_computer._compute_cuaev_with_half_nbrlist(
-                element_idxs, _coordinates, neighbors
+        if self.aev_computer._compute_strategy == "pyaev":
+            aev = self.aev_computer._compute_aev(elem_idxs, neighbors)
+        elif self.aev_computer._compute_strategy == "cuaev":
+            assert _coords is not None
+            aev = self.aev_computer._compute_cuaev_with_half_nbrlist(
+                elem_idxs, _coords, neighbors
             )
-        if self.aev_computer.compute_strategy == "pyaev":
-            return self.aev_computer._compute_aev(element_idxs, neighbors)
-        raise ValueError(
-            f"Unsupported compute strategy {self.aev_computer.compute_strategy}"
-        )
+        else:
+            raise RuntimeError(
+                f"Unsupported strat {self.aev_computer._compute_strategy}"
+            )
+        return aev
 
     def forward(
         self,
