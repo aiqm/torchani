@@ -247,11 +247,13 @@ class ANI(torch.nn.Module):
             energies = self._atomic_energy_of_pots(
                 elem_idxs, coords, largest_cutoff, neighbors
             ).mean(dim=1)
+        else:
+            energies = self._energy_of_pots(
+                elem_idxs, coords, largest_cutoff, neighbors
+            )
 
-        energies = self._energy_of_pots(elem_idxs, coords, largest_cutoff, neighbors)
-        dummy = NeighborData(torch.empty(0), torch.empty(0), torch.empty(0))
         energies += self.energy_shifter.atomic_energies(
-            elem_idxs, dummy, None, ensemble_average=ensemble_average
+            elem_idxs, ensemble_average=ensemble_average
         ).sum(dim=-1)
         return SpeciesEnergies(elem_idxs, energies)
 
