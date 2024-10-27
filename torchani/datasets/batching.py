@@ -79,7 +79,7 @@ class BatchedDataset(torch.utils.data.Dataset[Conformers]):
             elif isinstance(limit, int):
                 if not (0 <= limit < len(batches)):
                     raise ValueError("limit must lie in (0, num_batches)")
-                batches = batches[: int(limit * len(batches))]
+                batches = batches[: limit]
         return batches
 
 
