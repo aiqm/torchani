@@ -1,5 +1,5 @@
 r"""
-Miscellaneous utilities
+Miscellaneous utilities used throughout the code
 """
 from collections import OrderedDict
 import typing as tp

@@ -1,7 +1,8 @@
 r"""
-Various utilities for working with systems that have charges and explicit
+Various utilities for working with systems that have charges and coulomb-like
 electrostatic interactions.
 """
+
 import typing as tp
 
 import torch
@@ -26,9 +27,9 @@ class ChargeNormalizer(torch.nn.Module):
 
         normalizer = ChargeNormalizer()
         total_charge = 0
-        element_idxs = torch.tensor([[0, 0, 0, 1, 1]], dtype=torch.long)
+        elem_idxs = torch.tensor([[0, 0, 0, 1, 1]], dtype=torch.long)
         raw_charges = torch.tensor([[0.3, 0.5, -0.5]], dtype=torch.float)
-        norm_charges = normalizer(element_idxs, raw_charges, total_charge)
+        norm_charges = normalizer(elem_idxs, raw_charges, total_charge)
         # norm_charges will sum to zero
     """
 
@@ -67,29 +68,23 @@ class ChargeNormalizer(torch.nn.Module):
         # Get constant values from literature if not provided
         if not electronegativity:
             electronegativity = [ELECTRONEGATIVITY[j] for j in atomic_numbers]
-
         if not hardness:
             hardness = [HARDNESS[j] for j in atomic_numbers]
         weights = [(e / h) ** 2 for e, h in zip(electronegativity, hardness)]
         return cls(symbols, weights, scale_weights_by_charges_squared)
 
-    def factor(self, element_idxs: Tensor, raw_charges: Tensor) -> Tensor:
-        weights = self.weights[element_idxs]
-        weights = weights.masked_fill(element_idxs == -1, 0.0)
+    def factor(self, elem_idxs: Tensor, raw_charges: Tensor) -> Tensor:
+        weights = self.weights[elem_idxs]
+        weights = weights.masked_fill(elem_idxs == -1, 0.0)
         if self.scale_weights_by_charges_squared:
-            weights = weights * raw_charges**2
+            weights *= raw_charges**2
         return weights / torch.sum(weights, dim=-1, keepdim=True)
 
     def forward(
-        self,
-        element_idxs: Tensor,
-        raw_charges: Tensor,
-        total_charge: int = 0,
+        self, elem_idxs: Tensor, raw_charges: Tensor, total_charge: int = 0
     ) -> Tensor:
-        total_raw_charge = torch.sum(raw_charges, dim=-1, keepdim=True)
-        charge_excess = total_charge - total_raw_charge
-        factor = self.factor(element_idxs, raw_charges)
-        return raw_charges + charge_excess * factor
+        excess = total_charge - raw_charges.sum(dim=-1, keepdim=True)
+        return raw_charges + excess * self.factor(elem_idxs, raw_charges)
 
 
 class DipoleComputer(torch.nn.Module):
@@ -144,8 +139,7 @@ class DipoleComputer(torch.nn.Module):
         assert species.shape == charges.shape == coordinates.shape[:-1]
         charges = charges.unsqueeze(-1)
         coordinates = self._displace_to_reference(species, coordinates)
-        dipole = torch.sum(charges * coordinates, dim=1)
-        return dipole
+        return torch.sum(charges * coordinates, dim=1)
 
 
 # Convenience fn around DipoleComputer that is non-jittable

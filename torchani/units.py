@@ -1,17 +1,16 @@
 r"""
-Unit conversion factors used in torchani
+Unit conversion factors used in TorchANI
 
-The ANI models work internally in Hartrees
-(energy), Angstroms (distance) and AMU (mass).
+The ANI models work internally in Hartrees (energy), Angstroms (distance), and AMU
+(mass).
 
 In some example code and scripts we convert to other more commonly used units.
-Conversion factors are consistent with `CODATA 2014 recommendations`_, which is
-also consistent with the `units used in ASE`_ by default. (However, take into
-account that ASE uses electronvolt as its base energy unit, so the appropriate
-conversion factors should always be applied when converting from ASE to
-TorchANI) Joule-to-kcal conversion is taken from the `IUPAC Goldbook`_.  All
-the conversion factors we use are defined in this module, and convenience
-functions to convert between different units are provided.
+Conversion factors are consistent with `CODATA 2014 recommendations`_, which is also
+consistent with the `units used in ASE`_ by default. (However, take into account that
+ASE uses electronvolt as its base energy unit, so the appropriate conversion factors
+should always be applied when converting from ASE to TorchANI) Joule-to-kcal conversion
+is taken from the `IUPAC Goldbook`_.  All the conversion factors we use are defined in
+this module, and convenience functions to convert between different units are provided.
 
 
 .. _units used in ASE:

@@ -1,6 +1,6 @@
 r"""
-Modules that represent groups of element-specific neural networks, and perform different
-reduction operations over them.
+TorchANI modules that represent groups of element-specific neural networks, and perform
+different reduction operations over them.
 """
 
 import warnings

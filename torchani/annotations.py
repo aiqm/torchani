@@ -1,5 +1,5 @@
 r"""
-Type aliases, common type annotations used throughout the TorchANI codebase
+Type aliases. Common type annotations used throughout the TorchANI codebase
 """
 import torch
 import typing as tp
@@ -23,12 +23,12 @@ DType = tp.Union[torch.dtype, None]
 # Mimic typeshed
 StrPath = tp.Union[str, Path]
 
+# Python scalar
+PyScalar = tp.Union[bool, int, float, str, None]
+
 # Datasets
 Grouping = tp.Literal["by_num_atoms", "by_formula"]
 Backend = tp.Literal["hdf5", "zarr", "pandas", "cudf"]
 
-# Ase
+# Ase support
 StressKind = tp.Literal["scaling", "fdotr", "numerical"]
-
-# Python scalar
-PyScalar = tp.Union[bool, int, float, str, None]

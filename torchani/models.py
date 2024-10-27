@@ -5,19 +5,19 @@ have been published in TorchANI 3.0. If you use any of these models in your work
 cite the corresponding article(s).
 
 If for a given model you discover a bug, performance problem, or incorrect behavior in
-some region of chemical space, please post an issue in GitHub. The TorchANI developers
+some region of chemical space, please open an issue in GitHub. The TorchANI developers
 will attempt to address and document issues.
 
 Note that parameters of the ANI models are automatically downloaded and cached the first
 time they are instantiated. If this is an issue for your application we recommend you
-pre-download the parameters by instantiating the models before use.
+pre-download the parameters by instantiating the models once before use.
 
-The ANI models can be used directly as callable functions once they are instantiated.
-Alternatively, they can be cast to an ASE calculator by calling ``ANI.ase()``.
+The models can be used directly once they are instantiated. Alternatively, they can be
+cast to an ASE calculator by calling ``ANI.ase()``.
 
-Some models have a "network container" that consists of an "ensemble" of neural
-networks. Individual members of these ensembles can be accessed by indexing, and
-``len()`` can be used to query the number of networks in it.
+Some models have an interanl set of neural networks ("ANIEnsemble"), and they output
+their averaged values. Individual members of these ensembles can be accessed by
+indexing, and ``len()`` can be used to query the number of networks in it.
 
 The models also have three extra entry points for more specific use cases:
 atomic_energies and energies_qbcs.
@@ -26,7 +26,7 @@ All entrypoints expect a tuple of tensors `(species, coordinates)` as input, tog
 with two optional tensors, `cell` and `pbc`. `coordinates` and `cell` should be in units
 of Angstroms, and the output energies are always in Hartrees
 
-For more detailed examples of usage consult the examples documentation
+For more details consult the examples documentation
 
 .. code-block:: python
 
@@ -34,31 +34,31 @@ For more detailed examples of usage consult the examples documentation
 
     model = torchani.models.ANI2x()
 
-    # Batch of conformers
-    # shape is (molecules, atoms) for znums and (molecules, atoms, 3) for coords
-    znums = torch.tensor([[8, 1, 1]], dtype=torch.long)
-    coords = torch.tensor([[...], [...], [...]], dtype=torch.float)
+    # Batch of molecules
+    # shape is (molecules, atoms) for atomic_nums and (molecules, atoms, 3) for coords
+    atomic_nums = torch.tensor([[8, 1, 1]])
+    coords = torch.tensor([[...], [...], [...]])
 
-    # Average energies over the ensemble for the batch
+    # Average energies over the ensemble, for all molecules
     # Output shape is (molecules,)
-    _, energies = model((species, coords))
+    energies = model((atomic_nums, coords)).energies
 
     # Average atomic energies over the ensemble for the batch
     # Output shape is (molecules, atoms)
-    _, atomic_ene = model.atomic_energies((species, coords))
+    atomic_energies = model.atomic_energies((atomic_nums, coords)).energies
 
     # Individual energies of the members of the ensemble
-    # Output shape is (ensemble-size, molecules) or (ensemble-size, molecules, atoms)
-    _, energies = model((species, coords), ensemble_mean=False)
-    _, atomic_energies = model.atomic_energies((species, coords), ensemble_mean=False)
-
+    # Output shape is (ensemble-size, molecules)
+    energies = model((atomic_nums, coords), ensemble_values=True).energies
 
     # QBC factors are used for active learning, shape is (molecules,)
-    _, energies, qbcs = model.energies_qbcs((species, coords))
+    result = model.energies_qbcs((species, coords))
+    energies = result.energies
+    qbcs = result.qbcs
 
-    # Individual models of the ensemble can be obtained by indexing, they are also
+    # Individual submodels of the ensemble can be obtained by indexing, they are also
     # subclasses of ``ANI``, with the same functionality
-    member = model[0]
+    submodel = model[0]
 """
 
 from functools import partial
@@ -72,6 +72,20 @@ from torchani.neighbors import NeighborlistArg
 from torchani.nn import _ANINetworksDiscardFirstScalar
 from torchani.potentials import TwoBodyDispersionD3, RepulsionXTB
 from torchani.annotations import Device, DType
+
+
+# Protocol used by factory functions that instantiate ani models, here for reference
+class _ModelFactory(tp.Protocol):
+    def __call__(
+        self,
+        model_index: tp.Optional[int] = None,
+        neighborlist: NeighborlistArg = "full_pairwise",
+        strategy: str = "pyaev",
+        periodic_table_index: bool = True,
+        device: Device = None,
+        dtype: DType = None,
+    ) -> ANI:
+        pass
 
 
 def ANI1x(

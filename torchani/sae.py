@@ -1,5 +1,6 @@
 r"""
-Approximate calculation of self atomic energies (SAEs)
+Utilities to calculate self atomic energies (SAEs) via linear regression. It is
+recommended to use GSAEs (Ground State Atomic Energies) for new models instead.
 """
 import typing as tp
 import warnings
@@ -11,6 +12,8 @@ from torch.utils.data import DataLoader
 
 from torchani.datasets import BatchedDataset
 from torchani.transforms import AtomicNumbersToIndices
+
+__all__ = ["calculate_saes"]
 
 
 def calculate_saes(

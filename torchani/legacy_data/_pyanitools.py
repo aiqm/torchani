@@ -1,6 +1,11 @@
 # type: ignore
 # This file is legacy, it should not be type-checked
 # Written by Roman Zubatyuk and Justin S. Smith
+r"""
+This module is *internal* and considered an implementation detail. Functions and classes
+are subject to change at any point. This module is part of the *Legacy API* of TorchANI
+2.0 and should not be used in new code.
+"""
 import os
 
 import h5py

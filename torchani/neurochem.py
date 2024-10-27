@@ -1,8 +1,8 @@
 r"""
-This submodule is considered part of the *Legacy API*. Its not recommended for use with
-new models, and should only be used if needed to interface with previously trained ANI
-models. It contains tools for loading files in the NeuroChem format, the original file
-format used in the first `ANI`_ article.
+This module is part of the *Legacy API* of TorchANI 2.0 and should not be used in new
+code. It should only be used if you need to interface with previously trained ANI models
+in the NeuroChem format. It contains tools for loading files in the NeuroChem format,
+the original file format used in the first `ANI`_ article.
 
 .. _ANI:
     http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract

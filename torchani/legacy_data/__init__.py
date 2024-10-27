@@ -1,61 +1,58 @@
 # type: ignore
 # This file is legacy, it should not be type-checked
-"""Tools for loading, shuffling, and batching ANI datasets
+r"""
+This module is part of the *Legacy API* of TorchANI 2.0 and should not be used in new
+code. It holds tools for loading, shuffling, and batching legacy-style, TorchANI 2.0
 
-The `torchani.data.load(path)` creates an iterable of raw data,
-where species are strings, and coordinates are numpy ndarrays.
+`torchani.data.load(path)` creates an iterable of raw data, where species are strings,
+and coordinates are numpy ndarrays.
 
-You can transform this iterable by using transformations.
-To do a transformation, call `it.transformation_name()`. This
-will return an iterable that may be cached depending on the specific
-transformation.
+You can transform this iterable by using transformations. To do a transformation, call
+`it.transformation_name()`. This will return an iterable that may be cached depending on
+the specific transformation.
 
-Available transformations are listed below:
+Available transformations are:
 
-- `species_to_indices` accepts two different kinds of arguments. It converts
-  species from elements (e. g. "H", "C", "Cl", etc) into internal torchani
-  indices (as returned by :class:`torchani.utils.ChemicalSymbolsToInts`), if
-  its argument is an iterable of species. By default species_to_indices behaves
-  this way, with an argument of ``('H', 'C', 'N', 'O', 'F', 'S', 'Cl')``
-  However, if its argument is the string "periodic_table", then elements are
-  converted into atomic numbers ("periodic table indices") instead. This last
-  option is meant to be used when training networks that already perform a
-  forward pass of :class:`torchani.nn.SpeciesConverter` on their inputs in
-  order to convert elements to internal indices, before processing the
+- `species_to_indices` accepts two different kinds of arguments. It converts species
+  from elements (e. g. "H", "C", "Cl", etc) into internal torchani indices (as returned
+  by :class:`torchani.utils.ChemicalSymbolsToInts`), if its argument is an iterable of
+  species. By default species_to_indices behaves this way, with an argument of ``('H',
+  'C', 'N', 'O', 'F', 'S', 'Cl')`` However, if its argument is the string
+  "periodic_table", then elements are converted into atomic numbers ("periodic table
+  indices") instead. This last option is meant to be used when training networks that
+  already perform a forward pass of :class:`torchani.nn.SpeciesConverter` on their
+  inputs in order to convert elements to internal indices, before processing the
   coordinates.
 
-- `subtract_self_energies` subtracts self energies from all molecules of the
-    dataset. It accepts two different kinds of arguments: You can pass a dict
-    of self energies, in which case self energies are directly subtracted
-    according to the key-value pairs, or a
-    :class:`torchani.utils.EnergyShifter`, in which case the self energies are
-    calculated by linear regression and stored inside the class in the order
-    specified by species_order. By default the function orders by atomic
-    number if no extra argument is provided, but a specific order may be requested.
+- `subtract_self_energies` subtracts self energies from all molecules of the dataset. It
+  accepts two different kinds of arguments: You can pass a dict of self energies, in
+  which case self energies are directly subtracted according to the key-value pairs, or
+  a :class:`torchani.utils.EnergyShifter`, in which case the self energies are
+  calculated by linear regression and stored inside the class in the order specified by
+  species_order. By default the function orders by atomic number if no extra argument is
+  provided, but a specific order may be requested.
 
 - `remove_outliers` removes some outlier energies from the dataset if present.
 
-- `shuffle` shuffles the provided dataset. Note that if the dataset is
-    not cached (i.e. it lives in the disk and not in memory) then this method
-    will cache it before shuffling. This may take time and memory depending on
-    the dataset size. This method may be used before splitting into validation/training
-    shuffle all molecules in the dataset, and ensure a uniform sampling from
-    the initial dataset, and it can also be used during training on a cached
-    dataset of batches to shuffle the batches.
+- `shuffle` shuffles the provided dataset. Note that if the dataset is not cached (i.e.
+  it lives in the disk and not in memory) then this method will cache it before
+  shuffling. This may take time and memory depending on the dataset size. This method
+  may be used before splitting into validation/training shuffle all molecules in the
+  dataset, and ensure a uniform sampling from the initial dataset, and it can also be
+  used during training on a cached dataset of batches to shuffle the batches.
 
-- `cache` cache the result of previous transformations.
-    If the input is already cached this does nothing.
+- `cache` cache the result of previous transformations. If the input is already cached
+  this does nothing.
 
-- `collate` creates batches and pads the atoms of all molecules in each batch
-    with dummy atoms, then converts each batch to tensor. `collate` uses a
-    default padding dictionary:
-    ``{'species': -1, 'coordinates': 0.0, 'forces': 0.0, 'energies': 0.0}`` for
-    padding, but a custom padding dictionary can be passed as an optional
-    parameter, which overrides this default padding. Note that this function
-    returns a generator, it doesn't cache the result in memory.
+- `collate` creates batches and pads the atoms of all molecules in each batch with dummy
+  atoms, then converts each batch to tensor. `collate` uses a default padding
+  dictionary: ``{'species': -1, 'coordinates': 0.0, 'forces': 0.0, 'energies': 0.0}``
+  for padding, but a custom padding dictionary can be passed as an optional parameter,
+  which overrides this default padding. Note that this function returns a generator, it
+  doesn't cache the result in memory.
 
 - `pin_memory` copies the tensor to pinned (page-locked) memory so that later transfer
-    to cuda devices can be done faster.
+  to cuda devices can be done faster.
 
 you can also use `split` to split the iterable to pieces. use `split` as:
 
@@ -66,14 +63,14 @@ you can also use `split` to split the iterable to pieces. use `split` as:
 where None in the end indicate that we want to use all of the rest.
 
 Note that orderings used in :class:`torchani.utils.ChemicalSymbolsToInts` and
-:class:`torchani.nn.SpeciesConverter` should be consistent with orderings used
-in `species_to_indices` and `subtract_self_energies`. To prevent confusion it
-is recommended that arguments to intialize converters and arguments to these
-functions all order elements *by their atomic number* (e. g. if you are working
-with hydrogen, nitrogen and bromine always use ['H', 'N', 'Br'] and never ['N',
-'H', 'Br'] or other variations). It is possible to specify a different custom
-ordering, mainly due to backwards compatibility and to fully custom atom types,
-but doing so is NOT recommended, since it is very error prone.
+:class:`torchani.nn.SpeciesConverter` should be consistent with orderings used in
+`species_to_indices` and `subtract_self_energies`. To prevent confusion it is
+recommended that arguments to intialize converters and arguments to these functions all
+order elements *by their atomic number* (e. g. if you are working with hydrogen,
+nitrogen and bromine always use ['H', 'N', 'Br'] and never ['N', 'H', 'Br'] or other
+variations). It is possible to specify a different custom ordering, mainly due to
+backwards compatibility and to fully custom atom types, but doing so is NOT recommended,
+since it is very error prone.
 
 
 Example:
