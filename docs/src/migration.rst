@@ -89,7 +89,8 @@ If you were previously doing:
     model = torchani.nn.Sequential(aev_computer, neural_networks, energy_shifter)
 
 As an alternative, you can use the torchani ``Assembler`` to create your model. For
-example, to create a model just like ``ANI2x``, but with random weights, use:
+example, to create a model just like ``ANI2x``, but with random weights,
+and using the cuAEV strategy for faster training, use:
 
 .. code-block:: python
 
@@ -98,7 +99,7 @@ example, to create a model just like ``ANI2x``, but with random weights, use:
 
     asm = assembly.Assembler()
     asm.set_symbols(("H", "C", "N", "O"))
-    asm.set_featurizer(radial_terms="ani2x", angular_terms="ani2x", compute_strategy="cuaev")  # cuAEV for faster training
+    asm.set_featurizer(radial_terms="ani2x", angular_terms="ani2x", strategy="cuaev")
     asm.set_atomic_networks(atomics.like_2x)
     asm.set_gsaes_as_self_energies("wb97x-631gd")  # Add ground state atomic energies
     model = asm.assemble()  # The assembled model is ready to train

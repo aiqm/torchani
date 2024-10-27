@@ -80,15 +80,13 @@ python tests/test_infer.py
 ## Usage
 #### CUAEV
 
-Pass `compute_strategy='cuaev'` or `compute_strategy='cuaev-fused'` when constructing an aev_computer, for example:
+Pass `strategy='cuaev'` or `strategy='cuaev-fused'` when constructing an aev_computer, for example:
 ```python
-cuaev_computer = torchani.AEVComputer.from_constants(
-    Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, compute_strategy='cuaev',
+cuaev_computer = AEVComputer.from_constants(
+    Rcr, Rca, EtaR, ShfR, EtaA, Zeta, ShfA, ShfZ, num_species, strategy='cuaev',
 )
 # or
-cuaev_computer = torchani.AEVComputer.like_1x(
-    cutoff_fn="smooth", compute_strategy='cuaev-fused',
-)
+cuaev_computer = AEVComputer.like_1x(cutoff_fn="smooth", strategy='cuaev-fused')
 ```
 
 #### MNP

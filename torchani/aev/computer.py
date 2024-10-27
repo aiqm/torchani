@@ -44,7 +44,7 @@ class AEVComputer(torch.nn.Module):
     aev_length: Final[int]
 
     triu_index: Tensor
-    _compute_strategy: str
+    _strategy: str
     _cuaev_fused_strat_is_avail: bool
     _cuaev_strat_is_avail: bool
     _cuaev_computer_is_init: bool
@@ -54,7 +54,7 @@ class AEVComputer(torch.nn.Module):
         radial_terms: RadialTermArg,
         angular_terms: AngularTermArg,
         num_species: int,
-        compute_strategy: str = "pyaev",
+        strategy: str = "pyaev",
         cutoff_fn: tp.Optional[CutoffArg] = None,
         neighborlist: NeighborlistArg = "full_pairwise",
     ):
@@ -101,22 +101,22 @@ class AEVComputer(torch.nn.Module):
         self._cuaev_computer_is_init = False
 
         # Check that the requested strategy is available
-        if compute_strategy == "pyaev":
+        if strategy == "pyaev":
             pass
-        elif compute_strategy == "cuaev":
+        elif strategy == "cuaev":
             self._check_cuaev_strat_avail(raise_exc=True)
-        elif compute_strategy == "cuaev-fused":
+        elif strategy == "cuaev-fused":
             self._check_cuaev_fused_strat_avail(raise_exc=True)
         else:
-            raise ValueError(f"Unsupported strategy {compute_strategy}")
-        self._compute_strategy = compute_strategy
+            raise ValueError(f"Unsupported strategy {strategy}")
+        self._strategy = strategy
 
     @property
-    def compute_strategy(self) -> str:
-        return self._compute_strategy
+    def strategy(self) -> str:
+        return self._strategy
 
     @torch.jit.export
-    def set_compute_strategy(
+    def set_strategy(
         self,
         strat: str = "pyaev",
     ) -> None:
@@ -130,7 +130,7 @@ class AEVComputer(torch.nn.Module):
                 raise ValueError("cuAEV strategy is not available")
         else:
             raise ValueError("Unknown compute strategy")
-        self._compute_strategy = strat
+        self._strategy = strat
 
     def _check_cuaev_strat_avail(self, raise_exc: bool = False) -> bool:
         if not CUAEV_IS_INSTALLED:
@@ -168,7 +168,7 @@ class AEVComputer(torch.nn.Module):
             r"#  " f"radial_length={self.radial_length} ({radial_perc})",
             r"#  " f"angular_length={self.angular_length} ({angular_perc})",
             f"num_species={self.num_species},",
-            f"compute_strategy={self._compute_strategy},",
+            f"strategy={self._strategy},",
         ]
         return " \n".join(parts)
 
@@ -237,19 +237,19 @@ class AEVComputer(torch.nn.Module):
         # central cell for pbc calculations.
 
         cutoff = self.radial_terms.cutoff
-        if self._compute_strategy == "pyaev":
+        if self._strategy == "pyaev":
             neighbors = self.neighborlist(species, coords, cutoff, cell, pbc)
             aev = self._compute_pyaev(element_idxs=species, neighbors=neighbors)
-        elif self._compute_strategy == "cuaev":
+        elif self._strategy == "cuaev":
             neighbors = self.neighborlist(species, coords, cutoff, cell, pbc)
             aev = self._compute_cuaev_with_half_nbrlist(species, coords, neighbors)
-        elif self._compute_strategy == "cuaev-fused":
+        elif self._strategy == "cuaev-fused":
             if pbc is not None:
                 if pbc.any():
                     raise ValueError("cuAEV-fused doesn't support PBC")
             aev = self._compute_cuaev(species, coords)
         else:
-            raise RuntimeError(f"Invalid compute strategy {self._compute_strategy}")
+            raise RuntimeError(f"Invalid compute strategy {self._strategy}")
         return SpeciesAEV(species, aev)
 
     def _compute_pyaev(
@@ -572,7 +572,7 @@ class AEVComputer(torch.nn.Module):
         angular_shifts: tp.Sequence[float],
         angle_sections: tp.Sequence[float],
         num_species: int,
-        compute_strategy: str = "pyaev",
+        strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",
         neighborlist: NeighborlistArg = "full_pairwise",
     ) -> tpx.Self:
@@ -596,7 +596,7 @@ class AEVComputer(torch.nn.Module):
             angle_sections (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
                 equation (4) in the `ANI paper`_.
             num_species (int): Number of supported atom types.
-            compute_strategy (str): Compute strategy to use, one of 'pyaev', 'cuaev',
+            strategy (str): Compute strategy to use, one of 'pyaev', 'cuaev',
                 'cuaev-fused'
 
         .. _ANI paper:
@@ -618,7 +618,7 @@ class AEVComputer(torch.nn.Module):
                 cutoff_fn=cutoff_fn,
             ),
             num_species=num_species,
-            compute_strategy=compute_strategy,
+            strategy=strategy,
             neighborlist=neighborlist,
         )
 
@@ -626,7 +626,7 @@ class AEVComputer(torch.nn.Module):
     def like_1x(
         cls,
         num_species: int = 4,
-        compute_strategy: str = "pyaev",
+        strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",
         neighborlist: NeighborlistArg = "full_pairwise",
         # Radial args
@@ -660,7 +660,7 @@ class AEVComputer(torch.nn.Module):
                 cutoff_fn=cutoff_fn,
             ),
             num_species=num_species,
-            compute_strategy=compute_strategy,
+            strategy=strategy,
             neighborlist=neighborlist,
         )
 
@@ -668,7 +668,7 @@ class AEVComputer(torch.nn.Module):
     def like_2x(
         cls,
         num_species: int = 7,
-        compute_strategy: str = "pyaev",
+        strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",
         neighborlist: NeighborlistArg = "full_pairwise",
         # Radial args
@@ -702,6 +702,6 @@ class AEVComputer(torch.nn.Module):
                 cutoff_fn=cutoff_fn,
             ),
             num_species=num_species,
-            compute_strategy=compute_strategy,
+            strategy=strategy,
             neighborlist=neighborlist,
         )

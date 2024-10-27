@@ -278,7 +278,7 @@ if __name__ == "__main__":
                 "neighborlist", model.aev_computer.neighborlist.forward
             )
             model.forward = time_func("forward", model.forward)  # type: ignore
-            Calculator._get_ani_forces = time_func(  # type: ignore
+            Calculator._forces = time_func(  # type: ignore
                 "backward", Calculator._get_ani_forces
             )
         all_trials = []

@@ -34,7 +34,7 @@ def _build_ani2x(
         strat = "cuaev-fused"
     else:
         strat = "pyaev"
-    model = ANI2x(model_index=idx, compute_strategy=strat)
+    model = ANI2x(model_index=idx, strategy=strat)
     if infer:
         model = model.to_infer_model(mnp)
     model = model.to(device)

@@ -26,7 +26,7 @@ class NNPotential(Potential):
         neighbors: NeighborData,
         _coords: tp.Optional[Tensor] = None,
     ) -> Tensor:
-        strat = self.aev_computer._compute_strategy
+        strat = self.aev_computer._strategy
         if strat == "pyaev":
             return self.aev_computer._compute_pyaev(elem_idxs, neighbors)
         elif strat == "cuaev":

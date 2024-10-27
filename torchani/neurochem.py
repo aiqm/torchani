@@ -66,7 +66,7 @@ class NeurochemLayerSpec:
 
 def load_aev_computer_and_symbols(
     consts_file: StrPath,
-    compute_strategy: str = "pyaev",
+    strategy: str = "pyaev",
     neighborlist: NeighborlistArg = "full_pairwise",
     cutoff_fn: CutoffArg = "cosine",
 ) -> tp.Tuple[AEVComputer, tp.Tuple[str, ...]]:
@@ -81,7 +81,7 @@ def load_aev_computer_and_symbols(
         angular_shifts=consts.angular_shifts,
         angle_sections=consts.angle_sections,
         num_species=len(symbols),
-        compute_strategy=compute_strategy,
+        strategy=strategy,
         cutoff_fn=cutoff_fn,
         neighborlist=neighborlist,
     )
@@ -409,11 +409,11 @@ def download_model_parameters(
 def modules_from_info(
     info: NeurochemInfo,
     model_index: tp.Optional[int] = None,
-    compute_strategy: str = "pyaev",
+    strategy: str = "pyaev",
 ) -> tp.Tuple[AEVComputer, AtomicContainer, EnergyAdder, tp.Sequence[str]]:
     aev_computer, symbols = load_aev_computer_and_symbols(
         info.const,
-        compute_strategy=compute_strategy,
+        strategy=strategy,
     )
     adder = load_energy_adder(info.sae)
 
@@ -440,7 +440,7 @@ def modules_from_info(
 def modules_from_model_name(
     model_name: str,
     model_index: tp.Optional[int] = None,
-    compute_strategy: str = "pyaev",
+    strategy: str = "pyaev",
 ) -> tp.Tuple[AEVComputer, AtomicContainer, EnergyAdder, tp.Sequence[str]]:
     r"""
     Creates the necessary modules to generate a pre-trained ANI model, parsing the data
@@ -450,14 +450,14 @@ def modules_from_model_name(
     return modules_from_info(
         NeurochemInfo.from_model_name(model_name),
         model_index,
-        compute_strategy=compute_strategy,
+        strategy=strategy,
     )
 
 
 def modules_from_info_file(
     info_file: Path,
     model_index: tp.Optional[int] = None,
-    compute_strategy: str = "pyaev",
+    strategy: str = "pyaev",
 ) -> tp.Tuple[AEVComputer, AtomicContainer, EnergyAdder, tp.Sequence[str]]:
     r"""
     Creates the necessary modules to generate a pre-trained ANI model, parsing the data
@@ -466,21 +466,21 @@ def modules_from_info_file(
     return modules_from_info(
         NeurochemInfo.from_info_file(info_file),
         model_index,
-        compute_strategy=compute_strategy,
+        strategy=strategy,
     )
 
 
 def load_model_from_info_file(
     info_file: StrPath,
     model_index: tp.Optional[int] = None,
-    compute_strategy: str = "pyaev",
+    strategy: str = "pyaev",
     periodic_table_index: bool = True,
 ) -> ANI:
     info_file = Path(info_file).resolve()
     components = modules_from_info_file(
         info_file,
         model_index,
-        compute_strategy=compute_strategy,
+        strategy=strategy,
     )
     aev_computer, neural_networks, energy_adder, symbols = components
     return ANI(
@@ -495,13 +495,13 @@ def load_model_from_info_file(
 def load_model_from_name(
     model_name: str,
     model_index: tp.Optional[int] = None,
-    compute_strategy: str = "pyaev",
+    strategy: str = "pyaev",
     periodic_table_index: bool = True,
 ) -> ANI:
     components = modules_from_model_name(
         model_name,
         model_index,
-        compute_strategy=compute_strategy,
+        strategy=strategy,
     )
     aev_computer, neural_networks, energy_adder, symbols = components
     return ANI(

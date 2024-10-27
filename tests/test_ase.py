@@ -1,3 +1,4 @@
+import torch
 import shutil
 import typing as tp
 from pathlib import Path
@@ -122,7 +123,7 @@ class TestASE(ANITest):
     )
     def testAnalyticalStressMatchNumerical(
         self,
-        stress_partial_fdotr,
+        use_fdotr,
         repdisp,
         neighborlist,
     ):
@@ -132,11 +133,11 @@ class TestASE(ANITest):
                     "Cell used in this test is too small for dispersion potential"
                 )
             model = self._setup(
-                ANIdr(model_index=0, neighborlist=neighborlist).double()
+                ANIdr(model_index=0, neighborlist=neighborlist, dtype=torch.double)
             )
         else:
             model = self._setup(
-                ANI1x(model_index=0, neighborlist=neighborlist).double()
+                ANI1x(model_index=0, neighborlist=neighborlist, dtype=torch.double)
             )
         # Run NPT dynamics for some steps and periodically check that the
         # numerical and analytical stresses agree up to a given
@@ -154,7 +155,7 @@ class TestASE(ANITest):
             velocities=np.full((48, 3), 1e-15),  # Set velocities to very small value
             pbc=True,
         )
-        calculator = model.ase(stress_partial_fdotr=stress_partial_fdotr)
+        calculator = model.ase(stress_kind="fdotr" if use_fdotr else "scaling")
         benzene.calc = calculator
         dyn = NPTBerendsen(
             benzene,

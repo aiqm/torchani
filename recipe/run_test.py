@@ -21,7 +21,7 @@ if torch.cuda.is_available() and (os.environ.get("CONDA_BUILD_STATE", None) == "
     )
     species = torch.tensor([[1, 0, 0, 0, 0]], device="cuda")
     aev = aev.cuda()
-    cuaev = AEVComputer.like_1x(compute_strategy="cuaev-fused").cuda()
+    cuaev = AEVComputer.like_1x(strategy="cuaev-fused").cuda()
     aevs_cu = cuaev((species, coordinates)).aevs
     aevs_py = aev((species, coordinates)).aevs
     assert ((aevs_cu - aevs_py) < 1e-4).all()

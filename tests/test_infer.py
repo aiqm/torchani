@@ -59,7 +59,7 @@ class TestInfer(ANITest):
             strat = "cuaev-fused"
         else:
             strat = "pyaev"
-        model = ANI2x(model_index=idx, compute_strategy=strat)
+        model = ANI2x(model_index=idx, strategy=strat)
         if infer:
             model = model.to_infer_model(mnp)
         model = self._setup(model)

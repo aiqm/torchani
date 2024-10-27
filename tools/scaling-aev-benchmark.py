@@ -131,7 +131,7 @@ def benchmark(
 ):
     global runcounter
     global last_py_speed
-    runname_prefix = aev_comp.compute_strategy.replace("aev", "")
+    runname_prefix = aev_comp.strategy.replace("aev", "")
     runname = f"{runname_prefix} aev fd{'+bd' if runbackward else''}"
     items = [
         f"{(runcounter+1):02} {runname}",
@@ -217,7 +217,7 @@ def benchmark(
     others_time = total_time - force_time - forward_time
 
     if verbose:
-        if aev_comp.compute_strategy == "cuaev-fused":
+        if aev_comp.strategy == "cuaev-fused":
             if last_py_speed is not None:
                 speed_up = last_py_speed / total_time
                 speed_up = f"{speed_up:.2f}"
@@ -532,12 +532,12 @@ if __name__ == "__main__":
     nnp_ref = torchani.models.ANI2x(
         model_index=None,
         neighborlist="cell_list" if args.use_cell_list else "full_pairwise",
-        compute_strategy=args.reference_strategy,
+        strategy=args.reference_strategy,
     ).to(device)
 
     nnp_cuaev = torchani.models.ANI2x(
-        model_index=None, compute_strategy="cuaev-fused"
-    ).to(device)
+        model_index=None, strategy="cuaev-fused", device=device
+    )
     maxatoms = [6000, 10000]
 
     if args.nsight:
@@ -547,7 +547,7 @@ if __name__ == "__main__":
 
     neural_networks = nnp_ref.neural_networks
     num_models = len(neural_networks)
-    single_model = neural_networks[0]
+    single_model = neural_networks.member(0)
     if args.infer_model:
         neural_networks = neural_networks.to_infer_model(use_mnp=args.mnp).to(device)
         single_model = single_model.to_infer_model(use_mnp=args.mnp).to(device)

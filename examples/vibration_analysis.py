@@ -22,7 +22,7 @@ from torchani.utils import get_atomic_masses
 ###############################################################################
 # Let's now manually specify the device we want TorchANI to run:
 device = torch.device("cpu")
-model = ANI1x().to(device=device, dtype=torch.double)
+model = ANI1x(device=device, dtype=torch.double)
 
 ###############################################################################
 # Let's first construct a water molecule and do structure optimization:

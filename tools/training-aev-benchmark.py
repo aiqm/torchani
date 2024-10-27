@@ -76,7 +76,7 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
     if args.nsight and runcounter >= 0:
         torch.cuda.nvtx.range_push(args.runname)
     synchronize = True
-    _model = ANI1x(model_index=0, compute_strategy=strat)
+    _model = ANI1x(model_index=0, strategy=strat)
     aev_computer = _model.aev_computer
     nn = _model.neural_networks
     model = torch.nn.Sequential(aev_computer, nn).to(args.device)
