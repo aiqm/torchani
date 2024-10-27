@@ -126,7 +126,7 @@ class Neighborlist(torch.nn.Module):
             if shift_values is not None:
                 shift_values = shift_values.index_select(0, in_cutoff)
         else:
-            if shift_values is None:
+            if shift_values is not None:
                 raise ValueError("PBC can't use an infinite cutoff")
             screened_neighbor_indices = input_neighbor_indices
 
