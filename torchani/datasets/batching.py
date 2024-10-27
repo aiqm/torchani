@@ -71,15 +71,14 @@ class BatchedDataset(torch.utils.data.Dataset[Conformers]):
     def _limit_batches(
         self, batches: tp.List[_T], limit: tp.Union[int, float]
     ) -> tp.List[_T]:
-        if limit != 1.0:
-            if isinstance(limit, float):
-                if not (0.0 <= limit < 1.0):
-                    raise ValueError("limit must lie in (0.0, 1.0)")
-                batches = batches[: int(limit * len(batches))]
-            elif isinstance(limit, int):
-                if not (0 <= limit < len(batches)):
-                    raise ValueError("limit must lie in (0, num_batches)")
-                batches = batches[: limit]
+        if isinstance(limit, float):
+            if not (0.0 <= limit <= 1.0):
+                raise ValueError("limit must lie in (0.0, 1.0)")
+            batches = batches[: int(limit * len(batches))]
+        elif isinstance(limit, int):
+            if not (0 <= limit <= len(batches)):
+                raise ValueError("limit must lie in (0, num_batches)")
+            batches = batches[: limit]
         return batches
 
 
