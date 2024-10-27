@@ -3,15 +3,16 @@ Migrating from TorchANI 2.0
 
 If you were using a previous version of TorchANI there may be some necessary
 modifications to your code. We strive to keep backwards compatibility for the most part,
-but some breaking changes were necessary in order to support improvements in the models,
-the dataset loading and managing procedure, etc.
+but some minor breaking changes were necessary in order to support improvements in the
+models, the dataset loading and managing procedure, etc.
 
 Minor versions changes of ``torchani`` will attempt to be fully backwards compatible
 going forward, and breaking changes will be reserved for major releases.
 
-Here we document the most important breaking changes, and what you can do to modify your
-code to be compatible with version 3.0. Additionally, we provide recommendations to use
-the new, more user-friendly API, when appropriate.
+Here we document the most important changes, and what you can do to modify your code to
+be compatible with version 3.0. In many cases code will run without changes at all, but
+some warnings are emitted if the old, legacy API is being used, so we also provide
+recommendations to use the new, improved API, when appropriate.
 
 General usage of built-in ANI models
 ------------------------------------
@@ -29,7 +30,7 @@ If you were previously calling torchani models as:
     # or
     energies = model((species_indices, coords)).energies
 
-You can now do:
+you should now do this instead:
 
 .. code-block:: python
     
@@ -44,10 +45,9 @@ You can now do:
 Here "sp" stands for a "single-point calculation" (typical chemistry jargon). This was
 changed since it allows models to output more than a single scalar value, which is
 necessary e.g. for models that output charges. Additionally, the new version is simpler
-and less error prone, and it allows for outputting forces and hessians without any
-familiarity with torch (no need to do anything with the ``requires_grad`` flag of
-tensors). Calling a model directly is still possible, but *is strongly discouraged and
-may be removed in the future*.
+and allows for outputting forces and hessians without any familiarity with torch (no
+need to do anything with the ``requires_grad`` flag of tensors). Calling a model
+directly is still possible, but *is strongly discouraged*.
 
 To output other quantities of interest use:
 
@@ -59,18 +59,61 @@ To output other quantities of interest use:
     forces = result["forces"]
     hessians = result["hessians"]
 
-TODO: Add more stuff
+The `AEVComputer`, ``ANIModel``, ``Ensemble``, and ``SpeciesConverter`` classes
+-------------------------------------------------------------------------------
 
-The `AEVComputer`, ``torchani.ANIModel`` and ``torchani.SpeciesConverter`` classes
-----------------------------------------------------------------------------------
+If you were previously using these classes as:
 
-TODO: Add
+.. code-block:: python
+    
+    import torchani
+    aevc = torchani.AEVComputer(...)
+    animodel = torchani.nn.ANIModel(...)
+    ensemble = torchani.nn.Ensemble(...)
+    converter = torchani.nn.SpeciesConverter(...)
 
+    _, idxs = converter((species, coords), cell, pbc)
+    _, aevs = aevc((idxs, coords), cell, pbc)
+    _, energies = animodel((idxs, aevs), cell, pbc)
+    _, energies = ensemble((idxs, aevs), cell, pbc)
+
+you should now do this instead:
+
+.. code-block:: python
+    
+    import torchani
+    aevc = torchani.AEVComputer(...)
+    # Note that these classes have different names
+    ani_nets = torchani.nn.ANINetworks(...)
+    ensemble = torchani.nn.ANIEnsemble(...)
+    converter = torchani.utils.AtomicNumsToIdxs(...)
+
+    idxs = converter(atomic_nums)
+    aevs = aevc(idxs, coords, cell, pbc)
+    energies = animodel(idxs, aevs)
+    energies = ensemble(ixs, aevs)
+
+The old API is still supported but *strongly discouraged*. Additionally, it is possible
+(and recommended) to separate the AEVComputer and Neighborlist calculation like this:
+
+.. code-block:: python
+    
+    import torchani
+    neighborlist = torchani.neighbors.AllPairs(...)
+    aevc = torchani.AEVComputer(...)
+    converter = torchani.utils.AtomicNumsToIdxs(...)
+
+    idxs = converter(atomic_nums)
+    neighbors = neighborlist(idxs, coords, cell, pbc)
+    aevc = aevc.compute(idxs, neighbors)
 
 Usage of ``torchani.data``
 --------------------------
 
-TODO: Add
+This module is deprecated, you can still access it under ``torchani.legacy_data``, but
+its use is discouraged, and moving forward it will not be maintained. Use
+``torchani.datasets`` instead (it is similar to ``torchvision.datasets`` which you may
+be familiar with).
 
 Creating models for training with ``torchani.nn.Sequential``
 ------------------------------------------------------------
@@ -84,13 +127,13 @@ If you were previously doing:
 
     import torchani
     aev_computer = torchani.AEVComputer(...)
-    neural_networks = torchani.ANINetworks(...)
+    neural_networks = torchani.ANIModel(...)
     energy_shifter = torchani.EnergyShifter(...)
     model = torchani.nn.Sequential(aev_computer, neural_networks, energy_shifter)
 
 As an alternative, you can use the torchani ``Assembler`` to create your model. For
-example, to create a model just like ``ANI2x``, but with random weights,
-and using the cuAEV strategy for faster training, use:
+example, to create a model just like ``ANI2x``, but with random weights, and using the
+cuAEV strategy for faster training, do this:
 
 .. code-block:: python
 
@@ -102,16 +145,16 @@ and using the cuAEV strategy for faster training, use:
     asm.set_featurizer(radial_terms="ani2x", angular_terms="ani2x", strategy="cuaev")
     asm.set_atomic_networks(atomics.like_2x)
     asm.set_gsaes_as_self_energies("wb97x-631gd")  # Add ground state atomic energies
-    model = asm.assemble()  # The assembled model is ready to train
+    model = asm.assemble()  # The returned model is ready to train
 
-This takes care of all the gotchas of building a neural network model (for instance, it
-ensures the AEVComputer is initialized with the the correct number of elements, that it
-matches the initial size of the networks, and that the internal order of the element
-idxs is correct for all modules). It is a pretty customizable procedure, and has good
-defaults. It also avoids having to return irrelevant outputs and accept irrelevant
-inputs.
+This takes care of all the gotchas of building a model (for instance, it ensures the
+AEVComputer is initialized with the the correct number of elements, that it matches the
+initial size of the networks, and that the internal order of the element idxs is the
+same for all modules). It is a pretty customizable procedure, and has good defaults. It
+also avoids having to return irrelevant outputs and accept irrelevant inputs.
 
-If you want even more flexibility, we recommend you create your ``torch.nn.Module``:
+If you want even more flexibility, we recommend you create your own ``torch.nn.Module``,
+which is way easier than it sounds. As an example:
 
 .. code-block:: python
 
@@ -120,18 +163,20 @@ If you want even more flexibility, we recommend you create your ``torch.nn.Modul
 
     class Model(Module):
         def __init__(self):
-            self.converter = torchani.SpeciesConverter(...)
-            self.featurizer = torchani.AEVComputer(...)
-            self.nn = torchani.ANINetworks(...)
-            self.adder = torchani.EnergyAdder(...)
+            self.converter = torchani.utils.AtomicNumsToIdxs(...)
+            self.neighborlist = torchani.neighbors.AllPairs(...)
+            self.aevc = torchani.aev.AEVComputer(...)
+            self.nn = torchani.nn.ANINetworks(...)
+            self.adder = torchani.potentials.EnergyAdder(...)
 
         def forward(self, atomic_nums, coords, cell, pbc):
-            elem_idxs = self.converter(atomic_nums)
-            aevs = self.featurizer(elem_idxs, coords, cell, pbc)
-            energies = self.nn(elem_idxs, aevs)
-            return energies + self.adder(elem_idxs)
+            idxs = self.converter(atomic_nums)
+            neighbors = self.neighborlist(idxs, coords, cell, pbc)
+            aevs = self.aevc(idxs, neighbors)
+            energies = self.nn(idxs, aevs)
+            energies += self.adder(idxs)
+            return energies
 
     model = Model()
 
-This gives you the full flexibility of ``torch``, but be careful with potential
-pitfalls.
+This gives you the full flexibility of ``torch``, at the cost of additional complexity.

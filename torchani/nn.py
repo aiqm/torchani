@@ -1,5 +1,6 @@
 r"""
-Core modules used by the ANI-style models
+Modules that represent groups of element-specific neural networks, and perform different
+reduction operations over them.
 """
 
 import warnings
@@ -16,22 +17,25 @@ from torchani.infer import BmmEnsemble, InferModel
 
 class ANINetworks(AtomicContainer):
     r"""
-    Calculate output scalars by iterating over atomic networks, given input features
+    Predict molecular or atomic scalars from a set of element-specific atomic networks
 
-    When computing scalars, different elements can use different modules or share the
-    same module. ANINetworks will iterate over the given networks and calculate the
-    corresponding scalars. If ``atomic=True`` then the outputs will be added over the
-    network to obtain molecular quantities.
+    ``ANINetworks`` will iterate over atomic networks and calculate the corresponding
+    atomic scalars. By default the outputs are summed over atoms to obtain molecular
+    quantities. This can be disabled with ``atomic=True``. If you want to allow
+    different elements to map to the same network, pass ``alias=True``, otherwise
+    elemetns are required to be mapped to different, element-specific networks.
 
     .. warning::
 
-        The species input to this module must be indexed in 0, 1, 2, 3, ..., and not
+        The species input to this module must be indexed with 0, 1, 2, 3, ..., and not
         with atomic numbers.
 
     Arguments:
         modules (dict[str, AtomicNetwork]): symbol - network pairs for each supported
             element. Different elements will share networks if the same ref is used for
             different keys
+        alias (bool): Allow the class to map different elements to the same atomic
+            network.
     """
 
     # Needed for bw compatibility
@@ -55,10 +59,12 @@ class ANINetworks(AtomicContainer):
             state_dict[new_key] = state_dict.pop(k)
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
-    def __init__(self, modules: tp.Dict[str, AtomicNetwork]):
+    def __init__(self, modules: tp.Dict[str, AtomicNetwork], alias: bool = False):
         super().__init__()
         if any(s not in PERIODIC_TABLE for s in modules):
             raise ValueError("All modules should be mapped to valid chemical symbols")
+        if not alias and len(set(id(m) for m in modules.values())) != len(modules):
+            raise ValueError("Symbols map to same module. If intended use `alias=True`")
         self.atomics = torch.nn.ModuleDict(modules)
         self.num_species = len(self.atomics)
         self.total_members_num = 1
@@ -66,31 +72,43 @@ class ANINetworks(AtomicContainer):
 
     def forward(
         self,
-        species_aev: tp.Tuple[Tensor, Tensor],
+        elem_idxs: Tensor,
+        aevs: Tensor,
         atomic: bool = False,
-    ) -> SpeciesEnergies:
-        species, aev = species_aev
-        assert species.shape == aev.shape[:-1]
-        species_ = species.flatten()
-        aev = aev.flatten(0, 1)
-        output = aev.new_zeros(species_.shape)
+    ) -> Tensor:
+        assert elem_idxs.shape == aevs.shape[:-1]
+        flat_elem_idxs = elem_idxs.flatten()
+        aev = aevs.flatten(0, 1)
+        scalars = aev.new_zeros(flat_elem_idxs.shape)
         for i, m in enumerate(self.atomics.values()):
-            midx = (species_ == i).nonzero().view(-1)
-            if midx.shape[0] > 0:
-                input_ = aev.index_select(0, midx)
-                output.index_add_(0, midx, m(input_).view(-1))
-        output = output.view_as(species)
-        if not atomic:
-            output = output.sum(dim=-1)
-        return SpeciesEnergies(species, output)
+            selected_idxs = (flat_elem_idxs == i).nonzero().view(-1)
+            if selected_idxs.shape[0] > 0:
+                input_ = aev.index_select(0, selected_idxs)
+                scalars.index_add_(0, selected_idxs, m(input_).view(-1))
+        scalars = scalars.view_as(elem_idxs)
+        if atomic:
+            return scalars
+        return scalars.sum(dim=1)
 
     @torch.jit.unused
     def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
         return InferModel(self, use_mnp=use_mnp)
 
+    # Legacy API
+    def call(self, species_aevs: tp.Tuple[Tensor, Tensor]) -> SpeciesEnergies:
+        warnings.warn(".call is a deprecated API and will be removed in the future")
+        species, aevs = species_aevs
+        return SpeciesEnergies(species, self(species, aevs))
 
-class Ensemble(AtomicContainer):
-    """Compute the average output of a sequence of AtomicContainer"""
+
+class ANIEnsemble(AtomicContainer):
+    r"""
+    Calculate output scalars by averaging over a set of AtomicContainer
+
+    Arguments:
+        modules (iterable[AtomicContainer]): Set of networks to average.
+        repeats (bool): Allow repeated networks (False by default)
+    """
 
     # Needed for bw compatibility
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:
@@ -101,40 +119,31 @@ class Ensemble(AtomicContainer):
                 state_dict["".join((prefix, "members.", suffix))] = state_dict.pop(k)
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
-    def __init__(self, modules: tp.Sequence[AtomicContainer]):
+    def __init__(self, modules: tp.Iterable[AtomicContainer], repeats: bool = False):
         super().__init__()
+        if not repeats and len(set(map(id, modules))) != len(tuple(modules)):
+            raise ValueError("Modules are repeated. If intended use `repeats=True`")
         self.members = torch.nn.ModuleList(modules)
         self.total_members_num = len(self.members)
         self.active_members_idxs = list(range(self.total_members_num))
+        self.num_species = next(iter(modules)).num_species
+        if any(m.num_species != self.num_species for m in modules):
+            raise ValueError("All modules must support the same number of elements")
 
-        if any(m.num_species != modules[0].num_species for m in modules):
-            raise ValueError(
-                "All modules in the ensemble must support the same number of species"
-            )
-        self.num_species = modules[0].num_species
-
-    def forward(
-        self,
-        species_aevs: tp.Tuple[Tensor, Tensor],
-        atomic: bool = False,
-    ) -> SpeciesEnergies:
-        elem_idxs, aevs = species_aevs
+    def forward(self, elem_idxs: Tensor, aevs: Tensor, atomic: bool = False) -> Tensor:
         if atomic:
-            energies = aevs.new_zeros(elem_idxs.shape)
+            scalars = aevs.new_zeros(elem_idxs.shape)
         else:
-            energies = aevs.new_zeros(elem_idxs.shape[0])
+            scalars = aevs.new_zeros(elem_idxs.shape[0])
         for j, nnp in enumerate(self.members):
             if j in self.active_members_idxs:
-                energies += nnp((elem_idxs, aevs), atomic=atomic)[1]
-        energies = energies / self.get_active_members_num()
-        return SpeciesEnergies(elem_idxs, energies)
+                scalars += nnp(elem_idxs, aevs, atomic=atomic)
+        return scalars / self.get_active_members_num()
 
     def ensemble_values(
-        self,
-        species_aevs: tp.Tuple[Tensor, Tensor],
-        atomic: bool = False,
+        self, elem_idxs: Tensor, aevs: Tensor, atomic: bool = False
     ) -> Tensor:
-        elem_idxs, aevs = species_aevs
+        r"""Don't reduce over the set of networks"""
         size = len(self.active_members_idxs)
         if atomic:
             energies = aevs.new_zeros((size, elem_idxs.shape[0], elem_idxs.shape[1]))
@@ -143,7 +152,7 @@ class Ensemble(AtomicContainer):
         idx = 0
         for j, nnp in enumerate(self.members):
             if j in self.active_members_idxs:
-                energies[idx] = nnp((elem_idxs, aevs), atomic=atomic)[1]
+                energies[idx] = nnp(elem_idxs, aevs, atomic=atomic)
                 idx += 1
         return energies
 
@@ -156,48 +165,6 @@ class Ensemble(AtomicContainer):
         if use_mnp:
             return InferModel(self, use_mnp=True)
         return BmmEnsemble(self)
-
-
-# Dummy model that just returns zeros
-class DummyANINetworks(ANINetworks):
-    def forward(
-        self,
-        species_aev: tp.Tuple[Tensor, Tensor],
-        atomic: bool = False,
-    ) -> SpeciesEnergies:
-        elem_idxs, aevs = species_aev
-        if atomic:
-            energies = aevs.new_zeros(elem_idxs.shape)
-        else:
-            energies = aevs.new_zeros(elem_idxs.shape[0])
-        return SpeciesEnergies(elem_idxs, energies)
-
-
-# Hack: Grab a network with "bad first scalar", discard it and only outputs 2nd
-class _ANINetworksDiscardFirstScalar(ANINetworks):
-    def forward(
-        self,
-        species_aev: tp.Tuple[Tensor, Tensor],
-        atomic: bool = False,
-    ) -> SpeciesEnergies:
-        species, aev = species_aev
-        assert species.shape == aev.shape[:-1]
-        species_ = species.flatten()
-        aev = aev.flatten(0, 1)
-        output = aev.new_zeros(species_.shape)
-        for i, m in enumerate(self.atomics.values()):
-            midx = (species_ == i).nonzero().view(-1)
-            if midx.shape[0] > 0:
-                input_ = aev.index_select(0, midx)
-                output.index_add_(0, midx, m(input_)[:, 1].view(-1))
-        output = output.view_as(species)
-        if not atomic:
-            output = output.sum(dim=-1)
-        return SpeciesEnergies(species, output)
-
-    @torch.jit.unused
-    def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
-        return self
 
 
 class SpeciesConverter(torch.nn.Module):
@@ -248,12 +215,43 @@ class SpeciesConverter(torch.nn.Module):
         return elem_idxs.to(atomic_nums.device)
 
 
+# Hack: ANINetworks that return zeros
+class _ZeroANINetworks(ANINetworks):
+    def forward(self, elem_idxs: Tensor, aevs: Tensor, atomic: bool = False) -> Tensor:
+        if atomic:
+            return aevs.new_zeros(elem_idxs.shape)
+        return aevs.new_zeros(elem_idxs.shape[0])
+
+
+# Hack: Wrapper that Grabs a network with "bad first scalar", and discards it
+class _ANINetworksDiscardFirstScalar(ANINetworks):
+    def forward(self, elem_idxs: Tensor, aevs: Tensor, atomic: bool = False) -> Tensor:
+        assert elem_idxs.shape == aevs.shape[:-1]
+        flat_elem_idxs = elem_idxs.flatten()
+        aev = aevs.flatten(0, 1)
+        scalars = aev.new_zeros(flat_elem_idxs.shape)
+        for i, m in enumerate(self.atomics.values()):
+            selected_idxs = (flat_elem_idxs == i).nonzero().view(-1)
+            if selected_idxs.shape[0] > 0:
+                input_ = aev.index_select(0, selected_idxs)
+                scalars.index_add_(0, selected_idxs, m(input_)[:, 1].view(-1))
+        scalars = scalars.view_as(elem_idxs)
+        if atomic:
+            return scalars
+        return scalars.sum(dim=1)
+
+    @torch.jit.unused
+    def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
+        return self
+
+
+# Legacy API
 class Sequential(torch.nn.ModuleList):
     """Modified Sequential module that accept Tuple type as input"""
 
     def __init__(self, *modules):
-        super().__init__(modules)
         warnings.warn("Use of `torchani.nn.Sequential` is strongly discouraged.")
+        super().__init__(modules)
 
     def forward(
         self,
@@ -262,15 +260,35 @@ class Sequential(torch.nn.ModuleList):
         pbc: tp.Optional[Tensor] = None,
     ):
         for module in self:
-            if hasattr(module, "neighborlist"):
-                input_ = module(input_, cell=cell, pbc=pbc)
-            else:
-                input_ = module(input_)
+            input_ = module(input_, cell=cell, pbc=pbc)
         return input_
 
 
+class Ensemble(ANIEnsemble):
+    def __init__(self, modules: tp.Any) -> None:
+        warnings.warn("torchani.Ensemble is deprecated, use torchani.nn.ANIEnsemble")
+        super().__init__(modules, repeats=True)
+
+    # Signature is incompatible since this class is legacy
+    def forward(  # type: ignore
+        self,
+        species_aevs: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> SpeciesEnergies:
+        return self.call(species_aevs)
+
+
 class ANIModel(ANINetworks):
-    def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
-        warnings.warn(
-            "torchani.nn.ANIModel is deprecated, please use torchani.nn.ANINetworks"
-        )
+    def __init__(self, modules: tp.Any) -> None:
+        warnings.warn("torchani.ANIModel is deprecated, use torchani.nn.ANINetworks")
+        super().__init__(modules, alias=True)
+
+    # Signature is incompatible since this class is legacy
+    def forward(  # type: ignore
+        self,
+        species_aevs: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> SpeciesEnergies:
+        return self.call(species_aevs)

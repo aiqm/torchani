@@ -26,15 +26,13 @@ class AtomicContainer(torch.nn.Module):
 
     def forward(
         self,
-        species_aev: tp.Tuple[Tensor, Tensor],
+        elem_idxs: Tensor,
+        aevs: Tensor,
         atomic: bool = False,
-    ) -> tp.Tuple[Tensor, Tensor]:
-        elem_idxs, aevs = species_aev
+    ) -> Tensor:
         if atomic:
-            energies = aevs.new_zeros(elem_idxs.shape)
-        else:
-            energies = aevs.new_zeros(elem_idxs.shape[0])
-        return (elem_idxs, energies)
+            return aevs.new_zeros(elem_idxs.shape)
+        return aevs.new_zeros(elem_idxs.shape[0])
 
     @torch.jit.export
     def get_active_members_num(self) -> int:

@@ -46,7 +46,7 @@ class NNPotential(Potential):
         atomic: bool = False,
     ) -> Tensor:
         aevs = self._execute_aev_computer(elem_idxs, neighbors, _coordinates)
-        return self.neural_networks((elem_idxs, aevs), atomic=atomic)[1]
+        return self.neural_networks(elem_idxs, aevs, atomic=atomic)
 
     def ensemble_values(
         self,
@@ -58,7 +58,7 @@ class NNPotential(Potential):
     ) -> Tensor:
         if hasattr(self.neural_networks, "ensemble_values"):
             aevs = self._execute_aev_computer(elem_idxs, neighbors, _coordinates)
-            out = self.neural_networks.ensemble_values((elem_idxs, aevs), atomic=atomic)
+            out = self.neural_networks.ensemble_values(elem_idxs, aevs, atomic=atomic)
             return out
         out = self(elem_idxs, neighbors, _coordinates, ghost_flags, atomic).unsqueeze(0)
         return out
@@ -90,7 +90,7 @@ class MergedChargesNNPotential(NNPotential):
         atomic: bool = False,
     ) -> EnergiesAtomicCharges:
         aevs = self._execute_aev_computer(elem_idxs, neighbors, _coordinates)
-        energies_qs = self.neural_networks((elem_idxs, aevs), atomic=True)[1]
+        energies_qs = self.neural_networks(elem_idxs, aevs, atomic=True)
         energies = energies_qs[:, :, 0]
         if not atomic:
             energies = energies.sum(dim=-1)
@@ -115,15 +115,15 @@ class SeparateChargesNNPotential(NNPotential):
     @torch.jit.export
     def energies_and_atomic_charges(
         self,
-        element_idxs: Tensor,
+        elem_idxs: Tensor,
         neighbors: NeighborData,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         total_charge: int = 0,
         atomic: bool = False,
     ) -> EnergiesAtomicCharges:
-        aevs = self._execute_aev_computer(element_idxs, neighbors, _coordinates)
-        energies = self.neural_networks((element_idxs, aevs), atomic=atomic)[1]
-        qs = self.charge_networks((element_idxs, aevs), atomic=True)[1]
-        qs = self.charge_normalizer(element_idxs, qs, total_charge)
+        aevs = self._execute_aev_computer(elem_idxs, neighbors, _coordinates)
+        energies = self.neural_networks(elem_idxs, aevs, atomic=atomic)
+        qs = self.charge_networks(elem_idxs, aevs, atomic=True)
+        qs = self.charge_normalizer(elem_idxs, qs, total_charge)
         return EnergiesAtomicCharges(energies, qs)

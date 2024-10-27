@@ -73,7 +73,7 @@ class TestCorrectInput(ANITest):
         self.model = self._setup(model)
         self.converter = self._setup(model.species_converter)
         self.aev_computer = self._setup(model.aev_computer)
-        self.ani_model = self._setup(model.neural_networks)
+        self.ani_networks = self._setup(model.neural_networks)
 
     def testUnknownSpecies(self):
         # unsupported atomic number raises a value error
@@ -98,8 +98,9 @@ class TestCorrectInput(ANITest):
         )
         self.assertRaises(
             AssertionError,
-            self.ani_model,
-            (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 384))),
+            self.ani_networks,
+            torch.tensor([[0, 1, 2, 3]]),
+            torch.zeros((1, 3, 384)),
         )
         self.assertRaises(
             AssertionError,

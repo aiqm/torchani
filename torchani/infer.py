@@ -1,9 +1,10 @@
 r"""
-Inference-optimized versions of Ensemble and AtomicNetwork, recommended for
+Inference-optimized versions of ANIEnsemble and AtomicNetwork, recommended for
 single-point calculations of single molecules, molecular dynamics and geometry
 optimizations.
 """
 
+import warnings
 import itertools
 import typing as tp
 from itertools import accumulate
@@ -11,9 +12,8 @@ from itertools import accumulate
 import torch
 from torch import Tensor
 
-from torchani.utils import check_openmp_threads, TightCELU
-from torchani.tuples import SpeciesEnergies
 from torchani.csrc import MNP_IS_INSTALLED
+from torchani.utils import check_openmp_threads, TightCELU
 from torchani.atomics import AtomicContainer, AtomicNetwork
 
 
@@ -101,38 +101,37 @@ class BmmEnsemble(AtomicContainer):
 
     def forward(
         self,
-        species_aev: tp.Tuple[Tensor, Tensor],
+        elem_idxs: Tensor,
+        aevs: Tensor,
         atomic: bool = False,
-    ) -> SpeciesEnergies:
-        species, aev = species_aev
-        assert species.shape == aev.shape[:-1]
-        assert aev.shape[0] == 1, "BmmEnsemble only supports single-conformer inputs"
+    ) -> Tensor:
+        assert elem_idxs.shape == aevs.shape[:-1]
+        assert aevs.shape[0] == 1, "BmmEnsemble only supports single-conformer inputs"
 
-        # Initialize each species index if it has not been initialized or the
-        # species has changed
+        # Initialize each elem_idxs if it has not been init or the species has changed
         if self._MNP_IS_INSTALLED:
-            same_species = _is_same_tensor_optimized(self._last_species, species)
+            same_elem_idxs = _is_same_tensor_optimized(self._last_species, elem_idxs)
         else:
-            same_species = _is_same_tensor(self._last_species, species)
+            same_elem_idxs = _is_same_tensor(self._last_species, elem_idxs)
 
-        if not same_species:
-            self._idx_list = _make_idx_list(species, self.num_species, self._idx_list)
-        self._last_species = species
+        if not same_elem_idxs:
+            self._idx_list = _make_idx_list(elem_idxs, self.num_species, self._idx_list)
+        self._last_species = elem_idxs
 
-        aev = aev.flatten(0, 1)
-        energies = torch.zeros(aev.shape[0], dtype=aev.dtype, device=aev.device)
+        aevs = aevs.flatten(0, 1)
+        energies = aevs.new_zeros(aevs.shape[0])
         for i, bmm_atomic in enumerate(self.atomics):
             if self._idx_list[i].shape[0] > 0:
                 if not torch.jit.is_scripting():
                     torch.cuda.nvtx.range_push(f"bmm-species-{i}")
-                input_ = aev.index_select(0, self._idx_list[i])
+                input_ = aevs.index_select(0, self._idx_list[i])
                 energies[self._idx_list[i]] = bmm_atomic(input_).flatten()
                 if not torch.jit.is_scripting():
                     torch.cuda.nvtx.range_pop()
-        energies = energies.view_as(species)
+        energies = energies.view_as(elem_idxs)
         if not atomic:
             energies = energies.sum(dim=-1)
-        return SpeciesEnergies(species, energies)
+        return energies
 
 
 class BmmAtomicNetwork(torch.nn.Module):
@@ -228,24 +227,19 @@ class InferModel(AtomicContainer):
     def __init__(self, module: AtomicContainer, use_mnp: bool = False):
         super().__init__()
         if not torch.cuda.is_available():
-            raise RuntimeError(
-                "InferModel requires a CUDA device since it relies on CUDA Streams"
-            )
-        import warnings
+            raise RuntimeError("InferModel needs a CUDA device to use CUDA Streams")
 
-        # Infer model in general is hard to maintain so we emit some
-        # deprecation messages. In the future we may not support it anymore
+        # Infer model in general is hard to maintain so emit warnings
         if use_mnp:
-            msg = (
+            warnings.warn(
                 "InferModel with MNP C++ extension is experimental."
                 " It has a complex implementation, and may be removed in the future."
             )
         else:
-            msg = (
+            warnings.warn(
                 "InferModel with no MNP C++ extension is not optimized."
                 " It is meant as a proof of concept and may be removed in the future."
             )
-        warnings.warn(msg, category=DeprecationWarning)
 
         self._MNP_IS_INSTALLED = MNP_IS_INSTALLED
         self.total_members_num = 1
@@ -339,39 +333,36 @@ class InferModel(AtomicContainer):
 
     def forward(
         self,
-        species_aev: tp.Tuple[Tensor, Tensor],
+        elem_idxs: Tensor,
+        aevs: Tensor,
         atomic: bool = False,
-    ) -> SpeciesEnergies:
-        species, aev = species_aev
-        assert species.shape == aev.shape[:-1]
-        assert aev.shape[0] == 1, "InferModel only supports single-conformer inputs"
+    ) -> Tensor:
+        assert elem_idxs.shape == aevs.shape[:-1]
+        assert aevs.shape[0] == 1, "InferModel only supports single-conformer inputs"
         assert not atomic, "InferModel doesn't support atomic energies"
-        aev = aev.flatten(0, 1)
+        aevs = aevs.flatten(0, 1)
 
         if self._MNP_IS_INSTALLED:
-            same_species = _is_same_tensor_optimized(self._last_species, species)
+            same_species = _is_same_tensor_optimized(self._last_species, elem_idxs)
         else:
-            same_species = _is_same_tensor(self._last_species, species)
+            same_species = _is_same_tensor(self._last_species, elem_idxs)
 
         if not same_species:
-            self._idx_list = _make_idx_list(species, self.num_species, self._idx_list)
-        self._last_species = species
+            self._idx_list = _make_idx_list(elem_idxs, self.num_species, self._idx_list)
+        self._last_species = elem_idxs
 
-        # pyMNP code path
+        # pyMNP
         if not self._use_mnp:
             if not torch.jit.is_scripting():
-                energies = PythonMNP.apply(
-                    aev,
+                return PythonMNP.apply(
+                    aevs,
                     self._idx_list,
                     self.atomics,
                     self._stream_list,
                 )
-                return SpeciesEnergies(species, energies)
             raise RuntimeError("JIT-InferModel only supported with use_mnp=True")
-
-        # cppMNP code path
-        energies = self._cpp_mnp(aev)
-        return SpeciesEnergies(species, energies)
+        # cppMNP
+        return self._cpp_mnp(aevs)
 
     @jit_unused_if_no_mnp()
     def _cpp_mnp(self, aev: Tensor) -> Tensor:

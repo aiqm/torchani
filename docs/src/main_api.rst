@@ -40,7 +40,7 @@ Atomic Networks and Containers
 
 .. autoclass:: torchani.nn.ANINetworks
     :members:
-.. autoclass:: torchani.nn.Ensemble
+.. autoclass:: torchani.nn.ANIEnsemble
     :members:
 .. automodule:: torchani.atomics
 .. autoclass:: torchani.atomics.AtomicContainer

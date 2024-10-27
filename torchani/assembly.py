@@ -58,7 +58,7 @@ from torchani.aev.terms import (
 )
 from torchani.neighbors import rescreen, NeighborData
 from torchani.electro import ChargeNormalizer
-from torchani.nn import SpeciesConverter, ANINetworks, DummyANINetworks, Ensemble
+from torchani.nn import SpeciesConverter, ANINetworks, ANIEnsemble, _ZeroANINetworks
 from torchani.atomics import AtomicContainer, AtomicNetwork, AtomicMakerArg, AtomicMaker
 from torchani.constants import GSAES
 from torchani.utils import sort_by_element
@@ -212,14 +212,8 @@ class ANI(torch.nn.Module):
         # Optimized branch that uses the cuAEV-fused strategy
         if not self._has_pair_pots and self.aev_computer._strategy == "cuaev-fused":
             aevs = self.aev_computer((elem_idxs, coords), cell=cell, pbc=pbc)[1]
-            energies = self.neural_networks(
-                (elem_idxs, aevs),
-                atomic=atomic,
-            )[1]
-            energies += self.energy_shifter(
-                elem_idxs,
-                atomic=atomic,
-            )
+            energies = self.neural_networks(elem_idxs, aevs, atomic=atomic)
+            energies += self.energy_shifter(elem_idxs, atomic=atomic)
             return SpeciesEnergies(elem_idxs, energies)
 
         # Less optimized branch that goes through the internal neighborlist
@@ -1036,7 +1030,7 @@ class Assembler:
                         )
                     )
                 )
-            neural_networks = Ensemble(containers)
+            neural_networks = ANIEnsemble(containers)
         else:
             neural_networks = self._container_type(
                 self._build_atomic_networks(self.fn_for_atomics, featurizer.aev_length)
@@ -1256,9 +1250,10 @@ def simple_aniq(
             atomic_maker,
             normalizer=normalizer,
         )
+
     asm.set_atomic_networks(
         atomic_maker,
-        container_type=DummyANINetworks if dummy_energies else ANINetworks,
+        container_type=_ZeroANINetworks if dummy_energies else ANINetworks,
     )
     asm.set_neighborlist("full_pairwise")
     if not dummy_energies:

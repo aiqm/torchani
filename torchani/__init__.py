@@ -36,8 +36,7 @@ from importlib.metadata import version, PackageNotFoundError
 
 import torch
 
-from torchani.utils import EnergyShifter
-from torchani.nn import ANINetworks, Ensemble, SpeciesConverter
+from torchani.nn import ANINetworks, ANIEnsemble
 from torchani.aev import AEVComputer
 from torchani import (
     assembly,
@@ -60,6 +59,9 @@ from torchani import (
     annotations,
     paths,
 )
+# Legacy API
+from torchani.utils import EnergyShifter
+from torchani.nn import ANIModel, Ensemble, SpeciesConverter
 # NOTE: ase is an optional dependency so don't import here
 
 try:
@@ -68,31 +70,34 @@ except PackageNotFoundError:
     pass  # package is not installed
 
 __all__ = [
-    'AEVComputer',
-    'EnergyShifter',
-    'ANINetworks',
-    'Ensemble',
-    'grad',
-    'SpeciesConverter',
-    'utils',
-    'annotations',
-    'paths',
-    'models',
-    'units',
-    'potentials',
-    'neighbors',
-    'cutoffs',
-    'datasets',
-    'legacy_data',
-    'transforms',
-    'cli',
-    'io',
-    'electro',
-    'assembly',
+    "AEVComputer",
+    "ANINetworks",
+    "ANIEnsemble",
+    "grad",
+    "SpeciesConverter",
+    "utils",
+    "annotations",
+    "paths",
+    "models",
+    "units",
+    "potentials",
+    "neighbors",
+    "cutoffs",
+    "datasets",
+    "transforms",
+    "cli",
+    "io",
+    "electro",
+    "assembly",
     "sae",
     "infer",
     "constants",
+    # Legacy API
     "neurochem",
+    "legacy_data",
+    "EnergyShifter",
+    "Ensemble",
+    "ANIModel",
 ]
 
 # Disable TF32 since it catastrophically degrades accuracy
@@ -117,7 +122,7 @@ if torch.cuda.is_available():
 # Optional submodule, depends on 'ase' being available
 try:
     from . import ase  # noqa: F401
-    __all__.append('ase')
+    __all__.append("ase")
     ASE_IS_AVAILABLE = True
 except ImportError:
     ASE_IS_AVAILABLE = False
