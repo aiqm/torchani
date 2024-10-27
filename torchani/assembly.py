@@ -16,10 +16,9 @@ An ANI-style model consists of:
 An energy-predicting model may have PairPotentials (RepulsionXTB,
 TwoBodyDispersion, VDW potential, Coulombic, etc.)
 
-Each of the potentials has their own cutoff, and the Featurizer has two
-cutoffs, an angular and a radial ona (the radial cutoff must be larger than
-the angular cutoff, and it is recommended that the angular cutoff is kept
-small, 3.5 Ang or less).
+Each of the potentials has their own cutoff, and the Featurizer has two cutoffs, an
+angular and a radial ona (the radial cutoff must be larger than the angular cutoff, and
+it is recommended that the angular cutoff is kept small, 3.5 Ang or less).
 
 These pieces are assembled into a subclass of ANI
 """
@@ -205,7 +204,9 @@ class ANI(torch.nn.Module):
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> SpeciesEnergies:
-        elem_idxs, coords = self._maybe_convert_species(species_coordinates)
+        species, coords = species_coordinates
+        self._check_inputs(species, coords, total_charge)
+        elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
 
         # Optimized branch that uses the cuAEV-fused strategy
         if (
@@ -244,7 +245,7 @@ class ANI(torch.nn.Module):
     def from_neighborlist(
         self,
         species: Tensor,
-        coordinates: Tensor,
+        coords: Tensor,
         neighbor_idxs: Tensor,
         shift_values: Tensor,
         total_charge: int = 0,
@@ -252,14 +253,9 @@ class ANI(torch.nn.Module):
         ensemble_values: bool = False,
         input_needs_screening: bool = True,
     ) -> SpeciesEnergies:
-        r"""
-        This entrypoint supports input from an external neighborlist
-        """
-        elem_idxs, coords = self._maybe_convert_species((species, coordinates))
-        # Check inputs
-        assert elem_idxs.dim() == 2
-        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
-        assert total_charge == 0, "Model only supports neutral molecules"
+        r"""This entrypoint supports input from an external neighborlist"""
+        self._check_inputs(species, coords, total_charge)
+        elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
 
         max_cutoff = self.potentials[0].cutoff
         neighbors = self.neighborlist.process_external_input(
@@ -340,8 +336,9 @@ class ANI(torch.nn.Module):
             stress_numerical=stress_numerical,
         )
 
+    @property
     @torch.jit.unused
-    def get_chemical_symbols(self) -> tp.Tuple[str, ...]:
+    def symbols(self) -> tp.Tuple[str, ...]:
         return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)
 
     # TODO make this be useful
@@ -419,19 +416,13 @@ class ANI(torch.nn.Module):
                     state_dict[k] = state_dict[oldk]
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
-    @torch.jit.export
-    def _maybe_convert_species(
-        self, species_coordinates: tp.Tuple[Tensor, Tensor]
-    ) -> tp.Tuple[Tensor, Tensor]:
-        if self.periodic_table_index:
-            species_coordinates = self.species_converter(species_coordinates)
-        if (species_coordinates[0] >= self.aev_computer.num_species).any():
-            raise ValueError(f"Unknown species found in {species_coordinates[0]}")
+    def _check_inputs(
+        self, elem_idxs: Tensor, coords: Tensor, total_charge: int = 0
+    ) -> None:
         # Check inputs
-        elem_idxs, coords = species_coordinates
         assert elem_idxs.dim() == 2
         assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
-        return species_coordinates
+        assert total_charge == 0, "Model only supports neutral molecules"
 
     # Unfortunately this is an UGLY workaround for a torchscript bug
     @torch.jit.export
@@ -717,7 +708,7 @@ class ANIq(ANI):
     def energies_and_atomic_charges_from_neighborlist(
         self,
         species: Tensor,
-        coordinates: Tensor,
+        coords: Tensor,
         neighbor_idxs: Tensor,
         shift_values: Tensor,
         total_charge: int = 0,
@@ -728,8 +719,8 @@ class ANIq(ANI):
         if ensemble_values:
             raise ValueError("ensemble_values not supported for ANIq")
         # This entrypoint supports input from an external neighborlist
-        assert total_charge == 0, "Model only supports neutral molecules"
-        elem_idxs, coords = self._maybe_convert_species((species, coordinates))
+        self._check_inputs(species, coords, total_charge)
+        elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
 
         previous_cutoff = self.potentials[0].cutoff
         neighbors = self.neighborlist.process_external_input(
@@ -778,8 +769,10 @@ class ANIq(ANI):
     ) -> SpeciesEnergiesAtomicCharges:
         if ensemble_values:
             raise ValueError("atomic E and ensemble values not supported")
-        assert total_charge == 0, "Model only supports neutral molecules"
-        elem_idxs, coords = self._maybe_convert_species(species_coordinates)
+        species, coords = species_coordinates
+        self._check_inputs(species, coords, total_charge)
+        elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
+
         prev_cutoff = self.potentials[0].cutoff
         neighbor_data = self.neighborlist(elem_idxs, coords, prev_cutoff, cell, pbc)
         energies = coords.new_zeros(elem_idxs.shape[0])
@@ -848,18 +841,15 @@ class PairPotentialWrapper:
 class Assembler:
     def __init__(
         self,
-        ensemble_size: int = 1,
         symbols: tp.Sequence[str] = (),
-        container_type: ContainerType = ANIModel,
         model_type: tp.Type[ANI] = ANI,
-        featurizer: tp.Optional[FeaturizerWrapper] = None,
         neighborlist: NeighborlistArg = "full_pairwise",
         periodic_table_index: bool = True,
     ) -> None:
         self._global_cutoff_fn: tp.Optional[Cutoff] = None
 
         self._neighborlist = parse_neighborlist(neighborlist)
-        self._featurizer = featurizer
+        self._featurizer: tp.Optional[FeaturizerWrapper] = None
         self._pair_potentials: tp.List[PairPotentialWrapper] = []
 
         # This part of the assembler organizes the self-energies, the
@@ -867,52 +857,23 @@ class Assembler:
         self._self_energies: tp.Dict[str, float] = {}
         self._fn_for_atomics: tp.Optional[AtomicMaker] = None
         self._fn_for_charges: tp.Optional[AtomicMaker] = None
-        self._container_type: ContainerType = container_type
+        self._container_type: ContainerType = ANIModel
         self._charge_container_type: tp.Optional[ContainerType] = None
         self._charge_normalizer: tp.Optional[ChargeNormalizer] = None
         self._symbols: tp.Tuple[str, ...] = tuple(symbols)
-        self._ensemble_size: int = ensemble_size
 
-        # This is the general container for all the parts of the model
+        # The general container for all the parts of the model
         self._model_type: tp.Type[ANI] = model_type
 
         # This is a deprecated feature, it should probably not be used
         self.periodic_table_index = periodic_table_index
-
-    def _check_symbols(self, symbols: tp.Optional[tp.Iterable[str]] = None) -> None:
-        if not self.symbols:
-            raise ValueError(
-                "Please set symbols before setting the gsaes as self energies"
-            )
-        if symbols is not None:
-            if set(self.symbols) != set(symbols):
-                raise ValueError(
-                    f"Passed symbols don't match supported elements {self._symbols}"
-                )
-
-    @property
-    def ensemble_size(self) -> int:
-        return self._ensemble_size
-
-    @ensemble_size.setter
-    def ensemble_size(self, value: int) -> None:
-        if value < 0:
-            raise ValueError("Ensemble size must be positive")
-        self._ensemble_size = value
-
-    @property
-    def elements_num(self) -> int:
-        return len(self._symbols)
 
     @property
     def symbols(self) -> tp.Tuple[str, ...]:
         return self._symbols
 
     def set_symbols(self, symbols: tp.Sequence[str], auto_sort: bool = True) -> None:
-        if auto_sort:
-            self._symbols = sort_by_element(symbols)
-        else:
-            self._symbols = tuple(symbols)
+        self._symbols = sort_by_element(symbols) if auto_sort else tuple(symbols)
 
     @property
     def fn_for_atomics(self) -> AtomicMaker:
@@ -936,14 +897,13 @@ class Assembler:
             raise RuntimeError("Self energies have not been set")
         return self._self_energies
 
-    @self_energies.setter
-    def self_energies(self, value: tp.Mapping[str, float]) -> None:
+    def set_self_energies(self, value: tp.Mapping[str, float]) -> None:
         self._check_symbols(value.keys())
         self._self_energies = {k: v for k, v in value.items()}
 
     def set_zeros_as_self_energies(self) -> None:
         self._check_symbols()
-        self.self_energies = {s: 0.0 for s in self.symbols}
+        self.set_self_energies({s: 0.0 for s in self.symbols})
 
     def set_gsaes_as_self_energies(
         self,
@@ -963,21 +923,32 @@ class Assembler:
                 " or *both* functional *and* basis_set"
             )
         gsaes = GSAES[lot.lower()]
-        self.self_energies = {s: gsaes[s] for s in self.symbols}
+        self.set_self_energies({s: gsaes[s] for s in self.symbols})
+
+    def _check_symbols(self, symbols: tp.Optional[tp.Iterable[str]] = None) -> None:
+        if not self.symbols:
+            raise ValueError(
+                "Please set symbols before setting the gsaes as self energies"
+            )
+        if symbols is not None:
+            if set(self.symbols) != set(symbols):
+                raise ValueError(
+                    f"Passed symbols don't match supported elements {self._symbols}"
+                )
 
     def set_atomic_networks(
         self,
-        container_type: ContainerType,
         fn: AtomicMaker,
+        container_type: ContainerType = ANIModel,
     ) -> None:
         self._container_type = container_type
         self._fn_for_atomics = fn
 
     def set_charge_networks(
         self,
-        container_type: ContainerType,
         fn: AtomicMaker,
         normalizer: tp.Optional[ChargeNormalizer] = None,
+        container_type: ContainerType = ANIModel,
     ) -> None:
         if not issubclass(self._model_type, ANIq):
             raise ValueError("Model must be a subclass of ANIq to use charge networks")
@@ -987,11 +958,11 @@ class Assembler:
 
     def set_featurizer(
         self,
-        featurizer_type: FeaturizerType,
         angular_terms: AngularTermArg,
         radial_terms: RadialTermArg,
         cutoff_fn: CutoffArg = "global",
         compute_strategy: str = "pyaev",
+        featurizer_type: FeaturizerType = AEVComputer,
     ) -> None:
         self._featurizer = FeaturizerWrapper(
             featurizer_type,
@@ -1029,14 +1000,16 @@ class Assembler:
             )
         )
 
-    def build_atomic_networks(
+    def _build_atomic_networks(
         self,
         fn_for_networks: AtomicMaker,
         in_dim: int,
     ) -> tp.OrderedDict[str, AtomicNetwork]:
         return OrderedDict([(s, fn_for_networks(s, in_dim)) for s in self.symbols])
 
-    def assemble(self) -> ANI:
+    def assemble(self, ensemble_size: int = 1) -> ANI:
+        if ensemble_size < 0:
+            raise ValueError("Ensemble size must be positive")
         if not self.symbols:
             raise RuntimeError("Symbols not set. Call 'set_symbols()' before assembly")
         if self._featurizer is None:
@@ -1055,16 +1028,16 @@ class Assembler:
             cutoff_fn=feat_cutoff_fn,
             angular_terms=self._featurizer.angular_terms,
             radial_terms=self._featurizer.radial_terms,
-            num_species=self.elements_num,
+            num_species=len(self.symbols),
             compute_strategy=self._featurizer.compute_strategy,
         )
         neural_networks: AtomicContainer
-        if self.ensemble_size > 1:
+        if ensemble_size > 1:
             containers = []
-            for j in range(self.ensemble_size):
+            for j in range(ensemble_size):
                 containers.append(
                     self._container_type(
-                        self.build_atomic_networks(
+                        self._build_atomic_networks(
                             self.fn_for_atomics, featurizer.aev_length
                         )
                     )
@@ -1072,13 +1045,13 @@ class Assembler:
             neural_networks = Ensemble(containers)
         else:
             neural_networks = self._container_type(
-                self.build_atomic_networks(self.fn_for_atomics, featurizer.aev_length)
+                self._build_atomic_networks(self.fn_for_atomics, featurizer.aev_length)
             )
 
         charge_networks: tp.Optional[AtomicContainer] = None
         if self._charge_container_type is not None:
             charge_networks = self._charge_container_type(
-                self.build_atomic_networks(self.fn_for_charges, featurizer.aev_length)
+                self._build_atomic_networks(self.fn_for_charges, featurizer.aev_length)
             )
 
         self_energies = self.self_energies
@@ -1158,14 +1131,10 @@ def simple_ani(
     """
     if compute_strategy not in ["pyaev", "cuaev"]:
         raise ValueError(f"Unavailable strategy: {compute_strategy}")
-    asm = Assembler(
-        ensemble_size=ensemble_size,
-        periodic_table_index=True,
-    )
+    asm = Assembler()
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
     asm.set_featurizer(
-        AEVComputer,
         radial_terms=StandardRadial.cover_linearly(
             start=radial_start,
             cutoff=radial_cutoff,
@@ -1187,7 +1156,7 @@ def simple_ani(
         activation=atomics.parse_activation(activation),
         bias=bias,
     )
-    asm.set_atomic_networks(ANIModel, atomic_maker)
+    asm.set_atomic_networks(atomic_maker)
     asm.set_neighborlist("full_pairwise")
     asm.set_gsaes_as_self_energies(lot)
     if repulsion:
@@ -1201,7 +1170,7 @@ def simple_ani(
             cutoff=8.0,
             extra={"functional": lot.split("-")[0]},
         )
-    return asm.assemble()
+    return asm.assemble(ensemble_size)
 
 
 def simple_aniq(
@@ -1241,15 +1210,10 @@ def simple_aniq(
     """
     if compute_strategy not in ["pyaev", "cuaev"]:
         raise ValueError(f"Unavailable strategy: {compute_strategy}")
-    asm = Assembler(
-        ensemble_size=ensemble_size,
-        periodic_table_index=True,
-        model_type=ANIq,
-    )
+    asm = Assembler(model_type=ANIq)
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
     asm.set_featurizer(
-        AEVComputer,
         radial_terms=StandardRadial.cover_linearly(
             start=radial_start,
             cutoff=radial_cutoff,
@@ -1287,12 +1251,12 @@ def simple_aniq(
             bias=bias,
         )
         asm.set_charge_networks(
-            ANIModel,
             atomic_maker,
             normalizer=normalizer,
         )
     asm.set_atomic_networks(
-        ANIModel if not dummy_energies else DummyANIModel, atomic_maker
+        atomic_maker,
+        container_type=DummyANIModel if dummy_energies else ANIModel,
     )
     asm.set_neighborlist("full_pairwise")
     if not dummy_energies:
@@ -1310,7 +1274,7 @@ def simple_aniq(
             cutoff=8.0,
             extra={"functional": lot.split("-")[0]},
         )
-    return asm.assemble()
+    return asm.assemble(ensemble_size)
 
 
 def fetch_state_dict(

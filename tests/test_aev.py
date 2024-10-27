@@ -1,3 +1,4 @@
+import typing as tp
 from pathlib import Path
 import unittest
 import os
@@ -234,7 +235,7 @@ class TestAEV(_TestAEVBase):
 class TestAEVJIT(TestAEV):
     def setUp(self):
         super().setUp()
-        self.aev_computer = torch.jit.script(self.aev_computer)
+        self.aev_computer = tp.cast(AEVComputer, torch.jit.script(self.aev_computer))
 
 
 class TestPBCSeeEachOther(TestCase):
@@ -406,15 +407,13 @@ class TestAEVOnBoundary(TestCase):
 class TestAEVOnBenzenePBC(TestCase):
     def setUp(self):
         self.aev_computer = AEVComputer.like_1x()
-        species, coordinates, cell = read_xyz(
+        self.species, self.coordinates, cell = read_xyz(
             (Path(__file__).parent / "resources") / "benzene.xyz"
         )
         assert cell is not None
         self.cell = cell
         self.pbc = torch.tensor([True, True, True], dtype=torch.bool)
-        self.species, self.coordinates = SpeciesConverter(["H", "C", "N", "O"])(
-            (species, coordinates)
-        )
+        self.species = SpeciesConverter(["H", "C", "N", "O"])(self.species)
         _, self.aev = self.aev_computer(
             (self.species, self.coordinates), cell=self.cell, pbc=self.pbc
         )

@@ -655,7 +655,7 @@ class TestCUAEV(TestCase):
                 device=self.device,
                 dtype=self.dtype,
             )
-            species, coordinates = self.converter((species, coordinates))
+            species = self.converter(species)
             _, aev = self.aev_computer_2x((species, coordinates))
             _, cu_aev = self.cuaev_computer_2x((species, coordinates))
             self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
@@ -668,7 +668,7 @@ class TestCUAEV(TestCase):
                 device=self.device,
                 dtype=self.dtype,
             )
-            species, coordinates = self.converter((species, coordinates))
+            species = self.converter(species)
             coordinates.requires_grad_(True)
 
             _, aev = self.aev_computer_2x((species, coordinates))
@@ -693,7 +693,7 @@ class TestCUAEV(TestCase):
                 device=self.device,
                 dtype=self.dtype,
             )
-            species, coordinates = self.converter((species, coordinates))
+            species = self.converter(species)
             coordinates.requires_grad_(True)
 
             _, aev = self.aev_computer_2x((species, coordinates))
@@ -716,7 +716,7 @@ class TestCUAEV(TestCase):
             device=self.device,
             dtype=self.dtype,
         )
-        species, coordinates = self.converter((species, coordinates))
+        species = self.converter(species)
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         coordinates.requires_grad_(True)
         _, aev = self.aev_computer_2x((species, coordinates), cell, pbc)
@@ -741,7 +741,7 @@ class TestCUAEV(TestCase):
                 device=self.device,
                 dtype=self.dtype,
             )
-            species, coordinates = self.converter((species, coordinates))
+            species = self.converter(species)
             coordinates.requires_grad_(True)
 
             _, aev = self.aev_computer_2x((species, coordinates))
@@ -778,7 +778,7 @@ class TestCUAEV(TestCase):
             device=self.device,
             dtype=self.dtype,
         )
-        species, coordinates = self.converter((species, coordinates))
+        species = self.converter(species)
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         coordinates.requires_grad_(True)
         _, aev = self.aev_computer_2x((species, coordinates), cell, pbc)

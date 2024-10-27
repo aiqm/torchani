@@ -91,7 +91,7 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
         "_collect_radial_terms",
         "angular_terms",
         "radial_terms",
-        "_compute_aev",
+        "_compute_pyaev",
         "_triple_by_molecule",
         "forward",
     )

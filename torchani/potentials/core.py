@@ -41,8 +41,9 @@ class Potential(torch.nn.Module):
             conv_tensor[znum] = i
         self._conv_tensor = conv_tensor
 
+    @property
     @torch.jit.unused
-    def get_chemical_symbols(self) -> tp.Tuple[str, ...]:
+    def symbols(self) -> tp.Tuple[str, ...]:
         return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)
 
     @torch.jit.unused

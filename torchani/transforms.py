@@ -33,6 +33,7 @@ transforms. An example of their usage:
         split='validation',
     )
 """
+
 import typing as tp
 
 import torch
@@ -57,6 +58,7 @@ class Transform(torch.nn.Module):
     given order) then the atomic_numbers tensor should be defined, otherwise it
     should be None
     """
+
     atomic_numbers: tp.Optional[Tensor]
 
     def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
@@ -68,6 +70,7 @@ class Transform(torch.nn.Module):
 
 class Identity(Transform):
     r"""Pass-through transform"""
+
     def __init__(self) -> None:
         super().__init__()
         self.atomic_numbers = None
@@ -180,16 +183,12 @@ class AtomicNumbersToIndices(Transform):
     def __init__(self, symbols: tp.Sequence[str]):
         super().__init__()
         self.atomic_numbers = torch.tensor(
-            [ATOMIC_NUMBER[s] for s in symbols],
-            dtype=torch.long,
+            [ATOMIC_NUMBER[s] for s in symbols], dtype=torch.long
         )
         self.converter = SpeciesConverter(symbols)
 
     def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
-        species = self.converter(
-            (properties["species"], properties["coordinates"]),
-        ).species
-        properties["species"] = species
+        properties["species"] = self.converter(properties["species"])
         return properties
 
 

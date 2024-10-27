@@ -8,8 +8,8 @@ import typing as tp
 import torch
 from torch import Tensor
 
-from torchani.constants import PERIODIC_TABLE
-from torchani.tuples import SpeciesCoordinates, SpeciesEnergies
+from torchani.constants import PERIODIC_TABLE, ATOMIC_NUMBER
+from torchani.tuples import SpeciesEnergies
 from torchani.atomics import AtomicContainer, AtomicNetwork
 from torchani.infer import BmmEnsemble, InferModel
 
@@ -226,20 +226,27 @@ class SpeciesConverter(torch.nn.Module):
         )
         for i, s in enumerate(species):
             self.conv_tensor[rev_idx[s]] = i
+        self.atomic_numbers = torch.tensor(
+            [ATOMIC_NUMBER[e] for e in species], dtype=torch.long
+        )
 
-    def forward(
-        self,
-        input_: tp.Tuple[Tensor, Tensor],
-    ):
+    def forward(self, atomic_nums: Tensor, nop: bool = False) -> Tensor:
         r"""Convert species from atomic numbers to 0, 1, 2, 3, ... indexing"""
-        species, coordinates = input_
-        converted_species = self.conv_tensor[species]
 
-        # check if unknown species are included
-        if converted_species[species.ne(-1)].lt(0).any():
-            raise ValueError(f"Unknown species found in {species}")
-
-        return SpeciesCoordinates(converted_species.to(species.device), coordinates)
+        # Consider as element idxs and check that its not too large, otherwise its
+        # a no-op TODO: unclear documentation for this, possibly remove
+        if nop:
+            if atomic_nums.max() >= len(self.atomic_numbers):
+                raise ValueError(f"Unsupported element idx in {atomic_nums}")
+            return atomic_nums
+        elem_idxs = self.conv_tensor[atomic_nums]
+        if (elem_idxs[atomic_nums != -1] == -1).any():
+            raise ValueError(
+                f"Model doesn't support some elements in input"
+                f" Input elements include: {torch.unique(atomic_nums)}"
+                f" Supported elements are: {self.atomic_numbers}"
+            )
+        return elem_idxs.to(atomic_nums.device)
 
 
 class Sequential(torch.nn.ModuleList):
@@ -247,7 +254,7 @@ class Sequential(torch.nn.ModuleList):
 
     def __init__(self, *modules):
         super().__init__(modules)
-        warnings.warn("Use of 'Sequential' is strongly discouraged")
+        warnings.warn("Use of `torchani.nn.Sequential` is strongly discouraged.")
 
     def forward(
         self,

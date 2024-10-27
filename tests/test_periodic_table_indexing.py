@@ -27,9 +27,8 @@ class TestSpeciesConverter(ANITest):
             device=self.device,
             dtype=torch.long,
         )
-        dummy_coordinates = torch.empty(2, 5, 3, device=self.device)
         converter = self._setup(SpeciesConverter(["H", "C", "N", "O"]))
-        output = converter((input_, dummy_coordinates)).species
+        output = converter(input_)
         self.assertEqual(output, expect)
 
 

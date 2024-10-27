@@ -271,8 +271,8 @@ if __name__ == "__main__":
             return wrapper
 
         if not args.jit:
-            model.aev_computer._compute_aev = time_func(  # type: ignore
-                "aev_forward", model.aev_computer._compute_aev
+            model.aev_computer._compute_pyaev = time_func(  # type: ignore
+                "aev_forward", model.aev_computer._compute_pyaev
             )
             model.aev_computer.neighborlist.forward = time_func(  # type: ignore
                 "neighborlist", model.aev_computer.neighborlist.forward

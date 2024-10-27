@@ -50,7 +50,6 @@ def expand(
 _T = tp.TypeVar("_T", bound=torch.nn.Module)
 
 
-@expand()
 class ANITest(TestCase):
     _device: torch.device
     _jit: bool

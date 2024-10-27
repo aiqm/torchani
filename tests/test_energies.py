@@ -77,17 +77,12 @@ class TestCorrectInput(ANITest):
 
     def testUnknownSpecies(self):
         # unsupported atomic number raises a value error
-        self.assertRaises(
-            ValueError,
-            self.converter,
-            (torch.tensor([[1, 1, 7, 10]]), torch.zeros((1, 4, 3))),
-        )
+        with self.assertRaises(ValueError):
+            _ = self.converter(torch.tensor([[1, 1, 7, 10]]))
+
         # larger index than supported by the model raises a value error
-        self.assertRaises(
-            ValueError,
-            self.model,
-            (torch.tensor([[0, 1, 2, 4]]), torch.zeros((1, 4, 3))),
-        )
+        with self.assertRaises(ValueError):
+            _ = self.model((torch.tensor([[0, 1, 2, 4]]), torch.zeros((1, 4, 3))))
 
     def testIncorrectShape(self):
         # non matching shapes between species and coordinates

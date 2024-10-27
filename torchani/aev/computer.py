@@ -239,7 +239,7 @@ class AEVComputer(torch.nn.Module):
         cutoff = self.radial_terms.cutoff
         if self._compute_strategy == "pyaev":
             neighbors = self.neighborlist(species, coords, cutoff, cell, pbc)
-            aev = self._compute_aev(element_idxs=species, neighbors=neighbors)
+            aev = self._compute_pyaev(element_idxs=species, neighbors=neighbors)
         elif self._compute_strategy == "cuaev":
             neighbors = self.neighborlist(species, coords, cutoff, cell, pbc)
             aev = self._compute_cuaev_with_half_nbrlist(species, coords, neighbors)
@@ -252,7 +252,7 @@ class AEVComputer(torch.nn.Module):
             raise RuntimeError(f"Invalid compute strategy {self._compute_strategy}")
         return SpeciesAEV(species, aev)
 
-    def _compute_aev(
+    def _compute_pyaev(
         self,
         element_idxs: Tensor,  # shape (C, A)
         neighbors: NeighborData,

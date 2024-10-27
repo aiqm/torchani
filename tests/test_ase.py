@@ -56,13 +56,13 @@ class TestASE(ANITest):
         model_cell = self._setup(
             ANI1x(model_index=0, neighborlist="cell_list").double()
         )
-        symbols = model_cell.get_chemical_symbols()
+        symbols = model_cell.symbols
         model_pair = self._setup(
             ANI(
                 aev_computer=model_cell.aev_computer,
                 neural_networks=model_cell.neural_networks,
                 energy_shifter=model_cell.energy_shifter,
-                symbols=model_cell.get_chemical_symbols(),
+                symbols=model_cell.symbols,
                 pair_potentials=[
                     PairPotential(symbols=symbols, cutoff=6.4),
                     PairPotential(symbols=symbols, cutoff=5.2),
