@@ -358,6 +358,7 @@ class ANI(torch.nn.Module):
         return self.neural_networks.get_active_members_num()
 
     # TODO This is confusing, it may be a good idea to deprecate it, or at least warn
+    # Can be optimized but its not worth it
     def __getitem__(self, idx: int) -> tpx.Self:
         model = deepcopy(self)
         model.neural_networks = self.neural_networks.member(idx)
