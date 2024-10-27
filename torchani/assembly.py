@@ -427,15 +427,6 @@ class ANI(torch.nn.Module):
         assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
         assert total_charge == 0, "Model only supports neutral molecules"
 
-    # Unfortunately this is an UGLY workaround for a torchscript bug
-    @torch.jit.export
-    def _recast_long_buffers(self) -> None:
-        self.species_converter.conv_tensor = self.species_converter.conv_tensor.to(
-            dtype=torch.long
-        )
-        self.aev_computer.triu_index = self.aev_computer.triu_index.to(dtype=torch.long)
-        self.neighborlist._recast_long_buffers()
-
     @torch.jit.unused
     def members_forces(
         self,

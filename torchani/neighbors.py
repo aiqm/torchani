@@ -198,10 +198,6 @@ class Neighborlist(torch.nn.Module):
     def get_diff_vectors(self):
         return self.diff_vectors
 
-    @torch.jit.export
-    def _recast_long_buffers(self) -> None:
-        pass
-
 
 class FullPairwise(Neighborlist):
     """Compute pairs of atoms that are neighbors, uses pbc depending on
@@ -513,9 +509,10 @@ class CellList(Neighborlist):
         # dimensions.
         # surround=N=13 for 1-bucket-per-cutoff
         # shape (C, A, N=13, 3) contains negative and overflowing idxs
+        # NOTE: Casting is necessary for long buffers in C++ due to a LibTorch bug
         atom_surround_idx3 = atom_grid_idx3.unsqueeze(-2) + self._offset_idx3.view(
             1, 1, -1, 3
-        )
+        ).to(dtype=torch.long)
         # Modulo grid_shape is used to get rid of the negative and overflowing idxs
         # shape (C, A, surround=13) contains only positive idxs
         atom_surround_idx = flatten_idx3(atom_surround_idx3 % grid_shape, grid_shape)
@@ -581,11 +578,6 @@ class CellList(Neighborlist):
         image_pairs = torch.cat((_image_pairs_between, _image_pairs_within), dim=1)
         atom_pairs = image_to_atom[image_pairs]
         return atom_pairs, shift_idxs
-
-    @torch.jit.export
-    def _recast_long_buffers(self) -> None:
-        # Needed due to JIT bug in C++
-        self._offset_idx3 = self._offset_idx3.to(dtype=torch.long)
 
 
 def coords_to_grid_idx3(

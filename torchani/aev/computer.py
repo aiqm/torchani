@@ -331,8 +331,7 @@ class AEVComputer(torch.nn.Module):
             (num_molecules * num_atoms * self.num_species_pairs, self.angular_sublength)
         )
         # shape (T,)
-        # TODO: This gets cast to double in TorchScript,
-        # the issue should be investigated
+        # NOTE: Casting is necessary in C++ due to a LibTorch bug
         index = central_idx * self.num_species_pairs + self.triu_index[
             triple_element_side_idxs[0], triple_element_side_idxs[1]
         ].to(torch.long)

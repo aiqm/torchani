@@ -239,7 +239,8 @@ class SpeciesConverter(torch.nn.Module):
             if atomic_nums.max() >= len(self.atomic_numbers):
                 raise ValueError(f"Unsupported element idx in {atomic_nums}")
             return atomic_nums
-        elem_idxs = self.conv_tensor[atomic_nums]
+        # NOTE: Casting is necessary in C++ due to a LibTorch bug
+        elem_idxs = self.conv_tensor.to(torch.long)[atomic_nums]
         if (elem_idxs[atomic_nums != -1] == -1).any():
             raise ValueError(
                 f"Model doesn't support some elements in input"
