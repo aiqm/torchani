@@ -19,6 +19,9 @@ from torchani.transforms import Transform, identity
 from torchani.datasets.anidataset import ANIDataset
 
 
+_T = tp.TypeVar("_T")
+
+
 class BatchedDataset(torch.utils.data.Dataset[Conformers]):
     split: str
     transform: Transform
@@ -44,8 +47,11 @@ class BatchedDataset(torch.utils.data.Dataset[Conformers]):
         self,
         num_workers: tp.Optional[int] = None,
         pin_memory: tp.Optional[bool] = None,
+        prefetch_factor: tp.Optional[int] = None,
         shuffle: bool = True,
     ) -> torch.utils.data.DataLoader:
+        if prefetch_factor is None:
+            prefetch_factor = 2
         if num_workers is None:
             num_workers = len(os.sched_getaffinity(0)) - 1
         if pin_memory is None:
@@ -53,6 +59,7 @@ class BatchedDataset(torch.utils.data.Dataset[Conformers]):
         return torch.utils.data.DataLoader(
             self,
             num_workers=num_workers,
+            prefetch_factor=prefetch_factor,
             pin_memory=pin_memory,
             shuffle=shuffle,
             batch_size=None,
@@ -60,6 +67,20 @@ class BatchedDataset(torch.utils.data.Dataset[Conformers]):
 
     def __len__(self) -> int:
         return 0
+
+    def _limit_batches(
+        self, batches: tp.List[_T], limit: tp.Union[int, float]
+    ) -> tp.List[_T]:
+        if limit != 1.0:
+            if isinstance(limit, float):
+                if not (0.0 <= limit < 1.0):
+                    raise ValueError("limit must lie in (0.0, 1.0)")
+                batches = batches[: int(limit * len(batches))]
+            elif isinstance(limit, int):
+                if not (0 <= limit < len(batches)):
+                    raise ValueError("limit must lie in (0, num_batches)")
+                batches = batches[: int(limit * len(batches))]
+        return batches
 
 
 class ANIBatchedInMemoryDataset(BatchedDataset):
@@ -72,6 +93,7 @@ class ANIBatchedInMemoryDataset(BatchedDataset):
         self,
         batches: tp.Sequence[Conformers],
         transform: Transform = identity,
+        limit: tp.Union[int, float] = 1.0,
         split: str = "division",
         drop_last: bool = False,
     ) -> None:
@@ -80,7 +102,7 @@ class ANIBatchedInMemoryDataset(BatchedDataset):
         self.transform = transform
         if drop_last and self._batch_size(batches[0]) > self._batch_size(batches[-1]):
             batches.pop()
-        self._batches = batches
+        self._batches = self._limit_batches(batches, limit)
 
     def pin_memory(self, verbose: bool = True) -> None:
         if verbose:
@@ -93,9 +115,10 @@ class ANIBatchedInMemoryDataset(BatchedDataset):
         self,
         num_workers: tp.Optional[int] = None,
         pin_memory: tp.Optional[bool] = None,
+        prefetch_factor: tp.Optional[int] = None,
         shuffle: bool = True,
     ) -> torch.utils.data.DataLoader:
-        if num_workers not in (None, 0):
+        if num_workers not in (None, 0) or prefetch_factor is not None:
             raise ValueError("multiprocessing not supported for in-memory datasets")
         if pin_memory is None:
             pin_memory = torch.cuda.is_available()
@@ -127,6 +150,7 @@ class ANIBatchedDataset(BatchedDataset):
         store_dir: StrPath,
         split: str = "division",
         transform: Transform = identity,
+        limit: tp.Union[int, float] = 1.0,
         properties: tp.Sequence[str] = (),
         drop_last: bool = False,
     ):
@@ -137,6 +161,7 @@ class ANIBatchedDataset(BatchedDataset):
 
         if drop_last and self._batch_size(self[0]) > self._batch_size(self[-1]):
             self._batch_paths.pop()
+        self._batch_paths = self._limit_batches(self._batch_paths, limit)
 
     def _get_batch_paths(self, batches_dir: Path) -> tp.List[Path]:
         # We assume batch names are prefixed by a zero-filled number so that
@@ -277,7 +302,7 @@ class Batcher:
         elif isinstance(properties, str):
             properties = [properties]
         else:
-            properties = sorted(properties)
+            properties = sorted(set(properties))
 
         if splits is None and folds is None:
             splits = {"training": 1.0}
