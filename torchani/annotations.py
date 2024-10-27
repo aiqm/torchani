@@ -29,3 +29,6 @@ Backend = tp.Literal["hdf5", "zarr", "pandas", "cudf"]
 
 # Ase
 StressKind = tp.Literal["scaling", "fdotr", "numerical"]
+
+# Python scalar
+PyScalar = tp.Union[bool, int, float, str, None]
