@@ -102,16 +102,8 @@ class BmmEnsemble(AtomicContainer):
     def forward(
         self,
         species_aev: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        atomic: bool = False,
     ) -> SpeciesEnergies:
-        atomic_energies = self.atomic_energies(species_aev, ensemble_average=True)
-        return SpeciesEnergies(species_aev[0], torch.sum(atomic_energies, 0, True))
-
-    @torch.jit.export
-    def atomic_energies(
-        self, species_aev: tp.Tuple[Tensor, Tensor], ensemble_average: bool = False
-    ) -> Tensor:
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
         assert aev.shape[0] == 1, "BmmEnsemble only supports single-conformer inputs"
@@ -128,18 +120,19 @@ class BmmEnsemble(AtomicContainer):
         self._last_species = species
 
         aev = aev.flatten(0, 1)
-        atomic_energies = torch.zeros(aev.shape[0], dtype=aev.dtype, device=aev.device)
-        for i, net in enumerate(self.atomics):
+        energies = torch.zeros(aev.shape[0], dtype=aev.dtype, device=aev.device)
+        for i, bmm_atomic in enumerate(self.atomics):
             if self._idx_list[i].shape[0] > 0:
                 if not torch.jit.is_scripting():
                     torch.cuda.nvtx.range_push(f"bmm-species-{i}")
                 input_ = aev.index_select(0, self._idx_list[i])
-                atomic_energies[self._idx_list[i]] = net(input_).flatten()
+                energies[self._idx_list[i]] = bmm_atomic(input_).flatten()
                 if not torch.jit.is_scripting():
                     torch.cuda.nvtx.range_pop()
-        if ensemble_average:
-            return atomic_energies
-        return atomic_energies.unsqueeze(0)
+        energies = energies.view_as(species)
+        if not atomic:
+            energies = energies.sum(dim=-1)
+        return SpeciesEnergies(species, energies)
 
 
 class BmmAtomicNetwork(torch.nn.Module):
@@ -347,12 +340,12 @@ class InferModel(AtomicContainer):
     def forward(
         self,
         species_aev: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        atomic: bool = False,
     ) -> SpeciesEnergies:
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
         assert aev.shape[0] == 1, "InferModel only supports single-conformer inputs"
+        assert not atomic, "InferModel doesn't support atomic energies"
         aev = aev.flatten(0, 1)
 
         if self._MNP_IS_INSTALLED:

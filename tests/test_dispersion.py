@@ -6,7 +6,7 @@ import torch
 from torchani import units
 from torchani.utils import SYMBOLS_1X
 from torchani.aev import AEVComputer
-from torchani.potentials import TwoBodyDispersionD3, StandaloneTwoBodyDispersionD3
+from torchani.potentials import TwoBodyDispersionD3
 from torchani.potentials.dispersion import _load_c6_constants
 from torchani.testing import ANITest, expand
 from torchani.grad import energies_and_forces
@@ -209,14 +209,16 @@ class TestDispersion(ANITest):
         )
 
     def testMethaneStandalone(self):
+        if self.jit:
+            self.skipTest("calc is non-jittable")
         disp = self._setup(
-            StandaloneTwoBodyDispersionD3(
+            TwoBodyDispersionD3.from_functional(
                 symbols=SYMBOLS_1X,
                 cutoff=8.0,
                 functional="wB97X",
             )
         )
-        energy = disp((self.atomic_numbers, self.coordinates)).energies
+        energy = disp.calc(self.atomic_numbers, self.coordinates)
         energy = units.hartree2kcalpermol(energy)
         self.assertEqual(
             energy,
@@ -226,8 +228,10 @@ class TestDispersion(ANITest):
         )
 
     def testMethaneStandaloneBatch(self):
+        if self.jit:
+            self.skipTest("calc is non-jittable")
         disp = self._setup(
-            StandaloneTwoBodyDispersionD3(
+            TwoBodyDispersionD3.from_functional(
                 symbols=SYMBOLS_1X,
                 cutoff=8.0,
                 functional="wB97X",
@@ -236,7 +240,7 @@ class TestDispersion(ANITest):
         r = 2
         coordinates = self.coordinates.repeat(r, 1, 1)
         species = self.atomic_numbers.repeat(r, 1)
-        energy = disp((species, coordinates)).energies
+        energy = disp.calc(species, coordinates)
         energy = units.hartree2kcalpermol(energy)
         self.assertEqual(
             energy,
@@ -248,8 +252,10 @@ class TestDispersion(ANITest):
         )
 
     def testDispersionBatches(self):
-        rep = self._setup(
-            StandaloneTwoBodyDispersionD3(
+        if self.jit:
+            self.skipTest("calc is non-jittable")
+        disp = self._setup(
+            TwoBodyDispersionD3.from_functional(
                 symbols=SYMBOLS_1X,
                 cutoff=8.0,
                 functional="wB97X",
@@ -273,24 +279,29 @@ class TestDispersion(ANITest):
         coordinates_cat = torch.cat((coordinates1, coordinates2, coordinates3), dim=0)
         species_cat = torch.cat((species1, species2, species3), dim=0)
 
-        energy1 = rep((species1, coordinates1)).energies
+        energy1 = disp.calc(species1, coordinates1)
         # avoid first atom since it isdummy
-        energy2 = rep((species2[:, 1:], coordinates2[:, 1:, :])).energies
-        energy3 = rep((species3[:, 1:], coordinates3[:, 1:, :])).energies
+        energy2 = disp.calc(species2[:, 1:], coordinates2[:, 1:, :])
+        energy3 = disp.calc(species3[:, 1:], coordinates3[:, 1:, :])
         energies_cat = torch.cat((energy1, energy2, energy3))
-        energies = rep((species_cat, coordinates_cat)).energies
+        energies = disp.calc(species_cat, coordinates_cat)
         self.assertEqual(energies, energies_cat)
 
     def testForce(self):
-        model = self._setup(
-            StandaloneTwoBodyDispersionD3(
+        if self.jit:
+            self.skipTest("calc is non-jittable")
+        disp = self._setup(
+            TwoBodyDispersionD3.from_functional(
                 symbols=SYMBOLS_1X,
                 cutoff=math.inf,
                 functional="wB97X",
             )
         )
-        _, forces = energies_and_forces(model, self.atomic_numbers, self.coordinates)
+        energies, forces = energies_and_forces(
+            disp, self.atomic_numbers, self.coordinates
+        )
         grad = -forces / units.ANGSTROM_TO_BOHR
+        self.coordinates.requires_grad_(False)
         # compare with analytical gradient from Grimme's DFTD3 (DFTD3 gives
         # gradient in Bohr)
         expect_grad = torch.tensor(

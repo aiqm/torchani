@@ -27,10 +27,14 @@ class AtomicContainer(torch.nn.Module):
     def forward(
         self,
         species_aev: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        atomic: bool = False,
     ) -> tp.Tuple[Tensor, Tensor]:
-        raise NotImplementedError()
+        elem_idxs, aevs = species_aev
+        if atomic:
+            energies = aevs.new_zeros(elem_idxs.shape)
+        else:
+            energies = aevs.new_zeros(elem_idxs.shape[0])
+        return (elem_idxs, energies)
 
     @torch.jit.export
     def get_active_members_num(self) -> int:
@@ -45,20 +49,13 @@ class AtomicContainer(torch.nn.Module):
                 )
         self.active_members_idxs = idxs
 
-    @torch.jit.ignore
+    @torch.jit.unused
     def member(self, idx: int) -> "AtomicContainer":
         if idx == 0:
             return self
         raise IndexError("Only idx=0 supported")
 
-    @torch.jit.export
-    def atomic_energies(
-        self,
-        species_aev: tp.Tuple[Tensor, Tensor],
-        ensemble_average: bool = False,
-    ) -> Tensor:
-        raise NotImplementedError()
-
+    @torch.jit.unused
     def to_infer_model(self, use_mnp: bool = False) -> "AtomicContainer":
         return self
 

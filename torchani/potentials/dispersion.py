@@ -15,9 +15,8 @@ from torchani.constants import (
 )
 from torchani.units import ANGSTROM_TO_BOHR
 from torchani.cutoffs import CutoffArg
-from torchani.neighbors import NeighborData, NeighborlistArg
+from torchani.neighbors import NeighborData
 from torchani.potentials.core import PairPotential
-from torchani.potentials.wrapper import PotentialWrapper
 from torchani.paths import resources_dir
 
 
@@ -150,7 +149,6 @@ class TwoBodyDispersionD3(PairPotential):
         super().__init__(
             symbols=symbols,
             cutoff=cutoff,
-            is_trainable=False,
             cutoff_fn=cutoff_fn,
         )
         if not sqrt_empirical_charge:
@@ -323,26 +321,3 @@ class TwoBodyDispersionD3(PairPotential):
         w_factor = gauss_dist.sum(-1) + self._eps
         z_factor = (precalc_coeff6 * gauss_dist).sum(-1) + self._eps
         return z_factor / w_factor
-
-
-def StandaloneTwoBodyDispersionD3(
-    symbols: tp.Sequence[str],
-    functional: str,
-    cutoff_fn: CutoffArg = "dummy",
-    damp_fn: str = "bj",
-    cutoff: float = math.inf,
-    periodic_table_index: bool = True,
-    neighborlist: NeighborlistArg = "full_pairwise",
-) -> PotentialWrapper:
-    module = TwoBodyDispersionD3.from_functional(
-        symbols=symbols,
-        functional=functional,
-        cutoff=cutoff,
-        cutoff_fn=cutoff_fn,
-        damp_fn=damp_fn,
-    )
-    return PotentialWrapper(
-        potential=module,
-        periodic_table_index=periodic_table_index,
-        neighborlist=neighborlist,
-    )

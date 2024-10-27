@@ -2,6 +2,7 @@ r"""
 Core modules used by the ANI-style models
 """
 
+import warnings
 import typing as tp
 
 import torch
@@ -68,19 +69,10 @@ class ANIModel(AtomicContainer):
     def forward(
         self,
         species_aev: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        atomic: bool = False,
     ) -> SpeciesEnergies:
-        atomic_energies = self.atomic_energies(species_aev, ensemble_average=True)
-        return SpeciesEnergies(species_aev[0], atomic_energies.sum(dim=1))
-
-    @torch.jit.export
-    def atomic_energies(
-        self, species_aev: tp.Tuple[Tensor, Tensor], ensemble_average: bool = False
-    ) -> Tensor:
         species, aev = species_aev
         assert species.shape == aev.shape[:-1]
-
         species_ = species.flatten()
         aev = aev.flatten(0, 1)
         output = aev.new_zeros(species_.shape)
@@ -90,17 +82,17 @@ class ANIModel(AtomicContainer):
                 input_ = aev.index_select(0, midx)
                 output.index_add_(0, midx, m(input_).view(-1))
         output = output.view_as(species)
-        if ensemble_average:
-            return output
-        # Output shape is (1, molecs, atoms)
-        return output.unsqueeze(0)
+        if not atomic:
+            output = output.sum(dim=-1)
+        return SpeciesEnergies(species, output)
 
+    @torch.jit.unused
     def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
         return InferModel(self, use_mnp=use_mnp)
 
 
 class Ensemble(AtomicContainer):
-    """Compute the average output of an ensemble of modules."""
+    """Compute the average output of a sequence of AtomicContainer"""
 
     # Needed for bw compatibility
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:
@@ -125,59 +117,89 @@ class Ensemble(AtomicContainer):
 
     def forward(
         self,
-        species_input: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
+        species_aevs: tp.Tuple[Tensor, Tensor],
+        atomic: bool = False,
     ) -> SpeciesEnergies:
-        # TODO: Unclear if this is faster or more efficient than just
-        # calling atomic energies and taking the sum over atoms
-        species, input = species_input
-        sum_ = torch.zeros(species.shape[0], dtype=input.dtype, device=input.device)
-        for j, x in enumerate(self.members):
+        elem_idxs, aevs = species_aevs
+        if atomic:
+            energies = aevs.new_zeros(elem_idxs.shape)
+        else:
+            energies = aevs.new_zeros(elem_idxs.shape[0])
+        for j, nnp in enumerate(self.members):
             if j in self.active_members_idxs:
-                sum_ += x((species, input))[1]
-        return SpeciesEnergies(species, sum_ / self.get_active_members_num())
+                energies += nnp((elem_idxs, aevs), atomic=atomic)[1]
+        energies = energies / self.get_active_members_num()
+        return SpeciesEnergies(elem_idxs, energies)
 
-    @torch.jit.ignore
+    def ensemble_values(
+        self,
+        species_aevs: tp.Tuple[Tensor, Tensor],
+        atomic: bool = False,
+    ) -> Tensor:
+        elem_idxs, aevs = species_aevs
+        size = len(self.active_members_idxs)
+        if atomic:
+            energies = aevs.new_zeros((size, elem_idxs.shape[0], elem_idxs.shape[1]))
+        else:
+            energies = aevs.new_zeros((size, elem_idxs.shape[0]))
+        idx = 0
+        for j, nnp in enumerate(self.members):
+            if j in self.active_members_idxs:
+                energies[idx] = nnp((elem_idxs, aevs), atomic=atomic)[1]
+                idx += 1
+        return energies
+
+    @torch.jit.unused
     def member(self, idx: int) -> AtomicContainer:
         return self.members[idx]
 
-    @torch.jit.export
-    def atomic_energies(
-        self, species_aev: tp.Tuple[Tensor, Tensor], ensemble_average: bool = False
-    ) -> Tensor:
-        _energies = []
-        for nnp in self.members:
-            _energies.append(nnp.atomic_energies((species_aev)))
-        # TODO: Unnecessary cat, it is possible to pre-allocate a tensor of the correct
-        # size
-        energies = torch.cat(_energies, dim=0)
-        if ensemble_average:
-            return energies.mean(dim=0)
-        # out shape is (members, molecs, atoms)
-        return energies
-
+    @torch.jit.unused
     def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
         if use_mnp:
             return InferModel(self, use_mnp=True)
         return BmmEnsemble(self)
 
 
-class Sequential(torch.nn.ModuleList):
-    """Modified Sequential module that accept Tuple type as input"""
-
-    def __init__(self, *modules):
-        super().__init__(modules)
-
+# Dummy model that just returns zeros
+class DummyANIModel(ANIModel):
     def forward(
         self,
-        input_: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-    ):
-        for module in self:
-            input_ = module(input_, cell=cell, pbc=pbc)
-        return input_
+        species_aev: tp.Tuple[Tensor, Tensor],
+        atomic: bool = False,
+    ) -> SpeciesEnergies:
+        elem_idxs, aevs = species_aev
+        if atomic:
+            energies = aevs.new_zeros(elem_idxs.shape)
+        else:
+            energies = aevs.new_zeros(elem_idxs.shape[0])
+        return SpeciesEnergies(elem_idxs, energies)
+
+
+# Hack: Grab a network with "bad first scalar", discard it and only outputs 2nd
+class _ANIModelDiscardFirstScalar(ANIModel):
+    def forward(
+        self,
+        species_aev: tp.Tuple[Tensor, Tensor],
+        atomic: bool = False,
+    ) -> SpeciesEnergies:
+        species, aev = species_aev
+        assert species.shape == aev.shape[:-1]
+        species_ = species.flatten()
+        aev = aev.flatten(0, 1)
+        output = aev.new_zeros(species_.shape)
+        for i, m in enumerate(self.atomics.values()):
+            midx = (species_ == i).nonzero().view(-1)
+            if midx.shape[0] > 0:
+                input_ = aev.index_select(0, midx)
+                output.index_add_(0, midx, m(input_)[:, 1].view(-1))
+        output = output.view_as(species)
+        if not atomic:
+            output = output.sum(dim=-1)
+        return SpeciesEnergies(species, output)
+
+    @torch.jit.unused
+    def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
+        return self
 
 
 class SpeciesConverter(torch.nn.Module):
@@ -208,8 +230,6 @@ class SpeciesConverter(torch.nn.Module):
     def forward(
         self,
         input_: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
     ):
         r"""Convert species from atomic numbers to 0, 1, 2, 3, ... indexing"""
         species, coordinates = input_
@@ -222,45 +242,22 @@ class SpeciesConverter(torch.nn.Module):
         return SpeciesCoordinates(converted_species.to(species.device), coordinates)
 
 
-# Model that just returns zeros
-class DummyANIModel(ANIModel):
-    @torch.jit.export
-    def atomic_energies(
-        self, species_aev: tp.Tuple[Tensor, Tensor], ensemble_average: bool = False
-    ) -> Tensor:
-        species, aev = species_aev
-        energies = torch.zeros(species.shape, device=aev.device, dtype=aev.dtype)
-        if ensemble_average:
-            return energies
-        return energies.unsqueeze(0)
+class Sequential(torch.nn.ModuleList):
+    """Modified Sequential module that accept Tuple type as input"""
 
-    def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
-        return self
+    def __init__(self, *modules):
+        super().__init__(modules)
+        warnings.warn("Use of 'Sequential' is strongly discouraged")
 
-
-# Hack: Grab a network with "bad first scalar", discard it and only outputs 2nd
-class _ANIModelDiscardFirstScalar(ANIModel):
-    @torch.jit.export
-    def atomic_energies(
+    def forward(
         self,
-        species_aev: tp.Tuple[Tensor, Tensor],
-        ensemble_average: bool = False,
-    ) -> Tensor:
-        species, aev = species_aev
-        assert species.shape == aev.shape[:-1]
-
-        species_ = species.flatten()
-        aev = aev.flatten(0, 1)
-        output = aev.new_zeros(species_.shape)
-        for i, m in enumerate(self.atomics.values()):
-            midx = (species_ == i).nonzero().view(-1)
-            if midx.shape[0] > 0:
-                input_ = aev.index_select(0, midx)
-                output.index_add_(0, midx, m(input_)[:, 1].view(-1))
-        output = output.view_as(species)
-        if ensemble_average:
-            return output
-        return output.unsqueeze(0)
-
-    def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
-        return self
+        input_: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ):
+        for module in self:
+            if hasattr(module, "neighborlist"):
+                input_ = module(input_, cell=cell, pbc=pbc)
+            else:
+                input_ = module(input_)
+        return input_

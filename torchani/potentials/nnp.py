@@ -7,7 +7,6 @@ from torchani.electro import ChargeNormalizer
 from torchani.tuples import EnergiesAtomicCharges
 from torchani.neighbors import NeighborData
 from torchani.atomics import AtomicContainer
-from torchani.constants import PERIODIC_TABLE
 from torchani.aev.computer import AEVComputer
 from torchani.potentials.core import Potential
 
@@ -15,65 +14,54 @@ from torchani.potentials.core import Potential
 # Adaptor to use the aev computer as a three body potential
 class NNPotential(Potential):
     def __init__(self, aev_computer: AEVComputer, neural_networks: AtomicContainer):
-        # Fetch the symbols or "?" if they are not actually elements
-        # NOTE: symbols that are not elements is supported for backwards
-        # compatibility, since ANIModel supports arbitrary ordered dicts
-        # as inputs.
-        symbols = tuple(
-            k if k in PERIODIC_TABLE else "?" for k in neural_networks.member(0).atomics
-        )
-        super().__init__(
-            symbols=symbols,
-            cutoff=aev_computer.radial_terms.cutoff,
-            is_trainable=True,
-        )
+        symbols = tuple(k for k in neural_networks.member(0).atomics)
+        super().__init__(symbols=symbols, cutoff=aev_computer.radial_terms.cutoff)
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
 
-    # TODO: Wrapper that executes the correct _compute_aev call, very dirty
+    # TODO: Wrapper that executes the correct _compute_aev call, dirty
     def _execute_aev_computer(
         self,
         elem_idxs: Tensor,
         neighbors: NeighborData,
         _coords: tp.Optional[Tensor] = None,
     ) -> Tensor:
-        if self.aev_computer._compute_strategy == "pyaev":
-            aev = self.aev_computer._compute_aev(elem_idxs, neighbors)
-        elif self.aev_computer._compute_strategy == "cuaev":
+        strat = self.aev_computer._compute_strategy
+        if strat == "pyaev":
+            return self.aev_computer._compute_aev(elem_idxs, neighbors)
+        elif strat == "cuaev":
             assert _coords is not None
-            aev = self.aev_computer._compute_cuaev_with_half_nbrlist(
+            return self.aev_computer._compute_cuaev_with_half_nbrlist(
                 elem_idxs, _coords, neighbors
             )
         else:
-            raise RuntimeError(
-                f"Unsupported strat {self.aev_computer._compute_strategy}"
-            )
-        return aev
+            raise RuntimeError(f"Unsupported compute strategy {strat}")
 
     def forward(
         self,
-        element_idxs: Tensor,
+        elem_idxs: Tensor,
         neighbors: NeighborData,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
+        atomic: bool = False,
     ) -> Tensor:
-        aevs = self._execute_aev_computer(element_idxs, neighbors, _coordinates)
-        return self.neural_networks((element_idxs, aevs))[1]
+        aevs = self._execute_aev_computer(elem_idxs, neighbors, _coordinates)
+        return self.neural_networks((elem_idxs, aevs), atomic=atomic)[1]
 
-    @torch.jit.export
-    def atomic_energies(
+    def ensemble_values(
         self,
-        element_idxs: Tensor,
+        elem_idxs: Tensor,
         neighbors: NeighborData,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
-        ensemble_average: bool = False,
+        atomic: bool = False,
     ) -> Tensor:
-        aevs = self._execute_aev_computer(element_idxs, neighbors, _coordinates)
-        atomic_energies = self.neural_networks.atomic_energies((element_idxs, aevs))
-        if ensemble_average:
-            return atomic_energies.mean(dim=0)
-        return atomic_energies
+        if hasattr(self.neural_networks, "ensemble_values"):
+            aevs = self._execute_aev_computer(elem_idxs, neighbors, _coordinates)
+            out = self.neural_networks.ensemble_values((elem_idxs, aevs), atomic=atomic)
+            return out
+        out = self(elem_idxs, neighbors, _coordinates, ghost_flags, atomic).unsqueeze(0)
+        return out
 
 
 # Output of NN is assumed to be of shape (molecules, 2) with
@@ -94,23 +82,20 @@ class MergedChargesNNPotential(NNPotential):
     @torch.jit.export
     def energies_and_atomic_charges(
         self,
-        element_idxs: Tensor,
+        elem_idxs: Tensor,
         neighbors: NeighborData,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         total_charge: int = 0,
+        atomic: bool = False,
     ) -> EnergiesAtomicCharges:
-        aevs = self._execute_aev_computer(element_idxs, neighbors, _coordinates)
-        atomic_energies_and_raw_atomic_charges = self.neural_networks.atomic_energies(
-            (element_idxs, aevs),
-            ensemble_average=True,
-        )  # shape is assumed to be (C, A, 2)
-        energies = torch.sum(atomic_energies_and_raw_atomic_charges[:, :, 0], dim=-1)
-        raw_atomic_charges = atomic_energies_and_raw_atomic_charges[:, :, 1]
-        atomic_charges = self.charge_normalizer(
-            element_idxs, raw_atomic_charges, total_charge
-        )
-        return EnergiesAtomicCharges(energies, atomic_charges)
+        aevs = self._execute_aev_computer(elem_idxs, neighbors, _coordinates)
+        energies_qs = self.neural_networks((elem_idxs, aevs), atomic=True)[1]
+        energies = energies_qs[:, :, 0]
+        if not atomic:
+            energies = energies.sum(dim=-1)
+        qs = self.charge_normalizer(elem_idxs, energies_qs[:, :, 1], total_charge)
+        return EnergiesAtomicCharges(energies, qs)
 
 
 class SeparateChargesNNPotential(NNPotential):
@@ -135,13 +120,10 @@ class SeparateChargesNNPotential(NNPotential):
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         total_charge: int = 0,
+        atomic: bool = False,
     ) -> EnergiesAtomicCharges:
         aevs = self._execute_aev_computer(element_idxs, neighbors, _coordinates)
-        energies = self.neural_networks((element_idxs, aevs))[1]
-        raw_atomic_charges = self.charge_networks.atomic_energies(
-            (element_idxs, aevs), ensemble_average=True
-        )  # shape (M, C, A)
-        atomic_charges = self.charge_normalizer(
-            element_idxs, raw_atomic_charges, total_charge
-        )
-        return EnergiesAtomicCharges(energies, atomic_charges)
+        energies = self.neural_networks((element_idxs, aevs), atomic=atomic)[1]
+        qs = self.charge_networks((element_idxs, aevs), atomic=True)[1]
+        qs = self.charge_normalizer(element_idxs, qs, total_charge)
+        return EnergiesAtomicCharges(energies, qs)

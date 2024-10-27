@@ -6,15 +6,16 @@ TorchANI can use a built-in implementation of D3 dispersion for dispersion
 interactions. This is meant for using with functionals that are parametrized
 with dispersion in the first place.
 """
+
 # To begin with, let's import the modules we will use:
 import math
 import torch
 
-from torchani.potentials import StandaloneTwoBodyDispersionD3
+from torchani.potentials import TwoBodyDispersionD3
 from torchani.grad import energies_and_forces
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-disp = StandaloneTwoBodyDispersionD3(
+disp = TwoBodyDispersionD3.from_functional(
     functional="b973c", cutoff=math.inf, symbols=("H", "C", "N", "O")
 ).to(device)
 
@@ -46,7 +47,7 @@ print("Dispersion Energy:", disp_energy)
 print("Force:", force.squeeze())
 
 # Different supported species can be passed down to the constructor
-disp = StandaloneTwoBodyDispersionD3(
+disp = TwoBodyDispersionD3.from_functional(
     functional="b973c", cutoff=math.inf, symbols=("H", "C", "N", "O", "S", "Fe")
 ).to(device)
 # Here we change the species a bit to make a nonesense molecule

@@ -78,15 +78,9 @@ Potentials
 .. automodule:: torchani.potentials
 .. autoclass:: torchani.potentials.RepulsionXTB
     :members:
-.. autoclass:: torchani.potentials.StandaloneRepulsionXTB
-    :members:
 .. autoclass:: torchani.potentials.TwoBodyDispersionD3
     :members:
-.. autoclass:: torchani.potentials.StandaloneTwoBodyDispersionD3
-    :members:
 .. autoclass:: torchani.potentials.EnergyAdder
-    :members:
-.. autoclass:: torchani.potentials.wrapper.PotentialWrapper
     :members:
 
 Electrostatics

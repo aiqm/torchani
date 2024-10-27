@@ -81,7 +81,6 @@ class ANI(torch.nn.Module):
 
     atomic_numbers: Tensor
     periodic_table_index: Final[bool]
-    _output_labels: tp.List[str]
 
     def __init__(
         self,
@@ -89,24 +88,27 @@ class ANI(torch.nn.Module):
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: EnergyAdder,
-        pairwise_potentials: tp.Iterable[PairPotential] = (),
+        pair_potentials: tp.Iterable[PairPotential] = (),
         periodic_table_index: bool = True,
-        output_labels: tp.Sequence[str] = ("energies",),
     ):
         super().__init__()
+        if not periodic_table_index:
+            warnings.warn(
+                "Setting 'periodic_table_index=False' is deprecated "
+                " and will be removed in the future"
+            )
 
         # NOTE: Keep these refs for later usage
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
         self.neighborlist = self.aev_computer.neighborlist
-        self._output_labels = list(output_labels)
 
         device = energy_shifter.self_energies.device
         self.energy_shifter = energy_shifter
         self.species_converter = SpeciesConverter(symbols).to(device)
 
-        self._has_pair_pots = bool(pairwise_potentials)
-        potentials: tp.List[Potential] = list(pairwise_potentials)
+        self._has_pair_potentials = bool(pair_potentials)
+        potentials: tp.List[Potential] = list(pair_potentials)
         potentials.append(NNPotential(self.aev_computer, self.neural_networks))
 
         # Sort potentials in order of decresing cutoff. The potential with the
@@ -146,7 +148,8 @@ class ANI(torch.nn.Module):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
         total_charge: int = 0,
-        ensemble_average: bool = True,
+        atomic: bool = False,
+        ensemble_values: bool = False,
     ) -> tp.Dict[str, Tensor]:
         """Calculate energies for a batch of molecules
 
@@ -161,10 +164,7 @@ class ANI(torch.nn.Module):
                 to None if PBC is not enabled. shape (3,)
             total_charge: The total charge of the molecules. Only
                 the scalar 0 is currently supported.
-            ensemble_average: If True (default), return the average
-                over all models in the ensemble (output shape ``(C, A)``), otherwise
-                return one atomic energy per model (output shape ``(M, C, A)``).
-
+            atomic: Perform atomic decoposition of the energies
         Returns:
             species_energies: tuple of tensors, species and energies for the
                 given configurations
@@ -174,9 +174,27 @@ class ANI(torch.nn.Module):
             cell=cell,
             pbc=pbc,
             total_charge=total_charge,
-            ensemble_average=ensemble_average,
+            atomic=atomic,
+            ensemble_values=ensemble_values,
         )
-        return {self._output_labels[0]: energies}
+        out: tp.Dict[str, Tensor] = {}
+        if ensemble_values:
+            if atomic:
+                out["atomic_energies"] = energies.mean(dim=0)
+                _values = energies.sum(dim=-1)
+            else:
+                _values = energies
+            out["energies"] = _values.mean(dim=0)
+            if _values.shape[0] == 1:
+                out["ensemble_std"] = _values.new_zeros(energies.shape)
+            else:
+                out["ensemble_std"] = _values.std(dim=0, unbiased=True)
+            out["ensemble_values"] = _values
+            return out
+
+        if atomic:
+            return {"energies": energies.sum(dim=-1), "atomic_energies": energies}
+        return {"energies": energies}
 
     def forward(
         self,
@@ -184,80 +202,85 @@ class ANI(torch.nn.Module):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
         total_charge: int = 0,
-        ensemble_average: bool = True,
+        atomic: bool = False,
+        ensemble_values: bool = False,
     ) -> SpeciesEnergies:
-        # Unoptimized path to obtain member energies, and eventually QBC
-        if not ensemble_average:
-            elem_idxs, energies = self.atomic_energies(
-                species_coordinates,
-                cell=cell,
-                pbc=pbc,
-                total_charge=total_charge,
-                ensemble_average=False,
-            )
-            return SpeciesEnergies(elem_idxs, energies.sum(-1))
-
         elem_idxs, coords = self._maybe_convert_species(species_coordinates)
-        # Check inputs
-        assert elem_idxs.dim() == 2
-        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
-        assert total_charge == 0, "Model only supports neutral molecules"
 
-        # Optimized path, use merged Neighborlist-AEVComputer
+        # Optimized branch that uses the cuAEV-fused strategy
         if (
-            not self._has_pair_pots
+            not self._has_pair_potentials
             and self.aev_computer._compute_strategy == "cuaev-fused"
         ):
-            _, energies = self.neural_networks(
-                self.aev_computer((elem_idxs, coords), cell=cell, pbc=pbc)
+            aevs = self.aev_computer((elem_idxs, coords), cell=cell, pbc=pbc)[1]
+            energies = self.neural_networks(
+                (elem_idxs, aevs),
+                atomic=atomic,
+            )[1]
+            energies += self.energy_shifter(
+                elem_idxs,
+                atomic=atomic,
             )
-            return SpeciesEnergies(elem_idxs, energies + self.energy_shifter(elem_idxs))
+            return SpeciesEnergies(elem_idxs, energies)
 
-        # Unoptimized path
-        largest_cutoff = self.potentials[0].cutoff
-        neighbors = self.neighborlist(elem_idxs, coords, largest_cutoff, cell, pbc)
-        energies = self._energy_of_pots(elem_idxs, coords, largest_cutoff, neighbors)
+        # Less optimized branch that goes through the internal neighborlist
+        max_cutoff = self.potentials[0].cutoff
+        neighbors = self.neighborlist(elem_idxs, coords, max_cutoff, cell, pbc)
+        energies, _ensemble_values = self._potentials_energies(
+            elem_idxs,
+            coords,
+            max_cutoff,
+            neighbors,
+            atomic=atomic,
+            ensemble_values=ensemble_values,
+        )
+        if ensemble_values:
+            assert _ensemble_values is not None
+            energies = _ensemble_values + energies.unsqueeze(0)
+        return SpeciesEnergies(elem_idxs, energies)
 
-        return SpeciesEnergies(elem_idxs, energies + self.energy_shifter(elem_idxs))
-
+    # Branch that gets its input from an external neighborlist
     @torch.jit.export
     def from_neighborlist(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
+        species: Tensor,
+        coordinates: Tensor,
         neighbor_idxs: Tensor,
         shift_values: Tensor,
         total_charge: int = 0,
-        ensemble_average: bool = True,
+        atomic: bool = False,
+        ensemble_values: bool = False,
         input_needs_screening: bool = True,
     ) -> SpeciesEnergies:
         r"""
         This entrypoint supports input from an external neighborlist
         """
+        elem_idxs, coords = self._maybe_convert_species((species, coordinates))
+        # Check inputs
+        assert elem_idxs.dim() == 2
+        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
         assert total_charge == 0, "Model only supports neutral molecules"
-        elem_idxs, coords = self._maybe_convert_species(species_coordinates)
-        assert coords.shape[:-1] == elem_idxs.shape
-        assert coords.shape[-1] == 3
-        largest_cutoff = self.potentials[0].cutoff
+
+        max_cutoff = self.potentials[0].cutoff
         neighbors = self.neighborlist.process_external_input(
             elem_idxs,
             coords,
             neighbor_idxs,
             shift_values,
-            largest_cutoff,
+            max_cutoff,
             input_needs_screening,
         )
-        if not ensemble_average:
-            energies = self._atomic_energy_of_pots(
-                elem_idxs, coords, largest_cutoff, neighbors
-            ).mean(dim=1)
-        else:
-            energies = self._energy_of_pots(
-                elem_idxs, coords, largest_cutoff, neighbors
-            )
-
-        energies += self.energy_shifter.atomic_energies(
-            elem_idxs, ensemble_average=ensemble_average
-        ).sum(dim=-1)
+        energies, _ensemble_values = self._potentials_energies(
+            elem_idxs,
+            coords,
+            max_cutoff,
+            neighbors,
+            atomic=atomic,
+            ensemble_values=ensemble_values,
+        )
+        if ensemble_values:
+            assert _ensemble_values is not None
+            energies = _ensemble_values + energies.unsqueeze(0)
         return SpeciesEnergies(elem_idxs, energies)
 
     @torch.jit.export
@@ -267,42 +290,21 @@ class ANI(torch.nn.Module):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
         total_charge: int = 0,
-        ensemble_average: bool = True,
+        ensemble_values: bool = False,
     ) -> SpeciesEnergies:
         r"""Calculate predicted atomic energies of all atoms in a molecule
 
         Arguments and return value are the same as that of forward(), but
         the returned energies have shape (molecules, atoms)
         """
-        elem_idxs, coords = self._maybe_convert_species(species_coordinates)
-        # Check inputs
-        assert elem_idxs.dim() == 2
-        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
-        assert total_charge == 0, "Model only supports neutral molecules"
-
-        # Optimized path, go through the merged Neighborlist-AEVomputer only
-        if (
-            not self._has_pair_pots
-            and self.aev_computer._compute_strategy == "cuaev-fused"
-        ):
-            atomic_energies = self.neural_networks.atomic_energies(
-                self.aev_computer((elem_idxs, coords), cell=cell, pbc=pbc)
-            )
-        # Iterate over all potentials
-        else:
-            largest_cutoff = self.potentials[0].cutoff
-            neighbors = self.neighborlist(elem_idxs, coords, largest_cutoff, cell, pbc)
-            atomic_energies = self._atomic_energy_of_pots(
-                elem_idxs, coords, largest_cutoff, neighbors
-            )
-
-        atomic_energies += self.energy_shifter.atomic_energies(
-            elem_idxs, ensemble_average=False
+        return self(
+            species_coordinates,
+            cell,
+            pbc,
+            total_charge=total_charge,
+            atomic=True,
+            ensemble_values=ensemble_values,
         )
-
-        if ensemble_average:
-            atomic_energies = atomic_energies.mean(dim=0)
-        return SpeciesEnergies(elem_idxs, atomic_energies)
 
     def to_infer_model(self, use_mnp: bool = False) -> tpx.Self:
         r"""Convert the neural networks module of the model into a module
@@ -342,14 +344,15 @@ class ANI(torch.nn.Module):
     def get_chemical_symbols(self) -> tp.Tuple[str, ...]:
         return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)
 
+    # TODO make this be useful
     @torch.jit.unused
-    def strip_non_trainable_potentials(self):
+    def disable_non_nnp(self):
         r"""
-        Remove all potentials in the network that are non-trainable
+        Disable all potentials that don't have neural_networks
         """
-        self.potentials = torch.nn.ModuleList(
-            [p for p in self.potentials if p.is_trainable]
-        )
+        for p in self.potentials:
+            if hasattr(p, "neural_networks"):
+                p.is_enabled = False
 
     # TODO This is confusing, it may be a good idea to deprecate it, or at least warn
     def __len__(self):
@@ -364,45 +367,44 @@ class ANI(torch.nn.Module):
                 p.neural_networks = model.neural_networks
         return model
 
-    def _atomic_energy_of_pots(
+    # For now this assumes that there is only one potential with ensemble values
+    def _potentials_energies(
         self,
         elem_idxs: Tensor,
         coords: Tensor,
         previous_cutoff: float,
         neighbors: NeighborData,
-    ) -> Tensor:
-        # Add extra axis, since potentials return atomic E of shape (memb, N, A)
-        shape = (
-            len(self.neural_networks.active_members_idxs),
-            elem_idxs.shape[0],
-            elem_idxs.shape[1],
-        )
-        energies = torch.zeros(shape, dtype=coords.dtype, device=coords.device)
+        atomic: bool,
+        ensemble_values: bool,
+    ) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
+        # Output shape depends on the atomic flag
+        if atomic:
+            energies = coords.new_zeros(elem_idxs.shape)
+        else:
+            energies = coords.new_zeros(elem_idxs.shape[0])
+        _values: tp.Optional[Tensor] = None
         for pot in self.potentials:
             cutoff = pot.cutoff
             if cutoff < previous_cutoff:
                 neighbors = rescreen(cutoff, neighbors)
                 previous_cutoff = cutoff
-            energies += pot.atomic_energies(elem_idxs, neighbors, _coordinates=coords)
-        return energies
-
-    def _energy_of_pots(
-        self,
-        elem_idxs: Tensor,
-        coords: Tensor,
-        previous_cutoff: float,
-        neighbors: NeighborData,
-    ) -> Tensor:
-        energies = torch.zeros(
-            elem_idxs.shape[0], dtype=coords.dtype, device=coords.device
-        )
-        for pot in self.potentials:
-            cutoff = pot.cutoff
-            if cutoff < previous_cutoff:
-                neighbors = rescreen(cutoff, neighbors)
-                previous_cutoff = cutoff
-            energies += pot(elem_idxs, neighbors, _coordinates=coords)
-        return energies
+            # Separate the values of the potential that has ensemble values if requested
+            if ensemble_values and hasattr(pot, "ensemble_values"):
+                _values = pot.ensemble_values(
+                    elem_idxs,
+                    neighbors,
+                    _coordinates=coords,
+                    atomic=atomic,
+                )
+            else:
+                energies += pot(
+                    elem_idxs,
+                    neighbors,
+                    _coordinates=coords,
+                    atomic=atomic,
+                )
+        energies += self.energy_shifter(elem_idxs, atomic=atomic)
+        return energies, _values
 
     # Needed for bw compatibility
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:
@@ -425,6 +427,10 @@ class ANI(torch.nn.Module):
             species_coordinates = self.species_converter(species_coordinates)
         if (species_coordinates[0] >= self.aev_computer.num_species).any():
             raise ValueError(f"Unknown species found in {species_coordinates[0]}")
+        # Check inputs
+        elem_idxs, coords = species_coordinates
+        assert elem_idxs.dim() == 2
+        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
         return species_coordinates
 
     # Unfortunately this is an UGLY workaround for a torchscript bug
@@ -442,6 +448,7 @@ class ANI(torch.nn.Module):
         species_coordinates: tp.Tuple[Tensor, Tensor],
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
+        total_charge: int = 0,
     ) -> SpeciesForces:
         """Calculates predicted forces from ensemble members
 
@@ -456,21 +463,23 @@ class ANI(torch.nn.Module):
             SpeciesForces: species, molecular energies, and atomic forces
                 predicted by an ensemble of neural network models
         """
-        coordinates = species_coordinates[1].requires_grad_()
-        members_energies = self(
-            species_coordinates,
+        species, coordinates = species_coordinates
+        coordinates.requires_grad_(True)
+        elem_idxs, energies = self(
+            (species, coordinates),
             cell,
             pbc,
-            total_charge=0,
-            ensemble_average=False,
-        ).energies
+            total_charge=total_charge,
+            atomic=False,
+            ensemble_values=True,
+        )
         _forces = []
-        for energy in members_energies:
+        for energy in energies:
             _forces.append(
                 -torch.autograd.grad(energy.sum(), coordinates, retain_graph=True)[0]
             )
         forces = torch.stack(_forces, dim=0)
-        return SpeciesForces(species_coordinates[0], members_energies, forces)
+        return SpeciesForces(elem_idxs, energies, forces)
 
     @torch.jit.export
     def energies_qbcs(
@@ -503,15 +512,16 @@ class ANI(torch.nn.Module):
                 factors for the given configurations. The shapes of qbcs and
                 energies are equal.
         """
-        species, energies = self(
+        elem_idxs, energies = self(
             species_coordinates,
             cell,
             pbc,
             total_charge=total_charge,
-            ensemble_average=False,
+            atomic=False,
+            ensemble_values=True,
         )
 
-        if len(self.neural_networks.active_members_idxs) == 1:
+        if energies.shape[0] == 1:
             qbc_factors = torch.zeros_like(energies).squeeze(0)
         else:
             # standard deviation is taken across ensemble members
@@ -519,11 +529,11 @@ class ANI(torch.nn.Module):
 
         # rho's (qbc factors) are weighted by dividing by the square root of
         # the number of atoms in each molecule
-        num_atoms = (species >= 0).sum(dim=1, dtype=energies.dtype)
+        num_atoms = (elem_idxs >= 0).sum(dim=1, dtype=energies.dtype)
         qbc_factors = qbc_factors / num_atoms.sqrt()
         energies = energies.mean(dim=0)
         assert qbc_factors.shape == energies.shape
-        return SpeciesEnergiesQBC(species, energies, qbc_factors)
+        return SpeciesEnergiesQBC(elem_idxs, energies, qbc_factors)
 
     @torch.jit.export
     def atomic_stdev(
@@ -531,33 +541,32 @@ class ANI(torch.nn.Module):
         species_coordinates: tp.Tuple[Tensor, Tensor],
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-        ensemble_average: bool = False,
+        total_charge: int = 0,
+        ensemble_values: bool = False,
         unbiased: bool = True,
     ) -> AtomicStdev:
         r"""Returns standard deviation of atomic energies across an ensemble
 
         If the model has only 1 network, a value of 0.0 is output for the stdev
         """
-        species_coordinates = self._maybe_convert_species(species_coordinates)
-        species_aevs = self.aev_computer(species_coordinates, cell=cell, pbc=pbc)
-        atomic_energies = self.neural_networks.atomic_energies(species_aevs)
-
-        atomic_energies += self.energy_shifter.atomic_energies(
-            species_coordinates[0],
-            ensemble_average=ensemble_average,
+        elem_idxs, energies = self(
+            species_coordinates,
+            cell=cell,
+            pbc=pbc,
+            total_charge=total_charge,
+            atomic=True,
+            ensemble_values=True,
         )
 
-        if len(self.neural_networks.active_members_idxs) == 1:
-            stdev_atomic_energies = torch.zeros_like(atomic_energies).squeeze(0)
+        if energies.shape[0] == 1:
+            stdev = torch.zeros_like(energies).squeeze(0)
         else:
-            stdev_atomic_energies = atomic_energies.std(0, unbiased=unbiased)
+            stdev = energies.std(0, unbiased=unbiased)
 
-        if ensemble_average:
-            atomic_energies = atomic_energies.mean(0)
+        if not ensemble_values:
+            energies = energies.mean(0)
 
-        return AtomicStdev(
-            species_coordinates[0], atomic_energies, stdev_atomic_energies
-        )
+        return AtomicStdev(elem_idxs, energies, stdev)
 
     @torch.jit.unused
     def force_magnitudes(
@@ -565,7 +574,7 @@ class ANI(torch.nn.Module):
         species_coordinates: tp.Tuple[Tensor, Tensor],
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-        ensemble_average: bool = True,
+        ensemble_values: bool = False,
     ) -> ForceMagnitudes:
         """
         Computes the L2 norm of predicted atomic force vectors, returning magnitudes,
@@ -573,12 +582,11 @@ class ANI(torch.nn.Module):
 
         Args:
             species_coordinates: minibatch of configurations
-            ensemble_average: by default, returns the ensemble average magnitude for
-                each atomic force vector
+            ensemble_values: Return force magnitudes of members of the ensemble
         """
         species, _, members_forces = self.members_forces(species_coordinates, cell, pbc)
         magnitudes = members_forces.norm(dim=-1)
-        if ensemble_average:
+        if not ensemble_values:
             magnitudes = magnitudes.mean(0)
         return ForceMagnitudes(species, magnitudes)
 
@@ -588,7 +596,7 @@ class ANI(torch.nn.Module):
         species_coordinates: tp.Tuple[Tensor, Tensor],
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-        ensemble_average: bool = False,
+        ensemble_values: bool = False,
         unbiased: bool = True,
     ) -> ForceStdev:
         """
@@ -597,33 +605,28 @@ class ANI(torch.nn.Module):
 
         Args:
             species_coordinates: minibatch of configurations
-            ensemble_average: returns magnitudes predicted by each model by default
+            ensemble_values: Return magnitudes of each model of the ensemble
             unbiased: whether or not to use Bessel's correction in computing
                 the standard deviation, True by default
         """
-        species, magnitudes = self.force_magnitudes(
-            species_coordinates, cell, pbc, ensemble_average=False
+        species, mags = self.force_magnitudes(
+            species_coordinates, cell, pbc, ensemble_values=True
         )
 
-        max_magnitudes = magnitudes.max(dim=0).values
-        min_magnitudes = magnitudes.min(dim=0).values
-
-        if len(self.neural_networks.active_members_idxs) == 1:
-            relative_stdev = torch.zeros_like(magnitudes).squeeze(0)
-            relative_range = torch.ones_like(magnitudes).squeeze(0)
+        eps = 1e-8
+        mean_mags = mags.mean(0)
+        if mags.shape[0] == 1:
+            relative_std = torch.zeros_like(mags).squeeze(0)
+            relative_range = torch.ones_like(mags).squeeze(0)
         else:
-            mean_magnitudes = magnitudes.mean(0)
-            relative_stdev = (magnitudes.std(0, unbiased=unbiased) + 1e-8) / (
-                mean_magnitudes + 1e-8
-            )
-            relative_range = ((max_magnitudes - min_magnitudes) + 1e-8) / (
-                mean_magnitudes + 1e-8
-            )
+            relative_std = (mags.std(0, unbiased=unbiased) + eps) / (mean_mags + eps)
+            relative_range = (
+                (mags.max(dim=0).values - mags.min(dim=0).values) + eps
+            ) / (mean_mags + eps)
 
-        if ensemble_average:
-            magnitudes = mean_magnitudes
-
-        return ForceStdev(species, magnitudes, relative_stdev, relative_range)
+        if not ensemble_values:
+            mags = mean_mags
+        return ForceStdev(species, mags, relative_std, relative_range)
 
 
 class ANIq(ANI):
@@ -643,20 +646,18 @@ class ANIq(ANI):
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: EnergyAdder,
-        pairwise_potentials: tp.Iterable[PairPotential] = (),
+        pair_potentials: tp.Iterable[PairPotential] = (),
         periodic_table_index: bool = True,
         charge_networks: tp.Optional[AtomicContainer] = None,
         charge_normalizer: tp.Optional[ChargeNormalizer] = None,
-        output_labels: tp.Sequence[str] = ("energies", "atomic_charges"),
     ):
         super().__init__(
             symbols=symbols,
             aev_computer=aev_computer,
             neural_networks=neural_networks,
             energy_shifter=energy_shifter,
-            pairwise_potentials=pairwise_potentials,
+            pair_potentials=pair_potentials,
             periodic_table_index=periodic_table_index,
-            output_labels=output_labels,
         )
         nnp: NNPotential
         if charge_networks is None:
@@ -691,33 +692,45 @@ class ANIq(ANI):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
         total_charge: int = 0,
-        ensemble_average: bool = True,
+        atomic: bool = False,
+        ensemble_values: bool = False,
     ) -> tp.Dict[str, Tensor]:
-        assert ensemble_average, "Not currently supported"
         _, energies, atomic_charges = self.energies_and_atomic_charges(
-            (species, coordinates), cell, pbc, total_charge
+            (species, coordinates),
+            cell=cell,
+            pbc=pbc,
+            total_charge=total_charge,
+            atomic=atomic,
+            ensemble_values=ensemble_values,
         )
-        return {
-            self._output_labels[0]: energies,
-            self._output_labels[1]: atomic_charges,
-        }
+        if atomic:
+            return {
+                "energies": energies.sum(dim=-1),
+                "atomic_energies": energies,
+                "atomic_charges": atomic_charges,
+            }
+        return {"energies": energies, "atomic_charges": atomic_charges}
 
-    # TODO: Remove code duplication
+    # TODO: Remove code duplication, the next two functions should be reformulated so
+    # the code is not repeated
     @torch.jit.export
     def energies_and_atomic_charges_from_neighborlist(
         self,
-        species_coordinates: tp.Tuple[Tensor, Tensor],
+        species: Tensor,
+        coordinates: Tensor,
         neighbor_idxs: Tensor,
         shift_values: Tensor,
         total_charge: int = 0,
         input_needs_screening: bool = True,
+        atomic: bool = False,
+        ensemble_values: bool = False,
     ) -> SpeciesEnergiesAtomicCharges:
+        if ensemble_values:
+            raise ValueError("ensemble_values not supported for ANIq")
         # This entrypoint supports input from an external neighborlist
-        elem_idxs, coords = self._maybe_convert_species(species_coordinates)
-        # Check inputs
-        assert elem_idxs.dim() == 2
-        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
         assert total_charge == 0, "Model only supports neutral molecules"
+        elem_idxs, coords = self._maybe_convert_species((species, coordinates))
+
         previous_cutoff = self.potentials[0].cutoff
         neighbors = self.neighborlist.process_external_input(
             elem_idxs,
@@ -727,34 +740,31 @@ class ANIq(ANI):
             previous_cutoff,
             input_needs_screening,
         )
-        energies = torch.zeros(
-            elem_idxs.shape[0], device=elem_idxs.device, dtype=coords.dtype
-        )
-        atomic_charges = torch.zeros(
-            (elem_idxs.shape[0], elem_idxs.shape[1]),
-            device=elem_idxs.device,
-            dtype=coords.dtype,
-        )
+        if atomic:
+            energies = coords.new_zeros(elem_idxs.shape)
+        else:
+            energies = coords.new_zeros(elem_idxs.shape[0])
+        atomic_charges = coords.new_zeros(elem_idxs.shape)
         for pot in self.potentials:
             cutoff = pot.cutoff
             if cutoff < previous_cutoff:
                 neighbors = rescreen(cutoff, neighbors)
                 previous_cutoff = cutoff
-            if pot.is_trainable:
+            if hasattr(pot, "energies_and_atomic_charges"):
                 output = pot.energies_and_atomic_charges(
                     elem_idxs,
                     neighbors,
                     _coordinates=coords,
                     ghost_flags=None,
                     total_charge=total_charge,
+                    atomic=atomic,
                 )
                 energies += output.energies
                 atomic_charges += output.atomic_charges
             else:
                 energies += pot(elem_idxs, neighbors, _coordinates=coords)
-        return SpeciesEnergiesAtomicCharges(
-            elem_idxs, energies + self.energy_shifter(elem_idxs), atomic_charges
-        )
+        energies += self.energy_shifter(elem_idxs, atomic=atomic)
+        return SpeciesEnergiesAtomicCharges(elem_idxs, energies, atomic_charges)
 
     @torch.jit.export
     def energies_and_atomic_charges(
@@ -763,41 +773,41 @@ class ANIq(ANI):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
         total_charge: int = 0,
+        atomic: bool = False,
+        ensemble_values: bool = False,
     ) -> SpeciesEnergiesAtomicCharges:
-        elem_idxs, coords = self._maybe_convert_species(species_coordinates)
-        # Check inputs
-        assert elem_idxs.dim() == 2
-        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
+        if ensemble_values:
+            raise ValueError("atomic E and ensemble values not supported")
         assert total_charge == 0, "Model only supports neutral molecules"
-
-        previous_cutoff = self.potentials[0].cutoff
-        neighbor_data = self.neighborlist(elem_idxs, coords, previous_cutoff, cell, pbc)
-        energies = torch.zeros(
-            elem_idxs.shape[0], device=elem_idxs.device, dtype=coords.dtype
-        )
-        atomic_charges = torch.zeros(
-            elem_idxs.shape, device=elem_idxs.device, dtype=coords.dtype
-        )
+        elem_idxs, coords = self._maybe_convert_species(species_coordinates)
+        prev_cutoff = self.potentials[0].cutoff
+        neighbor_data = self.neighborlist(elem_idxs, coords, prev_cutoff, cell, pbc)
+        energies = coords.new_zeros(elem_idxs.shape[0])
+        atomic_charges = coords.new_zeros(elem_idxs.shape)
+        if atomic:
+            energies = coords.new_zeros(elem_idxs.shape)
+        else:
+            energies = coords.new_zeros(elem_idxs.shape[0])
         for pot in self.potentials:
             cutoff = pot.cutoff
-            if cutoff < previous_cutoff:
+            if cutoff < prev_cutoff:
                 neighbor_data = rescreen(cutoff, neighbor_data)
-                previous_cutoff = cutoff
-            if pot.is_trainable:
+                prev_cutoff = cutoff
+            if hasattr(pot, "energies_and_atomic_charges"):
                 output = pot.energies_and_atomic_charges(
                     elem_idxs,
                     neighbor_data,
                     _coordinates=coords,
                     ghost_flags=None,
                     total_charge=total_charge,
+                    atomic=atomic,
                 )
                 energies += output.energies
                 atomic_charges += output.atomic_charges
             else:
                 energies += pot(elem_idxs, neighbor_data, _coordinates=coords)
-        return SpeciesEnergiesAtomicCharges(
-            elem_idxs, energies + self.energy_shifter(elem_idxs), atomic_charges
-        )
+        energies += self.energy_shifter(elem_idxs)
+        return SpeciesEnergiesAtomicCharges(elem_idxs, energies, atomic_charges)
 
 
 FeaturizerType = tp.Type[AEVComputer]
@@ -845,14 +855,12 @@ class Assembler:
         featurizer: tp.Optional[FeaturizerWrapper] = None,
         neighborlist: NeighborlistArg = "full_pairwise",
         periodic_table_index: bool = True,
-        output_labels: tp.Sequence[str] = ("energies",),
     ) -> None:
         self._global_cutoff_fn: tp.Optional[Cutoff] = None
 
         self._neighborlist = parse_neighborlist(neighborlist)
         self._featurizer = featurizer
-        self._pairwise_potentials: tp.List[PairPotentialWrapper] = []
-        self._output_labels = output_labels
+        self._pair_potentials: tp.List[PairPotentialWrapper] = []
 
         # This part of the assembler organizes the self-energies, the
         # symbols and the atomic networks
@@ -1005,14 +1013,14 @@ class Assembler:
     ) -> None:
         self._global_cutoff_fn = parse_cutoff_fn(cutoff_fn)
 
-    def add_pairwise_potential(
+    def add_pair_potential(
         self,
         pair_type: PairPotentialType,
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "global",
         extra: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
-        self._pairwise_potentials.append(
+        self._pair_potentials.append(
             PairPotentialWrapper(
                 pair_type,
                 cutoff=cutoff,
@@ -1079,9 +1087,9 @@ class Assembler:
             self_energies=tuple(self_energies[k] for k in self.symbols),
         )
         kwargs: tp.Dict[str, tp.Any] = {}
-        if self._pairwise_potentials:
+        if self._pair_potentials:
             potentials = []
-            for pot in self._pairwise_potentials:
+            for pot in self._pair_potentials:
                 if pot.extra is not None:
                     pot_kwargs = pot.extra
                 else:
@@ -1100,7 +1108,7 @@ class Assembler:
                         **pot_kwargs,
                     )
                 )
-            kwargs.update({"pairwise_potentials": potentials})
+            kwargs.update({"pair_potentials": potentials})
 
         if charge_networks is not None:
             kwargs["charge_networks"] = charge_networks
@@ -1113,7 +1121,6 @@ class Assembler:
             energy_shifter=shifter,
             neural_networks=neural_networks,
             periodic_table_index=self.periodic_table_index,
-            output_labels=self._output_labels,
             **kwargs,
         )
 
@@ -1139,7 +1146,6 @@ def simple_ani(
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
     compute_strategy: str = "pyaev",
-    output_label: str = "energies",
 ) -> ANI:
     r"""
     Flexible builder to create ANI-style models. Defaults are similar to ANI-2x.
@@ -1155,7 +1161,6 @@ def simple_ani(
     asm = Assembler(
         ensemble_size=ensemble_size,
         periodic_table_index=True,
-        output_labels=(output_label,),
     )
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
@@ -1186,12 +1191,12 @@ def simple_ani(
     asm.set_neighborlist("full_pairwise")
     asm.set_gsaes_as_self_energies(lot)
     if repulsion:
-        asm.add_pairwise_potential(
+        asm.add_pair_potential(
             RepulsionXTB,
             cutoff=radial_cutoff,
         )
     if dispersion:
-        asm.add_pairwise_potential(
+        asm.add_pair_potential(
             TwoBodyDispersionD3,
             cutoff=8.0,
             extra={"functional": lot.split("-")[0]},
@@ -1223,8 +1228,6 @@ def simple_aniq(
     merge_charge_networks: bool = False,
     scale_charge_normalizer_weights: bool = True,
     dummy_energies: bool = False,
-    output_label: str = "energies",
-    second_output_label: str = "atomic_charges",
 ) -> ANI:
     r"""
     Flexible builder to create ANI-style models with separated or merged charge
@@ -1242,7 +1245,6 @@ def simple_aniq(
         ensemble_size=ensemble_size,
         periodic_table_index=True,
         model_type=ANIq,
-        output_labels=(output_label, second_output_label),
     )
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
@@ -1298,12 +1300,12 @@ def simple_aniq(
     else:
         asm.set_zeros_as_self_energies()
     if repulsion and not dummy_energies:
-        asm.add_pairwise_potential(
+        asm.add_pair_potential(
             RepulsionXTB,
             cutoff=radial_cutoff,
         )
     if dispersion and not dummy_energies:
-        asm.add_pairwise_potential(
+        asm.add_pair_potential(
             TwoBodyDispersionD3,
             cutoff=8.0,
             extra={"functional": lot.split("-")[0]},

@@ -7,7 +7,7 @@ from torch import Tensor
 import torchani
 from torchani.utils import SYMBOLS_1X
 from torchani.testing import ANITest, expand
-from torchani.potentials import RepulsionXTB, StandaloneRepulsionXTB
+from torchani.potentials import RepulsionXTB
 from torchani.neighbors import NeighborData
 
 
@@ -15,9 +15,6 @@ from torchani.neighbors import NeighborData
 class TestRepulsion(ANITest):
     def setUp(self):
         self.rep = self._setup(RepulsionXTB(symbols=SYMBOLS_1X, cutoff=5.2))
-        self.sa_rep = self._setup(
-            StandaloneRepulsionXTB(symbols=SYMBOLS_1X, cutoff=5.2)
-        )
 
     def testPotential(self):
         element_idxs = torch.tensor([[0, 0]], device=self.device)
@@ -31,15 +28,18 @@ class TestRepulsion(ANITest):
         self.assertEqual(torch.tensor([3.5325e-08], device=self.device), energies)
 
     def testStandalone(self):
+        if self.jit:
+            self.skipTest("calc is non-jittable")
         coordinates = torch.tensor(
             [[0.0, 0.0, 0.0], [3.5, 0.0, 0.0]], device=self.device
         ).unsqueeze(0)
         species = torch.tensor([[1, 1]], device=self.device)
-        energies = self.sa_rep((species, coordinates)).energies
+        energies = self.rep.calc(species, coordinates)
         self.assertEqual(torch.tensor([3.5325e-08], device=self.device), energies)
 
     def testBatches(self):
-        rep = self.sa_rep
+        if self.jit:
+            self.skipTest("calc is non-jittable")
         coordinates1 = torch.tensor(
             [[0.0, 0.0, 0.0], [1.5, 0.0, 0.0], [3.0, 0.0, 0.0]],
             device=self.device,
@@ -58,12 +58,12 @@ class TestRepulsion(ANITest):
         coordinates_cat = torch.cat((coordinates1, coordinates2, coordinates3), dim=0)
         species_cat = torch.cat((species1, species2, species3), dim=0)
 
-        energy1 = rep((species1, coordinates1)).energies
+        energy1 = self.rep.calc(species1, coordinates1)
         # avoid first atom since it isdummy
-        energy2 = rep((species2[:, 1:], coordinates2[:, 1:, :])).energies
-        energy3 = rep((species3[:, 1:], coordinates3[:, 1:, :])).energies
+        energy2 = self.rep.calc(species2[:, 1:], coordinates2[:, 1:, :])
+        energy3 = self.rep.calc(species3[:, 1:], coordinates3[:, 1:, :])
         energies_cat = torch.cat((energy1, energy2, energy3))
-        energies = rep((species_cat, coordinates_cat)).energies
+        energies = self.rep.calc(species_cat, coordinates_cat)
         self.assertEqual(energies, energies_cat)
 
     def testLongDistances(self):
@@ -97,7 +97,7 @@ class TestRepulsion(ANITest):
                 device=self.device,
             )
             _atomic_energies.append(
-                model.atomic_energies((species, coordinates), ensemble_average=True)
+                model.atomic_energies((species, coordinates))
                 .energies.sum(-1)
                 .item()
             )

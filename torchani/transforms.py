@@ -42,10 +42,10 @@ from torchani.grad import energies_and_forces
 from torchani.nn import SpeciesConverter
 from torchani.constants import ATOMIC_NUMBER
 from torchani.potentials import (
-    PotentialWrapper,
-    StandaloneEnergyAdder,
-    StandaloneTwoBodyDispersionD3,
-    StandaloneRepulsionXTB,
+    Potential,
+    EnergyAdder,
+    RepulsionXTB,
+    TwoBodyDispersionD3,
 )
 
 
@@ -81,31 +81,26 @@ identity = Identity()
 
 class SubtractEnergyAndForce(Transform):
     r"""
-    Subtract the energies (and optionally forces) from an arbitrary Wrapper
-    module. This can be coupled with, e.g., a PairwisePotential
+    Subtract the energies (and optionally forces) from an arbitrary Potential
     """
 
-    def __init__(self, wrapper: PotentialWrapper, subtract_force: bool = True):
+    def __init__(self, potential: Potential, subtract_force: bool = True):
         super().__init__()
-        if not wrapper.periodic_table_index:
-            raise ValueError("Wrapper module should have periodic_table_index=True")
-        self.wrapper = wrapper
-        self.atomic_numbers = wrapper.potential.atomic_numbers
+        self.potential = potential
+        self.atomic_numbers = potential.atomic_numbers
         self.subtract_force = subtract_force
 
     def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
+        if torch.jit.is_scripting():
+            raise RuntimeError("SubtractEnergyAndForce doesn't support JIT")
         species = properties["species"]
         coordinates = properties["coordinates"]
         if self.subtract_force:
-            if torch.jit.is_scripting():
-                raise RuntimeError(
-                    "Its not possible to JIT compile transforms that calculate forces"
-                )
-            energies, forces = energies_and_forces(self.wrapper, species, coordinates)
-            properties["forces"] -= forces
+            energies, forces = energies_and_forces(self.potential, species, coordinates)
             properties["energies"] -= energies
+            properties["forces"] -= forces
         else:
-            properties["energies"] -= self.wrapper((species, coordinates)).energies
+            properties["energies"] -= self.potential.calc(species, coordinates)
         return properties
 
 
@@ -113,7 +108,7 @@ class SubtractRepulsionXTB(Transform):
     r"""
     Convenience class that subtracts repulsion terms.
 
-    Takes same arguments as :class:``torchani.potentials.StandaloneRepulsionXTB``
+    Takes same arguments as :class:``torchani.potentials.RepulsionXTB``
     """
 
     def __init__(
@@ -124,7 +119,7 @@ class SubtractRepulsionXTB(Transform):
     ):
         super().__init__()
         self._transform = SubtractEnergyAndForce(
-            StandaloneRepulsionXTB(*args, **kwargs), subtract_force=subtract_force
+            RepulsionXTB(*args, **kwargs), subtract_force=subtract_force
         )
         self.atomic_numbers = self._transform.atomic_numbers
 
@@ -136,7 +131,7 @@ class SubtractTwoBodyDispersionD3(Transform):
     r"""
     Convenience class that subtracts dispersion terms.
 
-    Takes same arguments as :class:``torchani.potentials.StandaloneTwoBodyDispersionD3``
+    Takes same arguments as ``torchani.potentials.TwoBodyDispersionD3.from_functional``
     """
 
     def __init__(
@@ -147,7 +142,7 @@ class SubtractTwoBodyDispersionD3(Transform):
     ):
         super().__init__()
         self._transform = SubtractEnergyAndForce(
-            StandaloneTwoBodyDispersionD3(*args, **kwargs),
+            TwoBodyDispersionD3.from_functional(*args, **kwargs),
             subtract_force=subtract_force,
         )
         self.atomic_numbers = self._transform.atomic_numbers
@@ -160,13 +155,13 @@ class SubtractSAE(Transform):
     r"""
     Convenience class that subtracts self atomic energies.
 
-    Takes same arguments as :class:``torchani.potentials.StandaloneEnergyAdder``
+    Takes same arguments as :class:``torchani.potentials.EnergyAdder``
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__()
         self._transform = SubtractEnergyAndForce(
-            StandaloneEnergyAdder(*args, **kwargs), subtract_force=False
+            EnergyAdder(*args, **kwargs), subtract_force=False
         )
         self.atomic_numbers = self._transform.atomic_numbers
 

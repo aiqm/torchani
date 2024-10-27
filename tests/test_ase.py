@@ -63,7 +63,7 @@ class TestASE(ANITest):
                 neural_networks=model_cell.neural_networks,
                 energy_shifter=model_cell.energy_shifter,
                 symbols=model_cell.get_chemical_symbols(),
-                pairwise_potentials=[
+                pair_potentials=[
                     PairPotential(symbols=symbols, cutoff=6.4),
                     PairPotential(symbols=symbols, cutoff=5.2),
                     PairPotential(symbols=symbols, cutoff=3.0),

@@ -6,7 +6,6 @@ from torch import Tensor
 from torchani.constants import GSAES
 from torchani.neighbors import NeighborData
 from torchani.potentials.core import Potential
-from torchani.potentials.wrapper import PotentialWrapper
 
 
 class EnergyAdder(Potential):
@@ -23,14 +22,11 @@ class EnergyAdder(Potential):
     self_energies: Tensor
 
     def __init__(self, symbols: tp.Sequence[str], self_energies: tp.Sequence[float]):
-        super().__init__(symbols=symbols, cutoff=0.0, is_trainable=False)
+        super().__init__(symbols=symbols, cutoff=0.0)
         if not len(symbols) == len(self_energies):
-            raise ValueError(
-                "Chemical symbols and self energies do not match in length"
-            )
-        self.register_buffer(
-            "self_energies", torch.tensor(self_energies, dtype=torch.float)
-        )
+            raise ValueError("Symbols and self energies do not match in length")
+        _self_energies = torch.tensor(self_energies, dtype=torch.float)
+        self.register_buffer("self_energies", _self_energies)
 
     # Return a sequence of GSAES sorted by element
     # Example usage:
@@ -47,55 +43,21 @@ class EnergyAdder(Potential):
     @classmethod
     def with_gsaes(cls, elements: tp.Sequence[str], functional: str, basis_set: str):
         r"""Instantiate an EnergyAdder with ground state atomic energies"""
-        obj = cls(elements, cls._sorted_gsaes(elements, functional, basis_set))
-        return obj
-
-    @torch.jit.export
-    def atomic_energies(
-        self,
-        element_idxs: Tensor,
-        neighbors: NeighborData = NeighborData(
-            torch.empty(0), torch.empty(0), torch.empty(0)
-        ),
-        _coordinates: tp.Optional[Tensor] = None,
-        ghost_flags: tp.Optional[Tensor] = None,
-        ensemble_average: bool = False,
-    ) -> Tensor:
-        # Compute atomic self energies for a set of species.
-        self_atomic_energies = self.self_energies[element_idxs]
-        self_atomic_energies = self_atomic_energies.masked_fill(element_idxs == -1, 0.0)
-        if ensemble_average:
-            return self_atomic_energies
-        return self_atomic_energies.unsqueeze(0)
+        return cls(elements, cls._sorted_gsaes(elements, functional, basis_set))
 
     def forward(
         self,
-        element_idxs: Tensor,
+        elem_idxs: Tensor,
         neighbors: NeighborData = NeighborData(
             torch.empty(0), torch.empty(0), torch.empty(0)
         ),
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
+        atomic: bool = False,
     ) -> Tensor:
-        return self.atomic_energies(
-            element_idxs,
-            neighbors,
-            _coordinates=_coordinates,
-            ghost_flags=ghost_flags,
-            ensemble_average=True,
-        ).sum(dim=-1)
-
-
-def StandaloneEnergyAdder(
-    symbols: tp.Sequence[str],
-    self_energies: tp.Sequence[float],
-    periodic_table_index: bool = True,
-) -> PotentialWrapper:
-    module = EnergyAdder(
-        symbols=symbols,
-        self_energies=self_energies,
-    )
-    return PotentialWrapper(
-        module,
-        periodic_table_index,
-    )
+        # Compute atomic self energies for a set of species.
+        self_atomic_energies = self.self_energies[elem_idxs]
+        self_atomic_energies = self_atomic_energies.masked_fill(elem_idxs == -1, 0.0)
+        if not atomic:
+            self_atomic_energies = self_atomic_energies.sum(dim=-1)
+        return self_atomic_energies

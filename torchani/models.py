@@ -206,7 +206,6 @@ def ANImbis(
         ensemble_size=8,
         periodic_table_index=periodic_table_index,
         model_type=ANIq,
-        output_labels=("energies", "atomic_charges")
     )
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")
@@ -304,11 +303,11 @@ def ANIdr(
         compute_strategy=compute_strategy,
     )
     asm.set_atomic_networks(ANIModel, atomics.like_dr)
-    asm.add_pairwise_potential(
+    asm.add_pair_potential(
         RepulsionXTB,
         cutoff=5.3,
     )
-    asm.add_pairwise_potential(
+    asm.add_pair_potential(
         TwoBodyDispersionD3,
         cutoff=8.5,
         cutoff_fn="smooth4",

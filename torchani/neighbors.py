@@ -26,6 +26,7 @@ def rescreen(
 class Neighborlist(torch.nn.Module):
     default_pbc: Tensor
     default_cell: Tensor
+    diff_vectors: Tensor
 
     def __init__(self):
         """Compute pairs of atoms that are neighbors, uses pbc depending on
@@ -962,3 +963,23 @@ def parse_neighborlist(neighborlist: NeighborlistArg = "base") -> Neighborlist:
     elif not isinstance(neighborlist, Neighborlist):
         raise ValueError(f"Unsupported neighborlist: {neighborlist}")
     return tp.cast(Neighborlist, neighborlist)
+
+
+_global_cell_list = CellList()
+
+
+def _call_global_cell_list(
+    species: Tensor,
+    coordinates: Tensor,
+    cutoff: float,
+    cell: tp.Optional[Tensor] = None,
+    pbc: tp.Optional[Tensor] = None,
+    return_shift_values: bool = False,
+) -> NeighborData:
+    out = _global_cell_list(species, coordinates, cutoff, cell, pbc)
+    # Reset state
+    _global_cell_list.diff_vectors = torch.empty(0)
+    return out
+
+
+_call_global_all_pairs = FullPairwise()

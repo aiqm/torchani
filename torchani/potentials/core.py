@@ -3,107 +3,102 @@ import typing as tp
 import torch
 from torch import Tensor
 
-from torchani.tuples import EnergiesAtomicCharges
 from torchani.constants import ATOMIC_NUMBER, PERIODIC_TABLE
 from torchani.cutoffs import parse_cutoff_fn, CutoffArg
-from torchani.neighbors import NeighborData
+from torchani.neighbors import (
+    NeighborData,
+    _call_global_cell_list,
+    _call_global_all_pairs,
+)
+
 
 # TODO: The "_coordinates" input is only required due to a quirk of the
 # implementation of the cuAEV
-
-
 class Potential(torch.nn.Module):
     r"""Base class for all atomic potentials
 
-    Potentials may be many-body potentials or pairwise potentials
-    Subclasses must override 'forward' and 'atomic_energies'
-
-    Optionally, if the potential also assigns atomic charges to atoms,
-    subclasses may override energies_and_atomic_charges, by default this
-    function makes all atomic charges zero.
+    Potentials may be many-body potentials or 2-body (pair) potentials
+    By default, the base class returns a Tensor of zeros. Subclasses
+    must override forward.
     """
 
     cutoff: float
-    is_trainable: bool
     atomic_numbers: Tensor
 
     def __init__(
         self,
         symbols: tp.Sequence[str],
         cutoff: float,
-        is_trainable: bool = False,
     ):
         super().__init__()
         self.atomic_numbers = torch.tensor(
             [ATOMIC_NUMBER[e] for e in symbols], dtype=torch.long
         )
         self.cutoff = cutoff
-        self.is_trainable = is_trainable
+        # First element is extra-pair and last element will always be -1
+        conv_tensor = -torch.ones(118 + 2, dtype=torch.long)
+        for i, znum in enumerate(self.atomic_numbers):
+            conv_tensor[znum] = i
+        self._conv_tensor = conv_tensor
 
     @torch.jit.unused
     def get_chemical_symbols(self) -> tp.Tuple[str, ...]:
         return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)
 
-    def forward(
+    @torch.jit.unused
+    def calc(
         self,
-        element_idxs: Tensor,
-        neighbors: NeighborData,
-        _coordinates: tp.Optional[Tensor] = None,
-        ghost_flags: tp.Optional[Tensor] = None,
+        species: Tensor,
+        coordinates: Tensor,
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+        neighborlist: str = "full_pairwise",
+        periodic_table_index: bool = True,
+        atomic: bool = False,
     ) -> Tensor:
         r"""
-        Outputs "energy", with shape (N,)
+        Outputs energy, as calculated by the potential
 
-        All distances are assumed to lie inside self.cutoff (which may be infinite).
+        Output shape depends on the value of ``atomic``, it is either
+        ``(molecs, atoms)`` or ``(molecs,)``
         """
-        return torch.zeros(
-            element_idxs.shape[0],
-            dtype=neighbors.distances.dtype,
-            device=element_idxs.device,
+        if periodic_table_index:
+            elem_idxs = self._conv_tensor.to(species.device)[species]
+        else:
+            elem_idxs = species
+        # Check inputs
+        assert elem_idxs.dim() == 2
+        assert coordinates.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
+
+        if self.cutoff > 0.0:
+            if neighborlist == "cell_list":
+                neighbors = _call_global_cell_list(
+                    elem_idxs, coordinates, self.cutoff, cell, pbc
+                )
+            elif neighborlist == "full_pairwise":
+                neighbors = _call_global_all_pairs(
+                    elem_idxs, coordinates, self.cutoff, cell, pbc
+                )
+        else:
+            neighbors = NeighborData(torch.empty(0), torch.empty(0), torch.empty(0))
+        return self(
+            elem_idxs,
+            neighbors,
+            atomic=atomic,
         )
 
-    @torch.jit.export
-    def energies_and_atomic_charges(
+    # Forward should be modified by subclasses of Potential, but be careful =S
+    def forward(
         self,
-        element_idxs: Tensor,
+        elem_idxs: Tensor,
         neighbors: NeighborData,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
-        total_charge: int = 0,
-    ) -> EnergiesAtomicCharges:
-        assert total_charge == 0, "Only neutral species supported"
-        energies = self(
-            element_idxs, neighbors, _coordinates=_coordinates, ghost_flags=ghost_flags
-        )
-        atomic_charges = torch.zeros_like(element_idxs, dtype=energies.dtype)
-        return EnergiesAtomicCharges(energies, atomic_charges)
-
-    @torch.jit.export
-    def atomic_energies(
-        self,
-        element_idxs: Tensor,
-        neighbors: NeighborData,
-        _coordinates: tp.Optional[Tensor] = None,
-        ghost_flags: tp.Optional[Tensor] = None,
-        ensemble_average: bool = False,
+        atomic: bool = False,
     ) -> Tensor:
-        r"""Outputs "atomic_energies"
-
-        All distances are assumed to lie inside self.cutoff (which may be infinite)
-
-        'ensemble_average' controls whether the atomic energies are averaged over
-        the ensemble models.
-
-        Shape is (M, N, A) if not averaged over the models,
-        or (N, A) if averaged over models
-
-        Potentials that don't have an ensemble of models output shape (1, N, A)
-        if ensemble_average=False.
-        """
-        energies = torch.zeros_like(element_idxs, dtype=neighbors.distances.dtype)
-        if ensemble_average:
-            return energies
-        return energies.unsqueeze(0)
+        if atomic:
+            return neighbors.distances.new_zeros(elem_idxs.shape)
+        return neighbors.distances.new_zeros(elem_idxs.shape[0])
 
 
 class PairPotential(Potential):
@@ -114,102 +109,73 @@ class PairPotential(Potential):
 
     def __init__(
         self,
-        cutoff: float,
         symbols: tp.Sequence[str],
-        is_trainable: bool = False,
+        cutoff: float,
         cutoff_fn: CutoffArg = "dummy",
     ):
-        super().__init__(cutoff=cutoff, is_trainable=is_trainable, symbols=symbols)
+        super().__init__(cutoff=cutoff, symbols=symbols)
         self.cutoff_fn = parse_cutoff_fn(cutoff_fn)
 
     def pair_energies(
         self,
-        element_idxs: Tensor,
+        elem_idxs: Tensor,
         neighbors: NeighborData,
     ) -> Tensor:
-        r"""Calculate the raw (non-smoothed) energy of all pairs of neighbors
+        r"""
+        Return energy of all pairs of neighbors, disregarding the cutoff fn envelope
 
-        This function must be overriden by subclasses
-        If there are P pairs of neighbors, then
-        this must return a tensor of shape (P,)"""
+        Returns a Tensor of energies, of shape ('pairs',) where 'pairs' is
+        the number of neighbor pairs.
+        """
         return torch.zeros_like(neighbors.distances)
 
-    # This function wraps calculate_pair_energies
-    # It potentially smooths out the energies using a cutoff function,
-    # and it scales pair energies of ghost atoms by 1/2
-    def _calculate_pair_energies_wrapper(
+    # Modulate pair_energies by wrapping with the cutoff fn envelope,
+    # and scale ghost pair energies by 0.5
+    def _pair_energies_wrapper(
         self,
-        element_idxs: Tensor,
+        elem_idxs: Tensor,
         neighbors: NeighborData,
         ghost_flags: tp.Optional[Tensor] = None,
     ) -> Tensor:
-        # Validation
-        assert element_idxs.ndim == 2, "species should be 2 dimensional"
+        # Input validation
+        assert elem_idxs.ndim == 2, "species should be 2 dimensional"
         assert neighbors.distances.ndim == 1, "distances should be 1 dimensional"
         assert neighbors.indices.ndim == 2, "atom_index12 should be 2 dimensional"
         assert neighbors.distances.shape[0] == neighbors.indices.shape[1]
 
-        pair_energies = self.pair_energies(element_idxs, neighbors)
-
+        pair_energies = self.pair_energies(elem_idxs, neighbors)
         pair_energies *= self.cutoff_fn(neighbors.distances, self.cutoff)
 
         if ghost_flags is not None:
-            assert (
-                ghost_flags.numel() == element_idxs.numel()
-            ), "ghost_flags and species should have the same number of elements"
+            if not ghost_flags.numel() == elem_idxs.numel():
+                raise ValueError(
+                    "ghost_flags and species should have the same number of elements"
+                )
             ghost12 = ghost_flags.flatten()[neighbors.indices]
             ghost_mask = torch.logical_or(ghost12[0], ghost12[1])
             pair_energies = torch.where(ghost_mask, pair_energies * 0.5, pair_energies)
         return pair_energies
 
+    # Forward should not be modified by subclasses of PairPotential
     def forward(
         self,
-        element_idxs: Tensor,
+        elem_idxs: Tensor,
         neighbors: NeighborData,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
+        atomic: bool = False,
     ) -> Tensor:
-        pair_energies = self._calculate_pair_energies_wrapper(
-            element_idxs,
-            neighbors,
-            ghost_flags,
-        )
-        energies = torch.zeros(
-            element_idxs.shape[0],
-            dtype=pair_energies.dtype,
-            device=pair_energies.device,
-        )
-        molecule_indices = torch.div(
-            neighbors.indices[0], element_idxs.shape[1], rounding_mode="floor"
-        )
-        energies.index_add_(0, molecule_indices, pair_energies)
+        pair_energies = self._pair_energies_wrapper(elem_idxs, neighbors, ghost_flags)
+        molecs_num, atoms_num = elem_idxs.shape
+        if atomic:
+            energies = neighbors.distances.new_zeros(molecs_num * atoms_num)
+            energies.index_add_(0, neighbors.indices[0], pair_energies / 2)
+            energies.index_add_(0, neighbors.indices[1], pair_energies / 2)
+            energies = energies.view(molecs_num, atoms_num)
+        else:
+            energies = neighbors.distances.new_zeros(molecs_num)
+            molecs_idxs = torch.div(
+                neighbors.indices[0], elem_idxs.shape[1], rounding_mode="floor"
+            )
+            energies.index_add_(0, molecs_idxs, pair_energies)
         return energies
-
-    @torch.jit.export
-    def atomic_energies(
-        self,
-        element_idxs: Tensor,
-        neighbors: NeighborData,
-        _coordinates: tp.Optional[Tensor] = None,
-        ghost_flags: tp.Optional[Tensor] = None,
-        ensemble_average: bool = False,
-    ) -> Tensor:
-        pair_energies = self._calculate_pair_energies_wrapper(
-            element_idxs,
-            neighbors,
-            ghost_flags,
-        )
-        molecules_num = element_idxs.shape[0]
-        atoms_num = element_idxs.shape[1]
-
-        atomic_energies = torch.zeros(
-            molecules_num * atoms_num,
-            dtype=pair_energies.dtype,
-            device=pair_energies.device,
-        )
-        atomic_energies.index_add_(0, neighbors.indices[0], pair_energies / 2)
-        atomic_energies.index_add_(0, neighbors.indices[1], pair_energies / 2)
-        atomic_energies = atomic_energies.view(molecules_num, atoms_num)
-        if ensemble_average:
-            return atomic_energies
-        return atomic_energies.unsqueeze(0)

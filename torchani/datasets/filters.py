@@ -107,7 +107,7 @@ def filter_by_high_energy_error(
             c = tp.cast(Tensor, group["coordinates"]).to(device)
             targ = tp.cast(Tensor, group["energies"]).to(device)
 
-            energies = model.sp(s, c, ensemble_average=False)["energies"]
+            energies = model((s, c), ensemble_values=True).energies
             errors = hartree2kcalpermol((energies - targ).abs())
             # any over individual models of the ensemble
             bad_idxs = (errors > threshold).any(dim=0).nonzero().squeeze()

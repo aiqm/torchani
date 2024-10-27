@@ -58,7 +58,8 @@ class TestExternalEntryPoints(ANITest):
         species = properties["species"].to(self.device)
         coords = properties["coordinates"].to(self.device, dtype=torch.float)
         coords, cell = model.aev_computer.neighborlist.compute_bounding_cell(
-            coords.detach(), eps=1e-3,
+            coords.detach(),
+            eps=1e-3,
         )
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         if hasattr(model, "potentials"):
@@ -71,12 +72,25 @@ class TestExternalEntryPoints(ANITest):
         if not charges:
             _, e = model((species, coords), cell, pbc)
             _, e2 = model.from_neighborlist(
-                (species, coords), neighbors.indices, neighbors.shift_values
+                species,
+                coords,
+                neighbors.indices,
+                neighbors.shift_values,
+                total_charge=0,
             )
         else:
-            _, e, q = model.energies_and_atomic_charges((species, coords), cell, pbc)
+            _, e, q = model.energies_and_atomic_charges(
+                (species, coords),
+                cell=cell,
+                pbc=pbc,
+                total_charge=0,
+            )
             _, e2, q2 = model.energies_and_atomic_charges_from_neighborlist(
-                (species, coords), neighbors.indices, neighbors.shift_values
+                species,
+                coords,
+                neighbors.indices,
+                neighbors.shift_values,
+                total_charge=0,
             )
             self.assertEqual(q, q2)
         self.assertEqual(e, e2)

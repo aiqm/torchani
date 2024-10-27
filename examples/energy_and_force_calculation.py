@@ -5,6 +5,7 @@ Computing Energy and Force Using Built-in Models
 TorchANI has a model zoo trained by NeuroChem. These models are shipped with
 TorchANI and can be used directly.
 """
+
 # To begin with, let's first import the modules we will use:
 import torch
 
@@ -61,10 +62,7 @@ print("Force (Hartree / Å): \n", force)
 ###############################################################################
 # you can get the atomic energies (WARNING: these have no physical meaning)
 # by calling:
-_, atomic_energies = model.atomic_energies(
-    (species, coordinates),
-    ensemble_average=True,
-)
+_, atomic_energies = model.atomic_energies((species, coordinates))
 
 ###############################################################################
 # this gives you the average (shifted) energies over all models of the ensemble
@@ -73,9 +71,6 @@ _, atomic_energies = model.atomic_energies(
 print("Average Atomic energies: \n", atomic_energies)
 
 ###############################################################################
-# you can access model specific atomic energies by indexing:
-_, atomic_energies = model.atomic_energies(
-    (species, coordinates),
-    ensemble_average=False,
-)
+# you can access model specific atomic energies too:
+_, atomic_energies = model.atomic_energies((species, coordinates), ensemble_values=True)
 print("Atomic energies of first model: \n", atomic_energies[0, :, :])

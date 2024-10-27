@@ -5,10 +5,9 @@ from torch import Tensor
 from torch.jit import Final
 
 from torchani.units import ANGSTROM_TO_BOHR
-from torchani.neighbors import NeighborData, NeighborlistArg
+from torchani.neighbors import NeighborData
 from torchani.cutoffs import CutoffArg
 from torchani.constants import XTB_REPULSION_ALPHA, XTB_REPULSION_YEFF
-from torchani.potentials.wrapper import PotentialWrapper
 from torchani.potentials.core import PairPotential
 
 
@@ -38,7 +37,7 @@ class RepulsionXTB(PairPotential):
         cutoff_fn: CutoffArg = "smooth",
     ):
         super().__init__(
-            symbols=symbols, cutoff=cutoff, is_trainable=False, cutoff_fn=cutoff_fn
+            symbols=symbols, cutoff=cutoff, cutoff_fn=cutoff_fn
         )
         num_elements = len(symbols)
 
@@ -92,30 +91,3 @@ class RepulsionXTB(PairPotential):
 
         # calculates repulsion energies using distances and constants
         return (y_ab / distances) * torch.exp(-sqrt_alpha_ab * (distances**k_rep_ab))
-
-
-def StandaloneRepulsionXTB(
-    symbols: tp.Sequence[str],
-    cutoff: float,
-    krep_hydrogen: float = 1.0,
-    krep: float = 1.5,
-    alpha: tp.Sequence[float] = (),
-    yeff: tp.Sequence[float] = (),
-    cutoff_fn: CutoffArg = "smooth",
-    neighborlist: NeighborlistArg = "full_pairwise",
-    periodic_table_index: bool = True,
-) -> PotentialWrapper:
-    module = RepulsionXTB(
-        alpha=alpha,
-        yeff=yeff,
-        krep_hydrogen=krep_hydrogen,
-        krep=krep,
-        cutoff=cutoff,
-        symbols=symbols,
-        cutoff_fn=cutoff_fn,
-    )
-    return PotentialWrapper(
-        potential=module,
-        neighborlist=neighborlist,
-        periodic_table_index=periodic_table_index,
-    )

@@ -1,7 +1,8 @@
 r"""
 TorchANI functions that make use of torch.autograd capabilities to compute
-forces and hessians in a straightforward manner.
+forces and hessians.
 """
+
 import math
 import typing as tp
 
@@ -9,7 +10,7 @@ import torch
 from torch import Tensor
 
 from torchani.assembly import ANI
-from torchani.potentials import PotentialWrapper
+from torchani.potentials import Potential
 from torchani.units import mhessian2fconst, sqrt_mhessian2invcm, sqrt_mhessian2milliev
 from torchani.tuples import (
     VibAnalysis,
@@ -28,7 +29,7 @@ __all__ = [
     "vibrational_analysis",
 ]
 
-Model = tp.Union[ANI, PotentialWrapper]
+Model = tp.Union[Potential, ANI]
 
 
 def energies_forces_and_hessians(
@@ -71,7 +72,10 @@ def energies_and_forces(
             "'coordinates' passed to `torchani.grad` functions must be a 'leaf' Tensor"
             "(i.e. must not have been modified prior to being used as an input)."
         )
-    energies = model((species, coordinates), cell=cell, pbc=pbc).energies
+    if isinstance(model, Potential):
+        energies = model.calc(species, coordinates, cell=cell, pbc=pbc)
+    else:
+        energies = model((species, coordinates), cell=cell, pbc=pbc).energies
     _forces = forces(
         energies,
         coordinates,
