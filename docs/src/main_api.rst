@@ -38,7 +38,7 @@ Neighborlists
 Atomic Networks and Containers
 ==============================
 
-.. autoclass:: torchani.nn.ANIModel
+.. autoclass:: torchani.nn.ANINetworks
     :members:
 .. autoclass:: torchani.nn.Ensemble
     :members:

@@ -24,7 +24,7 @@ import typing_extensions as tpx
 from torchani.paths import neurochem_dir
 from torchani.assembly import ANI
 from torchani.aev import AEVComputer
-from torchani.nn import ANIModel, Ensemble
+from torchani.nn import ANINetworks, Ensemble
 from torchani.cutoffs import CutoffArg
 from torchani.neighbors import NeighborlistArg
 from torchani.potentials import EnergyAdder
@@ -316,8 +316,8 @@ def load_atomic_network(filename: StrPath) -> AtomicNetwork:
     return network
 
 
-def load_member(symbols: tp.Sequence[str], model_dir: StrPath) -> ANIModel:
-    """Returns an instance of :class:`torchani.nn.ANIModel` loaded from
+def load_member(symbols: tp.Sequence[str], model_dir: StrPath) -> ANINetworks:
+    """Returns an instance of :class:`torchani.nn.ANINetworks` loaded from
     NeuroChem's network directory.
 
     Arguments:
@@ -326,7 +326,7 @@ def load_member(symbols: tp.Sequence[str], model_dir: StrPath) -> ANIModel:
         model_dir (str): String for directory storing network configurations.
     """
     model_dir = Path(model_dir).resolve()
-    return ANIModel(
+    return ANINetworks(
         OrderedDict(
             [(s, load_atomic_network(model_dir / f"ANN-{s}.nnf")) for s in symbols]
         )

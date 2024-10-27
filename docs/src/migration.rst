@@ -84,7 +84,7 @@ If you were previously doing:
 
     import torchani
     aev_computer = torchani.AEVComputer(...)
-    neural_networks = torchani.ANIModel(...)
+    neural_networks = torchani.ANINetworks(...)
     energy_shifter = torchani.EnergyShifter(...)
     model = torchani.nn.Sequential(aev_computer, neural_networks, energy_shifter)
 
@@ -122,7 +122,7 @@ If you want even more flexibility, we recommend you create your ``torch.nn.Modul
         def __init__(self):
             self.converter = torchani.SpeciesConverter(...)
             self.featurizer = torchani.AEVComputer(...)
-            self.nn = torchani.ANIModel(...)
+            self.nn = torchani.ANINetworks(...)
             self.adder = torchani.EnergyAdder(...)
 
         def forward(self, atomic_nums, coords, cell, pbc):

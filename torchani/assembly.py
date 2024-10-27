@@ -8,7 +8,7 @@ compatibility issues among them.
 An ANI-style model consists of:
 
 - Featurizer (typically a AEVComputer, which supports custom cuda ops, or subclass)
-- Container for atomic networks (typically ANIModel or subclass)
+- Container for atomic networks (typically ANINetworks or subclass)
 - Atomic Networks Dict {"H": torch.nn.Module(), "C": torch.nn.Module, ...}
 - Self Energies Dict (In Ha) {"H": -12.0, "C": -75.0, ...}
 - Shifter (typically EnergyAdder)
@@ -58,7 +58,7 @@ from torchani.aev.terms import (
 )
 from torchani.neighbors import rescreen, NeighborData
 from torchani.electro import ChargeNormalizer
-from torchani.nn import SpeciesConverter, ANIModel, DummyANIModel, Ensemble
+from torchani.nn import SpeciesConverter, ANINetworks, DummyANINetworks, Ensemble
 from torchani.atomics import AtomicContainer, AtomicNetwork, AtomicMakerArg, AtomicMaker
 from torchani.constants import GSAES
 from torchani.utils import sort_by_element
@@ -851,7 +851,7 @@ class Assembler:
         self._self_energies: tp.Dict[str, float] = {}
         self._fn_for_atomics: tp.Optional[AtomicMaker] = None
         self._fn_for_charges: tp.Optional[AtomicMaker] = None
-        self._container_type: ContainerType = ANIModel
+        self._container_type: ContainerType = ANINetworks
         self._charge_container_type: tp.Optional[ContainerType] = None
         self._charge_normalizer: tp.Optional[ChargeNormalizer] = None
         self._symbols: tp.Tuple[str, ...] = tuple(symbols)
@@ -933,7 +933,7 @@ class Assembler:
     def set_atomic_networks(
         self,
         fn: AtomicMaker,
-        container_type: ContainerType = ANIModel,
+        container_type: ContainerType = ANINetworks,
     ) -> None:
         self._container_type = container_type
         self._fn_for_atomics = fn
@@ -942,7 +942,7 @@ class Assembler:
         self,
         fn: AtomicMaker,
         normalizer: tp.Optional[ChargeNormalizer] = None,
-        container_type: ContainerType = ANIModel,
+        container_type: ContainerType = ANINetworks,
     ) -> None:
         if not issubclass(self._model_type, ANIq):
             raise ValueError("Model must be a subclass of ANIq to use charge networks")
@@ -1258,7 +1258,7 @@ def simple_aniq(
         )
     asm.set_atomic_networks(
         atomic_maker,
-        container_type=DummyANIModel if dummy_energies else ANIModel,
+        container_type=DummyANINetworks if dummy_energies else ANINetworks,
     )
     asm.set_neighborlist("full_pairwise")
     if not dummy_energies:

@@ -60,7 +60,7 @@ def _make_idx_list(
 class BmmEnsemble(AtomicContainer):
     r"""
     The inference-optimized analogue of an Ensemble, functions just like a
-    single ANIModel.
+    single ANINetworks.
 
     This class fuses all networks of an ensemble that correspond to the same
     element into one single BmmAtomicNetwork.
@@ -80,7 +80,7 @@ class BmmEnsemble(AtomicContainer):
     def __init__(self, ensemble: AtomicContainer):
         super().__init__()
         self._MNP_IS_INSTALLED = MNP_IS_INSTALLED
-        self.total_members_num = 1  # Operates as a single ANIModel
+        self.total_members_num = 1  # Operates as a single ANINetworks
         self.active_members_idxs = [0]
         self.num_species = ensemble.num_species
         if not hasattr(ensemble, "members"):
@@ -144,7 +144,7 @@ class BmmAtomicNetwork(torch.nn.Module):
     of an ensemble. They consist on a sequence of BmmLinear layers with
     interleaved activation functions.
 
-    BmmAtomicNetworks are used by BmmEnsemble to operate like a single ANIModel
+    BmmAtomicNetworks are used by BmmEnsemble to operate like a single ANINetworks
     and avoid iterating over the ensemble members.
     """
 

@@ -1,7 +1,7 @@
 r"""
 `TorchANI`_ is a PyTorch library for training, development and research of
 `ANI`_ style neural networks, maintained by the `Roitberg group`_.  TorchANI
-contains classes like :class:`AEVComputer`, :class:`ANIModel`, and
+contains classes like :class:`AEVComputer`, :class:`ANINetworks`, and
 :class:`EnergyShifter` that can be pipelined to compute molecular energies from
 the 3D coordinates of molecules.  It also include tools to: deal with ANI
 datasets (e.g. `ANI-1`_, `ANI-1x`_, `ANI-1ccx`_, `ANI-2x`_) at
@@ -37,7 +37,7 @@ from importlib.metadata import version, PackageNotFoundError
 import torch
 
 from torchani.utils import EnergyShifter
-from torchani.nn import ANIModel, Ensemble, SpeciesConverter
+from torchani.nn import ANINetworks, Ensemble, SpeciesConverter
 from torchani.aev import AEVComputer
 from torchani import (
     assembly,
@@ -70,7 +70,7 @@ except PackageNotFoundError:
 __all__ = [
     'AEVComputer',
     'EnergyShifter',
-    'ANIModel',
+    'ANINetworks',
     'Ensemble',
     'grad',
     'SpeciesConverter',

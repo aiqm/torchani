@@ -14,26 +14,24 @@ from torchani.atomics import AtomicContainer, AtomicNetwork
 from torchani.infer import BmmEnsemble, InferModel
 
 
-class ANIModel(AtomicContainer):
-    """Module that compute energies from species and AEVs.
+class ANINetworks(AtomicContainer):
+    r"""
+    Calculate output scalars by iterating over atomic networks, given input features
 
-    Different atom types might have different modules, when computing
-    energies, for each atom, the module for its corresponding atom type will
-    be applied to its AEV, after that, outputs of modules will be reduced along
-    different atoms to obtain molecular energies.
+    When computing scalars, different elements can use different modules or share the
+    same module. ANINetworks will iterate over the given networks and calculate the
+    corresponding scalars. If ``atomic=True`` then the outputs will be added over the
+    network to obtain molecular quantities.
 
     .. warning::
 
-        The species must be indexed in 0, 1, 2, 3, ..., not the element
-        index in periodic table. Check :class:`torchani.SpeciesConverter`
-        if you want periodic table indexing.
-
-    .. note:: The resulting energies are in Hartree.
+        The species input to this module must be indexed in 0, 1, 2, 3, ..., and not
+        with atomic numbers.
 
     Arguments:
-        modules (Dict[str, AtomicNetwork]): symbol - network pairs for each
-        supported element. Different elements will share networks if the same
-        ref is used for different keys
+        modules (dict[str, AtomicNetwork]): symbol - network pairs for each supported
+            element. Different elements will share networks if the same ref is used for
+            different keys
     """
 
     # Needed for bw compatibility
@@ -161,7 +159,7 @@ class Ensemble(AtomicContainer):
 
 
 # Dummy model that just returns zeros
-class DummyANIModel(ANIModel):
+class DummyANINetworks(ANINetworks):
     def forward(
         self,
         species_aev: tp.Tuple[Tensor, Tensor],
@@ -176,7 +174,7 @@ class DummyANIModel(ANIModel):
 
 
 # Hack: Grab a network with "bad first scalar", discard it and only outputs 2nd
-class _ANIModelDiscardFirstScalar(ANIModel):
+class _ANINetworksDiscardFirstScalar(ANINetworks):
     def forward(
         self,
         species_aev: tp.Tuple[Tensor, Tensor],
@@ -269,3 +267,10 @@ class Sequential(torch.nn.ModuleList):
             else:
                 input_ = module(input_)
         return input_
+
+
+class ANIModel(ANINetworks):
+    def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
+        warnings.warn(
+            "torchani.nn.ANIModel is deprecated, please use torchani.nn.ANINetworks"
+        )

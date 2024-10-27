@@ -185,7 +185,7 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
     loss_time = loss_time / args.num_epochs
     force_time = force_time / args.num_epochs
     opti_time = timers["Adam.step"] / args.num_epochs
-    nn_time = timers["ANIModel.forward"] / args.num_epochs
+    nn_time = timers["ANINetworks.forward"] / args.num_epochs
     aev_time = timers["AEVComputer.forward"] / args.num_epochs
     model_time = timers["Sequential.forward"] / args.num_epochs
     print_timer("   Full Model forward", model_time)

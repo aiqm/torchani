@@ -69,7 +69,7 @@ from torchani.utils import SYMBOLS_2X, SYMBOLS_1X
 from torchani.electro import ChargeNormalizer
 from torchani.assembly import Assembler, ANI, ANIq, fetch_state_dict
 from torchani.neighbors import NeighborlistArg
-from torchani.nn import _ANIModelDiscardFirstScalar
+from torchani.nn import _ANINetworksDiscardFirstScalar
 from torchani.potentials import TwoBodyDispersionD3, RepulsionXTB
 from torchani.annotations import Device, DType
 
@@ -216,7 +216,7 @@ def ANImbis(
         normalizer=ChargeNormalizer.from_electronegativity_and_hardness(
             asm.symbols, scale_weights_by_charges_squared=True
         ),
-        container_type=_ANIModelDiscardFirstScalar,
+        container_type=_ANINetworksDiscardFirstScalar,
     )
     asm.set_neighborlist(neighborlist)
     # The self energies are overwritten by the state dict
