@@ -534,7 +534,7 @@ if __name__ == "__main__":
 
     nnp_ref = torchani.models.ANI2x(
         model_index=None,
-        neighborlist="cell_list" if args.use_cell_list else "full_pairwise",
+        neighborlist="cell_list" if args.use_cell_list else "all_pairs",
         strategy=args.reference_strategy,
     ).to(device)
 

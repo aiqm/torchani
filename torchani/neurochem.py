@@ -66,7 +66,7 @@ class NeurochemLayerSpec:
 def load_aev_computer_and_symbols(
     consts_file: StrPath,
     strategy: str = "pyaev",
-    neighborlist: NeighborlistArg = "full_pairwise",
+    neighborlist: NeighborlistArg = "all_pairs",
     cutoff_fn: CutoffArg = "cosine",
 ) -> tp.Tuple[AEVComputer, tp.Tuple[str, ...]]:
     consts, symbols = load_aev_constants_and_symbols(consts_file)

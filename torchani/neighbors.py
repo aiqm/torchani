@@ -25,18 +25,17 @@ def rescreen(
 
 
 class Neighborlist(torch.nn.Module):
+    """
+    Compute pairs of atoms that are neighbors, uses pbc depending on
+    weather pbc.any() is True or not
+
+    Subclasses must override ``forward``
+    """
     default_pbc: Tensor
     default_cell: Tensor
     diff_vectors: Tensor
 
     def __init__(self):
-        """Compute pairs of atoms that are neighbors, uses pbc depending on
-        weather pbc.any() is True or not
-
-        Arguments:
-            coordinates (:class:`torch.Tensor`): tensor of shape
-                (molecules, atoms, 3) for atom coordinates.
-        """
         super().__init__()
         self.register_buffer(
             "default_cell", torch.eye(3, dtype=torch.float), persistent=False
@@ -46,12 +45,26 @@ class Neighborlist(torch.nn.Module):
         )
         self.diff_vectors = torch.empty(0)
 
+    def forward(
+        self,
+        species: Tensor,
+        coordinates: Tensor,
+        cutoff: float,
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+        return_shift_values: bool = False,
+    ) -> NeighborData:
+        return NeighborData(torch.empty(0), torch.empty(0), torch.empty(0))
+
     @torch.jit.export
     def compute_bounding_cell(
         self,
         coordinates: Tensor,
         eps: float = 1e-3,
     ) -> tp.Tuple[Tensor, Tensor]:
+        r"""
+        Compute the square unit cell that minimally bounds a set of coordinates
+        """
         # this works but its not needed for this naive implementation
         # This should return a bounding cell
         # for the molecule, in all cases, also it displaces coordinates a fixed
@@ -197,12 +210,15 @@ class Neighborlist(torch.nn.Module):
         )
 
     def get_diff_vectors(self):
+        r""":meta private:"""
         return self.diff_vectors
 
 
-class FullPairwise(Neighborlist):
-    """Compute pairs of atoms that are neighbors, uses pbc depending on
-    wether pbc.any() is True or not"""
+class AllPairs(Neighborlist):
+    r"""
+    Compute all pairs of distances within a cutoff. This is a naive implementation, with
+    :math:`O(N^2)` scaling. Supports PBC
+    """
 
     def forward(
         self,
@@ -213,15 +229,15 @@ class FullPairwise(Neighborlist):
         pbc: tp.Optional[Tensor] = None,
         return_shift_values: bool = False,
     ) -> NeighborData:
-        """
-        Arguments:
-            coordinates (:class:`torch.Tensor`): tensor of shape
+        r"""
+        Args:
+            species: The elements
+            coordinates: tensor of shape
                 (molecules, atoms, 3) for atom coordinates.
-            cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three vectors
+            cell: tensor of shape (3, 3) of the three vectors
                 defining unit cell: tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])
-            cutoff (float): the cutoff inside which atoms are considered pairs
-            pbc (:class:`torch.Tensor`): boolean tensor of shape (3,) storing
-            wheather pbc is required
+            cutoff: the cutoff inside which atoms are considered pairs
+            pbc: boolean tensor of shape (3,) storing wheather pbc is required
         """
         assert (cell is not None and pbc is not None) or (cell is None and pbc is None)
         cell = cell if cell is not None else self.default_cell
@@ -229,7 +245,7 @@ class FullPairwise(Neighborlist):
 
         mask = species == -1
         if pbc.any():
-            atom_index12, shift_indices = self._full_pairwise_pbc(
+            atom_index12, shift_indices = self._all_pairs_pbc(
                 species, cutoff, cell, pbc
             )
             shift_values = shift_indices.to(cell.dtype) @ cell
@@ -267,7 +283,7 @@ class FullPairwise(Neighborlist):
                 shift_values=None,
             )
 
-    def _full_pairwise_pbc(
+    def _all_pairs_pbc(
         self,
         species: Tensor,
         cutoff: float,
@@ -297,22 +313,12 @@ class FullPairwise(Neighborlist):
         all_atom_pairs = torch.cat([p12_center, p12], dim=1)
         return all_atom_pairs, shifts_all
 
+    # Compute the shifts of unit cell along the given cell vectors to make it
+    # large enough to contain all pairs of neighbor atoms with PBC under
+    # consideration
+    # Returns a long tensor of shifts. the center cell and symmetric cells are not
+    # included.
     def _compute_shifts(self, cutoff: float, cell: Tensor, pbc: Tensor) -> Tensor:
-        """Compute the shifts of unit cell along the given cell vectors to make it
-        large enough to contain all pairs of neighbor atoms with PBC under
-        consideration
-
-        Arguments:
-            cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three
-            vectors defining unit cell:
-                tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])
-            pbc (:class:`torch.Tensor`): boolean vector of size 3 storing
-                if pbc is enabled for that direction.
-
-        Returns:
-            :class:`torch.Tensor`: long tensor of shifts. the center cell and
-                symmetric cells are not included.
-        """
         reciprocal_cell = cell.inverse().t()
         inv_distances = reciprocal_cell.norm(2, -1)
         num_repeats = torch.ceil(cutoff * inv_distances).to(torch.long)
@@ -341,6 +347,7 @@ class FullPairwise(Neighborlist):
 
 
 class CellList(Neighborlist):
+    r""" Linearly scaling implementation that subdivides the space into cells """
     _offset_idx3: Tensor
 
     def __init__(self):
@@ -400,6 +407,16 @@ class CellList(Neighborlist):
         pbc: tp.Optional[Tensor] = None,
         return_shift_values: bool = False,
     ) -> NeighborData:
+        r"""
+        Args:
+            species: The elements
+            coordinates: tensor of shape
+                (molecules, atoms, 3) for atom coordinates.
+            cell: tensor of shape (3, 3) of the three vectors
+                defining unit cell: tensor([[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]])
+            cutoff: the cutoff inside which atoms are considered pairs
+            pbc: boolean tensor of shape (3,) storing wheather pbc is required
+        """
         assert cutoff >= 0.0, "Cutoff must be a positive float"
         assert coordinates.shape[0] == 1, "Cell list doesn't support batches"
         # Coordinates are displaced only if (pbc=False, cell=None), in which
@@ -430,7 +447,7 @@ class CellList(Neighborlist):
             assert shift_indices is not None
             shift_values = shift_indices.to(cell.dtype) @ cell
             # Before the screening step we map the coordinates to the central cell,
-            # same as with a full pairwise calculation
+            # same as with an all-pairs calculation
             coordinates = map_to_central(coordinates, cell.detach(), pbc)
             return self._screen_with_cutoff(
                 cutoff,
@@ -946,7 +963,7 @@ class VerletCellList(CellList):
 
 NeighborlistArg = tp.Union[
     tp.Literal[
-        "full_pairwise",
+        "all_pairs",
         "cell_list",
         "verlet_cell_list",
         "base",
@@ -956,8 +973,9 @@ NeighborlistArg = tp.Union[
 
 
 def parse_neighborlist(neighborlist: NeighborlistArg = "base") -> Neighborlist:
-    if neighborlist == "full_pairwise":
-        neighborlist = FullPairwise()
+    r""":meta private:"""
+    if neighborlist == "all_pairs":
+        neighborlist = AllPairs()
     elif neighborlist == "cell_list":
         neighborlist = CellList()
     elif neighborlist == "verlet_cell_list":
@@ -986,4 +1004,4 @@ def _call_global_cell_list(
     return out
 
 
-_call_global_all_pairs = FullPairwise()
+_call_global_all_pairs = AllPairs()

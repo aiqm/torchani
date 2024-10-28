@@ -1,5 +1,6 @@
 r"""
-Tools for interfacing with the atomic simulation environment `ASE`_.
+Calculator subclass, used for interfacing with the atomic simulation environment
+(`ASE`_) python library.
 
 .. _ASE:
     https://wiki.fysik.dtu.dk/ase
@@ -37,7 +38,7 @@ class Calculator(AseCalculator):
         calc = model.ase()  # Convert model into its ASE Calculator form
 
     Arguments:
-        model (:class:`ANI`): neural network potential model
+        model (:class:`torchani.assembly.ANI`): neural network potential model
             that convert coordinates into energies.
         overwrite (bool): After wrapping atoms into central box, whether
             to replace the original positions stored in :class:`ase.Atoms`

@@ -1,5 +1,5 @@
 r"""
-``NamedTuples`` used as outputs of some TorchANI functions.
+:class:`typing.NamedTuple` used as outputs of some TorchANI functions.
 """
 
 import typing as tp

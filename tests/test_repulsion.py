@@ -97,9 +97,7 @@ class TestRepulsion(ANITestCase):
                 device=self.device,
             )
             _atomic_energies.append(
-                model.atomic_energies((species, coordinates))
-                .energies.sum(-1)
-                .item()
+                model.atomic_energies((species, coordinates)).energies.sum(-1).item()
             )
             _energies.append(model((species, coordinates)).energies.item())
         self.assertEqual(_atomic_energies, _energies)

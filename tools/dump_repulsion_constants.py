@@ -1,5 +1,6 @@
 import math
 from torchani.constants import PERIODIC_TABLE
+
 # data extracted from Grimme et. al. paper
 # https://pubs.acs.org/doi/10.1021/acs.jctc.8b01176
 _data = """H 0.405771 0.08 2.213717 1.105388 0.0556389 0.00027431 1.4 1.0
@@ -87,7 +88,9 @@ Pb 0.168152 0.02 1.179922 102.368258 0.0100702 -0.0000167 5.0
 Bi 0.900000 -0.0337508 1.130860 132.896832 -0.00737252 0.00162529 5.0
 Po 1.023267 0.187798 0.957939 52.301232 -0.0134485 0.00013818 5.0
 At 0.288848 0.184648 0.963878 81.771063 -0.00348123 0.00021624 5.0
-Rn 0.303400 0.0097834 0.965577 128.133580 -0.00167597 -0.00111556 5.0""".split('\n')
+Rn 0.303400 0.0097834 0.965577 128.133580 -0.00167597 -0.00111556 5.0""".split(
+    "\n"
+)
 SUPPORTED_REPULSION_ELEMENTS = len(_data)
 
 # first we make sure that all elements are present in the table

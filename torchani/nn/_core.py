@@ -89,6 +89,7 @@ class AtomicNetwork(torch.nn.Module):
         self.has_biases = bias
 
     def extra_repr(self) -> str:
+        r""":meta private:"""
         layer_dims = [layer.in_features for layer in self.layers]
         layer_dims.extend([self.final_layer.in_features, self.final_layer.out_features])
         parts = [

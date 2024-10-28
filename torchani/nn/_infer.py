@@ -209,6 +209,7 @@ class BmmLinear(torch.nn.Module):
         return torch.baddbmm(self.bias, input_, self.weight, beta=self._beta)
 
     def extra_repr(self):
+        r""":meta private:"""
         return (
             f"# batch_size={self.batch_size}"
             f"# in_features={self.in_features}"

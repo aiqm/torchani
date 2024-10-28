@@ -2,9 +2,9 @@ r"""
 `TorchANI`_ is a PyTorch library for training, development and research of `ANI`_ style
 neural networks, maintained by the `Roitberg group`_.  TorchANI contains classes like
 :class:`AEVComputer`, :class:`ANINetworks`, and :class:`EnergyAdder` that can be
-pipelined to compute molecular energies from the cartesian coordinates of molecules. It
-also include tools to: deal with ANI datasets (e.g. `ANI-1`_, `ANI-1x`_, `ANI-1ccx`_,
-`ANI-2x`_) at :attr:`torchani.datasets`, and import various file formats of NeuroChem.
+combined to compute molecular energies from the cartesian coordinates of molecules. It
+also includes tools to deal with ANI datasets (e.g. `ANI-1`_, `ANI-1x`_, `ANI-1ccx`_,
+`ANI-2x`_) in the submodule :attr:`torchani.datasets`.
 
 .. _TorchANI:
     https://doi.org/10.26434/chemrxiv.12218294.v1

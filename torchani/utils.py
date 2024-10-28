@@ -1,5 +1,5 @@
 r"""
-Miscellaneous utilities used throughout the code
+Misc utilities used throughout the TorchANI code.
 """
 
 from collections import OrderedDict

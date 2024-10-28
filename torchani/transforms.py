@@ -14,24 +14,14 @@ transforms. An example of their usage:
     from torchani.datasets import ANIBatchedDataset
 
     symbols = ("H", "N", "O")
-
     sae = SubtractSAE(symbols=symbols, (-0.5, -54.6, -75))
     rep = SubtractRepulsionXTB(symbols=symbols)
     disp = SubtractTwoBodyDispersionD3(symbols=symbols, functional='wB97X')
-
-    transform = Compose([sae, rep, disp])
+    t = Compose([sae, rep, disp])
 
     # Transforms will be applied automatically when iterating over the datasets
-    training = ANIBatchedDataset(
-        '/path/to/batched-dataset/',
-        transform=transform,
-        split='training',
-    )
-    validation = ANIBatchedDataset(
-        '/path/to/batched-dataset/',
-        transform=transform,
-        split='validation',
-    )
+    train = ANIBatchedDataset('/dataset/path/', transform=t, split='training')
+    valid = ANIBatchedDataset('/dataset/path/', transform=t, split='validation')
 """
 
 import typing as tp
@@ -52,11 +42,10 @@ from torchani.potentials import (
 
 class Transform(torch.nn.Module):
     r"""
-    Base class for callables that modify conformer properties on the fly
+    Base class for callables that modify mappings of molecule properties
 
-    If the callable supports only a limited number of atomic numbers (in a
-    given order) then the atomic_numbers tensor should be defined, otherwise it
-    should be None
+    If the callable supports only a limited number of atomic numbers (in a given order)
+    then the atomic_numbers tensor should be defined, otherwise it should be None
     """
 
     atomic_numbers: tp.Optional[Tensor]
@@ -65,6 +54,14 @@ class Transform(torch.nn.Module):
         super().__init__()
 
     def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
+        r"""
+        Transform a batch of properties
+
+        Args:
+            properties: Input properties
+        Returns:
+            Transformed properties
+        """
         raise NotImplementedError("Must be overriden by subclasses")
 
 
@@ -83,8 +80,11 @@ identity = Identity()
 
 
 class SubtractEnergyAndForce(Transform):
-    r"""
-    Subtract the energies (and optionally forces) from an arbitrary Potential
+    r"""Subtract the energies (and optionally forces) of a potential
+
+    Args:
+        potential: The potential to use for calculating energies and forces
+        subtract_force: Whether to subtract forces
     """
 
     def __init__(self, potential: Potential, subtract_force: bool = True):
@@ -109,9 +109,9 @@ class SubtractEnergyAndForce(Transform):
 
 class SubtractRepulsionXTB(Transform):
     r"""
-    Convenience class that subtracts repulsion terms.
+    Subtract xTB repulsion energies (and optionally forces)
 
-    Takes same arguments as :class:``torchani.potentials.RepulsionXTB``
+    Takes same arguments as :class:`torchani.potentials.RepulsionXTB`
     """
 
     def __init__(
@@ -132,9 +132,9 @@ class SubtractRepulsionXTB(Transform):
 
 class SubtractTwoBodyDispersionD3(Transform):
     r"""
-    Convenience class that subtracts dispersion terms.
+    Subtract two-body DFT-D3 energies (and optionally forces)
 
-    Takes same arguments as ``torchani.potentials.TwoBodyDispersionD3.from_functional``
+    Takes same arguments as :class:`torchani.potentials.TwoBodyDispersionD3`
     """
 
     def __init__(
@@ -156,9 +156,9 @@ class SubtractTwoBodyDispersionD3(Transform):
 
 class SubtractSAE(Transform):
     r"""
-    Convenience class that subtracts self atomic energies.
+    Subtract self atomic energies.
 
-    Takes same arguments as :class:``torchani.potentials.EnergyAdder``
+    Takes same arguments as :class:`torchani.potentials.EnergyAdder`
     """
 
     def __init__(self, *args, **kwargs):
@@ -174,10 +174,11 @@ class SubtractSAE(Transform):
 
 class AtomicNumbersToIndices(Transform):
     r"""
-    Converts atomic numbers to arbitrary indices
+    Converts atomic numbers to indices
 
-    Provided for legacy support, if added to a transform pipeline, it should in
-    general be the *last* transform.
+    Note:
+        Provided for backwards compatibility, if added to a transform pipeline, it
+        should in general be the *last* transform.
     """
 
     def __init__(self, symbols: tp.Sequence[str]):
@@ -194,10 +195,10 @@ class AtomicNumbersToIndices(Transform):
 
 # Similar to torchvision.transforms.Compose, but JIT scriptable
 class Compose(Transform):
-    r"""Composes several ``Transform`` together.
+    r"""Composes several :class:`torchani.transforms.Transform` into a pipeline
 
     Args:
-        transforms (list of ``Transform`` objects): list of transforms to compose.
+        transforms: Sequence of transforms to compose.
     """
 
     def __init__(self, transforms: tp.Sequence[Transform]):

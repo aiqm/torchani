@@ -53,7 +53,7 @@ class Potential(torch.nn.Module):
         coordinates: Tensor,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-        neighborlist: str = "full_pairwise",
+        neighborlist: str = "all_pairs",
         periodic_table_index: bool = True,
         atomic: bool = False,
     ) -> Tensor:
@@ -76,7 +76,7 @@ class Potential(torch.nn.Module):
                 neighbors = _call_global_cell_list(
                     elem_idxs, coordinates, self.cutoff, cell, pbc
                 )
-            elif neighborlist == "full_pairwise":
+            elif neighborlist == "all_pairs":
                 neighbors = _call_global_all_pairs(
                     elem_idxs, coordinates, self.cutoff, cell, pbc
                 )

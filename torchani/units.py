@@ -12,7 +12,6 @@ should always be applied when converting from ASE to TorchANI) Joule-to-kcal con
 is taken from the `IUPAC Goldbook`_.  All the conversion factors we use are defined in
 this module, and convenience functions to convert between different units are provided.
 
-
 .. _units used in ASE:
     https://wiki.fysik.dtu.dk/ase/ase/units.html#units
 

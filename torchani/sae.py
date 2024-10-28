@@ -1,5 +1,5 @@
 r"""
-Utilities to calculate self atomic energies (SAEs) via linear regression. It is
+Functions to calculate self atomic energies (SAEs) via linear regression. It is
 recommended to use GSAEs (Ground State Atomic Energies) for new models instead.
 """
 

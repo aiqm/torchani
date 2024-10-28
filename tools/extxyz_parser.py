@@ -3,6 +3,7 @@ and converts them into .h5 files
 
 Currently it is fairly specific for 3BPA but can be easily modified.
 """
+
 import numpy as np
 from pathlib import Path
 

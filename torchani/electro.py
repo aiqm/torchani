@@ -88,18 +88,15 @@ class ChargeNormalizer(torch.nn.Module):
 
 
 class DipoleComputer(torch.nn.Module):
-    """
+    r"""
     Compute dipoles in eA
 
-    Arguments:
-        species (torch.Tensor): (M, N), species must be atomic numbers.
-            padding atoms with pad = -1 can be included.
-        coordinates (torch.Tensor): (M, N, 3), unit should be Angstrom.
-        charges (torch.Tensor): (M, N), unit should be e.
-        center_of_mass (Bool): When calculating dipole for charged molecule,
-            it is necessary to displace the coordinates to the center-of-mass frame.
-    Returns:
-        dipoles (torch.Tensor): (M, 3)
+    Args:
+        masses (list[float]): Sequence of atomic masses
+        reference ('center_of_mass' | 'center_of_geometry' | 'origin'): Reference frame
+            to use when calculating dipole.
+        device ('cpu' | 'cuda'): TODO
+        dtype (:class:`torch.float` | :class:`torch.double`): TODO
     """
 
     def __init__(
@@ -115,6 +112,24 @@ class DipoleComputer(torch.nn.Module):
         self._center_of_mass = reference == "center_of_mass"
         self._skip = reference == "origin"
         self._converter = AtomicNumbersToMasses(masses, dtype=dtype, device=device)
+
+    def forward(self, species: Tensor, coordinates: Tensor, charges: Tensor) -> Tensor:
+        r"""
+        Calculate the dipoles
+
+        Args:
+            species: Must be atomic numbers. padding atoms with pad = -1 can be
+                included.
+            coordinates: ``(M, N, 3)``, unit should be Angstrom.
+            charges: ``(M, N)``, unit should be e.
+
+        Returns:
+            Dipoles with shape ``(molecules, 3)``
+        """
+        assert species.shape == charges.shape == coordinates.shape[:-1]
+        charges = charges.unsqueeze(-1)
+        coordinates = self._displace_to_reference(species, coordinates)
+        return torch.sum(charges * coordinates, dim=1)
 
     def _displace_to_reference(self, species: Tensor, coordinates: Tensor) -> Tensor:
         # Do nothing if reference is origin
@@ -135,20 +150,19 @@ class DipoleComputer(torch.nn.Module):
         centered_coordinates[mask, :] = 0.0
         return centered_coordinates
 
-    def forward(self, species: Tensor, coordinates: Tensor, charges: Tensor) -> Tensor:
-        assert species.shape == charges.shape == coordinates.shape[:-1]
-        charges = charges.unsqueeze(-1)
-        coordinates = self._displace_to_reference(species, coordinates)
-        return torch.sum(charges * coordinates, dim=1)
 
-
-# Convenience fn around DipoleComputer that is non-jittable
 def compute_dipole(
     species: Tensor,
     coordinates: Tensor,
     charges: Tensor,
     reference: Reference = "center_of_mass",
 ) -> Tensor:
+    r"""
+    Compute dipoles in eA
+
+    A convenience wrapper over :class:`DipoleComputer` that is non-jittable.
+    See :class:`DipoleComputer` for details.
+    """
     if torch.jit.is_scripting():
         raise RuntimeError(
             "'torchani.electro.compute_dipole' doesn't support JIT, "

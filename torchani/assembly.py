@@ -1,28 +1,31 @@
 r"""
 Construction of ANI-style models and definition of their architecture
 
-ANI-style models are all subclasses of the ``ANI`` base class. They can be either
+ANI-style models are all subclasses of the :class:`ANI` base class. They can be either
 constructed directly, or their construction can be managed by a different class, the
-``Assembler``. Think of the ``Assembler`` as your own personal employee, whose job is to
+:class:`Assembler`. Think of the :class:`Assembler` as your employee, whose job is to
 create the class from all the necessary components, in such a way that all parts
 interact in the correct way and there are no compatibility issues among them.
 
 An ANI-style model consists of:
 
-- ``AEVComputer`` (or subclass)
-- A container for atomic networks (typically ``ANINetworks`` or subclass)
-- An ``AtomicNetwork`` dict ``{"H": AtomicNetwork(...), "C": AtomicNetwork(...), ...}``
-- A self energies dict (in Hartree) ``{"H": -12.0, "C": -75.0, ...}``
+- :class:`AEVComputer` (or subclass)
+- A container for atomic networks (typically :class:`ANINetworks` or subclass)
+- An :class:`AtomicNetwork` mapping for example, this may take the shape
+    ``{"H": AtomicNetwork(...), "C": AtomicNetwork(...), ...}``. Its also possible
+    to pass a function that, given a symbol (e.g. ``"C"``) returns an atomic network,
+    such as :attr:`torchani.nn.make_2x_network`.
+- A self energies :class:`dict` (in Hartree): ``{"H": -12.0, "C": -75.0, ...}``
 
-An energy-predicting model may also have one or more ``PairPotential``
-(``RepulsionXTB``, ``TwoBodyDispersion``, etc.).
-
-Each ``PariPotential`` has their own cutoff, and the ``AEVComputer`` has two cutoffs, an
-angular and a radial one (the radial cutoff must be larger than the angular cutoff, and
-it is recommended that the angular cutoff is kept small, 3.5 Ang or less).
-
-These pieces are combined by ``Assembler`` into a subclass of ``ANI``, when the
+These pieces are combined when the
 ``Assembler.assemble(size=<num-networks-in-ensemble>)`` method is called.
+
+An energy-predicting model may also have one or more :class:`PairPotential` (
+:class:`RepulsionXTB`, :class:`TwoBodyDispersionD3`, etc.).
+
+Each :class:`PairPotential` has its own cutoff, and the :class:`AEVComputer` has two
+cutoffs, an angular and a radial one (the radial cutoff must be larger than the angular
+cutoff, and it is recommended that the angular cutoff is kept small, 3.5 Ang or less).
 """
 
 from copy import deepcopy
@@ -178,8 +181,9 @@ class ANI(torch.nn.Module):
             total_charge: The total charge of the molecules. Only
                 the scalar 0 is currently supported.
             atomic: Perform atomic decoposition of the energies
+            ensemble_values: Differentiate values of different models of the ensemble
         Returns:
-            result (dict[str, Tensor]): Output of the single point calculation
+            Result of the single point calculation
         """
         _, energies = self(
             species_coordinates=(species, coordinates),
@@ -217,6 +221,7 @@ class ANI(torch.nn.Module):
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> SpeciesEnergies:
+        r""":meta private:"""
         species, coords = species_coordinates
         self._check_inputs(species, coords, total_charge)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
@@ -311,7 +316,7 @@ class ANI(torch.nn.Module):
         optimized for inference.
 
         Assumes that the atomic networks are multi layer perceptrons (MLPs)
-        with torchani.utils.TightCELU activation functions.
+        with :class:`TightCELU` activation functions.
         """
         self.neural_networks = self.neural_networks.to_infer_model(use_mnp=use_mnp)
         return self
@@ -322,22 +327,20 @@ class ANI(torch.nn.Module):
         stress_kind: StressKind = "scaling",
         jit: bool = False,
     ):
-        r"""Get an ASE Calculator using this ANI model
+        r"""Obtain an ASE Calculator that uses this model
 
         Arguments:
-            jit (bool): Whether to JIT-compile the model before wrapping in a
-                Calculator
-            overwrite (bool): After wrapping atoms into central box, whether
+            overwrite: After wrapping atoms into central box, whether
                 to replace the original positions stored in :class:`ase.Atoms`
                 object with the wrapped positions.
-            stress_kind (str): Strategy to calculate stress, valid options are
-                'fdotr', 'scaling', and 'numerical'. The fdotr approach does not need
-                the cell's box information and can be used for multiple domians when
-                running parallel on multi-GPUs. Default is 'scaling'. kwargs:
-                torchani.ase.Calculator kwargs
+            jit: Whether to JIT-compile the model before wrapping in a
+                Calculator
+            stress_kind ('scaling' | 'fdotr' | 'numerical'): Strategy to calculate
+                stress. The fdotr approach does not need the cell's box information and
+                can be used for multiple domians when running parallel on multi-GPUs.
 
         Returns:
-            calculator (:class:`ase.Calculator`): A calculator to be used with ASE
+            An ASE-compatible Calculator
         """
         from torchani.ase import Calculator
 
@@ -352,9 +355,7 @@ class ANI(torch.nn.Module):
     # TODO make this be useful
     @torch.jit.unused
     def disable_non_nnp(self):
-        r"""
-        Disable all potentials that don't have neural_networks
-        """
+        r""":meta private:"""
         for p in self.potentials:
             if hasattr(p, "neural_networks"):
                 p.is_enabled = False
@@ -624,11 +625,11 @@ class ANIq(ANI):
     r"""
     ANI-style model that can calculate both atomic charges and energies
 
-    Charge networks share the input features with the energy networks, and may either
-    be fully independent of them, or share weights to some extent.
+    Charge networks share the input features with the energy networks, and may either be
+    fully independent of them, or share weights to some extent.
 
-    The output energies of these models don't necessarily include a coulombic
-    term, but they may.
+    The output energies of these models don't necessarily include a coulombic term, but
+    they may.
     """
 
     def __init__(
@@ -811,7 +812,7 @@ ModelCls = tp.Type[ANI]
 
 # "global" cutoff means the global cutoff_fn will be used
 # Otherwise, a specific cutoff fn can be specified
-class AEVComputerWrapper:
+class _AEVComputerWrapper:
     def __init__(
         self,
         cls: AEVComputerCls,
@@ -832,7 +833,7 @@ class AEVComputerWrapper:
 
 
 @dataclass
-class PairPotentialWrapper:
+class _PairPotentialWrapper:
     cls: PairPotentialCls
     cutoff_fn: CutoffArg = "global"
     cutoff: float = math.inf
@@ -840,18 +841,21 @@ class PairPotentialWrapper:
 
 
 class Assembler:
+    r"""
+    Assembles :class:`ANI` models (or their subclasses).
+    """
     def __init__(
         self,
         symbols: tp.Sequence[str] = (),
         model_cls: ModelCls = ANI,
-        neighborlist: NeighborlistArg = "full_pairwise",
+        neighborlist: NeighborlistArg = "all_pairs",
         periodic_table_index: bool = True,
     ) -> None:
         self._global_cutoff_fn: tp.Optional[Cutoff] = None
 
         self._neighborlist = parse_neighborlist(neighborlist)
-        self._aevcomp: tp.Optional[AEVComputerWrapper] = None
-        self._pair_potentials: tp.List[PairPotentialWrapper] = []
+        self._aevcomp: tp.Optional[_AEVComputerWrapper] = None
+        self._pair_potentials: tp.List[_PairPotentialWrapper] = []
 
         # This part of the assembler organizes the self-energies, the
         # symbols and the atomic networks
@@ -965,7 +969,7 @@ class Assembler:
         strategy: str = "pyaev",
         aev_computer_cls: AEVComputerCls = AEVComputer,
     ) -> None:
-        self._aevcomp = AEVComputerWrapper(
+        self._aevcomp = _AEVComputerWrapper(
             aev_computer_cls,
             cutoff_fn=cutoff_fn,
             angular_terms=angular_terms,
@@ -993,7 +997,7 @@ class Assembler:
         extra: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
         self._pair_potentials.append(
-            PairPotentialWrapper(
+            _PairPotentialWrapper(
                 pair_cls,
                 cutoff=cutoff,
                 cutoff_fn=cutoff_fn,
@@ -1162,7 +1166,7 @@ def simple_ani(
         bias=bias,
     )
     asm.set_atomic_networks(network_factory)
-    asm.set_neighborlist("full_pairwise")
+    asm.set_neighborlist("all_pairs")
     asm.set_gsaes_as_self_energies(lot)
     if repulsion:
         asm.add_pair_potential(
@@ -1268,7 +1272,7 @@ def simple_aniq(
         network_factory,
         container_cls=_ZeroANINetworks if dummy_energies else ANINetworks,
     )
-    asm.set_neighborlist("full_pairwise")
+    asm.set_neighborlist("all_pairs")
     if not dummy_energies:
         asm.set_gsaes_as_self_energies(lot)
     else:

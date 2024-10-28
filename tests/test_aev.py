@@ -9,7 +9,7 @@ import traceback
 import torch
 
 from torchani._testing import TestCase
-from torchani.neighbors import FullPairwise
+from torchani.neighbors import AllPairs
 from torchani.nn import SpeciesConverter
 from torchani.utils import ChemicalSymbolsToInts, pad_atomic_properties, map_to_central
 from torchani.aev import AEVComputer, StandardAngular, StandardRadial
@@ -236,7 +236,7 @@ class TestAEVJIT(TestAEV):
 class TestPBCSeeEachOther(TestCase):
     def setUp(self):
         self.aev_computer = AEVComputer.like_1x().to(torch.double)
-        self.neighborlist = FullPairwise()
+        self.neighborlist = AllPairs()
 
     def testTranslationalInvariancePBC(self):
         coords = torch.tensor(

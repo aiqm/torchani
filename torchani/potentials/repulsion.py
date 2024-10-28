@@ -1,6 +1,7 @@
 r"""
 Potentials that calculate repulsive (short-range) interactions.
 """
+
 import typing as tp
 
 import torch
@@ -39,21 +40,15 @@ class RepulsionXTB(PairPotential):
         yeff: tp.Sequence[float] = (),
         cutoff_fn: CutoffArg = "smooth",
     ):
-        super().__init__(
-            symbols=symbols, cutoff=cutoff, cutoff_fn=cutoff_fn
-        )
+        super().__init__(symbols=symbols, cutoff=cutoff, cutoff_fn=cutoff_fn)
         num_elements = len(symbols)
 
         if not alpha:
-            alpha = [
-                XTB_REPULSION_ALPHA[j] for j in self.atomic_numbers
-            ]
+            alpha = [XTB_REPULSION_ALPHA[j] for j in self.atomic_numbers]
         if not len(alpha) == num_elements:
             raise ValueError("len(alpha) should be equal to len(symbols) if provided")
         if not yeff:
-            yeff = [
-                XTB_REPULSION_YEFF[j] for j in self.atomic_numbers
-            ]
+            yeff = [XTB_REPULSION_YEFF[j] for j in self.atomic_numbers]
         if not len(yeff) == num_elements:
             raise ValueError("len(yeff) should be equal to len(symbols) if provided")
 

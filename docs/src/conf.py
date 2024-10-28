@@ -15,6 +15,11 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_gallery.gen_gallery",
 ]
+autodoc_typehints_format = "short"  # Avoid qualified names in return types
+autodoc_typehints = "description"  # Write types in description, not in signature
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+python_use_unqualifierd_type_names = True  # Not sure if needed
 
 templates_path = ["_templates"]
 

@@ -123,7 +123,7 @@ class TestCellList(TestCase):
     def testCellListInit(self):
         AEVComputer.like_1x(neighborlist="cell_list")
 
-    def testCellListMatchesFullPairwise(self):
+    def testCellListMatchesAllPairs(self):
         cut = self.cutoff
         d = 0.5
         batch = [
@@ -160,7 +160,7 @@ class TestCellList(TestCase):
             )
         self._check_neighborlists_match(self.coordinates)
 
-    def testCellListMatchesFullPairwiseRandomNoise(self):
+    def testCellListMatchesAllPairsRandomNoise(self):
         for j in range(100):
             noise = 0.1
             coordinates = self.coordinates + torch.empty(
@@ -168,7 +168,7 @@ class TestCellList(TestCase):
             ).uniform_(-noise, noise)
             self._check_neighborlists_match(coordinates)
 
-    def testCellListMatchesFullPairwiseRandomNormal(self):
+    def testCellListMatchesAllPairsRandomNormal(self):
         for j in range(100):
             coordinates = (
                 torch.randn((1, 10, 3), device=self.device, dtype=torch.float)
@@ -183,7 +183,7 @@ class TestCellList(TestCase):
     def _check_neighborlists_match(self, coords: Tensor):
         species = torch.ones(coords.shape[:-1], dtype=torch.long, device=coords.device)
         aev_cl = AEVComputer.like_1x(neighborlist="cell_list")
-        aev_fp = AEVComputer.like_1x(neighborlist="full_pairwise")
+        aev_fp = AEVComputer.like_1x(neighborlist="all_pairs")
         aevs_cl = aev_cl(species, coords, cell=self.cell, pbc=self.pbc)
         aevs_fp = aev_fp(species, coords, cell=self.cell, pbc=self.pbc)
         self.assertEqual(aevs_cl, aevs_fp)
@@ -205,7 +205,7 @@ class TestCellListEnergies(TestCase):
             torch.tensor([self.cell_size, self.cell_size, self.cell_size])
         ).float()
         self.aev_cl = AEVComputer.like_1x(neighborlist="cell_list")
-        self.aev_fp = AEVComputer.like_1x(neighborlist="full_pairwise")
+        self.aev_fp = AEVComputer.like_1x(neighborlist="all_pairs")
         self.model_cl = torchani.models.ANI1x(model_index=0, device=self.device)
         self.model_fp = torchani.models.ANI1x(model_index=0, device=self.device)
         self.model_cl.aev_computer = self.aev_cl
@@ -239,7 +239,7 @@ class TestCellListEnergies(TestCase):
 
     def testCellListEnergiesRandomFloat(self):
         # The tolerance of this test is slightly modified because otherwise the
-        # test also fails with AEVComputer FullPairwise ** against itself **.
+        # test also fails with AEVComputer AllPairs ** against itself **.
         # This is becausse non determinancy in order of operations in cuda
         # creates small floating point errors that may be larger than the
         # default threshold (I hope)
@@ -331,7 +331,7 @@ class TestCellListLargeSystem(ANITestCase):
             torch.tensor([cell_size, cell_size, cell_size], device=self.device),
         ).float()
         self.aev_cl = self._setup(AEVComputer.like_1x(neighborlist="cell_list"))
-        self.aev_fp = self._setup(AEVComputer.like_1x(neighborlist="full_pairwise"))
+        self.aev_fp = self._setup(AEVComputer.like_1x(neighborlist="all_pairs"))
         if self.jit and self.device == "cuda":
             # JIT + CUDA can have slightly different answers
             self.rtol = 1.0e-6

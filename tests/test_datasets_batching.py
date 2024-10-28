@@ -13,6 +13,7 @@ from torchani.datasets import (
     ANIDataset,
     ANIBatchedDataset,
 )
+
 path = os.path.dirname(os.path.realpath(__file__))
 dataset_path = os.path.join(path, "../dataset/ani-1x/sample.h5")
 

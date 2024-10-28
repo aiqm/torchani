@@ -713,9 +713,7 @@ class TestCUAEV(TestCase):
 
         coordinates = coordinates.clone().detach()
         coordinates.requires_grad_()
-        cu_aev = self.cuaev_computer_2x_use_interface(
-            species, coordinates, cell, pbc
-        )
+        cu_aev = self.cuaev_computer_2x_use_interface(species, coordinates, cell, pbc)
         cu_aev.backward(torch.ones_like(cu_aev))
         cuaev_grad = coordinates.grad
         self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)

@@ -8,7 +8,7 @@ import typing_extensions as tpx
 
 from torchani.tuples import SpeciesAEV, NeighborData
 from torchani.utils import cumsum_from_zero
-from torchani.neighbors import parse_neighborlist, NeighborlistArg, FullPairwise
+from torchani.neighbors import parse_neighborlist, NeighborlistArg, AllPairs
 from torchani.cutoffs import CutoffArg
 from torchani.aev._terms import (
     parse_angular_term,
@@ -34,39 +34,6 @@ def jit_unused_if_no_cuaev():
 
 
 class AEVComputer(torch.nn.Module):
-    r"""
-    Compute Atomic Environment Vectors (AEVs)
-
-    Arguments:
-        element_idxs (Tensor): Integer tensor with element indices of the system. Shape
-            should be ``(molecules, atoms)``.
-        coords (Tensor): Float tensor with coordinates of the system. Shape should
-            be ``(molecules, atoms, 3)``. ANI models assume this to be in Angstrom.
-        cell (Optional[Tensor]): Float tensor. Only if performing periodic boundary
-            conditions (PBC) calculations. Holds the unit cell vectors of the system in
-            its *rows*. Shape should be ``(3, 3)``. ANI models assume this to be in
-            Angstrom.
-        pbc (Optional[Tensor]): Bool tensor. Only if performing PBC calculations.
-            Shape should be ``(3,)``. It holds whether PBC is enabled in the x, y, or
-            z directions.
-
-    Returns:
-        Tensor: AEVs, of shape ``(molecules, atoms, self.aev_length)``, where the length
-            depends on the angular and radial terms used.
-
-    For reference, an example cell tensor is:
-
-    .. code-block:: python
-
-        tensor([[x1, y1, z1],
-                [x2, y2, z2],
-                [x3, y3, z3]])
-
-    .. warning::
-
-        The element indices must be 0, 1, 2, 3, ..., not atomic numbers. Check
-        :class:`torchani.nn.SpeciesConverter` if you want atomic numbers.
-    """
     num_species: Final[int]
     num_species_pairs: Final[int]
 
@@ -89,7 +56,7 @@ class AEVComputer(torch.nn.Module):
         num_species: int,
         strategy: str = "pyaev",
         cutoff_fn: tp.Optional[CutoffArg] = None,
-        neighborlist: NeighborlistArg = "full_pairwise",
+        neighborlist: NeighborlistArg = "all_pairs",
     ):
         super().__init__()
         self._print_aev_branch = _PRINT_AEV_BRANCH
@@ -187,13 +154,14 @@ class AEVComputer(torch.nn.Module):
         avail = self._check_cuaev_strat_avail(raise_exc=raise_exc)
         if not avail:
             return False
-        if not isinstance(self.neighborlist, FullPairwise):
+        if not isinstance(self.neighborlist, AllPairs):
             if raise_exc:
                 raise ValueError("cuAEV-fused only supports the default neighborlist")
             return False
         return True
 
     def extra_repr(self) -> str:
+        r""":meta private:"""
         radial_perc = f"{self.radial_length / self.aev_length * 100:.2f}% of features"
         angular_perc = f"{self.angular_length / self.aev_length * 100:.2f}% of features"
         parts = [
@@ -222,6 +190,36 @@ class AEVComputer(torch.nn.Module):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> Tensor:
+        r"""
+        Compute Atomic Environment Vectors (AEVs) for a batch of molecules
+
+        Warning:
+            The input element indices must be 0, 1, 2, 3, ..., not atomic numbers. Check
+            ``SpeciesConverter`` if you want atomic numbers.
+
+        Arguments:
+            elem_idxs: Integer tensor with element indices of the system.
+                Shape ``(molecules, atoms)``.
+            coords: Float tensor with coordinates of the system. Shape
+                ``(molecules, atoms, 3)``. ANI models assume Angstrom units.
+            cell: Float tensor. Shape ``(3, 3)``. Only use if
+                performing PBC calculations. Holds the unit cell vectors of the system
+                in its *rows*. ANI models Angstrom units. For example:
+            pbc: Bool tensor. Shape ``(3,)``. Only use if performing PBC calculations.
+                Determines whether PBC is enabled in the x, y, or z directions.
+
+        Returns:
+            AEVs of shape ``(molecules, atoms, self.aev_length)``. The last dim depends
+            on the angular and radial terms used.
+
+        An example input for the cell tensor is:
+
+                    .. code-block:: python
+
+                        tensor([[x1, y1, z1],
+                                [x2, y2, z2],
+                                [x3, y3, z3]])
+        """
         if not torch.jit.is_scripting():
             if isinstance(elem_idxs, tuple):
                 raise ValueError(
@@ -258,7 +256,17 @@ class AEVComputer(torch.nn.Module):
         _coords: tp.Optional[Tensor] = None,
     ) -> Tensor:
         r"""
-        Compute the AEV from neighborlist data
+        Compute the AEVs from the output of a neighborlist calculation
+
+        Args:
+            elem_idxs: Integer tensor with element indices of the system.
+                Shape ``(molecules, atoms)``.
+            neighbors (Neighbors): ``NamedTuple`` that contains the output of a
+                ``Neighborlist`` calculation.
+
+        Returns:
+            AEVs, of shape ``(molecules, atoms, self.aev_length)``. The last dim depends
+            on the angular and radial terms used.
         """
         if self._strategy == "pyaev":
             return self._compute_pyaev(elem_idxs, neighbors)
@@ -373,19 +381,17 @@ class AEVComputer(torch.nn.Module):
         # shape (C, A, SxR)
         return radial_aev.reshape(num_molecules, num_atoms, self.radial_length)
 
+    # NOTE: This function is very complex, please read the followin carefully
+    # Input: indices for pairs of atoms that are close to each other. each pair only
+    # appear once, i.e. only one of the pairs (1, 2) and (2, 1) exists.
+    # Output: indices for all central atoms and it pairs of neighbors. For example, if
+    # input has pair
+    # (0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
+    # then the output would have central atom 0, 1, 2, 3, 4 and for cental atom 0, its
+    # pairs of neighbors are (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
     def _triple_idxs_from_neighbors(
         self, neighbor_idxs: Tensor
     ) -> tp.Tuple[Tensor, Tensor, Tensor]:
-        """Input: indices for pairs of atoms that are close to each other.
-        each pair only appear once, i.e. only one of the pairs (1, 2) and
-        (2, 1) exists.
-
-        Output: indices for all central atoms and it pairs of neighbors. For
-        example, if input has pair (0, 1), (0, 2), (0, 3), (0, 4), (1, 2),
-        (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), then the output would have
-        central atom 0, 1, 2, 3, 4 and for cental atom 0, its pairs of neighbors
-        are (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
-        """
         # convert representation from pair to central-others and sort
         sorted_flat_neighbor_idxs, rev_idxs = neighbor_idxs.view(-1).sort()
 
@@ -479,6 +485,16 @@ class AEVComputer(torch.nn.Module):
             self.cuaev_computer,
         )
 
+    # NOTE: This function is for testing purposes or for usage with the LAMMPS interface
+    # Computing aev with full nbrlist that is from
+    # 1. Lammps interface
+    # 2. For testing purpose, the full nbrlist converted from half nbrlist
+    # The full neighbor list format needs the following three tensors:
+    # - `ilist_unique`: This is a 1D tensor containing all local atom indices.
+    # - `jlist`: A 1D tensor containing all the neighbors for all atoms.
+    #    The neighbors for atom `i` can be inferred from the numneigh tensor
+    # - `numneigh`: This is a 1D tensor that specifies the number of
+    # neighbors for each atom i.
     @jit_unused_if_no_cuaev()
     def _compute_cuaev_with_full_nbrlist(
         self,
@@ -488,19 +504,6 @@ class AEVComputer(torch.nn.Module):
         jlist: Tensor,
         numneigh: Tensor,
     ) -> Tensor:
-        """
-        Computing aev with full nbrlist that is from
-            1. Lammps interface
-            2. For testting purpose, the full nbrlist converted from half nbrlist
-
-        The full neighbor list format needs the following three tensors:
-            - `ilist_unique`: This is a 1D tensor containing all local atom indices.
-            - `jlist`: A 1D tensor containing all the neighbors for all atoms.
-                  The neighbors for atom `i` could be inferred from the numneigh
-                  tensor.
-            - `numneigh`: This is a 1D tensor that specifies the number of
-                neighbors for each atom i.
-        """
         self._prepare_cuaev_execution(species, "full-neighborlist")
         if coordinates.shape[0] != 1:
             raise ValueError("cuAEV with full neighborlist only supports single molecs")
@@ -524,12 +527,10 @@ class AEVComputer(torch.nn.Module):
         if not self._cuaev_computer_is_init:
             self._init_cuaev_computer()
 
+    # Converet half nbrlist to full nbrlist.
     @jit_unused_if_no_cuaev()
     @staticmethod
     def _half_to_full_nbrlist(atom_index12: Tensor) -> tp.Tuple[Tensor, Tensor, Tensor]:
-        """
-        Convereting half nbrlist to full nbrlist.
-        """
         ilist = atom_index12.view(-1)
         jlist = atom_index12.flip(0).view(-1)
         ilist_sorted, indices = ilist.sort(stable=True)
@@ -548,11 +549,10 @@ class AEVComputer(torch.nn.Module):
         species: Tensor,
         fullnbr_diff_vector: Tensor,
     ) -> tp.Tuple[Tensor, Tensor, Tensor]:
-        """
-        Limitations: only works for lammps-type pbc neighborlists (with local
-        and ghost atoms). TorchANI neighborlists only have 1 set of atoms and
-        do mapping with local and image atoms, which will not work here.
-        """
+        # NOTE: This function has the following limitations: itonly works for
+        # lammps-type pbc neighborlists (with local and ghost atoms). TorchANI
+        # neighborlists only have 1 set of atoms and do mapping with local and image
+        # atoms, which will not work here.
         ilist_unique = ilist_unique.long()
         jlist = jlist.long()
         ilist = torch.repeat_interleave(ilist_unique, numneigh)
@@ -574,14 +574,13 @@ class AEVComputer(torch.nn.Module):
         return atom_index12, diff_vector, distances
 
     # Constructors:
-
     @classmethod
     def like_1x(
         cls,
         num_species: int = 4,
         strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",
-        neighborlist: NeighborlistArg = "full_pairwise",
+        neighborlist: NeighborlistArg = "all_pairs",
         # Radial args
         radial_start: float = 0.9,
         radial_cutoff: float = 5.2,
@@ -595,6 +594,20 @@ class AEVComputer(torch.nn.Module):
         angular_num_shifts: int = 4,
         angular_num_angle_sections: int = 8,
     ) -> tpx.Self:
+        r"""
+        Build an AEVComputer with standard radial and angular terms directly
+
+        This function uses the same defaults as those in the `torchani.models.ANI1x`
+        model.
+
+        Args:
+            cutoff_fn (`Cutoff` object | "cosine" | "smooth"): The cutoff
+                function used for the calculation.
+            neighborlist (`Neighborlist` object | "all_pairs" | "cell_list"): The
+                neighborlist usied for the calculation.
+        Returns:
+            The constructed `AEVComputer`, ready for use.
+        """
         return cls(
             radial_terms=StandardRadial.cover_linearly(
                 start=radial_start,
@@ -623,7 +636,7 @@ class AEVComputer(torch.nn.Module):
         num_species: int = 7,
         strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",
-        neighborlist: NeighborlistArg = "full_pairwise",
+        neighborlist: NeighborlistArg = "all_pairs",
         # Radial args
         radial_start: float = 0.8,
         radial_cutoff: float = 5.1,
@@ -637,6 +650,20 @@ class AEVComputer(torch.nn.Module):
         angular_num_shifts: int = 8,
         angular_num_angle_sections: int = 4,
     ) -> tpx.Self:
+        r"""
+        Build an AEVComputer with standard radial and angular terms directly
+
+        This function uses the same defaults as those in the `torchani.models.ANI2x`
+        model.
+
+        Args:
+            cutoff_fn (`Cutoff` object | "cosine" | "smooth"): The cutoff
+                function used for the calculation.
+            neighborlist (`Neighborlist` object | "all_pairs" | "cell_list"): The
+                neighborlist usied for the calculation.
+        Returns:
+            The constructed `AEVComputer`, ready for use.
+        """
         return cls(
             radial_terms=StandardRadial.cover_linearly(
                 start=radial_start,
@@ -659,6 +686,7 @@ class AEVComputer(torch.nn.Module):
             neighborlist=neighborlist,
         )
 
+    # Legacy API
     @classmethod
     def from_constants(
         cls,
@@ -673,38 +701,38 @@ class AEVComputer(torch.nn.Module):
         num_species: int,
         strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",
-        neighborlist: NeighborlistArg = "full_pairwise",
+        neighborlist: NeighborlistArg = "all_pairs",
     ) -> tpx.Self:
-        r"""Initialize an AEVComputer from a set of constants
+        r"""
+        Build an AEVComputer with standard radial and angular terms from constants
 
-        .. note::
+        For reference consult the equations in the original `ANI article`_
 
+        Note:
             This constructor is not recommended, it is kept for backward compatibility.
-            Consider using AEVComputer(radial_terms=..., angular_terms=..., ...) or
-            AEVComputer.cover_linearly(...) instead.
+            Consider using either the primary `AEVComputer` constructor,
+            `AEVComputer.like_1x`, or `AEVComputer.like_2x` instead.
 
-        Arguments:
-            radial_cutoff (float): :math:`R_C` in equation (2) when used at equation (3)
-                in the `ANI paper`_.
-            Rca (float): :math:`R_C` in equation (2) when used at equation (4)
-                in the `ANI paper`_.
-            radial_eta (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
-                equation (3) in the `ANI paper`_.
-            radial_shifts (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
-                equation (3) in the `ANI paper`_.
-            angluar_eta (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
-                equation (4) in the `ANI paper`_.
-            angular_zeta (:class:`torch.Tensor`): The 1D tensor of :math:`\zeta` in
-                equation (4) in the `ANI paper`_.
-            angular_shifts (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
-                equation (4) in the `ANI paper`_.
-            angle_sections (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
-                equation (4) in the `ANI paper`_.
+        Args:
+            radial_cutoff: :math:`R_C` in eq. (2) when used at eq. (3)
+            angular_cutoff: :math:`R_C` in eq. (2) when used at eq. (4)
+            radial_eta: The 1D tensor of :math:`\eta` in eq. (3)
+            radial_shifts: The 1D tensor of :math:`R_s` in eq. (3)
+            angluar_eta: The 1D tensor of :math:`\eta` in eq. (4)
+            angular_zeta: The 1D tensor of :math:`\zeta` in eq. (4)
+            angular_shifts: The 1D tensor of :math:`R_s` in eq. (4)
+            angle_sections: The 1D tensor of :math:`\theta_s` in eq. (4)
             num_species (int): Number of supported atom types.
-            strategy (str): Compute strategy to use, one of 'pyaev', 'cuaev',
-                'cuaev-fused'
+            strategy ('pyaev' | 'cuaev' | 'cuaev-fused'): Compute strategy to use.
+            cutoff_fn (`Cutoff` object | "cosine" | "smooth"): The cutoff
+                function used for the calculation.
+            neighborlist (`Neighborlist` object | "all_pairs" | "cell_list"): The
+                neighborlist usied for the calculation.
 
-        .. _ANI paper:
+        Returns:
+            The constructed `AEVComputer`, ready for use.
+
+        .. _ANI article:
             http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
         """
         return cls(
@@ -727,7 +755,6 @@ class AEVComputer(torch.nn.Module):
             neighborlist=neighborlist,
         )
 
-    # Legacy API
     def call(
         self,
         input_: tp.Tuple[Tensor, Tensor],

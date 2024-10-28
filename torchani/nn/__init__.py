@@ -6,8 +6,8 @@ This submodule contains classes that represent atomic neural networks
 It also contains useful factory methods to instantiate neural networks for different
 elements.
 
-Inference-optimized versions of ``ANIEnsemble`` and ``AtomicNetwork``, recommended for
-single-point calculations of single molecules, molecular dynamics and geometry
+Inference-optimized versions of :class:`ANIEnsemble` and ``AtomicNetwork``, recommended
+for single-point calculations of single molecules, molecular dynamics and geometry
 optimizations, are also provided.
 """
 

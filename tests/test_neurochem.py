@@ -24,9 +24,7 @@ class TestModelLoader(ANITestCase):
     def testANI1xSingle(self):
         for j in range(8):
             model = self._setup(ANI1x(model_index=j))
-            model_nc = self._setup(
-                load_model_from_name("ani1x", model_index=j)
-            )
+            model_nc = self._setup(load_model_from_name("ani1x", model_index=j))
             self.assertEqual(model_nc.state_dict(), model.state_dict())
 
     def testANI2x(self):
@@ -37,9 +35,7 @@ class TestModelLoader(ANITestCase):
     def testANI2xSingle(self):
         for j in range(8):
             model = self._setup(ANI2x(model_index=j))
-            model_nc = self._setup(
-                load_model_from_name("ani2x", model_index=j)
-            )
+            model_nc = self._setup(load_model_from_name("ani2x", model_index=j))
             self.assertEqual(model_nc.state_dict(), model.state_dict())
 
     def testANI1ccx(self):
@@ -63,9 +59,7 @@ class TestAEVLoader(ANITestCase):
         self._compare_constants(aev_2x_nc, aev_2x)
 
     def testEqualNeurochem1ccx(self):
-        aev_1ccx_nc, _ = load_aev_computer_and_symbols(
-            const_file_1ccx
-        )
+        aev_1ccx_nc, _ = load_aev_computer_and_symbols(const_file_1ccx)
         aev_1ccx = AEVComputer.like_1x()
         self._compare_constants(aev_1ccx_nc, aev_1ccx)
 

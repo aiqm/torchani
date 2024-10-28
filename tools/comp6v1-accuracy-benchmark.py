@@ -31,9 +31,7 @@ def main(
     ]
     if not len(locations) == 1:
         raise ValueError(f"Subset {subset} could not be found")
-    console.print(
-        f"Benchmarking on subset {subset} on device {device.type.upper()}"
-    )
+    console.print(f"Benchmarking on subset {subset} on device {device.type.upper()}")
     ds = ANIDataset(locations=locations)
     model = ANI1x().to(device)
     count = 0

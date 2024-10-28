@@ -12,6 +12,7 @@ from numpy.typing import NDArray
 from parameterized import parameterized
 
 from torchani import ASE_IS_AVAILABLE
+
 if not ASE_IS_AVAILABLE:
     warnings.warn("Skipping all ASE tests, install ase to run them")
     raise unittest.SkipTest("ASE is not available, skipping all ASE tests.")
@@ -35,7 +36,7 @@ def _stress_test_name(fn: tp.Any, idx: int, param: tp.Any) -> str:
     nl = ""
     if param.args[2] == "cell_list":
         nl = "cell"
-    elif param.args[2] == "full_pairwise":
+    elif param.args[2] == "all_pairs":
         nl = "allpairs"
     return f"{fn.__name__}_fdotr_{param.args[0]}_repdisp_{param.args[1]}_{nl}"
 
@@ -118,7 +119,7 @@ class TestASE(ANITestCase):
         self.assertEqual(f[:num_atoms, :], fn, rtol=0.1, atol=0.1)
 
     @parameterized.expand(
-        product((True, False), (True, False), ("full_pairwise", "cell_list")),
+        product((True, False), (True, False), ("all_pairs", "cell_list")),
         name_func=_stress_test_name,
     )
     def testAnalyticalStressMatchNumerical(

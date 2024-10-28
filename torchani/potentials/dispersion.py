@@ -1,6 +1,7 @@
 r"""
 Potentials that calculate dispersion (i.e. van der Waals) interactions.
 """
+
 import math
 import typing as tp
 
@@ -57,6 +58,7 @@ class BeckeJohnsonDamp(torch.nn.Module):
     charges. Note that the cutoff radii is a matrix of T x T where T are the
     possible atom types and that these cutoff radii are in AU (Bohr)
     """
+
     _a1: Final[float]
     _a2: Final[float]
 

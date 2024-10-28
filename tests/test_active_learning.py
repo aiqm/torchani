@@ -234,7 +234,8 @@ class TestActiveLearningForces(ANITestCase):
             device=self.device,
         )
         _, magnitudes, relative_stdev, relative_range = self.model.force_qbc(
-            (self.species, ch4_coord), ensemble_values=True,
+            (self.species, ch4_coord),
+            ensemble_values=True,
         )
         _, _magnitudes = self.model.force_magnitudes(
             (self.species, ch4_coord), ensemble_values=True

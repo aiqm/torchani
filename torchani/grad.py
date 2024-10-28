@@ -1,5 +1,5 @@
 r"""
-TorchANI functions that make use of torch.autograd capabilities to compute
+TorchANI functions that make use of :attr:`torch.autograd` capabilities to compute
 forces and hessians.
 """
 

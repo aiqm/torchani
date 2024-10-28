@@ -76,6 +76,7 @@ class StandardRadial(RadialTerm):
         self.sublength = len(shifts)
 
     def extra_repr(self) -> str:
+        r""":meta private:"""
         _shifts = [f"{s:.4f}" for s in self.shifts]
         parts = [
             r"#  " f"sublength={self.sublength}",
@@ -207,6 +208,7 @@ class StandardAngular(AngularTerm):
         self.sublength = len(shifts) * len(angle_sections)
 
     def extra_repr(self) -> str:
+        r""":meta private:"""
         _shifts = [f"{s:.4f}" for s in self.shifts]
         _angle_sections = [f"{s:.4f}" for s in self.angle_sections]
         parts = [

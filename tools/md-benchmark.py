@@ -49,17 +49,19 @@ def main(
     dyn = ase.md.verlet.VelocityVerlet(molecule, timestep=1 * ase.units.fs)
 
     timer = Timer(
-        modules_and_fns=[
-            (model, "forward"),
-            (model.aev_computer, "forward"),
-            (model.neural_networks, "forward"),
-            (model.energy_shifter, "forward"),
-            (model.aev_computer.neighborlist, "forward"),
-            (model.aev_computer.angular_terms, "forward"),
-            (model.aev_computer.radial_terms, "forward"),
-        ]
-        if detail
-        else [],
+        modules_and_fns=(
+            [
+                (model, "forward"),
+                (model.aev_computer, "forward"),
+                (model.neural_networks, "forward"),
+                (model.energy_shifter, "forward"),
+                (model.aev_computer.neighborlist, "forward"),
+                (model.aev_computer.angular_terms, "forward"),
+                (model.aev_computer.radial_terms, "forward"),
+            ]
+            if detail
+            else []
+        ),
         nvtx=nvtx,
         sync=sync,
     )
@@ -162,7 +164,7 @@ if __name__ == "__main__":
         num_warm_up=args.num_warm_up,
         num_profile=args.num_profile,
         no_tqdm=args.no_tqdm,
-        neighborlist="full_pairwise",
+        neighborlist="all_pairs",
     )
     main(
         detail=args.detail,
@@ -174,7 +176,7 @@ if __name__ == "__main__":
         num_warm_up=args.num_warm_up,
         num_profile=args.num_profile,
         no_tqdm=args.no_tqdm,
-        neighborlist="full_pairwise",
+        neighborlist="all_pairs",
     )
     main(
         detail=args.detail,

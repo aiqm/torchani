@@ -49,16 +49,12 @@ class TestConverters(ANITestCase):
     def testAtomicNumbersToSymbols(self):
         atomic_nums_to_symbols = self._setup(AtomicNumbersToChemicalSymbols())
         symbols = atomic_nums_to_symbols(torch.tensor([6, 1, 1, 1, -1, -1, -1]))
-        self.assertEqual(
-            symbols, ['C', 'H', 'H', 'H']
-        )
+        self.assertEqual(symbols, ["C", "H", "H", "H"])
 
     def testIdxsToSymbols(self):
         i2str = self._setup(IntsToChemicalSymbols(["A", "B", "C", "D", "E", "F"]))
         symbols = i2str(torch.tensor([5, 1, 1, 1, -1, -1, -1]))
-        self.assertEqual(
-            symbols, ['F', 'B', 'B', 'B']
-        )
+        self.assertEqual(symbols, ["F", "B", "B", "B"])
 
 
 # TODO: For now this is non-jit only, it may need to be adapted

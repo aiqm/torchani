@@ -1,6 +1,6 @@
 r"""
-Fundamentals of TorchANI 3.0
-============================
+Fundamentals of TorchANI
+========================
 
 The TorchANI library provides a set of pre-trained models that can be used directly. All
 provided models are subclasses of class ``ANI``.

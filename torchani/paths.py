@@ -1,5 +1,5 @@
 r"""
-Default location for various TorchANI resources
+Locations used by TorchANI to cache various resources
 """
 
 import typing as tp

@@ -1,5 +1,5 @@
 r"""
-Type aliases. Common type annotations used throughout the TorchANI codebase
+Type aliases. Common type annotations used throughout the TorchANI code.
 """
 
 import torch

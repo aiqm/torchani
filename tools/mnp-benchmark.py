@@ -16,6 +16,7 @@ from torchani.models import ANI2x
 from torchani.grad import energies_and_forces
 
 from tool_utils import timeit
+
 ROOT = Path(__file__).resolve().parent.parent
 
 if not MNP_IS_INSTALLED:
@@ -160,9 +161,7 @@ def main() -> int:
         (True, False),
         (torch.device("cpu"), torch.device("cuda")),
     ):
-        console.print(
-            f"Profiling Single Model in {device.type}, JIT: {jit}"
-        )
+        console.print(f"Profiling Single Model in {device.type}, JIT: {jit}")
         benchmark(single_table, jit, device, idx=0)
     console.print(single_table)
     return 0
