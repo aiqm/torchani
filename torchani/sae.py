@@ -2,6 +2,7 @@ r"""
 Utilities to calculate self atomic energies (SAEs) via linear regression. It is
 recommended to use GSAEs (Ground State Atomic Energies) for new models instead.
 """
+
 import typing as tp
 import warnings
 import math

@@ -1,3 +1,6 @@
+r"""
+Potentials that calculate dispersion (i.e. van der Waals) interactions.
+"""
 import math
 import typing as tp
 

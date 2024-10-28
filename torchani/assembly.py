@@ -50,15 +50,15 @@ from torchani.tuples import (
 from torchani.annotations import StressKind
 from torchani.neighbors import parse_neighborlist, NeighborlistArg
 from torchani.cutoffs import parse_cutoff_fn, Cutoff, CutoffArg
-from torchani.aev import AEVComputer, StandardAngular, StandardRadial
-from torchani.aev.terms import (
+from torchani.aev import (
+    AEVComputer,
+    StandardAngular,
+    StandardRadial,
     RadialTermArg,
     AngularTermArg,
     parse_radial_term,
     parse_angular_term,
 )
-from torchani.neighbors import rescreen, NeighborData
-from torchani.electro import ChargeNormalizer
 from torchani.nn import (
     SpeciesConverter,
     AtomicContainer,
@@ -70,6 +70,8 @@ from torchani.nn import (
     parse_network_maker,
     parse_activation,
 )
+from torchani.neighbors import rescreen, NeighborData
+from torchani.electro import ChargeNormalizer
 from torchani.nn._internal import _ZeroANINetworks
 from torchani.constants import GSAES
 from torchani.utils import sort_by_element

@@ -38,6 +38,7 @@ precalculated values. For details on their calculation consult the DFT-D3 papers
 XTB repulsion data extracted from Grimme et. al. paper
 https://pubs.acs.org/doi/10.1021/acs.jctc.8b01176
 """
+
 import json
 import typing as tp
 import math

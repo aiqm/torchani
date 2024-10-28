@@ -4,16 +4,17 @@ calculate explicit analytical energy expressions that modify the final output
 of the models, usually to correct it in some regions of chemical space where
 they don't behave in a physically appropriate manner.
 
-Potentials may be many-body potentials or pairwise potentials. Subclasses must override
-'forward'.
-
 New potentials can be added to the TorchANI library by simple subclassing. For
 a tutorial on how to do this please refer to the corresponding documentation in
 examples.
 
-Many potentials correspond to functions implemented in specific articles. If
-you use any of these potentials in your work, please cite the corresponding
-article(s).
+``Potential`` is a torch ``Module``. It can represent many-body potentials.
+``PairPotential`` is a more specific subclass, which represents pair potentials.
+Subclasses of ``Potential`` should override ``forward``, and subclasses of
+``PairPotential`` should override ``pair_energies``.
+
+Many potentials correspond to functions implemented in specific scientific articles. If
+you use any of these potentials in your work, please cite the corresponding article(s).
 """
 
 from torchani.potentials.core import Potential, PairPotential

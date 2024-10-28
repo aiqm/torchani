@@ -1,6 +1,7 @@
 r"""
 Convenience functions for reading and writing molecules in ".xyz" format
 """
+
 import shlex
 import typing as tp
 from pathlib import Path
@@ -72,18 +73,12 @@ def write_xyz(
                 cell_elements = " ".join(
                     [(f"{e:.10f}" if e != 0.0 else "0.0") for e in cell.view(-1)]
                 )
-                f.write(
-                    f'Lattice="{cell_elements}" Properties={props} pbc="T T T"\n'
-                )
+                f.write(f'Lattice="{cell_elements}" Properties={props} pbc="T T T"\n')
             else:
-                f.write(
-                    f'Properties={props} pbc="F F F"\n'
-                )
+                f.write(f'Properties={props} pbc="F F F"\n')
             for z, atom in zip(znums, coords):
                 symbol = PERIODIC_TABLE[z]
-                f.write(
-                    f"{symbol} {atom[0]:.10f} {atom[1]:.10f} {atom[2]:.10f}\n"
-                )
+                f.write(f"{symbol} {atom[0]:.10f} {atom[1]:.10f} {atom[2]:.10f}\n")
 
 
 def read_xyz(

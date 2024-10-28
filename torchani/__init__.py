@@ -27,6 +27,7 @@ also include tools to: deal with ANI datasets (e.g. `ANI-1`_, `ANI-1x`_, `ANI-1c
 .. _ANI-2x:
     https://doi.org/10.26434/chemrxiv.11819268.v1
 """
+
 import os
 import warnings
 from importlib.metadata import version, PackageNotFoundError
@@ -56,9 +57,11 @@ from torchani import (
     paths,
     aev,
 )
+
 # Legacy API
 from torchani.utils import EnergyShifter
 from torchani.nn import ANIModel, Ensemble
+
 # NOTE: ase is an optional dependency so don't import here
 
 try:
@@ -120,6 +123,7 @@ if torch.cuda.is_available():
 # Optional submodule, depends on 'ase' being available
 try:
     from . import ase  # noqa: F401
+
     __all__.append("ase")
     ASE_IS_AVAILABLE = True
 except ImportError:

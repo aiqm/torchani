@@ -1,7 +1,3 @@
-r"""
-This module is *internal* and considered an implementation detail.
-"""
-
 import typing as tp
 
 import torch

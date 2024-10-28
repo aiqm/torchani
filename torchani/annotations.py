@@ -1,6 +1,7 @@
 r"""
 Type aliases. Common type annotations used throughout the TorchANI codebase
 """
+
 import torch
 import typing as tp
 from pathlib import Path

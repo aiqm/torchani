@@ -1,6 +1,7 @@
 r"""
 Miscellaneous utilities used throughout the code
 """
+
 from collections import OrderedDict
 import typing as tp
 import tarfile
@@ -544,6 +545,7 @@ class AtomicNumbersToMasses(torch.nn.Module):
     Returns:
         :class:`torch.Tensor`: with, atomic masses, with the same shape as the input.
     """
+
     atomic_masses: Tensor
 
     def __init__(

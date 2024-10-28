@@ -1,3 +1,6 @@
+r"""
+Potentials that calculate repulsive (short-range) interactions.
+"""
 import typing as tp
 
 import torch

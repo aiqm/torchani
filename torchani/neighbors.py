@@ -1,6 +1,7 @@
 r"""
 Modular neighborlists to improve scaling for large systems.
 """
+
 import typing as tp
 import math
 
@@ -202,6 +203,7 @@ class Neighborlist(torch.nn.Module):
 class FullPairwise(Neighborlist):
     """Compute pairs of atoms that are neighbors, uses pbc depending on
     wether pbc.any() is True or not"""
+
     def forward(
         self,
         species: Tensor,
@@ -439,7 +441,11 @@ class CellList(Neighborlist):
                 return_shift_values=return_shift_values,
             )
         return self._screen_with_cutoff(
-            cutoff, coordinates, atom_pairs, mask=(species == -1), shift_values=None,
+            cutoff,
+            coordinates,
+            atom_pairs,
+            mask=(species == -1),
+            shift_values=None,
         )
 
     def _validate_and_parse_cell_and_pbc(
@@ -460,7 +466,8 @@ class CellList(Neighborlist):
             if pbc.any():
                 raise ValueError("Cell must be provided if PBC is required")
             displaced_coordinates, cell = self.compute_bounding_cell(
-                coordinates.detach(), eps=1e-3,
+                coordinates.detach(),
+                eps=1e-3,
             )
             return displaced_coordinates, cell, pbc
 
@@ -892,7 +899,11 @@ class VerletCellList(CellList):
                 return_shift_values=return_shift_values,
             )
         return self._screen_with_cutoff(
-            cutoff, coordinates, atom_pairs, mask=(species == -1), shift_values=None,
+            cutoff,
+            coordinates,
+            atom_pairs,
+            mask=(species == -1),
+            shift_values=None,
         )
 
     def _cache_values(

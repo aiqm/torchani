@@ -1,3 +1,9 @@
+r"""
+This module contains the TorchANI CLI entrypoints. The actual implementation of
+the functions is considered internal. Please don't rely on calling functions inside
+``torchani.cli`` directly.
+"""
+
 import shutil
 import typer
 import typing as tp
