@@ -1,4 +1,5 @@
-r"""Atomic constants, and Density Functional constants
+r"""
+Atomic constants, and Density Functional constants
 
 If you use these constants in your work please cite the corresponding article(s).
 
@@ -23,8 +24,7 @@ Mardirossian, M. Head-Gordon, Phys. Chem. Chem. Phys, 16, 9904, 2014
 
 Except for B97-3c taken from https://aip.scitation.org/doi/pdf/10.1063/1.5012601
 
-And for wB97X taken from
-TODO: where?
+And for wB97X taken from TODO: where?
 
 Covalent radii are in angstroms, and are are used for the calculation of coordination
 numbers in DR. Taken directly from Grimme et. al. dftd3 source code, in turn taken from

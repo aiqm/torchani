@@ -34,6 +34,39 @@ def jit_unused_if_no_cuaev():
 
 
 class AEVComputer(torch.nn.Module):
+    r"""
+    Compute Atomic Environment Vectors (AEVs)
+
+    Arguments:
+        element_idxs (Tensor): Integer tensor with element indices of the system. Shape
+            should be ``(molecules, atoms)``.
+        coords (Tensor): Float tensor with coordinates of the system. Shape should
+            be ``(molecules, atoms, 3)``. ANI models assume this to be in Angstrom.
+        cell (Optional[Tensor]): Float tensor. Only if performing periodic boundary
+            conditions (PBC) calculations. Holds the unit cell vectors of the system in
+            its *rows*. Shape should be ``(3, 3)``. ANI models assume this to be in
+            Angstrom.
+        pbc (Optional[Tensor]): Bool tensor. Only if performing PBC calculations.
+            Shape should be ``(3,)``. It holds whether PBC is enabled in the x, y, or
+            z directions.
+
+    Returns:
+        Tensor: AEVs, of shape ``(molecules, atoms, self.aev_length)``, where the length
+            depends on the angular and radial terms used.
+
+    For reference, an example cell tensor is:
+
+    .. code-block:: python
+
+        tensor([[x1, y1, z1],
+                [x2, y2, z2],
+                [x3, y3, z3]])
+
+    .. warning::
+
+        The element indices must be 0, 1, 2, 3, ..., not atomic numbers. Check
+        :class:`torchani.nn.SpeciesConverter` if you want atomic numbers.
+    """
     num_species: Final[int]
     num_species_pairs: Final[int]
 
@@ -184,73 +217,58 @@ class AEVComputer(torch.nn.Module):
 
     def forward(
         self,
-        input_: tp.Tuple[Tensor, Tensor],
+        elem_idxs: Tensor,
+        coords: Tensor,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-    ) -> SpeciesAEV:
+    ) -> Tensor:
         """Compute AEVs
 
-        Arguments:
-            input_ (tuple): Can be one of the following two cases:
-
-                If you don't care about periodic boundary conditions at all,
-                then input can be a tuple of two tensors: species, coordinates.
-                species must have shape ``(N, A)``, coordinates must have shape
-                ``(N, A, 3)`` where ``N`` is the number of molecules in a batch,
-                and ``A`` is the number of atoms.
-
-                .. warning::
-
-                    The species must be indexed in 0, 1, 2, 3, ..., not the element
-                    index in periodic table. Check :class:`torchani.SpeciesConverter`
-                    if you want periodic table indexing.
-
-                .. note:: The coordinates, and cell are in Angstrom.
-
-                If you want to apply periodic boundary conditions, then the input
-                would be a tuple of two tensors (species, coordinates) and two keyword
-                arguments `cell=...` , and `pbc=...` where species and coordinates are
-                the same as described above, cell is a tensor of shape (3, 3) of the
-                three vectors defining unit cell:
-
-                .. code-block:: python
-
-                    tensor([[x1, y1, z1],
-                            [x2, y2, z2],
-                            [x3, y3, z3]])
-
-                and pbc is boolean vector of size 3 storing if pbc is enabled
-                for that direction.
-
-        Returns:
-            NamedTuple: Species and AEVs. species are the species from the input
-            unchanged, and AEVs is a tensor of shape ``(N, A, self.aev_length)``
         """
-        species, coords = input_
+        if not torch.jit.is_scripting():
+            if isinstance(elem_idxs, tuple):
+                raise ValueError(
+                    "You seem to be attempting to call "
+                    "`_, aevs = aev_computer((species, coords), cell, pbc)`. "
+                    "This signature was modified in TorchANI 3. "
+                    "Use `aevs = aev_computer(species, coords, cell, pbc)` instead."
+                    "If you want the old behavior (discouraged) use"
+                    " `_, aevs = aev_computer.call((species, coords), cell, pbc)`."
+                )
         # Check input shape correctness and validate cutoffs
-        assert species.dim() == 2
-        assert coords.dim() == 3
-        assert (species.shape == coords.shape[:2]) and (coords.shape[2] == 3)
+        assert elem_idxs.dim() == 2
+        assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
         assert self.angular_terms.cutoff < self.radial_terms.cutoff
-        # WARNING: If a neighborlist is used, the coords that are input
-        # into the neighborlist do **not** need to be mapped into the
-        # central cell for pbc calculations.
 
-        cutoff = self.radial_terms.cutoff
-        if self._strategy == "pyaev":
-            neighbors = self.neighborlist(species, coords, cutoff, cell, pbc)
-            aev = self._compute_pyaev(element_idxs=species, neighbors=neighbors)
-        elif self._strategy == "cuaev":
-            neighbors = self.neighborlist(species, coords, cutoff, cell, pbc)
-            aev = self._compute_cuaev_with_half_nbrlist(species, coords, neighbors)
+        # IMPORTANT: If a neighborlist is used, the coords that input to neighborlist
+        # are **not required** to be mapped to the central cell for pbc calculations.
+        if self._strategy == "pyaev" or self._strategy == "cuaev":
+            neighbors = self.neighborlist(
+                elem_idxs, coords, self.radial_terms.cutoff, cell, pbc
+            )
+            return self.compute_from_neighbors(elem_idxs, neighbors, _coords=coords)
         elif self._strategy == "cuaev-fused":
             if pbc is not None:
                 if pbc.any():
-                    raise ValueError("cuAEV-fused doesn't support PBC")
-            aev = self._compute_cuaev(species, coords)
-        else:
-            raise RuntimeError(f"Invalid compute strategy {self._strategy}")
-        return SpeciesAEV(species, aev)
+                    raise ValueError("cuaev-fused strategy doesn't support PBC")
+            return self._compute_cuaev(elem_idxs, coords)
+        raise RuntimeError(f"Invalid compute strategy {self._strategy}")
+
+    def compute_from_neighbors(
+        self,
+        elem_idxs: Tensor,
+        neighbors: NeighborData,
+        _coords: tp.Optional[Tensor] = None,
+    ) -> Tensor:
+        r"""
+        Compute the AEV from neighborlist data
+        """
+        if self._strategy == "pyaev":
+            return self._compute_pyaev(elem_idxs, neighbors)
+        if self._strategy == "cuaev":
+            assert _coords is not None
+            return self._compute_cuaev_with_half_nbrlist(elem_idxs, _coords, neighbors)
+        raise RuntimeError(f"Unsupported compute strategy {self._strategy}")
 
     def _compute_pyaev(
         self,
@@ -559,67 +577,6 @@ class AEVComputer(torch.nn.Module):
         return atom_index12, diff_vector, distances
 
     # Constructors:
-    @classmethod
-    def from_constants(
-        cls,
-        radial_cutoff: float,
-        angular_cutoff: float,
-        radial_eta: float,
-        radial_shifts: tp.Sequence[float],
-        angular_eta: float,
-        angular_zeta: float,
-        angular_shifts: tp.Sequence[float],
-        angle_sections: tp.Sequence[float],
-        num_species: int,
-        strategy: str = "pyaev",
-        cutoff_fn: CutoffArg = "cosine",
-        neighborlist: NeighborlistArg = "full_pairwise",
-    ) -> tpx.Self:
-        r"""Initialize the AEV computer from the following constants:
-
-        Arguments:
-            radial_cutoff (float): :math:`R_C` in equation (2) when used at equation (3)
-                in the `ANI paper`_.
-            Rca (float): :math:`R_C` in equation (2) when used at equation (4)
-                in the `ANI paper`_.
-            radial_eta (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
-                equation (3) in the `ANI paper`_.
-            radial_shifts (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
-                equation (3) in the `ANI paper`_.
-            angluar_eta (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
-                equation (4) in the `ANI paper`_.
-            angular_zeta (:class:`torch.Tensor`): The 1D tensor of :math:`\zeta` in
-                equation (4) in the `ANI paper`_.
-            angular_shifts (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
-                equation (4) in the `ANI paper`_.
-            angle_sections (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
-                equation (4) in the `ANI paper`_.
-            num_species (int): Number of supported atom types.
-            strategy (str): Compute strategy to use, one of 'pyaev', 'cuaev',
-                'cuaev-fused'
-
-        .. _ANI paper:
-            http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
-        """
-        return cls(
-            radial_terms=StandardRadial(
-                radial_eta,
-                radial_shifts,
-                radial_cutoff,
-                cutoff_fn=cutoff_fn,
-            ),
-            angular_terms=StandardAngular(
-                angular_eta,
-                angular_zeta,
-                angular_shifts,
-                angle_sections,
-                angular_cutoff,
-                cutoff_fn=cutoff_fn,
-            ),
-            num_species=num_species,
-            strategy=strategy,
-            neighborlist=neighborlist,
-        )
 
     @classmethod
     def like_1x(
@@ -704,3 +661,81 @@ class AEVComputer(torch.nn.Module):
             strategy=strategy,
             neighborlist=neighborlist,
         )
+
+    @classmethod
+    def from_constants(
+        cls,
+        radial_cutoff: float,
+        angular_cutoff: float,
+        radial_eta: float,
+        radial_shifts: tp.Sequence[float],
+        angular_eta: float,
+        angular_zeta: float,
+        angular_shifts: tp.Sequence[float],
+        angle_sections: tp.Sequence[float],
+        num_species: int,
+        strategy: str = "pyaev",
+        cutoff_fn: CutoffArg = "cosine",
+        neighborlist: NeighborlistArg = "full_pairwise",
+    ) -> tpx.Self:
+        r"""Initialize an AEVComputer from a set of constants
+
+        .. note::
+
+            This constructor is not recommended, it is kept for backward compatibility.
+            Consider using AEVComputer(radial_terms=..., angular_terms=..., ...) or
+            AEVComputer.cover_linearly(...) instead.
+
+        Arguments:
+            radial_cutoff (float): :math:`R_C` in equation (2) when used at equation (3)
+                in the `ANI paper`_.
+            Rca (float): :math:`R_C` in equation (2) when used at equation (4)
+                in the `ANI paper`_.
+            radial_eta (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
+                equation (3) in the `ANI paper`_.
+            radial_shifts (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
+                equation (3) in the `ANI paper`_.
+            angluar_eta (:class:`torch.Tensor`): The 1D tensor of :math:`\eta` in
+                equation (4) in the `ANI paper`_.
+            angular_zeta (:class:`torch.Tensor`): The 1D tensor of :math:`\zeta` in
+                equation (4) in the `ANI paper`_.
+            angular_shifts (:class:`torch.Tensor`): The 1D tensor of :math:`R_s` in
+                equation (4) in the `ANI paper`_.
+            angle_sections (:class:`torch.Tensor`): The 1D tensor of :math:`\theta_s` in
+                equation (4) in the `ANI paper`_.
+            num_species (int): Number of supported atom types.
+            strategy (str): Compute strategy to use, one of 'pyaev', 'cuaev',
+                'cuaev-fused'
+
+        .. _ANI paper:
+            http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
+        """
+        return cls(
+            radial_terms=StandardRadial(
+                radial_eta,
+                radial_shifts,
+                radial_cutoff,
+                cutoff_fn=cutoff_fn,
+            ),
+            angular_terms=StandardAngular(
+                angular_eta,
+                angular_zeta,
+                angular_shifts,
+                angle_sections,
+                angular_cutoff,
+                cutoff_fn=cutoff_fn,
+            ),
+            num_species=num_species,
+            strategy=strategy,
+            neighborlist=neighborlist,
+        )
+
+    # Legacy API
+    def call(
+        self,
+        input_: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> SpeciesAEV:
+        elem_idxs, coords = input_
+        return SpeciesAEV(elem_idxs, self(elem_idxs, coords, cell, pbc))

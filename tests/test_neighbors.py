@@ -180,14 +180,12 @@ class TestCellList(TestCase):
             )
             self._check_neighborlists_match(coordinates)
 
-    def _check_neighborlists_match(self, coordinates: Tensor):
-        species = torch.ones(
-            coordinates.shape[:-1], dtype=torch.long, device=coordinates.device
-        )
+    def _check_neighborlists_match(self, coords: Tensor):
+        species = torch.ones(coords.shape[:-1], dtype=torch.long, device=coords.device)
         aev_cl = AEVComputer.like_1x(neighborlist="cell_list")
         aev_fp = AEVComputer.like_1x(neighborlist="full_pairwise")
-        _, aevs_cl = aev_cl((species, coordinates), cell=self.cell, pbc=self.pbc)
-        _, aevs_fp = aev_fp((species, coordinates), cell=self.cell, pbc=self.pbc)
+        aevs_cl = aev_cl(species, coords, cell=self.cell, pbc=self.pbc)
+        aevs_fp = aev_fp(species, coords, cell=self.cell, pbc=self.pbc)
         self.assertEqual(aevs_cl, aevs_fp)
 
 
@@ -208,15 +206,15 @@ class TestCellListEnergies(TestCase):
         ).float()
         self.aev_cl = AEVComputer.like_1x(neighborlist="cell_list")
         self.aev_fp = AEVComputer.like_1x(neighborlist="full_pairwise")
-        self.model_cl = torchani.models.ANI1x(model_index=0).to(self.device)
-        self.model_fp = torchani.models.ANI1x(model_index=0).to(self.device)
+        self.model_cl = torchani.models.ANI1x(model_index=0, device=self.device)
+        self.model_fp = torchani.models.ANI1x(model_index=0, device=self.device)
         self.model_cl.aev_computer = self.aev_cl
         self.model_fp.aev_computer = self.aev_fp
         self.num_to_test = 10
 
     def testCellListEnergiesRandom(self):
-        self.model_cl = self.model_cl.to(self.device).double()
-        self.model_fp = self.model_fp.to(self.device).double()
+        self.model_cl = self.model_cl.to(self.device, torch.double)
+        self.model_fp = self.model_fp.to(self.device, torch.double)
         species = torch.ones((1, 100), dtype=torch.long, device=self.device)
         for j in range(self.num_to_test):
             coordinates = (
@@ -229,12 +227,12 @@ class TestCellListEnergies(TestCase):
             )
             _, e_cl = self.model_cl(
                 (species, coordinates),
-                cell=self.cell.to(self.device).double(),
+                cell=self.cell.to(self.device, torch.double),
                 pbc=self.pbc.to(self.device),
             )
             _, e_fp = self.model_fp(
                 (species, coordinates),
-                cell=self.cell.to(self.device).double(),
+                cell=self.cell.to(self.device, torch.double),
                 pbc=self.pbc.to(self.device),
             )
             self.assertEqual(e_cl, e_fp)
@@ -245,8 +243,8 @@ class TestCellListEnergies(TestCase):
         # This is becausse non determinancy in order of operations in cuda
         # creates small floating point errors that may be larger than the
         # default threshold (I hope)
-        self.model_cl = self.model_cl.to(self.device).float()
-        self.model_fp = self.model_fp.to(self.device).float()
+        self.model_cl = self.model_cl.to(self.device, torch.float)
+        self.model_fp = self.model_fp.to(self.device, torch.float)
         species = torch.ones((1, 100), dtype=torch.long, device=self.device)
         for j in range(self.num_to_test):
             coordinates = (
@@ -260,19 +258,19 @@ class TestCellListEnergies(TestCase):
 
             _, e_c = self.model_cl(
                 (species, coordinates),
-                cell=self.cell.to(self.device).float(),
+                cell=self.cell.to(self.device, torch.float),
                 pbc=self.pbc.to(self.device),
             )
             _, e_j = self.model_fp(
                 (species, coordinates),
-                cell=self.cell.to(self.device).float(),
+                cell=self.cell.to(self.device, torch.float),
                 pbc=self.pbc.to(self.device),
             )
             self.assertEqual(e_c, e_j, rtol=1e-4, atol=1e-4)
 
     def testCellListRandomFloat(self):
-        aev_cl = self.aev_cl.to(self.device).to(torch.float)
-        aev_fp = self.aev_fp.to(self.device).to(torch.float)
+        aev_cl = self.aev_cl.to(self.device, torch.float)
+        aev_fp = self.aev_fp.to(self.device, torch.float)
         idxs = torch.randint(
             self.aev_cl.num_species, (1, 100), device=self.device, dtype=torch.long
         )
@@ -286,13 +284,15 @@ class TestCellListEnergies(TestCase):
                 coordinates, min=0.0001, max=self.cell_size - 0.0001
             )
 
-            _, aevs_cl = aev_cl(
-                (idxs, coordinates),
+            aevs_cl = aev_cl(
+                idxs,
+                coordinates,
                 cell=self.cell.to(self.device),
                 pbc=self.pbc.to(self.device),
             )
-            _, aevs_fp = aev_fp(
-                (idxs, coordinates),
+            aevs_fp = aev_fp(
+                idxs,
+                coordinates,
                 cell=self.cell.to(self.device),
                 pbc=self.pbc.to(self.device),
             )
@@ -360,8 +360,8 @@ class TestCellListLargeSystem(ANITestCase):
                 coordinates, min=0.0001, max=self.cell_size - 0.0001
             )
 
-            _, aevs_cl = self.aev_cl((idxs, coordinates))
-            _, aevs_fp = self.aev_fp((idxs, coordinates))
+            aevs_cl = self.aev_cl(idxs, coordinates)
+            aevs_fp = self.aev_fp(idxs, coordinates)
             self.assertEqual(aevs_cl, aevs_fp, rtol=self.rtol, atol=self.atol)
 
     def testRandom(self):
@@ -378,14 +378,16 @@ class TestCellListLargeSystem(ANITestCase):
                 coordinates, min=0.0001, max=self.cell_size - 0.0001
             )
 
-            _, aevs_cl = self.aev_cl(
-                (idxs, coordinates),
-                cell=self.cell.to(self.device).double(),
+            aevs_cl = self.aev_cl(
+                idxs,
+                coordinates,
+                cell=self.cell.to(self.device, torch.double),
                 pbc=self.pbc.to(self.device),
             )
-            _, aevs_fp = self.aev_fp(
-                (idxs, coordinates),
-                cell=self.cell.to(self.device).double(),
+            aevs_fp = self.aev_fp(
+                idxs,
+                coordinates,
+                cell=self.cell.to(self.device, torch.double),
                 pbc=self.pbc.to(self.device),
             )
             self.assertEqual(aevs_cl, aevs_fp, rtol=self.rtol, atol=self.atol)

@@ -18,7 +18,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # This example is meant to show how to take advantage of the modular AEV implementation
 # We will use these coordinates and species:
-coordinates = torch.tensor(
+coords = torch.tensor(
     [
         [
             [0.03192167, 0.00638559, 0.01301679],
@@ -34,7 +34,7 @@ species = torch.tensor([[1, 0, 0, 0, 0]], device=device)
 
 # Suppose that we want to make an aev computer in the ANI 2x style:
 aev_computer = AEVComputer.like_2x().to(device)
-species, aevs = aev_computer((species, coordinates))
+aevs = aev_computer(species, coords)
 radial_length = aev_computer.radial_length
 print("AEV computer similar to 2x")
 print("for first atom, first 5 terms of radial:", aevs[0, 0, :5].tolist())
@@ -52,7 +52,7 @@ print()
 
 aev_computer_smooth = AEVComputer.like_1x(cutoff_fn="smooth").to(device)
 radial_length = aev_computer_smooth.radial_length
-species, aevs = aev_computer_smooth((species, coordinates))
+aevs = aev_computer_smooth(species, coords)
 print("AEV computer similar to 1x, but with a smooth cutoff")
 print("for first atom, first 5 terms of radial:", aevs[0, 0, :5].tolist())
 print(
@@ -79,7 +79,7 @@ class CutoffBiweight(Cutoff):
 
 aev_computer_bw = AEVComputer.like_1x(cutoff_fn=CutoffBiweight()).to(device)
 radial_length = aev_computer_bw.radial_length
-species, aevs = aev_computer_smooth((species, coordinates))
+aevs = aev_computer_smooth(species, coords)
 print("AEV computer similar to 1x, but with a custom cutoff function")
 print("for first atom, first 5 terms of radial:", aevs[0, 0, :5].tolist())
 print(
@@ -151,7 +151,7 @@ aev_computer_cosdiff = AEVComputer(
 ).to(device)
 
 radial_length = aev_computer_cosdiff.radial_length
-species, aevs = aev_computer_cosdiff((species, coordinates))
+aevs = aev_computer_cosdiff(species, coords)
 print("AEV computer similar to 1x, but with custom angular terms")
 print("for first atom, first 5 terms of radial:", aevs[0, 0, :5].tolist())
 print(

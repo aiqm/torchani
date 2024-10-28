@@ -1,3 +1,4 @@
+import typing as tp
 import time
 import gc
 import os
@@ -5,16 +6,18 @@ import argparse
 import textwrap
 
 import torch
-import torchani
 import pynvml
 import numpy as np
+
+import ase
 from ase.io import read
 
+import torchani
 
 summary = "\n"
 runcounter = 0
 N = 200
-last_py_speed = None
+last_py_speed: tp.Optional[float] = None
 
 
 def getGpuName(device=None):
@@ -146,8 +149,8 @@ def benchmark(
         "-",
     ]
 
-    forward_time = 0
-    force_time = 0
+    forward_time = 0.0
+    force_time = 0.0
     torch.cuda.empty_cache()
     gc.collect()
     torch.cuda.synchronize()
@@ -163,7 +166,7 @@ def benchmark(
         synchronize(not args.nsight)
         forward_start = time.time()
         try:
-            _, aev = aev_comp((species, coordinates))
+            aev = aev_comp(species, coordinates)
             if args.run_energy:
                 torch.cuda.nvtx.range_push("Network")
                 if args.single_nn:
@@ -219,8 +222,7 @@ def benchmark(
     if verbose:
         if aev_comp.strategy == "cuaev-fused":
             if last_py_speed is not None:
-                speed_up = last_py_speed / total_time
-                speed_up = f"{speed_up:.2f}"
+                speed_up = f"{last_py_speed / total_time:.2f}"
             else:
                 speed_up = "-"
             last_py_speed = None
@@ -280,6 +282,7 @@ def check_speedup_error(aev, aev_ref, force_cuaev, force_ref, speed, speed_ref):
 def run(file, nnp_ref, nnp_cuaev, runbackward, maxatoms=10000):
     filepath = os.path.join(path, f"../dataset/pdb/{file}")
     mol = read(filepath)
+    mol = tp.cast(ase.Atoms, mol)
     species = torch.tensor([mol.get_atomic_numbers()], device=device)
     positions = torch.tensor(
         [mol.get_positions()], dtype=torch.float32, requires_grad=False, device=device
@@ -373,7 +376,7 @@ def plot(maxatoms, aev_fd, cuaev_fd, aev_fdbd, cuaev_fdbd):
     energy_label = ""
     if args.run_energy:
         _infer_flag = "on" if args.infer_model else "off"
-        energy_label = f"Energy: NN ({num_nn}), Infer Model ({_infer_flag})"
+        energy_label = f"Energy: NN ({num_nn}), Inference optimized with: {_infer_flag}"
         if args.infer_model:
             energy_label += f", MNP ({'on' if args.mnp else 'off'})"
     # plot
@@ -555,11 +558,11 @@ if __name__ == "__main__":
 
     # if run for plots
     if args.plot:
-        maxatoms = np.concatenate(
+        maxatoms_arr = np.concatenate(
             [[100, 3000, 5000, 6000, 8000], np.arange(10000, 31000, 5000)]
         )
         file = "6ZDH.pdb"
-        run_for_plot(file, maxatoms, nnp_ref, nnp_cuaev)
+        run_for_plot(file, maxatoms_arr, nnp_ref, nnp_cuaev)
     else:
         # if not for nsight
         if not args.nsight:

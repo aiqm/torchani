@@ -1,3 +1,4 @@
+import typing as tp
 import argparse
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from rich.console import Console
 from tqdm import tqdm
 
 from torchani.models import ANI1x
+from torchani.neighbors import NeighborlistArg
 from tool_utils import Timer, Opt
 
 console = Console()
@@ -25,7 +27,7 @@ def main(
     no_tqdm: bool,
     num_warm_up: int,
     num_profile: int,
-    neighborlist: str,
+    neighborlist: NeighborlistArg,
 ) -> int:
     detail = (opt is Opt.NONE) and detail
     console.print(
@@ -41,7 +43,7 @@ def main(
     else:
         xyz_file_path = Path.cwd() / file
 
-    molecule = ase.io.read(str(xyz_file_path))
+    molecule = tp.cast(ase.Atoms, ase.io.read(str(xyz_file_path)))
     model = ANI1x(model_index=0, neighborlist=neighborlist).to(torch.device(device))
     molecule.calc = model.ase(jit=opt is Opt.JIT)
     dyn = ase.md.verlet.VelocityVerlet(molecule, timestep=1 * ase.units.fs)

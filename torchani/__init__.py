@@ -1,13 +1,10 @@
 r"""
-`TorchANI`_ is a PyTorch library for training, development and research of
-`ANI`_ style neural networks, maintained by the `Roitberg group`_.  TorchANI
-contains classes like :class:`AEVComputer`, :class:`ANINetworks`, and
-:class:`EnergyShifter` that can be pipelined to compute molecular energies from
-the 3D coordinates of molecules.  It also include tools to: deal with ANI
-datasets (e.g. `ANI-1`_, `ANI-1x`_, `ANI-1ccx`_, `ANI-2x`_) at
-:attr:`torchani.datasets`, import various file formats of NeuroChem at
-
-In order to use TorchANI
+`TorchANI`_ is a PyTorch library for training, development and research of `ANI`_ style
+neural networks, maintained by the `Roitberg group`_.  TorchANI contains classes like
+:class:`AEVComputer`, :class:`ANINetworks`, and :class:`EnergyAdder` that can be
+pipelined to compute molecular energies from the cartesian coordinates of molecules. It
+also include tools to: deal with ANI datasets (e.g. `ANI-1`_, `ANI-1x`_, `ANI-1ccx`_,
+`ANI-2x`_) at :attr:`torchani.datasets`, and import various file formats of NeuroChem.
 
 .. _TorchANI:
     https://doi.org/10.26434/chemrxiv.12218294.v1
@@ -36,7 +33,7 @@ from importlib.metadata import version, PackageNotFoundError
 
 import torch
 
-from torchani.nn import ANINetworks, ANIEnsemble
+from torchani.nn import ANINetworks, ANIEnsemble, SpeciesConverter
 from torchani.aev import AEVComputer
 from torchani import (
     assembly,
@@ -51,17 +48,17 @@ from torchani import (
     neighbors,
     cutoffs,
     sae,
-    infer,
     constants,
     grad,
     io,
     neurochem,
     annotations,
     paths,
+    aev,
 )
 # Legacy API
 from torchani.utils import EnergyShifter
-from torchani.nn import ANIModel, Ensemble, SpeciesConverter
+from torchani.nn import ANIModel, Ensemble
 # NOTE: ase is an optional dependency so don't import here
 
 try:
@@ -70,11 +67,7 @@ except PackageNotFoundError:
     pass  # package is not installed
 
 __all__ = [
-    "AEVComputer",
-    "ANINetworks",
-    "ANIEnsemble",
     "grad",
-    "SpeciesConverter",
     "utils",
     "annotations",
     "paths",
@@ -90,7 +83,7 @@ __all__ = [
     "electro",
     "assembly",
     "sae",
-    "infer",
+    "aev",
     "constants",
     # Legacy API
     "neurochem",
@@ -98,6 +91,11 @@ __all__ = [
     "EnergyShifter",
     "Ensemble",
     "ANIModel",
+    # In global namespace for convenience
+    "AEVComputer",
+    "ANINetworks",
+    "ANIEnsemble",
+    "SpeciesConverter",
 ]
 
 # Disable TF32 since it catastrophically degrades accuracy

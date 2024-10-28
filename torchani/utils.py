@@ -124,10 +124,13 @@ def check_openmp_threads(verbose: bool = True) -> None:
 
 
 def species_to_formula(species: NDArray[np.str_]) -> tp.List[str]:
-    r"""Transforms an array of strings into the corresponding formula.  This
-    function expects an array of shape (M, A) and returns a list of
-    formulas of len M.
-    sorts in alphabetical order e.g. [['H', 'H', 'C']] -> ['CH2']"""
+    r"""
+    Transform an array of strings into the corresponding formulas
+
+    Take a ``numpy`` ndarray of shape ``(molecules, atoms)`` with chemical symbols and
+    return a list of formulas with ``len(formulas) = molecules``. Sorting of symbols
+    within formulas is alphabetical e.g. ``[['H', 'H', 'C']] -> ['CH2']``
+    """
     if species.ndim == 1:
         species = np.expand_dims(species, axis=0)
     elif species.ndim != 2:
@@ -144,19 +147,21 @@ def species_to_formula(species: NDArray[np.str_]) -> tp.List[str]:
 
 
 def cumsum_from_zero(input_: Tensor) -> Tensor:
-    r"""Cumulative sum just like pytorch's cumsum, but with the first element
-    of the result being zero"""
+    r"""
+    Cumulative sum just like ``torch``'s ``torch.cumsum``, but with the first element of
+    the result being zero
+    """
     cumsum = torch.zeros_like(input_)
     torch.cumsum(input_[:-1], dim=0, out=cumsum[1:])
     return cumsum
 
 
 def nonzero_in_chunks(tensor: Tensor, chunk_size: int = 2**31 - 1):
-    r"""Flattens a tensor and applies nonzero in chunks of a given size
+    r"""
+    Flatten a tensor and applies nonzero in chunks of a given size
 
-    This is a workaround for a limitation in PyTorch's nonzero function, which
-    fails with a `RuntimeError` when applied to tensors with more than INT_MAX
-    elements.
+    Workaround for a limitation in PyTorch's nonzero function, which fails with a
+    ``RuntimeError`` when applied to tensors with more than ``INT_MAX`` elements.
 
     The issue is documented in PyTorch's GitHub repository:
     https://github.com/pytorch/pytorch/issues/51871
@@ -190,14 +195,18 @@ def pad_atomic_properties(
     properties: tp.Sequence[tp.Mapping[str, Tensor]],
     padding_values: tp.Optional[tp.Dict[str, float]] = None,
 ) -> tp.Dict[str, Tensor]:
-    """Put a sequence of atomic properties together into single tensor.
+    r"""
+    Combine a sequence of properties together into single tensor.
 
-    Inputs are `[{'species': ..., ...}, {'species': ..., ...}, ...]` and the outputs
-    are `{'species': padded_tensor, ...}`
+    Inputs are ``[{'species': tensor, ...}, {'species': tensor, ...}, ...]`j` and the
+    output is of the form ``{'species': padded_tensor, ...}``.
 
     Arguments:
-        properties (:class:`collections.abc.Sequence`): sequence of properties.
-        padding_values (dict): the value to fill to pad tensors to same size
+        properties (list[dict[str, Tensor]]): Sequence of properties
+        padding_values (Optional[list[dict[str, float]]]): Values to use for padding.
+
+    Returns:
+        dict[str, Tensor]: Padded tensors.
     """
     if padding_values is None:
         padding_values = PADDING
@@ -245,14 +254,13 @@ def strip_redundant_padding(
 
 
 def map_to_central(coordinates: Tensor, cell: Tensor, pbc: Tensor) -> Tensor:
-    """Map atoms outside the unit cell into the cell using PBC.
+    r"""
+    Map atoms outside the unit cell into the cell using PBC
 
     Arguments:
 
-        coordinates (:class:`torch.Tensor`): Tensor of shape
-            ``(molecules, atoms, 3)``.
-
-        cell (:class:`torch.Tensor`): tensor of shape (3, 3) of the three
+        coordinates (:class:`torch.Tensor`): Float Tensor,  ``(molecules, atoms, 3)``.
+        cell (:class:`torch.Tensor`): Float tensor of shape ``(3, 3)`` of the three
             vectors defining unit cell:
 
             .. code-block:: python
@@ -260,12 +268,11 @@ def map_to_central(coordinates: Tensor, cell: Tensor, pbc: Tensor) -> Tensor:
                 tensor([[x1, y1, z1],
                         [x2, y2, z2],
                         [x3, y3, z3]])
-
-        pbc (:class:`torch.Tensor`): boolean vector of size 3 storing
-            if pbc is enabled for that direction.
+        pbc (:class:`torch.Tensor`): Boolean tensor of shape ``(3,)`` size 3 storing
+            whether PBC is enabled for each direction.
 
     Returns:
-        :class:`torch.Tensor`: coordinates of atoms mapped back to unit cell.
+        :class:`torch.Tensor`: Coords of atoms mapped to the unit cell.
     """
     # Step 1: convert coordinates from standard cartesian coordinate to unit
     # cell coordinates
@@ -279,7 +286,8 @@ def map_to_central(coordinates: Tensor, cell: Tensor, pbc: Tensor) -> Tensor:
 
 
 class EnergyShifter(torch.nn.Module):
-    """Helper class for adding and subtracting self atomic energies
+    """
+    Helper class for adding and subtracting self atomic energies
 
     Note: This class is *legacy*. Please use
     :class:`torchani.potentials.EnergyAddder`, which has equivalent

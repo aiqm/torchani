@@ -1,8 +1,7 @@
 r"""
-The ``models`` submodule provides access to all published ANI models, which are
-subclasses of ``ANI``. Some models have been published in specific articles, and some
-have been published in TorchANI 3.0. If you use any of these models in your work please
-cite the corresponding article(s).
+This submodule provides access to all published ANI models, which are subclasses of
+``ANI``. Some models have been published in previous articles, and some in TorchANI 3.
+If you use any of these models in your work please cite the corresponding article(s).
 
 If for a given model you discover a bug, performance problem, or incorrect behavior in
 some region of chemical space, please open an issue in GitHub. The TorchANI developers
@@ -13,7 +12,7 @@ time they are instantiated. If this is an issue for your application we recommen
 pre-download the parameters by instantiating the models once before use.
 
 The models can be used directly once they are instantiated. Alternatively, they can be
-cast to an ASE calculator by calling ``ANI.ase()``.
+converted to an ASE calculator by calling ``model.ase()``.
 
 Some models have an interanl set of neural networks ("ANIEnsemble"), and they output
 their averaged values. Individual members of these ensembles can be accessed by
@@ -64,14 +63,19 @@ For more details consult the examples documentation
 from functools import partial
 import typing as tp
 
-from torchani import atomics
 from torchani.utils import SYMBOLS_2X, SYMBOLS_1X
 from torchani.electro import ChargeNormalizer
 from torchani.assembly import Assembler, ANI, ANIq, fetch_state_dict
 from torchani.neighbors import NeighborlistArg
-from torchani.nn import _ANINetworksDiscardFirstScalar
 from torchani.potentials import TwoBodyDispersionD3, RepulsionXTB
 from torchani.annotations import Device, DType
+from torchani.nn._internal import _ANINetworksDiscardFirstScalar
+from torchani.nn import (
+    make_1x_network,
+    make_2x_network,
+    make_dr_network,
+    make_ala_network,
+)
 
 
 # Protocol used by factory functions that instantiate ani models, here for reference
@@ -111,9 +115,9 @@ def ANI1x(
     """
     asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_1X, auto_sort=False)
-    asm.set_atomic_networks(atomics.like_1x)
+    asm.set_atomic_networks(make_1x_network)
     asm.set_global_cutoff_fn("cosine")
-    asm.set_featurizer(angular_terms="ani1x", radial_terms="ani1x", strategy=strategy)
+    asm.set_aev_computer(angular_terms="ani1x", radial_terms="ani1x", strategy=strategy)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble(8)
@@ -152,8 +156,8 @@ def ANI1ccx(
     asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_1X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")
-    asm.set_featurizer(radial_terms="ani1x", angular_terms="ani1x", strategy=strategy)
-    asm.set_atomic_networks(atomics.like_1x)
+    asm.set_aev_computer(radial_terms="ani1x", angular_terms="ani1x", strategy=strategy)
+    asm.set_atomic_networks(make_1x_network)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("ccsd(t)star-cbs")
     model = asm.assemble(8)
@@ -190,8 +194,8 @@ def ANI2x(
     asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")
-    asm.set_featurizer(radial_terms="ani2x", angular_terms="ani2x", strategy=strategy)
-    asm.set_atomic_networks(atomics.like_2x)
+    asm.set_aev_computer(radial_terms="ani2x", angular_terms="ani2x", strategy=strategy)
+    asm.set_atomic_networks(make_2x_network)
     asm.set_neighborlist(neighborlist)
     # The self energies are overwritten by the state dict
     asm.set_gsaes_as_self_energies("wb97x-631gd")
@@ -219,18 +223,18 @@ def ANImbis(
     """
     if strategy not in ["pyaev", "cuaev"]:
         raise ValueError(f"Unavailable strategy for ANImbis: {strategy}")
-    asm = Assembler(periodic_table_index=periodic_table_index, model_type=ANIq)
+    asm = Assembler(periodic_table_index=periodic_table_index, model_cls=ANIq)
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")
-    asm.set_featurizer(radial_terms="ani2x", angular_terms="ani2x", strategy=strategy)
-    asm.set_atomic_networks(atomics.like_2x)
+    asm.set_aev_computer(radial_terms="ani2x", angular_terms="ani2x", strategy=strategy)
+    asm.set_atomic_networks(make_2x_network)
 
     asm.set_charge_networks(
-        partial(atomics.like_2x, out_dim=2, bias=False, activation="gelu"),
+        partial(make_2x_network, out_dim=2, bias=False, activation="gelu"),
         normalizer=ChargeNormalizer.from_electronegativity_and_hardness(
             asm.symbols, scale_weights_by_charges_squared=True
         ),
-        container_type=_ANINetworksDiscardFirstScalar,
+        container_cls=_ANINetworksDiscardFirstScalar,
     )
     asm.set_neighborlist(neighborlist)
     # The self energies are overwritten by the state dict
@@ -278,8 +282,8 @@ def ANIala(
     asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")
-    asm.set_featurizer(radial_terms="ani2x", angular_terms="ani2x", strategy=strategy)
-    asm.set_atomic_networks(atomics.like_ala)
+    asm.set_aev_computer(radial_terms="ani2x", angular_terms="ani2x", strategy=strategy)
+    asm.set_atomic_networks(make_ala_network)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble(1)
@@ -311,8 +315,8 @@ def ANIdr(
     asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("smooth2")
-    asm.set_featurizer(angular_terms="ani2x", radial_terms="ani2x", strategy=strategy)
-    asm.set_atomic_networks(atomics.like_dr)
+    asm.set_aev_computer(angular_terms="ani2x", radial_terms="ani2x", strategy=strategy)
+    asm.set_atomic_networks(make_dr_network)
     asm.add_pair_potential(
         RepulsionXTB,
         cutoff=5.3,

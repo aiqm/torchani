@@ -99,7 +99,7 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
         [
             ("forward", model),
             ("forward", aev_computer.neighborlist),
-            ("step", optimizer),
+            ("step", optimizer),  # type: ignore
             (_aev_fns, aev_computer),
             ("forward", nn),
         ],

@@ -38,18 +38,24 @@ Neighborlists
 Atomic Networks and Containers
 ==============================
 
+.. automodule:: torchani.nn
 .. autoclass:: torchani.nn.ANINetworks
     :members:
 .. autoclass:: torchani.nn.ANIEnsemble
     :members:
-.. automodule:: torchani.atomics
-.. autoclass:: torchani.atomics.AtomicContainer
+.. autoclass:: torchani.nn.BmmEnsemble
     :members:
-.. autoclass:: torchani.atomics.AtomicNetwork
+.. autoclass:: torchani.nn.AtomicNetwork
     :members:
-.. autofunction:: torchani.atomics.like_1x
-.. autofunction:: torchani.atomics.like_2x
-.. autofunction:: torchani.atomics.like_dr
+.. autoclass:: torchani.nn.BmmAtomicNetwork
+    :members:
+.. autoclass:: torchani.nn.BmmLinear
+    :members:
+.. autoclass:: torchani.nn.MNPNetworks
+    :members:
+.. autofunction:: torchani.nn.make_1x_network
+.. autofunction:: torchani.nn.make_2x_network
+.. autofunction:: torchani.nn.make_dr_network
 
 Assembly of custom ANI-style Models
 ===================================
@@ -89,9 +95,9 @@ Electrostatics
 .. automodule:: torchani.electro
 .. autoclass:: torchani.electro.DipoleComputer
     :members:
-.. autofunction:: torchani.electro.compute_dipole
 .. autoclass:: torchani.electro.ChargeNormalizer
     :members:
+.. autofunction:: torchani.electro.compute_dipole
 
 General Utilities
 =================
@@ -116,19 +122,6 @@ Forces, Hessians, Normal Modes
 .. autofunction:: torchani.grad.energies_and_forces
 .. autofunction:: torchani.grad.energies_forces_and_hessians
 .. autofunction:: torchani.grad.vibrational_analysis
-
-Optimizations for Inference
-===========================
-
-.. automodule:: torchani.infer
-.. autoclass:: torchani.infer.BmmEnsemble
-    :members:
-.. autoclass:: torchani.infer.BmmAtomicNetwork
-    :members:
-.. autoclass:: torchani.infer.BmmLinear
-    :members:
-.. autoclass:: torchani.infer.InferModel
-    :members:
 
 ASE Interface
 =============

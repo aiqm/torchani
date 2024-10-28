@@ -1,26 +1,28 @@
 r"""
 Construction of ANI-style models and definition of their architecture
 
-The assembler builds ANI-style models from the different necessary parts, in
-such a way that all parts interact in the correct way and there are no
-compatibility issues among them.
+ANI-style models are all subclasses of the ``ANI`` base class. They can be either
+constructed directly, or their construction can be managed by a different class, the
+``Assembler``. Think of the ``Assembler`` as your own personal employee, whose job is to
+create the class from all the necessary components, in such a way that all parts
+interact in the correct way and there are no compatibility issues among them.
 
 An ANI-style model consists of:
 
-- Featurizer (typically a AEVComputer, which supports custom cuda ops, or subclass)
-- Container for atomic networks (typically ANINetworks or subclass)
-- Atomic Networks Dict {"H": torch.nn.Module(), "C": torch.nn.Module, ...}
-- Self Energies Dict (In Ha) {"H": -12.0, "C": -75.0, ...}
-- Shifter (typically EnergyAdder)
+- ``AEVComputer`` (or subclass)
+- A container for atomic networks (typically ``ANINetworks`` or subclass)
+- An ``AtomicNetwork`` dict ``{"H": AtomicNetwork(...), "C": AtomicNetwork(...), ...}``
+- A self energies dict (in Hartree) ``{"H": -12.0, "C": -75.0, ...}``
 
-An energy-predicting model may have PairPotentials (RepulsionXTB,
-TwoBodyDispersion, VDW potential, Coulombic, etc.)
+An energy-predicting model may also have one or more ``PairPotential``
+(``RepulsionXTB``, ``TwoBodyDispersion``, etc.).
 
-Each of the potentials has their own cutoff, and the Featurizer has two cutoffs, an
-angular and a radial ona (the radial cutoff must be larger than the angular cutoff, and
+Each ``PariPotential`` has their own cutoff, and the ``AEVComputer`` has two cutoffs, an
+angular and a radial one (the radial cutoff must be larger than the angular cutoff, and
 it is recommended that the angular cutoff is kept small, 3.5 Ang or less).
 
-These pieces are assembled into a subclass of ANI
+These pieces are combined by ``Assembler`` into a subclass of ``ANI``, when the
+``Assembler.assemble(size=<num-networks-in-ensemble>)`` method is called.
 """
 
 from copy import deepcopy
@@ -46,7 +48,6 @@ from torchani.tuples import (
     ForceMagnitudes,
 )
 from torchani.annotations import StressKind
-from torchani import atomics
 from torchani.neighbors import parse_neighborlist, NeighborlistArg
 from torchani.cutoffs import parse_cutoff_fn, Cutoff, CutoffArg
 from torchani.aev import AEVComputer, StandardAngular, StandardRadial
@@ -58,8 +59,18 @@ from torchani.aev.terms import (
 )
 from torchani.neighbors import rescreen, NeighborData
 from torchani.electro import ChargeNormalizer
-from torchani.nn import SpeciesConverter, ANINetworks, ANIEnsemble, _ZeroANINetworks
-from torchani.atomics import AtomicContainer, AtomicNetwork, AtomicMakerArg, AtomicMaker
+from torchani.nn import (
+    SpeciesConverter,
+    AtomicContainer,
+    ANINetworks,
+    ANIEnsemble,
+    AtomicNetwork,
+    AtomicMakerArg,
+    AtomicMaker,
+    parse_network_maker,
+    parse_activation,
+)
+from torchani.nn._internal import _ZeroANINetworks
 from torchani.constants import GSAES
 from torchani.utils import sort_by_element
 from torchani.paths import state_dicts_dir
@@ -151,7 +162,7 @@ class ANI(torch.nn.Module):
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> tp.Dict[str, Tensor]:
-        """Calculate energies for a batch of molecules
+        """Calculate properties for a batch of molecules
 
         Args:
             species: Int tensor with the atomic numbers of molecules in the batch, shape
@@ -166,8 +177,7 @@ class ANI(torch.nn.Module):
                 the scalar 0 is currently supported.
             atomic: Perform atomic decoposition of the energies
         Returns:
-            species_energies: tuple of tensors, species and energies for the
-                given configurations
+            result (dict[str, Tensor]): Output of the single point calculation
         """
         _, energies = self(
             species_coordinates=(species, coordinates),
@@ -211,7 +221,7 @@ class ANI(torch.nn.Module):
 
         # Optimized branch that uses the cuAEV-fused strategy
         if not self._has_pair_pots and self.aev_computer._strategy == "cuaev-fused":
-            aevs = self.aev_computer((elem_idxs, coords), cell=cell, pbc=pbc)[1]
+            aevs = self.aev_computer(elem_idxs, coords, cell=cell, pbc=pbc)
             energies = self.neural_networks(elem_idxs, aevs, atomic=atomic)
             energies += self.energy_shifter(elem_idxs, atomic=atomic)
             return SpeciesEnergies(elem_idxs, energies)
@@ -791,17 +801,18 @@ class ANIq(ANI):
         return SpeciesEnergiesAtomicCharges(elem_idxs, energies, atomic_charges)
 
 
-FeaturizerType = tp.Type[AEVComputer]
-PairPotentialType = tp.Type[PairPotential]
-ContainerType = tp.Type[AtomicContainer]
+AEVComputerCls = tp.Type[AEVComputer]
+PairPotentialCls = tp.Type[PairPotential]
+ContainerCls = tp.Type[AtomicContainer]
+ModelCls = tp.Type[ANI]
 
 
 # "global" cutoff means the global cutoff_fn will be used
 # Otherwise, a specific cutoff fn can be specified
-class FeaturizerWrapper:
+class AEVComputerWrapper:
     def __init__(
         self,
-        cls: FeaturizerType,
+        cls: AEVComputerCls,
         radial_terms: RadialTermArg,
         angular_terms: AngularTermArg,
         cutoff_fn: CutoffArg = "global",
@@ -820,7 +831,7 @@ class FeaturizerWrapper:
 
 @dataclass
 class PairPotentialWrapper:
-    cls: PairPotentialType
+    cls: PairPotentialCls
     cutoff_fn: CutoffArg = "global"
     cutoff: float = math.inf
     extra: tp.Optional[tp.Dict[str, tp.Any]] = None
@@ -830,14 +841,14 @@ class Assembler:
     def __init__(
         self,
         symbols: tp.Sequence[str] = (),
-        model_type: tp.Type[ANI] = ANI,
+        model_cls: ModelCls = ANI,
         neighborlist: NeighborlistArg = "full_pairwise",
         periodic_table_index: bool = True,
     ) -> None:
         self._global_cutoff_fn: tp.Optional[Cutoff] = None
 
         self._neighborlist = parse_neighborlist(neighborlist)
-        self._featurizer: tp.Optional[FeaturizerWrapper] = None
+        self._aevcomp: tp.Optional[AEVComputerWrapper] = None
         self._pair_potentials: tp.List[PairPotentialWrapper] = []
 
         # This part of the assembler organizes the self-energies, the
@@ -845,13 +856,13 @@ class Assembler:
         self._self_energies: tp.Dict[str, float] = {}
         self._fn_for_atomics: tp.Optional[AtomicMaker] = None
         self._fn_for_charges: tp.Optional[AtomicMaker] = None
-        self._container_type: ContainerType = ANINetworks
-        self._charge_container_type: tp.Optional[ContainerType] = None
+        self._container_cls: ContainerCls = ANINetworks
+        self._charge_container_cls: tp.Optional[ContainerCls] = None
         self._charge_normalizer: tp.Optional[ChargeNormalizer] = None
         self._symbols: tp.Tuple[str, ...] = tuple(symbols)
 
         # The general container for all the parts of the model
-        self._model_type: tp.Type[ANI] = model_type
+        self._model_cls: ModelCls = model_cls
 
         # This is a deprecated feature, it should probably not be used
         self.periodic_table_index = periodic_table_index
@@ -927,33 +938,33 @@ class Assembler:
     def set_atomic_networks(
         self,
         fn: AtomicMaker,
-        container_type: ContainerType = ANINetworks,
+        container_cls: ContainerCls = ANINetworks,
     ) -> None:
-        self._container_type = container_type
+        self._container_cls = container_cls
         self._fn_for_atomics = fn
 
     def set_charge_networks(
         self,
         fn: AtomicMaker,
         normalizer: tp.Optional[ChargeNormalizer] = None,
-        container_type: ContainerType = ANINetworks,
+        container_cls: ContainerCls = ANINetworks,
     ) -> None:
-        if not issubclass(self._model_type, ANIq):
+        if not issubclass(self._model_cls, ANIq):
             raise ValueError("Model must be a subclass of ANIq to use charge networks")
-        self._charge_container_type = container_type
+        self._charge_container_cls = container_cls
         self._charge_normalizer = normalizer
         self._fn_for_charges = fn
 
-    def set_featurizer(
+    def set_aev_computer(
         self,
         angular_terms: AngularTermArg,
         radial_terms: RadialTermArg,
         cutoff_fn: CutoffArg = "global",
         strategy: str = "pyaev",
-        featurizer_type: FeaturizerType = AEVComputer,
+        aev_computer_cls: AEVComputerCls = AEVComputer,
     ) -> None:
-        self._featurizer = FeaturizerWrapper(
-            featurizer_type,
+        self._aevcomp = AEVComputerWrapper(
+            aev_computer_cls,
             cutoff_fn=cutoff_fn,
             angular_terms=angular_terms,
             radial_terms=radial_terms,
@@ -974,14 +985,14 @@ class Assembler:
 
     def add_pair_potential(
         self,
-        pair_type: PairPotentialType,
+        pair_cls: PairPotentialCls,
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "global",
         extra: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
         self._pair_potentials.append(
             PairPotentialWrapper(
-                pair_type,
+                pair_cls,
                 cutoff=cutoff,
                 cutoff_fn=cutoff_fn,
                 extra=extra,
@@ -1000,46 +1011,46 @@ class Assembler:
             raise ValueError("Ensemble size must be positive")
         if not self.symbols:
             raise RuntimeError("Symbols not set. Call 'set_symbols()' before assembly")
-        if self._featurizer is None:
+        if self._aevcomp is None:
             raise RuntimeError(
-                "Featurizer not set. Call 'set_featurizer' before assembly"
+                "AEVComputer not set. Call 'set_aev_computer' before assembly"
             )
 
         feat_cutoff_fn = parse_cutoff_fn(
-            self._featurizer.cutoff_fn, self._global_cutoff_fn
+            self._aevcomp.cutoff_fn, self._global_cutoff_fn
         )
 
-        self._featurizer.angular_terms.cutoff_fn = feat_cutoff_fn
-        self._featurizer.radial_terms.cutoff_fn = feat_cutoff_fn
-        featurizer = self._featurizer.cls(
+        self._aevcomp.angular_terms.cutoff_fn = feat_cutoff_fn
+        self._aevcomp.radial_terms.cutoff_fn = feat_cutoff_fn
+        aevcomp = self._aevcomp.cls(
             neighborlist=self._neighborlist,
             cutoff_fn=feat_cutoff_fn,
-            angular_terms=self._featurizer.angular_terms,
-            radial_terms=self._featurizer.radial_terms,
+            angular_terms=self._aevcomp.angular_terms,
+            radial_terms=self._aevcomp.radial_terms,
             num_species=len(self.symbols),
-            strategy=self._featurizer.strategy,
+            strategy=self._aevcomp.strategy,
         )
         neural_networks: AtomicContainer
         if ensemble_size > 1:
             containers = []
             for j in range(ensemble_size):
                 containers.append(
-                    self._container_type(
+                    self._container_cls(
                         self._build_atomic_networks(
-                            self.fn_for_atomics, featurizer.aev_length
+                            self.fn_for_atomics, aevcomp.aev_length
                         )
                     )
                 )
             neural_networks = ANIEnsemble(containers)
         else:
-            neural_networks = self._container_type(
-                self._build_atomic_networks(self.fn_for_atomics, featurizer.aev_length)
+            neural_networks = self._container_cls(
+                self._build_atomic_networks(self.fn_for_atomics, aevcomp.aev_length)
             )
 
         charge_networks: tp.Optional[AtomicContainer] = None
-        if self._charge_container_type is not None:
-            charge_networks = self._charge_container_type(
-                self._build_atomic_networks(self.fn_for_charges, featurizer.aev_length)
+        if self._charge_container_cls is not None:
+            charge_networks = self._charge_container_cls(
+                self._build_atomic_networks(self.fn_for_charges, aevcomp.aev_length)
             )
 
         self_energies = self.self_energies
@@ -1076,9 +1087,9 @@ class Assembler:
         if self._charge_normalizer is not None:
             kwargs["charge_normalizer"] = self._charge_normalizer
 
-        return self._model_type(
+        return self._model_cls(
             symbols=self.symbols,
-            aev_computer=featurizer,
+            aev_computer=aevcomp,
             energy_shifter=shifter,
             neural_networks=neural_networks,
             periodic_table_index=self.periodic_table_index,
@@ -1103,7 +1114,7 @@ def simple_ani(
     cutoff_fn: CutoffArg = "smooth2",
     dispersion: bool = False,
     repulsion: bool = True,
-    atomic_maker: AtomicMakerArg = "ani2x",
+    network_factory: AtomicMakerArg = "ani2x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
     strategy: str = "pyaev",
@@ -1126,7 +1137,7 @@ def simple_ani(
     asm = Assembler()
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
-    asm.set_featurizer(
+    asm.set_aev_computer(
         radial_terms=StandardRadial.cover_linearly(
             start=radial_start,
             cutoff=radial_cutoff,
@@ -1143,12 +1154,12 @@ def simple_ani(
         ),
         strategy=strategy,
     )
-    atomic_maker = functools.partial(
-        atomics.parse_atomics(atomic_maker),
-        activation=atomics.parse_activation(activation),
+    network_factory = functools.partial(
+        parse_network_maker(network_factory),
+        activation=parse_activation(activation),
         bias=bias,
     )
-    asm.set_atomic_networks(atomic_maker)
+    asm.set_atomic_networks(network_factory)
     asm.set_neighborlist("full_pairwise")
     asm.set_gsaes_as_self_energies(lot)
     if repulsion:
@@ -1182,7 +1193,7 @@ def simple_aniq(
     cutoff_fn: CutoffArg = "smooth2",
     dispersion: bool = False,
     repulsion: bool = True,
-    atomic_maker: AtomicMakerArg = "ani2x",
+    network_factory: AtomicMakerArg = "ani2x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
     strategy: str = "pyaev",
@@ -1206,10 +1217,10 @@ def simple_aniq(
     if use_cuda_ops:
         warnings.warn("use_cuda_ops is deprecated, please use strategy = 'cuaev'")
         strategy = "cuaev"
-    asm = Assembler(model_type=ANIq)
+    asm = Assembler(model_cls=ANIq)
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
-    asm.set_featurizer(
+    asm.set_aev_computer(
         radial_terms=StandardRadial.cover_linearly(
             start=radial_start,
             cutoff=radial_cutoff,
@@ -1233,27 +1244,27 @@ def simple_aniq(
     if merge_charge_networks:
         if dummy_energies:
             raise ValueError("Can't output dummy energies with merged charge network")
-        atomic_maker = functools.partial(
-            atomics.parse_atomics(atomic_maker),
+        network_factory = functools.partial(
+            parse_network_maker(network_factory),
             out_dim=2,
-            activation=atomics.parse_activation(activation),
+            activation=parse_activation(activation),
             bias=bias,
         )
     else:
-        atomic_maker = functools.partial(
-            atomics.parse_atomics(atomic_maker),
+        network_factory = functools.partial(
+            parse_network_maker(network_factory),
             out_dim=1,
-            activation=atomics.parse_activation(activation),
+            activation=parse_activation(activation),
             bias=bias,
         )
         asm.set_charge_networks(
-            atomic_maker,
+            network_factory,
             normalizer=normalizer,
         )
 
     asm.set_atomic_networks(
-        atomic_maker,
-        container_type=_ZeroANINetworks if dummy_energies else ANINetworks,
+        network_factory,
+        container_cls=_ZeroANINetworks if dummy_energies else ANINetworks,
     )
     asm.set_neighborlist("full_pairwise")
     if not dummy_energies:

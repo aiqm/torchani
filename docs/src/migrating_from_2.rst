@@ -82,20 +82,27 @@ you should now do this instead:
 .. code-block:: python
     
     import torchani
+    converter = torchani.nn.SpeciesConverter(...)
     aevc = torchani.AEVComputer(...)
     # Note that the following classes have different names
     ani_nets = torchani.nn.ANINetworks(...)
     ensemble = torchani.nn.ANIEnsemble(...)
-    converter = torchani.utils.AtomicNumsToIdxs(...)
 
     idxs = converter(atomic_nums)
     aevs = aevc(idxs, coords, cell, pbc)
     energies = animodel(idxs, aevs)
     energies = ensemble(ixs, aevs)
 
-The old behavior is still supported by using the new class names with the ``.call()``
-method, or the old class names (except ``AEVComputer``, for which ``.call()`` must be
-used to obtain the old behavior).
+.. NOTE The old behavior is also supported directly by using the old class names but we
+   omit to mention this here.
+
+The old behavior is still supported by using the ``.call()`` method, but this is
+discouraged. An example:
+
+.. code-block:: python
+
+    aevc = torchani.AEVComputer(...)
+    _, aevs = aevc.call((species, coords), cell, pbc)
 
 Extra notes on the ``AEVComputer``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -112,7 +119,11 @@ calculation like this:
 
     idxs = converter(atomic_nums)
     neighbors = neighborlist(idxs, coords, cell, pbc)
-    aevc = aevc.compute(idxs, neighbors)
+    aevc = aevc.compute_from_neighbors(idxs, neighbors)
+
+Additionally, ``AEVComputer`` is now initialized with different inputs. If you prefer
+the old behavior you can use ``AEVComputer.from_constants(...)`` instead. (we
+recommend using the new constructors however).
 
 Additionally, ``AEVComputer`` is now initialized with different inputs. If you prefer
 the old behavior you can use ``AEVComputer.from_constants(...)`` instead. (we recommend
@@ -149,12 +160,13 @@ faster training, do this:
 .. code-block:: python
 
     from torchani import assembly
-    from torchani import atomics
+    from torchani.nn import make_2x_network
 
     asm = assembly.Assembler()
     asm.set_symbols(("H", "C", "N", "O"))
     asm.set_featurizer(radial_terms="ani2x", angular_terms="ani2x", strategy="cuaev")
-    asm.set_atomic_networks(atomics.like_2x)
+    # make_2x_network is a function that, given a symbol, builds an atomic network
+    asm.set_atomic_networks(make_2x_network)
     asm.set_gsaes_as_self_energies("wb97x-631gd")  # Add ground state atomic energies
     model = asm.assemble()  # The returned model is ready to train
 
@@ -175,7 +187,7 @@ If you want even *more* flexibility, we recommend you create your own
 
     class Model(Module):
         def __init__(self):
-            self.converter = torchani.utils.AtomicNumsToIdxs(...)
+            self.converter = torchani.nn.SpeciesConverter(...)
             self.neighborlist = torchani.neighbors.AllPairs(...)
             self.aevc = torchani.aev.AEVComputer(...)
             self.nn = torchani.nn.ANINetworks(...)

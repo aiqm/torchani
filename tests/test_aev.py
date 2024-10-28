@@ -80,13 +80,13 @@ class TestIsolated(TestCase):
             2 * self.rcr,
         ]
         for dist in distances:
-            coordinates = torch.tensor(
+            coords = torch.tensor(
                 [[[-dist, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, dist]]],
                 requires_grad=True,
                 device=self.device,
             )
             try:
-                _, _ = self.aev_computer((species, coordinates))
+                _ = self.aev_computer(species, coords)
             except IndexError:
                 self.fail(
                     f"\n\n{traceback.format_exc()}\nFailure at distance: {dist}\n"
@@ -105,13 +105,13 @@ class TestIsolated(TestCase):
             2 * self.rcr,
         ]
         for dist in distances:
-            coordinates = torch.tensor(
+            coords = torch.tensor(
                 [[[0.0, 0.0, 0.0], [0.0, 0.0, dist]]],
                 requires_grad=True,
                 device=self.device,
             )
             try:
-                _, _ = self.aev_computer((species, coordinates))
+                _ = self.aev_computer(species, coords)
             except IndexError:
                 self.fail(
                     f"\n\n{traceback.format_exc()}\nFailure at distance: {dist}\n"
@@ -122,11 +122,11 @@ class TestIsolated(TestCase):
     def testH(self):
         # Tests for failure on a single atom
         species = self.symbols_to_idxs(["H"]).to(self.device).unsqueeze(0)
-        coordinates = torch.tensor(
+        coords = torch.tensor(
             [[[0.0, 0.0, 0.0]]], requires_grad=True, device=self.device
         )
         try:
-            _, _ = self.aev_computer((species, coordinates))
+            _ = self.aev_computer(species, coords)
         except IndexError:
             self.fail(f"\n\n{traceback.format_exc()}\nFailure on lone atom\n")
 
@@ -137,7 +137,7 @@ class TestAEV(_TestAEVBase):
         # with dummy atoms
         N = 25
         assert N % 5 == 0, "N must be a multiple of 5"
-        coordinates_list = []
+        coords_list = []
         species_list = []
         grads_expect_list = []
         for j in range(N):
@@ -145,83 +145,78 @@ class TestAEV(_TestAEVBase):
             s = torch.randint(low=0, high=4, size=(1, 3), dtype=torch.long)
             if j % 5 == 0:
                 s[0, 0] = -1
-            _, aev = self.aev_computer((s, c))
+            aev = self.aev_computer(s, c)
             aev.backward(torch.ones_like(aev))
             if c.grad is None:
                 self.fail("Got a None gradient")
             grads_expect_list.append(c.grad)
-            coordinates_list.append(c)
+            coords_list.append(c)
             species_list.append(s)
 
-        coordinates_cat = torch.cat(coordinates_list, dim=0).detach()
-        coordinates_cat.requires_grad_(True)
+        coords_cat = torch.cat(coords_list, dim=0).detach()
+        coords_cat.requires_grad_(True)
         species_cat = torch.cat(species_list, dim=0)
         grads_expect = torch.cat(grads_expect_list, dim=0)
 
-        _, aev = self.aev_computer((species_cat, coordinates_cat))
+        aev = self.aev_computer(species_cat, coords_cat)
         aev.backward(torch.ones_like(aev))
-        self.assertEqual(grads_expect, coordinates_cat.grad)
+        self.assertEqual(grads_expect, coords_cat.grad)
 
     def testIsomers(self):
         for i in range(N):
             datafile = os.path.join(path, f"resources/ANI1_subset/{i}")
             with open(datafile, "rb") as f:
                 (
-                    coordinates,
+                    coords,
                     species,
                     expected_radial,
                     expected_angular,
                     _,
                     _,
                 ) = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates)
+                coords = torch.from_numpy(coords)
                 species = torch.from_numpy(species)
                 expected_radial = torch.from_numpy(expected_radial)
                 expected_angular = torch.from_numpy(expected_angular)
-                _, aev = self.aev_computer((species, coordinates))
+                aev = self.aev_computer(species, coords)
                 self.assertAEVEqual(expected_radial, expected_angular, aev)
 
     def testNoNan(self):
-        # AEV should not output NaN even when coordinates are superimposed
-        coordinates = torch.ones(1, 3, 3, dtype=torch.float)
+        # AEV should not output NaN even when coords are superimposed
+        coords = torch.ones(1, 3, 3, dtype=torch.float)
         species = torch.zeros(1, 3, dtype=torch.long)
-        _, aev = self.aev_computer((species, coordinates))
+        aev = self.aev_computer(species, coords)
         self.assertFalse(torch.isnan(aev).any())
 
     def testBoundingCell(self):
         datafile = os.path.join(path, "resources/ANI1_subset/10")
         with open(datafile, "rb") as f:
-            coordinates, species, _, _, _, _ = pickle.load(f)
-            coordinates = torch.from_numpy(coordinates)
+            coords, species, _, _, _, _ = pickle.load(f)
+            coords = torch.from_numpy(coords)
             species = torch.from_numpy(species)
 
-        coordinates, cell = self.aev_computer.neighborlist.compute_bounding_cell(
-            coordinates, 1e-5
+        coords, cell = self.aev_computer.neighborlist.compute_bounding_cell(
+            coords, 1e-5
         )
-        self.assertTrue((coordinates > 0.0).all())
-        self.assertTrue((coordinates < torch.norm(cell, dim=1)).all())
+        self.assertTrue((coords > 0.0).all())
+        self.assertTrue((coords < torch.norm(cell, dim=1)).all())
 
     def testPadding(self):
-        species_coordinates = []
+        species_coords = []
         radial_angular = []
         for i in range(N):
             datafile = os.path.join(path, f"resources/ANI1_subset/{i}")
             with open(datafile, "rb") as f:
-                coordinates, species, radial, angular, _, _ = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates)
+                coords, species, radial, angular, _, _ = pickle.load(f)
+                coords = torch.from_numpy(coords)
                 species = torch.from_numpy(species)
                 radial = torch.from_numpy(radial)
                 angular = torch.from_numpy(angular)
-                species_coordinates.append(
-                    {"species": species, "coordinates": coordinates}
-                )
+                species_coords.append({"species": species, "coords": coords})
                 radial_angular.append((radial, angular))
-        species_coordinates_dict = pad_atomic_properties(species_coordinates)
-        _, aev = self.aev_computer(
-            (
-                species_coordinates_dict["species"],
-                species_coordinates_dict["coordinates"],
-            )
+        species_coords_dict = pad_atomic_properties(species_coords)
+        aev = self.aev_computer(
+            species_coords_dict["species"], species_coords_dict["coords"]
         )
         start = 0
         for expected_radial, expected_angular in radial_angular:
@@ -244,7 +239,7 @@ class TestPBCSeeEachOther(TestCase):
         self.neighborlist = FullPairwise()
 
     def testTranslationalInvariancePBC(self):
-        coordinates = torch.tensor(
+        coords = torch.tensor(
             [[[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 1, 1]]],
             dtype=torch.double,
             requires_grad=True,
@@ -253,13 +248,11 @@ class TestPBCSeeEachOther(TestCase):
         species = torch.tensor([[1, 0, 0, 0, 0]], dtype=torch.long)
         pbc = torch.ones(3, dtype=torch.bool)
 
-        _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
+        aev = self.aev_computer(species, coords, cell=cell, pbc=pbc)
 
         for _ in range(100):
             translation = torch.randn(3, dtype=torch.double)
-            _, aev2 = self.aev_computer(
-                (species, coordinates + translation), cell=cell, pbc=pbc
-            )
+            aev2 = self.aev_computer(species, coords + translation, cell=cell, pbc=pbc)
             self.assertEqual(aev, aev2)
 
     def testPBCConnersSeeEachOther(self):
@@ -279,10 +272,8 @@ class TestPBCSeeEachOther(TestCase):
         ]
 
         for xyz2 in xyz2s:
-            coordinates = torch.stack([xyz1, xyz2]).to(torch.double).unsqueeze(0)
-            atom_index12, _, _, _ = self.neighborlist(
-                species, coordinates, 1.0, cell, pbc
-            )
+            coords = torch.stack([xyz1, xyz2]).to(torch.double).unsqueeze(0)
+            atom_index12, _, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
             atom_index1, atom_index2 = atom_index12.unbind(0)
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
@@ -298,10 +289,8 @@ class TestPBCSeeEachOther(TestCase):
             xyz2 = xyz1.clone()
             xyz2[i] = 9.9
 
-            coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
-            atom_index12, _, _, _ = self.neighborlist(
-                species, coordinates, 1.0, cell, pbc
-            )
+            coords = torch.stack([xyz1, xyz2]).unsqueeze(0)
+            atom_index12, _, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
             atom_index1, atom_index2 = atom_index12.unbind(0)
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
@@ -320,10 +309,8 @@ class TestPBCSeeEachOther(TestCase):
                 xyz2[i] = new_i
                 xyz2[j] = new_j
 
-            coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
-            atom_index12, _, _, _ = self.neighborlist(
-                species, coordinates, 1.0, cell, pbc
-            )
+            coords = torch.stack([xyz1, xyz2]).unsqueeze(0)
+            atom_index12, _, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
             atom_index1, atom_index2 = atom_index12.unbind(0)
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
@@ -340,8 +327,8 @@ class TestPBCSeeEachOther(TestCase):
         xyz1 = torch.tensor([0.1, 0.1, 0.05], dtype=torch.double)
         xyz2 = torch.tensor([10.0, 0.1, 0.1], dtype=torch.double)
 
-        coordinates = torch.stack([xyz1, xyz2]).unsqueeze(0)
-        atom_index12, _, _, _ = self.neighborlist(species, coordinates, 1.0, cell, pbc)
+        coords = torch.stack([xyz1, xyz2]).unsqueeze(0)
+        atom_index12, _, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
         atom_index1, atom_index2 = atom_index12.unbind(0)
         self.assertEqual(atom_index1.tolist(), [0])
         self.assertEqual(atom_index2.tolist(), [1])
@@ -355,7 +342,7 @@ class TestAEVOnBoundary(TestCase):
             dtype=torch.double,
         )
         self.inv_cell = torch.inverse(self.cell)
-        self.coordinates = torch.tensor(
+        self.coords = torch.tensor(
             [
                 [
                     [0.0, 0.0, 0.0],
@@ -370,36 +357,34 @@ class TestAEVOnBoundary(TestCase):
         self.species = torch.tensor([[1, 0, 0, 0, 0]])
         self.pbc = torch.ones(3, dtype=torch.bool)
         self.v1, self.v2, self.v3 = self.cell
-        self.center_coordinates = self.coordinates + 0.5 * (self.v1 + self.v2 + self.v3)
+        self.center_coords = self.coords + 0.5 * (self.v1 + self.v2 + self.v3)
         self.aev_computer = AEVComputer.like_1x().to(torch.double)
 
-        _, self.aev = self.aev_computer(
-            (self.species, self.center_coordinates), cell=self.cell, pbc=self.pbc
+        self.aev = self.aev_computer(
+            self.species, self.center_coords, cell=self.cell, pbc=self.pbc
         )
 
-    def assertInCell(self, coordinates):
-        coordinates_cell = coordinates @ self.inv_cell
-        self.assertEqual(coordinates, coordinates_cell @ self.cell)
-        in_cell = (coordinates_cell >= -self.eps) & (coordinates_cell <= 1 + self.eps)
+    def assertInCell(self, coords):
+        coords_cell = coords @ self.inv_cell
+        self.assertEqual(coords, coords_cell @ self.cell)
+        in_cell = (coords_cell >= -self.eps) & (coords_cell <= 1 + self.eps)
         self.assertTrue(in_cell.all())
 
-    def assertNotInCell(self, coordinates):
-        coordinates_cell = coordinates @ self.inv_cell
-        self.assertEqual(coordinates, coordinates_cell @ self.cell)
-        in_cell = (coordinates_cell >= -self.eps) & (coordinates_cell <= 1 + self.eps)
+    def assertNotInCell(self, coords):
+        coords_cell = coords @ self.inv_cell
+        self.assertEqual(coords, coords_cell @ self.cell)
+        in_cell = (coords_cell >= -self.eps) & (coords_cell <= 1 + self.eps)
         self.assertFalse(in_cell.all())
 
     def testCornerSurfaceAndEdge(self):
         for i, j, k in itertools.product([0, 0.5, 1], repeat=3):
             if i == 0.5 and j == 0.5 and k == 0.5:
                 continue
-            coordinates = self.coordinates + i * self.v1 + j * self.v2 + k * self.v3
-            self.assertNotInCell(coordinates)
-            coordinates = map_to_central(coordinates, self.cell, self.pbc)
-            self.assertInCell(coordinates)
-            _, aev = self.aev_computer(
-                (self.species, coordinates), cell=self.cell, pbc=self.pbc
-            )
+            coords = self.coords + i * self.v1 + j * self.v2 + k * self.v3
+            self.assertNotInCell(coords)
+            coords = map_to_central(coords, self.cell, self.pbc)
+            self.assertInCell(coords)
+            aev = self.aev_computer(self.species, coords, self.cell, self.pbc)
             self.assertGreater(aev.abs().max().item(), 0)
             self.assertEqual(aev, self.aev)
 
@@ -407,32 +392,30 @@ class TestAEVOnBoundary(TestCase):
 class TestAEVOnBenzenePBC(TestCase):
     def setUp(self):
         self.aev_computer = AEVComputer.like_1x()
-        self.species, self.coordinates, cell = read_xyz(
+        self.species, self.coords, cell = read_xyz(
             (Path(__file__).parent / "resources") / "benzene.xyz"
         )
         assert cell is not None
         self.cell = cell
         self.pbc = torch.tensor([True, True, True], dtype=torch.bool)
         self.species = SpeciesConverter(["H", "C", "N", "O"])(self.species)
-        _, self.aev = self.aev_computer(
-            (self.species, self.coordinates), cell=self.cell, pbc=self.pbc
-        )
+        self.aev = self.aev_computer(self.species, self.coords, self.cell, self.pbc)
         self.natoms = self.aev.shape[1]
 
     def testRepeat(self):
         c1, c2, c3 = self.cell
         species2 = self.species.repeat(1, 4)
-        coordinates2 = torch.cat(
+        coords2 = torch.cat(
             [
-                self.coordinates,
-                self.coordinates + c1,
-                self.coordinates + 2 * c1,
-                self.coordinates + 3 * c1,
+                self.coords,
+                self.coords + c1,
+                self.coords + 2 * c1,
+                self.coords + 3 * c1,
             ],
             dim=1,
         )
         cell2 = torch.stack([4 * c1, c2, c3])
-        _, aev2 = self.aev_computer((species2, coordinates2), cell=cell2, pbc=self.pbc)
+        aev2 = self.aev_computer(species2, coords2, cell=cell2, pbc=self.pbc)
         for i in range(3):
             _start = i * self.natoms
             _end = (i + 1) * self.natoms
@@ -442,14 +425,14 @@ class TestAEVOnBenzenePBC(TestCase):
     def testManualMirror(self):
         c1, c2, c3 = self.cell
         species2 = self.species.repeat(1, 3**3)
-        coordinates2 = torch.cat(
+        coords2 = torch.cat(
             [
-                self.coordinates + i * c1 + j * c2 + k * c3
+                self.coords + i * c1 + j * c2 + k * c3
                 for i, j, k in itertools.product([0, -1, 1], repeat=3)
             ],
             dim=1,
         )
-        _, aev2 = self.aev_computer((species2, coordinates2))
+        aev2 = self.aev_computer(species2, coords2)
         aev2 = aev2[:, : self.natoms, :]
         self.assertEqual(self.aev, aev2)
 
@@ -461,12 +444,12 @@ class TestAEVNIST(_TestAEVBase):
             data = pickle.load(f)
             # only use first 100 data points to make test take an
             # acceptable time
-            for coordinates, species, radial, angular, _, _ in data[:100]:
-                coordinates = torch.from_numpy(coordinates).to(torch.float)
+            for coords, species, radial, angular, _, _ in data[:100]:
+                coords = torch.from_numpy(coords).to(torch.float)
                 species = torch.from_numpy(species)
                 radial = torch.from_numpy(radial).to(torch.float)
                 angular = torch.from_numpy(angular).to(torch.float)
-                _, aev = self.aev_computer((species, coordinates))
+                aev = self.aev_computer(species, coords)
                 self.assertAEVEqual(radial, angular, aev)
 
 
@@ -476,7 +459,7 @@ class TestDynamicsAEV(_TestAEVBase):
             datafile = os.path.join(path, f"resources/benzene-md/{i}.dat")
             with open(datafile, "rb") as f:
                 (
-                    coordinates,
+                    coords,
                     species,
                     expected_radial,
                     expected_angular,
@@ -485,7 +468,7 @@ class TestDynamicsAEV(_TestAEVBase):
                     cell,
                     pbc,
                 ) = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
+                coords = torch.from_numpy(coords).float().unsqueeze(0)
                 species = torch.from_numpy(species).unsqueeze(0)
                 expected_radial = torch.from_numpy(expected_radial).float().unsqueeze(0)
                 expected_angular = (
@@ -493,7 +476,7 @@ class TestDynamicsAEV(_TestAEVBase):
                 )
                 cell = torch.from_numpy(cell).float()
                 pbc = torch.from_numpy(pbc).bool()
-                _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
+                aev = self.aev_computer(species, coords, cell=cell, pbc=pbc)
                 self.assertAEVEqual(expected_radial, expected_angular, aev)
 
     def testBenzeneCellList(self):
@@ -502,7 +485,7 @@ class TestDynamicsAEV(_TestAEVBase):
             self.aev_computer.neighborlist = CellList()
             with open(datafile, "rb") as f:
                 (
-                    coordinates,
+                    coords,
                     species,
                     expected_radial,
                     expected_angular,
@@ -511,7 +494,7 @@ class TestDynamicsAEV(_TestAEVBase):
                     cell,
                     pbc,
                 ) = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
+                coords = torch.from_numpy(coords).float().unsqueeze(0)
                 species = torch.from_numpy(species).unsqueeze(0)
                 expected_radial = torch.from_numpy(expected_radial).float().unsqueeze(0)
                 expected_angular = (
@@ -519,7 +502,7 @@ class TestDynamicsAEV(_TestAEVBase):
                 )
                 cell = torch.from_numpy(cell).float()
                 pbc = torch.from_numpy(pbc).bool()
-                _, aev = self.aev_computer((species, coordinates), cell=cell, pbc=pbc)
+                aev = self.aev_computer(species, coords, cell=cell, pbc=pbc)
                 self.assertAEVEqual(expected_radial, expected_angular, aev)
 
     def testTripeptide(self):
@@ -527,7 +510,7 @@ class TestDynamicsAEV(_TestAEVBase):
             datafile = os.path.join(path, f"resources/tripeptide-md/{i}.dat")
             with open(datafile, "rb") as f:
                 (
-                    coordinates,
+                    coords,
                     species,
                     expected_radial,
                     expected_angular,
@@ -536,13 +519,13 @@ class TestDynamicsAEV(_TestAEVBase):
                     _,
                     _,
                 ) = pickle.load(f)
-                coordinates = torch.from_numpy(coordinates).float().unsqueeze(0)
+                coords = torch.from_numpy(coords).float().unsqueeze(0)
                 species = torch.from_numpy(species).unsqueeze(0)
                 expected_radial = torch.from_numpy(expected_radial).float().unsqueeze(0)
                 expected_angular = (
                     torch.from_numpy(expected_angular).float().unsqueeze(0)
                 )
-                _, aev = self.aev_computer((species, coordinates))
+                aev = self.aev_computer(species, coords)
                 self.assertAEVEqual(expected_radial, expected_angular, aev)
 
 

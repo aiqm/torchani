@@ -88,13 +88,13 @@ class TestCUAEVStrategy(ANITestCase):
         m = self._setup(AEVComputer.like_2x(strategy="cuaev"))
 
         m.set_strategy("cuaev")
-        cu = m(self.input)[1]
+        cu = m(*self.input)[1]
 
         m.set_strategy("cuaev-fused")
-        cu_fused = m(self.input)[1]
+        cu_fused = m(*self.input)[1]
 
         m.set_strategy("pyaev")
-        py = m(self.input)[1]
+        py = m(*self.input)[1]
 
         self.assertEqual(py, cu, atol=self.tolerance, rtol=self.tolerance)
         self.assertEqual(cu, cu_fused, atol=self.tolerance, rtol=self.tolerance)
@@ -139,7 +139,7 @@ class TestCUAEVNoGPU(TestCase):
         coordinates = make_tensor(
             (8, 0, 3), device="cpu", dtype=torch.float32, low=-5, high=5
         )
-        self.assertIn("cuaev::run", str(m.graph_for((species, coordinates))))
+        self.assertIn("cuaev::run", str(m.graph_for(species, coordinates)))
 
     def testPickle(self):
         aev_computer = AEVComputer.like_1x(strategy="cuaev-fused")
@@ -203,7 +203,7 @@ class TestCUAEV(TestCase):
         def double_backward(aev_computer, species, coordinates):
             torch.manual_seed(12345)
             self.nn.zero_grad()
-            _, aev = aev_computer((species, coordinates))
+            aev = aev_computer(species, coordinates)
             E = self.nn(aev).sum()
             force = -torch.autograd.grad(
                 E, coordinates, create_graph=True, retain_graph=True
@@ -247,7 +247,7 @@ class TestCUAEV(TestCase):
             torch.manual_seed(12345)
             # graph1 input -> aev
             coordinates = coordinates.clone().detach().requires_grad_()
-            _, aev = aev_computer((species, coordinates))
+            aev = aev_computer(species, coordinates)
             # graph2 aev -> E
             aev_ = aev.clone().detach().requires_grad_()
             E = self.nn(aev_).sum()
@@ -321,8 +321,8 @@ class TestCUAEV(TestCase):
         )
         species = torch.tensor([[1, 0, 0, 0, 0], [2, 0, 0, 0, -1]], device=self.device)
 
-        _, aev = self.aev_computer_1x((species, coordinates))
-        _, cu_aev = self.cuaev_computer_1x((species, coordinates))
+        aev = self.aev_computer_1x(species, coordinates)
+        cu_aev = self.cuaev_computer_1x(species, coordinates)
         self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
 
     @skipIfNoMultiGPU
@@ -338,16 +338,16 @@ class TestCUAEV(TestCase):
         coordinates = torch.rand([100, 50, 3], device=self.device, dtype=self.dtype) * 5
         species = torch.randint(-1, 3, (100, 50), device=self.device)
 
-        _, aev = self.aev_computer_1x((species, coordinates))
-        _, cu_aev = self.cuaev_computer_1x((species, coordinates))
+        aev = self.aev_computer_1x(species, coordinates)
+        cu_aev = self.cuaev_computer_1x(species, coordinates)
         self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
 
     def testBatchHalfNbr(self):
         coordinates = torch.rand([100, 50, 3], device=self.device, dtype=self.dtype) * 5
         species = torch.randint(-1, 3, (100, 50), device=self.device)
 
-        _, aev = self.aev_computer_2x((species, coordinates))
-        _, cu_aev = self.cuaev_computer_2x_use_interface((species, coordinates))
+        aev = self.aev_computer_2x(species, coordinates)
+        cu_aev = self.cuaev_computer_2x_use_interface(species, coordinates)
         self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
 
     def testPickleCorrectness(self):
@@ -361,8 +361,8 @@ class TestCUAEV(TestCase):
 
         coordinates = torch.rand([2, 50, 3], device=self.device, dtype=self.dtype) * 5
         species = torch.randint(-1, 3, (2, 50), device=self.device)
-        _, ref_aev = ref_aev_computer((species, coordinates))
-        _, test_aev = test_aev_computer((species, coordinates))
+        ref_aev = ref_aev_computer(species, coordinates)
+        test_aev = test_aev_computer(species, coordinates)
         self.assertEqual(ref_aev, test_aev, atol=self.tolerance, rtol=self.tolerance)
 
     def testSimpleBackward(self):
@@ -389,13 +389,13 @@ class TestCUAEV(TestCase):
         )
         species = torch.tensor([[1, 0, 0, 0, 0], [2, 0, 0, 0, -1]], device=self.device)
 
-        _, aev = self.aev_computer_1x((species, coordinates))
+        aev = self.aev_computer_1x(species, coordinates)
         aev.backward(torch.ones_like(aev))
         aev_grad = coordinates.grad
 
         coordinates = coordinates.clone().detach()
         coordinates.requires_grad_()
-        _, cu_aev = self.cuaev_computer_1x((species, coordinates))
+        cu_aev = self.cuaev_computer_1x(species, coordinates)
         cu_aev.backward(torch.ones_like(cu_aev))
         cuaev_grad = coordinates.grad
         self.assertEqual(
@@ -485,8 +485,8 @@ class TestCUAEV(TestCase):
                     .to(self.device, self.dtype)
                 )
                 species = torch.from_numpy(species).unsqueeze(0).to(self.device)
-                _, aev = self.aev_computer_1x((species, coordinates))
-                _, cu_aev = self.cuaev_computer_1x((species, coordinates))
+                aev = self.aev_computer_1x(species, coordinates)
+                cu_aev = self.cuaev_computer_1x(species, coordinates)
                 self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
 
     def testTripeptideMDBackward(self):
@@ -501,13 +501,13 @@ class TestCUAEV(TestCase):
                     .requires_grad_(True)
                 )
                 species = torch.from_numpy(species).unsqueeze(0).to(self.device)
-                _, aev = self.aev_computer_1x((species, coordinates))
+                aev = self.aev_computer_1x(species, coordinates)
                 aev.backward(torch.ones_like(aev))
                 aev_grad = coordinates.grad
 
                 coordinates = coordinates.clone().detach()
                 coordinates.requires_grad_()
-                _, cu_aev = self.cuaev_computer_1x((species, coordinates))
+                cu_aev = self.cuaev_computer_1x(species, coordinates)
                 cu_aev.backward(torch.ones_like(cu_aev))
                 cuaev_grad = coordinates.grad
                 self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
@@ -542,8 +542,8 @@ class TestCUAEV(TestCase):
             for coordinates, species, _, _, _, _ in data:
                 coordinates = torch.from_numpy(coordinates).to(self.device, self.dtype)
                 species = torch.from_numpy(species).to(self.device)
-                _, aev = self.aev_computer_1x((species, coordinates))
-                _, cu_aev = self.cuaev_computer_1x((species, coordinates))
+                aev = self.aev_computer_1x(species, coordinates)
+                cu_aev = self.cuaev_computer_1x(species, coordinates)
                 self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
 
     def testNISTBackward(self):
@@ -560,13 +560,13 @@ class TestCUAEV(TestCase):
                     .requires_grad_(True)
                 )
                 species = torch.from_numpy(species).to(self.device)
-                _, aev = self.aev_computer_1x((species, coordinates))
+                aev = self.aev_computer_1x(species, coordinates)
                 aev.backward(torch.ones_like(aev))
                 aev_grad = coordinates.grad
 
                 coordinates = coordinates.clone().detach()
                 coordinates.requires_grad_()
-                _, cu_aev = self.cuaev_computer_1x((species, coordinates))
+                cu_aev = self.cuaev_computer_1x(species, coordinates)
                 cu_aev.backward(torch.ones_like(cu_aev))
                 cuaev_grad = coordinates.grad
                 self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
@@ -605,8 +605,8 @@ class TestCUAEV(TestCase):
                     self.device, self.dtype
                 )
                 species = torch.from_numpy(species).unsqueeze(0).to(self.device)
-                _, aev = self.aev_computer_1x((species, coordinates))
-                _, cu_aev = self.cuaev_computer_1x((species, coordinates))
+                aev = self.aev_computer_1x(species, coordinates)
+                cu_aev = self.cuaev_computer_1x(species, coordinates)
                 self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
 
     def testVeryDenseMoleculeBackward(self):
@@ -621,13 +621,13 @@ class TestCUAEV(TestCase):
                 coordinates.requires_grad_(True)
                 species = torch.from_numpy(species).unsqueeze(0).to(self.device)
 
-                _, aev = self.aev_computer_1x((species, coordinates))
+                aev = self.aev_computer_1x(species, coordinates)
                 aev.backward(torch.ones_like(aev))
                 aev_grad = coordinates.grad
 
                 coordinates = coordinates.clone().detach()
                 coordinates.requires_grad_()
-                _, cu_aev = self.cuaev_computer_1x((species, coordinates))
+                cu_aev = self.cuaev_computer_1x(species, coordinates)
                 cu_aev.backward(torch.ones_like(cu_aev))
                 cuaev_grad = coordinates.grad
                 self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
@@ -644,8 +644,8 @@ class TestCUAEV(TestCase):
                 dtype=self.dtype,
             )
             species = self.converter(species)
-            _, aev = self.aev_computer_2x((species, coordinates))
-            _, cu_aev = self.cuaev_computer_2x((species, coordinates))
+            aev = self.aev_computer_2x(species, coordinates)
+            cu_aev = self.cuaev_computer_2x(species, coordinates)
             self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
 
     def testXYZBackward(self):
@@ -659,13 +659,13 @@ class TestCUAEV(TestCase):
             species = self.converter(species)
             coordinates.requires_grad_(True)
 
-            _, aev = self.aev_computer_2x((species, coordinates))
+            aev = self.aev_computer_2x(species, coordinates)
             aev.backward(torch.ones_like(aev))
             aev_grad = coordinates.grad
 
             coordinates = coordinates.clone().detach()
             coordinates.requires_grad_()
-            _, cu_aev = self.cuaev_computer_2x((species, coordinates))
+            cu_aev = self.cuaev_computer_2x(species, coordinates)
             cu_aev.backward(torch.ones_like(cu_aev))
             cuaev_grad = coordinates.grad
             self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
@@ -684,13 +684,13 @@ class TestCUAEV(TestCase):
             species = self.converter(species)
             coordinates.requires_grad_(True)
 
-            _, aev = self.aev_computer_2x((species, coordinates))
+            aev = self.aev_computer_2x(species, coordinates)
             aev.backward(torch.ones_like(aev))
             aev_grad = coordinates.grad
 
             coordinates = coordinates.clone().detach()
             coordinates.requires_grad_()
-            _, cu_aev = self.cuaev_computer_2x_use_interface((species, coordinates))
+            cu_aev = self.cuaev_computer_2x_use_interface(species, coordinates)
             cu_aev.backward(torch.ones_like(cu_aev))
             cuaev_grad = coordinates.grad
             self.assertEqual(cu_aev, aev, atol=self.tolerance, rtol=self.tolerance)
@@ -707,14 +707,14 @@ class TestCUAEV(TestCase):
         species = self.converter(species)
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         coordinates.requires_grad_(True)
-        _, aev = self.aev_computer_2x((species, coordinates), cell, pbc)
+        aev = self.aev_computer_2x(species, coordinates, cell, pbc)
         aev.backward(torch.ones_like(aev))
         aev_grad = coordinates.grad
 
         coordinates = coordinates.clone().detach()
         coordinates.requires_grad_()
-        _, cu_aev = self.cuaev_computer_2x_use_interface(
-            (species, coordinates), cell, pbc
+        cu_aev = self.cuaev_computer_2x_use_interface(
+            species, coordinates, cell, pbc
         )
         cu_aev.backward(torch.ones_like(cu_aev))
         cuaev_grad = coordinates.grad
@@ -732,7 +732,7 @@ class TestCUAEV(TestCase):
             species = self.converter(species)
             coordinates.requires_grad_(True)
 
-            _, aev = self.aev_computer_2x((species, coordinates))
+            aev = self.aev_computer_2x(species, coordinates)
             aev.backward(torch.ones_like(aev))
             aev_grad = coordinates.grad
 
@@ -769,7 +769,7 @@ class TestCUAEV(TestCase):
         species = self.converter(species)
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         coordinates.requires_grad_(True)
-        _, aev = self.aev_computer_2x((species, coordinates), cell, pbc)
+        aev = self.aev_computer_2x(species, coordinates, cell, pbc)
         aev.backward(torch.ones_like(aev))
         aev_grad = coordinates.grad
 

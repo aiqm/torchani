@@ -94,7 +94,7 @@ class TestCorrectInput(ANITestCase):
         self.assertRaises(
             AssertionError,
             self.aev_computer,
-            (torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 3))),
+            torch.tensor([[0, 1, 2, 3]]), torch.zeros((1, 3, 3)),
         )
         self.assertRaises(
             AssertionError,

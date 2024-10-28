@@ -1,3 +1,4 @@
+import typing as tp
 import sys
 from pathlib import Path
 import argparse
@@ -6,6 +7,7 @@ import torch
 from rich.console import Console
 from tqdm import tqdm
 
+from torchani.assembly import ANI
 from torchani.annotations import Device
 from torchani.models import ANI1x
 from torchani.grad import energies_and_forces
@@ -28,6 +30,7 @@ def main(
     num_warm_up: int,
     num_profile: int,
 ) -> int:
+    assert device is not None  # mypy
     device = torch.device(device)
     detail = (opt is Opt.NONE) and detail
     console.print(
@@ -41,7 +44,7 @@ def main(
         xyz_file_path = Path.cwd() / file
     model = ANI1x()[0].to(device)
     if opt is Opt.JIT:
-        model = torch.jit.script(model)
+        model = tp.cast(ANI, torch.jit.script(model))
     elif opt is Opt.COMPILE:
         # Compile transforms the model into a Callable
         model = torch.compile(model)  # type: ignore

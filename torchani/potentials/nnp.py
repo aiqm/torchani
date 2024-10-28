@@ -3,11 +3,11 @@ import typing as tp
 import torch
 from torch import Tensor
 
+from torchani.nn import AtomicContainer
+from torchani.aev import AEVComputer
 from torchani.electro import ChargeNormalizer
 from torchani.tuples import EnergiesAtomicCharges
 from torchani.neighbors import NeighborData
-from torchani.atomics import AtomicContainer
-from torchani.aev.computer import AEVComputer
 from torchani.potentials.core import Potential
 
 
@@ -19,24 +19,6 @@ class NNPotential(Potential):
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
 
-    # TODO: Wrapper that executes the correct _compute_(py|cu)aev call, dirty
-    def _execute_aev_computer(
-        self,
-        elem_idxs: Tensor,
-        neighbors: NeighborData,
-        _coords: tp.Optional[Tensor] = None,
-    ) -> Tensor:
-        strat = self.aev_computer._strategy
-        if strat == "pyaev":
-            return self.aev_computer._compute_pyaev(elem_idxs, neighbors)
-        elif strat == "cuaev":
-            assert _coords is not None
-            return self.aev_computer._compute_cuaev_with_half_nbrlist(
-                elem_idxs, _coords, neighbors
-            )
-        else:
-            raise RuntimeError(f"Unsupported compute strategy {strat}")
-
     def forward(
         self,
         elem_idxs: Tensor,
@@ -45,7 +27,9 @@ class NNPotential(Potential):
         ghost_flags: tp.Optional[Tensor] = None,
         atomic: bool = False,
     ) -> Tensor:
-        aevs = self._execute_aev_computer(elem_idxs, neighbors, _coordinates)
+        aevs = self.aev_computer.compute_from_neighbors(
+            elem_idxs, neighbors, _coordinates
+        )
         return self.neural_networks(elem_idxs, aevs, atomic=atomic)
 
     def ensemble_values(
@@ -57,7 +41,9 @@ class NNPotential(Potential):
         atomic: bool = False,
     ) -> Tensor:
         if hasattr(self.neural_networks, "ensemble_values"):
-            aevs = self._execute_aev_computer(elem_idxs, neighbors, _coordinates)
+            aevs = self.aev_computer.compute_from_neighbors(
+                elem_idxs, neighbors, _coordinates
+            )
             out = self.neural_networks.ensemble_values(elem_idxs, aevs, atomic=atomic)
             return out
         out = self(elem_idxs, neighbors, _coordinates, ghost_flags, atomic).unsqueeze(0)
@@ -89,7 +75,9 @@ class MergedChargesNNPotential(NNPotential):
         total_charge: int = 0,
         atomic: bool = False,
     ) -> EnergiesAtomicCharges:
-        aevs = self._execute_aev_computer(elem_idxs, neighbors, _coordinates)
+        aevs = self.aev_computer.compute_from_neighbors(
+            elem_idxs, neighbors, _coordinates
+        )
         energies_qs = self.neural_networks(elem_idxs, aevs, atomic=True)
         energies = energies_qs[:, :, 0]
         if not atomic:
@@ -122,7 +110,9 @@ class SeparateChargesNNPotential(NNPotential):
         total_charge: int = 0,
         atomic: bool = False,
     ) -> EnergiesAtomicCharges:
-        aevs = self._execute_aev_computer(elem_idxs, neighbors, _coordinates)
+        aevs = self.aev_computer.compute_from_neighbors(
+            elem_idxs, neighbors, _coordinates
+        )
         energies = self.neural_networks(elem_idxs, aevs, atomic=atomic)
         qs = self.charge_networks(elem_idxs, aevs, atomic=True)
         qs = self.charge_normalizer(elem_idxs, qs, total_charge)

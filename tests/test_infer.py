@@ -21,17 +21,13 @@ if not MNP_IS_INSTALLED:
 class TestInfer(ANITestCase):
     def setUp(self):
         if not torch.cuda.is_available():
-            self.skipTest("InferMNP models need CUDA even when running on cpu devices")
-        # This module is actually deprecated, so we filter those warnings here
-        warnings.filterwarnings(
-            "ignore",
-            message=".* MNP .*",
-            category=DeprecationWarning,
-        )
+            self.skipTest("MNPNetworks models need CUDA even when running on CPU")
+        # MNPNetworks emits warnings due to its complexity, filter those here
+        warnings.filterwarnings("ignore", message=".* MNP .*")
         self._saved_omp_num_threads = os.environ.get("OMP_NUM_THREADS", "")
-        # set num threads for multi net parallel
+        # set num threads for MNP
         os.environ["OMP_NUM_THREADS"] = "2"
-        # Disable Tensorfloat, errors between two run of same model for large system
+        # Disable TensorFloat32, errors between two run of same model for large system
         # could reach 1e-3. However note that this error for large system is not that
         # big actually.
         self._saved_tf32 = torch.backends.cuda.matmul.allow_tf32
@@ -95,7 +91,7 @@ class TestInfer(ANITestCase):
 
     def testANIInfer(self):
         if self.jit:
-            self.skipTest("ANIInfer does not support JIT with no MNP")
+            self.skipTest("MNPNetworks does not support JIT with pyMNP")
         self._test(
             self._build_ani2x(idx=0),
             self._build_ani2x(idx=0, infer=True),
