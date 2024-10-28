@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.utils import (
     # Padding
     pad_atomic_properties,
@@ -18,7 +18,7 @@ from torchani.utils import (
 
 
 @expand()
-class TestTorchUtils(ANITest):
+class TestTorchUtils(ANITestCase):
     def testNonzeroInChunks(self):
         tensor = torch.tensor([1, 0, 0, 1, 5], device=self.device)
         f = nonzero_in_chunks
@@ -30,7 +30,7 @@ class TestTorchUtils(ANITest):
 
 
 @expand()
-class TestConverters(ANITest):
+class TestConverters(ANITestCase):
     def testSymbolsToIdxs(self):
         str2i = self._setup(ChemicalSymbolsToInts(["A", "B", "C", "D", "E", "F"]))
 
@@ -63,7 +63,7 @@ class TestConverters(ANITest):
 
 # TODO: For now this is non-jit only, it may need to be adapted
 @expand(jit=False)
-class TestPaddingUtils(ANITest):
+class TestPaddingUtils(ANITestCase):
     def testStripRedundantPadding(self):
         expect = torch.tensor(
             [

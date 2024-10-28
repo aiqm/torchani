@@ -6,13 +6,13 @@ from torch import Tensor
 
 import torchani
 from torchani.utils import SYMBOLS_1X
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.potentials import RepulsionXTB
 from torchani.neighbors import NeighborData
 
 
 @expand()
-class TestRepulsion(ANITest):
+class TestRepulsion(ANITestCase):
     def setUp(self):
         self.rep = self._setup(RepulsionXTB(symbols=SYMBOLS_1X, cutoff=5.2))
 

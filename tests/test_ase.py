@@ -25,7 +25,7 @@ from ase.md.nptberendsen import NPTBerendsen
 from ase.calculators.test import numeric_force
 
 from torchani.io import read_xyz
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.assembly import ANI
 from torchani.models import ANI1x, ANIdr
 from torchani.potentials import PairPotential
@@ -41,7 +41,7 @@ def _stress_test_name(fn: tp.Any, idx: int, param: tp.Any) -> str:
 
 
 @expand(jit=False)
-class TestASE(ANITest):
+class TestASE(ANITestCase):
     def testConsistentForcesCellWithAllPairs(self):
         model = self._setup(ANI1x(model_index=0).double())
         model_cell = self._setup(
@@ -177,7 +177,7 @@ class TestASE(ANITest):
 
 
 @expand(jit=False)
-class TestVibrationsASE(ANITest):
+class TestVibrationsASE(ANITestCase):
     def tearDown(self) -> None:
         vib_path = Path(Path(__file__).parent, "vib")
         if vib_path.is_dir():
@@ -215,7 +215,7 @@ class TestVibrationsASE(ANITest):
 
 
 @expand(jit=False)
-class TestOptimizationASE(ANITest):
+class TestOptimizationASE(ANITestCase):
     def setUp(self):
         self.tolerance = 1e-6
         self.calculator = self._setup(ANI1x(model_index=0)).ase()

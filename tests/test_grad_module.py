@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.grad import (
     forces_and_hessians,
     forces,
@@ -11,7 +11,7 @@ from torchani.grad import (
 
 
 @expand(device="cpu", jit=True)
-class TestScripting(ANITest):
+class TestScripting(ANITestCase):
     def testHessians(self):
         torch.jit.script(hessians)
 

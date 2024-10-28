@@ -16,7 +16,7 @@ from torchani.transforms import (
     Compose,
 )
 from torchani.constants import PERIODIC_TABLE, ATOMIC_NUMBER
-from torchani.testing import TestCase
+from torchani._testing import TestCase
 from torchani.datasets import (
     concatenate,
     ANIDataset,

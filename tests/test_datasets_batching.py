@@ -7,7 +7,7 @@ import torch
 import h5py
 import numpy as np
 
-from torchani.testing import TestCase
+from torchani._testing import TestCase
 from torchani.datasets import (
     create_batched_dataset,
     ANIDataset,

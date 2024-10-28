@@ -4,12 +4,12 @@ import unittest
 import torch
 import torchani
 
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.grad import forces, energies_and_forces
 
 
 @expand()
-class TestActiveLearning(ANITest):
+class TestActiveLearning(ANITestCase):
     def setUp(self):
         model = torchani.models.ANI1x().double()
         self.model = self._setup(model)
@@ -136,7 +136,7 @@ class TestActiveLearning(ANITest):
 
 # Note that forces functions are non-jittable
 @expand(jit=False)
-class TestActiveLearningForces(ANITest):
+class TestActiveLearningForces(ANITestCase):
     def setUp(self):
         self.model = self._setup(torchani.models.ANI1x().double())
         # fully symmetric methane

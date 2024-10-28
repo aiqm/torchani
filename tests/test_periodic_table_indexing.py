@@ -1,7 +1,7 @@
 import unittest
 import torch
 
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.nn import SpeciesConverter
 from torchani.utils import ChemicalSymbolsToInts
 from torchani.models import ANI1x
@@ -9,7 +9,7 @@ from torchani.grad import energies_and_forces
 
 
 @expand()
-class TestSpeciesConverter(ANITest):
+class TestSpeciesConverter(ANITestCase):
     def testSpeciesConverter(self):
         input_ = torch.tensor(
             [
@@ -33,7 +33,7 @@ class TestSpeciesConverter(ANITest):
 
 
 @expand(device="cpu", jit=False)
-class TestBuiltinEnsemblePeriodicTableIndex(ANITest):
+class TestBuiltinEnsemblePeriodicTableIndex(ANITestCase):
     def setUp(self):
         model1 = ANI1x(periodic_table_index=False)
         model2 = ANI1x()

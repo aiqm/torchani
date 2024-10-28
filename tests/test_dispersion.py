@@ -8,15 +8,14 @@ from torchani.utils import SYMBOLS_1X
 from torchani.aev import AEVComputer
 from torchani.potentials import TwoBodyDispersionD3
 from torchani.potentials.dispersion import _load_c6_constants
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.grad import energies_and_forces
 
 
 @expand()
-class TestDispersion(ANITest):
+class TestDispersion(ANITestCase):
     def setUp(self):
-        # for the purposes of testing we use the exact same conversion factors
-        # as the original DFTD3 code
+        # Use the exact same conversion factors as the original DFTD3 code
         self.old_angstrom_to_bohr = units.ANGSTROM_TO_BOHR
         self.old_hartree_to_kcalpermol = units.HARTREE_TO_KCALPERMOL
         units.ANGSTROM_TO_BOHR = 1 / 0.52917726

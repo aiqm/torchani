@@ -4,14 +4,14 @@ import pickle
 
 import torch
 
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.utils import pad_atomic_properties
 from torchani.models import ANI1x, ANI2x, ANIdr
 from torchani.units import hartree2kcalpermol
 
 
 @expand()
-class TestANI2x(ANITest):
+class TestANI2x(ANITestCase):
     def setUp(self):
         self.model_pti = self._setup(ANI2x(model_index=0))
         self.model = self._setup(ANI2x(model_index=0, periodic_table_index=False))
@@ -42,7 +42,7 @@ class TestANI2x(ANITest):
 
 
 @expand()
-class TestANIdr(ANITest):
+class TestANIdr(ANITestCase):
     def setUp(self):
         self.model = self._setup(ANIdr(model_index=0))
 
@@ -67,7 +67,7 @@ class TestANIdr(ANITest):
 
 
 @expand(device="cpu", jit=False)
-class TestCorrectInput(ANITest):
+class TestCorrectInput(ANITestCase):
     def setUp(self):
         model = ANI1x(model_index=0, periodic_table_index=False)
         self.model = self._setup(model)
@@ -115,7 +115,7 @@ class TestCorrectInput(ANITest):
 
 
 @expand()
-class TestEnergies(ANITest):
+class TestEnergies(ANITestCase):
     def setUp(self):
         self.model = self._setup(ANI1x(model_index=0, periodic_table_index=False))
         self.num_conformers = 50

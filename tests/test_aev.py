@@ -8,7 +8,7 @@ import traceback
 
 import torch
 
-from torchani.testing import TestCase
+from torchani._testing import TestCase
 from torchani.neighbors import FullPairwise
 from torchani.nn import SpeciesConverter
 from torchani.utils import ChemicalSymbolsToInts, pad_atomic_properties, map_to_central

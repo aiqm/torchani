@@ -10,7 +10,7 @@ Welcome to TorchANI's documentation!
 
     installing
     examples_autogen/fundamentals.rst
-    migration
+    migrating_from_2
     tips
 
 .. toctree::

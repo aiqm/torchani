@@ -5,13 +5,13 @@ import torch
 import numpy as np
 
 from torchani.models import ANI1x
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.grad import vibrational_analysis, energies_forces_and_hessians
 from torchani.utils import get_atomic_masses
 
 
 @expand(jit=False, device="cpu")
-class TestVibrational(ANITest):
+class TestVibrational(ANITestCase):
     def testWater(self):
         model = self._setup(ANI1x().double())
         # Expected results

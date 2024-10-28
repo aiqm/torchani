@@ -1,5 +1,5 @@
 r"""
-This module is part of the *Legacy API* of TorchANI 2.0 and should not be used in new
+This module is part of the *Legacy API* of TorchANI 2 and should not be used in new
 code. It should only be used if you need to interface with previously trained ANI models
 in the NeuroChem format. It contains tools for loading files in the NeuroChem format,
 the original file format used in the first `ANI`_ article.

@@ -4,13 +4,13 @@ import pickle
 
 import torch
 
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.models import ANI1x
 from torchani.grad import energies_and_forces, forces
 
 
 @expand()
-class TestEnsemble(ANITest):
+class TestEnsemble(ANITestCase):
     def setUp(self):
         model = ANI1x(periodic_table_index=False)
         self.ensemble = self._setup(model)

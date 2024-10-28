@@ -4,7 +4,7 @@ import os
 import torch
 
 import torchani
-from torchani.testing import TestCase
+from torchani._testing import TestCase
 
 batch_size = 256
 path = os.path.dirname(os.path.realpath(__file__))

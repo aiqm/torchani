@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.models import ANI1x, ANI2x, ANI1ccx
 from torchani.aev import AEVComputer
 from torchani.neurochem import load_model_from_name, load_aev_computer_and_symbols
@@ -13,7 +13,7 @@ const_file_2x = os.path.join(path, "resources/rHCNOSFCl-5.1R_16-3.5A_a8-4.params
 
 
 @expand(device="cpu", jit=False)
-class TestModelLoader(ANITest):
+class TestModelLoader(ANITestCase):
     # check that models loaded from a neurochem source are equal to models
     # loaded directly from a state_dict
     def testANI1x(self):
@@ -49,7 +49,7 @@ class TestModelLoader(ANITest):
 
 
 @expand(device="cpu", jit=False)
-class TestAEVLoader(ANITest):
+class TestAEVLoader(ANITestCase):
     # Test that checks that inexact friendly constructor
     # reproduces the values from ANI1x with the correct parameters
     def testEqualNeurochem1x(self):

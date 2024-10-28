@@ -2,13 +2,13 @@ import unittest
 
 import torch
 
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.models import ANI1x, ANIdr, ANImbis
 from torchani.datasets import batch_all_in_ram, TestData
 
 
 @expand()
-class TestSinglePointEntry(ANITest):
+class TestSinglePointEntry(ANITestCase):
     def setUp(self):
         # in general self energies should be subtracted, and shuffle should be
         # performed, but for these tests this is not important

@@ -5,13 +5,13 @@ import pickle
 import torch
 
 from torchani.models import ANI1x
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.utils import pad_atomic_properties
 from torchani.grad import energies_and_forces
 
 
 @expand()
-class TestForce(ANITest):
+class TestForce(ANITestCase):
     def setUp(self):
         self.model = self._setup(ANI1x(model_index=0, periodic_table_index=False))
         self.num_conformers = 50

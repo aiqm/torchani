@@ -1,7 +1,7 @@
 import typing as tp
 import tempfile
 
-from torchani.testing import TestCase
+from torchani._testing import TestCase
 from torchani import datasets
 from torchani.cli import data_pull
 from torchani.datasets import DatasetId, LotId

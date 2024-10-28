@@ -50,7 +50,7 @@ def expand(
 _T = tp.TypeVar("_T", bound=torch.nn.Module)
 
 
-class ANITest(TestCase):
+class ANITestCase(TestCase):
     _device: torch.device
     _jit: bool
 
@@ -78,4 +78,4 @@ class ANITest(TestCase):
         return model
 
 
-__all__ = ["make_tensor", "TestCase", "ANITest", "expand"]
+__all__ = ["make_tensor", "TestCase", "ANITestCase", "expand"]

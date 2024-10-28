@@ -6,13 +6,13 @@ import torch
 from torch.autograd import gradcheck, gradgradcheck
 
 import torchani
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 
 path = os.path.dirname(os.path.realpath(__file__))
 
 
 @expand()
-class TestTorchNumericalCheck(ANITest):
+class TestTorchNumericalCheck(ANITestCase):
     # torch.autograd.gradcheck (and torch.autograd.gradgradcheck) verify that
     # the numerical and analytical gradient (and hessian respectively) of a
     # function match within a given tolerance.

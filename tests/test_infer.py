@@ -7,7 +7,7 @@ import unittest
 import torch
 
 from torchani.models import ANI2x
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.csrc import MNP_IS_INSTALLED, CUAEV_IS_INSTALLED
 from torchani.grad import energies_and_forces
 from torchani.io import read_xyz
@@ -18,7 +18,7 @@ if not MNP_IS_INSTALLED:
 
 
 @expand()
-class TestInfer(ANITest):
+class TestInfer(ANITestCase):
     def setUp(self):
         if not torch.cuda.is_available():
             self.skipTest("InferMNP models need CUDA even when running on cpu devices")

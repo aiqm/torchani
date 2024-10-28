@@ -6,7 +6,7 @@ from torch import Tensor
 
 import torchani
 from torchani.io import read_xyz
-from torchani.testing import TestCase, expand, ANITest
+from torchani._testing import TestCase, expand, ANITestCase
 from torchani.aev import AEVComputer
 from torchani.neighbors import (
     CellList,
@@ -308,7 +308,7 @@ class TestCellListEnergiesCuda(TestCellListEnergies):
 
 
 @expand()
-class TestCellListLargeSystem(ANITest):
+class TestCellListLargeSystem(ANITestCase):
     def setUp(self):
         # JIT optimizations are avoided to prevent cuda bugs that make first
         # evaluations extremely slow for old pytorch

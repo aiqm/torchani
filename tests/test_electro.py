@@ -3,11 +3,11 @@ import unittest
 import torch
 
 from torchani.electro import DipoleComputer
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 
 
 @expand()
-class TestDipoles(ANITest):
+class TestDipoles(ANITestCase):
     def setUp(self) -> None:
         self.species = torch.tensor([[1, 1, 8]], dtype=torch.long, device=self.device)
         self.coordinates = torch.tensor(

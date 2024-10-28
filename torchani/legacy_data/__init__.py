@@ -1,8 +1,9 @@
 # type: ignore
 # This file is legacy, it should not be type-checked
 r"""
-This module is part of the *Legacy API* of TorchANI 2.0 and should not be used in new
-code. It holds tools for loading, shuffling, and batching legacy-style, TorchANI 2.0
+This module is part of the *Legacy API* of TorchANI 2 and should not be used in new
+code. It holds tools for loading, shuffling, and batching legacy-style, TorchANI 2
+datasets.
 
 `torchani.data.load(path)` creates an iterable of raw data, where species are strings,
 and coordinates are numpy ndarrays.

@@ -2,13 +2,13 @@ import unittest
 
 import torch
 
-from torchani.testing import ANITest, expand
+from torchani._testing import ANITestCase, expand
 from torchani.models import ANI1x, ANI2x, ANIdr, ANImbis
 from torchani.datasets import batch_all_in_ram, TestData
 
 
 @expand()
-class TestActiveModelsPoints(ANITest):
+class TestActiveModelsPoints(ANITestCase):
     def setUp(self):
         # in general self energies should be subtracted, and shuffle should be
         # performed, but for these tests this is not important
@@ -36,7 +36,7 @@ class TestActiveModelsPoints(ANITest):
 
 
 @expand()
-class TestExternalEntryPoints(ANITest):
+class TestExternalEntryPoints(ANITestCase):
     def setUp(self):
         self.ds = batch_all_in_ram(
             TestData(verbose=False, skip_check=True),
@@ -97,7 +97,7 @@ class TestExternalEntryPoints(ANITest):
 
 
 @expand(jit=True, device="cpu")
-class TestBuiltinModels(ANITest):
+class TestBuiltinModels(ANITestCase):
     # Tests if JIT compiled models have the same output energies
     # as eager (non JIT) models
 
