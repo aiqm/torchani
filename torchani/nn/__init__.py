@@ -1,7 +1,7 @@
 r"""
 This submodule contains classes that represent atomic neural networks
-(``AtomicNetwork``), and groups of element-specific neural networks (``ANINetworks``,
-``ANIEnsemble``), and perform different reduction operations over them.
+(`AtomicNetwork`), and groups of element-specific neural networks (`ANINetworks`,
+`ANIEnsemble`), and perform different reduction operations over them.
 
 It also contains useful factory methods to instantiate neural networks for different
 elements.

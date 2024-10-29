@@ -1,6 +1,7 @@
-r"""
-Collection of Cutoff functions, which can be used to envelope the outputs of
-:class:`PairPotential` and :class:`AEVComputer`.
+r"""Collection of Cutoff functions
+
+These can be used to envelope the outputs of `torchani.potentials.PairPotential` and
+`torchani.aev.AEVComputer`
 """
 
 import typing as tp

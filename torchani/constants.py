@@ -1,5 +1,4 @@
-r"""
-Atomic constants, and Density Functional constants
+r"""Atomic constants, and Density Functional constants
 
 If you use these constants in your work please cite the corresponding article(s).
 

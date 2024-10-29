@@ -1,31 +1,14 @@
-r"""
-`TorchANI`_ is a PyTorch library for training, development and research of `ANI`_ style
-neural networks, maintained by the `Roitberg group`_.  TorchANI contains classes like
-:class:`AEVComputer`, :class:`ANINetworks`, and :class:`EnergyAdder` that can be
-combined to compute molecular energies from the cartesian coordinates of molecules. It
-also includes tools to deal with ANI datasets (e.g. `ANI-1`_, `ANI-1x`_, `ANI-1ccx`_,
-`ANI-2x`_) in the submodule :attr:`torchani.datasets`.
+r"""The TorchANI neural network potential library main namespace
 
-.. _TorchANI:
-    https://doi.org/10.26434/chemrxiv.12218294.v1
+Most of the functions and classes of the library are accessible from their specific
+modules. For convenience, some useful classes are accessible *also* from here. These
+are:
 
-.. _ANI:
-    http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
-
-.. _Roitberg group:
-    https://roitberg.chem.ufl.edu/
-
-.. _ANI-1:
-    https://www.nature.com/articles/sdata2017193
-
-.. _ANI-1x:
-    https://aip.scitation.org/doi/abs/10.1063/1.5023802
-
-.. _ANI-1ccx:
-    https://doi.org/10.26434/chemrxiv.6744440.v1
-
-.. _ANI-2x:
-    https://doi.org/10.26434/chemrxiv.11819268.v1
+- `ANI`
+- `SpeciesConverter`
+- `AEVComputer`
+- `ANINetworks`
+- `EnergyAdder`
 """
 
 import os
@@ -34,9 +17,9 @@ from importlib.metadata import version, PackageNotFoundError
 
 import torch
 
-from torchani.nn import ANINetworks, ANIEnsemble, SpeciesConverter
-from torchani.aev import AEVComputer
 from torchani import (
+    nn,
+    aev,
     assembly,
     utils,
     models,
@@ -55,12 +38,16 @@ from torchani import (
     neurochem,
     annotations,
     paths,
-    aev,
 )
 
-# Legacy API
+# Legacy API, don't document
 from torchani.utils import EnergyShifter
 from torchani.nn import ANIModel, Ensemble
+
+# Dump into global namespace for convenience
+from torchani.aev import AEVComputer
+from torchani.nn import ANINetworks, ANIEnsemble, SpeciesConverter
+from torchani.potentials import EnergyAdder
 
 # NOTE: ase is an optional dependency so don't import here
 
@@ -70,24 +57,25 @@ except PackageNotFoundError:
     pass  # package is not installed
 
 __all__ = [
-    "grad",
-    "utils",
-    "annotations",
-    "paths",
-    "models",
-    "units",
-    "potentials",
     "neighbors",
+    "aev",
+    "nn",
+    "grad",
+    "models",
+    "potentials",
     "cutoffs",
     "datasets",
     "transforms",
-    "cli",
     "io",
     "electro",
     "assembly",
-    "sae",
-    "aev",
     "constants",
+    "utils",
+    "units",
+    "sae",
+    "cli",
+    "paths",
+    "annotations",
     # Legacy API
     "neurochem",
     "legacy_data",
@@ -95,13 +83,14 @@ __all__ = [
     "Ensemble",
     "ANIModel",
     # In global namespace for convenience
+    "SpeciesConverter",
     "AEVComputer",
     "ANINetworks",
     "ANIEnsemble",
-    "SpeciesConverter",
+    "EnergyAdder",
 ]
 
-# Disable TF32 since it catastrophically degrades accuracy
+# Disable TF32 since it catastrophically degrades accuracy of ANI models
 torch.backends.cuda.matmul.allow_tf32 = False
 torch.backends.cudnn.allow_tf32 = False
 
@@ -117,12 +106,12 @@ if torch.cuda.is_available():
             "TorchANI disables TF32 (supported by your GPU) to prevent accuracy loss."
             " To suppress warn set the env var TORCHANI_NO_WARN_TF32=1"
             " For example, if using bash,"
-            " you may add `export TORCHANI_NO_WARN_TF32=1` to your .bashrc"
+            " you may add 'export TORCHANI_NO_WARN_TF32=1' to your .bashrc"
         )
 
-# Optional submodule, depends on 'ase' being available
+# Optional submodule, depends on ase being available
 try:
-    from . import ase  # noqa: F401
+    from torchani import ase  # noqa: F401
 
     __all__.append("ase")
     ASE_IS_AVAILABLE = True

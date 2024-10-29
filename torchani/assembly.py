@@ -1,31 +1,31 @@
-r"""
-Construction of ANI-style models and definition of their architecture
+r"""Construction of ANI-style models and definition of their architecture
 
-ANI-style models are all subclasses of the :class:`ANI` base class. They can be either
+ANI-style models are all subclasses of the `ANI` base class. They can be either
 constructed directly, or their construction can be managed by a different class, the
-:class:`Assembler`. Think of the :class:`Assembler` as your employee, whose job is to
-create the class from all the necessary components, in such a way that all parts
-interact in the correct way and there are no compatibility issues among them.
+`Assembler`. Think of the `Assembler` as a helpful friend who create the class from all
+the necessary components, in such a way that all parts interact in the correct way and
+there are no compatibility issues among them.
 
 An ANI-style model consists of:
 
-- :class:`AEVComputer` (or subclass)
-- A container for atomic networks (typically :class:`ANINetworks` or subclass)
-- An :class:`AtomicNetwork` mapping for example, this may take the shape
+- `torchani.aev.AEVComputer` (or subclass)
+- A container for atomic networks (typically `ANINetworks` or subclass)
+- An `torchani.nn.AtomicNetwork` mapping for example, this may take the shape
     ``{"H": AtomicNetwork(...), "C": AtomicNetwork(...), ...}``. Its also possible
     to pass a function that, given a symbol (e.g. ``"C"``) returns an atomic network,
-    such as :attr:`torchani.nn.make_2x_network`.
-- A self energies :class:`dict` (in Hartree): ``{"H": -12.0, "C": -75.0, ...}``
+    such as `torchani.nn.make_2x_network`.
+- A self energies `dict` (in Hartree): ``{"H": -12.0, "C": -75.0, ...}``
 
 These pieces are combined when the
 ``Assembler.assemble(size=<num-networks-in-ensemble>)`` method is called.
 
-An energy-predicting model may also have one or more :class:`PairPotential` (
-:class:`RepulsionXTB`, :class:`TwoBodyDispersionD3`, etc.).
+An energy-predicting model may also have one or more `torchani.potentials.PairPotential`
+(`torchani.potentials.RepulsionXTB`, `torchani.potentials.TwoBodyDispersionD3`, etc.).
 
-Each :class:`PairPotential` has its own cutoff, and the :class:`AEVComputer` has two
-cutoffs, an angular and a radial one (the radial cutoff must be larger than the angular
-cutoff, and it is recommended that the angular cutoff is kept small, 3.5 Ang or less).
+Each `torchani.potentials.PairPotential` has its own cutoff, and the
+`torchani.aev.AEVComputer` has two cutoffs, an angular and a radial one (the radial
+cutoff must be larger than the angular cutoff, and it is recommended that the angular
+cutoff is kept small, 3.5 Ang or less).
 """
 
 from copy import deepcopy
@@ -167,7 +167,7 @@ class ANI(torch.nn.Module):
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> tp.Dict[str, Tensor]:
-        """Calculate properties for a batch of molecules
+        r"""Calculate properties for a batch of molecules
 
         Args:
             species: Int tensor with the atomic numbers of molecules in the batch, shape
@@ -176,7 +176,7 @@ class ANI(torch.nn.Module):
                 in the batch, shape (molecules, atoms, 3)
             cell: Float tensorwith the cell used for PBC computations. Set to None if
                 PBC is not enabled, shape (3, 3)
-            pbc: Boolean tensor that indicates enabled PBC directions. Set
+            pbc: Bool tensor that indicates enabled PBC directions. Set
                 to None if PBC is not enabled. shape (3,)
             total_charge: The total charge of the molecules. Only
                 the scalar 0 is currently supported.
@@ -299,7 +299,7 @@ class ANI(torch.nn.Module):
     ) -> SpeciesEnergies:
         r"""Calculate predicted atomic energies of all atoms in a molecule
 
-        Arguments and return value are the same as that of forward(), but
+        Arguments and return value are the same as that of `ANI.forward`, but
         the returned energies have shape (molecules, atoms)
         """
         return self(
@@ -316,7 +316,7 @@ class ANI(torch.nn.Module):
         optimized for inference.
 
         Assumes that the atomic networks are multi layer perceptrons (MLPs)
-        with :class:`TightCELU` activation functions.
+        with `torchani.utils.TightCELU` activation functions.
         """
         self.neural_networks = self.neural_networks.to_infer_model(use_mnp=use_mnp)
         return self
@@ -327,11 +327,12 @@ class ANI(torch.nn.Module):
         stress_kind: StressKind = "scaling",
         jit: bool = False,
     ):
-        r"""Obtain an ASE Calculator that uses this model
+        r"""
+        Obtain an ASE Calculator that uses this model
 
         Arguments:
             overwrite: After wrapping atoms into central box, whether
-                to replace the original positions stored in :class:`ase.Atoms`
+                to replace the original positions stored in the `ase.Atoms`
                 object with the wrapped positions.
             jit: Whether to JIT-compile the model before wrapping in a
                 Calculator
@@ -442,7 +443,7 @@ class ANI(torch.nn.Module):
         pbc: tp.Optional[Tensor] = None,
         total_charge: int = 0,
     ) -> SpeciesForces:
-        """Calculates predicted forces from ensemble members
+        r"""Calculates predicted forces from ensemble members
 
         Args:
             species_coordinates: minibatch of configurations
@@ -452,8 +453,8 @@ class ANI(torch.nn.Module):
                 to none if PBC is not enabled
 
         Returns:
-            SpeciesForces: species, molecular energies, and atomic forces
-                predicted by an ensemble of neural network models
+            species, molecular energies, and atomic forces predicted by an ensemble of
+            neural network models
         """
         species, coordinates = species_coordinates
         coordinates.requires_grad_(True)
@@ -482,12 +483,12 @@ class ANI(torch.nn.Module):
         unbiased: bool = True,
         total_charge: int = 0,
     ) -> SpeciesEnergiesQBC:
-        """Calculates predicted predicted energies and qbc factors
+        r"""Calculates predicted predicted energies and qbc factors
 
         QBC factors are used for query-by-committee (QBC) based active learning
         (as described in the ANI-1x paper `less-is-more`_ ).
 
-        If the model has only 1 network, then qbc factors are all 0.0
+        If the model has only 1 network, then QBC factors are all 0.0
 
         .. _less-is-more:
             https://aip.scitation.org/doi/10.1063/1.5023802
@@ -500,9 +501,8 @@ class ANI(torch.nn.Module):
             unbiased: Whether to unbias the standard deviation over ensemble predictions
 
         Returns:
-            species_energies_qbcs: tuple of tensors, species, energies and qbc
-                factors for the given configurations. The shapes of qbcs and
-                energies are equal.
+            Tuple of species, energies and qbc factor tensors for the given
+            configurations. The shapes of qbcs and energies are equal.
         """
         elem_idxs, energies = self(
             species_coordinates,
@@ -568,13 +568,14 @@ class ANI(torch.nn.Module):
         pbc: tp.Optional[Tensor] = None,
         ensemble_values: bool = False,
     ) -> ForceMagnitudes:
-        """
-        Computes the L2 norm of predicted atomic force vectors, returning magnitudes,
-        averaged by default.
+        r"""Computes the L2 norm of predicted atomic force vectors
 
         Args:
             species_coordinates: minibatch of configurations
             ensemble_values: Return force magnitudes of members of the ensemble
+
+        Returns:
+            Force magnitudes, averaged by default.
         """
         species, _, members_forces = self.members_forces(species_coordinates, cell, pbc)
         magnitudes = members_forces.norm(dim=-1)
@@ -591,7 +592,7 @@ class ANI(torch.nn.Module):
         ensemble_values: bool = False,
         unbiased: bool = True,
     ) -> ForceStdev:
-        """
+        r"""
         Returns the mean force magnitudes and relative range and standard deviation
         of predicted forces across an ensemble of networks.
 
@@ -622,8 +623,7 @@ class ANI(torch.nn.Module):
 
 
 class ANIq(ANI):
-    r"""
-    ANI-style model that can calculate both atomic charges and energies
+    r"""ANI-style model that can calculate both atomic charges and energies
 
     Charge networks share the input features with the energy networks, and may either be
     fully independent of them, or share weights to some extent.
@@ -841,9 +841,7 @@ class _PairPotentialWrapper:
 
 
 class Assembler:
-    r"""
-    Assembles :class:`ANI` models (or their subclasses).
-    """
+    r"""Assembles an `ANI` model (or subclass)"""
     def __init__(
         self,
         symbols: tp.Sequence[str] = (),
@@ -1126,10 +1124,9 @@ def simple_ani(
     strategy: str = "pyaev",
     use_cuda_ops: bool = False,
 ) -> ANI:
-    r"""
-    Flexible builder to create ANI-style models. Defaults are similar to ANI-2x.
+    r"""Flexible builder to create ANI-style models. Defaults are similar to ANI-2x
 
-    To reproduce the ANI-2x AEV exactly use the following defaults:
+    To reproduce the ANI-2x AEV exactly use the following args:
         - cutoff_fn='cosine'
         - radial_start=0.8
         - angular_start=0.8
@@ -1208,11 +1205,11 @@ def simple_aniq(
     dummy_energies: bool = False,
     use_cuda_ops: bool = False,
 ) -> ANI:
-    r"""
-    Flexible builder to create ANI-style models with separated or merged charge
-    networks. Defaults are similar to ANI-2x.
+    r"""Flexible builder to create ANI-style models that output charges
 
-    To reproduce the ANI-2x AEV exactly use the following defaults:
+    Defaults are similar to ANI-2x.
+
+    To reproduce the ANI-2x AEV exactly use the following args:
         - cutoff_fn='cosine'
         - radial_start=0.8
         - angular_start=0.8

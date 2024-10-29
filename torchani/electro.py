@@ -1,6 +1,6 @@
-r"""
-Various utilities for working with systems that have charges and coulomb-like
-electrostatic interactions.
+r"""Utilities for working with charged systems
+
+Useful for systems that have charges and coulomb-like electrostatic interactions.
 """
 
 import typing as tp

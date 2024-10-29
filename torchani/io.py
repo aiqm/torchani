@@ -1,6 +1,4 @@
-r"""
-Convenience functions for reading and writing molecules in ".xyz" format
-"""
+r"""Convenience functions for reading and writing molecules in ".xyz" format"""
 
 import shlex
 import typing as tp
@@ -30,19 +28,18 @@ def write_xyz(
     pad_coord_value: float = 0.0,
     pad_species_value: int = 100,
 ) -> None:
-    r"""
-    Write an xyz file with possibly many coordinates and species. The shapes of
-    the input tensors should be (C, A) and (C, A, 3) respectively, where C is
-    the number of conformations, and A the maximum number of atoms.
-    Output is compatible with ASE's 'extxyz'. If a cell is passed it is written
-    in the comment line of all conformations.
+    r"""Write an xyz file with possibly many coordinates and species.
 
-    If pad=True, output species are padded with atomic number pad_species_value
-    (100 by default) and with coordinates pad_coord_value (0.0 by default),
-    otherwise atoms with species number -1 are not written to the file. Note
-    that many programs (e.g. vmd) require that all conformations in
-    multi-conformation *.xyz files have the same number of atoms, so padding
-    may be useful for visualization in some cases.
+    The shapes of the input tensors should be ``(C, A)`` and ``(C, A, 3)`` respectively,
+    where C is the number of conformations, and A the maximum number of atoms. Output is
+    compatible with ASE's 'extxyz'. If a cell is passed it is written in the comment
+    line of all conformations.
+
+    If ``pad=True``, output species are padded with atomic number pad_species_value (100
+    by default) and with coordinates pad_coord_value (0.0 by default), otherwise atoms
+    with species number -1 are not written to the file. Note that many programs (e.g.
+    vmd) require that all conformations in multi-conformation ``*.xyz`` files have the
+    same number of atoms, so padding may be useful for visualization in some cases.
     """
     dest = Path(dest).resolve()
     # Input validation
@@ -88,16 +85,16 @@ def read_xyz(
     detect_padding: bool = True,
     pad_species_value: int = 100,
 ) -> tp.Tuple[Tensor, Tensor, tp.Optional[Tensor]]:
-    r"""
-    Read an xyz file with possibly many coordinates and species and return a
-    (species, coordinates) tuple of tensors. The shapes of the tensors are (C,
-    A) and (C, A, 3) respectively, where C is the number of conformations, A
-    the maximum number of atoms (conformations with less atoms are padded with
-    species=-1 and coordinates=0.0).
+    r"""Read an xyz file with possibly many molecules. Return them in tensor form
 
-    If detect_padding is True, species with atomic number pad_species_value
-    (100 by default) are considered "padding atoms" and are changed to -1. All
-    their coordinates are set to 0.0, no matter their value.
+    Returns a (species, coordinates) tuple of tensors. The shapes of the tensors are (C,
+    A) and (C, A, 3) respectively, where C is the number of conformations, A the maximum
+    number of atoms (conformations with less atoms are padded with species=-1 and
+    coordinates=0.0).
+
+    If detect_padding is True, species with atomic number pad_species_value (100 by
+    default) are considered "padding atoms" and are changed to -1. All their coordinates
+    are set to 0.0, no matter their value.
 
     Cell is read from the first conformation.
     """

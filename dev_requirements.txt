@@ -22,8 +22,9 @@ zarr
 
 # Docs: Sphinx-related, for building the docs
 sphinx
-sphinx_rtd_theme
 sphinx-gallery
+sphinx-design
+pydata-sphinx-theme
 
 # Docs: For logging on training example
 tensorboard

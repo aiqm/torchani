@@ -1,18 +1,17 @@
-Migrating from TorchANI 2
-=========================
+.. _torchani-migrating:
 
-If you were using a previous version of TorchANI there may be some necessary
-modifications to your code. We strive to keep backwards compatibility for the most part,
+Migrating to TorchANI 3
+=======================
+
+If you were using a previous version of TorchANI you may need to update your
+code to work with TorchANI 3. We strive to keep backwards compatibility,
 but some minor breaking changes were necessary in order to support improvements in the
-models, the dataset loading and managing procedure, etc.
+models, dataset management, etc. Minor versions changes attempt to be fully backwards
+compatible, and breaking changes are reserved for major releases.
 
-Minor versions changes of ``torchani`` will attempt to be fully backwards compatible
-going forward, and breaking changes will be reserved for major releases.
-
-Here we document the most important changes, and what you can do to modify your code to
-be compatible with version 3. In many cases code will run without changes at all, but
-some warnings are emitted if the old, legacy API is being used, so we also provide
-recommendations to use the new, improved API, when appropriate.
+Here we document the most important changes. In many cases code will run as is, but some
+warnings are emitted if the old, legacy API is being used, so we also provide
+recommendations to use the new functions when appropriate.
 
 General usage of built-in ANI models
 ------------------------------------
@@ -94,9 +93,9 @@ you should now do this instead:
     energies = ensemble(ixs, aevs)
 
 .. NOTE The old behavior is also supported directly by using the old class names but we
-   omit to mention this here.
+   omit to mention this here on purpose.
 
-The old behavior is still supported by using the ``.call()`` method, but this is
+The old signature is still supported by using the ``.call()`` method, but this is
 discouraged. An example:
 
 .. code-block:: python
@@ -122,12 +121,8 @@ calculation like this:
     aevc = aevc.compute_from_neighbors(idxs, neighbors)
 
 Additionally, ``AEVComputer`` is now initialized with different inputs. If you prefer
-the old behavior you can use ``AEVComputer.from_constants(...)`` instead. (we
+the old signature you can use ``AEVComputer.from_constants(...)`` instead. (we
 recommend using the new constructors however).
-
-Additionally, ``AEVComputer`` is now initialized with different inputs. If you prefer
-the old behavior you can use ``AEVComputer.from_constants(...)`` instead. (we recommend
-using the new constructors however).
 
 Usage of ``torchani.data``
 --------------------------

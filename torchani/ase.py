@@ -1,6 +1,7 @@
-r"""
-Calculator subclass, used for interfacing with the atomic simulation environment
-(`ASE`_) python library.
+r"""Calculator subclass, used for interfacing with the ASE library
+
+The `ASE`_ library can be used to perform molecular dynamics. For more information
+consult the user guide.
 
 .. _ASE:
     https://wiki.fysik.dtu.dk/ase
@@ -29,7 +30,7 @@ class Calculator(AseCalculator):
     """TorchANI calculator for ASE
 
     ANI models can be converted to their ASE Calculator form by calling the
-    ``ANI.ase()`` method.
+    `torchani.assembly.ANI.ase` method.
 
     .. code-block:: python
 
@@ -38,15 +39,15 @@ class Calculator(AseCalculator):
         calc = model.ase()  # Convert model into its ASE Calculator form
 
     Arguments:
-        model (:class:`torchani.assembly.ANI`): neural network potential model
+        model (`torchani.assembly.ANI`): neural network potential model
             that convert coordinates into energies.
         overwrite (bool): After wrapping atoms into central box, whether
-            to replace the original positions stored in :class:`ase.Atoms`
+            to replace the original positions stored in `ase.Atoms`
             object with the wrapped positions.
-        stress_kind (str): Strategy to calculate stress, valid options are
-            'fdotr', 'scaling', and 'numerical'. The fdotr approach does not need the
+        stress_kind (str): Strategy to calculate stress, valid options are ``'fdotr'``,
+            ``'scaling'``, and ``'numerical'``. The fdotr approach does not need the
             cell's box information and can be used for multiple domians when running
-            parallel on multi-GPUs. Default is 'scaling'.
+            parallel on multi-GPUs. Default is ``'scaling'``.
     """
 
     implemented_properties = ["energy", "free_energy", "forces", "stress"]

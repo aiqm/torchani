@@ -1,6 +1,6 @@
-r"""
-TorchANI functions that make use of :attr:`torch.autograd` capabilities to compute
-forces and hessians.
+r"""Wrapper functions that make use of `torch.autograd`
+
+Computation of forces, hessians, and vibrational frequencies.
 """
 
 import math

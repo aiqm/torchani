@@ -58,6 +58,7 @@ dependencies:
 
   ## Building torchani/docs ##
   - sphinx
-  - sphinx_rtd_theme
+  - sphinx-design
   - sphinx-gallery
+  - pydata-sphinx-theme
   - tensorboard
