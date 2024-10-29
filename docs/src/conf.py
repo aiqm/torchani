@@ -37,6 +37,7 @@ sphinx_gallery_conf = {
     "examples_dirs": "../../examples",
     "gallery_dirs": "examples_autogen",
     "filename_pattern": r".*\.py",
+    "show_signature": False,
 }
 # intersphinx
 intersphinx_mapping = {
