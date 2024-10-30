@@ -40,14 +40,15 @@ class _ANINetworksDiscardFirstScalar(ANINetworks):
 
 
 # Legacy API
+# Modified Sequential module that accept Tuple type as input
 class Sequential(torch.nn.ModuleList):
-    """Modified Sequential module that accept Tuple type as input"""
+    r""":meta private:"""
 
     def __init__(self, *modules):
         warnings.warn(
             "Use of `torchani.nn.Sequential` is strongly discouraged."
-            "Please use the Assembler, or write your own torch.nn.Module."
-            "For more information consult the 'migrating to 3' documentation"
+            "Please use `torchani.assembly.Assembler`, or write a `torch.nn.Module`."
+            " For more info consult 'Migrating to TorchANI 3' in the user guide."
         )
         super().__init__(modules)
 
@@ -66,10 +67,12 @@ class Sequential(torch.nn.ModuleList):
 
 
 class ANIModel(ANINetworks):
+    r""":meta private:"""
     def __init__(self, modules: tp.Any) -> None:
         warnings.warn(
-            "torchani.ANIModel is deprecated, its use is discouraged."
-            " Please use torchani.nn.ANINetworks instead."
+            "`torchani.nn.ANIModel` is deprecated, its use is discouraged."
+            " Please use `torchani.nn.ANINetworks` instead."
+            " For more info consult 'Migrating to TorchANI 3' in the user guide."
         )
         super().__init__(modules, alias=True)
 
@@ -84,10 +87,12 @@ class ANIModel(ANINetworks):
 
 
 class Ensemble(ANIEnsemble):
+    r""":meta private:"""
     def __init__(self, modules: tp.Any) -> None:
         warnings.warn(
-            "torchani.Ensemble is deprecated, its use is discouraged."
-            " Please use torchani.nn.ANIEnsemble instead."
+            "`torchani.nn.Ensemble` is deprecated, its use is discouraged."
+            " Please use `torchani.nn.ANIEnsemble` instead."
+            " For more info consult 'Migrating to TorchANI 3' in the user guide."
         )
         super().__init__(modules, repeats=True)
 

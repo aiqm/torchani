@@ -7,7 +7,7 @@ from torchani.nn import AtomicContainer
 from torchani.aev import AEVComputer
 from torchani.electro import ChargeNormalizer
 from torchani.tuples import EnergiesAtomicCharges
-from torchani.neighbors import NeighborData
+from torchani.neighbors import Neighbors
 from torchani.potentials.core import Potential
 
 
@@ -22,7 +22,7 @@ class NNPotential(Potential):
     def forward(
         self,
         elem_idxs: Tensor,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         atomic: bool = False,
@@ -35,7 +35,7 @@ class NNPotential(Potential):
     def ensemble_values(
         self,
         elem_idxs: Tensor,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         atomic: bool = False,
@@ -69,7 +69,7 @@ class MergedChargesNNPotential(NNPotential):
     def energies_and_atomic_charges(
         self,
         elem_idxs: Tensor,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         total_charge: int = 0,
@@ -104,7 +104,7 @@ class SeparateChargesNNPotential(NNPotential):
     def energies_and_atomic_charges(
         self,
         elem_idxs: Tensor,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         total_charge: int = 0,

@@ -1,6 +1,4 @@
-r"""
-Locations used by TorchANI to cache various resources
-"""
+r"""Locations used by TorchANI to cache various resources"""
 
 import typing as tp
 import os

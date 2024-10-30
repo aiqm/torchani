@@ -132,7 +132,7 @@ AtomicMakerArg = tp.Union[
 ]
 
 
-def parse_network_maker(module: AtomicMakerArg) -> AtomicMaker:
+def _parse_network_maker(module: AtomicMakerArg) -> AtomicMaker:
     if module in ["ani1x", "ani1ccx"]:
         return make_1x_network
     elif module == "ani2x":

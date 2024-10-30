@@ -81,7 +81,7 @@ CutoffArg = tp.Union[
 ]
 
 
-def parse_cutoff_fn(
+def _parse_cutoff_fn(
     cutoff_fn: CutoffArg,
     global_cutoff: tp.Optional[Cutoff] = None,
 ) -> Cutoff:

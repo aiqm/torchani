@@ -9,7 +9,7 @@ from torch import Tensor
 from torch.jit import Final
 
 from torchani.units import ANGSTROM_TO_BOHR
-from torchani.neighbors import NeighborData
+from torchani.neighbors import Neighbors
 from torchani.cutoffs import CutoffArg
 from torchani.constants import XTB_REPULSION_ALPHA, XTB_REPULSION_YEFF
 from torchani.potentials.core import PairPotential
@@ -68,7 +68,7 @@ class RepulsionXTB(PairPotential):
     def pair_energies(
         self,
         element_idxs: Tensor,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
     ) -> Tensor:
         # Clamp distances to prevent singularities when dividing by zero
         distances = torch.clamp(neighbors.distances, min=1e-7)

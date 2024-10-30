@@ -6,13 +6,13 @@ from torch import Tensor
 from torch.jit import Final
 import typing_extensions as tpx
 
-from torchani.tuples import SpeciesAEV, NeighborData
+from torchani.tuples import SpeciesAEV, Neighbors
 from torchani.utils import cumsum_from_zero
-from torchani.neighbors import parse_neighborlist, NeighborlistArg, AllPairs
+from torchani.neighbors import _parse_neighborlist, NeighborlistArg, AllPairs
 from torchani.cutoffs import CutoffArg
 from torchani.aev._terms import (
-    parse_angular_term,
-    parse_radial_term,
+    _parse_angular_term,
+    _parse_radial_term,
     StandardAngular,
     StandardRadial,
     RadialTermArg,
@@ -34,6 +34,16 @@ def jit_unused_if_no_cuaev():
 
 
 class AEVComputer(torch.nn.Module):
+    r"""Base class for modules that compute AEVs
+
+    Can be used to compute local atomic features (atomic environment vectors or AEVs),
+    given a batch of molecules.
+
+    Args:
+        radial_terms: The module used to compute the radial part of the AEVs
+        angular_terms: The module used to compute the angular part of the AEVs
+        num_species: The number of elements this module supports
+    """
     num_species: Final[int]
     num_species_pairs: Final[int]
 
@@ -65,8 +75,8 @@ class AEVComputer(torch.nn.Module):
         self.register_buffer("triu_index", self._calculate_triu_index(num_species))
 
         # Terms
-        self.radial_terms = parse_radial_term(radial_terms)
-        self.angular_terms = parse_angular_term(angular_terms)
+        self.radial_terms = _parse_radial_term(radial_terms)
+        self.angular_terms = _parse_angular_term(angular_terms)
         if not (self.angular_terms.cutoff_fn.is_same(self.radial_terms.cutoff_fn)):
             raise ValueError("Cutoff fn must be the same for angular and radial terms")
         if self.angular_terms.cutoff > self.radial_terms.cutoff:
@@ -77,7 +87,7 @@ class AEVComputer(torch.nn.Module):
         self._cuaev_cutoff_fn = self.angular_terms.cutoff_fn._cuaev_name
 
         # Neighborlist
-        self.neighborlist = parse_neighborlist(neighborlist)
+        self.neighborlist = _parse_neighborlist(neighborlist)
 
         # Lenghts
         self.radial_sublength = self.radial_terms.sublength
@@ -190,35 +200,16 @@ class AEVComputer(torch.nn.Module):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> Tensor:
-        r"""
-        Compute Atomic Environment Vectors (AEVs) for a batch of molecules
-
-        Warning:
-            The input element indices must be 0, 1, 2, 3, ..., not atomic numbers. Check
-            ``SpeciesConverter`` if you want atomic numbers.
+        r"""Compute AEVs for a batch of molecules
 
         Arguments:
-            elem_idxs: Integer tensor with element indices of the system.
-                Shape ``(molecules, atoms)``.
-            coords: Float tensor with coordinates of the system. Shape
-                ``(molecules, atoms, 3)``. ANI models assume Angstrom units.
-            cell: Float tensor. Shape ``(3, 3)``. Only use if
-                performing PBC calculations. Holds the unit cell vectors of the system
-                in its *rows*. ANI models Angstrom units. For example:
-            pbc: Bool tensor. Shape ``(3,)``. Only use if performing PBC calculations.
-                Determines whether PBC is enabled in the x, y, or z directions.
+            elem_idxs: |elem_idxs|
+            coords: |coords|
+            cell: |cell|
+            pbc: |pbc|
 
         Returns:
-            AEVs of shape ``(molecules, atoms, self.aev_length)``. The last dim depends
-            on the angular and radial terms used.
-
-        An example input for the cell tensor is:
-
-                    .. code-block:: python
-
-                        tensor([[x1, y1, z1],
-                                [x2, y2, z2],
-                                [x3, y3, z3]])
+            |aevs|
         """
         if not torch.jit.is_scripting():
             if isinstance(elem_idxs, tuple):
@@ -252,21 +243,17 @@ class AEVComputer(torch.nn.Module):
     def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
         _coords: tp.Optional[Tensor] = None,
     ) -> Tensor:
-        r"""
-        Compute the AEVs from the output of a neighborlist calculation
+        r"""Compute the AEVs from the result of a neighborlist calculation
 
         Args:
-            elem_idxs: Integer tensor with element indices of the system.
-                Shape ``(molecules, atoms)``.
-            neighbors (Neighbors): ``NamedTuple`` that contains the output of a
-                ``Neighborlist`` calculation.
+            elem_idxs: |elem_idxs|
+            neighbors: |neighbors|
 
         Returns:
-            AEVs, of shape ``(molecules, atoms, self.aev_length)``. The last dim depends
-            on the angular and radial terms used.
+            |aevs|
         """
         if self._strategy == "pyaev":
             return self._compute_pyaev(elem_idxs, neighbors)
@@ -278,7 +265,7 @@ class AEVComputer(torch.nn.Module):
     def _compute_pyaev(
         self,
         element_idxs: Tensor,  # shape (C, A)
-        neighbors: NeighborData,
+        neighbors: Neighbors,
     ) -> Tensor:
         if self._print_aev_branch:
             print("Executing branch: pyAEV")
@@ -470,7 +457,7 @@ class AEVComputer(torch.nn.Module):
         self,
         species: Tensor,
         coordinates: Tensor,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
     ) -> Tensor:
         self._prepare_cuaev_execution(species, "half-neighborlist")
         # The coordinates will not be used in forward calculation, but it's
@@ -594,11 +581,9 @@ class AEVComputer(torch.nn.Module):
         angular_num_shifts: int = 4,
         angular_num_angle_sections: int = 8,
     ) -> tpx.Self:
-        r"""
-        Build an AEVComputer with standard radial and angular terms directly
+        r"""Build an AEVComputer with standard radial and angular terms
 
-        This function uses the same defaults as those in the `torchani.models.ANI1x`
-        model.
+        Uses the same defaults as those in the `torchani.models.ANI1x` model.
 
         Args:
             cutoff_fn (`Cutoff` object | "cosine" | "smooth"): The cutoff
@@ -650,11 +635,9 @@ class AEVComputer(torch.nn.Module):
         angular_num_shifts: int = 8,
         angular_num_angle_sections: int = 4,
     ) -> tpx.Self:
-        r"""
-        Build an AEVComputer with standard radial and angular terms directly
+        r"""Build an AEVComputer with standard radial and angular terms
 
-        This function uses the same defaults as those in the `torchani.models.ANI2x`
-        model.
+        Uses the same defaults as those in the `torchani.models.ANI2x` model.
 
         Args:
             cutoff_fn (`Cutoff` object | "cosine" | "smooth"): The cutoff
@@ -703,10 +686,9 @@ class AEVComputer(torch.nn.Module):
         cutoff_fn: CutoffArg = "cosine",
         neighborlist: NeighborlistArg = "all_pairs",
     ) -> tpx.Self:
-        r"""
-        Build an AEVComputer with standard radial and angular terms from constants
+        r"""Build an AEVComputer with standard radial and angular terms, from constants
 
-        For reference consult the equations in the original `ANI article`_
+        For more detail consult the equations in the original `ANI article`_.
 
         Note:
             This constructor is not recommended, it is kept for backward compatibility.
@@ -761,5 +743,6 @@ class AEVComputer(torch.nn.Module):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesAEV:
+        r""":meta private:"""
         elem_idxs, coords = input_
         return SpeciesAEV(elem_idxs, self(elem_idxs, coords, cell, pbc))

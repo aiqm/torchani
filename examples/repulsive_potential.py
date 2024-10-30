@@ -1,6 +1,6 @@
-"""
-Using the XTB-Repulsion module
-==============================
+r"""
+Using xTB repulsion
+===================
 
 TorchANI can use semiempirical XTB repulsion to improve the description of the
 potential energy surface at short distances

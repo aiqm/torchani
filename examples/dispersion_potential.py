@@ -1,6 +1,6 @@
-"""
-Using the Dispersion D3 module
-==============================
+r"""
+Using DFT-D3 dispersion
+=======================
 
 TorchANI can use a built-in implementation of D3 dispersion for dispersion
 interactions. This is meant for using with functionals that are parametrized

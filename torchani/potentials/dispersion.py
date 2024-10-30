@@ -19,7 +19,7 @@ from torchani.constants import (
 )
 from torchani.units import ANGSTROM_TO_BOHR
 from torchani.cutoffs import CutoffArg
-from torchani.neighbors import NeighborData
+from torchani.neighbors import Neighbors
 from torchani.potentials.core import PairPotential
 from torchani.paths import resources_dir
 
@@ -237,7 +237,7 @@ class TwoBodyDispersionD3(PairPotential):
     def pair_energies(
         self,
         element_idxs: Tensor,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
     ) -> Tensor:
         # Internally this module works in AU
         distances = self.ANGSTROM_TO_BOHR * neighbors.distances

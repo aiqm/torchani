@@ -1,10 +1,10 @@
 r"""
-Train An ANI-Style Neural Network Potential
-===========================================
+Training an ANI network using a custom script
+=============================================
 
 This example shows how to use TorchANI to train a neural network potential.
 """
-# To begin with, let's first import the modules and setup devices we will use:
+# %% To begin with, let's first import the modules and setup devices we will use:
 import math
 from pathlib import Path
 

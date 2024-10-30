@@ -9,15 +9,15 @@ import torch
 from torch import Tensor
 
 from torchani.utils import map_to_central, cumsum_from_zero, fast_masked_select
-from torchani.tuples import NeighborData
+from torchani.tuples import Neighbors
 
 
 def rescreen(
     cutoff: float,
-    neighbors: NeighborData,
-) -> NeighborData:
+    neighbors: Neighbors,
+) -> Neighbors:
     closer_indices = (neighbors.distances <= cutoff).nonzero().flatten()
-    return NeighborData(
+    return Neighbors(
         indices=neighbors.indices.index_select(1, closer_indices),
         distances=neighbors.distances.index_select(0, closer_indices),
         diff_vectors=neighbors.diff_vectors.index_select(0, closer_indices),
@@ -53,8 +53,8 @@ class Neighborlist(torch.nn.Module):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
         return_shift_values: bool = False,
-    ) -> NeighborData:
-        return NeighborData(torch.empty(0), torch.empty(0), torch.empty(0))
+    ) -> Neighbors:
+        return Neighbors(torch.empty(0), torch.empty(0), torch.empty(0))
 
     @torch.jit.export
     def compute_bounding_cell(
@@ -89,7 +89,7 @@ class Neighborlist(torch.nn.Module):
         mask: Tensor,
         shift_values: tp.Optional[Tensor] = None,
         return_shift_values: bool = False,
-    ) -> NeighborData:
+    ) -> Neighbors:
         # passing an infinite cutoff will only work for non pbc conditions
         # (shift values must be None)
         #
@@ -159,7 +159,7 @@ class Neighborlist(torch.nn.Module):
         self.diff_vectors = screened_diff_vectors
 
         screened_distances = screened_diff_vectors.norm(2, -1)
-        return NeighborData(
+        return Neighbors(
             indices=screened_neighbor_indices,
             distances=screened_distances,
             diff_vectors=screened_diff_vectors,
@@ -175,7 +175,7 @@ class Neighborlist(torch.nn.Module):
         shift_values: Tensor,
         cutoff: float = 0.0,
         input_needs_screening: bool = True,
-    ) -> NeighborData:
+    ) -> Neighbors:
         # Check shapes
         num_pairs = neighbor_idxs.shape[1]
         assert neighbor_idxs.shape == (2, num_pairs)
@@ -205,7 +205,7 @@ class Neighborlist(torch.nn.Module):
         # Store diff vectors internally for calculation of stress
         self.diff_vectors = diff_vectors
 
-        return NeighborData(
+        return Neighbors(
             indices=neighbor_idxs, distances=distances, diff_vectors=diff_vectors
         )
 
@@ -228,7 +228,7 @@ class AllPairs(Neighborlist):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
         return_shift_values: bool = False,
-    ) -> NeighborData:
+    ) -> Neighbors:
         r"""
         Args:
             species: The elements
@@ -406,7 +406,7 @@ class CellList(Neighborlist):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
         return_shift_values: bool = False,
-    ) -> NeighborData:
+    ) -> Neighbors:
         r"""
         Args:
             species: The elements
@@ -873,7 +873,7 @@ class VerletCellList(CellList):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
         return_shift_values: bool = False,
-    ) -> NeighborData:
+    ) -> Neighbors:
         assert cutoff >= 0.0, "Cutoff must be a positive float"
         assert coordinates.shape[0] == 1, "Cell list doesn't support batches"
         displaced_coordinates, cell, pbc = self._validate_and_parse_cell_and_pbc(
@@ -972,7 +972,7 @@ NeighborlistArg = tp.Union[
 ]
 
 
-def parse_neighborlist(neighborlist: NeighborlistArg = "base") -> Neighborlist:
+def _parse_neighborlist(neighborlist: NeighborlistArg = "base") -> Neighborlist:
     r""":meta private:"""
     if neighborlist == "all_pairs":
         neighborlist = AllPairs()
@@ -997,7 +997,7 @@ def _call_global_cell_list(
     cell: tp.Optional[Tensor] = None,
     pbc: tp.Optional[Tensor] = None,
     return_shift_values: bool = False,
-) -> NeighborData:
+) -> Neighbors:
     out = _global_cell_list(species, coordinates, cutoff, cell, pbc)
     # Reset state
     _global_cell_list.diff_vectors = torch.empty(0)

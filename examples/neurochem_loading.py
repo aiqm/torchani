@@ -1,6 +1,6 @@
-"""
-Constructing a Model From NeuroChem Files
-=========================================
+r"""
+Constructing a TorchANI model from NeuroChem files
+==================================================
 
 This tutorial illustrates how to manually load model from `NeuroChem files`_.
 

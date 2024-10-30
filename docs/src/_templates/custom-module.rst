@@ -58,6 +58,7 @@
 {%- if fullname == "torchani" %}
 .. toctree::
     :hidden:
+    :caption: API reference
 
     self
 {%- endif %}

@@ -52,23 +52,21 @@ def _make_idx_list(
 
 
 class BmmEnsemble(AtomicContainer):
-    r"""
-    The inference-optimized analogue of an Ensemble, functions just like a
-    single ANINetworks.
+    r"""The inference-optimized analogue of an `ANIEnsemble`
 
-    This class fuses all networks of an ensemble that correspond to the same
-    element into one single BmmAtomicNetwork.
+    Combines all networks of an ensemble that correspond to the same element into a
+    single `BmmAtomicNetwork`.
 
     As an example, if an ensemble has 8 models, and each model has 1 H-network
     and 1 C-network, all 8 H-networks and all 8 C-networks are fused into two
     networks: one single H-BmmAtomicNework and one single C-BmmAtomicNetwork.
 
-    The resulting networks perform the same calculations but with less CUDA
-    kernel calls, since iteration over the ensemble models in python is not
-    needed, so this avoids the interpreter overhead.
+    The resulting networks perform the same calculations but faster, and using less CUDA
+    kernel calls, since the conversion avoids iteration over the ensemble members in
+    python.
 
-    The BmmAtomicNetwork modules consist of sequences of BmmLinear, which
-    perform Batched Matrix Multiplication (BMM).
+    The `BmmAtomicNetwork` modules consist of sequences of `BmmLinear`, which perform
+    batched matrix multiplication (BMM).
     """
 
     def __init__(self, ensemble: AtomicContainer):
@@ -129,16 +127,12 @@ class BmmEnsemble(AtomicContainer):
 
 
 class BmmAtomicNetwork(torch.nn.Module):
-    r"""
-    The inference-optimized analogue of an atomic networks.
+    r"""The inference-optimized analogue of an `AtomicNetwork`
 
-    BmmAtomicNetwork instances are "combined" atomic networks for a single
-    element, each of which holds all networks associated with all the members
-    of an ensemble. They consist on a sequence of BmmLinear layers with
-    interleaved activation functions.
-
-    BmmAtomicNetworks are used by BmmEnsemble to operate like a single ANINetworks
-    and avoid iterating over the ensemble members.
+    `BmmAtomicNetwork` instances are "combined" networks for a single element. Each
+    combined network holds all networks associated with all the members of an ensemble.
+    They consist on a sequence of `BmmLinear` layers with interleaved activation
+    functions (simple multi-layer perceptrons or MLPs).
     """
 
     def __init__(self, networks: tp.Sequence[AtomicNetwork]):
@@ -348,14 +342,11 @@ class MNPNetworks(AtomicContainer):
 
         # pyMNP
         if not self._use_mnp:
-            if not torch.jit.is_scripting():
-                return PythonMNP.apply(
-                    aevs,
-                    self._idx_list,
-                    self.atomics,
-                    self._stream_list,
-                )
-            raise RuntimeError("JIT-MNPNetworks only supported with use_mnp=True")
+            if torch.jit.is_scripting():
+                raise RuntimeError("JIT-MNPNetworks only supported with use_mnp=True")
+            return PythonMNP.apply(
+                aevs, self._idx_list, self.atomics, self._stream_list
+            )
         # cppMNP
         return self._cpp_mnp(aevs)
 

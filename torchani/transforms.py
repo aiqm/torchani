@@ -1,7 +1,7 @@
-r"""
-Transforms are composable functions that can be  applied to properties when
-training or batching a dataset. They are modelled after ``torchvision``
-transforms. An example of their usage:
+r"""Composable functions that modify to properties when training or batching a dataset.
+
+The API for the transforms in this module is modelled after the ``torchvision``
+transforms, which you may be familiar with already. An example of their usage:
 
 .. code-block:: python
 
@@ -41,8 +41,7 @@ from torchani.potentials import (
 
 
 class Transform(torch.nn.Module):
-    r"""
-    Base class for callables that modify mappings of molecule properties
+    r"""Base class for callables that modify mappings of molecule properties
 
     If the callable supports only a limited number of atomic numbers (in a given order)
     then the atomic_numbers tensor should be defined, otherwise it should be None
@@ -108,10 +107,9 @@ class SubtractEnergyAndForce(Transform):
 
 
 class SubtractRepulsionXTB(Transform):
-    r"""
-    Subtract xTB repulsion energies (and optionally forces)
+    r"""Subtract xTB repulsion energies (and optionally forces)
 
-    Takes same arguments as :class:`torchani.potentials.RepulsionXTB`
+    Takes same arguments as `torchani.potentials.RepulsionXTB`
     """
 
     def __init__(
@@ -131,10 +129,9 @@ class SubtractRepulsionXTB(Transform):
 
 
 class SubtractTwoBodyDispersionD3(Transform):
-    r"""
-    Subtract two-body DFT-D3 energies (and optionally forces)
+    r"""Subtract two-body DFT-D3 energies (and optionally forces)
 
-    Takes same arguments as :class:`torchani.potentials.TwoBodyDispersionD3`
+    Takes same arguments as `torchani.potentials.TwoBodyDispersionD3`
     """
 
     def __init__(
@@ -155,10 +152,9 @@ class SubtractTwoBodyDispersionD3(Transform):
 
 
 class SubtractSAE(Transform):
-    r"""
-    Subtract self atomic energies.
+    r"""Subtract self atomic energies.
 
-    Takes same arguments as :class:`torchani.potentials.EnergyAdder`
+    Takes same arguments as `torchani.potentials.EnergyAdder`
     """
 
     def __init__(self, *args, **kwargs):
@@ -173,12 +169,13 @@ class SubtractSAE(Transform):
 
 
 class AtomicNumbersToIndices(Transform):
-    r"""
-    Converts atomic numbers to indices
+    r"""Converts atomic numbers to indices
 
     Note:
         Provided for backwards compatibility, if added to a transform pipeline, it
         should in general be the *last* transform.
+    Args:
+        symbols: |symbols|
     """
 
     def __init__(self, symbols: tp.Sequence[str]):
@@ -195,10 +192,10 @@ class AtomicNumbersToIndices(Transform):
 
 # Similar to torchvision.transforms.Compose, but JIT scriptable
 class Compose(Transform):
-    r"""Composes several :class:`torchani.transforms.Transform` into a pipeline
+    r"""Compose several `torchani.transforms.Transform` into a pipeline
 
     Args:
-        transforms: Sequence of transforms to compose.
+        transforms: Transforms to compose, in order.
     """
 
     def __init__(self, transforms: tp.Sequence[Transform]):

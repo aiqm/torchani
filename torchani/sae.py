@@ -1,6 +1,7 @@
-r"""
-Functions to calculate self atomic energies (SAEs) via linear regression. It is
-recommended to use GSAEs (Ground State Atomic Energies) for new models instead.
+r"""Functions to calculate self atomic energies (SAEs) via linear regression.
+
+It is recommended to use GSAEs (Ground State Atomic Energies) for new models instead, so
+that models predict atomization energies.
 """
 
 import typing as tp

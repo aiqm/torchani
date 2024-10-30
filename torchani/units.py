@@ -1,5 +1,4 @@
-r"""
-Unit conversion factors used in TorchANI
+r"""Unit conversion factors used in TorchANI
 
 The ANI models work internally in Hartrees (energy), Angstroms (distance), and AMU
 (mass).

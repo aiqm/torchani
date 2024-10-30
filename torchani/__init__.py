@@ -4,11 +4,11 @@ Most of the functions and classes of the library are accessible from their speci
 modules. For convenience, some useful classes are accessible *also* from here. These
 are:
 
-- `ANI`
-- `SpeciesConverter`
-- `AEVComputer`
-- `ANINetworks`
-- `EnergyAdder`
+- `torchani.assembly.ANI`
+- `torchani.nn.SpeciesConverter`
+- `torchani.aev.AEVComputer`
+- `tochani.nn.ANINetworks`
+- `torchani.potentials.EnergyAdder`
 """
 
 import os

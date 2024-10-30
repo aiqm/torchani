@@ -61,6 +61,7 @@ class AtomicContainer(torch.nn.Module):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesEnergies:
+        r""":meta private"""
         warnings.warn(".call is a deprecated API and will be removed in the future")
         species, aevs = species_aevs
         return SpeciesEnergies(species, self(species, aevs))
@@ -88,6 +89,11 @@ class AtomicNetwork(torch.nn.Module):
         self.activation = parse_activation(activation)
         self.has_biases = bias
 
+    def forward(self, features: Tensor) -> Tensor:
+        for layer in self.layers:
+            features = self.activation(layer(features))
+        return self.final_layer(features)
+
     def extra_repr(self) -> str:
         r""":meta private:"""
         layer_dims = [layer.in_features for layer in self.layers]
@@ -98,11 +104,6 @@ class AtomicNetwork(torch.nn.Module):
             f"bias={self.has_biases},",
         ]
         return " \n".join(parts)
-
-    def forward(self, features: Tensor) -> Tensor:
-        for layer in self.layers:
-            features = self.activation(layer(features))
-        return self.final_layer(features)
 
 
 def parse_activation(module: tp.Union[str, torch.nn.Module]) -> torch.nn.Module:

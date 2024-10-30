@@ -4,9 +4,9 @@ import torch
 from torch import Tensor
 
 from torchani.constants import ATOMIC_NUMBER, PERIODIC_TABLE
-from torchani.cutoffs import parse_cutoff_fn, CutoffArg
+from torchani.cutoffs import _parse_cutoff_fn, CutoffArg
 from torchani.neighbors import (
-    NeighborData,
+    Neighbors,
     _call_global_cell_list,
     _call_global_all_pairs,
 )
@@ -81,7 +81,7 @@ class Potential(torch.nn.Module):
                     elem_idxs, coordinates, self.cutoff, cell, pbc
                 )
         else:
-            neighbors = NeighborData(torch.empty(0), torch.empty(0), torch.empty(0))
+            neighbors = Neighbors(torch.empty(0), torch.empty(0), torch.empty(0))
         return self(
             elem_idxs,
             neighbors,
@@ -92,7 +92,7 @@ class Potential(torch.nn.Module):
     def forward(
         self,
         elem_idxs: Tensor,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         atomic: bool = False,
@@ -115,12 +115,12 @@ class PairPotential(Potential):
         cutoff_fn: CutoffArg = "dummy",
     ):
         super().__init__(cutoff=cutoff, symbols=symbols)
-        self.cutoff_fn = parse_cutoff_fn(cutoff_fn)
+        self.cutoff_fn = _parse_cutoff_fn(cutoff_fn)
 
     def pair_energies(
         self,
         elem_idxs: Tensor,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
     ) -> Tensor:
         r"""
         Return energy of all pairs of neighbors, disregarding the cutoff fn envelope
@@ -135,7 +135,7 @@ class PairPotential(Potential):
     def _pair_energies_wrapper(
         self,
         elem_idxs: Tensor,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
         ghost_flags: tp.Optional[Tensor] = None,
     ) -> Tensor:
         # Input validation
@@ -161,7 +161,7 @@ class PairPotential(Potential):
     def forward(
         self,
         elem_idxs: Tensor,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
         _coordinates: tp.Optional[Tensor] = None,
         ghost_flags: tp.Optional[Tensor] = None,
         atomic: bool = False,

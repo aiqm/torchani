@@ -8,6 +8,41 @@ _version = ".".join(torchani.__version__.split(".")[:2])
 version = f"{_version} (dev)" if "dev" in torchani.__version__ else _version
 release = torchani.__version__
 
+# Common substitutions used throughout the docs
+rst_epilog = """
+..  |coords| replace:: A float tensor with the coordinates of a batch of molecules.
+    Shape is ``(molecules, atoms, 3)``. All ANI models use Angstrom.
+
+..  |symbols| replace:: A `tuple` or `list` of strings that are valid chemical symbols.
+    (case sensitive).
+
+..  |atomic_nums| replace:: An int tensor that stores the atomic numbers of a batch of
+    molecules. Shape is ``(molecules, 3)``.
+
+..  |elem_idxs| replace:: An int `torch.Tensor` that stores the element indices of a
+    batch of molecules, (for example after conversion with
+    `torchani.nn.SpeciesConverter`). Shape is ``(molecules, 3)``.
+
+..  |pbc| replace:: A bool tensor that stores whether periodic boundary conditions (PBC)
+    are enabled for the x, y, z directions. ``pbc=torch.tensor([True, True, True])``
+    fully enables PBC and ``pbc=None`` (or ``torch.tensor([False, False, False])``).
+    fully disables it.
+
+..  |neighbors| replace:: `NamedTuple` that contains the output of a
+    `torchani.neighbors.Neighborlist` calculation.
+
+..  |distances| replace:: A float tensor with the distances between pairs of atoms in a
+    system. Shape is ``(pairs,)``.
+
+..  |cell| replace:: A float tensor with unit cell vectors in its *rows*. Only
+    use this with PBC. A cell with dimensions 10, 15, 20 (in Angstrom for all ANI
+    models) in the x, y, and z directions is given by ``torch.tensor([[10., 0., 0.],[0.,
+    15., 0.],[0., 0., 20.]])``.
+
+..  |aevs| replace:: A float tensor with local atomic features (AEVs). Shape is
+    ``(molecules, atoms, num-aev-features)``.
+"""
+
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",  # For autogen python module docs
@@ -38,6 +73,7 @@ sphinx_gallery_conf = {
     "gallery_dirs": "examples_autogen",
     "filename_pattern": r".*\.py",
     "show_signature": False,
+    "min_reported_time": 3600,  # Don't report computation times
 }
 # intersphinx
 intersphinx_mapping = {

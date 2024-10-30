@@ -1,19 +1,20 @@
-r"""
-This submodule contains classes that represent atomic neural networks
-(`AtomicNetwork`), and groups of element-specific neural networks (`ANINetworks`,
-`ANIEnsemble`), and perform different reduction operations over them.
+r"""Classes that represent atomic (and groups of element-specific) neural networks
+
+The most important classes in this module are `AtomicNetwork`, which represents a
+callable that computes scalars from local atomic features, `ANINetworks`, and
+`ANIEnsemble`, which collect groups of element-specific neural networks and perform
+different reduction operations over them.
 
 It also contains useful factory methods to instantiate neural networks for different
 elements.
 
-Inference-optimized versions of :class:`ANIEnsemble` and ``AtomicNetwork``, recommended
-for single-point calculations of single molecules, molecular dynamics and geometry
-optimizations, are also provided.
+Inference-optimized versions of `ANIEnsemble` and `AtomicNetwork`, recommended for
+calculations of single molecules, molecular dynamics and geometry optimizations, are
+also provided.
 """
 
 from torchani.nn._core import AtomicNetwork, AtomicContainer, parse_activation
 from torchani.nn._factories import (
-    parse_network_maker,
     AtomicMaker,
     AtomicMakerArg,
     make_1x_network,
@@ -37,7 +38,6 @@ __all__ = [
     # Factories
     "AtomicMaker",
     "AtomicMakerArg",
-    "parse_network_maker",
     "make_1x_network",
     "make_2x_network",
     "make_ala_network",

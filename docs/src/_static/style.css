@@ -1,12 +1,6 @@
-/* Remove sphinx-gallery note, timings, and download links */
-p.sphx-glr-timing,
-p.sphx-glr-signature,
-div.sphx-glr-download-link-note,
-div.sphx-glr-footer {
-    visibility: hidden;
-    height: 0;
-    margin: 0;
-    padding: 0;
+/* Remove sphinx-gallery note at the top of generated rst files*/
+div.sphx-glr-download-link-note {
+    display: none;
 }
 
 /* Main index page overview cards */
@@ -18,6 +12,7 @@ div.sphx-glr-footer {
   margin-top: 10px;
 }
 
+/* Show inverted colors in svg icons, if using a dark theme */
 html[data-theme=dark] .sd-card img[src*='.svg'] {
   filter: invert(0.82) brightness(0.8) contrast(1.2);
 }

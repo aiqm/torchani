@@ -51,17 +51,16 @@ from torchani.tuples import (
     ForceMagnitudes,
 )
 from torchani.annotations import StressKind
-from torchani.neighbors import parse_neighborlist, NeighborlistArg
-from torchani.cutoffs import parse_cutoff_fn, Cutoff, CutoffArg
+from torchani.neighbors import _parse_neighborlist, NeighborlistArg
+from torchani.cutoffs import _parse_cutoff_fn, Cutoff, CutoffArg
 from torchani.aev import (
     AEVComputer,
     StandardAngular,
     StandardRadial,
     RadialTermArg,
     AngularTermArg,
-    parse_radial_term,
-    parse_angular_term,
 )
+from torchani.aev._terms import _parse_radial_term, _parse_angular_term
 from torchani.nn import (
     SpeciesConverter,
     AtomicContainer,
@@ -70,10 +69,10 @@ from torchani.nn import (
     AtomicNetwork,
     AtomicMakerArg,
     AtomicMaker,
-    parse_network_maker,
     parse_activation,
 )
-from torchani.neighbors import rescreen, NeighborData
+from torchani.nn._factories import _parse_network_maker
+from torchani.neighbors import rescreen, Neighbors
 from torchani.electro import ChargeNormalizer
 from torchani.nn._internal import _ZeroANINetworks
 from torchani.constants import GSAES
@@ -381,7 +380,7 @@ class ANI(torch.nn.Module):
         elem_idxs: Tensor,
         coords: Tensor,
         previous_cutoff: float,
-        neighbors: NeighborData,
+        neighbors: Neighbors,
         atomic: bool,
         ensemble_values: bool,
     ) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
@@ -823,8 +822,8 @@ class _AEVComputerWrapper:
     ) -> None:
         self.cls = cls
         self.cutoff_fn = cutoff_fn
-        self.radial_terms = parse_radial_term(radial_terms)
-        self.angular_terms = parse_angular_term(angular_terms)
+        self.radial_terms = _parse_radial_term(radial_terms)
+        self.angular_terms = _parse_angular_term(angular_terms)
         if self.angular_terms.cutoff > self.radial_terms.cutoff:
             raise ValueError("Angular cutoff must be smaller or equal to radial cutoff")
         if self.angular_terms.cutoff <= 0 or self.radial_terms.cutoff <= 0:
@@ -851,7 +850,7 @@ class Assembler:
     ) -> None:
         self._global_cutoff_fn: tp.Optional[Cutoff] = None
 
-        self._neighborlist = parse_neighborlist(neighborlist)
+        self._neighborlist = _parse_neighborlist(neighborlist)
         self._aevcomp: tp.Optional[_AEVComputerWrapper] = None
         self._pair_potentials: tp.List[_PairPotentialWrapper] = []
 
@@ -979,13 +978,13 @@ class Assembler:
         self,
         neighborlist: NeighborlistArg,
     ) -> None:
-        self._neighborlist = parse_neighborlist(neighborlist)
+        self._neighborlist = _parse_neighborlist(neighborlist)
 
     def set_global_cutoff_fn(
         self,
         cutoff_fn: CutoffArg,
     ) -> None:
-        self._global_cutoff_fn = parse_cutoff_fn(cutoff_fn)
+        self._global_cutoff_fn = _parse_cutoff_fn(cutoff_fn)
 
     def add_pair_potential(
         self,
@@ -1020,7 +1019,7 @@ class Assembler:
                 "AEVComputer not set. Call 'set_aev_computer' before assembly"
             )
 
-        feat_cutoff_fn = parse_cutoff_fn(
+        feat_cutoff_fn = _parse_cutoff_fn(
             self._aevcomp.cutoff_fn, self._global_cutoff_fn
         )
 
@@ -1078,7 +1077,7 @@ class Assembler:
                     builder(
                         symbols=self.symbols,
                         cutoff=pot.cutoff,
-                        cutoff_fn=parse_cutoff_fn(
+                        cutoff_fn=_parse_cutoff_fn(
                             pot.cutoff_fn, self._global_cutoff_fn
                         ),
                         **pot_kwargs,
@@ -1158,7 +1157,7 @@ def simple_ani(
         strategy=strategy,
     )
     network_factory = functools.partial(
-        parse_network_maker(network_factory),
+        _parse_network_maker(network_factory),
         activation=parse_activation(activation),
         bias=bias,
     )
@@ -1248,14 +1247,14 @@ def simple_aniq(
         if dummy_energies:
             raise ValueError("Can't output dummy energies with merged charge network")
         network_factory = functools.partial(
-            parse_network_maker(network_factory),
+            _parse_network_maker(network_factory),
             out_dim=2,
             activation=parse_activation(activation),
             bias=bias,
         )
     else:
         network_factory = functools.partial(
-            parse_network_maker(network_factory),
+            _parse_network_maker(network_factory),
             out_dim=1,
             activation=parse_activation(activation),
             bias=bias,

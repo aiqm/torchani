@@ -8,7 +8,7 @@ import torchani
 from torchani.utils import SYMBOLS_1X
 from torchani._testing import ANITestCase, expand
 from torchani.potentials import RepulsionXTB
-from torchani.neighbors import NeighborData
+from torchani.neighbors import Neighbors
 
 
 @expand()
@@ -19,7 +19,7 @@ class TestRepulsion(ANITestCase):
     def testPotential(self):
         element_idxs = torch.tensor([[0, 0]], device=self.device)
         energies = torch.tensor([0.0], device=self.device)
-        neighbors = NeighborData(
+        neighbors = Neighbors(
             indices=torch.tensor([[0], [1]], device=self.device),
             distances=torch.tensor([3.5], device=self.device),
             diff_vectors=torch.tensor([[3.5, 0, 0]], device=self.device),
@@ -69,7 +69,7 @@ class TestRepulsion(ANITestCase):
     def testLongDistances(self):
         element_idxs = torch.tensor([[0, 0]], device=self.device)
         energies = torch.tensor([0.0], device=self.device)
-        neighbors = NeighborData(
+        neighbors = Neighbors(
             indices=torch.tensor([[0], [1]], device=self.device),
             distances=torch.tensor([6.0], device=self.device),
             diff_vectors=torch.tensor([[6.0, 0, 0]], device=self.device),

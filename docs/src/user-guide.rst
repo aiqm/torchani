@@ -52,6 +52,6 @@ forces in Hartree/Angstrom.
 .. toctree::
     :maxdepth: 1
     :titlesonly:
-    :caption: Loading legacy NeuroChem files
+    :caption: Working with legacy NeuroChem files
 
     examples_autogen/neurochem_loading.rst

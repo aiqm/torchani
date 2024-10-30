@@ -5,7 +5,7 @@ import torch
 from torch import Tensor
 import typing_extensions as tpx
 
-from torchani.cutoffs import parse_cutoff_fn, CutoffArg
+from torchani.cutoffs import _parse_cutoff_fn, CutoffArg
 from torchani.utils import linspace
 
 
@@ -19,7 +19,7 @@ class _Term(torch.nn.Module):
         cutoff_fn: CutoffArg = "cosine",
     ) -> None:
         super().__init__()
-        self.cutoff_fn = parse_cutoff_fn(cutoff_fn)
+        self.cutoff_fn = _parse_cutoff_fn(cutoff_fn)
         self.cutoff = cutoff
         self.sublength = 0
 
@@ -35,7 +35,7 @@ class RadialTerm(_Term):
 
 
 class StandardRadial(RadialTerm):
-    """Compute the radial sub-AEV terms of the center atom given neighbors
+    r"""Compute the radial sub-AEV terms given a sequence of atom pair distances
 
     This correspond to equation (3) in the `ANI paper`_. This function just
     computes the terms. The sum in the equation is not computed.  The input
@@ -70,7 +70,7 @@ class StandardRadial(RadialTerm):
     ):
         super().__init__(cutoff=cutoff, cutoff_fn=cutoff_fn)
         dtype = torch.float
-        self.cutoff_fn = parse_cutoff_fn(cutoff_fn)
+        self.cutoff_fn = _parse_cutoff_fn(cutoff_fn)
         self.register_buffer("eta", torch.tensor([eta], dtype=dtype))
         self.register_buffer("shifts", torch.tensor(shifts, dtype=dtype))
         self.sublength = len(shifts)
@@ -88,13 +88,21 @@ class StandardRadial(RadialTerm):
         return " \n".join(parts)
 
     def forward(self, distances: Tensor) -> Tensor:
+        r"""Computes the terms given a tensor of distances
+
+        Args:
+            distances: |distances|
+
+        Returns:
+            A float `torch.Tensor` of shape ``(pairs, shifts)``. Note that by
+            design this function does *not* sum over shifts.
+        """
         distances = distances.view(-1, 1)
         # Note that in the equation in the paper there is no 0.25
         # coefficient, but in NeuroChem there is such a coefficient.
         # We choose to be consistent with NeuroChem instead of the paper here.
         ret = 0.25 * torch.exp(-self.eta * (distances - self.shifts.view(1, -1)) ** 2)
-        ret *= self.cutoff_fn(distances, self.cutoff)
-        return ret  # shape(P, radial_sublenght)
+        return ret * self.cutoff_fn(distances, self.cutoff)  # shape (pairs, shifts)
 
     @classmethod
     def cover_linearly(
@@ -105,11 +113,11 @@ class StandardRadial(RadialTerm):
         num_shifts: int = 16,
         cutoff_fn: CutoffArg = "cosine",
     ) -> tpx.Self:
-        r"""Builds angular terms by linearly subdividing space radially up to a cutoff
+        r"""Builds angular terms by linearly dividing space radially up to a cutoff
 
-        "num_shifts" are created, starting from "start" until "cutoff",
-        excluding it. This the way angular and radial shifts were originally
-        created in the `ANI paper`_.
+        ``num_shifts`` are created, starting from ``start`` until ``cutoff``, excluding
+        it. This is the way angular and radial shifts were originally created in the
+        `ANI paper`_.
 
         .. _ANI paper:
             http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
@@ -257,12 +265,11 @@ class StandardAngular(AngularTerm):
         num_angle_sections: int = 4,
         cutoff_fn: CutoffArg = "cosine",
     ) -> tpx.Self:
-        r"""Builds angular terms by linearly subdividing space in the angular
-        dimension and in the radial one up to a cutoff
+        r"""Builds angular terms by dividing angular and radial coords, up to a cutoff
 
-        "num_shifts" are created, starting from "start" until "cutoff",
-        excluding it. "num_angle_sections" does a similar thing for the angles.
-        This is the way angular and radial shifts were originally created in
+        The divisions are equally spaced "num_shifts" are created, starting from "start"
+        until "cutoff", excluding it. "num_angle_sections" does a similar thing for the
+        angles. This is the way angular and radial shifts were originally created in
         ANI.
         """
         shifts = linspace(start, cutoff, num_shifts)
@@ -320,7 +327,7 @@ AngularTermArg = tp.Union[_Models, AngularTerm]
 RadialTermArg = tp.Union[_Models, RadialTerm]
 
 
-def parse_angular_term(angular_term: AngularTermArg) -> AngularTerm:
+def _parse_angular_term(angular_term: AngularTermArg) -> AngularTerm:
     if angular_term in ["ani1x", "ani1ccx"]:
         angular_term = StandardAngular.like_1x()
     elif angular_term == "ani2x":
@@ -330,7 +337,7 @@ def parse_angular_term(angular_term: AngularTermArg) -> AngularTerm:
     return tp.cast(AngularTerm, angular_term)
 
 
-def parse_radial_term(radial_term: RadialTermArg) -> RadialTerm:
+def _parse_radial_term(radial_term: RadialTermArg) -> RadialTerm:
     if radial_term in ["ani1x", "ani1ccx"]:
         radial_term = StandardRadial.like_1x()
     elif radial_term == "ani2x":

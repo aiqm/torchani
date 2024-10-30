@@ -1,6 +1,6 @@
-"""
-Computing Vibrational Frequencies Using Analytical Hessian
-==========================================================
+r"""
+Computing vibrational frequencies
+=================================
 
 TorchANI is able to use ASE interface to do structure optimization and
 vibration analysis, but the Hessian in ASE's vibration analysis is computed

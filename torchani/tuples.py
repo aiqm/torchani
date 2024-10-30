@@ -1,6 +1,4 @@
-r"""
-:class:`typing.NamedTuple` used as outputs of some TorchANI functions.
-"""
+r"""`typing.NamedTuple` used as outputs of some TorchANI functions."""
 
 import typing as tp
 
@@ -43,7 +41,7 @@ class VibAnalysis(tp.NamedTuple):
     rmasses: Tensor
 
 
-class NeighborData(tp.NamedTuple):
+class Neighbors(tp.NamedTuple):
     r"""
     Output data of the neighborlist module
     """

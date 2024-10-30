@@ -1,6 +1,6 @@
 r"""
-Modifying and Customizing the AEV
-=================================
+Extending AEVs with custom terms
+================================
 
 TorchANI allows for modification and customization of the AEV features
 """

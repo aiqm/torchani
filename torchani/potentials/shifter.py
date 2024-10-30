@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 
 from torchani.constants import GSAES
-from torchani.neighbors import NeighborData
+from torchani.neighbors import Neighbors
 from torchani.potentials.core import Potential
 
 
@@ -48,7 +48,7 @@ class EnergyAdder(Potential):
     def forward(
         self,
         elem_idxs: Tensor,
-        neighbors: NeighborData = NeighborData(
+        neighbors: Neighbors = Neighbors(
             torch.empty(0), torch.empty(0), torch.empty(0)
         ),
         _coordinates: tp.Optional[Tensor] = None,

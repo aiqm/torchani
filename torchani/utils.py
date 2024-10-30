@@ -1,6 +1,4 @@
-r"""
-Misc utilities used throughout the TorchANI code.
-"""
+r"""Misc utilities used throughout the code"""
 
 from collections import OrderedDict
 import typing as tp
@@ -83,9 +81,7 @@ def download_and_extract(
     verbose: bool = False,
 ) -> None:
     dest_dir.mkdir(exist_ok=True)
-    r"""
-    Download and extract a .tar.gz or .zip file form a given url
-    """
+    r"""Download and extract a .tar.gz or .zip file form a given url"""
     # Download
     dest_path = dest_dir / file_name
     if verbose:
@@ -104,10 +100,12 @@ def download_and_extract(
 
 # Pure python linspace to ensure reproducibility
 def linspace(start: float, stop: float, steps: int) -> tp.Tuple[float, ...]:
+    r""":meta private:"""
     return tuple(start + ((stop - start) / steps) * j for j in range(steps))
 
 
 def check_openmp_threads(verbose: bool = True) -> None:
+    r""":meta private:"""
     if "OMP_NUM_THREADS" not in os.environ:
         warnings.warn(
             "OMP_NUM_THREADS not set."
@@ -125,10 +123,9 @@ def check_openmp_threads(verbose: bool = True) -> None:
 
 
 def species_to_formula(species: NDArray[np.str_]) -> tp.List[str]:
-    r"""
-    Transform an array of strings into the corresponding formulas
+    r"""Transform a numpy array of strings into the corresponding formulas
 
-    Take a ``numpy`` ndarray of shape ``(molecules, atoms)`` with chemical symbols and
+    Take a `numpy` ndarray of shape ``(molecules, atoms)`` with chemical symbols and
     return a list of formulas with ``len(formulas) = molecules``. Sorting of symbols
     within formulas is alphabetical e.g. ``[['H', 'H', 'C']] -> ['CH2']``
     """
@@ -148,24 +145,20 @@ def species_to_formula(species: NDArray[np.str_]) -> tp.List[str]:
 
 
 def cumsum_from_zero(input_: Tensor) -> Tensor:
-    r"""
-    Cumulative sum just like ``torch``'s ``torch.cumsum``, but with the first element of
-    the result being zero
-    """
+    r"""Cumulative sum just like `torch.cumsum`, but result starts from 0"""
     cumsum = torch.zeros_like(input_)
     torch.cumsum(input_[:-1], dim=0, out=cumsum[1:])
     return cumsum
 
 
 def nonzero_in_chunks(tensor: Tensor, chunk_size: int = 2**31 - 1):
-    r"""
-    Flatten a tensor and applies nonzero in chunks of a given size
+    r"""Flatten a tensor and applies nonzero in chunks of a given size
 
     Workaround for a limitation in PyTorch's nonzero function, which fails with a
-    ``RuntimeError`` when applied to tensors with more than ``INT_MAX`` elements.
+    `RuntimeError` when applied to tensors with more than ``INT_MAX`` elements.
 
-    The issue is documented in PyTorch's GitHub repository:
-    https://github.com/pytorch/pytorch/issues/51871
+    The issue is documented in
+    `PyTorch's repo <https://github.com/pytorch/pytorch/issues/51871>`_.
     """
     tensor = tensor.view(-1)
     num_splits = math.ceil(tensor.numel() / chunk_size)
@@ -258,22 +251,13 @@ def map_to_central(coordinates: Tensor, cell: Tensor, pbc: Tensor) -> Tensor:
     r"""
     Map atoms outside the unit cell into the cell using PBC
 
-    Arguments:
-
-        coordinates (:class:`torch.Tensor`): Float Tensor,  ``(molecules, atoms, 3)``.
-        cell (:class:`torch.Tensor`): Float tensor of shape ``(3, 3)`` of the three
-            vectors defining unit cell:
-
-            .. code-block:: python
-
-                tensor([[x1, y1, z1],
-                        [x2, y2, z2],
-                        [x3, y3, z3]])
-        pbc (:class:`torch.Tensor`): Boolean tensor of shape ``(3,)`` size 3 storing
-            whether PBC is enabled for each direction.
+    Args:
+        coordinates: |coords|
+        cell: |cell|
+        pbc: |pbc|
 
     Returns:
-        :class:`torch.Tensor`: Coords of atoms mapped to the unit cell.
+        Tensor of coordinates of atoms mapped to the unit cell.
     """
     # Step 1: convert coordinates from standard cartesian coordinate to unit
     # cell coordinates
@@ -287,15 +271,15 @@ def map_to_central(coordinates: Tensor, cell: Tensor, pbc: Tensor) -> Tensor:
 
 
 class EnergyShifter(torch.nn.Module):
-    """
-    Helper class for adding and subtracting self atomic energies
+    """Helper class for adding and subtracting self atomic energies
 
-    Note: This class is *legacy*. Please use
-    :class:`torchani.potentials.EnergyAddder`, which has equivalent
-    functionality instead of this class.
+    Note:
+        This class is part of the *Legacy API*. Please use
+        `torchani.potentials.EnergyAddder`, which has equivalent functionality instead
+        of this class.
 
-    Arguments:
-        self_energies (:class:`collections.abc.Sequence`): Sequence of floating
+    Args:
+        self_energies (`list`[`float`]): Sequence of floating
             numbers for the self energy of each atom type. The numbers should
             be in order, i.e. ``self_energies[i]`` should be atom type ``i``.
         fit_intercept (bool): Whether to calculate the intercept during the LSTSQ
@@ -341,12 +325,11 @@ class EnergyShifter(torch.nn.Module):
         Padding atoms are automatically excluded.
 
         Arguments:
-            species (:class:`torch.Tensor`): Long tensor in shape
+            species: Long tensor in shape
                 ``(conformations, atoms)``.
 
         Returns:
-            :class:`torch.Tensor`: 1D vector in shape ``(conformations,)``
-            for molecular self energies.
+            1D tensor of shape ``(molecules,)`` with molecular self-energies
         """
         sae = self._atomic_saes(species).sum(dim=1)
         if self.fit_intercept:
@@ -388,13 +371,11 @@ class _NumbersConvert(torch.nn.Module):
 class AtomicNumbersToChemicalSymbols(_NumbersConvert):
     r"""Converts tensor of atomic numbers to list of chemical symbols
 
-    On initialization, it is optional to supply the class with a :class:'dict'
-    containing custom numbers and symbols. This is not necessary, as the class
-    is provided ATOMIC_NUMBER by default. Otherwise, the class should be
-    supplied with a :class:`list` (or in general
-    :class:`collections.abc.Sequence`) of :class:`str`.The returned instance is
-    a callable object, which can be called an arbituary tensor of the supported
-    atomic numbers that is converted into a list of strings.
+    On initialization, it is optional to supply the class with a `dict` containing
+    custom numbers and symbols. This is not necessary, as the class is provided
+    ATOMIC_NUMBER by default. Otherwise, the class should be supplied with a `list` of
+    `str`.The returned instance is a callable object, which can be called an arbituary
+    tensor of the supported atomic numbers that is converted into a list of strings.
 
     Usage example:
     .. code-block:: python
@@ -421,11 +402,10 @@ class AtomicNumbersToChemicalSymbols(_NumbersConvert):
 class IntsToChemicalSymbols(_NumbersConvert):
     r"""Convert tensor or list of integers to list[str] of chemical symbols
 
-    On initialization, it is optional to supply the class with a :class:'dict'
+    On initialization, it is optional to supply the class with a `dict`
     containing custom numbers and symbols. This is not necessary, as the class
     is provided ATOMIC_NUMBER by default. Otherwise, the class should be
-    supplied with a :class:`list` (or in general
-    :class:`collections.abc.Sequence`) of :class:`str`. The returned instance
+    supplied with a `list` of `str`. The returned instance
     is a callable object, which can be called with an arbitrary list or tensor
     of the supported indicies that is converted into a list of strings.
 
@@ -479,10 +459,10 @@ class ChemicalSymbolsToAtomicNumbers(_ChemicalSymbolsConvert):
     r"""Converts a sequence of chemical symbols into a tensor of atomic numbers
 
 
-    On initialization, it is optional to supply the class with a :class:'dict'
+    On initialization, it is optional to supply the class with a `dict`
     containing custom numbers and symbols. This is not necessary, as the
     class is provided ATOMIC_NUMBER by default.
-    Output is a tensor of dtype :class:`torch.long`. Usage example:
+    Output is a tensor of dtype `torch.long`. Usage example:
 
     .. code-block:: python
 
@@ -503,10 +483,10 @@ class ChemicalSymbolsToAtomicNumbers(_ChemicalSymbolsConvert):
 class ChemicalSymbolsToInts(_ChemicalSymbolsConvert):
     r"""Helper that can be called to convert chemical symbol string to integers
 
-    On initialization the class should be supplied with a :class:`list` of
-    :class:`str`. The returned instance is a callable object, which can be
+    On initialization the class should be supplied with a `list` of
+    `str`. The returned instance is a callable object, which can be
     called with an arbitrary list of the supported species that is converted
-    into a tensor of dtype :class:`torch.long`. Usage example:
+    into a tensor of dtype `torch.long`. Usage example:
 
     .. code-block:: python
 
@@ -539,11 +519,6 @@ class AtomicNumbersToMasses(torch.nn.Module):
     r"""Convert a tensor of atomic numbers into a tensor of atomic masses
 
 
-    Arguments:
-        atomic_numbers (:class:`torch.Tensor`): tensor with atomic numbers
-
-    Returns:
-        :class:`torch.Tensor`: with, atomic masses, with the same shape as the input.
     """
 
     atomic_masses: Tensor
@@ -564,6 +539,14 @@ class AtomicNumbersToMasses(torch.nn.Module):
         )
 
     def forward(self, atomic_numbers: Tensor) -> Tensor:
+        r"""Convert a sequence of atomic nubmers to masses
+
+        Args:
+            atomic_numbers: |atomic_nums|
+
+        Returns:
+            Tensor of atomic masses, with the same shape as the input.
+        """
         assert not (atomic_numbers == 0).any(), "Input should be atomic numbers"
         mask = atomic_numbers == -1
         masses = self.atomic_masses[atomic_numbers]
@@ -590,18 +573,20 @@ get_atomic_masses = atomic_numbers_to_masses
 
 
 def sort_by_element(it: tp.Iterable[str]) -> tp.Tuple[str, ...]:
-    r"""
-    Sort an iterable of chemical symbols by element
-    """
+    r"""Sort an iterable of chemical symbols by element
+
+    Args:
+        it: Iterable of chemical symbols
+    Returns:
+        Sorted tuple of chemical symbols
+    """,
     if isinstance(it, str):
         it = (it,)
     return tuple(sorted(it, key=lambda x: ATOMIC_NUMBER[x]))
 
 
 def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
-    r"""
-    Merge multiple single-model state dicts into a state dict for an ensemble of models
-    """
+    r"""Merge multiple single-model state dicts into an ensemble state dict"""
     if any(not path.is_file() for path in paths):
         raise ValueError("All passed paths must be existing files with state dicts")
     merged_dict: tp.Dict[str, Tensor] = {}
