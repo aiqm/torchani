@@ -30,7 +30,7 @@ download_model_parameters()
 
 ###############################################################################
 # Now let's read constants from constant file and construct AEV computer,
-# The sae's and construct an EnergyShifter,
+# The sae's and construct a SelfEnergy potential,
 # and the networks to construct an ensemble
 const_file = Path(root, "ani-1x_8x", "rHCNO-5.2R_16-3.5A_a4-8.params")
 aev_computer, symbols = load_aev_computer_and_symbols(const_file)

@@ -34,7 +34,7 @@ from torchani.nn import SpeciesConverter
 from torchani.constants import ATOMIC_NUMBER
 from torchani.potentials import (
     Potential,
-    EnergyAdder,
+    SelfEnergy,
     RepulsionXTB,
     TwoBodyDispersionD3,
 )
@@ -154,13 +154,13 @@ class SubtractTwoBodyDispersionD3(Transform):
 class SubtractSAE(Transform):
     r"""Subtract self atomic energies.
 
-    Takes same arguments as `torchani.potentials.EnergyAdder`
+    Takes same arguments as `torchani.potentials.SelfEnergy`
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__()
         self._transform = SubtractEnergyAndForce(
-            EnergyAdder(*args, **kwargs), subtract_force=False
+            SelfEnergy(*args, **kwargs), subtract_force=False
         )
         self.atomic_numbers = self._transform.atomic_numbers
 

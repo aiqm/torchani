@@ -186,7 +186,7 @@ If you want even *more* flexibility, we recommend you create your own
             self.neighborlist = torchani.neighbors.AllPairs(...)
             self.aevc = torchani.aev.AEVComputer(...)
             self.nn = torchani.nn.ANINetworks(...)
-            self.adder = torchani.potentials.EnergyAdder(...)
+            self.adder = torchani.potentials.SelfEnergy(...)
 
         def forward(self, atomic_nums, coords, cell, pbc):
             idxs = self.converter(atomic_nums)

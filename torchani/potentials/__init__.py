@@ -25,13 +25,13 @@ from torchani.potentials.nnp import (
 )
 from torchani.potentials.repulsion import RepulsionXTB
 from torchani.potentials.dispersion import TwoBodyDispersionD3
-from torchani.potentials.shifter import EnergyAdder
+from torchani.potentials.shifter import SelfEnergy
 
 
 __all__ = [
     "Potential",
     "PairPotential",
-    "EnergyAdder",
+    "SelfEnergy",
     "RepulsionXTB",
     "TwoBodyDispersionD3",
     "NNPotential",

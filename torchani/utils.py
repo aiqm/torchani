@@ -5,8 +5,6 @@ import typing as tp
 import tarfile
 import zipfile
 import math
-import os
-import warnings
 import itertools
 from pathlib import Path
 from collections import Counter
@@ -18,7 +16,7 @@ from torch import Tensor
 import torch.utils.data
 
 from torchani.annotations import Device
-from torchani.constants import MASS, ATOMIC_NUMBER, PERIODIC_TABLE, GSAES
+from torchani.constants import MASS, ATOMIC_NUMBER, PERIODIC_TABLE
 from torchani.tuples import SpeciesEnergies
 
 
@@ -34,7 +32,6 @@ __all__ = [
     "get_atomic_masses",
     "PERIODIC_TABLE",
     "ATOMIC_NUMBER",
-    "TightCELU",
 ]
 
 # The second dimension of these keys can be assumed to be "number of atoms"
@@ -55,8 +52,10 @@ ATOMIC_KEYS = (
     "atomic_polarizabilities",
 )
 
-SYMBOLS_1X = ("H", "C", "N", "O")
-SYMBOLS_2X = ("H", "C", "N", "O", "S", "F", "Cl")
+#: Elements used in the ANI-1x and ANI-1ccx models, in order
+SYMBOLS_1X: tp.Tuple[str, ...] = ("H", "C", "N", "O")
+#: Elements used in the ANI-2x model, in order
+SYMBOLS_2X: tp.Tuple[str, ...] = ("H", "C", "N", "O", "S", "F", "Cl")
 
 
 PADDING = {
@@ -67,11 +66,6 @@ PADDING = {
     "forces": 0.0,
     "energies": 0.0,
 }
-
-
-class TightCELU(torch.nn.Module):
-    def forward(self, x: Tensor) -> Tensor:
-        return torch.nn.functional.celu(x, alpha=0.1)
 
 
 def download_and_extract(
@@ -102,24 +96,6 @@ def download_and_extract(
 def linspace(start: float, stop: float, steps: int) -> tp.Tuple[float, ...]:
     r""":meta private:"""
     return tuple(start + ((stop - start) / steps) * j for j in range(steps))
-
-
-def check_openmp_threads(verbose: bool = True) -> None:
-    r""":meta private:"""
-    if "OMP_NUM_THREADS" not in os.environ:
-        warnings.warn(
-            "OMP_NUM_THREADS not set."
-            " MNP works best if OMP_NUM_THREADS >= 2."
-            " You can set this variable by running 'export OMP_NUM_THREADS=4')"
-            " or 'export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK' if using slurm"
-        )
-        return
-
-    num_threads = int(os.environ["OMP_NUM_THREADS"])
-    if num_threads <= 0:
-        raise RuntimeError(f"OMP_NUM_THREADS set to an incorrect value: {num_threads}")
-    if verbose:
-        print(f"OMP_NUM_THREADS set to: {num_threads}")
 
 
 def species_to_formula(species: NDArray[np.str_]) -> tp.List[str]:
@@ -268,86 +244,6 @@ def map_to_central(coordinates: Tensor, cell: Tensor, pbc: Tensor) -> Tensor:
     # Step 3: convert from cell coordinates back to standard cartesian
     # coordinate
     return torch.matmul(coordinates_cell, cell)
-
-
-class EnergyShifter(torch.nn.Module):
-    """Helper class for adding and subtracting self atomic energies
-
-    Note:
-        This class is part of the *Legacy API*. Please use
-        `torchani.potentials.EnergyAddder`, which has equivalent functionality instead
-        of this class.
-
-    Args:
-        self_energies (`list`[`float`]): Sequence of floating
-            numbers for the self energy of each atom type. The numbers should
-            be in order, i.e. ``self_energies[i]`` should be atom type ``i``.
-        fit_intercept (bool): Whether to calculate the intercept during the LSTSQ
-            fit. The intercept will also be taken into account to shift energies.
-    """
-
-    self_energies: Tensor
-
-    def __init__(self, self_energies, fit_intercept=False):
-        super().__init__()
-
-        self.fit_intercept = fit_intercept
-        if self_energies is not None:
-            self_energies = torch.tensor(self_energies, dtype=torch.double)
-
-        self.register_buffer("self_energies", self_energies)
-
-    @staticmethod
-    def _sorted_gsaes(
-        elements: tp.Sequence[str], functional: str, basis_set: str
-    ) -> tp.List[float]:
-        gsaes = GSAES[f"{functional.lower()}-{basis_set.lower()}"]
-        return [gsaes[e] for e in elements]
-
-    @classmethod
-    def with_gsaes(cls, elements: tp.Sequence[str], functional: str, basis_set: str):
-        r"""Instantiate an EnergyShifter with a given set of GSAES"""
-        return cls(
-            cls._sorted_gsaes(elements, functional, basis_set), fit_intercept=False
-        )
-
-    @torch.jit.export
-    def _atomic_saes(self, species: Tensor) -> Tensor:
-        # Compute atomic self energies for a set of species.
-        self_atomic_energies = self.self_energies[species]
-        self_atomic_energies = self_atomic_energies.masked_fill(species == -1, 0.0)
-        return self_atomic_energies
-
-    @torch.jit.export
-    def sae(self, species: Tensor) -> Tensor:
-        """Compute self energies for molecules.
-
-        Padding atoms are automatically excluded.
-
-        Arguments:
-            species: Long tensor in shape
-                ``(conformations, atoms)``.
-
-        Returns:
-            1D tensor of shape ``(molecules,)`` with molecular self-energies
-        """
-        sae = self._atomic_saes(species).sum(dim=1)
-        if self.fit_intercept:
-            sae += self.self_energies[-1]
-        return sae
-
-    def forward(
-        self,
-        species_energies: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-    ) -> SpeciesEnergies:
-        species, energies = species_energies
-        sae = self._atomic_saes(species).sum(dim=1)
-
-        if self.fit_intercept:
-            sae += self.self_energies[-1]
-        return SpeciesEnergies(species, energies + sae)
 
 
 class _NumbersConvert(torch.nn.Module):
@@ -573,7 +469,7 @@ get_atomic_masses = atomic_numbers_to_masses
 
 
 def sort_by_element(it: tp.Iterable[str]) -> tp.Tuple[str, ...]:
-    r"""Sort an iterable of chemical symbols by element
+    r"""Sort an iterable of chemical symbols by atomic number
 
     Args:
         it: Iterable of chemical symbols
@@ -615,3 +511,70 @@ def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
                     raise ValueError(f"Incompatible values for key {k}")
         merged_dict.update(state_dict)
     return OrderedDict(merged_dict)
+
+
+# Legacy API
+class EnergyShifter(torch.nn.Module):
+    """Helper class for adding and subtracting self atomic energies
+
+    Note:
+        This class is part of the *Legacy API*. Please use
+        `torchani.potentials.EnergyAddder`, which has equivalent functionality instead
+        of this class.
+
+    Args:
+        self_energies (`list`[`float`]): Sequence of floating
+            numbers for the self energy of each atom type. The numbers should
+            be in order, i.e. ``self_energies[i]`` should be atom type ``i``.
+        fit_intercept (bool): Whether to calculate the intercept during the LSTSQ
+            fit. The intercept will also be taken into account to shift energies.
+    """
+
+    self_energies: Tensor
+
+    def __init__(self, self_energies, fit_intercept=False):
+        super().__init__()
+
+        self.fit_intercept = fit_intercept
+        if self_energies is not None:
+            self_energies = torch.tensor(self_energies, dtype=torch.double)
+
+        self.register_buffer("self_energies", self_energies)
+
+    @torch.jit.export
+    def _atomic_saes(self, species: Tensor) -> Tensor:
+        # Compute atomic self energies for a set of species.
+        self_atomic_energies = self.self_energies[species]
+        self_atomic_energies = self_atomic_energies.masked_fill(species == -1, 0.0)
+        return self_atomic_energies
+
+    @torch.jit.export
+    def sae(self, species: Tensor) -> Tensor:
+        """Compute self energies for molecules.
+
+        Padding atoms are automatically excluded.
+
+        Arguments:
+            species: Long tensor in shape
+                ``(conformations, atoms)``.
+
+        Returns:
+            1D tensor of shape ``(molecules,)`` with molecular self-energies
+        """
+        sae = self._atomic_saes(species).sum(dim=1)
+        if self.fit_intercept:
+            sae += self.self_energies[-1]
+        return sae
+
+    def forward(
+        self,
+        species_energies: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> SpeciesEnergies:
+        species, energies = species_energies
+        sae = self._atomic_saes(species).sum(dim=1)
+
+        if self.fit_intercept:
+            sae += self.self_energies[-1]
+        return SpeciesEnergies(species, energies + sae)

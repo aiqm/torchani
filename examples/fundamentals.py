@@ -6,7 +6,7 @@ The TorchANI library provides a set of pre-trained models that can be used direc
 provided models are subclasses of class `torchani.ANI`.
 
 It also contains classes such as `torchani.AEVComputer`, `torchani.ANINetworks`, and
-`torchani.EnergyAdder` that can be combined to compute molecular energies from the
+`torchani.SelfEnergy` that can be combined to compute molecular energies from the
 cartesian coordinates of molecules, and it includes tools to deal with ANI datasets in
 the submodule `torchani.datasets`.
 

@@ -8,7 +8,7 @@ from torchani.neighbors import Neighbors
 from torchani.potentials.core import Potential
 
 
-class EnergyAdder(Potential):
+class SelfEnergy(Potential):
     """Adds constant atomic energies that depend only on the atom types
 
     Arguments:
@@ -42,7 +42,7 @@ class EnergyAdder(Potential):
 
     @classmethod
     def with_gsaes(cls, elements: tp.Sequence[str], functional: str, basis_set: str):
-        r"""Instantiate an EnergyAdder with ground state atomic energies"""
+        r"""Instantiate an SelfEnergy with ground state atomic energies"""
         return cls(elements, cls._sorted_gsaes(elements, functional, basis_set))
 
     def forward(

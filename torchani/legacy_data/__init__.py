@@ -126,8 +126,8 @@ import numpy
 import torch
 from tqdm import tqdm
 
-from torchani import utils
 from torchani.legacy_data._pyanitools import anidataloader
+from torchani.utils import PERIODIC_TABLE, EnergyShifter
 
 verbose = True
 
@@ -184,7 +184,7 @@ class Transformations:
         reenterable_iterable, species_order=("H", "C", "N", "O", "F", "S", "Cl")
     ):
         if species_order == "periodic_table":
-            species_order = utils.PERIODIC_TABLE
+            species_order = PERIODIC_TABLE
         idx = {k: i for i, k in enumerate(species_order)}
 
         def reenterable_iterable_factory():
@@ -205,7 +205,7 @@ class Transformations:
     ):
         intercept = 0.0
         shape_inference = False
-        if isinstance(self_energies, utils.EnergyShifter):
+        if isinstance(self_energies, EnergyShifter):
             shape_inference = True
             shifter = self_energies
             self_energies = {}
@@ -227,7 +227,7 @@ class Transformations:
 
             # sort based on the order in periodic table by default
             if species_order is None:
-                species_order = utils.PERIODIC_TABLE
+                species_order = PERIODIC_TABLE
 
             species = sorted(list(counts.keys()), key=lambda x: species_order.index(x))
 

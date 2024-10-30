@@ -8,7 +8,7 @@ are:
 - `torchani.nn.SpeciesConverter`
 - `torchani.aev.AEVComputer`
 - `tochani.nn.ANINetworks`
-- `torchani.potentials.EnergyAdder`
+- `torchani.potentials.SelfEnergy`
 """
 
 import os
@@ -47,7 +47,7 @@ from torchani.nn import ANIModel, Ensemble
 # Dump into global namespace for convenience
 from torchani.aev import AEVComputer
 from torchani.nn import ANINetworks, ANIEnsemble, SpeciesConverter
-from torchani.potentials import EnergyAdder
+from torchani.potentials import SelfEnergy
 
 # NOTE: ase is an optional dependency so don't import here
 
@@ -87,7 +87,7 @@ __all__ = [
     "AEVComputer",
     "ANINetworks",
     "ANIEnsemble",
-    "EnergyAdder",
+    "SelfEnergy",
 ]
 
 # Disable TF32 since it catastrophically degrades accuracy of ANI models

@@ -18,18 +18,22 @@ import shutil
 from collections import OrderedDict
 
 import torch
-from torch import Tensor
 import typing_extensions as tpx
 
 from torchani.paths import neurochem_dir
 from torchani.assembly import ANI
 from torchani.aev import AEVComputer
-from torchani.nn import ANINetworks, ANIEnsemble, AtomicNetwork, AtomicContainer
+from torchani.nn import (
+    ANINetworks,
+    ANIEnsemble,
+    AtomicNetwork,
+    AtomicContainer,
+    TightCELU,
+)
 from torchani.cutoffs import CutoffArg
 from torchani.neighbors import NeighborlistArg
-from torchani.potentials import EnergyAdder
-from torchani.tuples import SpeciesEnergies
-from torchani.utils import TightCELU, download_and_extract
+from torchani.potentials import SelfEnergy
+from torchani.utils import download_and_extract
 from torchani.annotations import StrPath
 
 
@@ -154,9 +158,12 @@ def load_aev_constants_and_symbols(
     return constants, symbols
 
 
-def load_energy_adder(filename: StrPath) -> EnergyAdder:
-    """Returns an object of :class:`EnergyAdder` with self energies from
-    NeuroChem sae file"""
+def load_sae(filename: StrPath) -> SelfEnergy:
+    r"""Returns a self-energy calculator, with self energies from NeuroChem sae file
+
+    The constructed object is of class `torchani.potentials.SelfEnergy`, and can
+    be used to calculate the self atomic energies of a group of molecules.
+    """
     _self_energies = []
     _symbols = []
     with open(Path(filename).resolve(), mode="rt", encoding="utf-8") as f:
@@ -169,30 +176,7 @@ def load_energy_adder(filename: StrPath) -> EnergyAdder:
             _self_energies.append((idx, energy))
     self_energies = [e for _, e in sorted(_self_energies)]
     symbols = [s for _, s in sorted(_symbols)]
-    return EnergyAdder(symbols, self_energies)
-
-
-class EnergyShifter(torch.nn.Module):
-    def __init__(self, adder: EnergyAdder) -> None:
-        super().__init__()
-        self._adder = adder
-
-    def forward(
-        self,
-        species_energies: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-    ) -> SpeciesEnergies:
-        species, energies = species_energies
-        self_energies = self._adder(species)
-        return SpeciesEnergies(species, energies + self_energies)
-
-
-# This function is kept for backwards compatibility
-def load_sae(filename: StrPath):
-    """Returns an object of :class:`EnergyShifter` with self energies from
-    NeuroChem sae file"""
-    return EnergyShifter(load_energy_adder(filename))
+    return SelfEnergy(symbols, self_energies)
 
 
 def _get_activation(activation_index: int) -> torch.nn.Module:
@@ -410,12 +394,12 @@ def modules_from_info(
     info: NeurochemInfo,
     model_index: tp.Optional[int] = None,
     strategy: str = "pyaev",
-) -> tp.Tuple[AEVComputer, AtomicContainer, EnergyAdder, tp.Sequence[str]]:
+) -> tp.Tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
     aev_computer, symbols = load_aev_computer_and_symbols(
         info.const,
         strategy=strategy,
     )
-    adder = load_energy_adder(info.sae)
+    adder = load_sae(info.sae)
 
     neural_networks: AtomicContainer
     if model_index is None:
@@ -441,7 +425,7 @@ def modules_from_model_name(
     model_name: str,
     model_index: tp.Optional[int] = None,
     strategy: str = "pyaev",
-) -> tp.Tuple[AEVComputer, AtomicContainer, EnergyAdder, tp.Sequence[str]]:
+) -> tp.Tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
     r"""
     Creates the necessary modules to generate a pre-trained ANI model, parsing the data
     from legacy neurochem files, which are fetched according to the model name.
@@ -458,7 +442,7 @@ def modules_from_info_file(
     info_file: Path,
     model_index: tp.Optional[int] = None,
     strategy: str = "pyaev",
-) -> tp.Tuple[AEVComputer, AtomicContainer, EnergyAdder, tp.Sequence[str]]:
+) -> tp.Tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
     r"""
     Creates the necessary modules to generate a pre-trained ANI model, parsing the data
     from legacy neurochem files.
@@ -482,12 +466,12 @@ def load_model_from_info_file(
         model_index,
         strategy=strategy,
     )
-    aev_computer, neural_networks, energy_adder, symbols = components
+    aev_computer, neural_networks, self_energy_potential, symbols = components
     return ANI(
         symbols,
         aev_computer,
         neural_networks,
-        energy_adder,
+        self_energy_potential,
         periodic_table_index=periodic_table_index,
     )
 
@@ -503,12 +487,12 @@ def load_model_from_name(
         model_index,
         strategy=strategy,
     )
-    aev_computer, neural_networks, energy_adder, symbols = components
+    aev_computer, neural_networks, self_energy_potential, symbols = components
     return ANI(
         symbols,
         aev_computer,
         neural_networks,
-        energy_adder,
+        self_energy_potential,
         periodic_table_index=periodic_table_index,
     )
 
@@ -517,7 +501,6 @@ __all__ = [
     "load_aev_constants_and_symbols",
     "load_aev_computer_and_symbols",
     "load_sae",
-    "load_energy_adder",
     "load_member",
     "load_ensemble",
     "load_model_from_name",

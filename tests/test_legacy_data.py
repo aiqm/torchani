@@ -1,10 +1,13 @@
+# type: ignore
+# This file tests legacy API, it should not by type checked
 import unittest
 import os
 
 import torch
 
-import torchani
 from torchani._testing import TestCase
+from torchani.utils import EnergyShifter
+from torchani import legacy_data
 
 batch_size = 256
 path = os.path.dirname(os.path.realpath(__file__))
@@ -20,7 +23,7 @@ ani1x_sae_dict = {
 class TestData(TestCase):
     def testTensorShape(self):
         ds = (
-            torchani.legacy_data.load(dataset_path)
+            legacy_data.load(dataset_path)
             .subtract_self_energies(ani1x_sae_dict)
             .species_to_indices()
             .shuffle()
@@ -41,7 +44,7 @@ class TestData(TestCase):
 
     def testNoUnnecessaryPadding(self):
         ds = (
-            torchani.legacy_data.load(dataset_path)
+            legacy_data.load(dataset_path)
             .subtract_self_energies(ani1x_sae_dict)
             .species_to_indices()
             .shuffle()
@@ -55,7 +58,7 @@ class TestData(TestCase):
 
     def testReEnter(self):
         # make sure that a dataset can be iterated multiple times
-        ds = torchani.legacy_data.load(dataset_path)
+        ds = legacy_data.load(dataset_path)
         for _ in ds:
             pass
         entered = False
@@ -114,8 +117,8 @@ class TestData(TestCase):
         self.assertTrue(entered)
 
     def testShapeInference(self):
-        shifter = torchani.EnergyShifter(None)
-        ds = torchani.legacy_data.load(dataset_path).subtract_self_energies(shifter)
+        shifter = EnergyShifter(None)
+        ds = legacy_data.load(dataset_path).subtract_self_energies(shifter)
         len(ds)
         ds = ds.species_to_indices()
         len(ds)
@@ -125,8 +128,8 @@ class TestData(TestCase):
         len(ds)
 
     def testSAE(self):
-        shifter = torchani.EnergyShifter(None)
-        torchani.legacy_data.load(dataset_path).subtract_self_energies(shifter)
+        shifter = EnergyShifter(None)
+        legacy_data.load(dataset_path).subtract_self_energies(shifter)
         true_self_energies = torch.tensor(
             [
                 -19.354171758844188,
@@ -139,9 +142,9 @@ class TestData(TestCase):
         self.assertEqual(true_self_energies, shifter.self_energies)
 
     def testDataloader(self):
-        shifter = torchani.EnergyShifter(None)
+        shifter = EnergyShifter(None)
         dataset = list(
-            torchani.legacy_data.load(dataset_path)
+            legacy_data.load(dataset_path)
             .subtract_self_energies(shifter)
             .species_to_indices()
             .shuffle()
@@ -149,7 +152,7 @@ class TestData(TestCase):
         loader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,
-            collate_fn=torchani.legacy_data.collate_fn,
+            collate_fn=legacy_data.collate_fn,
             num_workers=0,
         )
         for _ in loader:

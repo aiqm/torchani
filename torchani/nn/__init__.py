@@ -13,7 +13,12 @@ calculations of single molecules, molecular dynamics and geometry optimizations,
 also provided.
 """
 
-from torchani.nn._core import AtomicNetwork, AtomicContainer, parse_activation
+from torchani.nn._core import (
+    AtomicNetwork,
+    AtomicContainer,
+    parse_activation,
+    TightCELU,
+)
 from torchani.nn._factories import (
     AtomicMaker,
     AtomicMakerArg,
@@ -51,6 +56,8 @@ __all__ = [
     "BmmLinear",
     "BmmEnsemble",
     "BmmAtomicNetwork",
+    # Activation functions
+    "TightCELU",
     # Legacy
     "ANIModel",
     "Ensemble",

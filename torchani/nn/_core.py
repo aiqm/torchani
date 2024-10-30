@@ -5,7 +5,6 @@ import torch
 from torch import Tensor
 
 from torchani.tuples import SpeciesEnergies
-from torchani.utils import TightCELU
 
 
 class AtomicContainer(torch.nn.Module):
@@ -104,6 +103,12 @@ class AtomicNetwork(torch.nn.Module):
             f"bias={self.has_biases},",
         ]
         return " \n".join(parts)
+
+
+class TightCELU(torch.nn.Module):
+    r"""CELU activation function with alpha=0.1"""
+    def forward(self, x: Tensor) -> Tensor:
+        return torch.nn.functional.celu(x, alpha=0.1)
 
 
 def parse_activation(module: tp.Union[str, torch.nn.Module]) -> torch.nn.Module:

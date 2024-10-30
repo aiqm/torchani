@@ -87,7 +87,7 @@ from torchani.potentials import (
     PairPotential,
     RepulsionXTB,
     TwoBodyDispersionD3,
-    EnergyAdder,
+    SelfEnergy,
 )
 
 
@@ -102,7 +102,7 @@ class ANI(torch.nn.Module):
         symbols: tp.Sequence[str],
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
-        energy_shifter: EnergyAdder,
+        energy_shifter: SelfEnergy,
         pair_potentials: tp.Iterable[PairPotential] = (),
         periodic_table_index: bool = True,
     ):
@@ -636,7 +636,7 @@ class ANIq(ANI):
         symbols: tp.Sequence[str],
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
-        energy_shifter: EnergyAdder,
+        energy_shifter: SelfEnergy,
         pair_potentials: tp.Iterable[PairPotential] = (),
         periodic_table_index: bool = True,
         charge_networks: tp.Optional[AtomicContainer] = None,
@@ -1057,7 +1057,7 @@ class Assembler:
             )
 
         self_energies = self.self_energies
-        shifter = EnergyAdder(
+        shifter = SelfEnergy(
             symbols=self.symbols,
             self_energies=tuple(self_energies[k] for k in self.symbols),
         )

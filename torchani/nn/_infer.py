@@ -1,4 +1,5 @@
 import warnings
+import os
 import itertools
 import typing as tp
 from itertools import accumulate
@@ -7,8 +8,7 @@ import torch
 from torch import Tensor
 
 from torchani.csrc import MNP_IS_INSTALLED
-from torchani.utils import check_openmp_threads, TightCELU
-from torchani.nn._core import AtomicContainer, AtomicNetwork
+from torchani.nn._core import AtomicContainer, AtomicNetwork, TightCELU
 
 
 def jit_unused_if_no_mnp():
@@ -18,6 +18,21 @@ def jit_unused_if_no_mnp():
         return torch.jit.unused(func)
 
     return decorator
+
+
+def _check_openmp_threads() -> None:
+    if "OMP_NUM_THREADS" not in os.environ:
+        warnings.warn(
+            "OMP_NUM_THREADS not set."
+            " MNP works best if OMP_NUM_THREADS >= 2."
+            " You can set this variable by running 'export OMP_NUM_THREADS=4')"
+            " or 'export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK' if using slurm"
+        )
+        return
+
+    num_threads = int(os.environ["OMP_NUM_THREADS"])
+    if num_threads <= 0:
+        raise RuntimeError(f"OMP_NUM_THREADS set to an incorrect value: {num_threads}")
 
 
 @jit_unused_if_no_mnp()
@@ -271,7 +286,7 @@ class MNPNetworks(AtomicContainer):
                 raise RuntimeError("The MNP C++ extension is not installed")
 
             # Check that the OpenMP environment variable is correctly set
-            check_openmp_threads(verbose=False)
+            _check_openmp_threads()
 
             # Copy params from networks (reshape & transpose if from BmmEnsemble)
             weights, biases, self._num_layers = self._copy_weights_and_biases()
