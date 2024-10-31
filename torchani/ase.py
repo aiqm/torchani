@@ -7,9 +7,11 @@ consult the user guide.
     https://wiki.fysik.dtu.dk/ase
 """
 
+import typing as tp
 import warnings
 
 import torch
+from torch import Tensor
 
 try:
     import ase.units
@@ -23,6 +25,7 @@ except ImportError:
     ) from None
 
 from torchani.annotations import StressKind
+from torchani.neighbors import Neighbors
 from torchani.utils import map_to_central
 
 
@@ -44,10 +47,10 @@ class Calculator(AseCalculator):
         overwrite (bool): After wrapping atoms into central box, whether
             to replace the original positions stored in `ase.Atoms`
             object with the wrapped positions.
-        stress_kind (str): Strategy to calculate stress, valid options are ``'fdotr'``,
-            ``'scaling'``, and ``'numerical'``. The fdotr approach does not need the
-            cell's box information and can be used for multiple domians when running
-            parallel on multi-GPUs. Default is ``'scaling'``.
+        stress_kind (str): Strategy to calculate stress, valid options are *fdotr*,
+            *scaling*, and *numerical*. The fdotr approach does not need the cell's box
+            information and can be used for multiple domians when running parallel on
+            multi-GPUs.
     """
 
     implemented_properties = ["energy", "free_energy", "forces", "stress"]
@@ -85,7 +88,7 @@ class Calculator(AseCalculator):
             dtype=self.dtype,
             requires_grad=needs_forces,
         )
-        cell = torch.tensor(
+        cell: tp.Optional[Tensor] = torch.tensor(
             self.atoms.get_cell(complete=True).array,
             dtype=self.dtype,
             device=self.device,
@@ -93,9 +96,13 @@ class Calculator(AseCalculator):
         pbc = torch.tensor(self.atoms.get_pbc(), dtype=torch.bool, device=self.device)
 
         if pbc.any() and self.overwrite:
+            assert cell is not None
             warnings.warn("'overwrite' set, info about crossing PBC *will be lost*")
             coords = map_to_central(coords, cell, pbc)
             self.atoms.set_positions(coords.detach().cpu().reshape(-1, 3).numpy())
+
+        if not pbc.any():
+            cell = None
 
         if needs_stress and self.stress_kind == "scaling":
             scaling = torch.eye(
@@ -104,14 +111,26 @@ class Calculator(AseCalculator):
             coords = coords @ scaling
         coords = coords.unsqueeze(0)
 
-        if pbc.any():
-            if needs_stress and self.stress_kind == "scaling":
+        if needs_stress:
+            elem_idxs = self.model.species_converter(species)
+            cutoff = self.model.potentials[0].cutoff
+            if self.stress_kind == "scaling":
                 cell = cell @ scaling
-            energy = self.model((species, coords), cell=cell, pbc=pbc).energies
+            neighbors = self.model.neighborlist(species, coords, cutoff, cell, pbc)
+            if self.stress_kind == "fdotr":
+                neighbors.diff_vectors.requires_grad_(True)
+                neighbors = Neighbors(
+                    neighbors.indices,
+                    neighbors.diff_vectors.norm(2, -1),
+                    neighbors.diff_vectors,
+                    neighbors.shift_values,
+                )
+            energy = self.model.compute_from_neighbors(elem_idxs, neighbors, coords)
         else:
-            energy = self.model((species, coords)).energies
+            energy = self.model((species, coords), cell, pbc).energies
         energy = energy * ase.units.Hartree
         self.results["energy"] = energy.item()
+
         # Unclear what free_energy means in ASE, it is returned from
         # get_potential_energy(force_consistent=True), and required for
         # calculate_numerical_stress
@@ -121,8 +140,10 @@ class Calculator(AseCalculator):
         if needs_stress:
             volume = self.atoms.get_volume()
             if self.stress_kind == "fdotr":
-                diff_vecs = self.model.aev_computer.neighborlist.get_diff_vectors()
-                self.results["stress"] = self._stress_fdotr(diff_vecs, energy, volume)
+                # Neighbors must be not-none if stress is needed
+                self.results["stress"] = self._stress_fdotr(
+                    neighbors.diff_vectors, energy, volume
+                )
             elif self.stress_kind == "numerical":
                 self.results["stress"] = self.calculate_numerical_stress(self.atoms)
             elif self.stress_kind == "scaling":

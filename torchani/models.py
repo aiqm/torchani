@@ -1,7 +1,8 @@
-r"""
-This submodule provides access to all published ANI models, which are subclasses of
-:class:`ANI`. Some models have been published in previous articles, and some in TorchANI
-3. If you use any of these models in your work please cite the corresponding article(s).
+r"""Provides access to all published ANI models.
+
+Provided models are subclasses of `torchani.assembly.ANI`. Some models have been
+published in previous articles, and some in TorchANI 3. If you use any of these models
+in your work please cite the corresponding article(s).
 
 If for a given model you discover a bug, performance problem, or incorrect behavior in
 some region of chemical space, please open an issue in GitHub. The TorchANI developers
@@ -12,17 +13,17 @@ time they are instantiated. If this is an issue for your application we recommen
 pre-download the parameters by instantiating the models once before use.
 
 The models can be used directly once they are instantiated. Alternatively, they can be
-converted to an ASE calculator by calling :attr:`ANI.ase`.
+converted to an ASE calculator by calling `torchani.assembly.ANI.ase`.
 
-Some models have an interanl set of neural networks (:class:`ANIEnsemble`), and they
-output their averaged values. Individual members of these ensembles can be accessed by
-indexing, and ``len(ANI)`` can be used to query the number of networks in it.
+Some models have an interanl set of neural networks (`torchani.nn.ANIEnsemble`), and
+they output their averaged values. Individual members of these ensembles can be accessed
+by indexing, and ``len(ANI)`` can be used to query the number of networks in it.
 
 The models also have three extra entry points for more specific use cases:
 atomic_energies and energies_qbcs.
 
-All entrypoints expect a tuple of tensors ``(species, coordinates)`` as input, together
-with two optional tensors, `cell` and `pbc`. ``coordinates`` and ``cell`` should be in
+All entrypoints expect a tuple of tensors ``(species, coords)`` as input, together
+with two optional tensors, ``cell`` and ``pbc``. ``coords`` and ``cell`` should be in
 units of Angstroms, and the output energies are always in Hartrees
 
 For more details consult the examples documentation
@@ -63,9 +64,10 @@ For more details consult the examples documentation
 from functools import partial
 import typing as tp
 
+from torchani.cutoffs import CutoffSmooth
 from torchani.utils import SYMBOLS_2X, SYMBOLS_1X
 from torchani.electro import ChargeNormalizer
-from torchani.assembly import Assembler, ANI, ANIq, fetch_state_dict
+from torchani.assembly import Assembler, ANI, ANIq, _fetch_state_dict
 from torchani.neighbors import NeighborlistArg
 from torchani.potentials import TwoBodyDispersionD3, RepulsionXTB
 from torchani.annotations import Device, DType
@@ -121,7 +123,7 @@ def ANI1x(
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble(8)
-    model.load_state_dict(fetch_state_dict("ani1x_state_dict.pt", private=False))
+    model.load_state_dict(_fetch_state_dict("ani1x_state_dict.pt", private=False))
     model.requires_grad_(False)
     # TODO: Fix this
     if device is not None:
@@ -161,7 +163,7 @@ def ANI1ccx(
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("ccsd(t)star-cbs")
     model = asm.assemble(8)
-    model.load_state_dict(fetch_state_dict("ani1ccx_state_dict.pt", private=False))
+    model.load_state_dict(_fetch_state_dict("ani1ccx_state_dict.pt", private=False))
     model.requires_grad_(False)
     if device is not None:
         model = model.to(device)
@@ -199,7 +201,7 @@ def ANI2x(
     # The self energies are overwritten by the state dict
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble(8)
-    model.load_state_dict(fetch_state_dict("ani2x_state_dict.pt", private=False))
+    model.load_state_dict(_fetch_state_dict("ani2x_state_dict.pt", private=False))
     model.requires_grad_(False)
     if device is not None:
         model = model.to(device)
@@ -239,7 +241,7 @@ def ANImbis(
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble(8)
 
-    ani2x_state_dict = fetch_state_dict("ani2x_state_dict.pt")
+    ani2x_state_dict = _fetch_state_dict("ani2x_state_dict.pt")
     energy_nn_state_dict = {
         k.replace("neural_networks.", ""): v
         for k, v in ani2x_state_dict.items()
@@ -253,7 +255,7 @@ def ANImbis(
     shifter_state_dict = {
         "self_energies": ani2x_state_dict["energy_shifter.self_energies"]
     }
-    charge_nn_state_dict = fetch_state_dict("charge_nn_state_dict.pt", private=True)
+    charge_nn_state_dict = _fetch_state_dict("charge_nn_state_dict.pt", private=True)
     model.energy_shifter.load_state_dict(shifter_state_dict)
     model.aev_computer.load_state_dict(aev_state_dict)
     model.neural_networks.load_state_dict(energy_nn_state_dict)
@@ -285,7 +287,7 @@ def ANIala(
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble(1)
-    model.load_state_dict(fetch_state_dict("aniala_state_dict.pt", private=True))
+    model.load_state_dict(_fetch_state_dict("aniala_state_dict.pt", private=True))
     model.requires_grad_(False)
     if device is not None:
         model = model.to(device)
@@ -312,7 +314,7 @@ def ANIdr(
         raise ValueError(f"Unavailable strategy for ANImbis: {strategy}")
     asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
-    asm.set_global_cutoff_fn("smooth2")
+    asm.set_global_cutoff_fn("smooth")
     asm.set_aev_computer(angular_terms="ani2x", radial_terms="ani2x", strategy=strategy)
     asm.set_atomic_networks(make_dr_network)
     asm.add_pair_potential(
@@ -322,13 +324,13 @@ def ANIdr(
     asm.add_pair_potential(
         TwoBodyDispersionD3,
         cutoff=8.5,
-        cutoff_fn="smooth4",
+        cutoff_fn=CutoffSmooth(order=4),
         extra={"functional": "B973c"},
     )
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("b973c-def2mtzvp")
     model = asm.assemble(7)
-    model.load_state_dict(fetch_state_dict("anidr_state_dict.pt", private=True))
+    model.load_state_dict(_fetch_state_dict("anidr_state_dict.pt", private=True))
     model.requires_grad_(False)
     if device is not None:
         model = model.to(device)

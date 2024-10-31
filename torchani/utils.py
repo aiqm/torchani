@@ -29,6 +29,8 @@ __all__ = [
     "ChemicalSymbolsToInts",
     "ChemicalSymbolsToAtomicNumbers",
     "AtomicNumbersToMasses",
+    "sort_by_element",
+    "EnergyShifter",
     "get_atomic_masses",
     "PERIODIC_TABLE",
     "ATOMIC_NUMBER",
@@ -74,8 +76,8 @@ def download_and_extract(
     dest_dir: Path,
     verbose: bool = False,
 ) -> None:
-    dest_dir.mkdir(exist_ok=True)
     r"""Download and extract a .tar.gz or .zip file form a given url"""
+    dest_dir.mkdir(exist_ok=True)
     # Download
     dest_path = dest_dir / file_name
     if verbose:
@@ -92,9 +94,12 @@ def download_and_extract(
     dest_path.unlink()
 
 
-# Pure python linspace to ensure reproducibility
 def linspace(start: float, stop: float, steps: int) -> tp.Tuple[float, ...]:
-    r""":meta private:"""
+    r"""Pure python linspace
+
+    Used to ensure repro of constants in case `numpy` changes its internal
+    implementation.
+    """
     return tuple(start + ((stop - start) / steps) * j for j in range(steps))
 
 
@@ -154,6 +159,7 @@ def nonzero_in_chunks(tensor: Tensor, chunk_size: int = 2**31 - 1):
 
 
 def fast_masked_select(x: Tensor, mask: Tensor, idx: int) -> Tensor:
+    r"""Has the same effect as `torch.masked_select` but faster"""
     # x.index_select(0, tensor.view(-1).nonzero().view(-1)) is EQUIVALENT to:
     # torch.masked_select(x, tensor) but FASTER
     # nonzero_in_chunks calls tensor.view(-1).nonzero().view(-1)
@@ -168,15 +174,15 @@ def pad_atomic_properties(
     r"""
     Combine a sequence of properties together into single tensor.
 
-    Inputs are ``[{'species': tensor, ...}, {'species': tensor, ...}, ...]`j` and the
+    Inputs are ``[{'species': tensor, ...}, {'species': tensor, ...}, ...]`` and the
     output is of the form ``{'species': padded_tensor, ...}``.
 
     Arguments:
-        properties (list[dict[str, Tensor]]): Sequence of properties
-        padding_values (Optional[list[dict[str, float]]]): Values to use for padding.
+        properties: Sequence of properties
+        padding_values: Values to use for padding.
 
     Returns:
-        dict[str, Tensor]: Padded tensors.
+        Padded tensors.
     """
     if padding_values is None:
         padding_values = PADDING
@@ -214,6 +220,7 @@ def strip_redundant_padding(
     properties: tp.Dict[str, Tensor],
     atomic_properties: tp.Iterable[str] = ATOMIC_KEYS,
 ) -> tp.Dict[str, Tensor]:
+    r"""Strip padding from a sequence of padded properties"""
     # NOTE: Assume that the padding value is -1
     species = properties["species"]
     non_padding = (species >= 0).any(dim=0).nonzero().squeeze()
@@ -224,14 +231,12 @@ def strip_redundant_padding(
 
 
 def map_to_central(coordinates: Tensor, cell: Tensor, pbc: Tensor) -> Tensor:
-    r"""
-    Map atoms outside the unit cell into the cell using PBC
+    r"""Map atoms outside the unit cell into the cell using PBC
 
     Args:
         coordinates: |coords|
         cell: |cell|
         pbc: |pbc|
-
     Returns:
         Tensor of coordinates of atoms mapped to the unit cell.
     """
@@ -252,6 +257,7 @@ class _NumbersConvert(torch.nn.Module):
         super().__init__()
 
     def forward(self, species: Tensor) -> tp.List[str]:
+        r"""Convert species to a list of chemical symbols"""
         assert species.dim() == 1, "Only 1D tensors supported"
         species = species[species != -1]
         # This can't be an in-place loop to be jit-compilable
@@ -305,25 +311,16 @@ class IntsToChemicalSymbols(_NumbersConvert):
     is a callable object, which can be called with an arbitrary list or tensor
     of the supported indicies that is converted into a list of strings.
 
-    Usage example:
+    Args:
+        symbols: |symbols|
 
-        #species list used for indexing
+    .. code-block:: python
+
+        # Species list used for indexing
         elements = ['H','C','N','O','S','F', 'Cl']
-
         species_converter = IntsToChemicalSymbols(elements)
-
         species = torch.Tensor([3, 0, 0, -1, -1, -1])
-
-        species_converter(species)
-
-        Output:
-            ['O', 'H', 'H']
-
-    Arguments:
-        elements: list of species in your model, used for indexing
-        species: list or tensor of species integer values you wish to convert
-        (must be 1-D)
-
+        species_converter(species)  # Output: ['O', 'H', 'H']
     """
 
     def __init__(self, symbols: tp.Sequence[str]):
@@ -341,6 +338,7 @@ class _ChemicalSymbolsConvert(torch.nn.Module):
         self.register_buffer("_dummy", torch.empty(0, device=device), persistent=False)
 
     def forward(self, species: tp.List[str]) -> Tensor:
+        r"""Converts a list of chemical symbols to an integer tensor"""
         # This can't be an in-place loop to be jit-compilable
         numbers_list: tp.List[int] = []
         for x in species:
@@ -354,11 +352,9 @@ class _ChemicalSymbolsConvert(torch.nn.Module):
 class ChemicalSymbolsToAtomicNumbers(_ChemicalSymbolsConvert):
     r"""Converts a sequence of chemical symbols into a tensor of atomic numbers
 
-
-    On initialization, it is optional to supply the class with a `dict`
-    containing custom numbers and symbols. This is not necessary, as the
-    class is provided ATOMIC_NUMBER by default.
-    Output is a tensor of dtype `torch.long`. Usage example:
+    On initialization, it is optional to supply the class with a `dict` containing
+    custom numbers and symbols. This is not necessary, as the class is provided
+    ATOMIC_NUMBER by default. Output is an integer tensor. Usage example:
 
     .. code-block:: python
 
@@ -367,9 +363,6 @@ class ChemicalSymbolsToAtomicNumbers(_ChemicalSymbolsConvert):
         species_convert = ['C', 'S', 'O', 'F', 'H', 'H']
         atomic_numbers = symbols_to_numbers(species_convert)
         # atomic_numbers is now torch.tensor([ 6, 16,  8,  9,  1,  1])
-
-    Arguments:
-        species_convert: list of chemical symbols to convert to atomic numbers
     """
 
     def __init__(self, device: Device = "cpu"):
@@ -379,29 +372,24 @@ class ChemicalSymbolsToAtomicNumbers(_ChemicalSymbolsConvert):
 class ChemicalSymbolsToInts(_ChemicalSymbolsConvert):
     r"""Helper that can be called to convert chemical symbol string to integers
 
-    On initialization the class should be supplied with a `list` of
-    `str`. The returned instance is a callable object, which can be
-    called with an arbitrary list of the supported species that is converted
-    into a tensor of dtype `torch.long`. Usage example:
+    On initialization the class should be supplied with a `list` of `str`. The returned
+    instance is a callable object, which can be called with an arbitrary list of the
+    supported species that is converted into an integer tensor. Usage
+    example:
 
     .. code-block:: python
 
         from torchani.utils import ChemicalSymbolsToInts
-
         # We initialize ChemicalSymbolsToInts with the supported species
         elements = ['H', 'C', 'N', 'O', 'S', 'F', 'Cl']
         species_to_tensor = ChemicalSymbolsToInts(elements)
-
         species_convert = ['C', 'S', 'O', 'F', 'H', 'H']
-
         # We have a species list which we want to convert to an index tensor
         index_tensor = species_to_tensor(species_convert)
-
         # index_tensor is now [1, 4, 3, 5, 0, 0]
 
-    Arguments:
-        elements: list of species in your model, used for indexing
-        species_convert: list of chemical symbols to convert to atomic numbers
+    Args:
+        symbols: |symbols|
     """
 
     def __init__(self, symbols: tp.Sequence[str], device: Device = "cpu"):
@@ -412,10 +400,7 @@ class ChemicalSymbolsToInts(_ChemicalSymbolsConvert):
 
 
 class AtomicNumbersToMasses(torch.nn.Module):
-    r"""Convert a tensor of atomic numbers into a tensor of atomic masses
-
-
-    """
+    r"""Convert a tensor of atomic numbers into a tensor of atomic masses"""
 
     atomic_masses: Tensor
 
@@ -435,7 +420,7 @@ class AtomicNumbersToMasses(torch.nn.Module):
         )
 
     def forward(self, atomic_numbers: Tensor) -> Tensor:
-        r"""Convert a sequence of atomic nubmers to masses
+        r"""Perform conversion to atomic masses
 
         Args:
             atomic_numbers: |atomic_nums|
@@ -450,11 +435,14 @@ class AtomicNumbersToMasses(torch.nn.Module):
         return masses
 
 
-# Convenience fn around AtomicNumbersToMasses that is non-jittable
 def atomic_numbers_to_masses(
     atomic_numbers: Tensor,
     dtype: torch.dtype = torch.float,
 ) -> Tensor:
+    r"""Convert a sequence of atomic nubmers to masses
+
+    Convenience wrapper over `AtomicNumbersToMasses`. Non-jittable.
+    """
     if torch.jit.is_scripting():
         raise RuntimeError(
             "'torchani.utils.atomic_numbers_to_masses' doesn't support JIT, "
@@ -475,7 +463,7 @@ def sort_by_element(it: tp.Iterable[str]) -> tp.Tuple[str, ...]:
         it: Iterable of chemical symbols
     Returns:
         Sorted tuple of chemical symbols
-    """,
+    """
     if isinstance(it, str):
         it = (it,)
     return tuple(sorted(it, key=lambda x: ATOMIC_NUMBER[x]))
@@ -515,15 +503,14 @@ def merge_state_dicts(paths: tp.Iterable[Path]) -> tp.OrderedDict[str, Tensor]:
 
 # Legacy API
 class EnergyShifter(torch.nn.Module):
-    """Helper class for adding and subtracting self atomic energies
+    r"""Helper class for adding and subtracting self atomic energies
 
-    Note:
+    Deprecated:
         This class is part of the *Legacy API*. Please use
-        `torchani.potentials.EnergyAddder`, which has equivalent functionality instead
-        of this class.
+        `torchani.potentials.SelfEnergy`, which has equivalent functionality, instead.
 
     Args:
-        self_energies (`list`[`float`]): Sequence of floating
+        self_energies (list[float]): Sequence of floating
             numbers for the self energy of each atom type. The numbers should
             be in order, i.e. ``self_energies[i]`` should be atom type ``i``.
         fit_intercept (bool): Whether to calculate the intercept during the LSTSQ
@@ -550,14 +537,12 @@ class EnergyShifter(torch.nn.Module):
 
     @torch.jit.export
     def sae(self, species: Tensor) -> Tensor:
-        """Compute self energies for molecules.
+        r"""Compute self energies for molecules.
 
         Padding atoms are automatically excluded.
 
-        Arguments:
-            species: Long tensor in shape
-                ``(conformations, atoms)``.
-
+        Args:
+            species: |elem_idxs|
         Returns:
             1D tensor of shape ``(molecules,)`` with molecular self-energies
         """
@@ -572,6 +557,7 @@ class EnergyShifter(torch.nn.Module):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesEnergies:
+        r"""Transforms a species_energies tuples by adding self-energies"""
         species, energies = species_energies
         sae = self._atomic_saes(species).sum(dim=1)
 

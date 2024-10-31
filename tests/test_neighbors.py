@@ -40,7 +40,7 @@ class TestCellList(TestCase):
         self.clist = CellList()
 
     def testInit(self):
-        self.assertTrue(self.clist._offset_idx3.shape == (13, 3))
+        self.assertTrue(self.clist._offset_idx3().shape == (13, 3))
 
     def testSetupGrid(self):
         grid_shape = setup_grid(

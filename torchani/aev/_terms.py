@@ -25,12 +25,18 @@ class _Term(torch.nn.Module):
 
 
 class AngularTerm(_Term):
+    r"""Base class for angular terms"""
+
     def forward(self, vectors: Tensor, distances: Tensor) -> Tensor:
+        r"""Compute the angular terms from difference vectors and distances"""
         raise NotImplementedError("Must be implemented by subclasses")
 
 
 class RadialTerm(_Term):
+    r"""Base class for radial terms calculators"""
+
     def forward(self, distances: Tensor) -> Tensor:
+        r"""Compute the radial terms from difference vectors and distances"""
         raise NotImplementedError("Must be implemented by subclasses")
 
 

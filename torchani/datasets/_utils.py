@@ -1,6 +1,3 @@
-r"""
-Internal module with utilities, not meant for users
-"""
 from pathlib import Path
 import json
 import typing as tp

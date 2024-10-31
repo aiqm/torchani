@@ -4,7 +4,7 @@ import tempfile
 from torchani._testing import TestCase
 from torchani import datasets
 from torchani.cli import data_pull
-from torchani.datasets import DatasetId, LotId
+from torchani.datasets import _DatasetId, _LotId
 from torchani.paths import set_data_dir
 
 
@@ -26,14 +26,14 @@ class TestBuiltinDatasets(TestCase):
         self.assertEqual(ds.grouping, "by_num_atoms")
 
     def testDownloadSmallSample(self):
-        data_pull([DatasetId.TESTDATA], [LotId.WB97X_631GD])
+        data_pull([_DatasetId.TESTDATA], [_LotId.WB97X_631GD])
         files = datasets.TestData().store_locations
         self.assertGreater(len(files), 0)
 
     def testBuiltins(self):
         # all these have default levels of theory
-        for ds_id in DatasetId:
-            if ds_id is DatasetId.TESTDATA:
+        for ds_id in _DatasetId:
+            if ds_id is _DatasetId.TESTDATA:
                 continue
             c = ds_id.value
             with self.assertRaisesRegex(RuntimeError, "Dataset not found"):

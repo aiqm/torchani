@@ -42,8 +42,13 @@ class _ANINetworksDiscardFirstScalar(ANINetworks):
 # Legacy API
 # Modified Sequential module that accept Tuple type as input
 class Sequential(torch.nn.ModuleList):
-    r""":meta private:"""
+    r"""Create a pipeline of modules, like `torch.nn.Sequential`
 
+    Deprecated:
+        Use of `torchani.nn.Sequential` is strongly discouraged. Please use
+        `torchani.assembly.Assembler`, or write a `torch.nn.Module`. For more info
+        consult `the migration guide <torchani-migrating>`
+    """
     def __init__(self, *modules):
         warnings.warn(
             "Use of `torchani.nn.Sequential` is strongly discouraged."
@@ -58,6 +63,7 @@ class Sequential(torch.nn.ModuleList):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ):
+        r"""Return the result of chaining together the calculation of the modules"""
         for module in self:
             if hasattr(module, "call"):
                 input_ = module.call(input_, cell=cell, pbc=pbc)
@@ -67,7 +73,13 @@ class Sequential(torch.nn.ModuleList):
 
 
 class ANIModel(ANINetworks):
-    r""":meta private:"""
+    r"""Legacy version of `torchani.nn.ANINetworks`
+
+    Deprecated:
+        `torchani.nn.ANIModel` is deprecated, its use is discouraged.
+        Please use `torchani.nn.ANINetworks` instead.
+        For more info consult `the migration guide <torchani-migrating>`.
+    """
     def __init__(self, modules: tp.Any) -> None:
         warnings.warn(
             "`torchani.nn.ANIModel` is deprecated, its use is discouraged."
@@ -83,11 +95,18 @@ class ANIModel(ANINetworks):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesEnergies:
+        r"""Return a tuple species-energies from a species-aevs tuple"""
         return self.call(species_aevs, cell, pbc)
 
 
 class Ensemble(ANIEnsemble):
-    r""":meta private:"""
+    r"""Legacy version of `torchani.nn.ANIEnsemble`
+
+    Deprecated:
+        `torchani.nn.Ensemble` is deprecated, its use is discouraged.
+        Please use `torchani.nn.ANIEnsemble` instead.
+        For more info consult `the migration guide <torchani-migrating>`.
+    """
     def __init__(self, modules: tp.Any) -> None:
         warnings.warn(
             "`torchani.nn.Ensemble` is deprecated, its use is discouraged."
@@ -103,4 +122,5 @@ class Ensemble(ANIEnsemble):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> SpeciesEnergies:
+        r"""Return a tuple species-energies from a species-aevs tuple"""
         return self.call(species_aevs, cell, pbc)

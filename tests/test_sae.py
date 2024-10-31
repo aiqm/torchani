@@ -4,7 +4,7 @@ import warnings
 
 import torch
 
-from torchani.sae import calculate_saes
+from torchani.sae import exact_saes, approx_saes
 from torchani._testing import TestCase
 from torchani.datasets import create_batched_dataset, ANIBatchedDataset
 
@@ -71,7 +71,7 @@ class TestEstimationSAE(TestCase):
                     " this may take up a lot of memory."
                 ),
             )
-            saes, _ = calculate_saes(ds, ("H", "C", "N", "O"), mode="exact")
+            saes, _ = exact_saes(ds, ("H", "C", "N", "O"))
             torch.set_printoptions(precision=10)
         self.assertEqual(
             saes,
@@ -88,7 +88,7 @@ class TestEstimationSAE(TestCase):
             ds = self.direct_cache["training"]
         else:
             ds = self.train
-        saes, _ = calculate_saes(ds, ("H", "C", "N", "O"), mode="sgd")
+        saes, _ = approx_saes(ds, ("H", "C", "N", "O"))
         # in this specific case the sae difference is very large because it is a
         # very small sample, but for the full sample this imlementation is correct
         self.assertEqual(

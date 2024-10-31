@@ -42,7 +42,7 @@ import json
 import typing as tp
 import math
 
-from torchani.paths import resources_dir
+from torchani.paths import _resources_dir
 
 __all__ = [
     "ATOMIC_CONSTANTS",
@@ -159,10 +159,10 @@ GSAES: tp.Dict[str, tp.Dict[str, float]] = {
     },
 }
 
-with open(resources_dir() / "atomic_constants.json", mode="rt") as f:
+with open(_resources_dir() / "atomic_constants.json", mode="rt") as f:
     ATOMIC_CONSTANTS = json.load(f)
 
-with open(resources_dir() / "functional_d3bj_constants.json", mode="rt") as f:
+with open(_resources_dir() / "functional_d3bj_constants.json", mode="rt") as f:
     FUNCTIONAL_D3BJ_CONSTANTS = json.load(f)
 
 

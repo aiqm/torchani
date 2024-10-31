@@ -2,6 +2,8 @@
 
 .. This documentation is based on that of Pandas and SciPy, and uses the PyData theme
 
+.. currentmodule:: torchani
+
 **********************
 TorchANI documentation
 **********************

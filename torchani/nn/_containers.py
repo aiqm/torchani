@@ -11,21 +11,18 @@ from torchani.nn._infer import BmmEnsemble, MNPNetworks
 class ANINetworks(AtomicContainer):
     r"""Predict molecular or atomic scalars from a set of element-specific networks
 
-    This class will iterate over atomic networks and calculate the corresponding
-    atomic scalars. By default the outputs are summed over atoms to obtain molecular
-    quantities. This can be disabled with ``atomic=True``. If you want to allow
-    different elements to map to the same network, pass ``alias=True``, otherwise
-    elemetns are required to be mapped to different, element-specific networks.
+    Iterate over atomic networks and calculate the corresponding atomic scalars. By
+    default the outputs are summed over atoms to obtain molecular quantities. This can
+    be disabled with ``atomic=True``. If you want to allow different elements to map to
+    the same network, pass ``alias=True``, otherwise elemetns are required to be mapped
+    to different, element-specific networks.
 
     Arguments:
-        modules (dict[str, AtomicNetwork]): symbol - network pairs for each supported
-            element. Different elements will share networks if the same ref is used for
-            different keys
-        alias (bool): Allow the class to map different elements to the same atomic
-            network.
+        modules: symbol-network mapping for each supported element. Different elements
+            will share networks if the same ref is used for different keys
+        alias: Allow the class to map different elements to the same atomic network.
 
-    .. warning::
-
+    Warning:
         The input element indices must be 0, 1, 2, 3, ..., not atomic numbers. You can
         convert from atomic numbers with `torchani.nn.SpeciesConverter`
     """
@@ -76,6 +73,7 @@ class ANINetworks(AtomicContainer):
             atomic: Whether to perform a sum reduction in the ``atoms`` dim. If
                 ``True``, the returned tensor has shape ``(molecules, atoms)``,
                 otherwise it has shape ``(molecules,)``
+
         Returns:
             Tensor with the predicted scalars.
         """
@@ -137,17 +135,6 @@ class ANIEnsemble(AtomicContainer):
             raise ValueError("All modules must support the same number of elements")
 
     def forward(self, elem_idxs: Tensor, aevs: Tensor, atomic: bool = False) -> Tensor:
-        r"""Calculate atomic scalars from the input features
-
-        Args:
-            elem_idxs: |elem_idxs|
-            aevs: |aevs|
-            atomic: Whether to perform a sum reduction in the ``atoms`` dim. If
-                ``True``, the returned tensor has shape ``(molecules, atoms)``,
-                otherwise it has shape ``(molecules,)``
-        Returns:
-            Tensor with the predicted scalars.
-        """
         if not torch.jit.is_scripting():
             if isinstance(elem_idxs, tuple):
                 raise ValueError(
@@ -175,9 +162,9 @@ class ANIEnsemble(AtomicContainer):
         Args:
             elem_idxs: |elem_idxs|
             aevs: |aevs|
-            atomic: Whether to perform a sum reduction in the ``atoms`` dim. If
-                ``True``, the returned tensor has shape ``(members, molecules, atoms)``,
-                otherwise it has shape ``(members, molecules)``
+            atomic: Whether to perform a sum reduction in the ``atoms`` dim.
+                The returned tensor has shape ``(members, molecules, atoms)`` if
+                ``True``, and ``(members, molecules)`` otherwise.
         Returns:
             Tensor with the predicted scalars.
         """
@@ -208,13 +195,12 @@ class SpeciesConverter(torch.nn.Module):
     r"""Convert atomic numbers into internal ANI element indices
 
     Conversion is done according to the symbols sequence passed as init argument. If the
-    class is initialized with ``['H', 'C', 'N', 'O']``, it will convert ``tensor([1, 1,
-    6, 7, 1, 8])`` into a ``tensor([0, 0, 1, 2, 0, 3])``
+    class is initialized with ``['H', 'C', 'N', 'O']``, it will convert ``tensor([1, 6,
+    7, 1, 8])`` into a ``tensor([0, 1, 2, 0, 3])``
 
     Args:
-        symbols: Sequence of all supported elements, in order (it is recommended to
-            order according to atomic number, which you can do by using
-            ``torchani.utils.sort_by_element``).
+        symbols: |symbols| (it is recommended to order according to atomic number, which
+            you can do with `torchani.utils.sort_by_element`).
     """
 
     conv_tensor: Tensor
@@ -223,8 +209,8 @@ class SpeciesConverter(torch.nn.Module):
         super().__init__()
         if isinstance(symbols, str):
             raise ValueError(
-                "You seem to be calling `SpeciesConverter('HCNO')` or similar. "
-                "Please use ``SpeciesConverter(['H', 'C', 'N', 'O'])`` instead"
+                "You seem to be calling 'SpeciesConverter('HCNO')' or similar. "
+                "Please use 'SpeciesConverter(['H', 'C', 'N', 'O'])' instead"
             )
         rev_idx = {s: k for k, s in enumerate(PERIODIC_TABLE)}
         maxidx = max(rev_idx.values())
@@ -238,13 +224,20 @@ class SpeciesConverter(torch.nn.Module):
         )
 
     def forward(self, atomic_nums: Tensor, nop: bool = False) -> Tensor:
+        r"""Perform the conversion to element indices
+
+        Args:
+            atomic_nums: |atomic_nums|
+        Returns:
+            |elem_idxs|
+        """
         if not torch.jit.is_scripting():
             if isinstance(atomic_nums, tuple):
                 raise ValueError(
                     "You seem to be calling "
-                    "`_, idxs = converter((atom_nums, aevs), cell, pbc)`. "
+                    "'_, idxs = converter((atom_nums, aevs), cell, pbc)'. "
                     "This signature was modified in TorchANI 3. "
-                    "Please use `idxs = converter(atom_nums)` instead."
+                    "Please use 'idxs = converter(atom_nums)' instead."
                 )
 
         # Consider as element idxs and check that its not too large, otherwise its

@@ -22,18 +22,14 @@ class ForcesHessians(tp.NamedTuple):
 
 
 class SpeciesAEV(tp.NamedTuple):
-    r"""
-    Chemical elements and AEV feature tensor
-    """
+    r"""Chemical elements and AEV feature tensor"""
 
     species: Tensor
     aevs: Tensor
 
 
 class VibAnalysis(tp.NamedTuple):
-    r"""
-    Frequencies, modes, force constants and reduced masses in vibrational analysis
-    """
+    r"""Freqs, modes, force constants and reduced masses in vibrational analysis"""
 
     freqs: Tensor
     modes: Tensor
@@ -41,31 +37,15 @@ class VibAnalysis(tp.NamedTuple):
     rmasses: Tensor
 
 
-class Neighbors(tp.NamedTuple):
-    r"""
-    Output data of the neighborlist module
-    """
-
-    indices: Tensor
-    distances: Tensor
-    diff_vectors: Tensor
-    shift_values: tp.Optional[Tensor] = None
-
-
 class SpeciesCoordinates(tp.NamedTuple):
-    r"""
-    Defines the input for built-in ANI models
-    """
+    r"""Group of molecules"""
 
     species: Tensor
     coordinates: Tensor
 
 
 class SpeciesEnergies(tp.NamedTuple):
-    r"""
-    Tuple used in output from NNP models, used for total energy and
-     atomic energies functions.
-    """
+    r"""Tuple used in output of ANI models"""
 
     species: Tensor
     energies: Tensor
@@ -88,9 +68,7 @@ class SpeciesAtomicCharges(tp.NamedTuple):
 
 
 class SpeciesEnergiesQBC(tp.NamedTuple):
-    """
-    Tuple used in output from energies_qbcs function.
-    """
+    r"""Tuple used in output from energies_qbcs function"""
 
     species: Tensor
     energies: Tensor
@@ -98,9 +76,7 @@ class SpeciesEnergiesQBC(tp.NamedTuple):
 
 
 class AtomicStdev(tp.NamedTuple):
-    """
-    Tuple used in output from atomic_stdev function.
-    """
+    r"""Tuple used in output from atomic_stdev function"""
 
     species: Tensor
     energies: Tensor
@@ -108,9 +84,7 @@ class AtomicStdev(tp.NamedTuple):
 
 
 class SpeciesForces(tp.NamedTuple):
-    """
-    Tuple used in output from members_forces function.
-    """
+    r"""Tuple used in output from members_forces function"""
 
     species: Tensor
     energies: Tensor
@@ -118,9 +92,7 @@ class SpeciesForces(tp.NamedTuple):
 
 
 class ForceStdev(tp.NamedTuple):
-    """
-    Tuple used in output from force_qbc function.
-    """
+    r"""Tuple used in output from force_qbc function"""
 
     species: Tensor
     magnitudes: Tensor
@@ -129,9 +101,7 @@ class ForceStdev(tp.NamedTuple):
 
 
 class ForceMagnitudes(tp.NamedTuple):
-    """
-    Tuple used in output from force_magnitudes function.
-    """
+    r"""Tuple used in output from force_magnitudes function"""
 
     species: Tensor
     magnitudes: Tensor

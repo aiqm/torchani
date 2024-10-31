@@ -224,8 +224,11 @@ def _parse_nnf(nnf_str: str) -> tp.List[NeurochemLayerSpec]:
 
 
 def load_atomic_network(filename: StrPath) -> AtomicNetwork:
-    """Returns an instance of :class:`torch.nn.Sequential` with hyperparameters
-    and parameters loaded from NeuroChem's .nnf, .wparam and .bparam files."""
+    """Returns a `torchani.nn.AtomicNetwork`
+
+    Hyperparams and params are loaded from NeuroChem's ``.nnf``, ``.wparam`` and
+    ``.bparam`` files.
+    """
     filename = Path(filename).resolve()
 
     with open(filename, "rb") as f:
@@ -300,13 +303,11 @@ def load_atomic_network(filename: StrPath) -> AtomicNetwork:
 
 
 def load_member(symbols: tp.Sequence[str], model_dir: StrPath) -> ANINetworks:
-    """Returns an instance of :class:`torchani.nn.ANINetworks` loaded from
-    NeuroChem's network directory.
+    """Returns a `torchani.nn.ANINetworks` loaded from NeuroChem's network directory.
 
-    Arguments:
-        symbols (:class:`collections.abc.Sequence`): Sequence of strings for
-            chemical symbols of each supported atom type in correct order.
-        model_dir (str): String for directory storing network configurations.
+    Args:
+        symbols: |symbols|
+        model_dir: Dir storing network configurations.
     """
     model_dir = Path(model_dir).resolve()
     return ANINetworks(
@@ -319,14 +320,12 @@ def load_member(symbols: tp.Sequence[str], model_dir: StrPath) -> ANINetworks:
 def load_ensemble(
     symbols: tp.Sequence[str], prefix: StrPath, count: int
 ) -> ANIEnsemble:
-    """Loads :class:`torchani.nn.ANIEnsemble` from NeuroChem's dirs with a given prefix
+    r"""Loads `torchani.nn.ANIEnsemble` from NeuroChem's dirs with a given prefix
 
-    Arguments:
-        symbols (:class:`collections.abc.Sequence`): Sequence of strings for
-            chemical symbols of each supported atom type in correct order.
-        prefix (str): Prefix of paths of directory that networks configurations
-            are stored.
-        count (int): Number of models in the ensemble.
+    Args:
+        symbols: |symbols|
+        prefix: Prefix of paths of directory where networks configurations are stored.
+        count: Number of models in the ensemble.
     """
     prefix = Path(prefix)
     return ANIEnsemble(
@@ -426,10 +425,10 @@ def modules_from_model_name(
     model_index: tp.Optional[int] = None,
     strategy: str = "pyaev",
 ) -> tp.Tuple[AEVComputer, AtomicContainer, SelfEnergy, tp.Sequence[str]]:
-    r"""
-    Creates the necessary modules to generate a pre-trained ANI model, parsing the data
-    from legacy neurochem files, which are fetched according to the model name.
-    modify some modules.
+    r"""Creates the necessary modules to generate a pre-trained ANI model
+
+    Parses data from legacy neurochem files, which are fetched according to the model
+    name.
     """
     return modules_from_info(
         NeurochemInfo.from_model_name(model_name),

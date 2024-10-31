@@ -2,9 +2,8 @@ r"""
 Molecular dynamics using ASE
 ============================
 
-This example is modified from the official `home page` and
-`Constant temperature MD`_ to use the ASE interface of TorchANI as energy
-calculator.
+This example is modified from the official `home page`_ and `Constant temperature MD`_
+to use the ASE interface of TorchANI as energy calculator.
 
 .. _home page:
     https://wiki.fysik.dtu.dk/ase/
@@ -12,7 +11,7 @@ calculator.
     https://wiki.fysik.dtu.dk/ase/tutorials/md/md.html#constant-temperature-md
 """
 # %%
-# As always, we import the necessary modules
+# As always, we start by importing the modules we need
 import ase
 from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
@@ -29,7 +28,7 @@ atoms.calc = torchani.models.ANI2x().ase()
 # %%
 # Then we minimize our system using the
 # `L-BFGS <https://en.wikipedia.org/wiki/Limited-memory_BFGS>`_ optimizer,
-# which is included in `ase`, under `ase.optimize.LBFGS`.
+# which is included in ASE, under `ase.optimize.LBFGS`.
 opt = LBFGS(atoms)
 opt.run(fmax=0.0002)
 # %%

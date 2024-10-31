@@ -31,6 +31,7 @@ def main(
     )
     detail = (opt is Opt.NONE) and detail
     model = ANI1x(model_index=0).to(device)
+    model.requires_grad_(True)
     if opt is Opt.JIT:
         model = tp.cast(ANI, torch.jit.script(model))
     optimizer = torch.optim.Adam(model.parameters(), lr=0.000001)

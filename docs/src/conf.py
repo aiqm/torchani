@@ -28,7 +28,7 @@ rst_epilog = """
     fully enables PBC and ``pbc=None`` (or ``torch.tensor([False, False, False])``).
     fully disables it.
 
-..  |neighbors| replace:: `NamedTuple` that contains the output of a
+..  |neighbors| replace:: `typing.NamedTuple` that contains the output of a
     `torchani.neighbors.Neighborlist` calculation.
 
 ..  |distances| replace:: A float tensor with the distances between pairs of atoms in a
@@ -58,8 +58,10 @@ extensions = [
 autosummary_ignore_module_all = False  # Respect <module>.__all__
 # Extensions config
 # autodoc
-autodoc_typehints_format = "short"  # Avoid qualified names in return types
+autodoc_typehints_format = "short"  # Avoid qualified names in autodoc types
 autodoc_typehints = "description"  # Write types in description, not in signature
+autodoc_typehints_description_target = "documented"  # Only write type for docum. params
+autodoc_inherit_docstrings = True  # Docstring of supercls is used by dflt
 autodoc_default_options = {
     "members": None,  # This means "True"
     "member-order": "bysource",  # Document in the same order as python source code
@@ -86,11 +88,11 @@ intersphinx_mapping = {
 
 # General sphinx config
 # nitpicky = True  # Fail if refs can't be resolved TODO re-enable and fix invalid refs
-default_role = "py:obj"  # Behavior of `inline-backticks`
+default_role = "any"  # Behavior of `inline-backticks`, try to link to "anything"
 pygments_style = "sphinx"  # Code render style
 templates_path = ["_templates"]
 master_doc = "index"  # Default, Main toctree
-# source_suffix = {".rst": "restructuredtext"}  # Default, Suffix of files
+source_suffix = {".rst": "restructuredtext"}  # Default, Suffix of files
 
 # Python-domain sphinx config
 python_use_unqualifierd_type_names = True  # Try to dequa py obj names if resolveable

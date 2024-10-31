@@ -9,7 +9,7 @@ import traceback
 import torch
 
 from torchani._testing import TestCase
-from torchani.neighbors import AllPairs
+from torchani.neighbors import AllPairs, compute_bounding_cell
 from torchani.nn import SpeciesConverter
 from torchani.utils import ChemicalSymbolsToInts, pad_atomic_properties, map_to_central
 from torchani.aev import AEVComputer, StandardAngular, StandardRadial
@@ -195,9 +195,7 @@ class TestAEV(_TestAEVBase):
             coords = torch.from_numpy(coords)
             species = torch.from_numpy(species)
 
-        coords, cell = self.aev_computer.neighborlist.compute_bounding_cell(
-            coords, 1e-5
-        )
+        coords, cell = compute_bounding_cell(coords, 1e-5)
         self.assertTrue((coords > 0.0).all())
         self.assertTrue((coords < torch.norm(cell, dim=1)).all())
 

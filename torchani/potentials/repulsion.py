@@ -1,6 +1,4 @@
-r"""
-Potentials that calculate repulsive (short-range) interactions.
-"""
+r"""Potentials that calculate repulsive (short-range) interactions"""
 
 import typing as tp
 
@@ -21,11 +19,11 @@ class RepulsionXTB(PairPotential):
     Potential used is as in work by Grimme:
     https://pubs.acs.org/doi/10.1021/acs.jctc.8b01176
 
-    By default `alpha`, `yeff` and `krep` parameters are taken from Grimme et. al.
-    pairwise_kwargs are passed to `PairPotential`
+    By default ``alpha``, ``yeff`` and ``krep`` parameters are taken from Grimme et. al.
+    pairwise_kwargs are passed to `torchani.potentials.PairPotential`
 
-    `krep_hydrogen` is only used for H-H repulsive interaction. All other
-    interactions use `krep`
+    ``krep_hydrogen`` is only used for H-H repulsive interaction. All other
+    interactions use ``krep``
     """
 
     ANGSTROM_TO_BOHR: Final[float]

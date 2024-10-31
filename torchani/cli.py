@@ -1,7 +1,7 @@
 r"""Contains the TorchANI CLI entrypoints.
 
 The actual implementation of the functions is considered internal. Please don't rely on
-calling functions inside `torchani.cli` directly.
+calling functions inside :mod:`torchani.cli` directly.
 """
 
 import shutil
@@ -18,7 +18,7 @@ import re
 
 from torchani.paths import datasets_dir
 import torchani.datasets
-from torchani.datasets.utils import (
+from torchani.datasets._utils import (
     DatasetIntegrityError,
     _DATASETS_SPEC,
     _calc_file_md5,
@@ -27,7 +27,7 @@ from torchani.datasets.utils import (
     _available_archives,
     _default_dataset_lot,
 )
-from torchani.datasets.builtin import DatasetId, LotId
+from torchani.datasets.builtin import _DatasetId, _LotId
 
 
 REPO_BASE_URL = "https://github.com/roitberg-group/torchani_sandbox"
@@ -40,9 +40,9 @@ main = Typer(
     A PyTorch library for training, development and research of
     ANI-style neural networks, maintained by the *Roitberg Group*.
 
-    Datasets and Models are saved in `$TORCHANI_DATA_DIR/Datasets` and
-    `$TORCHANI_DATA_DIR/StateDicts` respectively. By default
-    `TORCHANI_DATA_DIR=~/.local/share/Torchani`.
+    Datasets and Models are saved in ``$TORCHANI_DATA_DIR/Datasets`` and
+    ``$TORCHANI_DATA_DIR/StateDicts`` respectively. By default
+    ``TORCHANI_DATA_DIR=~/.local/share/Torchani``.
     """,
 )
 
@@ -53,13 +53,13 @@ main.add_typer(data_app, name="data", help="Manage TorchANI datasets")
 @data_app.command("pull", help="Download one or more built-in datasets.")
 def data_pull(
     names: tpx.Annotated[
-        tp.Optional[tp.List[DatasetId]],
+        tp.Optional[tp.List[_DatasetId]],
         Argument(
             help="Dataset(s) to download. If unspecified all datasets are downloaded"
         ),
     ] = None,
     lots: tpx.Annotated[
-        tp.Optional[tp.List[LotId]],
+        tp.Optional[tp.List[_LotId]],
         Option(
             "-l",
             "--lot",
@@ -67,7 +67,7 @@ def data_pull(
             "'default' (a default dataset-dependent LoT)"
             " and 'all' (all available LoT for the dataset) are also supported options."
             " Note that not all datasets support all LoT. To check which LoT"
-            " are available for a given dataset run `ani data info <dataset-name>`",
+            " are available for a given dataset run ``ani data info <dataset-name>``",
         ),
     ] = None,
     ds_dir: tpx.Annotated[
@@ -92,8 +92,8 @@ def data_pull(
     Download a built-in dataset to the default location in disk, or to a
     custom location
     """
-    names = names or list(DatasetId)
-    lots = lots or [LotId.DEFAULT]
+    names = names or list(_DatasetId)
+    lots = lots or [_LotId.DEFAULT]
 
     if len(lots) == 1:
         lots = lots * len(names)
@@ -110,13 +110,13 @@ def data_pull(
     processed_lots = []
     processed_names = []
     for name, lot in zip(names, lots):
-        if lot is LotId.ALL:
-            all_lots = [LotId(_lot) for _lot in _available_dataset_lots(name.value)]
+        if lot is _LotId.ALL:
+            all_lots = [_LotId(_lot) for _lot in _available_dataset_lots(name.value)]
             processed_lots.extend(all_lots)
             processed_names.extend([name] * len(all_lots))
         else:
-            if lot is LotId.DEFAULT:
-                lot = LotId(_default_dataset_lot(name.value))
+            if lot is _LotId.DEFAULT:
+                lot = _LotId(_default_dataset_lot(name.value))
             processed_lots.append(lot)
             processed_names.append(name)
 
@@ -151,16 +151,16 @@ def data_clean() -> None:
         try:
             getattr(torchani.datasets, name)(lot=lot, download=False, verbose=False)
         except DatasetIntegrityError:
-            data_rm(DatasetId(name), LotId(lot))
+            data_rm(_DatasetId(name), _LotId(lot))
     if deleted == 0:
         print("No integrity issues found, no datasets deleted")
 
 
 @data_app.command("rm", help="Remove a downloaded dataset")
 def data_rm(
-    name: tpx.Annotated[DatasetId, Argument()],
+    name: tpx.Annotated[_DatasetId, Argument()],
     lot: tpx.Annotated[
-        tp.Optional[LotId],
+        tp.Optional[_LotId],
         Option("-l", "--lot"),
     ] = None,
 ) -> None:
@@ -201,9 +201,9 @@ def data_ls(
 
 @data_app.command("info", help="Display info regarding downloaded built-in datasets")
 def data_info(
-    name: tpx.Annotated[DatasetId, Argument()],
+    name: tpx.Annotated[_DatasetId, Argument()],
     lot: tpx.Annotated[
-        tp.Optional[LotId],
+        tp.Optional[_LotId],
         Option("-l", "--lot"),
     ] = None,
     check: tpx.Annotated[

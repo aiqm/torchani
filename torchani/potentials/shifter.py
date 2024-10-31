@@ -12,11 +12,10 @@ class SelfEnergy(Potential):
     """Adds constant atomic energies that depend only on the atom types
 
     Arguments:
-        symbols: (:class:``list[str]``): Sequence of symbols corresponding to the
-            supported elements.
-        self_energies (:class:`list[float]`): Ordered sequence of floats
-            corresponding to the self energy of each element. Energies must be
-            be in order: ``self_energies[i]`` corresponds to element ``symbols[i]``.
+        symbols: |symbols|
+        self_energies: Ordered sequence of floats corresponding to the self energy of
+            each element. Energies must be be in order: ``self_energies[i]`` corresponds
+            to element ``symbols[i]``.
     """
 
     self_energies: Tensor

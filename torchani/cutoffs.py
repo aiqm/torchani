@@ -15,6 +15,8 @@ from torch import Tensor
 # all parameters of a Cutoff **must be passed to init of the superclass**
 # If cuaev supports the cutoff _cuaev_name must be defined to be a unique string
 class Cutoff(torch.nn.Module):
+    r"""Base class for cutoff functions"""
+
     _cuaev_name: str
 
     def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
@@ -34,15 +36,20 @@ class Cutoff(torch.nn.Module):
         return True
 
     def forward(self, distances: Tensor, cutoff: float) -> Tensor:
+        r"""Calculates factors that modify a scalar function, using pair distances"""
         raise NotImplementedError
 
 
 class CutoffDummy(Cutoff):
+    r"""Dummy cutoff that returns ones as factors"""
+
     def forward(self, distances: Tensor, cutoff: float) -> Tensor:
         return torch.ones_like(distances)
 
 
 class CutoffCosine(Cutoff):
+    r"""Use a cosine function as a cutoff"""
+
     def __init__(self) -> None:
         super().__init__()
         self._cuaev_name = "cosine"
@@ -52,6 +59,8 @@ class CutoffCosine(Cutoff):
 
 
 class CutoffSmooth(Cutoff):
+    r"""Use an infinitely differentiable exponential cutoff"""
+
     def __init__(self, order: int = 2, eps: float = 1.0e-10) -> None:
         super().__init__(order, eps)
         if order == 2 and eps == 1.0e-10:
@@ -69,14 +78,7 @@ class CutoffSmooth(Cutoff):
 
 
 CutoffArg = tp.Union[
-    tp.Literal[
-        "global",
-        "dummy",
-        "cosine",
-        "smooth",
-        "smooth2",
-        "smooth4",
-    ],
+    tp.Literal["global", "dummy", "cosine", "smooth"],
     Cutoff,
 ]
 
@@ -92,10 +94,8 @@ def _parse_cutoff_fn(
         cutoff_fn = CutoffDummy()
     elif cutoff_fn == "cosine":
         cutoff_fn = CutoffCosine()
-    elif cutoff_fn in ("smooth", "smooth2"):
-        cutoff_fn = CutoffSmooth(order=2)
-    elif cutoff_fn == "smooth4":
-        cutoff_fn = CutoffSmooth(order=4)
+    elif cutoff_fn == "smooth":
+        cutoff_fn = CutoffSmooth()
     elif not isinstance(cutoff_fn, Cutoff):
         raise ValueError(f"Unsupported cutoff fn: {cutoff_fn}")
     return tp.cast(Cutoff, cutoff_fn)

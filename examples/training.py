@@ -4,7 +4,7 @@ Training an ANI network using a custom script
 
 This example shows how to use TorchANI to train a neural network potential.
 """
-# %% To begin with, let's first import the modules and setup devices we will use:
+# %% To begin with, let's first import the modules and setup devices we will use
 import math
 from pathlib import Path
 
@@ -18,12 +18,11 @@ from torchani.datasets import ANIDataset, ANIBatchedDataset, BatchedDataset
 from torchani.units import hartree2kcalpermol
 from torchani.assembly import simple_ani
 from torchani.grad import forces_for_training
-
-# Explanation of how to train an ANI model
+# %%
 # Device and dataset to run the training
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ds = ANIDataset("../dataset/ani-1x/sample.h5")
-
+# %%
 # We prebatch the dataset to train with memory efficiency, keeping a good
 # performance.
 batched_dataset_path = Path("./batched_dataset").resolve()
@@ -37,13 +36,13 @@ if not batched_dataset_path.exists():
 
 train_ds: BatchedDataset = ANIBatchedDataset(batched_dataset_path, split="training")
 valid_ds: BatchedDataset = ANIBatchedDataset(batched_dataset_path, split="validation")
-
+# %%
 # We use the pytorch DataLoader with multiprocessing to load the batches while we train
 #
-# NOTE: for more info about the DataLoader and multiprocessing read
+# For more info about the DataLoader and multiprocessing read
 # https://pytorch.org/docs/stable/data.html
 #
-# NOTE: CACHE saves all data in memory. It is very memory intensive but faster.
+# CACHE saves all data in memory. It is very memory intensive but faster.
 # Also, pin_memory is automatically performed by ANIBatchedDataset in the CACHE
 # case, so it should be set to False for the DataLoader.
 CACHE: bool = True
@@ -53,11 +52,11 @@ if CACHE:
 
 training = train_ds.as_dataloader(num_workers=0)
 validation = valid_ds.as_dataloader(num_workers=0)
-
-# We can use the transforms module to modify the batches, the API for transforms is
-# very similar to torchvision https://pytorch.org/vision/stable/transforms.html
-# with the difference that the transforms are applied to both target and inputs
-# in all cases.
+# %%
+# We can use the transforms module to modify the batches, the API for transforms is very
+# similar to `torchvision's API <https://pytorch.org/vision/stable/transforms.html>`_
+# with the difference that the transforms are applied to both target and inputs in all
+# cases.
 #
 # Transform can be passed to the "transform" argument of ANIBatchedDataset to
 # to be performed on-the-fly on CPU (slow if no CACHE)
@@ -69,7 +68,7 @@ validation = valid_ds.as_dataloader(num_workers=0)
 # error prone)
 #
 # In this case we wont apply any transform
-
+#
 # Lets generate a model from scratch. For simplicity we use PyTorch's default random
 # initialization for the weights.
 model = simple_ani(
@@ -77,25 +76,22 @@ model = simple_ani(
     symbols=("H", "C", "N", "O"),
     repulsion=True,
 )
-
-# Set up of optimizer, lr-scheduler and loss-function
+# %%
+# Set up of optimizer and lr-scheduler
 optimizer = torch.optim.AdamW(
     params=model.neural_networks.parameters(),
     lr=0.5e-3,
     weight_decay=1e-6,
 )
-
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     optimizer,
     factor=0.5,
     patience=100,
     threshold=0,
 )
-
-###############################################################################
-# We first read the checkpoint files to restart training. We use `latest_traininig.pt`
+# %%
+# We first read the checkpoint files to restart training. We use ``latest_traininig.pt``
 # to store current training state.
-
 latest_training_state_checkpoint_path = Path("./latest_training_state.pt").resolve()
 best_model_state_checkpoint_path = Path("./best_model_state.pt").resolve()
 if latest_training_state_checkpoint_path.exists():
@@ -106,7 +102,7 @@ if latest_training_state_checkpoint_path.exists():
 
 model = model.to(torch.float)
 model = model.to(device)
-###############################################################################
+# %%
 # During training, we need to validate on validation set and if validation error
 # is better than the best, then save the new best model to a checkpoint
 
@@ -132,18 +128,14 @@ def validate(model: ANI, validation: torch.utils.data.DataLoader) -> float:
     return hartree2kcalpermol(rmse)
 
 
-###############################################################################
+# %%
 # We will also use TensorBoard to visualize our training process
 tensorboard = torch.utils.tensorboard.SummaryWriter()
-
-###############################################################################
-# Finally, we come to the training loop.
-mse = torch.nn.MSELoss(reduction="none")
-
+# %%
 # Criteria for stopping training
 max_epochs = 5
 min_learning_rate = 1.0e-10
-
+# %%
 # Epoch 0 is right before training starts
 if scheduler.last_epoch == 0:
     rmse = validate(model, validation)
@@ -157,7 +149,9 @@ if scheduler.last_epoch == 0:
         },
         latest_training_state_checkpoint_path,
     )
-
+# %%
+# Finally, we come to the training loop.
+mse = torch.nn.MSELoss(reduction="none")
 force_training = False
 force_coefficient = 0.1
 for epoch in range(scheduler.last_epoch, max_epochs + 1):

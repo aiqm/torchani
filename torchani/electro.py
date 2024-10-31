@@ -83,6 +83,7 @@ class ChargeNormalizer(torch.nn.Module):
     def forward(
         self, elem_idxs: Tensor, raw_charges: Tensor, total_charge: int = 0
     ) -> Tensor:
+        r"""Normalize charges so that they add up to a total charge"""
         excess = total_charge - raw_charges.sum(dim=-1, keepdim=True)
         return raw_charges + excess * self.factor(elem_idxs, raw_charges)
 
@@ -92,11 +93,9 @@ class DipoleComputer(torch.nn.Module):
     Compute dipoles in eA
 
     Args:
-        masses (list[float]): Sequence of atomic masses
-        reference ('center_of_mass' | 'center_of_geometry' | 'origin'): Reference frame
+        masses: Sequence of atomic masses
+        reference: Reference frame
             to use when calculating dipole.
-        device ('cpu' | 'cuda'): TODO
-        dtype (:class:`torch.float` | :class:`torch.double`): TODO
     """
 
     def __init__(
@@ -113,22 +112,23 @@ class DipoleComputer(torch.nn.Module):
         self._skip = reference == "origin"
         self._converter = AtomicNumbersToMasses(masses, dtype=dtype, device=device)
 
-    def forward(self, species: Tensor, coordinates: Tensor, charges: Tensor) -> Tensor:
+    def forward(
+        self, atomic_nums: Tensor, coordinates: Tensor, charges: Tensor
+    ) -> Tensor:
         r"""
         Calculate the dipoles
 
         Args:
-            species: Must be atomic numbers. padding atoms with pad = -1 can be
-                included.
-            coordinates: ``(M, N, 3)``, unit should be Angstrom.
-            charges: ``(M, N)``, unit should be e.
+            atomic_nums: |atomic_nums|
+            coordinates: |coords|
+            charges: Float tensor of atomic charges ``(M, N)``. Unit should be e.
 
         Returns:
             Dipoles with shape ``(molecules, 3)``
         """
-        assert species.shape == charges.shape == coordinates.shape[:-1]
+        assert atomic_nums.shape == charges.shape == coordinates.shape[:-1]
         charges = charges.unsqueeze(-1)
-        coordinates = self._displace_to_reference(species, coordinates)
+        coordinates = self._displace_to_reference(atomic_nums, coordinates)
         return torch.sum(charges * coordinates, dim=1)
 
     def _displace_to_reference(self, species: Tensor, coordinates: Tensor) -> Tensor:
@@ -160,8 +160,7 @@ def compute_dipole(
     r"""
     Compute dipoles in eA
 
-    A convenience wrapper over :class:`DipoleComputer` that is non-jittable.
-    See :class:`DipoleComputer` for details.
+    Convenience wrapper over `DipoleComputer`. Non-jittable.
     """
     if torch.jit.is_scripting():
         raise RuntimeError(

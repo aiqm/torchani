@@ -1,6 +1,4 @@
-r"""
-Potentials that calculate dispersion (i.e. van der Waals) interactions.
-"""
+r"""Potentials that calculate dispersion (i.e. van der Waals) interactions"""
 
 import math
 import typing as tp
@@ -21,7 +19,7 @@ from torchani.units import ANGSTROM_TO_BOHR
 from torchani.cutoffs import CutoffArg
 from torchani.neighbors import Neighbors
 from torchani.potentials.core import PairPotential
-from torchani.paths import resources_dir
+from torchani.paths import _resources_dir
 
 
 # NOTE: Precalculated C6 constants for D3
@@ -37,7 +35,7 @@ from torchani.paths import resources_dir
 # This means for each pair of elements and reference indices there is an
 # associated coordination number for the first and second items.
 def _load_c6_constants() -> tp.Tuple[Tensor, Tensor, Tensor]:
-    with h5py.File(str(resources_dir() / "c6.h5"), "r") as f:
+    with h5py.File(str(_resources_dir() / "c6.h5"), "r") as f:
         c6_constants = torch.from_numpy(f["all/constants"][:])
         c6_coordnums_a = torch.from_numpy(f["all/coordnums_a"][:])
         c6_coordnums_b = torch.from_numpy(f["all/coordnums_b"][:])
@@ -50,7 +48,7 @@ class BeckeJohnsonDamp(torch.nn.Module):
     Damp functions are like cutoff functions, but modulate potentials close to
     zero.
 
-    For modulating potentials of different "order" (e.g. 1 / r ** 6 => order 6),
+    For modulating potentials of different "order" (e.g. ``1 / r ** 6`` => order 6),
     different parameters may be needed.
 
     For BJ damping style, the cutoff radii are by default calculated directly

@@ -6,9 +6,9 @@ from torch import Tensor
 from torch.jit import Final
 import typing_extensions as tpx
 
-from torchani.tuples import SpeciesAEV, Neighbors
+from torchani.tuples import SpeciesAEV
 from torchani.utils import cumsum_from_zero
-from torchani.neighbors import _parse_neighborlist, NeighborlistArg, AllPairs
+from torchani.neighbors import _parse_neighborlist, NeighborlistArg, AllPairs, Neighbors
 from torchani.cutoffs import CutoffArg
 from torchani.aev._terms import (
     _parse_angular_term,
@@ -586,10 +586,8 @@ class AEVComputer(torch.nn.Module):
         Uses the same defaults as those in the `torchani.models.ANI1x` model.
 
         Args:
-            cutoff_fn (`Cutoff` object | "cosine" | "smooth"): The cutoff
-                function used for the calculation.
-            neighborlist (`Neighborlist` object | "all_pairs" | "cell_list"): The
-                neighborlist usied for the calculation.
+            cutoff_fn: The cutoff function used for the calculation.
+            neighborlist: The neighborlist usied for the calculation.
         Returns:
             The constructed `AEVComputer`, ready for use.
         """
@@ -640,10 +638,8 @@ class AEVComputer(torch.nn.Module):
         Uses the same defaults as those in the `torchani.models.ANI2x` model.
 
         Args:
-            cutoff_fn (`Cutoff` object | "cosine" | "smooth"): The cutoff
-                function used for the calculation.
-            neighborlist (`Neighborlist` object | "all_pairs" | "cell_list"): The
-                neighborlist usied for the calculation.
+            cutoff_fn: The cutoff function used for the calculation.
+            neighborlist: The neighborlist usied for the calculation.
         Returns:
             The constructed `AEVComputer`, ready for use.
         """
@@ -704,12 +700,10 @@ class AEVComputer(torch.nn.Module):
             angular_zeta: The 1D tensor of :math:`\zeta` in eq. (4)
             angular_shifts: The 1D tensor of :math:`R_s` in eq. (4)
             angle_sections: The 1D tensor of :math:`\theta_s` in eq. (4)
-            num_species (int): Number of supported atom types.
-            strategy ('pyaev' | 'cuaev' | 'cuaev-fused'): Compute strategy to use.
-            cutoff_fn (`Cutoff` object | "cosine" | "smooth"): The cutoff
-                function used for the calculation.
-            neighborlist (`Neighborlist` object | "all_pairs" | "cell_list"): The
-                neighborlist usied for the calculation.
+            num_species: Number of supported atom types.
+            strategy: Compute strategy to use.
+            cutoff_fn: The cutoff function used for the calculation.
+            neighborlist: The neighborlist usied for the calculation.
 
         Returns:
             The constructed `AEVComputer`, ready for use.

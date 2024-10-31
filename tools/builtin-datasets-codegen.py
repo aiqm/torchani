@@ -48,7 +48,8 @@ for fname in ("builtin", "__init__"):
         if "article" in ds:
             docstr_parts.append(f"Originally published in *{ds['article']}*")
         if "doi" in ds:
-            docstr_parts.append(f"DOI: `{ds['doi']}`")
+            doi_key = "doi"
+            docstr_parts.append(f"DOI: '{ds[doi_key]}'")
 
         template_kwargs["datasets"].append(
             {

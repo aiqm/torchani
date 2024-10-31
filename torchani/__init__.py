@@ -4,11 +4,11 @@ Most of the functions and classes of the library are accessible from their speci
 modules. For convenience, some useful classes are accessible *also* from here. These
 are:
 
-- `torchani.assembly.ANI`
-- `torchani.nn.SpeciesConverter`
-- `torchani.aev.AEVComputer`
-- `tochani.nn.ANINetworks`
-- `torchani.potentials.SelfEnergy`
+- `torchani.ANI <torchani.assembly.ANI>`
+- `torchani.SpeciesConverter <torchani.nn.SpeciesConverter>`
+- `torchani.AEVComputer <torchani.aev.AEVComputer>`
+- `torchani.ANINetworks <torchani.nn.ANINetworks>`
+- `torchani.SelfEnergy <torchani.potentials.SelfEnergy>`
 """
 
 import os
@@ -48,6 +48,7 @@ from torchani.nn import ANIModel, Ensemble
 from torchani.aev import AEVComputer
 from torchani.nn import ANINetworks, ANIEnsemble, SpeciesConverter
 from torchani.potentials import SelfEnergy
+from torchani.assembly import ANI
 
 # NOTE: ase is an optional dependency so don't import here
 
@@ -88,6 +89,7 @@ __all__ = [
     "ANINetworks",
     "ANIEnsemble",
     "SelfEnergy",
+    "ANI",
 ]
 
 # Disable TF32 since it catastrophically degrades accuracy of ANI models
@@ -113,7 +115,7 @@ if torch.cuda.is_available():
 try:
     from torchani import ase  # noqa: F401
 
-    __all__.append("ase")
+    __all__.insert(19, "ase")  # Insert in a nice location for docs
     ASE_IS_AVAILABLE = True
 except ImportError:
     ASE_IS_AVAILABLE = False

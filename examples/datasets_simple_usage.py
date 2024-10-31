@@ -1,6 +1,6 @@
 r"""
-Basic usage of `torchani.datasets.ANIDataset`
-=============================================
+Basic usage of :obj:`~torchani.datasets.ANIDataset`
+===================================================
 
 This supersedes the obsolete anidataloader. There are also builtin datasets
 that live in moria, and they can be directly downloaded through torchani.

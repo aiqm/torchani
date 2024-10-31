@@ -1,6 +1,6 @@
-r"""
-Filters to remove unwanted structures from datasets (e.g. extremely high
-energies or non-converged structures).
+r"""Filters to remove unwanted structures from datasets
+
+Filters can be used to remove extremely high-energy or non-converged structures.
 """
 
 import typing as tp

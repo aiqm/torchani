@@ -90,7 +90,7 @@ def read_xyz(
     Returns a (species, coordinates) tuple of tensors. The shapes of the tensors are (C,
     A) and (C, A, 3) respectively, where C is the number of conformations, A the maximum
     number of atoms (conformations with less atoms are padded with species=-1 and
-    coordinates=0.0).
+    coords = 0.0).
 
     If detect_padding is True, species with atomic number pad_species_value (100 by
     default) are considered "padding atoms" and are changed to -1. All their coordinates

@@ -9,10 +9,10 @@ there are no compatibility issues among them.
 An ANI-style model consists of:
 
 - `torchani.aev.AEVComputer` (or subclass)
-- A container for atomic networks (typically `ANINetworks` or subclass)
+- A container for atomic networks (typically `torchani.nn.ANINetworks` or subclass)
 - An `torchani.nn.AtomicNetwork` mapping for example, this may take the shape
     ``{"H": AtomicNetwork(...), "C": AtomicNetwork(...), ...}``. Its also possible
-    to pass a function that, given a symbol (e.g. ``"C"``) returns an atomic network,
+    to pass a function that, given a symbol (e.g. "C") returns an atomic network,
     such as `torchani.nn.make_2x_network`.
 - A self energies `dict` (in Hartree): ``{"H": -12.0, "C": -75.0, ...}``
 
@@ -220,7 +220,7 @@ class ANI(torch.nn.Module):
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> SpeciesEnergies:
-        r""":meta private:"""
+        r"""Obtain a species-energies tuple from an input species-coords tuple"""
         species, coords = species_coordinates
         self._check_inputs(species, coords, total_charge)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
@@ -232,60 +232,86 @@ class ANI(torch.nn.Module):
             energies += self.energy_shifter(elem_idxs, atomic=atomic)
             return SpeciesEnergies(elem_idxs, energies)
 
-        # Less optimized branch that goes through the internal neighborlist
+        # Branch that goes through internal neighborlist
         max_cutoff = self.potentials[0].cutoff
         neighbors = self.neighborlist(elem_idxs, coords, max_cutoff, cell, pbc)
-        energies, _ensemble_values = self._potentials_energies(
-            elem_idxs,
-            coords,
-            max_cutoff,
-            neighbors,
-            atomic=atomic,
-            ensemble_values=ensemble_values,
+        energies = self.compute_from_neighbors(
+            elem_idxs, neighbors, coords, total_charge, atomic, ensemble_values
         )
-        if ensemble_values:
-            assert _ensemble_values is not None
-            energies = _ensemble_values + energies.unsqueeze(0)
         return SpeciesEnergies(elem_idxs, energies)
 
-    # Branch that gets its input from an external neighborlist
+    # Entrypoint that uses *external* neighbors, which need re-screening
     @torch.jit.export
-    def from_neighborlist(
+    def compute_from_external_neighbors(
         self,
         species: Tensor,
         coords: Tensor,
-        neighbor_idxs: Tensor,
-        shift_values: Tensor,
+        neighbor_idxs: Tensor,  # External neighbors
+        shift_values: Tensor,  # External neighbors
         total_charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
-        input_needs_screening: bool = True,
-    ) -> SpeciesEnergies:
+    ) -> Tensor:
         r"""This entrypoint supports input from an external neighborlist"""
         self._check_inputs(species, coords, total_charge)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
-
         max_cutoff = self.potentials[0].cutoff
-        neighbors = self.neighborlist.process_external_input(
-            elem_idxs,
-            coords,
-            neighbor_idxs,
-            shift_values,
-            max_cutoff,
-            input_needs_screening,
+        # Discard dist larger than the cutoff, which may be present if the neighbors
+        # come from a program that uses a skin value to conditionally rebuild
+        # (Verlet lists in MD engine). Also discard dummy atoms
+        neighbors = self.neighborlist._screen_with_cutoff(
+            max_cutoff, coords, neighbor_idxs, elem_idxs == -1, shift_values
         )
-        energies, _ensemble_values = self._potentials_energies(
-            elem_idxs,
-            coords,
-            max_cutoff,
-            neighbors,
-            atomic=atomic,
-            ensemble_values=ensemble_values,
+        return self.compute_from_neighbors(
+            elem_idxs, neighbors, coords, total_charge, atomic, ensemble_values
         )
+
+    # Entrypoint that uses neighbors
+    # For now this assumes that there is only one potential with ensemble values
+    @torch.jit.export
+    def compute_from_neighbors(
+        self,
+        elem_idxs: Tensor,
+        neighbors: Neighbors,
+        _coords: Tensor,
+        total_charge: int = 0,
+        atomic: bool = False,
+        ensemble_values: bool = False,
+    ) -> Tensor:
+        r"""This entrypoint supports input from TorchANI neighbors"""
+        self._check_inputs(elem_idxs, _coords, total_charge)
+        previous_cutoff = self.potentials[0].cutoff
+        # Output shape depends on the atomic flag
+        if atomic:
+            energies = neighbors.distances.new_zeros(elem_idxs.shape)
+        else:
+            energies = neighbors.distances.new_zeros(elem_idxs.shape[0])
+        _values: tp.Optional[Tensor] = None
+        for pot in self.potentials:
+            cutoff = pot.cutoff
+            if cutoff < previous_cutoff:
+                neighbors = rescreen(cutoff, neighbors)
+                previous_cutoff = cutoff
+            # Separate the values of the potential that has ensemble values if requested
+            if ensemble_values and hasattr(pot, "ensemble_values"):
+                _values = pot.ensemble_values(
+                    elem_idxs,
+                    neighbors,
+                    _coordinates=_coords,
+                    atomic=atomic,
+                )
+            else:
+                energies += pot(
+                    elem_idxs,
+                    neighbors,
+                    _coordinates=_coords,
+                    atomic=atomic,
+                )
+        energies += self.energy_shifter(elem_idxs, atomic=atomic)
         if ensemble_values:
-            assert _ensemble_values is not None
-            energies = _ensemble_values + energies.unsqueeze(0)
-        return SpeciesEnergies(elem_idxs, energies)
+            assert _values is not None
+            return _values + energies.unsqueeze(0)
+        return energies
 
     @torch.jit.export
     def atomic_energies(
@@ -315,7 +341,7 @@ class ANI(torch.nn.Module):
         optimized for inference.
 
         Assumes that the atomic networks are multi layer perceptrons (MLPs)
-        with `torchani.utils.TightCELU` activation functions.
+        with `torchani.nn.TightCELU` activation functions.
         """
         self.neural_networks = self.neural_networks.to_infer_model(use_mnp=use_mnp)
         return self
@@ -335,7 +361,7 @@ class ANI(torch.nn.Module):
                 object with the wrapped positions.
             jit: Whether to JIT-compile the model before wrapping in a
                 Calculator
-            stress_kind ('scaling' | 'fdotr' | 'numerical'): Strategy to calculate
+            stress_kind: Strategy to calculate
                 stress. The fdotr approach does not need the cell's box information and
                 can be used for multiple domians when running parallel on multi-GPUs.
 
@@ -374,45 +400,6 @@ class ANI(torch.nn.Module):
                 p.neural_networks = model.neural_networks
         return model
 
-    # For now this assumes that there is only one potential with ensemble values
-    def _potentials_energies(
-        self,
-        elem_idxs: Tensor,
-        coords: Tensor,
-        previous_cutoff: float,
-        neighbors: Neighbors,
-        atomic: bool,
-        ensemble_values: bool,
-    ) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
-        # Output shape depends on the atomic flag
-        if atomic:
-            energies = coords.new_zeros(elem_idxs.shape)
-        else:
-            energies = coords.new_zeros(elem_idxs.shape[0])
-        _values: tp.Optional[Tensor] = None
-        for pot in self.potentials:
-            cutoff = pot.cutoff
-            if cutoff < previous_cutoff:
-                neighbors = rescreen(cutoff, neighbors)
-                previous_cutoff = cutoff
-            # Separate the values of the potential that has ensemble values if requested
-            if ensemble_values and hasattr(pot, "ensemble_values"):
-                _values = pot.ensemble_values(
-                    elem_idxs,
-                    neighbors,
-                    _coordinates=coords,
-                    atomic=atomic,
-                )
-            else:
-                energies += pot(
-                    elem_idxs,
-                    neighbors,
-                    _coordinates=coords,
-                    atomic=atomic,
-                )
-        energies += self.energy_shifter(elem_idxs, atomic=atomic)
-        return energies, _values
-
     # Needed for bw compatibility
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:
         old_keys = list(state_dict.keys())
@@ -429,7 +416,6 @@ class ANI(torch.nn.Module):
     def _check_inputs(
         self, elem_idxs: Tensor, coords: Tensor, total_charge: int = 0
     ) -> None:
-        # Check inputs
         assert elem_idxs.dim() == 2
         assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
         assert total_charge == 0, "Model only supports neutral molecules"
@@ -702,34 +688,31 @@ class ANIq(ANI):
             }
         return {"energies": energies, "atomic_charges": atomic_charges}
 
+    # TODO: must also support this from internal neighbors right?
     # TODO: Remove code duplication, the next two functions should be reformulated so
     # the code is not repeated
     @torch.jit.export
-    def energies_and_atomic_charges_from_neighborlist(
+    def energies_and_atomic_charges_from_external_neighbors(
         self,
         species: Tensor,
         coords: Tensor,
-        neighbor_idxs: Tensor,
-        shift_values: Tensor,
+        neighbor_idxs: Tensor,  # External neighbors
+        shift_values: Tensor,  # External neighbors
         total_charge: int = 0,
-        input_needs_screening: bool = True,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> SpeciesEnergiesAtomicCharges:
         if ensemble_values:
             raise ValueError("ensemble_values not supported for ANIq")
-        # This entrypoint supports input from an external neighborlist
         self._check_inputs(species, coords, total_charge)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
 
-        previous_cutoff = self.potentials[0].cutoff
-        neighbors = self.neighborlist.process_external_input(
-            elem_idxs,
-            coords,
-            neighbor_idxs,
-            shift_values,
-            previous_cutoff,
-            input_needs_screening,
+        prev_cutoff = self.potentials[0].cutoff
+        # Discard dist larger than the cutoff, which may be present if the neighbors
+        # come from a program that uses a skin value to conditionally rebuild
+        # (Verlet lists in MD engine). Also discard dummy atoms
+        neighbors = self.neighborlist._screen_with_cutoff(
+            prev_cutoff, coords, neighbor_idxs, species == -1, shift_values
         )
         if atomic:
             energies = coords.new_zeros(elem_idxs.shape)
@@ -738,9 +721,9 @@ class ANIq(ANI):
         atomic_charges = coords.new_zeros(elem_idxs.shape)
         for pot in self.potentials:
             cutoff = pot.cutoff
-            if cutoff < previous_cutoff:
+            if cutoff < prev_cutoff:
                 neighbors = rescreen(cutoff, neighbors)
-                previous_cutoff = cutoff
+                prev_cutoff = cutoff
             if hasattr(pot, "energies_and_atomic_charges"):
                 output = pot.energies_and_atomic_charges(
                     elem_idxs,
@@ -841,6 +824,7 @@ class _PairPotentialWrapper:
 
 class Assembler:
     r"""Assembles an `ANI` model (or subclass)"""
+
     def __init__(
         self,
         symbols: tp.Sequence[str] = (),
@@ -1114,7 +1098,7 @@ def simple_ani(
     radial_precision: float = 19.7,
     angular_precision: float = 12.5,
     angular_zeta: float = 14.1,
-    cutoff_fn: CutoffArg = "smooth2",
+    cutoff_fn: CutoffArg = "smooth",
     dispersion: bool = False,
     repulsion: bool = True,
     network_factory: AtomicMakerArg = "ani2x",
@@ -1192,7 +1176,7 @@ def simple_aniq(
     radial_precision: float = 19.7,
     angular_precision: float = 12.5,
     angular_zeta: float = 14.1,
-    cutoff_fn: CutoffArg = "smooth2",
+    cutoff_fn: CutoffArg = "smooth",
     dispersion: bool = False,
     repulsion: bool = True,
     network_factory: AtomicMakerArg = "ani2x",
@@ -1287,7 +1271,7 @@ def simple_aniq(
     return asm.assemble(ensemble_size)
 
 
-def fetch_state_dict(
+def _fetch_state_dict(
     state_dict_file: str,
     local: bool = False,
     private: bool = False,
