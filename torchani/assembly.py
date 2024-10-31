@@ -89,6 +89,10 @@ from torchani.potentials import (
     TwoBodyDispersionD3,
     SelfEnergy,
 )
+from torchani._grad import (
+    forces as _calc_forces,
+    forces_and_hessians as _calc_forces_and_hessians,
+)
 
 
 class ANI(torch.nn.Module):
@@ -168,8 +172,13 @@ class ANI(torch.nn.Module):
         total_charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
+        forces: bool = False,
+        hessians: bool = False,
+        keep_vars: bool = False,
     ) -> tp.Dict[str, Tensor]:
         r"""Calculate properties for a batch of molecules
+
+        This is the main entrypoint of TorchANI models
 
         Args:
             species: Int tensor with the atomic numbers of molecules in the batch, shape
@@ -184,9 +193,13 @@ class ANI(torch.nn.Module):
                 the scalar 0 is currently supported.
             atomic: Perform atomic decoposition of the energies
             ensemble_values: Differentiate values of different models of the ensemble
+                Also output ensemble standard deviation and qbc factors
         Returns:
             Result of the single point calculation
         """
+        saved_requires_grad = coordinates.requires_grad
+        if forces or hessians:
+            coordinates.requires_grad_(True)
         _, energies = self(
             species_coordinates=(species, coordinates),
             cell=cell,
@@ -203,16 +216,40 @@ class ANI(torch.nn.Module):
             else:
                 _values = energies
             out["energies"] = _values.mean(dim=0)
+
             if _values.shape[0] == 1:
                 out["ensemble_std"] = _values.new_zeros(energies.shape)
             else:
                 out["ensemble_std"] = _values.std(dim=0, unbiased=True)
             out["ensemble_values"] = _values
-            return out
 
-        if atomic:
-            return {"energies": energies.sum(dim=-1), "atomic_energies": energies}
-        return {"energies": energies}
+            if _values.shape[0] == 1:
+                qbc_factors = torch.zeros_like(_values).squeeze(0)
+            else:
+                # standard deviation is taken across ensemble members
+                qbc_factors = _values.std(0, unbiased=True)
+            # rho's (qbc factors) are weighted by dividing by the square root of
+            # the number of atoms in each molecule
+            num_atoms = (species >= 0).sum(dim=1, dtype=energies.dtype)
+            qbc_factors = qbc_factors / num_atoms.sqrt()
+            assert qbc_factors.shape == out["energies"].shape
+            out["qbcs"] = qbc_factors
+        else:
+            if atomic:
+                out = {"energies": energies.sum(dim=-1), "atomic_energies": energies}
+            else:
+                out = {"energies": energies}
+        if hessians:
+            _forces, _hessians = _calc_forces_and_hessians(out["energies"], coordinates)
+            out["forces"], out["hessians"] = _forces, _hessians
+            if forces:
+                out["forces"] = _forces
+        elif forces:
+            out["forces"] = _calc_forces(out["energies"], coordinates)
+        coordinates.requires_grad_(saved_requires_grad)
+        if not keep_vars:
+            out = {k: v.detach() for k, v in out.items()}
+        return out
 
     def forward(
         self,
