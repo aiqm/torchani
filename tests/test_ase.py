@@ -65,11 +65,11 @@ class TestASE(ANITestCase):
                 neural_networks=model_cell.neural_networks,
                 energy_shifter=model_cell.energy_shifter,
                 symbols=model_cell.symbols,
-                pair_potentials=[
-                    PairPotential(symbols=symbols, cutoff=6.4),
-                    PairPotential(symbols=symbols, cutoff=5.2),
-                    PairPotential(symbols=symbols, cutoff=3.0),
-                ],
+                potentials={
+                    "dummy-0": PairPotential(symbols=symbols, cutoff=6.4),
+                    "dummy-1": PairPotential(symbols=symbols, cutoff=5.2),
+                    "dummy-2": PairPotential(symbols=symbols, cutoff=3.0),
+                },
             ).double()
         )
 

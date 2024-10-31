@@ -16,13 +16,12 @@ An ANI-style model consists of:
     such as `torchani.nn.make_2x_network`.
 - A self energies `dict` (in Hartree): ``{"H": -12.0, "C": -75.0, ...}``
 
-These pieces are combined when the
-``Assembler.assemble(size=<num-networks-in-ensemble>)`` method is called.
+These pieces are combined when the `Assembler.assemble` method is called.
 
-An energy-predicting model may also have one or more `torchani.potentials.PairPotential`
+An energy-predicting model may also have one or more `torchani.potentials.Potential`
 (`torchani.potentials.RepulsionXTB`, `torchani.potentials.TwoBodyDispersionD3`, etc.).
 
-Each `torchani.potentials.PairPotential` has its own cutoff, and the
+Each `torchani.potentials.Potential` has its own cutoff, and the
 `torchani.aev.AEVComputer` has two cutoffs, an angular and a radial one (the radial
 cutoff must be larger than the angular cutoff, and it is recommended that the angular
 cutoff is kept small, 3.5 Ang or less).
@@ -84,7 +83,6 @@ from torchani.potentials import (
     SeparateChargesNNPotential,
     MergedChargesNNPotential,
     Potential,
-    PairPotential,
     RepulsionXTB,
     TwoBodyDispersionD3,
     SelfEnergy,
@@ -107,7 +105,7 @@ class ANI(torch.nn.Module):
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: SelfEnergy,
-        pair_potentials: tp.Iterable[PairPotential] = (),
+        potentials: tp.Optional[tp.Dict[str, Potential]] = None,
         periodic_table_index: bool = True,
     ):
         super().__init__()
@@ -117,50 +115,48 @@ class ANI(torch.nn.Module):
                 " and will be removed in the future"
             )
 
+        numbers = torch.tensor([ATOMIC_NUMBER[e] for e in symbols], dtype=torch.long)
+        self.register_buffer("atomic_numbers", numbers)
+
+        # Make sure all modules passed support the correct num species
+        assert len(energy_shifter.self_energies) == len(self.atomic_numbers)
+        assert aev_computer.num_species == len(self.atomic_numbers)
+        assert neural_networks.num_species == len(self.atomic_numbers)
+
         # NOTE: Keep these refs for later usage
-        self.aev_computer = aev_computer
-        self.neural_networks = neural_networks
-        self.neighborlist = self.aev_computer.neighborlist
+        self.neighborlist = aev_computer.neighborlist
 
         device = energy_shifter.self_energies.device
         self.energy_shifter = energy_shifter
         self.species_converter = SpeciesConverter(symbols).to(device)
 
-        self._has_pair_pots = bool(pair_potentials)
-        potentials: tp.List[Potential] = list(pair_potentials)
-        potentials.append(NNPotential(self.aev_computer, self.neural_networks))
-
+        self._has_extra_pots = bool(potentials)
+        potentials = potentials or {}
+        potentials["nnp"] = NNPotential(aev_computer, neural_networks)
         # Sort potentials in order of decresing cutoff. The potential with the
         # LARGEST cutoff is computed first, then sequentially things that need
         # SMALLER cutoffs are computed.
-        potentials = sorted(potentials, key=lambda x: x.cutoff, reverse=True)
-        self.potentials = torch.nn.ModuleList(potentials)
-
+        self.potentials = torch.nn.ModuleDict(
+            {
+                k: v
+                for k, v in sorted(
+                    potentials.items(), key=lambda x: x[1].cutoff, reverse=True
+                )
+            }
+        )
+        self.cutoff = next(iter(self.potentials.values())).cutoff
         self.periodic_table_index = periodic_table_index
-        numbers = torch.tensor([ATOMIC_NUMBER[e] for e in symbols], dtype=torch.long)
-        self.register_buffer("atomic_numbers", numbers)
-
-        # Make sure all modules passed support the correct num species
-        assert len(self.energy_shifter.self_energies) == len(self.atomic_numbers)
-        assert self.aev_computer.num_species == len(self.atomic_numbers)
-        assert self.neural_networks.num_species == len(self.atomic_numbers)
 
     @torch.jit.export
     def set_active_members(self, idxs: tp.List[int]) -> None:
-        self.neural_networks.set_active_members(idxs)
-        for p in self.potentials:
-            if hasattr(p, "neural_networks"):
-                p.neural_networks.set_active_members(idxs)
+        self.potentials["nnp"].neural_networks.set_active_members(idxs)
 
     def shifts_energy(self, enable: bool = True) -> None:
         self.energy_shifter._is_enabled = enable
 
     @torch.jit.export
     def set_strategy(self, strategy: str = "pyaev") -> None:
-        self.aev_computer.set_strategy(strategy)
-        for p in self.potentials:
-            if hasattr(p, "aev_computer"):
-                p.aev_computer.set_strategy(strategy)
+        self.potentials["nnp"].aev_computer.set_strategy(strategy)
 
     @torch.jit.export
     def sp(
@@ -170,47 +166,74 @@ class ANI(torch.nn.Module):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
         total_charge: int = 0,
-        atomic: bool = False,
-        ensemble_values: bool = False,
         forces: bool = False,
         hessians: bool = False,
+        atomic_energies: bool = False,
+        atomic_charges: bool = False,
+        atomic_charges_grad: bool = False,
+        ensemble_values: bool = False,
         keep_vars: bool = False,
     ) -> tp.Dict[str, Tensor]:
         r"""Calculate properties for a batch of molecules
 
-        This is the main entrypoint of TorchANI models
+        This is the main entrypoint of ANI-style models
 
         Args:
-            species: Int tensor with the atomic numbers of molecules in the batch, shape
-                (molecules, atoms).
-            coordinates: Float tensor with coords of molecules
-                in the batch, shape (molecules, atoms, 3)
-            cell: Float tensorwith the cell used for PBC computations. Set to None if
-                PBC is not enabled, shape (3, 3)
-            pbc: Bool tensor that indicates enabled PBC directions. Set
-                to None if PBC is not enabled. shape (3,)
+            species: |atomic_nums|
+            coordinates: |coords|
+            cell: |cell|
+            pbc: |pbc|
             total_charge: The total charge of the molecules. Only
                 the scalar 0 is currently supported.
-            atomic: Perform atomic decoposition of the energies
+            forces: Calculate the associated forces. Shape ``(molecules, atoms, 3)``
+            hessians: Calculate the hessians. Shape is
+                ``(molecules, atoms * 3, atoms * 3)``
+            atomic_energies: Perform atomic decoposition of the energies
+            atomic_charges: Only for models that support it, output atomic charges.
+                Shape ``(molecules, atoms)``
+            atomic_charges_grad: Only for models that support it, output atomic charge
+                gradients. Shape ``(molecules, atoms, 3)``.
             ensemble_values: Differentiate values of different models of the ensemble
                 Also output ensemble standard deviation and qbc factors
+            keep_vars: The output scalars are detached from the graph unless
+                ``keep_vars=True``.
         Returns:
-            Result of the single point calculation
+            Result of the single point calculation. Dictionary that maps strings to
+            various result tensors.
         """
         saved_requires_grad = coordinates.requires_grad
-        if forces or hessians:
+        if forces or hessians or atomic_charges_grad:
             coordinates.requires_grad_(True)
-        _, energies = self(
-            species_coordinates=(species, coordinates),
-            cell=cell,
-            pbc=pbc,
-            total_charge=total_charge,
-            atomic=atomic,
-            ensemble_values=ensemble_values,
-        )
         out: tp.Dict[str, Tensor] = {}
+        if atomic_charges:
+            if not hasattr(self, "energies_and_atomic_charges"):
+                raise ValueError("Model doesn't support atomic charges")
+            _, energies, qs = self.energies_and_atomic_charges(
+                species_coordinates=(species, coordinates),
+                cell=cell,
+                pbc=pbc,
+                total_charge=total_charge,
+                atomic=atomic_energies,
+                ensemble_values=ensemble_values,
+            )
+            out["atomic_charges"] = qs
+            if atomic_charges_grad:
+                retain = forces or hessians
+                out["atomic_charges_grad"] = -_calc_forces(
+                    qs, coordinates, retain_graph=retain
+                )
+        else:
+            _, energies = self(
+                species_coordinates=(species, coordinates),
+                cell=cell,
+                pbc=pbc,
+                total_charge=total_charge,
+                atomic=atomic_energies,
+                ensemble_values=ensemble_values,
+            )
+
         if ensemble_values:
-            if atomic:
+            if atomic_energies:
                 out["atomic_energies"] = energies.mean(dim=0)
                 _values = energies.sum(dim=-1)
             else:
@@ -226,7 +249,7 @@ class ANI(torch.nn.Module):
             if _values.shape[0] == 1:
                 qbc_factors = torch.zeros_like(_values).squeeze(0)
             else:
-                # standard deviation is taken across ensemble members
+                # std is taken across ensemble members
                 qbc_factors = _values.std(0, unbiased=True)
             # rho's (qbc factors) are weighted by dividing by the square root of
             # the number of atoms in each molecule
@@ -235,10 +258,11 @@ class ANI(torch.nn.Module):
             assert qbc_factors.shape == out["energies"].shape
             out["qbcs"] = qbc_factors
         else:
-            if atomic:
-                out = {"energies": energies.sum(dim=-1), "atomic_energies": energies}
+            if atomic_energies:
+                out["energies"] = energies.sum(dim=-1)
+                out["atomic_energies"] = energies
             else:
-                out = {"energies": energies}
+                out["energies"] = energies
         if hessians:
             _forces, _hessians = _calc_forces_and_hessians(out["energies"], coordinates)
             out["forces"], out["hessians"] = _forces, _hessians
@@ -266,15 +290,21 @@ class ANI(torch.nn.Module):
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
 
         # Optimized branch that uses the cuAEV-fused strategy
-        if not self._has_pair_pots and self.aev_computer._strategy == "cuaev-fused":
-            aevs = self.aev_computer(elem_idxs, coords, cell=cell, pbc=pbc)
-            energies = self.neural_networks(elem_idxs, aevs, atomic=atomic)
+        if (
+            not self._has_extra_pots
+            and self.potentials["nnp"].aev_computer._strategy == "cuaev-fused"
+        ):
+            aevs = self.potentials["nnp"].aev_computer(
+                elem_idxs, coords, cell=cell, pbc=pbc
+            )
+            energies = self.potentials["nnp"].neural_networks(
+                elem_idxs, aevs, atomic=atomic
+            )
             energies += self.energy_shifter(elem_idxs, atomic=atomic)
             return SpeciesEnergies(elem_idxs, energies)
 
         # Branch that goes through internal neighborlist
-        max_cutoff = self.potentials[0].cutoff
-        neighbors = self.neighborlist(elem_idxs, coords, max_cutoff, cell, pbc)
+        neighbors = self.neighborlist(elem_idxs, coords, self.cutoff, cell, pbc)
         energies = self.compute_from_neighbors(
             elem_idxs, neighbors, coords, total_charge, atomic, ensemble_values
         )
@@ -295,12 +325,11 @@ class ANI(torch.nn.Module):
         r"""This entrypoint supports input from an external neighborlist"""
         self._check_inputs(species, coords, total_charge)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
-        max_cutoff = self.potentials[0].cutoff
         # Discard dist larger than the cutoff, which may be present if the neighbors
         # come from a program that uses a skin value to conditionally rebuild
         # (Verlet lists in MD engine). Also discard dummy atoms
         neighbors = self.neighborlist._screen_with_cutoff(
-            max_cutoff, coords, neighbor_idxs, elem_idxs == -1, shift_values
+            self.cutoff, coords, neighbor_idxs, elem_idxs == -1, shift_values
         )
         return self.compute_from_neighbors(
             elem_idxs, neighbors, coords, total_charge, atomic, ensemble_values
@@ -320,18 +349,14 @@ class ANI(torch.nn.Module):
     ) -> Tensor:
         r"""This entrypoint supports input from TorchANI neighbors"""
         self._check_inputs(elem_idxs, _coords, total_charge)
-        previous_cutoff = self.potentials[0].cutoff
         # Output shape depends on the atomic flag
         if atomic:
             energies = neighbors.distances.new_zeros(elem_idxs.shape)
         else:
             energies = neighbors.distances.new_zeros(elem_idxs.shape[0])
         _values: tp.Optional[Tensor] = None
-        for pot in self.potentials:
-            cutoff = pot.cutoff
-            if cutoff < previous_cutoff:
-                neighbors = rescreen(cutoff, neighbors)
-                previous_cutoff = cutoff
+        for pot in self.potentials.values():
+            neighbors = rescreen(pot.cutoff, neighbors)
             # Separate the values of the potential that has ensemble values if requested
             if ensemble_values and hasattr(pot, "ensemble_values"):
                 _values = pot.ensemble_values(
@@ -360,6 +385,8 @@ class ANI(torch.nn.Module):
 
         Arguments and return value are the same as that of `ANI.forward`, but
         the returned energies have shape (molecules, atoms)
+
+        :meta private:
         """
         return self(
             species_coordinates,
@@ -377,7 +404,9 @@ class ANI(torch.nn.Module):
         Assumes that the atomic networks are multi layer perceptrons (MLPs)
         with `torchani.nn.TightCELU` activation functions.
         """
-        self.neural_networks = self.neural_networks.to_infer_model(use_mnp=use_mnp)
+        self.potentials["nnp"].neural_networks = self.potentials[
+            "nnp"
+        ].neural_networks.to_infer_model(use_mnp=use_mnp)
         return self
 
     def ase(
@@ -386,19 +415,16 @@ class ANI(torch.nn.Module):
         stress_kind: StressKind = "scaling",
         jit: bool = False,
     ):
-        r"""
-        Obtain an ASE Calculator that uses this model
+        r"""Obtain an ASE Calculator that uses this model
 
-        Arguments:
-            overwrite: After wrapping atoms into central box, whether
-                to replace the original positions stored in the `ase.Atoms`
-                object with the wrapped positions.
-            jit: Whether to JIT-compile the model before wrapping in a
-                Calculator
-            stress_kind: Strategy to calculate
-                stress. The fdotr approach does not need the cell's box information and
-                can be used for multiple domians when running parallel on multi-GPUs.
-
+        Args:
+            overwrite: After wrapping atoms into central box, whether to replace the
+                original positions stored in the `ase.Atoms` object with the wrapped
+                positions.
+            stress_kind: Strategy to calculate stress. The fdotr approach does not need
+                the cell's box information and can be used for multiple domians when
+                running parallel on multi-GPUs.
+            jit: Whether to JIT-compile the model before wrapping in a Calculator
         Returns:
             An ASE-compatible Calculator
         """
@@ -412,39 +438,46 @@ class ANI(torch.nn.Module):
     def symbols(self) -> tp.Tuple[str, ...]:
         return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)
 
-    # TODO make this be useful
-    @torch.jit.unused
-    def disable_non_nnp(self):
-        r""":meta private:"""
-        for p in self.potentials:
-            if hasattr(p, "neural_networks"):
-                p.is_enabled = False
-
     # TODO This is confusing, it may be a good idea to deprecate it, or at least warn
     def __len__(self):
-        return self.neural_networks.get_active_members_num()
+        return self.potentials["nnp"].neural_networks.get_active_members_num()
 
     # TODO This is confusing, it may be a good idea to deprecate it, or at least warn
-    # Can be optimized but its not worth it
     def __getitem__(self, idx: int) -> tpx.Self:
+        _nn = self.potentials["nnp"].neural_networks
+        self.potentials["nnp"].neural_networks = None  # type: ignore
         model = deepcopy(self)
-        model.neural_networks = self.neural_networks.member(idx)
-        for p in model.potentials:
-            if isinstance(p, NNPotential):
-                p.neural_networks = model.neural_networks
+        self.potentials["nnp"].neural_networks = _nn
+        model.potentials["nnp"].neural_networks = deepcopy(_nn.member(idx))
         return model
+
+    # Needed for client classes that depend on accessing aev_computer directly
+    @property
+    @torch.jit.unused
+    def neural_networks(self) -> AtomicContainer:
+        r""":meta private:"""
+        return self.potentials["nnp"].neural_networks
+
+    # Needed for client classes that depend on accessing neural_networks directly
+    @property
+    @torch.jit.unused
+    def aev_computer(self) -> AEVComputer:
+        r""":meta private:"""
+        return self.potentials["nnp"].aev_computer
 
     # Needed for bw compatibility
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:
-        old_keys = list(state_dict.keys())
-        if not any(k.startswith("potentials") for k in old_keys):
-            for oldk in old_keys:
-                if oldk.startswith("aev_computer"):
-                    k = f"potentials.0.{oldk}"
-                    state_dict[k] = state_dict[oldk]
-                if oldk.startswith("neural_networks"):
-                    k = f"potentials.0.{oldk}"
-                    state_dict[k] = state_dict[oldk]
+        for oldk in list(state_dict.keys()):
+            k = oldk
+            if oldk.startswith("potentials.0"):
+                k = oldk.replace("potentials.0", "potentials.dispersion_d3")
+            elif oldk.startswith("potentials.1"):
+                k = oldk.replace("potentials.1", "potentials.repulsion_xtb")
+            elif oldk.startswith("potentials.2"):
+                k = oldk.replace("potentials.2", "potentials.nnp")
+            elif oldk.startswith("aev_computer") or oldk.startswith("neural_networks"):
+                k = f"potentials.nnp.{oldk}"
+            state_dict[k] = state_dict.pop(oldk)
         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
 
     def _check_inputs(
@@ -474,6 +507,8 @@ class ANI(torch.nn.Module):
         Returns:
             species, molecular energies, and atomic forces predicted by an ensemble of
             neural network models
+
+        :meta private:
         """
         species, coordinates = species_coordinates
         coordinates.requires_grad_(True)
@@ -518,10 +553,11 @@ class ANI(torch.nn.Module):
             pbc: the bool tensor indicating which direction PBC is enabled,
                     set to None if PBC is not enabled
             unbiased: Whether to unbias the standard deviation over ensemble predictions
-
         Returns:
             Tuple of species, energies and qbc factor tensors for the given
             configurations. The shapes of qbcs and energies are equal.
+
+        :meta private:
         """
         elem_idxs, energies = self(
             species_coordinates,
@@ -559,6 +595,8 @@ class ANI(torch.nn.Module):
         r"""Returns standard deviation of atomic energies across an ensemble
 
         If the model has only 1 network, a value of 0.0 is output for the stdev
+
+        :meta private:
         """
         elem_idxs, energies = self(
             species_coordinates,
@@ -595,6 +633,8 @@ class ANI(torch.nn.Module):
 
         Returns:
             Force magnitudes, averaged by default.
+
+        :meta private:
         """
         species, _, members_forces = self.members_forces(species_coordinates, cell, pbc)
         magnitudes = members_forces.norm(dim=-1)
@@ -611,15 +651,15 @@ class ANI(torch.nn.Module):
         ensemble_values: bool = False,
         unbiased: bool = True,
     ) -> ForceStdev:
-        r"""
-        Returns the mean force magnitudes and relative range and standard deviation
-        of predicted forces across an ensemble of networks.
+        r"""Return the mean force magnitudes, relative range, and std across an ensemble
 
         Args:
             species_coordinates: minibatch of configurations
             ensemble_values: Return magnitudes of each model of the ensemble
             unbiased: whether or not to use Bessel's correction in computing
                 the standard deviation, True by default
+
+        :meta private:
         """
         species, mags = self.force_magnitudes(
             species_coordinates, cell, pbc, ensemble_values=True
@@ -657,7 +697,7 @@ class ANIq(ANI):
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         energy_shifter: SelfEnergy,
-        pair_potentials: tp.Iterable[PairPotential] = (),
+        potentials: tp.Optional[tp.Dict[str, Potential]] = None,
         periodic_table_index: bool = True,
         charge_networks: tp.Optional[AtomicContainer] = None,
         charge_normalizer: tp.Optional[ChargeNormalizer] = None,
@@ -667,60 +707,20 @@ class ANIq(ANI):
             aev_computer=aev_computer,
             neural_networks=neural_networks,
             energy_shifter=energy_shifter,
-            pair_potentials=pair_potentials,
+            potentials=potentials,
             periodic_table_index=periodic_table_index,
         )
-        nnp: NNPotential
+        _nn = self.potentials["nnp"].neural_networks
+        _aev_computer = self.potentials["nnp"].aev_computer
         if charge_networks is None:
             warnings.warn("Merged charges potential is experimental")
-            nnp = MergedChargesNNPotential(
-                self.aev_computer,
-                self.neural_networks,
-                charge_normalizer,
+            self.potentials["nnp"] = MergedChargesNNPotential(
+                _aev_computer, _nn, charge_normalizer
             )
         else:
-            nnp = SeparateChargesNNPotential(
-                self.aev_computer,
-                self.neural_networks,
-                charge_networks,
-                charge_normalizer,
+            self.potentials["nnp"] = SeparateChargesNNPotential(
+                _aev_computer, _nn, charge_networks, charge_normalizer
             )
-
-        # Check which index has the NNPotential and replace with ChargesNNPotential
-        potentials = [pot for pot in self.potentials]
-        for j, pot in enumerate(potentials):
-            if isinstance(pot, NNPotential):
-                potentials[j] = nnp
-                break
-        # Re-register the ModuleList
-        self.potentials = torch.nn.ModuleList(potentials)
-
-    @torch.jit.export
-    def sp(
-        self,
-        species: Tensor,
-        coordinates: Tensor,
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-        total_charge: int = 0,
-        atomic: bool = False,
-        ensemble_values: bool = False,
-    ) -> tp.Dict[str, Tensor]:
-        _, energies, atomic_charges = self.energies_and_atomic_charges(
-            (species, coordinates),
-            cell=cell,
-            pbc=pbc,
-            total_charge=total_charge,
-            atomic=atomic,
-            ensemble_values=ensemble_values,
-        )
-        if atomic:
-            return {
-                "energies": energies.sum(dim=-1),
-                "atomic_energies": energies,
-                "atomic_charges": atomic_charges,
-            }
-        return {"energies": energies, "atomic_charges": atomic_charges}
 
     # TODO: must also support this from internal neighbors right?
     # TODO: Remove code duplication, the next two functions should be reformulated so
@@ -741,23 +741,19 @@ class ANIq(ANI):
         self._check_inputs(species, coords, total_charge)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
 
-        prev_cutoff = self.potentials[0].cutoff
         # Discard dist larger than the cutoff, which may be present if the neighbors
         # come from a program that uses a skin value to conditionally rebuild
         # (Verlet lists in MD engine). Also discard dummy atoms
         neighbors = self.neighborlist._screen_with_cutoff(
-            prev_cutoff, coords, neighbor_idxs, species == -1, shift_values
+            self.cutoff, coords, neighbor_idxs, species == -1, shift_values
         )
         if atomic:
             energies = coords.new_zeros(elem_idxs.shape)
         else:
             energies = coords.new_zeros(elem_idxs.shape[0])
         atomic_charges = coords.new_zeros(elem_idxs.shape)
-        for pot in self.potentials:
-            cutoff = pot.cutoff
-            if cutoff < prev_cutoff:
-                neighbors = rescreen(cutoff, neighbors)
-                prev_cutoff = cutoff
+        for pot in self.potentials.values():
+            neighbors = rescreen(pot.cutoff, neighbors)
             if hasattr(pot, "energies_and_atomic_charges"):
                 output = pot.energies_and_atomic_charges(
                     elem_idxs,
@@ -790,19 +786,15 @@ class ANIq(ANI):
         self._check_inputs(species, coords, total_charge)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
 
-        prev_cutoff = self.potentials[0].cutoff
-        neighbor_data = self.neighborlist(elem_idxs, coords, prev_cutoff, cell, pbc)
+        neighbor_data = self.neighborlist(elem_idxs, coords, self.cutoff, cell, pbc)
         energies = coords.new_zeros(elem_idxs.shape[0])
         atomic_charges = coords.new_zeros(elem_idxs.shape)
         if atomic:
             energies = coords.new_zeros(elem_idxs.shape)
         else:
             energies = coords.new_zeros(elem_idxs.shape[0])
-        for pot in self.potentials:
-            cutoff = pot.cutoff
-            if cutoff < prev_cutoff:
-                neighbor_data = rescreen(cutoff, neighbor_data)
-                prev_cutoff = cutoff
+        for pot in self.potentials.values():
+            neighbor_data = rescreen(self.cutoff, neighbor_data)
             if hasattr(pot, "energies_and_atomic_charges"):
                 output = pot.energies_and_atomic_charges(
                     elem_idxs,
@@ -821,7 +813,7 @@ class ANIq(ANI):
 
 
 AEVComputerCls = tp.Type[AEVComputer]
-PairPotentialCls = tp.Type[PairPotential]
+PotentialCls = tp.Type[Potential]
 ContainerCls = tp.Type[AtomicContainer]
 ModelCls = tp.Type[ANI]
 
@@ -849,8 +841,8 @@ class _AEVComputerWrapper:
 
 
 @dataclass
-class _PairPotentialWrapper:
-    cls: PairPotentialCls
+class _PotentialWrapper:
+    cls: PotentialCls
     cutoff_fn: CutoffArg = "global"
     cutoff: float = math.inf
     extra: tp.Optional[tp.Dict[str, tp.Any]] = None
@@ -870,7 +862,7 @@ class Assembler:
 
         self._neighborlist = _parse_neighborlist(neighborlist)
         self._aevcomp: tp.Optional[_AEVComputerWrapper] = None
-        self._pair_potentials: tp.List[_PairPotentialWrapper] = []
+        self._potentials: tp.Dict[str, _PotentialWrapper] = {}
 
         # This part of the assembler organizes the self-energies, the
         # symbols and the atomic networks
@@ -1004,20 +996,21 @@ class Assembler:
     ) -> None:
         self._global_cutoff_fn = _parse_cutoff_fn(cutoff_fn)
 
-    def add_pair_potential(
+    def add_potential(
         self,
-        pair_cls: PairPotentialCls,
+        pair_cls: PotentialCls,
+        name: str,
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "global",
         extra: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
-        self._pair_potentials.append(
-            _PairPotentialWrapper(
-                pair_cls,
-                cutoff=cutoff,
-                cutoff_fn=cutoff_fn,
-                extra=extra,
-            )
+        if name in self._potentials:
+            raise ValueError("Potential names must be unique")
+        self._potentials[name] = _PotentialWrapper(
+            pair_cls,
+            cutoff=cutoff,
+            cutoff_fn=cutoff_fn,
+            extra=extra,
         )
 
     def _build_atomic_networks(
@@ -1028,6 +1021,13 @@ class Assembler:
         return OrderedDict([(s, fn_for_networks(s, in_dim)) for s in self.symbols])
 
     def assemble(self, ensemble_size: int = 1) -> ANI:
+        r"""Construct an `ANI` model from the passed arguments
+
+        Args:
+            ensemble_size: The size of the constructed ensemble
+        Returns:
+            `ANI` model, ready to train.
+        """
         if ensemble_size < 0:
             raise ValueError("Ensemble size must be positive")
         if not self.symbols:
@@ -1080,28 +1080,24 @@ class Assembler:
             self_energies=tuple(self_energies[k] for k in self.symbols),
         )
         kwargs: tp.Dict[str, tp.Any] = {}
-        if self._pair_potentials:
-            potentials = []
-            for pot in self._pair_potentials:
+        if self._potentials:
+            potentials: tp.Dict[str, Potential] = {}
+            for pot_name, pot in self._potentials.items():
                 if pot.extra is not None:
                     pot_kwargs = pot.extra
                 else:
                     pot_kwargs = {}
                 if hasattr(pot.cls, "from_functional") and "functional" in pot_kwargs:
-                    builder = pot.cls.from_functional
+                    _ctor = pot.cls.from_functional
                 else:
-                    builder = pot.cls
-                potentials.append(
-                    builder(
-                        symbols=self.symbols,
-                        cutoff=pot.cutoff,
-                        cutoff_fn=_parse_cutoff_fn(
-                            pot.cutoff_fn, self._global_cutoff_fn
-                        ),
-                        **pot_kwargs,
-                    )
+                    _ctor = pot.cls
+                potentials[pot_name] = _ctor(
+                    symbols=self.symbols,
+                    cutoff=pot.cutoff,
+                    cutoff_fn=_parse_cutoff_fn(pot.cutoff_fn, self._global_cutoff_fn),
+                    **pot_kwargs,
                 )
-            kwargs.update({"pair_potentials": potentials})
+            kwargs.update({"potentials": potentials})
 
         if charge_networks is not None:
             kwargs["charge_networks"] = charge_networks
@@ -1141,13 +1137,15 @@ def simple_ani(
     strategy: str = "pyaev",
     use_cuda_ops: bool = False,
 ) -> ANI:
-    r"""Flexible builder to create ANI-style models. Defaults are similar to ANI-2x
+    r"""Flexible builder to create ANI-style models
+
+    Defaults are similar to ANI-2x, with some improvements.
 
     To reproduce the ANI-2x AEV exactly use the following args:
-        - cutoff_fn='cosine'
-        - radial_start=0.8
-        - angular_start=0.8
-        - radial_cutoff=5.1
+        - ``cutoff_fn='cosine'``
+        - ``radial_start=0.8``
+        - ``angular_start=0.8``
+        - ``radial_cutoff=5.1``
     """
     if strategy not in ["pyaev", "cuaev"]:
         raise ValueError(f"Unavailable strategy: {strategy}")
@@ -1183,13 +1181,15 @@ def simple_ani(
     asm.set_neighborlist("all_pairs")
     asm.set_gsaes_as_self_energies(lot)
     if repulsion:
-        asm.add_pair_potential(
+        asm.add_potential(
             RepulsionXTB,
+            name="repulsion_xtb",
             cutoff=radial_cutoff,
         )
     if dispersion:
-        asm.add_pair_potential(
+        asm.add_potential(
             TwoBodyDispersionD3,
+            name="dispersion_d3",
             cutoff=8.0,
             extra={"functional": lot.split("-")[0]},
         )
@@ -1224,13 +1224,13 @@ def simple_aniq(
 ) -> ANI:
     r"""Flexible builder to create ANI-style models that output charges
 
-    Defaults are similar to ANI-2x.
+    Defaults are similar to ANI-2x, with some improvements.
 
     To reproduce the ANI-2x AEV exactly use the following args:
-        - cutoff_fn='cosine'
-        - radial_start=0.8
-        - angular_start=0.8
-        - radial_cutoff=5.1
+        - ``cutoff_fn='cosine'``
+        - ``radial_start=0.8``
+        - ``angular_start=0.8``
+        - ``radial_cutoff=5.1``
     """
     if strategy not in ["pyaev", "cuaev"]:
         raise ValueError(f"Unavailable strategy: {strategy}")
@@ -1292,15 +1292,11 @@ def simple_aniq(
     else:
         asm.set_zeros_as_self_energies()
     if repulsion and not dummy_energies:
-        asm.add_pair_potential(
-            RepulsionXTB,
-            cutoff=radial_cutoff,
-        )
+        asm.add_potential(RepulsionXTB, name="repulsion_xtb", cutoff=radial_cutoff)
     if dispersion and not dummy_energies:
-        asm.add_pair_potential(
-            TwoBodyDispersionD3,
-            cutoff=8.0,
-            extra={"functional": lot.split("-")[0]},
+        extra = {"functional": lot.split("-")[0]}
+        asm.add_potential(
+            TwoBodyDispersionD3, name="dispersion_d3", cutoff=8.0, extra=extra
         )
     return asm.assemble(ensemble_size)
 

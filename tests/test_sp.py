@@ -10,8 +10,6 @@ from torchani.datasets import batch_all_in_ram, TestData
 @expand()
 class TestSinglePointEntry(ANITestCase):
     def setUp(self):
-        # in general self energies should be subtracted, and shuffle should be
-        # performed, but for these tests this is not important
         self.ds = batch_all_in_ram(
             TestData(verbose=False, skip_check=True),
             batch_size=256,
@@ -31,7 +29,7 @@ class TestSinglePointEntry(ANITestCase):
         properties = next(iter(self.ds))
         species = properties["species"].to(self.device)
         coords = properties["coordinates"].to(self.device, dtype=torch.float)
-        outputs = model.sp(species, coords)
+        outputs = model.sp(species, coords, atomic_charges=charges)
         if not charges:
             _, e = model((species, coords))
         else:

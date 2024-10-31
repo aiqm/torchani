@@ -60,12 +60,11 @@ class TestExternalNeighborsEntryPoint(ANITestCase):
         coords = properties["coordinates"].to(self.device, dtype=torch.float)
         coords, cell = compute_bounding_cell(coords.detach(), eps=1e-3)
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
-        cutoff = model.potentials[0].cutoff
         # Emulate external neighbors:
         # - don't pass diff_vectors or distances.
         # - pass shift values
         neighbors = model.neighborlist(
-            species, coords, cutoff, cell, pbc, return_shift_values=True
+            species, coords, model.cutoff, cell, pbc, return_shift_values=True
         )
         if not charges:
             _, e = model((species, coords), cell, pbc)
@@ -106,9 +105,8 @@ class TestInternalNeighborsEntryPoint(TestExternalNeighborsEntryPoint):
         coords = properties["coordinates"].to(self.device, dtype=torch.float)
         coords, cell = compute_bounding_cell(coords.detach(), eps=1e-3)
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
-        cutoff = model.potentials[0].cutoff
         elem_idxs = model.species_converter(species)
-        neighbors = model.neighborlist(elem_idxs, coords, cutoff, cell, pbc)
+        neighbors = model.neighborlist(elem_idxs, coords, model.cutoff, cell, pbc)
         e2 = model.compute_from_neighbors(elem_idxs, neighbors, coords, total_charge=0)
         _, e = model((species, coords), cell, pbc)
         self.assertEqual(e, e2)

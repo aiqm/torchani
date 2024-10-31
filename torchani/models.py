@@ -257,9 +257,9 @@ def ANImbis(
     }
     charge_nn_state_dict = _fetch_state_dict("charge_nn_state_dict.pt", private=True)
     model.energy_shifter.load_state_dict(shifter_state_dict)
-    model.aev_computer.load_state_dict(aev_state_dict)
-    model.neural_networks.load_state_dict(energy_nn_state_dict)
-    model.potentials[0].charge_networks.load_state_dict(charge_nn_state_dict)
+    model.potentials["nnp"].aev_computer.load_state_dict(aev_state_dict)
+    model.potentials["nnp"].neural_networks.load_state_dict(energy_nn_state_dict)
+    model.potentials["nnp"].charge_networks.load_state_dict(charge_nn_state_dict)
     model.requires_grad_(False)
     if device is not None:
         model = model.to(device)
@@ -317,12 +317,10 @@ def ANIdr(
     asm.set_global_cutoff_fn("smooth")
     asm.set_aev_computer(angular_terms="ani2x", radial_terms="ani2x", strategy=strategy)
     asm.set_atomic_networks(make_dr_network)
-    asm.add_pair_potential(
-        RepulsionXTB,
-        cutoff=5.3,
-    )
-    asm.add_pair_potential(
+    asm.add_potential(RepulsionXTB, name="repulsion_xtb", cutoff=5.3)
+    asm.add_potential(
         TwoBodyDispersionD3,
+        name="dispersion_d3",
         cutoff=8.5,
         cutoff_fn=CutoffSmooth(order=4),
         extra={"functional": "B973c"},
