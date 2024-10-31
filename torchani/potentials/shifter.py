@@ -26,6 +26,7 @@ class SelfEnergy(Potential):
             raise ValueError("Symbols and self energies do not match in length")
         _self_energies = torch.tensor(self_energies, dtype=torch.float)
         self.register_buffer("self_energies", _self_energies)
+        self._is_enabled = True  # Hack, needed for now
 
     # Return a sequence of GSAES sorted by element
     # Example usage:
@@ -57,6 +58,8 @@ class SelfEnergy(Potential):
         # Compute atomic self energies for a set of species.
         self_atomic_energies = self.self_energies[elem_idxs]
         self_atomic_energies = self_atomic_energies.masked_fill(elem_idxs == -1, 0.0)
+        if not self._is_enabled:
+            self_atomic_energies = self_atomic_energies * 0.0
         if not atomic:
             self_atomic_energies = self_atomic_energies.sum(dim=-1)
         return self_atomic_energies

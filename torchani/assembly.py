@@ -148,6 +148,9 @@ class ANI(torch.nn.Module):
             if hasattr(p, "neural_networks"):
                 p.neural_networks.set_active_members(idxs)
 
+    def shifts_energy(self, enable: bool = True) -> None:
+        self.energy_shifter._is_enabled = enable
+
     @torch.jit.export
     def set_strategy(self, strategy: str = "pyaev") -> None:
         self.aev_computer.set_strategy(strategy)
@@ -295,17 +298,11 @@ class ANI(torch.nn.Module):
             # Separate the values of the potential that has ensemble values if requested
             if ensemble_values and hasattr(pot, "ensemble_values"):
                 _values = pot.ensemble_values(
-                    elem_idxs,
-                    neighbors,
-                    _coordinates=_coords,
-                    atomic=atomic,
+                    elem_idxs, neighbors, _coordinates=_coords, atomic=atomic
                 )
             else:
                 energies += pot(
-                    elem_idxs,
-                    neighbors,
-                    _coordinates=_coords,
-                    atomic=atomic,
+                    elem_idxs, neighbors, _coordinates=_coords, atomic=atomic
                 )
         energies += self.energy_shifter(elem_idxs, atomic=atomic)
         if ensemble_values:
