@@ -1152,8 +1152,10 @@ def simple_ani(
         - ``angular_start=0.8``
         - ``radial_cutoff=5.1``
     """
-    if strategy not in ["pyaev", "cuaev"]:
+    if strategy not in ["pyaev", "cuaev", "cuaev-fused"]:
         raise ValueError(f"Unavailable strategy: {strategy}")
+    if strategy == "cuaev-fused" and (dispersion or repulsion):
+        raise ValueError(f"{strategy} incompatible with external potentials")
     if use_cuda_ops:
         warnings.warn("use_cuda_ops is deprecated, please use strategy = 'cuaev'")
         strategy = "cuaev"
