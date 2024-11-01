@@ -5,11 +5,7 @@ from torch import Tensor
 
 from torchani.constants import ATOMIC_NUMBER, PERIODIC_TABLE
 from torchani.cutoffs import _parse_cutoff_fn, CutoffArg
-from torchani.neighbors import (
-    Neighbors,
-    _call_global_cell_list,
-    _call_global_all_pairs,
-)
+from torchani.neighbors import Neighbors, cell_list, all_pairs
 
 
 # TODO: The "_coordinates" input is only required due to a quirk of the
@@ -73,13 +69,9 @@ class Potential(torch.nn.Module):
 
         if self.cutoff > 0.0:
             if neighborlist == "cell_list":
-                neighbors = _call_global_cell_list(
-                    elem_idxs, coordinates, self.cutoff, cell, pbc
-                )
+                neighbors = cell_list(elem_idxs, coordinates, self.cutoff, cell, pbc)
             elif neighborlist == "all_pairs":
-                neighbors = _call_global_all_pairs(
-                    elem_idxs, coordinates, self.cutoff, cell, pbc
-                )
+                neighbors = all_pairs(elem_idxs, coordinates, self.cutoff, cell, pbc)
         else:
             neighbors = Neighbors(torch.empty(0), torch.empty(0), torch.empty(0))
         return self(

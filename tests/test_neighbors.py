@@ -16,6 +16,7 @@ from torchani.neighbors import (
     flatten_idx3,
     image_pairs_within,
     count_atoms_in_buckets,
+    _offset_idx3,
 )
 
 
@@ -40,7 +41,7 @@ class TestCellList(TestCase):
         self.clist = CellList()
 
     def testInit(self):
-        self.assertTrue(self.clist._offset_idx3().shape == (13, 3))
+        self.assertTrue(_offset_idx3().shape == (13, 3))
 
     def testSetupGrid(self):
         grid_shape = setup_grid(

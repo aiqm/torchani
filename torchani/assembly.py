@@ -50,7 +50,6 @@ from torchani.tuples import (
     ForceMagnitudes,
 )
 from torchani.annotations import StressKind
-from torchani.neighbors import _parse_neighborlist, NeighborlistArg
 from torchani.cutoffs import _parse_cutoff_fn, Cutoff, CutoffArg
 from torchani.aev import (
     AEVComputer,
@@ -71,7 +70,13 @@ from torchani.nn import (
     parse_activation,
 )
 from torchani.nn._factories import _parse_network_maker
-from torchani.neighbors import rescreen, Neighbors
+from torchani.neighbors import (
+    Neighbors,
+    _parse_neighborlist,
+    NeighborlistArg,
+    narrow_down,
+    discard_outside_cutoff,
+)
 from torchani.electro import ChargeNormalizer
 from torchani.nn._internal import _ZeroANINetworks
 from torchani.constants import GSAES
@@ -328,8 +333,8 @@ class ANI(torch.nn.Module):
         # Discard dist larger than the cutoff, which may be present if the neighbors
         # come from a program that uses a skin value to conditionally rebuild
         # (Verlet lists in MD engine). Also discard dummy atoms
-        neighbors = self.neighborlist._screen_with_cutoff(
-            self.cutoff, coords, neighbor_idxs, elem_idxs == -1, shift_values
+        neighbors = narrow_down(
+            species, coords, self.cutoff, neighbor_idxs, shift_values
         )
         return self.compute_from_neighbors(
             elem_idxs, neighbors, coords, total_charge, atomic, ensemble_values
@@ -356,7 +361,7 @@ class ANI(torch.nn.Module):
             energies = neighbors.distances.new_zeros(elem_idxs.shape[0])
         _values: tp.Optional[Tensor] = None
         for pot in self.potentials.values():
-            neighbors = rescreen(pot.cutoff, neighbors)
+            neighbors = discard_outside_cutoff(neighbors, pot.cutoff)
             # Separate the values of the potential that has ensemble values if requested
             if ensemble_values and hasattr(pot, "ensemble_values"):
                 _values = pot.ensemble_values(
@@ -744,8 +749,8 @@ class ANIq(ANI):
         # Discard dist larger than the cutoff, which may be present if the neighbors
         # come from a program that uses a skin value to conditionally rebuild
         # (Verlet lists in MD engine). Also discard dummy atoms
-        neighbors = self.neighborlist._screen_with_cutoff(
-            self.cutoff, coords, neighbor_idxs, species == -1, shift_values
+        neighbors = narrow_down(
+            species, coords, self.cutoff, neighbor_idxs, shift_values
         )
         if atomic:
             energies = coords.new_zeros(elem_idxs.shape)
@@ -753,7 +758,7 @@ class ANIq(ANI):
             energies = coords.new_zeros(elem_idxs.shape[0])
         atomic_charges = coords.new_zeros(elem_idxs.shape)
         for pot in self.potentials.values():
-            neighbors = rescreen(pot.cutoff, neighbors)
+            neighbors = discard_outside_cutoff(neighbors, pot.cutoff)
             if hasattr(pot, "energies_and_atomic_charges"):
                 output = pot.energies_and_atomic_charges(
                     elem_idxs,
@@ -781,12 +786,12 @@ class ANIq(ANI):
         ensemble_values: bool = False,
     ) -> SpeciesEnergiesAtomicCharges:
         if ensemble_values:
-            raise ValueError("atomic E and ensemble values not supported")
+            raise ValueError("Ensemble values not supported")
         species, coords = species_coordinates
         self._check_inputs(species, coords, total_charge)
         elem_idxs = self.species_converter(species, nop=not self.periodic_table_index)
 
-        neighbor_data = self.neighborlist(elem_idxs, coords, self.cutoff, cell, pbc)
+        neighbors = self.neighborlist(elem_idxs, coords, self.cutoff, cell, pbc)
         energies = coords.new_zeros(elem_idxs.shape[0])
         atomic_charges = coords.new_zeros(elem_idxs.shape)
         if atomic:
@@ -794,11 +799,11 @@ class ANIq(ANI):
         else:
             energies = coords.new_zeros(elem_idxs.shape[0])
         for pot in self.potentials.values():
-            neighbor_data = rescreen(self.cutoff, neighbor_data)
+            neighbors = discard_outside_cutoff(neighbors, self.cutoff)
             if hasattr(pot, "energies_and_atomic_charges"):
                 output = pot.energies_and_atomic_charges(
                     elem_idxs,
-                    neighbor_data,
+                    neighbors,
                     _coordinates=coords,
                     ghost_flags=None,
                     total_charge=total_charge,
@@ -807,7 +812,7 @@ class ANIq(ANI):
                 energies += output.energies
                 atomic_charges += output.atomic_charges
             else:
-                energies += pot(elem_idxs, neighbor_data, _coordinates=coords)
+                energies += pot(elem_idxs, neighbors, _coordinates=coords)
         energies += self.energy_shifter(elem_idxs)
         return SpeciesEnergiesAtomicCharges(elem_idxs, energies, atomic_charges)
 
