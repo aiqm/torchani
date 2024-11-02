@@ -18,7 +18,7 @@ keywords = [
 classifiers = ["License :: OSI Approved :: MIT License"]
 requires-python = ">=3.8"
 dependencies = [
-    "torch==2.3",
+    "torch==2.5",
     "numpy==1.26",
     "typing_extensions>=4.0.0",
     "h5py",

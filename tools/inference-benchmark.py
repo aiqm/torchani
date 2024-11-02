@@ -207,8 +207,6 @@ if __name__ == "__main__":
         num_profile=args.num_profile,
     )
     if args.compile:
-        if not tuple(map(int, torch.__version__.split("."))) >= (2, 0):
-            raise RuntimeError("PyTorch 2.0 or later needed for torch.compile")
         main(
             opt=Opt.COMPILE,
             file=args.filename,

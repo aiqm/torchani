@@ -311,12 +311,6 @@ class TestCellListEnergiesCuda(TestCellListEnergies):
 @expand()
 class TestCellListLargeSystem(ANITestCase):
     def setUp(self):
-        # JIT optimizations are avoided to prevent cuda bugs that make first
-        # evaluations extremely slow for old pytorch
-        # NOTE: This may not even happen anymore with the re-coding of the
-        # cell-list code
-        if tuple(map(int, torch.__version__.split("."))) < (2, 0):
-            torch._C._jit_set_profiling_executor(False)
         cut = 5.2
         cell_size = cut * 3 + 0.1
 
@@ -340,12 +334,6 @@ class TestCellListLargeSystem(ANITestCase):
         else:
             self.rtol = 1.0e-7
             self.atol = 1.0e-7
-
-    def tearDown(self) -> None:
-        # JIT optimizations are reset since this generates bugs in the
-        # on the repulsion tests, on old pytorch
-        if tuple(map(int, torch.__version__.split("."))) < (2, 0):
-            torch._C._jit_set_profiling_executor(True)
 
     def testRandomNoPBC(self):
         idxs = torch.randint(

@@ -128,10 +128,6 @@ def main() -> int:
     # could reach 1e-3. However note that this error for large system is not that
     # big actually.
     torch.backends.cuda.matmul.allow_tf32 = False
-    if tuple(map(int, torch.__version__.split("."))) < (2, 3):
-        # Avoid nvfuser bugs for old pytorch versions
-        # https://github.com/pytorch/pytorch/issues/84510)
-        torch._C._jit_set_nvfuser_enabled(False)
     console = Console()
     ensemble_table = Table(
         title="MNP Ensemble Benchmark",

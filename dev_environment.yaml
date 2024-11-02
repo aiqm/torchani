@@ -9,7 +9,7 @@ dependencies:
   - python=3.10
   - pip>=24.0
   - numpy=1.26
-  - pytorch::pytorch=2.3  # Modify to 'pytorch::pytorch=2' if installing on macOS
+  - pytorch::pytorch=2.5  # Modify to 'pytorch::pytorch=2' if installing on macOS
   - typing_extensions>=4.0.0
   - h5py  # HDF5 backend for datasets
   - tqdm  # progress bar util

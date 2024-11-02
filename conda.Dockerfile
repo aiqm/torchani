@@ -1,5 +1,5 @@
-# This image has ubuntu 22.0, cuda 11.8, cudnn 8.7, python 3.10, pytorch 2.3.0
-FROM pytorch/pytorch:2.3.0-cuda11.8-cudnn8-devel
+# This image has ubuntu 22.0, cuda 11.8, cudnn 9, python 3.11.10, pytorch 2.5.1
+FROM pytorch/pytorch:2.5.1-cuda11.8-cudnn9-devel
 WORKDIR /repo
 
 # Set cuda env vars
@@ -31,7 +31,7 @@ RUN \
     && git init \
     && git add . \
     && git commit -m "Initial commit" \
-    && git tag -a "3.1" -m "Version 3.1"
+    && git tag -a "3.0-dev" -m "Version 3.0-dev"
 
 # Build conda pkg locally
 RUN \

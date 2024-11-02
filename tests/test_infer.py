@@ -32,19 +32,11 @@ class TestInfer(ANITestCase):
         # big actually.
         self._saved_tf32 = torch.backends.cuda.matmul.allow_tf32
         torch.backends.cuda.matmul.allow_tf32 = False
-        if tuple(map(int, torch.__version__.split("."))) < (2, 3):
-            # Avoid nvfuser bugs for old pytorch versions
-            # https://github.com/pytorch/pytorch/issues/84510)
-            torch._C._jit_set_nvfuser_enabled(False)
 
     def tearDown(self) -> None:
         torch.backends.cuda.matmul.allow_tf32 = self._saved_tf32
         os.environ["OMP_NUM_THREADS"] = self._saved_omp_num_threads
         warnings.resetwarnings()
-        if tuple(map(int, torch.__version__.split("."))) < (2, 3):
-            # Avoid nvfuser bugs for old pytorch versions
-            # https://github.com/pytorch/pytorch/issues/84510)
-            torch._C._jit_set_nvfuser_enabled(True)
 
     def _build_ani2x(
         self, idx: tp.Optional[int] = None, mnp: bool = False, infer: bool = False

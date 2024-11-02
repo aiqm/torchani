@@ -3,7 +3,7 @@ c_compiler_version:
 cxx_compiler_version:
   - 11.4.0
 pytorch:
-  - 2.3
+  - 2.5
 python:
   - 3.10
 cuda:

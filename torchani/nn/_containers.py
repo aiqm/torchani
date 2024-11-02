@@ -182,7 +182,7 @@ class ANIEnsemble(AtomicContainer):
 
     @torch.jit.unused
     def member(self, idx: int) -> AtomicContainer:
-        return self.members[idx]
+        return tp.cast(AtomicContainer, self.members[idx])
 
     @torch.jit.unused
     def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:

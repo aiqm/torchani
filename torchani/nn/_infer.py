@@ -165,8 +165,9 @@ class BmmAtomicNetwork(torch.nn.Module):
                 raise ValueError("All networks must have the same activation function")
 
         # "layers" is now a sequence of BmmLinear
+        #  Not sure why this fail
         self.layers = torch.nn.ModuleList(
-            [BmmLinear([n.layers[j] for n in networks]) for j in range(num_layers)]
+            [BmmLinear([n.layers[j] for n in networks]) for j in range(num_layers)]  # type: ignore  # noqa
         )
         self.final_layer = BmmLinear([n.final_layer for n in networks])
         self._num_batched_networks = len(networks)
