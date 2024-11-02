@@ -11,12 +11,21 @@ from torchani.utils import map_to_central, cumsum_from_zero, fast_masked_select
 
 
 class Neighbors(tp.NamedTuple):
-    r"""Named tuple with the result of a neighborlist calculation"""
+    r"""Holds pairs of atoms that are neighbors. Result of a neighborlist calculation"""
 
     indices: Tensor  #: Long tensor with idxs of neighbor pairs. Shape ``(2, pairs)``
     distances: Tensor  #: The associated pair distances. Shape is ``(pairs,)``
     diff_vectors: Tensor  #: The associated difference vectors. Shape is ``(pairs, 3)``
-    shift_values: tp.Optional[Tensor] = None  #: Shifts in coords for wraped through PBC
+
+
+class Triples(tp.NamedTuple):
+    r"""Holds groups of 3 atoms that are neighbors. Result of `neighbors_to_triples`"""
+
+    central_idxs: Tensor  #: Long tensor with central idxs. Shape ``(triples,)``
+    side_idxs: Tensor  #: Long tensor with side idxs. Shape ``(2, triples)``
+    diff_sign: Tensor  #: Long tensor with diff vector direction. Shape ``(2, triples)``
+    distances: Tensor  #: Similar to `Neighbors`, for triples. ``(2, triples)``
+    diff_vectors: Tensor  #: Similar to `Neighbors`, for triples. ``(2, triples, 3)``
 
 
 def discard_outside_cutoff(
@@ -43,7 +52,6 @@ def narrow_down(
     cutoff: float,
     neighbor_idxs: Tensor,
     shift_values: tp.Optional[Tensor] = None,
-    return_shift_values: bool = False,
 ) -> Neighbors:
     r"""Takes a set of potential neighbor idxs and narrows it down to true neighbors"""
     mask = elem_idxs == -1
@@ -87,9 +95,7 @@ def narrow_down(
     if shift_values is not None:
         diff_vectors += shift_values
     distances = diff_vectors.norm(2, -1)
-    if not return_shift_values:
-        shift_values = None
-    return Neighbors(neighbor_idxs, distances, diff_vectors, shift_values)
+    return Neighbors(neighbor_idxs, distances, diff_vectors)
 
 
 def compute_bounding_cell(
@@ -131,7 +137,6 @@ class Neighborlist(torch.nn.Module):
         cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-        return_shift_values: bool = False,
     ) -> Neighbors:
         r"""Calculate all pairs of atoms that are neighbors, given a cutoff.
 
@@ -142,7 +147,6 @@ class Neighborlist(torch.nn.Module):
                 are not included.
             cell: |cell|
             pbc: |pbc|
-            return_shift_values: Whether to return the shift-values
         Returns:
             `typing.NamedTuple` with all pairs of atoms that are neighbors.
         """
@@ -163,9 +167,8 @@ class AllPairs(Neighborlist):
         cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-        return_shift_values: bool = False,
     ) -> Neighbors:
-        return all_pairs(species, coords, cutoff, cell, pbc, return_shift_values)
+        return all_pairs(species, coords, cutoff, cell, pbc)
 
 
 def all_pairs(
@@ -174,7 +177,6 @@ def all_pairs(
     cutoff: float,
     cell: tp.Optional[Tensor] = None,
     pbc: tp.Optional[Tensor] = None,
-    return_shift_values: bool = False,
 ) -> Neighbors:
     cell, pbc = _validate_cell_pbc(species, cell, pbc)
     if pbc.any():
@@ -182,9 +184,7 @@ def all_pairs(
         shift_values = shift_indices.to(cell.dtype) @ cell
         # Before screening coords, must map to central cell (not need if no PBC)
         coords = map_to_central(coords, cell, pbc)
-        return narrow_down(
-            species, coords, cutoff, neighbor_idxs, shift_values, return_shift_values
-        )
+        return narrow_down(species, coords, cutoff, neighbor_idxs, shift_values)
     num_molecs, num_atoms = species.shape
     # Create a neighborlist for all molecules and all atoms.
     # Later screen dummy atoms
@@ -278,9 +278,8 @@ class CellList(Neighborlist):
         cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-        return_shift_values: bool = False,
     ) -> Neighbors:
-        return cell_list(species, coords, cutoff, cell, pbc, return_shift_values)
+        return cell_list(species, coords, cutoff, cell, pbc)
 
 
 def cell_list(
@@ -289,7 +288,6 @@ def cell_list(
     cutoff: float,
     cell: tp.Optional[Tensor] = None,
     pbc: tp.Optional[Tensor] = None,
-    return_shift_values: bool = False,
 ) -> Neighbors:
     assert cutoff >= 0.0, "Cutoff must be a positive float"
     cell, pbc = _validate_cell_pbc(species, cell, pbc)
@@ -324,9 +322,7 @@ def cell_list(
         # Before the screening step we map the coords to the central cell,
         # same as with an all-pairs calculation
         coords = map_to_central(coords, cell.detach(), pbc)
-        return narrow_down(
-            species, coords, cutoff, neighbor_idxs, shift_values, return_shift_values
-        )
+        return narrow_down(species, coords, cutoff, neighbor_idxs, shift_values)
     return narrow_down(species, coords, cutoff, neighbor_idxs)
 
 
@@ -725,7 +721,6 @@ class _VerletCellList(CellList):
         cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-        return_shift_values: bool = False,
     ) -> Neighbors:
         assert cutoff >= 0.0, "Cutoff must be a positive float"
         cell, pbc = _validate_cell_pbc(species, cell, pbc)
@@ -766,7 +761,6 @@ class _VerletCellList(CellList):
                 cutoff,
                 neighbor_idxs,
                 shift_values,
-                return_shift_values,
             )
         return narrow_down(species, coords, cutoff, neighbor_idxs)
 
@@ -852,7 +846,7 @@ def _validate_cell_pbc(
     return cell, pbc
 
 
-# NOTE: This function is very complex, please read the followin carefully
+# NOTE: This function is very complex, please read the following carefully
 # Input: indices for pairs of atoms that are close to each other. each pair only
 # appear once, i.e. only one of the pairs (1, 2) and (2, 1) exists.
 # Output: indices for all central atoms and it pairs of neighbors. For example, if
@@ -860,32 +854,31 @@ def _validate_cell_pbc(
 # (0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
 # then the output would have central atom 0, 1, 2, 3, 4 and for cental atom 0, its
 # pairs of neighbors are (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
-def _triple_idxs_from_neighbors(
-    neighbor_idxs: Tensor,
-) -> tp.Tuple[Tensor, Tensor, Tensor]:
+def neighbors_to_triples(neighbors: Neighbors) -> Triples:
+    r"""Converts output of a neighborlist calculation into triples of atoms"""
     # convert representation from pair to central-others and sort
-    sorted_flat_neighbor_idxs, rev_idxs = neighbor_idxs.view(-1).sort()
+    sorted_flat_neighbor_idxs, rev_idxs = neighbors.indices.view(-1).sort()
 
     # sort compute unique key
-    uniqued_central_atom_idx, counts = torch.unique_consecutive(
+    uniqued_central_idx, counts = torch.unique_consecutive(
         sorted_flat_neighbor_idxs, return_inverse=False, return_counts=True
     )
 
-    # compute central_atom_idx
+    # compute central_idxs
     pair_sizes = (counts * (counts - 1)).div(2, rounding_mode="floor")
     pair_indices = torch.repeat_interleave(pair_sizes)
-    central_atom_idx = uniqued_central_atom_idx.index_select(0, pair_indices)
+    central_idxs = uniqued_central_idx.index_select(0, pair_indices)
 
     # do local combinations within unique key, assuming sorted
     m = counts.max().item() if counts.numel() > 0 else 0
     n = pair_sizes.shape[0]
     intra_pair_indices = (
-        torch.tril_indices(m, m, -1, device=neighbor_idxs.device)
+        torch.tril_indices(m, m, -1, device=neighbors.indices.device)
         .unsqueeze(1)
         .expand(-1, n, -1)
     )
     mask = (
-        torch.arange(intra_pair_indices.shape[2], device=neighbor_idxs.device)
+        torch.arange(intra_pair_indices.shape[2], device=neighbors.indices.device)
         < pair_sizes.unsqueeze(1)
     ).view(-1)
     sorted_local_idx12 = intra_pair_indices.flatten(1, 2)[:, mask]
@@ -895,6 +888,22 @@ def _triple_idxs_from_neighbors(
     local_idx12 = rev_idxs[sorted_local_idx12]
 
     # compute mapping between representation of central-other to pair
-    n = neighbor_idxs.shape[1]
+    n = neighbors.indices.shape[1]
     sign12 = ((local_idx12 < n).to(torch.int8) * 2) - 1
-    return central_atom_idx, local_idx12 % n, sign12
+    side_idxs = local_idx12 % n
+
+    # Shape (2, T, 3)
+    diff_vectors = neighbors.diff_vectors.index_select(0, side_idxs.view(-1)).view(
+        2, -1, 3
+    )
+    diff_vectors = diff_vectors * sign12.view(2, -1, 1)
+    distances = neighbors.distances.index_select(0, side_idxs.view(-1)).view(2, -1)
+    return Triples(central_idxs, side_idxs, sign12, distances, diff_vectors)
+
+
+# Reconstruct the shift values used to calculate the diff vectors
+def _reconstruct_shift_values(coords: Tensor, neighbors: Neighbors) -> Tensor:
+    coords0 = coords.view(-1, 3).index_select(0, neighbors.indices[0])
+    coords1 = coords.view(-1, 3).index_select(0, neighbors.indices[1])
+    unshifted_diff_vectors = coords0 - coords1
+    return neighbors.diff_vectors - unshifted_diff_vectors

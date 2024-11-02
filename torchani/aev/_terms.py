@@ -27,21 +27,19 @@ class _Term(torch.nn.Module):
 class AngularTerm(_Term):
     r"""Base class for angular term modules"""
 
-    def forward(self, triples_distances: Tensor, triples_vectors: Tensor) -> Tensor:
+    def forward(self, tri_distances: Tensor, tri_vectors: Tensor) -> Tensor:
         r""":meta private:"""
         # Wraps computation of terms with cutoff function
-        triples_factor = self.cutoff_fn(triples_distances, self.cutoff)
-        terms = self.compute_terms(triples_distances, triples_vectors)
-        assert terms.shape == (triples_distances.shape[1], self.num_feats)
+        tri_factor = self.cutoff_fn(tri_distances, self.cutoff)
+        terms = self.compute_terms(tri_distances, tri_vectors)
+        assert terms.shape == (tri_distances.shape[1], self.num_feats)
         # Use `fcj12[0] * fcj12[1]` instead of `fcj12.prod(0)` to avoid the INFs/NaNs
         # problem for smooth cutoff function, for more detail please check issue:
         # https://github.com/roitberg-group/torchani_sandbox/issues/178
         # shape (T, shifts, sections)
-        return terms * (triples_factor[0] * triples_factor[1]).view(-1, 1)
+        return terms * (tri_factor[0] * tri_factor[1]).view(-1, 1)
 
-    def compute_terms(
-        self, triples_distances: Tensor, triples_vectors: Tensor
-    ) -> Tensor:
+    def compute_terms(self, tri_distances: Tensor, tri_vectors: Tensor) -> Tensor:
         r"""Compute the angular terms. Output shape is: ``(triples, self.num_feats)``
 
         Subclasses must implement this method
@@ -268,7 +266,7 @@ class ANIAngular(AngularTerm):
         ]
         return " \n".join(parts)
 
-    def compute_terms(self, triple_distances: Tensor, triple_vectors: Tensor) -> Tensor:
+    def compute_terms(self, tri_distances: Tensor, tri_vectors: Tensor) -> Tensor:
         r"""Computes the terms associated with a group of triples
 
         Note:
@@ -283,17 +281,17 @@ class ANIAngular(AngularTerm):
             Shape ``(pairs, num_feats = shifts * sections)``. Note that by design this
             function does *not* sum over atoms.
         """
-        triple_vectors = triple_vectors.view(2, -1, 3, 1, 1)
-        triple_distances = triple_distances.view(2, -1, 1, 1)
-        cos_angles = triple_vectors.prod(0).sum(1) / torch.clamp(
-            triple_distances.prod(0), min=1e-10
+        tri_vectors = tri_vectors.view(2, -1, 3, 1, 1)
+        tri_distances = tri_distances.view(2, -1, 1, 1)
+        cos_angles = tri_vectors.prod(0).sum(1) / torch.clamp(
+            tri_distances.prod(0), min=1e-10
         )
         # 0.95 is multiplied to the cos values to prevent acos from returning NaN.
         angles = torch.acos(0.95 * cos_angles)
         angle_deviations = angles - self.sections.view(1, -1)
         factor1 = ((1 + torch.cos(angle_deviations)) / 2) ** self.zeta
 
-        mean_distance_deviations = triple_distances.sum(0) / 2 - self.shifts.view(-1, 1)
+        mean_distance_deviations = tri_distances.sum(0) / 2 - self.shifts.view(-1, 1)
         factor2 = torch.exp(-self.eta * mean_distance_deviations**2)
         return (2 * factor1 * factor2).view(-1, self.num_feats)
 

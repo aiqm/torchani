@@ -5,7 +5,7 @@ import torch
 from torchani._testing import ANITestCase, expand
 from torchani.models import ANI1x, ANI2x, ANIdr, ANImbis
 from torchani.datasets import batch_all_in_ram, TestData
-from torchani.neighbors import compute_bounding_cell
+from torchani.neighbors import compute_bounding_cell, _reconstruct_shift_values
 
 
 @expand()
@@ -63,16 +63,15 @@ class TestExternalNeighborsEntryPoint(ANITestCase):
         # Emulate external neighbors:
         # - don't pass diff_vectors or distances.
         # - pass shift values
-        neighbors = model.neighborlist(
-            species, coords, model.cutoff, cell, pbc, return_shift_values=True
-        )
+        neighbors = model.neighborlist(species, coords, model.cutoff, cell, pbc)
+        shift_values = _reconstruct_shift_values(coords, neighbors)
         if not charges:
             _, e = model((species, coords), cell, pbc)
             e2 = model.compute_from_external_neighbors(
                 species,
                 coords,
                 neighbors.indices,
-                neighbors.shift_values,
+                shift_values,
                 total_charge=0,
             )
         else:
@@ -86,7 +85,7 @@ class TestExternalNeighborsEntryPoint(ANITestCase):
                 species,
                 coords,
                 neighbors.indices,
-                neighbors.shift_values,
+                shift_values,
                 total_charge=0,
             )
             self.assertEqual(q, q2)

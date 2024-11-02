@@ -9,7 +9,7 @@ import typing_extensions as tpx
 from torchani.tuples import SpeciesAEV
 from torchani.neighbors import (
     _parse_neighborlist,
-    _triple_idxs_from_neighbors,
+    neighbors_to_triples,
     discard_outside_cutoff,
     NeighborlistArg,
     AllPairs,
@@ -266,28 +266,23 @@ class AEVComputer(torch.nn.Module):
     def _compute_pyaev(self, elem_idxs: Tensor, neighbors: Neighbors) -> Tensor:
         if self._print_aev_branch:
             print("Executing branch: pyAEV")
-        terms = self.radial(neighbors.distances)  # Shape (pairs, rad)
-        # Shape (molecs, atoms, num-species * rad)
+        terms = self.radial(neighbors.distances)  # (pairs, rad)
+        # (molecs, atoms, species * rad)
         radial_aev = self._collect_radial(elem_idxs, neighbors.indices, terms)
 
         # Discard neighbors outside the (smaller) angular cutoff to improve performance
-        neighbors = discard_outside_cutoff(neighbors, self.angular.cutoff)  # (pairs',)
+        neighbors = discard_outside_cutoff(neighbors, self.angular.cutoff)
+        triples = neighbors_to_triples(neighbors)
 
-        # Shapes: (T,) (2, T) (2, T)
-        central_idx, side_idxs, sign12 = _triple_idxs_from_neighbors(neighbors.indices)
-        # Shape (2, T, 3)
-        triple_vectors = neighbors.diff_vectors.index_select(
-            0, side_idxs.view(-1)
-        ).view(2, -1, 3)
-        triple_vectors = triple_vectors * sign12.view(2, -1, 1)
-        triple_distances = neighbors.distances.index_select(0, side_idxs.view(-1)).view(
-            2, -1
-        )
-
-        terms = self.angular(triple_distances, triple_vectors)  # Shape (triples, ang)
-        # Shape (molecs, atoms, num-species-pairs * ang)
+        terms = self.angular(triples.distances, triples.diff_vectors)  # (triples, ang)
+        # (molecs, atoms, species-pairs * ang)
         angular_aev = self._collect_angular(
-            elem_idxs, neighbors.indices, central_idx, side_idxs, sign12, terms
+            elem_idxs,
+            neighbors.indices,
+            triples.central_idxs,
+            triples.side_idxs,
+            triples.diff_sign,
+            terms,
         )
         # Shape (molecs, atoms, num-species-pairs * ang + num-species * rad)
         return torch.cat([radial_aev, angular_aev], dim=-1)

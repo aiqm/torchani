@@ -271,7 +271,7 @@ class TestPBCSeeEachOther(TestCase):
 
         for xyz2 in xyz2s:
             coords = torch.stack([xyz1, xyz2]).to(torch.double).unsqueeze(0)
-            atom_index12, _, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
+            atom_index12, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
             atom_index1, atom_index2 = atom_index12.unbind(0)
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
@@ -288,7 +288,7 @@ class TestPBCSeeEachOther(TestCase):
             xyz2[i] = 9.9
 
             coords = torch.stack([xyz1, xyz2]).unsqueeze(0)
-            atom_index12, _, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
+            atom_index12, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
             atom_index1, atom_index2 = atom_index12.unbind(0)
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
@@ -308,7 +308,7 @@ class TestPBCSeeEachOther(TestCase):
                 xyz2[j] = new_j
 
             coords = torch.stack([xyz1, xyz2]).unsqueeze(0)
-            atom_index12, _, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
+            atom_index12, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
             atom_index1, atom_index2 = atom_index12.unbind(0)
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
@@ -326,7 +326,7 @@ class TestPBCSeeEachOther(TestCase):
         xyz2 = torch.tensor([10.0, 0.1, 0.1], dtype=torch.double)
 
         coords = torch.stack([xyz1, xyz2]).unsqueeze(0)
-        atom_index12, _, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
+        atom_index12, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
         atom_index1, atom_index2 = atom_index12.unbind(0)
         self.assertEqual(atom_index1.tolist(), [0])
         self.assertEqual(atom_index2.tolist(), [1])

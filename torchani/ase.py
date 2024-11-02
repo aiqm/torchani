@@ -124,7 +124,6 @@ class Calculator(AseCalculator):
                     neighbors.indices,
                     neighbors.diff_vectors.norm(2, -1),
                     neighbors.diff_vectors,
-                    neighbors.shift_values,
                 )
             energy = self.model.compute_from_neighbors(elem_idxs, neighbors, coords)
         else:

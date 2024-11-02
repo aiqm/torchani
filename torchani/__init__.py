@@ -93,8 +93,8 @@ __all__ = [
 ]
 
 # Disable TF32 since it catastrophically degrades accuracy of ANI models
-torch.backends.cuda.matmul.allow_tf32 = False
-torch.backends.cudnn.allow_tf32 = False
+# torch.backends.cuda.matmul.allow_tf32 = False
+# torch.backends.cudnn.allow_tf32 = False
 
 # Warn about disabling TF3 only if an Ampere (or newer) GPU is detected
 # (suppressed by setting TORCHANI_NO_WARN_TF32)
