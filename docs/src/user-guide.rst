@@ -31,7 +31,7 @@ forces in Hartree/Angstrom.
 
     examples_autogen/dispersion_potential.rst
     examples_autogen/repulsive_potential.rst
-    examples_autogen/modular_aev.rst
+    examples_autogen/extending_aev.rst
 
 .. toctree::
     :maxdepth: 1

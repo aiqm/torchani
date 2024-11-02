@@ -86,13 +86,11 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
     # enable timers
     timers: tp.Dict[str, float] = {}
     _aev_fns = (
-        "_collect_radial_terms",
-        "_collect_angular_terms",
-        "_collect_radial_terms",
-        "angular_terms",
-        "radial_terms",
+        "_collect_radial",
+        "_collect_angular",
+        "angular",
+        "radial",
         "_compute_pyaev",
-        "_triple_by_molecule",
         "forward",
     )
     time_functions(

@@ -12,7 +12,7 @@ from torchani._testing import TestCase
 from torchani.neighbors import AllPairs, compute_bounding_cell
 from torchani.nn import SpeciesConverter
 from torchani.utils import ChemicalSymbolsToInts, pad_atomic_properties, map_to_central
-from torchani.aev import AEVComputer, StandardAngular, StandardRadial
+from torchani.aev import AEVComputer, ANIAngular, ANIRadial
 from torchani.io import read_xyz
 from torchani.neighbors import CellList
 
@@ -24,12 +24,12 @@ N = 97
 class _TestAEVBase(TestCase):
     def setUp(self):
         self.aev_computer = AEVComputer.like_1x()
-        self.radial_length = self.aev_computer.radial_length
+        self.radial_len = self.aev_computer.radial_len
         self._debug_aev = False
 
     def assertAEVEqual(self, expected_radial, expected_angular, aev):
-        radial = aev[..., : self.radial_length]
-        angular = aev[..., self.radial_length:]
+        radial = aev[..., : self.radial_len]
+        angular = aev[..., self.radial_len:]
         if self._debug_aev:
             aid = 1
             print(torch.stack([expected_radial[0, aid, :], radial[0, aid, :]]))
@@ -39,15 +39,15 @@ class _TestAEVBase(TestCase):
 
 class TestAEVConstructor(TestCase):
     def testTerms2x(self):
-        exact_angular = StandardAngular.like_2x()
-        exact_radial = StandardRadial.like_2x()
+        exact_angular = ANIAngular.like_2x()
+        exact_radial = ANIRadial.like_2x()
         computer = AEVComputer(exact_radial, exact_angular, num_species=7)
         computer_alt = AEVComputer.like_2x()
         self._compare_constants(computer, computer_alt)
 
     def testTerms1x(self):
-        exact_angular = StandardAngular.like_1x()
-        exact_radial = StandardRadial.like_1x()
+        exact_angular = ANIAngular.like_1x()
+        exact_radial = ANIRadial.like_1x()
         computer = AEVComputer(exact_radial, exact_angular, num_species=4)
         computer_alt = AEVComputer.like_1x()
         self._compare_constants(computer, computer_alt)
@@ -66,8 +66,8 @@ class TestIsolated(TestCase):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.aev_computer = AEVComputer.like_1x().to(self.device)
         self.symbols_to_idxs = ChemicalSymbolsToInts(["H", "C", "N", "O"])
-        self.rcr = self.aev_computer.radial_terms.cutoff
-        self.rca = self.aev_computer.angular_terms.cutoff
+        self.rcr = self.aev_computer.radial.cutoff
+        self.rca = self.aev_computer.angular.cutoff
 
     def testCO2(self):
         species = self.symbols_to_idxs(["O", "C", "O"]).to(self.device).unsqueeze(0)

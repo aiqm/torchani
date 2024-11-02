@@ -6,8 +6,8 @@ AEV Computer, 2-body ("radial"), and 3-body ("angular") AEV terms.
 
 from torchani.aev._computer import AEVComputer
 from torchani.aev._terms import (
-    StandardAngular,
-    StandardRadial,
+    ANIAngular,
+    ANIRadial,
     AngularTermArg,
     RadialTermArg,
     AngularTerm,
@@ -16,8 +16,8 @@ from torchani.aev._terms import (
 
 __all__ = [
     "AEVComputer",
-    "StandardRadial",
-    "StandardAngular",
+    "ANIRadial",
+    "ANIAngular",
     "AngularTerm",
     "RadialTerm",
     "AngularTermArg",

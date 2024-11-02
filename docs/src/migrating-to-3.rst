@@ -184,7 +184,7 @@ but with random initial weights and the ``cuAEV`` strategy for faster training, 
     asm = assembly.Assembler()
     asm.set_symbols(("H", "C", "N", "O"))
     # You can also pass your custom angular or radial terms as arguments
-    asm.set_aev_computer(radial_terms="ani2x", angular_terms="ani2x", strategy="cuaev")
+    asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy="cuaev")
     # make_2x_network is a function that, given a symbol, builds an atomic network,
     # you can pass whatever other function you want here.
     asm.set_atomic_networks(make_2x_network)

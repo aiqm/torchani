@@ -7,14 +7,20 @@ from torch.jit import Final
 import typing_extensions as tpx
 
 from torchani.tuples import SpeciesAEV
-from torchani.utils import cumsum_from_zero
-from torchani.neighbors import _parse_neighborlist, NeighborlistArg, AllPairs, Neighbors
+from torchani.neighbors import (
+    _parse_neighborlist,
+    _triple_idxs_from_neighbors,
+    discard_outside_cutoff,
+    NeighborlistArg,
+    AllPairs,
+    Neighbors,
+)
 from torchani.cutoffs import CutoffArg
 from torchani.aev._terms import (
     _parse_angular_term,
     _parse_radial_term,
-    StandardAngular,
-    StandardRadial,
+    ANIAngular,
+    ANIRadial,
     RadialTermArg,
     AngularTermArg,
 )
@@ -40,18 +46,17 @@ class AEVComputer(torch.nn.Module):
     given a batch of molecules.
 
     Args:
-        radial_terms: The module used to compute the radial part of the AEVs
-        angular_terms: The module used to compute the angular part of the AEVs
+        radial: The module used to compute the radial part of the AEVs
+        angular: The module used to compute the angular part of the AEVs
         num_species: The number of elements this module supports
     """
+
     num_species: Final[int]
     num_species_pairs: Final[int]
 
-    angular_length: Final[int]
-    angular_sublength: Final[int]
-    radial_length: Final[int]
-    radial_sublength: Final[int]
-    aev_length: Final[int]
+    angular_len: Final[int]
+    radial_len: Final[int]
+    out_dim: Final[int]
 
     triu_index: Tensor
     _strategy: str
@@ -61,8 +66,8 @@ class AEVComputer(torch.nn.Module):
 
     def __init__(
         self,
-        radial_terms: RadialTermArg,
-        angular_terms: AngularTermArg,
+        radial: RadialTermArg,
+        angular: AngularTermArg,
         num_species: int,
         strategy: str = "pyaev",
         cutoff_fn: tp.Optional[CutoffArg] = None,
@@ -75,42 +80,38 @@ class AEVComputer(torch.nn.Module):
         self.register_buffer("triu_index", self._calculate_triu_index(num_species))
 
         # Terms
-        self.radial_terms = _parse_radial_term(radial_terms)
-        self.angular_terms = _parse_angular_term(angular_terms)
-        if not (self.angular_terms.cutoff_fn.is_same(self.radial_terms.cutoff_fn)):
+        self.radial = _parse_radial_term(radial)
+        self.angular = _parse_angular_term(angular)
+        if not (self.angular.cutoff_fn.is_same(self.radial.cutoff_fn)):
             raise ValueError("Cutoff fn must be the same for angular and radial terms")
-        if self.angular_terms.cutoff > self.radial_terms.cutoff:
+        if self.angular.cutoff > self.radial.cutoff:
             raise ValueError(
-                f"Angular cutoff {self.angular_terms.cutoff}"
-                f" should be smaller than radial cutoff {self.radial_terms.cutoff}"
+                f"Angular cutoff {self.angular.cutoff}"
+                f" should be smaller than radial cutoff {self.radial.cutoff}"
             )
-        self._cuaev_cutoff_fn = self.angular_terms.cutoff_fn._cuaev_name
+        self._cuaev_cutoff_fn = self.angular.cutoff_fn._cuaev_name
 
         # Neighborlist
         self.neighborlist = _parse_neighborlist(neighborlist)
 
         # Lenghts
-        self.radial_sublength = self.radial_terms.sublength
-        self.angular_sublength = self.angular_terms.sublength
-        self.radial_length = self.radial_sublength * self.num_species
-        self.angular_length = self.angular_sublength * self.num_species_pairs
-        self.aev_length = self.radial_length + self.angular_length
+        self.radial_len = self.radial.num_feats * self.num_species
+        self.angular_len = self.angular.num_feats * self.num_species_pairs
+        self.out_dim = self.radial_len + self.angular_len
 
-        # The following corresponds to initialization and checks for the cuAEV:
-
-        # Check if the cuaev and the cuaev fused are available for used
+        # Perform init and checks of cuAEV
+        # Check if the cuaev and the cuaev fused are available for use
         self._cuaev_fused_strat_is_avail = self._check_cuaev_fused_strat_avail()
         self._cuaev_strat_is_avail = self._check_cuaev_strat_avail()
 
-        # cuAEV dummy initialization ('registration') happens here, as long as
-        # cuAEV is installed, even if it is not used. This is required by JIT
+        # Do cuAEV dummy init ('registration'), even if not used. Required by JIT
         if CUAEV_IS_INSTALLED:
             self._register_cuaev_computer()
 
-        # cuAEV init is delayed until fwd, to ensure tensors are in the correct device
+        # Delay cuAEV true init to fwd, to put tensors in correct device
         self._cuaev_computer_is_init = False
 
-        # Check that the requested strategy is available
+        # Check the requested strategy is available
         if strategy == "pyaev":
             pass
         elif strategy == "cuaev":
@@ -149,12 +150,12 @@ class AEVComputer(torch.nn.Module):
             return False
         if (
             not self._cuaev_cutoff_fn
-            or type(self.angular_terms) is not StandardAngular
-            or type(self.radial_terms) is not StandardRadial
+            or type(self.angular) is not ANIAngular
+            or type(self.radial) is not ANIRadial
         ):
             if raise_exc:
                 raise ValueError(
-                    "cuAEV only supports StandardAngular and StandardAngular terms, "
+                    "cuAEV only supports ANIAngular and ANIAngular terms, "
                     "and CosineCutoff or SmoothCutoff functions (with default args)"
                 )
             return False
@@ -172,12 +173,12 @@ class AEVComputer(torch.nn.Module):
 
     def extra_repr(self) -> str:
         r""":meta private:"""
-        radial_perc = f"{self.radial_length / self.aev_length * 100:.2f}% of features"
-        angular_perc = f"{self.angular_length / self.aev_length * 100:.2f}% of features"
+        radial_perc = f"{self.radial_len / self.out_dim * 100:.2f}% of feats"
+        angular_perc = f"{self.angular_len / self.out_dim * 100:.2f}% of feats"
         parts = [
-            r"#  " f"aev_length={self.aev_length}",
-            r"#  " f"radial_length={self.radial_length} ({radial_perc})",
-            r"#  " f"angular_length={self.angular_length} ({angular_perc})",
+            r"#  " f"out_dim={self.out_dim}",
+            r"#  " f"radial_len={self.radial_len} ({radial_perc})",
+            r"#  " f"angular_len={self.angular_len} ({angular_perc})",
             f"num_species={self.num_species},",
             f"strategy={self._strategy},",
         ]
@@ -224,13 +225,13 @@ class AEVComputer(torch.nn.Module):
         # Check input shape correctness and validate cutoffs
         assert elem_idxs.dim() == 2
         assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
-        assert self.angular_terms.cutoff < self.radial_terms.cutoff
+        assert self.angular.cutoff < self.radial.cutoff
 
         # IMPORTANT: If a neighborlist is used, the coords that input to neighborlist
         # are **not required** to be mapped to the central cell for pbc calculations.
         if self._strategy == "pyaev" or self._strategy == "cuaev":
             neighbors = self.neighborlist(
-                elem_idxs, coords, self.radial_terms.cutoff, cell, pbc
+                elem_idxs, coords, self.radial.cutoff, cell, pbc
             )
             return self.compute_from_neighbors(elem_idxs, neighbors, _coords=coords)
         elif self._strategy == "cuaev-fused":
@@ -262,74 +263,51 @@ class AEVComputer(torch.nn.Module):
             return self._compute_cuaev_with_half_nbrlist(elem_idxs, _coords, neighbors)
         raise RuntimeError(f"Unsupported compute strategy {self._strategy}")
 
-    def _compute_pyaev(
-        self,
-        element_idxs: Tensor,  # shape (C, A)
-        neighbors: Neighbors,
-    ) -> Tensor:
+    def _compute_pyaev(self, elem_idxs: Tensor, neighbors: Neighbors) -> Tensor:
         if self._print_aev_branch:
             print("Executing branch: pyAEV")
-        neighbor_idxs = neighbors.indices  # shape (2, P)
-        distances = neighbors.distances  # shape (P,)
-        diff_vectors = neighbors.diff_vectors  # shape (P, 3)
-        num_molecules, num_atoms = element_idxs.shape
-        # shape (2, P)
-        neighbor_element_idxs = element_idxs.view(-1)[neighbor_idxs]
-        # shape (P, R)
-        terms = self.radial_terms(distances)
-        # shape (C, A, SxZ)
-        radial_aev = self._collect_radial_terms(
-            num_molecules,
-            num_atoms,
-            neighbor_element_idxs,
-            neighbor_idxs=neighbor_idxs,
-            terms=terms,
-        )
+        terms = self.radial(neighbors.distances)  # Shape (pairs, rad)
+        # Shape (molecs, atoms, num-species * rad)
+        radial_aev = self._collect_radial(elem_idxs, neighbors.indices, terms)
 
-        # Angular cutoff is smaller than radial. Here we discard neighbors
-        # outside the angular cutoff to improve performance
-        # New shape: (P')
-        closer_indices = (distances <= self.angular_terms.cutoff).nonzero().view(-1)
-        # new shapes: (2, P') (2, P')  (P', 3)
-        neighbor_idxs = neighbor_idxs.index_select(1, closer_indices)
-        neighbor_element_idxs = neighbor_element_idxs.index_select(1, closer_indices)
-        diff_vectors = diff_vectors.index_select(0, closer_indices)
-        distances = distances.index_select(0, closer_indices)
+        # Discard neighbors outside the (smaller) angular cutoff to improve performance
+        neighbors = discard_outside_cutoff(neighbors, self.angular.cutoff)  # (pairs',)
 
-        # shapes: (T,) (2, T) (2, T)
-        central_idx, side_idxs, sign12 = self._triple_idxs_from_neighbors(neighbor_idxs)
-        # shape (2, T, 3)
-        triple_vectors = diff_vectors.index_select(0, side_idxs.view(-1)).view(2, -1, 3)
+        # Shapes: (T,) (2, T) (2, T)
+        central_idx, side_idxs, sign12 = _triple_idxs_from_neighbors(neighbors.indices)
+        # Shape (2, T, 3)
+        triple_vectors = neighbors.diff_vectors.index_select(
+            0, side_idxs.view(-1)
+        ).view(2, -1, 3)
         triple_vectors = triple_vectors * sign12.view(2, -1, 1)
-        triple_distances = distances.index_select(0, side_idxs.view(-1)).view(2, -1)
-
-        # shape (T, Z)
-        terms = self.angular_terms(triple_vectors, triple_distances)
-        # shape (C, A, SpxZ)
-        angular_aev = self._collect_angular_terms(
-            num_molecules,
-            num_atoms,
-            neighbor_element_idxs,
-            central_idx,
-            side_idxs,
-            sign12,
-            terms,
+        triple_distances = neighbors.distances.index_select(0, side_idxs.view(-1)).view(
+            2, -1
         )
-        # shape (C, A, SxR + SpxZ)
+
+        terms = self.angular(triple_distances, triple_vectors)  # Shape (triples, ang)
+        # Shape (molecs, atoms, num-species-pairs * ang)
+        angular_aev = self._collect_angular(
+            elem_idxs, neighbors.indices, central_idx, side_idxs, sign12, terms
+        )
+        # Shape (molecs, atoms, num-species-pairs * ang + num-species * rad)
         return torch.cat([radial_aev, angular_aev], dim=-1)
 
-    def _collect_angular_terms(
+    # Input shapes: (triples,), (2, triples), (2, triples), (2, ang)
+    # Output shape: (molecs, atoms, num-species-pairs * ang)
+    def _collect_angular(
         self,
-        num_molecules: int,
-        num_atoms: int,
-        neighbor_element_idxs: Tensor,  # shape (2, P')
-        central_idx: Tensor,  # shape (T,)
-        side_idxs: Tensor,  # shape (2, T)
-        sign12: Tensor,  # shape (2, T)
-        terms: Tensor,  # shape (T, Z)
+        elem_idxs: Tensor,
+        neighbor_idxs: Tensor,
+        central_idx: Tensor,
+        side_idxs: Tensor,
+        sign12: Tensor,
+        terms: Tensor,
     ) -> Tensor:
+        num_molecs, num_atoms = elem_idxs.shape
+        neighbor_elem_idxs = elem_idxs.view(-1)[neighbor_idxs]  # shape (2, pairs)
+
         # shape (2, 2, T)
-        species12_small = neighbor_element_idxs[:, side_idxs]
+        species12_small = neighbor_elem_idxs[:, side_idxs]
         # shape (2, T)
         triple_element_side_idxs = torch.where(
             sign12 == 1,
@@ -338,7 +316,7 @@ class AEVComputer(torch.nn.Module):
         )
         # shape (CxAxSp, Z)
         angular_aev = terms.new_zeros(
-            (num_molecules * num_atoms * self.num_species_pairs, self.angular_sublength)
+            (num_molecs * num_atoms * self.num_species_pairs, self.angular.num_feats)
         )
         # shape (T,)
         # NOTE: Casting is necessary in C++ due to a LibTorch bug
@@ -347,73 +325,24 @@ class AEVComputer(torch.nn.Module):
         ].to(torch.long)
         angular_aev.index_add_(0, index, terms)
         # shape (C, A, SpxZ)
-        return angular_aev.reshape(num_molecules, num_atoms, self.angular_length)
+        return angular_aev.reshape(num_molecs, num_atoms, self.angular_len)
 
-    def _collect_radial_terms(
-        self,
-        num_molecules: int,
-        num_atoms: int,
-        neighbor_element_idxs: Tensor,  # shape (2, P)
-        neighbor_idxs: Tensor,  # shape (2, P)
-        terms: Tensor,  # shape (P, R)
+    # Input shapes: (molecs, atoms), (2, pairs), (pairs, rad)
+    # Output shape (molecs, atoms, num_species * rad-feat)
+    def _collect_radial(
+        self, elem_idxs: Tensor, neighbor_idxs: Tensor, terms: Tensor
     ) -> Tensor:
+        num_molecs, num_atoms = elem_idxs.shape
+        neighbor_elem_idxs = elem_idxs.view(-1)[neighbor_idxs]  # shape (2, pairs)
         # shape (CxAxS, R)
         radial_aev = terms.new_zeros(
-            (num_molecules * num_atoms * self.num_species, self.radial_sublength)
+            (num_molecs * num_atoms * self.num_species, self.radial.num_feats)
         )
         # shape (2, P)
-        index12 = neighbor_idxs * self.num_species + neighbor_element_idxs.flip(0)
+        index12 = neighbor_idxs * self.num_species + neighbor_elem_idxs.flip(0)
         radial_aev.index_add_(0, index12[0], terms)
         radial_aev.index_add_(0, index12[1], terms)
-        # shape (C, A, SxR)
-        return radial_aev.reshape(num_molecules, num_atoms, self.radial_length)
-
-    # NOTE: This function is very complex, please read the followin carefully
-    # Input: indices for pairs of atoms that are close to each other. each pair only
-    # appear once, i.e. only one of the pairs (1, 2) and (2, 1) exists.
-    # Output: indices for all central atoms and it pairs of neighbors. For example, if
-    # input has pair
-    # (0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
-    # then the output would have central atom 0, 1, 2, 3, 4 and for cental atom 0, its
-    # pairs of neighbors are (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
-    def _triple_idxs_from_neighbors(
-        self, neighbor_idxs: Tensor
-    ) -> tp.Tuple[Tensor, Tensor, Tensor]:
-        # convert representation from pair to central-others and sort
-        sorted_flat_neighbor_idxs, rev_idxs = neighbor_idxs.view(-1).sort()
-
-        # sort compute unique key
-        uniqued_central_atom_idx, counts = torch.unique_consecutive(
-            sorted_flat_neighbor_idxs, return_inverse=False, return_counts=True
-        )
-
-        # compute central_atom_idx
-        pair_sizes = (counts * (counts - 1)).div(2, rounding_mode="floor")
-        pair_indices = torch.repeat_interleave(pair_sizes)
-        central_atom_idx = uniqued_central_atom_idx.index_select(0, pair_indices)
-
-        # do local combinations within unique key, assuming sorted
-        m = counts.max().item() if counts.numel() > 0 else 0
-        n = pair_sizes.shape[0]
-        intra_pair_indices = (
-            torch.tril_indices(m, m, -1, device=neighbor_idxs.device)
-            .unsqueeze(1)
-            .expand(-1, n, -1)
-        )
-        mask = (
-            torch.arange(intra_pair_indices.shape[2], device=neighbor_idxs.device)
-            < pair_sizes.unsqueeze(1)
-        ).view(-1)
-        sorted_local_idx12 = intra_pair_indices.flatten(1, 2)[:, mask]
-        sorted_local_idx12 += cumsum_from_zero(counts).index_select(0, pair_indices)
-
-        # unsort result from last part
-        local_idx12 = rev_idxs[sorted_local_idx12]
-
-        # compute mapping between representation of central-other to pair
-        n = neighbor_idxs.shape[1]
-        sign12 = ((local_idx12 < n).to(torch.int8) * 2) - 1
-        return central_atom_idx, local_idx12 % n, sign12
+        return radial_aev.reshape(num_molecs, num_atoms, self.radial_len)
 
     @jit_unused_if_no_cuaev()
     def _register_cuaev_computer(self) -> None:
@@ -432,14 +361,14 @@ class AEVComputer(torch.nn.Module):
         # If we reach this part of the code then the radial and
         # angular terms must be Standard*, so these tensors will exist
         self.cuaev_computer = torch.classes.cuaev.CuaevComputer(
-            self.radial_terms.cutoff,
-            self.angular_terms.cutoff,
-            self.radial_terms.eta,
-            self.radial_terms.shifts,
-            self.angular_terms.eta,
-            self.angular_terms.zeta,
-            self.angular_terms.shifts,
-            self.angular_terms.angle_sections,
+            self.radial.cutoff,
+            self.angular.cutoff,
+            self.radial.eta,
+            self.radial.shifts,
+            self.angular.eta,
+            self.angular.zeta,
+            self.angular.shifts,
+            self.angular.sections,
             self.num_species,
             (self._cuaev_cutoff_fn == "cosine"),
         )
@@ -579,7 +508,7 @@ class AEVComputer(torch.nn.Module):
         angular_eta: float = 8.0,
         angular_zeta: float = 32.0,
         angular_num_shifts: int = 4,
-        angular_num_angle_sections: int = 8,
+        angular_num_sections: int = 8,
     ) -> tpx.Self:
         r"""Build an AEVComputer with standard radial and angular terms
 
@@ -592,20 +521,20 @@ class AEVComputer(torch.nn.Module):
             The constructed `AEVComputer`, ready for use.
         """
         return cls(
-            radial_terms=StandardRadial.cover_linearly(
+            radial=ANIRadial.cover_linearly(
                 start=radial_start,
                 cutoff=radial_cutoff,
                 eta=radial_eta,
                 num_shifts=radial_num_shifts,
                 cutoff_fn=cutoff_fn,
             ),
-            angular_terms=StandardAngular.cover_linearly(
+            angular=ANIAngular.cover_linearly(
                 start=angular_start,
                 cutoff=angular_cutoff,
                 eta=angular_eta,
                 zeta=angular_zeta,
                 num_shifts=angular_num_shifts,
-                num_angle_sections=angular_num_angle_sections,
+                num_sections=angular_num_sections,
                 cutoff_fn=cutoff_fn,
             ),
             num_species=num_species,
@@ -631,7 +560,7 @@ class AEVComputer(torch.nn.Module):
         angular_eta: float = 12.5,
         angular_zeta: float = 14.1,
         angular_num_shifts: int = 8,
-        angular_num_angle_sections: int = 4,
+        angular_num_sections: int = 4,
     ) -> tpx.Self:
         r"""Build an AEVComputer with standard radial and angular terms
 
@@ -644,20 +573,20 @@ class AEVComputer(torch.nn.Module):
             The constructed `AEVComputer`, ready for use.
         """
         return cls(
-            radial_terms=StandardRadial.cover_linearly(
+            radial=ANIRadial.cover_linearly(
                 start=radial_start,
                 cutoff=radial_cutoff,
                 eta=radial_eta,
                 num_shifts=radial_num_shifts,
                 cutoff_fn=cutoff_fn,
             ),
-            angular_terms=StandardAngular.cover_linearly(
+            angular=ANIAngular.cover_linearly(
                 start=angular_start,
                 cutoff=angular_cutoff,
                 eta=angular_eta,
                 zeta=angular_zeta,
                 num_shifts=angular_num_shifts,
-                num_angle_sections=angular_num_angle_sections,
+                num_sections=angular_num_sections,
                 cutoff_fn=cutoff_fn,
             ),
             num_species=num_species,
@@ -676,7 +605,7 @@ class AEVComputer(torch.nn.Module):
         angular_eta: float,
         angular_zeta: float,
         angular_shifts: tp.Sequence[float],
-        angle_sections: tp.Sequence[float],
+        sections: tp.Sequence[float],
         num_species: int,
         strategy: str = "pyaev",
         cutoff_fn: CutoffArg = "cosine",
@@ -699,7 +628,7 @@ class AEVComputer(torch.nn.Module):
             angluar_eta: The 1D tensor of :math:`\eta` in eq. (4)
             angular_zeta: The 1D tensor of :math:`\zeta` in eq. (4)
             angular_shifts: The 1D tensor of :math:`R_s` in eq. (4)
-            angle_sections: The 1D tensor of :math:`\theta_s` in eq. (4)
+            sections: The 1D tensor of :math:`\theta_s` in eq. (4)
             num_species: Number of supported atom types.
             strategy: Compute strategy to use.
             cutoff_fn: The cutoff function used for the calculation.
@@ -712,17 +641,17 @@ class AEVComputer(torch.nn.Module):
             http://pubs.rsc.org/en/Content/ArticleLanding/2017/SC/C6SC05720A#!divAbstract
         """
         return cls(
-            radial_terms=StandardRadial(
+            radial=ANIRadial(
                 radial_eta,
                 radial_shifts,
                 radial_cutoff,
                 cutoff_fn=cutoff_fn,
             ),
-            angular_terms=StandardAngular(
+            angular=ANIAngular(
                 angular_eta,
                 angular_zeta,
                 angular_shifts,
-                angle_sections,
+                sections,
                 angular_cutoff,
                 cutoff_fn=cutoff_fn,
             ),
@@ -740,3 +669,12 @@ class AEVComputer(torch.nn.Module):
         r""":meta private:"""
         elem_idxs, coords = input_
         return SpeciesAEV(elem_idxs, self(elem_idxs, coords, cell, pbc))
+
+    # Needed for bw compatibility
+    def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:
+        for oldk in list(state_dict.keys()):
+            k = oldk.replace("radial_terms", "radial").replace(
+                "angular_terms", "angular"
+            )
+            state_dict[k] = state_dict.pop(oldk)
+        super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)

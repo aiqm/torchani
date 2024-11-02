@@ -188,8 +188,8 @@ class TestCUAEV(TestCase):
             cutoff_fn=self.cutoff_fn, strategy="cuaev"
         ).to(self.device, self.dtype)
         self.converter = SpeciesConverter(SYMBOLS_2X).to(self.device, self.dtype)
-        self.cutoff_2x = self.cuaev_computer_2x.radial_terms.cutoff
-        self.cutoff_1x = self.cuaev_computer_1x.radial_terms.cutoff
+        self.cutoff_2x = self.cuaev_computer_2x.radial.cutoff
+        self.cutoff_1x = self.cuaev_computer_1x.radial.cutoff
 
     def _skip_if_not_cosine(self):
         if self.cutoff_fn != "cosine":

@@ -119,7 +119,7 @@ def ANI1x(
     asm.set_symbols(SYMBOLS_1X, auto_sort=False)
     asm.set_atomic_networks(make_1x_network)
     asm.set_global_cutoff_fn("cosine")
-    asm.set_aev_computer(angular_terms="ani1x", radial_terms="ani1x", strategy=strategy)
+    asm.set_aev_computer(angular="ani1x", radial="ani1x", strategy=strategy)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = asm.assemble(8)
@@ -158,7 +158,7 @@ def ANI1ccx(
     asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_1X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")
-    asm.set_aev_computer(radial_terms="ani1x", angular_terms="ani1x", strategy=strategy)
+    asm.set_aev_computer(radial="ani1x", angular="ani1x", strategy=strategy)
     asm.set_atomic_networks(make_1x_network)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("ccsd(t)star-cbs")
@@ -195,7 +195,7 @@ def ANI2x(
     asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")
-    asm.set_aev_computer(radial_terms="ani2x", angular_terms="ani2x", strategy=strategy)
+    asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
     asm.set_atomic_networks(make_2x_network)
     asm.set_neighborlist(neighborlist)
     # The self energies are overwritten by the state dict
@@ -226,7 +226,7 @@ def ANImbis(
     asm = Assembler(periodic_table_index=periodic_table_index, model_cls=ANIq)
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")
-    asm.set_aev_computer(radial_terms="ani2x", angular_terms="ani2x", strategy=strategy)
+    asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
     asm.set_atomic_networks(make_2x_network)
 
     asm.set_charge_networks(
@@ -282,7 +282,7 @@ def ANIala(
     asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")
-    asm.set_aev_computer(radial_terms="ani2x", angular_terms="ani2x", strategy=strategy)
+    asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
     asm.set_atomic_networks(make_ala_network)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
@@ -315,7 +315,7 @@ def ANIdr(
     asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("smooth")
-    asm.set_aev_computer(angular_terms="ani2x", radial_terms="ani2x", strategy=strategy)
+    asm.set_aev_computer(angular="ani2x", radial="ani2x", strategy=strategy)
     asm.set_atomic_networks(make_dr_network)
     asm.add_potential(RepulsionXTB, name="repulsion_xtb", cutoff=5.3)
     asm.add_potential(

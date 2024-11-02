@@ -82,7 +82,7 @@ def load_aev_computer_and_symbols(
         angular_eta=consts.angular_eta,
         angular_zeta=consts.angular_zeta,
         angular_shifts=consts.angular_shifts,
-        angle_sections=consts.angle_sections,
+        sections=consts.sections,
         num_species=len(symbols),
         strategy=strategy,
         cutoff_fn=cutoff_fn,
@@ -100,7 +100,7 @@ class AEVConstants:
     angular_eta: float
     angular_zeta: float
     angular_shifts: tp.Tuple[float, ...]
-    angle_sections: tp.Tuple[float, ...]
+    sections: tp.Tuple[float, ...]
 
 
 def load_aev_constants_and_symbols(
@@ -114,7 +114,7 @@ def load_aev_constants_and_symbols(
         "EtaR": "radial_eta",
         "ShfR": "radial_shifts",
         "ShfA": "angular_shifts",
-        "ShfZ": "angle_sections",
+        "ShfZ": "sections",
         "EtaA": "angular_eta",
         "Zeta": "angular_zeta",
     }
@@ -153,7 +153,7 @@ def load_aev_constants_and_symbols(
         angular_zeta=aev_floats["angular_zeta"],
         radial_shifts=aev_seqs["radial_shifts"],
         angular_shifts=aev_seqs["angular_shifts"],
-        angle_sections=aev_seqs["angle_sections"],
+        sections=aev_seqs["sections"],
     )
     return constants, symbols
 

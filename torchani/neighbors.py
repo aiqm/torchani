@@ -850,3 +850,51 @@ def _validate_cell_pbc(
     if pbc is None:
         pbc = torch.zeros(3, dtype=torch.bool, device=species.device)
     return cell, pbc
+
+
+# NOTE: This function is very complex, please read the followin carefully
+# Input: indices for pairs of atoms that are close to each other. each pair only
+# appear once, i.e. only one of the pairs (1, 2) and (2, 1) exists.
+# Output: indices for all central atoms and it pairs of neighbors. For example, if
+# input has pair
+# (0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
+# then the output would have central atom 0, 1, 2, 3, 4 and for cental atom 0, its
+# pairs of neighbors are (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4)
+def _triple_idxs_from_neighbors(
+    neighbor_idxs: Tensor,
+) -> tp.Tuple[Tensor, Tensor, Tensor]:
+    # convert representation from pair to central-others and sort
+    sorted_flat_neighbor_idxs, rev_idxs = neighbor_idxs.view(-1).sort()
+
+    # sort compute unique key
+    uniqued_central_atom_idx, counts = torch.unique_consecutive(
+        sorted_flat_neighbor_idxs, return_inverse=False, return_counts=True
+    )
+
+    # compute central_atom_idx
+    pair_sizes = (counts * (counts - 1)).div(2, rounding_mode="floor")
+    pair_indices = torch.repeat_interleave(pair_sizes)
+    central_atom_idx = uniqued_central_atom_idx.index_select(0, pair_indices)
+
+    # do local combinations within unique key, assuming sorted
+    m = counts.max().item() if counts.numel() > 0 else 0
+    n = pair_sizes.shape[0]
+    intra_pair_indices = (
+        torch.tril_indices(m, m, -1, device=neighbor_idxs.device)
+        .unsqueeze(1)
+        .expand(-1, n, -1)
+    )
+    mask = (
+        torch.arange(intra_pair_indices.shape[2], device=neighbor_idxs.device)
+        < pair_sizes.unsqueeze(1)
+    ).view(-1)
+    sorted_local_idx12 = intra_pair_indices.flatten(1, 2)[:, mask]
+    sorted_local_idx12 += cumsum_from_zero(counts).index_select(0, pair_indices)
+
+    # unsort result from last part
+    local_idx12 = rev_idxs[sorted_local_idx12]
+
+    # compute mapping between representation of central-other to pair
+    n = neighbor_idxs.shape[1]
+    sign12 = ((local_idx12 < n).to(torch.int8) * 2) - 1
+    return central_atom_idx, local_idx12 % n, sign12

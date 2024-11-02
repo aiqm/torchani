@@ -56,8 +56,8 @@ def main(
                 (model.neural_networks, "forward"),
                 (model.energy_shifter, "forward"),
                 (model.aev_computer.neighborlist, "forward"),
-                (model.aev_computer.angular_terms, "forward"),
-                (model.aev_computer.radial_terms, "forward"),
+                (model.aev_computer.angular, "forward"),
+                (model.aev_computer.radial, "forward"),
             ]
             if detail
             else []
