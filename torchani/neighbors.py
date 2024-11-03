@@ -846,6 +846,14 @@ def _validate_cell_pbc(
     return cell, pbc
 
 
+# Wrapper because unique_consecutive doesn't have a dynamic meta kernel asof pytorch 2.5
+def _unique_and_counts(sorted_flat_idxs: Tensor) -> tp.Tuple[Tensor, Tensor]:
+    # Sort compute unique key
+    if torch.compiler.is_compiling():
+        return torch.unique(sorted_flat_idxs, return_counts=True)
+    return torch.unique_consecutive(sorted_flat_idxs, return_counts=True)
+
+
 # NOTE: This function is very complex, please read the following carefully
 # Input: indices for pairs of atoms that are close to each other. each pair only
 # appear once, i.e. only one of the pairs (1, 2) and (2, 1) exists.
@@ -857,12 +865,8 @@ def _validate_cell_pbc(
 def neighbors_to_triples(neighbors: Neighbors) -> Triples:
     r"""Converts output of a neighborlist calculation into triples of atoms"""
     # convert representation from pair to central-others and sort
-    sorted_flat_neighbor_idxs, rev_idxs = neighbors.indices.view(-1).sort()
-
-    # sort compute unique key
-    uniqued_central_idx, counts = torch.unique_consecutive(
-        sorted_flat_neighbor_idxs, return_inverse=False, return_counts=True
-    )
+    sorted_flat_idxs, rev_idxs = neighbors.indices.view(-1).sort()
+    uniqued_central_idx, counts = _unique_and_counts(sorted_flat_idxs)
 
     # compute central_idxs
     pair_sizes = (counts * (counts - 1)).div(2, rounding_mode="floor")
@@ -870,7 +874,8 @@ def neighbors_to_triples(neighbors: Neighbors) -> Triples:
     central_idxs = uniqued_central_idx.index_select(0, pair_indices)
 
     # do local combinations within unique key, assuming sorted
-    m = counts.max().item() if counts.numel() > 0 else 0
+    zcounts = torch.cat((counts.new_zeros(1), counts))
+    m: int = int(zcounts.max())  # Dynamo can't get past this
     n = pair_sizes.shape[0]
     intra_pair_indices = (
         torch.tril_indices(m, m, -1, device=neighbors.indices.device)
@@ -882,7 +887,7 @@ def neighbors_to_triples(neighbors: Neighbors) -> Triples:
         < pair_sizes.unsqueeze(1)
     ).view(-1)
     sorted_local_idx12 = intra_pair_indices.flatten(1, 2)[:, mask]
-    sorted_local_idx12 += cumsum_from_zero(counts).index_select(0, pair_indices)
+    sorted_local_idx12 += torch.cumsum(zcounts, dim=0).index_select(0, pair_indices)
 
     # unsort result from last part
     local_idx12 = rev_idxs[sorted_local_idx12]

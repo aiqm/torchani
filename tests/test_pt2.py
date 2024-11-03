@@ -1,6 +1,9 @@
 # NOTE: These tests are experimental
+import typing as tp
 import os
 import torch
+from torch import Tensor
+from torch.export import Dim
 import unittest
 
 from torchani._testing import ANITestCase, make_neighbors, make_molec
@@ -21,9 +24,10 @@ class ANITestCasePT2(ANITestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        # Set up logging (high verbosity with +) for Dynamo, AOT and Inductor
-        os.environ["TORCH_LOGS"] = "+dynamo,+aot,+inductor"
+        # Set up logging (high verbosity with +) for Dynamo
+        os.environ["TORCH_LOGS"] = "+dynamo"
         os.environ["TORCHDYNAMO_VERBOSE"] = "1"  # (needed according to log msgs?)
+        os.environ["TORCHDYNAMO_EXTENDED_DEBUG_CREATE_SYMBOL"] = "u2"
         # Many models use dynamic output shape ops (nonzero, unique, unique_consecutive)
         torch._dynamo.config.capture_dynamic_output_shape_ops = True
 
@@ -69,7 +73,7 @@ class TestExport(ANITestCasePT2):
     def testRadial(self) -> None:
         neighbors = make_neighbors(10, seed=1234)
         mod = ANIRadial.like_1x()
-        pairs_dim = torch.export.Dim("pairs")
+        pairs_dim = Dim("pairs")
         _ = torch.export.export(
             mod,
             args=(neighbors.distances,),
@@ -80,87 +84,95 @@ class TestExport(ANITestCasePT2):
         neighbors = make_neighbors(10, seed=1234)
         triples = neighbors_to_triples(neighbors)
         mod = ANIAngular.like_1x()
-        triples_dim = torch.export.Dim("triples")
+        stat = Dim.STATIC  # type: ignore
+        triples_dim = Dim("triples")
         _ = torch.export.export(
             mod,
             args=(triples.distances, triples.diff_vectors),
             dynamic_shapes={
-                "tri_distances": (None, triples_dim),
-                "tri_vectors": (None, triples_dim, None),
+                "tri_distances": (stat, triples_dim),
+                "tri_vectors": (stat, triples_dim, stat),
             },
         )
 
-    # currently this test fails even with capture_dynamic_output_shapes=True
-    # Maybe pytorch bug?
-    @unittest.skipIf(True, "Fails in pytorch 2.5 due to namedtuple")
     def testDiscardNeighbors(self) -> None:
         neighbors = make_neighbors(10, seed=1234)
 
         class Mod(torch.nn.Module):
-            def forward(self, neighbors: Neighbors, cutoff: float) -> Neighbors:
-                return discard_outside_cutoff(neighbors, cutoff)
+            def forward(
+                self, neighbors: tp.Tuple[Tensor, Tensor, Tensor], cutoff: float
+            ) -> Neighbors:
+                indices, distances, diff_vectors = neighbors
+                _neighbors = Neighbors(indices, distances, diff_vectors)
+                return discard_outside_cutoff(_neighbors, cutoff)
 
         m = Mod()
 
-        pairs = torch.export.Dim("pairs")
+        stat = Dim.STATIC  # type: ignore
+        pairs = Dim("pairs")
         _ = torch.export.export(
             m,
-            args=(neighbors, 5.2),
+            args=(tuple(neighbors), 5.2),
             dynamic_shapes={
-                "neighbors": ((None, pairs), (pairs,), (pairs, None)),
+                "neighbors": ((stat, pairs), (pairs,), (pairs, stat)),
                 "cutoff": None,  # cutoff is fixed on export
             },
         )
 
-    # currently this test fails even with capture_dynamic_output_shapes=True
-    # Maybe pytorch bug?
-    @unittest.skipIf(True, "Fails in pytorch 2.3.1")
+    @unittest.skipIf(True, "Fails in pytorch 2.5, due to m: int = int(counts.max())")
     def testNeighborsToTriples(self) -> None:
         neighbors = make_neighbors(10, seed=1234)
 
         class Mod(torch.nn.Module):
-            def forward(self, neighbors: Neighbors) -> Triples:
-                return neighbors_to_triples(neighbors)
+            def forward(self, neighbors: tp.Tuple[Tensor, Tensor, Tensor]) -> Triples:
+                indices, distances, diff_vectors = neighbors
+                _neighbors = Neighbors(indices, distances, diff_vectors)
+                return neighbors_to_triples(_neighbors)
 
         m = Mod()
+        stat = Dim.STATIC  # type: ignore
         pairs = torch.export.Dim("pairs")
         _ = torch.export.export(
             m,
-            args=(neighbors,),
-            dynamic_shapes={"neighbors": ((None, pairs), (pairs,), (pairs, None))},
+            args=(tuple(neighbors),),
+            dynamic_shapes={
+                "neighbors": ((stat, pairs), (pairs,), (pairs, stat))
+            },
         )
 
     @unittest.skipIf(True, "Currently fails due to pbc.any() control flow")
     def testCellList(self) -> None:
         molec = make_molec(10, seed=1234)
-        atoms_d = torch.export.Dim("atoms")
+        stat = Dim.STATIC  # type: ignore
+        atoms_d = Dim("atoms")
         _ = torch.export.export(
             CellList(),
             args=(molec.coords, molec.atomic_nums, 5.2, molec.cell, molec.pbc),
             dynamic_shapes={
                 # specialize to 1 molecule
-                "species": (None, atoms_d),
-                "coords": (None, atoms_d, None),
-                "cutoff": None,  # cutoff is fixed on export
-                "cell": (None, None),
-                "pbc": (None,),
+                "species": (stat, atoms_d),
+                "coords": (stat, atoms_d, stat),
+                "cutoff": stat,  # cutoff is fixed on export
+                "cell": (stat, stat),
+                "pbc": (stat,),
             },
         )
 
     @unittest.skipIf(True, "Currently fails due to pbc.any() control flow")
     def testAllPairs(self) -> None:
         molec = make_molec(10, seed=1234)
+        stat = Dim.STATIC  # type: ignore
         atoms_d = torch.export.Dim("atoms")
         _ = torch.export.export(
             AllPairs(),
             args=(molec.coords, molec.atomic_nums, 5.2, molec.cell, molec.pbc),
             dynamic_shapes={
                 # specialize to 1 molecule
-                "species": (None, atoms_d),
-                "coords": (None, atoms_d, None),
-                "cutoff": None,  # cutoff is fixed on export
-                "cell": (None, None),
-                "pbc": (None,),
+                "species": (stat, atoms_d),
+                "coords": (stat, atoms_d, stat),
+                "cutoff": stat,  # cutoff is fixed on export
+                "cell": (stat, stat),
+                "pbc": (stat,),
             },
         )
 
