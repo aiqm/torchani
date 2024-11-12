@@ -49,6 +49,7 @@ Untitled.ipynb
 # Output of tools
 /tools/plots/
 /tools/benchmark/
+/tools/*.csv
 
 # Output of examples
 /examples/batched_dataset/

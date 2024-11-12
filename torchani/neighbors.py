@@ -116,11 +116,9 @@ def compute_bounding_cell(
         )
     else:
         cell = torch.eye(3, dtype=torch.float, device=coords.device) * largest_dist
-
     if displace:
-        coords = coords - min_
-        assert (coords > 0.0).all(), "compute_bounding_cell failed"
-        assert (coords < torch.norm(cell, dim=1)).all(), "compute_bounding_cell failed"
+        # Benchmarks show that these assert coords > 0.0 slows things down a bit
+        return coords - min_, cell
     return coords, cell
 
 
@@ -282,6 +280,50 @@ class CellList(Neighborlist):
         return cell_list(species, coords, cutoff, cell, pbc)
 
 
+class AdaptiveList(Neighborlist):
+    r"""Compute pairs of neighbors using the best algorithm for the system size
+
+    This is a linearly scaling implementation that uses the 'cell list' algorithm for
+    large system sizes and the naive 'all pairs' for small sizes.
+    """
+
+    def __init__(self, threshold: int = 190, threshold_nopbc: int = 1770) -> None:
+        super().__init__()
+        self._thresh = threshold
+        self._thresh_nopbc = threshold_nopbc
+
+    def forward(
+        self,
+        species: Tensor,
+        coords: Tensor,
+        cutoff: float,
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ) -> Neighbors:
+        if pbc is not None:
+            if pbc.any():
+                return adaptive_list(species, coords, cutoff, cell, pbc, self._thresh)
+        return adaptive_list(species, coords, cutoff, cell, pbc, self._thresh_nopbc)
+
+
+def adaptive_list(
+    species: Tensor,
+    coords: Tensor,
+    cutoff: float,
+    cell: tp.Optional[Tensor] = None,
+    pbc: tp.Optional[Tensor] = None,
+    threshold: int = 190,
+) -> Neighbors:
+    # Cell list check (disallowed for both for consistency)
+    if coords.shape[0] != 1:
+        raise ValueError("Adaptive list doesn't support batches")
+    # Forward directly to all_pairs if below threshold or in the non-pbc case
+    if coords.shape[1] < threshold:
+        return all_pairs(species, coords, cutoff, cell, pbc)
+    # NOTE: This disallows pbc with self interactions, which may or may not be desirable
+    return cell_list(species, coords, cutoff, cell, pbc)
+
+
 def cell_list(
     species: Tensor,
     coords: Tensor,
@@ -304,13 +346,21 @@ def cell_list(
     if pbc.any():
         displ_coords = coords.detach()
     else:
-        displ_coords, cell = compute_bounding_cell(coords.detach(), eps=1e-3)
+        # Make cell large enough to deny PBC interaction (fast, not bottleneck)
+        displ_coords, cell = compute_bounding_cell(
+            coords.detach(), eps=(cutoff + 1e-3),
+        )
 
     # The cell is spanned by a 3D grid of "buckets" or "grid elements",
     # which has grid_shape=(GX, GY, GZ) and grid_numel=G=(GX * GY * GZ)
     #
     # Set up grid shape each step. Cheap and avoids state in the cls
     grid_shape = setup_grid(cell.detach(), cutoff)
+    if pbc.any():
+        if (grid_shape == 0).any():
+            raise RuntimeError("Cell is too small to perform pbc calculations")
+    else:
+        grid_shape = torch.max(grid_shape, grid_shape.new_ones(grid_shape.shape))
 
     # Since coords will be fractionalized they may lie outside the cell before this
     neighbor_idxs, shift_indices = _cell_list(
@@ -332,11 +382,10 @@ def _cell_list(
     cell: Tensor,  # shape (3, 3)
     pbc: Tensor,  # shape (3,)
 ) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
-    # 1) Get location of each atom in the grid, given by a "grid_idx3" or by a
+    # 1) Get location of each atom in the grid, given by a "grid_idx3" (g3) or by a
     # single flat "grid_idx" (g).
-    # Shapes (C, A, 3) and (C, A)
-    atom_grid_idx3 = coords_to_grid_idx3(coords, cell, grid_shape)
-    atom_grid_idx = flatten_idx3(atom_grid_idx3, grid_shape)
+    atom_grid_idx3 = coords_to_grid_idx3(coords, cell, grid_shape)  # Shape (M, A, 3)
+    atom_grid_idx = flatten_idx3(atom_grid_idx3, grid_shape)  # Shape (M, A)
 
     # 2) Get image pairs of atoms WITHIN atoms inside a bucket
     # To do this, first calculate:
@@ -345,7 +394,7 @@ def _cell_list(
     # Both shapes (G,)
     count_in_grid, cumcount_in_grid = count_atoms_in_buckets(atom_grid_idx, grid_shape)
     count_in_grid_max: int = int(count_in_grid.max())
-    # Shape (2, W)
+    # Shape (2, within-pairs) "within-pairs aka W"
     _image_pairs_within = image_pairs_within(
         count_in_grid, cumcount_in_grid, count_in_grid_max
     )
@@ -357,32 +406,28 @@ def _cell_list(
     #
     # The surrounding buckets will either lie in the central cell or wrap
     # around one or more dimensions due to PBC. In the latter case the
-    # atom_surround_idx3 may be negative, or larger than the corrseponding
+    # atom_surr_idx3 may be negative, or larger than the corrseponding
     # grid_shape dim, which can be used to identify them. The required shift
     # is given by the number and value of negative and overflowing
     # dimensions.
     # surround=N=13 for 1-bucket-per-cutoff
     # shape (C, A, N=13, 3) contains negative and overflowing idxs
     # NOTE: Casting is necessary for long buffers in C++ due to a LibTorch bug
-    atom_surround_idx3 = atom_grid_idx3.unsqueeze(-2) + _offset_idx3().to(
-        coords.device
-    ).view(1, 1, -1, 3)
+    offset_idx3 = _offset_idx3().to(coords.device).view(1, 1, -1, 3)
+    atom_surr_idx3 = atom_grid_idx3.unsqueeze(-2) + offset_idx3
+    # shape (C, A, N=13, 3), note that the -1 is needed here
+    shift_idxs_between = -torch.div(atom_surr_idx3, grid_shape, rounding_mode="floor")
     # Modulo grid_shape is used to get rid of the negative and overflowing idxs
     # shape (C, A, surround=13) contains only positive idxs
-    atom_surround_idx = flatten_idx3(atom_surround_idx3 % grid_shape, grid_shape)
+    atom_surr_idx = flatten_idx3(atom_surr_idx3 % grid_shape, grid_shape)
 
     # 4) Calc upper and lower part of the image_pairs_between.
     # The "unpadded" upper part of the pairlist repeats each image idx a
     # number of times equal to the number of atoms on the surroundings of
     # each atom
-
     # Both shapes (C, A, N=13)
-    count_in_atom_surround = count_in_grid[atom_surround_idx]
-    cumcount_in_atom_surround = cumcount_in_grid[atom_surround_idx]
-    # shape (C, A, N=13, 3), note that the -1 is needed here
-    shift_idxs_between = -torch.div(
-        atom_surround_idx3, grid_shape, rounding_mode="floor"
-    )
+    count_in_atom_surround = count_in_grid[atom_surr_idx]  # shp (C, A, N=13)
+    cumcount_in_atom_surround = cumcount_in_grid[atom_surr_idx]  # shp (C, A, N=13)
 
     # Shapes (B,) and (B, 3)
     lower_between, shift_idxs_between = lower_image_pairs_between(
@@ -409,19 +454,13 @@ def _cell_list(
 
     # 5) Get the necessary shifts. If no PBC is needed also get rid of the
     # image_pairs_between that need wrapping
-    if not pbc.any():
-        _image_pairs_between = fast_masked_select(
-            _image_pairs_between, (shift_idxs_between == 0).all(dim=-1), 1
-        )
-        shift_idxs = None
-    else:
-        shift_idxs_within = torch.zeros(
-            _image_pairs_within.shape[1],
-            3,
-            device=grid_shape.device,
-            dtype=torch.long,
-        )
-        shift_idxs = torch.cat((shift_idxs_between, shift_idxs_within), dim=0)
+    shift_idxs_within = torch.zeros(
+        _image_pairs_within.shape[1],
+        3,
+        device=grid_shape.device,
+        dtype=torch.long,
+    )
+    shift_idxs = torch.cat((shift_idxs_between, shift_idxs_within), dim=0)
 
     # 6) Concatenate all image pairs, and convert to atom pairs
     image_pairs = torch.cat((_image_pairs_between, _image_pairs_within), dim=1)
@@ -588,9 +627,6 @@ def setup_grid(
     grid_shape = torch.div(
         cell_lengths, bucket_length_lower_bound, rounding_mode="floor"
     ).to(torch.long)
-
-    if (grid_shape == 0).any():
-        raise RuntimeError("Cell is too small to perform pbc calculations")
     return grid_shape
 
 
@@ -653,13 +689,13 @@ def image_pairs_within(
     return fast_masked_select(_image_pairs_within, mask, 1)
 
 
+# Calculate "lower" part of the image_pairs_between buckets
 def lower_image_pairs_between(
     count_in_atom_surround: Tensor,  # shape (C, A, N=13)
     cumcount_in_atom_surround: Tensor,  # shape (C, A, N=13)
     shift_idxs_between: Tensor,  # shape (C, A, N=13, 3)
     count_in_grid_max: int,  # scalar
 ) -> tp.Tuple[Tensor, Tensor]:
-    # Calculate "lower" part of the image_pairs_between buckets
     device = count_in_atom_surround.device
     mols, atoms, neighbors = count_in_atom_surround.shape
     # shape is (c-max)
@@ -681,7 +717,7 @@ def lower_image_pairs_between(
     shift_idxs_between = shift_idxs_between.repeat(1, 1, 1, count_in_grid_max, 1)
 
     # Apply the mask
-    # Both shapes (B,)
+    # Both shapes (between-pairs,) "between-pairs aka B"
     lower_between = fast_masked_select(padded_atom_neighbors.view(-1), mask, 0)
     shift_idxs_between = fast_masked_select(shift_idxs_between.view(-1, 3), mask, 0)
     return lower_between, shift_idxs_between
@@ -734,9 +770,17 @@ class _VerletCellList(CellList):
         if pbc.any():
             displ_coords = coords.detach()
         else:
-            displ_coords, cell = compute_bounding_cell(coords.detach(), eps=1e-3)
+            # Make cell large enough to deny PBC interaction (fast, not bottleneck)
+            displ_coords, cell = compute_bounding_cell(
+                coords.detach(), eps=(cutoff + 1e-3),
+            )
 
         grid_shape = setup_grid(cell.detach(), cutoff)
+        if pbc.any():
+            if (grid_shape == 0).any():
+                raise RuntimeError("Cell is too small to perform pbc calculations")
+        else:
+            grid_shape = torch.max(grid_shape, grid_shape.new_ones(grid_shape.shape))
         cell_lengths = torch.linalg.norm(cell.detach(), dim=0)
         if self._can_use_prev_list(displ_coords, cell_lengths):
             # If a cell list is not needed use the old cached values
@@ -808,6 +852,7 @@ class _VerletCellList(CellList):
 NeighborlistArg = tp.Union[
     tp.Literal[
         "all_pairs",
+        "adaptive",
         "cell_list",
         "verlet_cell_list",
         "base",
@@ -821,11 +866,13 @@ def _parse_neighborlist(neighborlist: NeighborlistArg = "base") -> Neighborlist:
         neighborlist = AllPairs()
     elif neighborlist == "cell_list":
         neighborlist = CellList()
+    elif neighborlist == "adaptive":
+        neighborlist = AdaptiveList()
+    elif neighborlist == "base":
+        neighborlist = Neighborlist()
     elif neighborlist == "verlet_cell_list":
         neighborlist = _VerletCellList()
         warnings.warn("Verlet cell list is under development, do NOT use")
-    elif neighborlist == "base":
-        neighborlist = Neighborlist()
     elif not isinstance(neighborlist, Neighborlist):
         raise ValueError(f"Unsupported neighborlist: {neighborlist}")
     return tp.cast(Neighborlist, neighborlist)

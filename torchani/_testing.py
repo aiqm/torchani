@@ -104,7 +104,7 @@ def make_molecs(
     rng.manual_seed(seed) if seed is not None else rng.seed()
     coords = torch.rand(
         (molecs_num, atoms_num, 3), generator=rng, device=device, dtype=dtype
-    )
+    ) * cell_size + 1.0e-3
     idxs = torch.randint(
         low=0,
         high=len(symbols),
@@ -117,7 +117,7 @@ def make_molecs(
         list(map(ATOMIC_NUMBER.get, symbols)), device=device, dtype=torch.long
     )
     atomic_nums = atomic_num_kinds[idxs].view(molecs_num, atoms_num)
-    cell = torch.eye(3, device=device, dtype=dtype) * cell_size
+    cell = torch.eye(3, device=device, dtype=dtype) * (cell_size + 2.0e-3)
     _pbc = torch.full((3,), fill_value=int(pbc), device=device, dtype=torch.bool)
     return Molecs(coords, atomic_nums, cell, _pbc)
 

@@ -30,15 +30,11 @@ class TestCellList(TestCase):
         # a cutoff of 5.2 and a bucket length of 5.200001
         # first bucket is 0 - 5.2, in 3 directions, and subsequent buckets
         # are on top of that
-        self.species, self.coordinates, cell = read_xyz(
+        _, self.coordinates, cell = read_xyz(
             (Path(__file__).resolve().parent / "resources") / "tight_cell.xyz"
-        )
-        self.pbc = torch.tensor(
-            [True, True, True], dtype=torch.bool, device=self.device
         )
         assert cell is not None
         self.cell = cell
-        self.clist = CellList()
 
     def testInit(self):
         self.assertTrue(_offset_idx3().shape == (13, 3))
@@ -124,6 +120,36 @@ class TestCellList(TestCase):
     def testCellListInit(self):
         AEVComputer.like_1x(neighborlist="cell_list")
 
+
+@expand()
+class TestCellListComparison(ANITestCase):
+    def setUp(self):
+        self.cutoff = 5.2
+        self.cell_size = self.cutoff * 3 + 0.1
+        # The length of the box is ~ (3 * 5.2 + 0.1) this so that
+        # 3 buckets in each direction are needed to cover it, if one uses
+        # a cutoff of 5.2 and a bucket length of 5.200001
+        # first bucket is 0 - 5.2, in 3 directions, and subsequent buckets
+        # are on top of that
+        self.species, self.coordinates, cell = read_xyz(
+            Path(Path(__file__).parent, "resources", "tight_cell.xyz"),
+            device=self.device,
+        )
+        self.pbc = torch.tensor(
+            [True, True, True], dtype=torch.bool, device=self.device
+        )
+        self.cell = cell
+        self.clist = self._setup(CellList())
+        self.num_to_test = 10
+
+    def _check_neighborlists_match(self, coords: Tensor):
+        species = torch.ones(coords.shape[:-1], dtype=torch.long, device=self.device)
+        aev_cl = self._setup(AEVComputer.like_1x(neighborlist="cell_list"))
+        aev_fp = self._setup(AEVComputer.like_1x(neighborlist="all_pairs"))
+        aevs_cl = aev_cl(species, coords, cell=self.cell, pbc=self.pbc)
+        aevs_fp = aev_fp(species, coords, cell=self.cell, pbc=self.pbc)
+        self.assertEqual(aevs_cl, aevs_fp)
+
     def testCellListMatchesAllPairs(self):
         cut = self.cutoff
         d = 0.5
@@ -162,15 +188,15 @@ class TestCellList(TestCase):
         self._check_neighborlists_match(self.coordinates)
 
     def testCellListMatchesAllPairsRandomNoise(self):
-        for j in range(100):
+        for j in range(self.num_to_test):
             noise = 0.1
             coordinates = self.coordinates + torch.empty(
-                self.coordinates.shape, device="cpu"
+                self.coordinates.shape, device=self.device
             ).uniform_(-noise, noise)
             self._check_neighborlists_match(coordinates)
 
     def testCellListMatchesAllPairsRandomNormal(self):
-        for j in range(100):
+        for j in range(self.num_to_test):
             coordinates = (
                 torch.randn((1, 10, 3), device=self.device, dtype=torch.float)
                 * 3
@@ -181,13 +207,27 @@ class TestCellList(TestCase):
             )
             self._check_neighborlists_match(coordinates)
 
-    def _check_neighborlists_match(self, coords: Tensor):
-        species = torch.ones(coords.shape[:-1], dtype=torch.long, device=coords.device)
-        aev_cl = AEVComputer.like_1x(neighborlist="cell_list")
-        aev_fp = AEVComputer.like_1x(neighborlist="all_pairs")
-        aevs_cl = aev_cl(species, coords, cell=self.cell, pbc=self.pbc)
-        aevs_fp = aev_fp(species, coords, cell=self.cell, pbc=self.pbc)
-        self.assertEqual(aevs_cl, aevs_fp)
+
+@expand()
+class TestCellListComparisonNoPBC(TestCellListComparison):
+    def setUp(self):
+        self.cutoff = 5.2
+        self.cell_size = self.cutoff * 3 + 0.1
+        # The length of the box is ~ (3 * 5.2 + 0.1) this so that
+        # 3 buckets in each direction are needed to cover it, if one uses
+        # a cutoff of 5.2 and a bucket length of 5.200001
+        # first bucket is 0 - 5.2, in 3 directions, and subsequent buckets
+        # are on top of that
+        self.species, self.coordinates, cell = read_xyz(
+            Path(Path(__file__).parent, "resources", "tight_cell.xyz"),
+            device=self.device,
+        )
+        self.cell = None
+        self.pbc = torch.tensor(
+            [False, False, False], dtype=torch.bool, device=self.device
+        )
+        self.clist = self._setup(CellList())
+        self.num_to_test = 10
 
 
 class TestCellListEnergies(TestCase):
@@ -209,8 +249,8 @@ class TestCellListEnergies(TestCase):
         self.aev_fp = AEVComputer.like_1x(neighborlist="all_pairs")
         self.model_cl = torchani.models.ANI1x(model_index=0, device=self.device)
         self.model_fp = torchani.models.ANI1x(model_index=0, device=self.device)
-        self.model_cl.aev_computer = self.aev_cl
-        self.model_fp.aev_computer = self.aev_fp
+        self.model_cl.potentials["nnp"].aev_computer = self.aev_cl
+        self.model_fp.potentials["nnp"].aev_computer = self.aev_fp
         self.num_to_test = 10
 
     def testCellListEnergiesRandom(self):

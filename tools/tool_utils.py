@@ -1,3 +1,4 @@
+from pathlib import Path
 from enum import Enum
 import numpy as np
 import typing as tp
@@ -69,6 +70,24 @@ class Timer:
         # Restore the wrapped functions
         for (m, f), sf in zip(self.modules_and_fns, self.saved_fns):
             setattr(m, f, sf)
+
+    def dump_csv(self, path: Path) -> None:
+        with open(path, mode="wt", encoding="utf-8") as f:
+            f.write(",".join(("timing", "num", "median", "mean", "std", "total\n")))
+            for k, v in self.timers.items():
+                fw = np.array(v) if v else np.array([0.0])
+                f.write(
+                    ",".join(
+                        (
+                            k,
+                            f"{len(fw)}",
+                            f"{np.median(fw):.5f}",
+                            f"{np.mean(fw):.5f}",
+                            f"{np.std(fw):.5f}",
+                            f"{np.sum(fw):.5f}\n",
+                        )
+                    )
+                )
 
     def display(self) -> None:
         console = Console()

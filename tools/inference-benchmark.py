@@ -1,221 +1,222 @@
+from enum import Enum
+from typer import Option, Argument, Typer
+import typing_extensions as tpx
 import typing as tp
 import sys
 from pathlib import Path
-import argparse
 
-import torch
 from rich.console import Console
 from tqdm import tqdm
 
-from torchani.assembly import ANI
-from torchani.annotations import Device
-from torchani.models import ANI1x
-from torchani.grad import energies_and_forces
-from torchani.io import read_xyz
-
-from tool_utils import Timer, Opt
 
 console = Console()
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def main(
-    opt: Opt,
-    file: str,
-    nvtx: bool,
-    sync: bool,
-    no_tqdm: bool,
-    device: Device,
-    detail: bool,
-    num_warm_up: int,
-    num_profile: int,
-) -> int:
-    assert device is not None  # mypy
-    device = torch.device(device)
-    detail = (opt is Opt.NONE) and detail
-    console.print(
-        f"Profiling with optimization={opt.value}, on device: {device.type.upper()}"
+app = Typer()
+
+
+class Opt(Enum):
+    JIT = "jit"
+    NONE = "none"
+    COMPILE = "compile"
+
+
+@app.command()
+def cmd(
+    file: tpx.Annotated[
+        tp.Optional[Path],
+        Argument(help=".xyz file to use for the benchmark", show_default=False),
+    ] = None,
+    optims: tpx.Annotated[
+        tp.Optional[tp.List[Opt]],
+        Option(
+            "-o",
+            "--optim",
+            help="Torch optimizations to perform. Default is all",
+            show_default=False,
+        ),
+    ] = None,
+    device_str: tpx.Annotated[
+        str,
+        Option("--device", help="Device to use for benchmark (cpu or cuda)"),
+    ] = "cpu",
+    nvtx: tpx.Annotated[
+        bool,
+        Option(
+            "-n/-N",
+            "--nvtx/--no-nvtx",
+            help="Whether to emit nvtx for NVIDIA Nsight systems",
+        ),
+    ] = False,
+    strategy: tpx.Annotated[
+        str,
+        Option("--strategy"),
+    ] = "pyaev",
+    neighborlist: tpx.Annotated[
+        str,
+        Option("--neighborlist"),
+    ] = "all_pairs",
+    sync: tpx.Annotated[
+        bool,
+        Option(
+            "-s/-S",
+            "--sync/--no-sync",
+            help="Whether to sync cuda threads in between function calls",
+        ),
+    ] = True,
+    use_tqdm: tpx.Annotated[
+        bool,
+        Option("-t/-T", "--tqdm/--no-tqdm", help="Whether to use a progress bar"),
+    ] = True,
+    detail: tpx.Annotated[
+        bool,
+        Option("-d/-D", "--detail/--no-detail", help="Detailed breakdown of benchmark"),
+    ] = False,
+    num_warm_up: tpx.Annotated[
+        int,
+        Option("-n", "--num-warm-up", help="Num of warm up steps"),
+    ] = 50,
+    num_profile: tpx.Annotated[
+        int,
+        Option("-n", "--num-profile", help="Num of profiling steps"),
+    ] = 20,
+    profile_batches: tpx.Annotated[
+        bool,
+        Option(
+            "-b/-B",
+            "--profile-batches/--no-profile-batches",
+            help="Whether to profile batched molecules",
+        ),
+    ] = True,
+) -> None:
+    import torch
+    from torchani.assembly import ANI
+    from torchani.models import ANI1x
+    from torchani.grad import energies_and_forces
+    from torchani.io import read_xyz
+
+    from tool_utils import Timer
+
+    assert strategy in ["pyaev", "cuaev", "cuaev-fused"]
+    assert neighborlist in ["all_pairs", "cell_list", "adaptive"]
+    neighborlist = tp.cast(
+        tp.Literal["all_pairs", "cell_list", "adaptive"], neighborlist
     )
-    if not file:
+
+    if optims is None:
+        optims = [Opt.NONE, Opt.JIT, Opt.COMPILE]
+
+    no_tqdm = not use_tqdm
+    device = torch.device(device_str)
+
+    if nvtx and device.type != "cuda":
+        console.print("NVTX can only be enabled on cuda device", style="red")
+        sys.exit(1)
+    if device.type == "cuda":
+        console.print(
+            f"NVTX {'[green]ENABLED[/green]' if nvtx else '[red]DISABLED[/red]'}"
+        )
+        console.print(
+            f"CUDA sync {'[green]ENABLED[/green]' if sync else '[red]DISABLED[/red]'}"
+        )
+    if file is None:
         xyz_file_path = Path(ROOT, "tests", "resources", "CH4-5.xyz")
-    elif file.startswith("/"):
-        xyz_file_path = Path(file)
     else:
-        xyz_file_path = Path.cwd() / file
-    model = ANI1x()[0].to(device)
-    if opt is Opt.JIT:
-        model = tp.cast(ANI, torch.jit.script(model))
-    elif opt is Opt.COMPILE:
-        # Compile transforms the model into a Callable
-        model = torch.compile(model)  # type: ignore
+        xyz_file_path = file
+
+    # Set up required models for benchmark
+    model = ANI1x(
+        model_index=0, device=device, strategy=strategy, neighborlist=neighborlist
+    )
+    models: tp.Dict[Opt, ANI] = {}
+    for opt in optims:
+        if opt is Opt.NONE:
+            models[opt] = model
+        elif opt is Opt.JIT:
+            models[opt] = tp.cast(ANI, torch.jit.script(model))
+        elif opt is Opt.COMPILE:
+            models[opt] = tp.cast(ANI, torch.compile(model))
+
+    # Loop over molecules and calculate timings
     species, coordinates, _ = read_xyz(xyz_file_path, device=device)
-    num_conformations = species.shape[0]
-    timer = Timer(
-        modules_and_fns=(
-            [
+    for opt, m in models.items():
+        console.print(
+            "Profiling energy *and* force."
+            f" optim={opt.value}, device={device.type.upper()}, strat={strategy}"
+        )
+        num_conformations = species.shape[0]
+        if detail and isinstance(m, torch.nn.Module):
+            calls = [
                 (model, "forward"),
                 (model.aev_computer, "forward"),
                 (model.neural_networks, "forward"),
                 (model.energy_shifter, "forward"),
-                (model.aev_computer.neighborlist, "forward"),
-                (model.aev_computer.angular_terms, "forward"),
-                (model.aev_computer.radial_terms, "forward"),
             ]
-            if detail
-            else []
-        ),
-        nvtx=nvtx,
-        sync=sync,
-    )
+            if strategy == "pyaev":
+                calls.extend(
+                    [
+                        (model.aev_computer.neighborlist, "forward"),
+                        (model.aev_computer.angular, "forward"),
+                        (model.aev_computer.radial, "forward"),
+                    ]
+                )
+        else:
+            calls = []
+        timer = Timer(modules_and_fns=calls, nvtx=nvtx, sync=sync)
+        for j, (_species, _coordinates) in tqdm(
+            enumerate(zip(species[:num_warm_up], coordinates[:num_warm_up])),
+            desc="Warm Up",
+            disable=no_tqdm,
+            total=num_warm_up,
+            leave=False,
+        ):
+            _, _ = energies_and_forces(
+                model,
+                _species.unsqueeze(0),
+                _coordinates.unsqueeze(0).detach(),
+            )
+        timer.start_profiling()
+        for j, (_species, _coordinates) in tqdm(
+            enumerate(zip(species[:num_profile], coordinates[:num_profile])),
+            desc="Profiling",
+            disable=no_tqdm,
+            total=num_profile,
+            leave=False,
+        ):
+            timer.start_range("batch-size-1")
+            _, _ = energies_and_forces(
+                model,
+                _species.unsqueeze(0),
+                _coordinates.unsqueeze(0).detach(),
+            )
+            timer.end_range("batch-size-1")
+        timer.stop_profiling()
 
-    for _ in tqdm(
-        range(num_warm_up),
-        desc="Warm up",
-        total=num_warm_up,
-        leave=False,
-        disable=no_tqdm,
-    ):
-        energies_and_forces(model, species, coordinates)
-    timer.start_profiling()
-    for _ in tqdm(
-        range(num_profile),
-        desc="Profiling",
-        total=num_profile,
-        leave=False,
-        disable=no_tqdm,
-    ):
-        timer.start_range(f"batch-size-{num_conformations}")
-        energies_and_forces(model, species, coordinates)
-        timer.end_range(f"batch-size-{num_conformations}")
-    timer.stop_profiling()
-
-    for j, (_species, _coordinates) in tqdm(
-        enumerate(zip(species[:num_warm_up], coordinates[:num_warm_up])),
-        desc="Warm Up",
-        disable=no_tqdm,
-        total=num_warm_up,
-        leave=False,
-    ):
-        _, _ = energies_and_forces(
-            model,
-            _species.unsqueeze(0),
-            _coordinates.unsqueeze(0).detach(),
-        )
-    timer.start_profiling()
-    for j, (_species, _coordinates) in tqdm(
-        enumerate(zip(species[:num_profile], coordinates[:num_profile])),
-        desc="Profiling",
-        disable=no_tqdm,
-        total=num_profile,
-        leave=False,
-    ):
-        timer.start_range("batch-size-1")
-        _, _ = energies_and_forces(
-            model,
-            _species.unsqueeze(0),
-            _coordinates.unsqueeze(0).detach(),
-        )
-        timer.end_range("batch-size-1")
-    timer.stop_profiling()
-    timer.display()
-    return 0
+        #  Cell List does not support batches
+        if neighborlist != "cell_list" and profile_batches:
+            for _ in tqdm(
+                range(num_warm_up),
+                desc="Warm up",
+                total=num_warm_up,
+                leave=False,
+                disable=no_tqdm,
+            ):
+                energies_and_forces(model, species, coordinates)
+            timer.start_profiling()
+            for _ in tqdm(
+                range(num_profile),
+                desc="Profiling",
+                total=num_profile,
+                leave=False,
+                disable=no_tqdm,
+            ):
+                timer.start_range(f"batch-size-{num_conformations}")
+                energies_and_forces(model, species, coordinates)
+                timer.end_range(f"batch-size-{num_conformations}")
+            timer.stop_profiling()
+            timer.display()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("filename", help="Path to xyz file", default="", nargs="?")
-    parser.add_argument(
-        "-d",
-        "--device",
-        help="Device for modules and tensors",
-        default=("cuda" if torch.cuda.is_available() else "cpu"),
-    )
-    parser.add_argument(
-        "--no-tqdm",
-        dest="no_tqdm",
-        action="store_true",
-        help="Whether to disable tqdm to display progress",
-    )
-    parser.add_argument(
-        "--nvtx",
-        action="store_true",
-        help="Whether to emit nvtx for NVIDIA Nsight systems",
-    )
-    parser.add_argument(
-        "--no-sync",
-        action="store_true",
-        help="Whether to disable sync between CUDA calls",
-    )
-    parser.add_argument(
-        "-c",
-        "--compile",
-        action="store_true",
-        help="Whether to use torch.compile for optimization",
-    )
-    parser.add_argument(
-        "--detail",
-        action="store_true",
-        help="Detailed breakdown of benchmark",
-    )
-    parser.add_argument(
-        "-w",
-        "--num-warm-up",
-        help="Number of warm up steps",
-        type=int,
-        default=50,
-    )
-    parser.add_argument(
-        "-e",
-        "--num-profile",
-        help="Number of profiling steps",
-        type=int,
-        default=10,
-    )
-    args = parser.parse_args()
-    if args.nvtx and not torch.cuda.is_available():
-        raise ValueError("CUDA is needed to profile with NVTX")
-    sync = False
-    if args.device == "cuda" and not args.no_sync:
-        sync = True
-    console.print(
-        f"NVTX {'[green]ENABLED[/green]' if args.nvtx else '[red]DISABLED[/red]'}"
-    )
-    console.print(
-        f"CUDA sync {'[green]ENABLED[/green]' if sync else '[red]DISABLED[/red]'}"
-    )
-    console.print()
-    main(
-        opt=Opt.NONE,
-        file=args.filename,
-        nvtx=args.nvtx,
-        sync=sync,
-        no_tqdm=args.no_tqdm,
-        device=args.device,
-        detail=args.detail,
-        num_warm_up=args.num_warm_up,
-        num_profile=args.num_profile,
-    )
-    main(
-        opt=Opt.JIT,
-        file=args.filename,
-        nvtx=args.nvtx,
-        sync=sync,
-        no_tqdm=args.no_tqdm,
-        device=args.device,
-        detail=args.detail,
-        num_warm_up=args.num_warm_up,
-        num_profile=args.num_profile,
-    )
-    if args.compile:
-        main(
-            opt=Opt.COMPILE,
-            file=args.filename,
-            nvtx=args.nvtx,
-            sync=sync,
-            no_tqdm=args.no_tqdm,
-            device=args.device,
-            detail=args.detail,
-            num_warm_up=args.num_warm_up,
-            num_profile=args.num_profile,
-        )
-    sys.exit(0)
+    app()
