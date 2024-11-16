@@ -281,7 +281,7 @@ class AEVComputer(torch.nn.Module):
             neighbors.indices,
             triples.central_idxs,
             triples.side_idxs,
-            triples.diff_sign,
+            triples.diff_signs,
             terms,
         )
         # Shape (molecs, atoms, num-species-pairs * ang + num-species * rad)

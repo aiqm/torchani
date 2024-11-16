@@ -1,6 +1,5 @@
 r"""Modular neighborlists to improve scaling for large systems"""
 
-import warnings
 import typing as tp
 import math
 
@@ -23,7 +22,7 @@ class Triples(tp.NamedTuple):
 
     central_idxs: Tensor  #: Long tensor with central idxs. Shape ``(triples,)``
     side_idxs: Tensor  #: Long tensor with side idxs. Shape ``(2, triples)``
-    diff_sign: Tensor  #: Long tensor with diff vector direction. Shape ``(2, triples)``
+    diff_signs: Tensor  #: Long tensor of diff vector directions. Shape ``(2, triples)``
     distances: Tensor  #: Similar to `Neighbors`, for triples. ``(2, triples)``
     diff_vectors: Tensor  #: Similar to `Neighbors`, for triples. ``(2, triples, 3)``
 
@@ -51,7 +50,7 @@ def narrow_down(
     coords: Tensor,
     cutoff: float,
     neighbor_idxs: Tensor,
-    shift_values: tp.Optional[Tensor] = None,
+    shifts: tp.Optional[Tensor] = None,
 ) -> Neighbors:
     r"""Takes a set of potential neighbor idxs and narrows it down to true neighbors"""
     mask = elem_idxs == -1
@@ -61,15 +60,15 @@ def narrow_down(
         mask = mask.view(-1)[neighbor_idxs.view(-1)].view(2, -1)
         non_dummy_pairs = (~torch.any(mask, dim=0)).nonzero().flatten()
         neighbor_idxs = neighbor_idxs.index_select(1, non_dummy_pairs)
-        # shift_values can be None when there are no pbc conditions to prevent
+        # shifts can be None when there are no pbc conditions to prevent
         # torch from launching kernels with only zeros
-        if shift_values is not None:
-            shift_values = shift_values.index_select(0, non_dummy_pairs)
+        if shifts is not None:
+            shifts = shifts.index_select(0, non_dummy_pairs)
 
     # Interpret as single molecule
     coords = coords.view(-1, 3)
     if cutoff == math.inf:
-        if shift_values is not None:
+        if shifts is not None:
             raise ValueError("PBC can't use an infinite cutoff")
     else:
         # Diff vector and distances need to be calculated to screen unfortunately
@@ -81,19 +80,19 @@ def narrow_down(
         _coords0 = _coords.index_select(0, neighbor_idxs[0])
         _coords1 = _coords.index_select(0, neighbor_idxs[1])
         _diff_vectors = _coords0 - _coords1
-        if shift_values is not None:
-            _diff_vectors += shift_values
+        if shifts is not None:
+            _diff_vectors += shifts
         in_cutoff = (_diff_vectors.norm(2, -1) <= cutoff).nonzero().flatten()
         neighbor_idxs = neighbor_idxs.index_select(1, in_cutoff)
-        if shift_values is not None:
-            shift_values = shift_values.index_select(0, in_cutoff)
+        if shifts is not None:
+            shifts = shifts.index_select(0, in_cutoff)
         # ------------------- #
 
     coords0 = coords.index_select(0, neighbor_idxs[0])
     coords1 = coords.index_select(0, neighbor_idxs[1])
     diff_vectors = coords0 - coords1
-    if shift_values is not None:
-        diff_vectors += shift_values
+    if shifts is not None:
+        diff_vectors += shifts
     distances = diff_vectors.norm(2, -1)
     return Neighbors(neighbor_idxs, distances, diff_vectors)
 
@@ -178,11 +177,11 @@ def all_pairs(
 ) -> Neighbors:
     cell, pbc = _validate_cell_pbc(species, cell, pbc)
     if pbc.any():
-        neighbor_idxs, shift_indices = _all_pairs_pbc(species, cutoff, cell, pbc)
-        shift_values = shift_indices.to(cell.dtype) @ cell
+        neighbor_idxs, shift_idxs = _all_pairs_pbc(species, cutoff, cell, pbc)
+        shifts = shift_idxs.to(cell.dtype) @ cell
         # Before screening coords, must map to central cell (not need if no PBC)
         coords = map_to_central(coords, cell, pbc)
-        return narrow_down(species, coords, cutoff, neighbor_idxs, shift_values)
+        return narrow_down(species, coords, cutoff, neighbor_idxs, shifts)
     num_molecs, num_atoms = species.shape
     # Create a neighborlist for all molecules and all atoms.
     # Later screen dummy atoms
@@ -348,7 +347,8 @@ def cell_list(
     else:
         # Make cell large enough to deny PBC interaction (fast, not bottleneck)
         displ_coords, cell = compute_bounding_cell(
-            coords.detach(), eps=(cutoff + 1e-3),
+            coords.detach(),
+            eps=(cutoff + 1e-3),
         )
 
     # The cell is spanned by a 3D grid of "buckets" or "grid elements",
@@ -363,16 +363,13 @@ def cell_list(
         grid_shape = torch.max(grid_shape, grid_shape.new_ones(grid_shape.shape))
 
     # Since coords will be fractionalized they may lie outside the cell before this
-    neighbor_idxs, shift_indices = _cell_list(
-        displ_coords.detach(), grid_shape, cell, pbc
-    )
+    neighbor_idxs, shift_idxs = _cell_list(displ_coords.detach(), grid_shape, cell, pbc)
     if pbc.any():
-        assert shift_indices is not None
-        shift_values = shift_indices.to(cell.dtype) @ cell
+        shifts = shift_idxs.to(cell.dtype) @ cell
         # Before the screening step we map the coords to the central cell,
         # same as with an all-pairs calculation
         coords = map_to_central(coords, cell.detach(), pbc)
-        return narrow_down(species, coords, cutoff, neighbor_idxs, shift_values)
+        return narrow_down(species, coords, cutoff, neighbor_idxs, shifts)
     return narrow_down(species, coords, cutoff, neighbor_idxs)
 
 
@@ -381,7 +378,7 @@ def _cell_list(
     grid_shape: Tensor,  # shape (3,)
     cell: Tensor,  # shape (3, 3)
     pbc: Tensor,  # shape (3,)
-) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
+) -> tp.Tuple[Tensor, Tensor]:
     # 1) Get location of each atom in the grid, given by a "grid_idx3" (g3) or by a
     # single flat "grid_idx" (g).
     atom_grid_idx3 = coords_to_grid_idx3(coords, cell, grid_shape)  # Shape (M, A, 3)
@@ -723,11 +720,11 @@ def lower_image_pairs_between(
     return lower_between, shift_idxs_between
 
 
-# TODO: Currently broken
-class _VerletCellList(CellList):
+# TODO: testme
+class VerletCellList(CellList):
     r"""Compute pairs of neighbors. Uses a cell-list algorithm with 'verlet' skin."""
 
-    _prev_shift_indices: tp.Optional[Tensor]
+    _prev_shift_idxs: Tensor
     _prev_neighbor_idxs: Tensor
     _prev_coords: Tensor
     _prev_cell_lenghts: Tensor
@@ -737,7 +734,9 @@ class _VerletCellList(CellList):
         if skin <= 0.0:
             raise ValueError("skin must be a positive float")
         self.skin = skin
-        self.register_buffer("_prev_shift_indices", None, persistent=False)
+        self.register_buffer(
+            "_prev_shift_idxs", torch.zeros(1, dtype=torch.long), persistent=False
+        )
         self.register_buffer(
             "_prev_neighbor_idxs", torch.zeros(1, dtype=torch.long), persistent=False
         )
@@ -745,10 +744,9 @@ class _VerletCellList(CellList):
             "_prev_coords", torch.zeros(1, dtype=torch.float), persistent=False
         )
         self.register_buffer(
-            "_prev_cell_lenghts", torch.zeros(1, dtype=torch.float), persistent=False
+            "_prev_cell", torch.eye(3, dtype=torch.float), persistent=False
         )
         self._prev_values_are_cached = False
-        raise ValueError("VerletCellList is currently unsupported")
 
     def forward(
         self,
@@ -761,7 +759,7 @@ class _VerletCellList(CellList):
         assert cutoff >= 0.0, "Cutoff must be a positive float"
         cell, pbc = _validate_cell_pbc(species, cell, pbc)
 
-        # Extra cell-list checks
+        # Cell-list checks
         if coords.shape[0] != 1:
             raise ValueError("Cell list doesn't support batches")
         if not ((~pbc).all() or pbc.all()):
@@ -770,58 +768,49 @@ class _VerletCellList(CellList):
         if pbc.any():
             displ_coords = coords.detach()
         else:
-            # Make cell large enough to deny PBC interaction (fast, not bottleneck)
+            # Make cell large enough to avoid PBC interaction (fast, not bottleneck)
             displ_coords, cell = compute_bounding_cell(
-                coords.detach(), eps=(cutoff + 1e-3),
+                coords.detach(),
+                eps=(cutoff + 1e-3),
             )
 
-        grid_shape = setup_grid(cell.detach(), cutoff)
+        # The grid uses a skin, but the narrowing uses the actual cutoff
+        grid_shape = setup_grid(cell.detach(), cutoff + self.skin)
         if pbc.any():
             if (grid_shape == 0).any():
                 raise RuntimeError("Cell is too small to perform pbc calculations")
         else:
             grid_shape = torch.max(grid_shape, grid_shape.new_ones(grid_shape.shape))
-        cell_lengths = torch.linalg.norm(cell.detach(), dim=0)
-        if self._can_use_prev_list(displ_coords, cell_lengths):
+        if self._can_use_prev_list(displ_coords, cell.detach()):
             # If a cell list is not needed use the old cached values
             # NOTE: Cached values should NOT be updated here
-            neighbor_idxs = self._prev_neighbor_idxs
-            shift_indices = self._prev_shift_indices
+            # Casting is required due to LibTorch bug
+            neighbor_idxs = self._prev_neighbor_idxs.to(torch.long)
+            shift_idxs = self._prev_shift_idxs.to(torch.long)
         else:
-            # TODO: The cell list should be calculated with a skin (?) here.
-            neighbor_idxs, shift_indices = self._cell_list(
+            neighbor_idxs, shift_idxs = _cell_list(
                 displ_coords.detach(), grid_shape, cell, pbc
             )
             self._cache_values(
-                neighbor_idxs, shift_indices, displ_coords.detach(), cell_lengths
+                neighbor_idxs, shift_idxs, displ_coords.detach(), cell.detach()
             )
         if pbc.any():
-            assert shift_indices is not None
-            shift_values = shift_indices.to(cell.dtype) @ cell
+            shifts = shift_idxs.to(cell.dtype) @ cell
             coords = map_to_central(coords, cell.detach(), pbc)
-            return narrow_down(
-                species,
-                coords,
-                cutoff,
-                neighbor_idxs,
-                shift_values,
-            )
+            return narrow_down(species, coords, cutoff, neighbor_idxs, shifts)
         return narrow_down(species, coords, cutoff, neighbor_idxs)
 
     def _cache_values(
         self,
         neighbor_idxs: Tensor,
-        shift_indices: tp.Optional[Tensor],
+        shift_idxs: Tensor,
         coords: Tensor,
-        cell_lengths: Tensor,
+        cell: Tensor,
     ):
-        if shift_indices is not None:
-            self._prev_shift_indices = shift_indices.detach()
-        else:
-            self._prev_shift_indices = None
+        self._prev_shift_idxs = shift_idxs.detach()
         self._prev_neighbor_idxs = neighbor_idxs.detach()
         self._prev_coords = coords.detach()
-        self._prev_cell_lengths = cell_lengths.detach()
+        self._prev_cell = cell.detach()
         self._prev_values_are_cached = True
 
     @torch.jit.export
@@ -832,19 +821,27 @@ class _VerletCellList(CellList):
             torch.zeros(1, dtype=torch.long, device=device),
             torch.zeros(1, dtype=torch.long, device=device),
             torch.zeros(1, dtype=dtype, device=device),
-            torch.zeros(1, dtype=dtype, device=device),
+            torch.eye(3, dtype=dtype, device=device),
         )
         self._prev_values_are_cached = False
 
-    def _can_use_prev_list(self, coords: Tensor, cell_lengths: Tensor) -> bool:
+    def _can_use_prev_list(self, coords: Tensor, cell: Tensor) -> bool:
         if not self._prev_values_are_cached:
             return False
         coords.detach_()
-        cell_lengths.detach_()
+        cell.detach_()
         # Check if any coordinate moved more than half the skin depth,
         # If this happened, then the cell list has to be rebuilt
-        cell_scaling = cell_lengths / self._prev_cell_lenghts
-        delta = coords - self._prev_coords * cell_scaling
+        scaling = torch.linalg.norm(cell, dim=1) / torch.linalg.norm(
+            self._prev_cell, dim=1
+        )
+        pbc = torch.tensor([True, True, True], device=coords.device)
+        # delta needs to be wrt wrapped coordinates, since the shifts may need to be
+        # updated too
+        delta = (
+            map_to_central(coords, cell, pbc)
+            - map_to_central(self._prev_coords, self._prev_cell, pbc) * scaling
+        )
         dist_squared = delta.pow(2).sum(-1)
         return bool((dist_squared > (self.skin / 2) ** 2).all())
 
@@ -871,8 +868,7 @@ def _parse_neighborlist(neighborlist: NeighborlistArg = "base") -> Neighborlist:
     elif neighborlist == "base":
         neighborlist = Neighborlist()
     elif neighborlist == "verlet_cell_list":
-        neighborlist = _VerletCellList()
-        warnings.warn("Verlet cell list is under development, do NOT use")
+        neighborlist = VerletCellList()
     elif not isinstance(neighborlist, Neighborlist):
         raise ValueError(f"Unsupported neighborlist: {neighborlist}")
     return tp.cast(Neighborlist, neighborlist)
@@ -954,7 +950,8 @@ def neighbors_to_triples(neighbors: Neighbors) -> Triples:
 
 
 # Reconstruct the shift values used to calculate the diff vectors
-def _reconstruct_shift_values(coords: Tensor, neighbors: Neighbors) -> Tensor:
+def reconstruct_shifts(coords: Tensor, neighbors: Neighbors) -> Tensor:
+    r"""Reconstruct shift values used to calculate neighbors"""
     coords0 = coords.view(-1, 3).index_select(0, neighbors.indices[0])
     coords1 = coords.view(-1, 3).index_select(0, neighbors.indices[1])
     unshifted_diff_vectors = coords0 - coords1

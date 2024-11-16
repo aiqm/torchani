@@ -76,6 +76,7 @@ from torchani.neighbors import (
     NeighborlistArg,
     narrow_down,
     discard_outside_cutoff,
+    map_to_central,
 )
 from torchani.electro import ChargeNormalizer
 from torchani.nn._internal import _ZeroANINetworks
@@ -321,8 +322,10 @@ class ANI(torch.nn.Module):
         self,
         species: Tensor,
         coords: Tensor,
+        cell: Tensor,
+        pbc: Tensor,
         neighbor_idxs: Tensor,  # External neighbors
-        shift_values: Tensor,  # External neighbors
+        shifts: Tensor,  # External neighbors
         total_charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
@@ -333,9 +336,8 @@ class ANI(torch.nn.Module):
         # Discard dist larger than the cutoff, which may be present if the neighbors
         # come from a program that uses a skin value to conditionally rebuild
         # (Verlet lists in MD engine). Also discard dummy atoms
-        neighbors = narrow_down(
-            species, coords, self.cutoff, neighbor_idxs, shift_values
-        )
+        coords = map_to_central(coords, cell.detach(), pbc)
+        neighbors = narrow_down(species, coords, self.cutoff, neighbor_idxs, shifts)
         return self.compute_from_neighbors(
             elem_idxs, neighbors, coords, total_charge, atomic, ensemble_values
         )
@@ -735,8 +737,10 @@ class ANIq(ANI):
         self,
         species: Tensor,
         coords: Tensor,
+        cell: Tensor,
+        pbc: Tensor,
         neighbor_idxs: Tensor,  # External neighbors
-        shift_values: Tensor,  # External neighbors
+        shifts: Tensor,  # External neighbors
         total_charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
@@ -749,9 +753,8 @@ class ANIq(ANI):
         # Discard dist larger than the cutoff, which may be present if the neighbors
         # come from a program that uses a skin value to conditionally rebuild
         # (Verlet lists in MD engine). Also discard dummy atoms
-        neighbors = narrow_down(
-            species, coords, self.cutoff, neighbor_idxs, shift_values
-        )
+        coords = map_to_central(coords, cell.detach(), pbc)
+        neighbors = narrow_down(species, coords, self.cutoff, neighbor_idxs, shifts)
         if atomic:
             energies = coords.new_zeros(elem_idxs.shape)
         else:
