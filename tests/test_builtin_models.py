@@ -70,8 +70,6 @@ class TestExternalNeighborsEntryPoint(ANITestCase):
             e2 = model.compute_from_external_neighbors(
                 species,
                 coords,
-                cell,
-                pbc,
                 neighbors.indices,
                 shifts,
                 total_charge=0,
@@ -86,8 +84,6 @@ class TestExternalNeighborsEntryPoint(ANITestCase):
             _, e2, q2 = model.energies_and_atomic_charges_from_external_neighbors(
                 species,
                 coords,
-                cell,
-                pbc,
                 neighbors.indices,
                 shifts,
                 total_charge=0,
