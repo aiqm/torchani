@@ -8,14 +8,10 @@ terms and cutoff functions.
 """
 
 # To begin with, let's first import the modules and setup devices we will use:
-import math
-
 import torch
-from torch import Tensor
 
 from torchani.cutoffs import Cutoff
-from torchani.aev import ANIRadial, AEVComputer, AngularTerm
-from torchani.utils import linspace
+from torchani.aev import AEVComputer, Angular, Radial
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # %%
@@ -73,94 +69,103 @@ radial_len = aevcomp_smooth.radial_len
 aevs[0, 0, radial_len:radial_len + 5].tolist()
 # %%
 # Lets say now we want to experiment with a different cutoff function, such as a
-# biweight cutoff.
-#
-# .. warning::
-#
-#   biweight does not have a continuous second derivative at the cutoff value, this may
-#   not be appropriate for your model
-#
-#
-# Since biweight is not coded in TorchANI we can code it ourselves and pass it
-# to the AEVComputer, as long as the forward method has this form, it will work!
+# biweight cutoff. Since biweight is not coded in TorchANI we can code it ourselves and
+# pass it to the AEVComputer, as long as the forward method has this form, it will work!
 #
 # The same cutoff function will be used for both radial and angular terms
 
 
 class CutoffBiweight(Cutoff):
-    def forward(self, distances: Tensor, cutoff: float) -> Tensor:
-        # Assuming all elements in distances are smaller than cutoff
+    def forward(self, distances, cutoff):
+        # The calculation can assume all distances passed to be smaller than the cutoff
         return (cutoff**2 - distances**2) ** 2 / cutoff**4
 
 
-cutoff_fn_biw = CutoffBiweight()
-aevcomp_biw = AEVComputer.like_1x(cutoff_fn=cutoff_fn_biw).to(device)
-radial_len = aevcomp_biw.radial_len
+biweight = CutoffBiweight()
+aevcomp_biweight = AEVComputer.like_1x(cutoff_fn=biweight).to(device)
+radial_len = aevcomp_biweight.radial_len
 # %%
 # Now we calculate some AEVs
-aevs = aevcomp_biw(species, coords)
+aevs = aevcomp_biweight(species, coords)
 # %%
 # The first 5 radial terms of the first atom:
 aevs[0, 0, :5].tolist()
 # %%
 # The first 5 angular terms of the first atom:
-radial_len = aevcomp_biw.radial_len
+radial_len = aevcomp_biweight.radial_len
 aevs[0, 0, radial_len:radial_len + 5].tolist()
 # %%
-# Lets try something a bit more complicated. Lets experiment with different angular
-# terms that have a form of ``exp(-gamma * (cos(theta) - cos(theta0))**2)``. How can we
-# do that?
+# Lets try something a bit more complicated. Lets experiment with different 2-body and
+# 3-body terms. Our 3-body terms will include a term ``exp(-eta_a * (cos(theta) -
+# cos_phi)**2)``, and our 2-body terms will be lorentzians, with the form ``1 / (1 +
+# x**2)``, where ``x = ((r - shifts) / fwhm)``. How can we do that?
 #
-# We can pass a custom module to the ``AEVComputer``. As long as it has the necessary
-# attributes and methods (it has to have a *dim_out*, a *cutoff*, a *cutoff_fn* and a
-# *compute_terms*)
+# We can pass custom modules to the ``AEVComputer``. The easiest
+# way to code custom modules is, for the 2-body part, by subclassing ``Radial``,
+# which can be used to calculate terms of the form ``R(r_ij) * fcut(r_ij)``, where
+# ``i, j`` is a pair of neighbors.
 
 
-class CosAngular(AngularTerm):
-    def __init__(self, eta, shifts, gamma, sections, cutoff, cutoff_fn="cosine"):
-        super().__init__(cutoff=cutoff, cutoff_fn=cutoff_fn)  # *Must* be called
-        assert len(sections) == len(gamma)
-        self.register_buffer("gamma", torch.tensor(gamma))
-        self.register_buffer("eta", torch.tensor([eta]))
-        self.register_buffer("shifts", torch.tensor(shifts))
-        self.register_buffer("sections", torch.tensor(sections))
-        self.num_feats = len(shifts) * len(sections)  # *Must* have an num_feats
+class Lorentzian(Radial):
+    tensors = ["shifts", "fwhm"]  # Tensors we will use. fwhm = Full Width at Half Max
 
-    # The inputs are two tensors, of shapes (triples,) and (triples, 3)
-    def compute_terms(self, triple_distances: Tensor, triple_vectors: Tensor) -> Tensor:
-        triple_vectors = triple_vectors.view(2, -1, 3, 1, 1)
-        triple_distances = triple_distances.view(2, -1, 1, 1)
-        cos_angles = triple_vectors.prod(0).sum(1) / torch.clamp(
-            triple_distances.prod(0), min=1e-10
-        )
-        factor1 = triple_distances.sum(0) / 2 - self.shifts.view(-1, 1)
-        factor2 = cos_angles - torch.cos(self.sections.view(1, -1))
-        exponent = self.eta * factor1**2 + self.gamma.view(1, -1) * factor2**2
-        # *Must* output with ``(triples, self.num_feats)``
-        return (4 * torch.exp(-exponent)).view(-1, self.num_feats)
+    def compute(self, distances):
+        x = 2 * (distances - self.shifts) / self.fwhm
+        return 1 / (1 + x**2)
 
 
 # %%
-# Now lets initialize the module, since we will use our custom terms in some AEVs
-eta = 8.0
-cutoff = 3.5
-shifts = [0.9000, 1.5500, 2.2000, 2.8500]
-sections = linspace(0.0, math.pi, 9)
-gamma = [1023.0, 146.5, 36.0, 18.6, 15.5, 18.6, 36.0, 146.5, 1023.0]
-cos_angular = CosAngular(eta, shifts, gamma, sections, cutoff, cutoff_fn="smooth")
+# And for the 3-body part, by subclassing ``Angular``, which calculates terms of the
+# form ``R(r_ij, r_ik) * A(cos(theta_ijk)) * fcut(r_ij) * fcut(r_ik)``,
+# where ``i, j, k`` is a triple consisting on two pairs of neighbors
+# that share one atom in common.
+
+
+class ExpCosine(Angular):
+    angles_tensors = ["cos_phi", "eta_a"]  # Tensors we will use in A(cos(theta_ijk))
+    radial_tensors = ["shifts", "eta_r"]  # Tensors we will use in R(r_ij, r_ik)
+
+    def compute_cos_angles(self, cos_angles):
+        return 2 * torch.exp(-self.eta_a * (cos_angles - self.cos_phi) ** 2)
+
+    def compute_radial(self, distances_ji, distances_jk):
+        mean_dists = (distances_ji + distances_jk) / 2
+        return 2 * torch.exp(-self.eta_r * (mean_dists - self.shifts) ** 2)
+
+
 # %%
-# For the radial part we use the standard ANI-1x terms, with the same cutoff function
-ani_radial = ANIRadial.like_1x(cutoff_fn="smooth")
-aevcomp_cos = AEVComputer(radial=ani_radial, angular=cos_angular, num_species=4).to(
+# Now lets initialize the angular module with constants
+custom_3body = ExpCosine(
+    eta_r=8.0,
+    shifts=[0.9000, 1.5500, 2.2000, 2.8500],
+    eta_a=[1023.0, 146.5, 36.0, 18.6, 15.5, 18.6, 36.0, 146.5, 1023.0],
+    cos_phi=[1.0, 0.75, 0.5, 0.25, 0.0, -0.25, -0.5, -0.75, -1.0],
+    cutoff=3.5,
+    cutoff_fn="smooth",
+)
+# %%
+# For the 3-body module, we want to make the shifts trainable, which is supported.
+# if we wanted to make both ``fwhm`` and ``shifts`` trainable we could use
+# ``trainable=["shifts", "fwhm"]``
+custom_2body = Lorentzian(
+    fwhm=1.5,
+    shifts=[0.0, 1.0, 2.0, 3.0, 4.0],
+    trainable="shifts",
+    cutoff=5.2,
+    cutoff_fn="smooth",
+)
+# %%
+# Finally we create our custom AEVComputer, which will use the specified terms
+custom_aev = AEVComputer(radial=custom_2body, angular=custom_3body, num_species=4).to(
     device
 )
 # %%
 # Now we calculate some AEVs
-aevs = aevcomp_cos(species, coords)
+aevs = custom_aev(species, coords)
 # %%
 # The first 5 radial terms of the first atom:
 aevs[0, 0, :5].tolist()
 # %%
 # The first 5 angular terms of the first atom:
-radial_len = aevcomp_cos.radial_len
+radial_len = custom_aev.radial_len
 aevs[0, 0, radial_len:radial_len + 5].tolist()

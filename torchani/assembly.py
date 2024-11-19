@@ -50,13 +50,13 @@ from torchani.tuples import (
     ForceMagnitudes,
 )
 from torchani.annotations import StressKind
-from torchani.cutoffs import _parse_cutoff_fn, Cutoff, CutoffArg
+from torchani.cutoffs import _parse_cutoff_fn, Cutoff, CutoffArg, CutoffSmooth
 from torchani.aev import (
     AEVComputer,
     ANIAngular,
     ANIRadial,
-    RadialTermArg,
-    AngularTermArg,
+    RadialArg,
+    AngularArg,
 )
 from torchani.aev._terms import _parse_radial_term, _parse_angular_term
 from torchani.nn import (
@@ -832,8 +832,8 @@ class _AEVComputerWrapper:
     def __init__(
         self,
         cls: AEVComputerCls,
-        radial: RadialTermArg,
-        angular: AngularTermArg,
+        radial: RadialArg,
+        angular: AngularArg,
         cutoff_fn: CutoffArg = "global",
         strategy: str = "pyaev",
     ) -> None:
@@ -866,7 +866,7 @@ class Assembler:
         neighborlist: NeighborlistArg = "all_pairs",
         periodic_table_index: bool = True,
     ) -> None:
-        self._global_cutoff_fn: tp.Optional[Cutoff] = None
+        self._global_cutoff_fn: tp.Optional[Cutoff] = CutoffSmooth(2)
 
         self._neighborlist = _parse_neighborlist(neighborlist)
         self._aevcomp: tp.Optional[_AEVComputerWrapper] = None
@@ -978,8 +978,8 @@ class Assembler:
 
     def set_aev_computer(
         self,
-        angular: AngularTermArg,
-        radial: RadialTermArg,
+        angular: AngularArg,
+        radial: RadialArg,
         cutoff_fn: CutoffArg = "global",
         strategy: str = "pyaev",
         aev_computer_cls: AEVComputerCls = AEVComputer,

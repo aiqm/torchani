@@ -1,10 +1,11 @@
-import itertools
+from enum import Enum
 from typer import Option, Typer
 import typing_extensions as tpx
 import typing as tp
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
+
 
 from rich.console import Console
 from tqdm import tqdm
@@ -17,12 +18,28 @@ ROOT = Path(__file__).resolve().parent.parent
 app = Typer()
 
 
+class Opt(Enum):
+    PY = "py"
+    CU = "cu"
+    JIT = "jit"
+    COMPILE = "compile"
+
+
 @app.command()
 def run(
     cuda: tpx.Annotated[
         bool,
         Option("--cuda/--no-cuda", help="Use a CUDA enabled gpu for benchmark"),
     ] = True,
+    optims: tpx.Annotated[
+        tp.Optional[tp.List[Opt]],
+        Option(
+            "-o",
+            "--optim",
+            help="Torch optimizations to perform. Default is all",
+            show_default=False,
+        ),
+    ] = None,
     sync: tpx.Annotated[
         bool,
         Option(
@@ -38,21 +55,23 @@ def run(
     num_warm_up: tpx.Annotated[
         int,
         Option("-n", "--num-warm-up", help="Num of warm up steps"),
-    ] = 50,
+    ] = 200,
     num_profile: tpx.Annotated[
         int,
         Option("-n", "--num-profile", help="Num of profiling steps"),
-    ] = 20,
-    pbc: tpx.Annotated[
-        bool,
-        Option("-p/-P", "--pbc/--no-pbc", help="Benchmark for the PBC case"),
-    ] = True,
+    ] = 30,
 ) -> None:
     import torch
-    from torchani.neighbors import _parse_neighborlist
+    from torchani.aev import AEVComputer
+    from torchani.utils import SYMBOLS_2X
+    from torchani.nn import SpeciesConverter
+    from torchani.neighbors import AdaptiveList
     from torchani._testing import make_molecs
 
     from tool_utils import Timer
+
+    if optims is None:
+        optims = [Opt.PY, Opt.JIT, Opt.COMPILE, Opt.CU]
 
     target_atomic_density = 0.1
     # num_atoms / cell_size has to be a constant, equal to the water atomic density
@@ -65,35 +84,42 @@ def run(
         console.print(f"CUDA sync {'[green]ON[/green]' if sync else '[red]OFF[/red]'}")
 
     # Set up required models for benchmark
-    models = {
-        "dummy": _parse_neighborlist("adaptive"),  # Only for general warm-up
-        "all_pairs": _parse_neighborlist("all_pairs"),
-        "cell_list": _parse_neighborlist("cell_list"),
-        "adaptive": _parse_neighborlist("adaptive"),
-    }
+    symbols = SYMBOLS_2X
+    models: tp.Dict[str, tp.Any] = {}
+    if Opt.PY in optims:
+        models["pyaev"] = AEVComputer.like_2x(
+            strategy="pyaev", num_species=len(symbols)
+        ).to(device)
+    if Opt.CU in optims:
+        models["cuaev"] = AEVComputer.like_2x(
+            strategy="cuaev", num_species=len(symbols)
+        ).to(device)
+    if Opt.COMPILE in optims:
+        models["pyaev-compile"] = torch.compile(
+            AEVComputer.like_2x(strategy="pyaev", num_species=len(symbols)).to(device)
+        )
+    if Opt.JIT in optims:
+        models["pyaev-jit"] = torch.jit.script(
+            AEVComputer.like_2x(strategy="pyaev", num_species=len(symbols)).to(device)
+        )
+    converter = SpeciesConverter(symbols=symbols).to(device)
+    nl = AdaptiveList().to(device)
 
     # Loop over molecules and calculate timings
-    for k, nl in models.items():
-        console.print(f"Neighborlist kind={k}")
+    cutoff = tp.cast(AEVComputer, models["pyaev"]).radial.cutoff
+    for k, aevc in models.items():
+        console.print(f"Model kind={k}")
         timer = Timer(modules_and_fns=[], nvtx=False, sync=sync)
         atoms_num: tp.Iterable[int]
-        if pbc:
-            # Smaller than 25 atoms risks self-interaction
-            atoms_num = range(25, 301)
-        else:
-            atoms_num = itertools.chain(
-                range(30, 2500, 10),
-                range(2500, 10000, 500),
-            )
+        atoms_num = range(30, 1300, 10)
 
-        cutoff = 5.2
         for n in map(int, atoms_num):
             cell_side = (n / target_atomic_density) ** (1 / 3)
             molecs = make_molecs(
                 num_warm_up + num_profile,
                 n,
                 cell_side,
-                pbc=pbc,
+                pbc=False,
                 device=tp.cast(tp.Literal["cpu", "cuda"], device.type),
                 seed=1234,
             )
@@ -105,13 +131,23 @@ def run(
                 total=num_warm_up,
                 leave=False,
             ):
-                _ = nl(
-                    _species.unsqueeze(0),
-                    _coordinates.unsqueeze(0),
+                coords = _coordinates.unsqueeze(0)
+                elem_idxs = converter(_species.unsqueeze(0))
+                neighbors = nl(
+                    elem_idxs,
+                    coords,
                     cutoff=cutoff,
                     cell=molecs.cell if molecs.pbc.any() else None,
                     pbc=molecs.pbc,
                 )
+                if isinstance(aevc, AEVComputer) and aevc._strategy == "cuaev":
+                    _ = aevc.compute_from_neighbors(
+                        elem_idxs, neighbors, _coords=coords
+                    )
+                else:
+                    _ = tp.cast(AEVComputer, aevc).compute_from_neighbors(
+                        elem_idxs, neighbors
+                    )
                 if cuda:
                     torch.cuda.empty_cache()
             if k != "dummy":
@@ -124,22 +160,36 @@ def run(
                 total=num_profile,
                 leave=False,
             ):
-                timer.start_range(str(n))
-                _ = nl(
-                    _species.unsqueeze(0),
-                    _coordinates.unsqueeze(0),
+                coords = _coordinates.unsqueeze(0)
+                elem_idxs = converter(_species.unsqueeze(0))
+                neighbors = nl(
+                    elem_idxs,
+                    coords=coords,
                     cutoff=cutoff,
                     cell=molecs.cell if molecs.pbc.any() else None,
                     pbc=molecs.pbc,
                 )
+                timer.start_range(str(n))
+                if isinstance(aevc, AEVComputer) and aevc._strategy == "cuaev":
+                    coords = coords.detach().requires_grad_(True)
+                    neighbors.distances.detach_().requires_grad_(False)
+                    neighbors.diff_vectors.detach_().requires_grad_(False)
+                    aevs = aevc.compute_from_neighbors(
+                        elem_idxs, neighbors, _coords=coords
+                    )
+                else:
+                    neighbors.distances.detach_().requires_grad_(True)
+                    neighbors.diff_vectors.detach_().requires_grad_(True)
+                    aevs = tp.cast(AEVComputer, aevc).compute_from_neighbors(
+                        elem_idxs, neighbors
+                    )
+                aevs.backward(torch.ones_like(aevs))
                 timer.end_range(str(n))
                 if cuda:
                     torch.cuda.empty_cache()
             if k != "dummy":
                 timer.stop_profiling()
-                timer.dump_csv(
-                    Path(__file__).parent / f"{k}{'-nopbc' if not pbc else ''}.csv"
-                )
+                timer.dump_csv(Path(__file__).parent / f"{k}.csv")
         timer.display()
 
 
@@ -147,54 +197,42 @@ def run(
 def plot() -> None:
 
     def prettify(label) -> str:
-        return "".join(s.capitalize() for s in label.replace("-nopbc", "").split("_"))
+        return f"{label.replace('aev', 'AEV')} fwd + bwd"
 
     fig, ax = plt.subplots()
     size = 0.5
     alpha = 0.7
-    colors = ("tab:purple", "tab:blue", "tab:green")
+    colors = (
+        "tab:purple",
+        "tab:blue",
+        "tab:green",
+        "tab:orange",
+        "darkred",
+        "teal",
+        "magenta",
+    )
     for c, k in zip(
         colors,
         (
-            "cell_list",
-            "all_pairs",
-            "adaptive",
+            "pyaev-old",
+            "pyaev-old-jit",
+            "pyaev-old-compile",
+            "pyaev",
+            "pyaev-jit",
+            "pyaev-compile",
+            "cuaev",
         ),
     ):
         csv = Path(__file__).parent / f"{k}.csv"
-        if csv.is_file():
-            df = pd.read_csv(csv, sep=",")
+        if not csv.is_file():
+            continue
+        df = pd.read_csv(csv, sep=",")
         ax.scatter(
             df["timing"], df["median"], label=prettify(k), s=size, color=c, alpha=alpha
         )
         ax.set_xlabel("Num. atoms")
         ax.set_ylabel("Median walltime per call, CUDA (ms)")
         # ax.set_title("PBC benchmark")
-        ax.legend()
-    # plt.savefig("/home/ipickering/Figures/pbc-neighborlist")
-
-    fig, ax = plt.subplots()
-    inset = fig.add_axes((0.22, 0.4, 0.32, 0.32))
-    for c, k in zip(
-        colors,
-        (
-            "cell_list-nopbc",
-            "all_pairs-nopbc",
-            "adaptive-nopbc",
-        ),
-    ):
-        csv = Path(__file__).parent / f"{k}.csv"
-        if csv.is_file():
-            df = pd.read_csv(csv, sep=",")
-        ax.scatter(
-            df["timing"], df["median"], label=prettify(k), s=size, color=c, alpha=alpha
-        )
-        inset.scatter(
-            df["timing"][50:247], df["median"][50:247], s=0.1, color=c, alpha=alpha
-        )
-        ax.set_xlabel("Num. atoms")
-        ax.set_ylabel("Median walltime per call, CUDA (ms)")
-        # ax.set_title("No-PBC benchmark")
         ax.legend()
     # plt.savefig("/home/ipickering/Figures/no-pbc-neighborlist")
     plt.show()

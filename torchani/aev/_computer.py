@@ -21,8 +21,8 @@ from torchani.aev._terms import (
     _parse_radial_term,
     ANIAngular,
     ANIRadial,
-    RadialTermArg,
-    AngularTermArg,
+    RadialArg,
+    AngularArg,
 )
 from torchani.csrc import CUAEV_IS_INSTALLED
 
@@ -66,8 +66,8 @@ class AEVComputer(torch.nn.Module):
 
     def __init__(
         self,
-        radial: RadialTermArg,
-        angular: AngularTermArg,
+        radial: RadialArg,
+        angular: AngularArg,
         num_species: int,
         strategy: str = "pyaev",
         cutoff_fn: tp.Optional[CutoffArg] = None,

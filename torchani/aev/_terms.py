@@ -24,55 +24,98 @@ class _Term(torch.nn.Module):
         self.num_feats = 0
 
 
-class AngularTerm(_Term):
-    r"""Base class for angular term modules"""
+class BaseAngular(_Term):
+    r"""Base class for 3-body expansions
+
+    Client classes should only rely on ``module(tri_distances, tri_vectors)``,
+    ``compute_*`` functions are meant only to be overriden by users.
+    """
 
     def forward(self, tri_distances: Tensor, tri_vectors: Tensor) -> Tensor:
         r""":meta private:"""
         # Wraps computation of terms with cutoff function
+        assert tri_vectors.shape == (2, tri_distances.shape[1], 3)
+        assert tri_distances.shape == (2, tri_distances.shape[1])
+
         tri_factor = self.cutoff_fn(tri_distances, self.cutoff)
-        terms = self.compute_terms(tri_distances, tri_vectors)
-        assert terms.shape == (tri_distances.shape[1], self.num_feats)
+
+        tri_vectors = tri_vectors.view(2, -1, 3, 1)
+        tri_distances = tri_distances.view(2, -1, 1)
+        cos_angles = (tri_vectors[0] * tri_vectors[1]).sum(1) / torch.clamp(
+            tri_distances[0] * tri_distances[1], min=1e-10
+        )
+        # cos_angles = torch.clamp(cos_angles, min=-1.0, max=1.0)
+        _angular = self.compute_cos_angles(cos_angles)
+        _radial = self.compute_radial(tri_distances[0], tri_distances[1])
+        terms = (_radial.unsqueeze(2) * _angular.unsqueeze(1)).view(-1, self.num_feats)
         # Use `fcj12[0] * fcj12[1]` instead of `fcj12.prod(0)` to avoid the INFs/NaNs
         # problem for smooth cutoff function, for more detail please check issue:
         # https://github.com/roitberg-group/torchani_sandbox/issues/178
-        # shape (T, shifts, sections)
+        # shape (T, num-feats)
         return terms * (tri_factor[0] * tri_factor[1]).view(-1, 1)
 
-    def compute_terms(self, tri_distances: Tensor, tri_vectors: Tensor) -> Tensor:
-        r"""Compute the angular terms. Output shape is: ``(triples, self.num_feats)``
+    def compute_radial(self, distances_ji: Tensor, distances_jk) -> Tensor:
+        r"""Computes the radial part of the 3-body terms
+
+        This function *must* be overriden by subclasses
+
+        Note:
+            Don't call this method directly, instead call, ``module(triple_distances,
+            triple_vectors)``.
+        Args:
+            distances_ji: Distances from the center atom, 'j', to a side atom, 'i'.
+            distances_jk: Distances from the center atom, 'j', to a side atom, 'k'.
+        Returns:
+            A float `torch.Tensor` of shape ``(triples, feats)``. By design
+            this function does *not* sum over atoms.
+        """
+        raise NotImplementedError("Must be implemented by subclasses")
+
+    def compute_cos_angles(self, cos_angles: Tensor) -> Tensor:
+        r"""Computes the angular part of the 3-body terms
+
+        This function *must* be overriden by subclasses
+
+        Note:
+            Don't call this method directly, instead call, ``module(triples.distances,
+            triples.diff_vectors)``.
+        Args:
+            cos_angles: Cosine of the angle for a triple ijk
+        Returns:
+            A float `torch.Tensor` of shape ``(triples, feats)``. By design
+            this function does *not* sum over atoms.
+        """
+        raise NotImplementedError("Must be implemented by subclasses")
+
+
+# TODO: Change name to BaseRadial
+class BaseRadial(_Term):
+    r"""Base class for 2-body expansions
+
+    Client classes should only rely on ``module(distances)``,
+    ``compute`` is meant only to be overriden by users.
+    """
+
+    def forward(self, distances: Tensor) -> Tensor:
+        r""":meta private:"""
+        assert distances.shape == (distances.shape[0],)
+        # Wraps computation of terms with cutoff function
+        factor = self.cutoff_fn(distances, self.cutoff).view(-1, 1)
+        return self.compute(distances.view(-1, 1)) * factor
+
+    def compute(self, distances: Tensor) -> Tensor:
+        r"""Compute the radial terms. Output shape is: ``(pairs, self.num_feats)``
 
         Subclasses must implement this method
 
         Note:
             Don't call this method directly, instead call,
-            ``module(triple_distances, triple_vectors)``.
+            ``module(neighbors.distances)``.
         """
         raise NotImplementedError("Must be implemented by subclasses")
 
 
-class RadialTerm(_Term):
-    r"""Base class for radial term modules"""
-
-    def forward(self, distances: Tensor) -> Tensor:
-        r""":meta private:"""
-        # Wraps computation of terms with cutoff function
-        factor = self.cutoff_fn(distances, self.cutoff).view(-1, 1)
-        return self.compute_terms(distances) * factor
-
-    def compute_terms(self, distances: Tensor) -> Tensor:
-        r"""Compute the radial terms. Output shape is: ``(pairs, self.num_feats)``
-
-        Subclasses must implement this method to
-
-        Note:
-            Don't call this method directly, instead call,
-            ``module(triple_distances, triple_vectors)``.
-        """
-        raise NotImplementedError("Must be implemented by subclasses")
-
-
-class ANIRadial(RadialTerm):
+class ANIRadial(BaseRadial):
     r"""Compute the radial sub-AEV terms given a sequence of atom pair distances
 
     This correspond to equation (3) in the `ANI paper`_. This function just
@@ -125,8 +168,8 @@ class ANIRadial(RadialTerm):
         ]
         return " \n".join(parts)
 
-    def compute_terms(self, distances: Tensor) -> Tensor:
-        r"""Computes the terms associated with a group of pairs
+    def compute(self, distances: Tensor) -> Tensor:
+        r"""Computes the ANI terms associated with a group of pairs
 
         Note:
             Don't call this method directly, instead call the module,
@@ -134,13 +177,12 @@ class ANIRadial(RadialTerm):
         Args:
             distances: |distances|
         Returns:
-            A float `torch.Tensor` of shape ``(pairs, shifts)``. Note that by design
+            A float `torch.Tensor` of shape ``(pairs, shifts)``. By design
             this function does *not* sum over atoms.
         """
         # Note that in the equation in the paper there is no 0.25
         # coefficient, but in NeuroChem there is such a coefficient.
         # We choose to be consistent with NeuroChem instead of the paper here.
-        distances = distances.view(-1, 1)
         return 0.25 * torch.exp(-self.eta * (distances - self.shifts.view(1, -1)) ** 2)
 
     @classmethod
@@ -199,7 +241,7 @@ class ANIRadial(RadialTerm):
         )
 
 
-class ANIAngular(AngularTerm):
+class ANIAngular(BaseAngular):
     """Compute the angular sub-AEV terms of the center atom given neighbor pairs.
 
     This correspond to equation (4) in the `ANI paper`_. This function just
@@ -266,34 +308,39 @@ class ANIAngular(AngularTerm):
         ]
         return " \n".join(parts)
 
-    def compute_terms(self, tri_distances: Tensor, tri_vectors: Tensor) -> Tensor:
-        r"""Computes the terms associated with a group of triples
+    def compute_radial(self, distances_ji: Tensor, distances_jk) -> Tensor:
+        r"""Computes the radial part of the ANI 3-body terms
 
         Note:
             Don't call this method directly, instead call, ``module(triple_distances,
             triple_vectors)``.
         Args:
-            triple_distances: Shape ``(2, triples,)``. Holds distances central -> left
-                and central -> right
-            triple_vectors: Shape ``(2, triples, 3)`` Holds difference vectors
-                central -> left and central -> right.
+            distances_ji: Distances from the center atom, 'j', to a side atom, 'i'.
+            distances_jk: Distances from the center atom, 'j', to a side atom, 'k'.
         Returns:
-            Shape ``(pairs, num_feats = shifts * sections)``. Note that by design this
-            function does *not* sum over atoms.
+            A float `torch.Tensor` of shape ``(triples, feats)``. By design
+            this function does *not* sum over atoms.
         """
-        tri_vectors = tri_vectors.view(2, -1, 3, 1, 1)
-        tri_distances = tri_distances.view(2, -1, 1, 1)
-        cos_angles = tri_vectors.prod(0).sum(1) / torch.clamp(
-            tri_distances.prod(0), min=1e-10
-        )
-        # 0.95 is multiplied to the cos values to prevent acos from returning NaN.
+        mean_dists = (distances_ji + distances_jk) / 2
+        return torch.exp(-self.eta * (mean_dists - self.shifts.view(1, -1)) ** 2)
+
+    def compute_cos_angles(self, cos_angles: Tensor) -> Tensor:
+        r"""Computes the angular part of the ANI 3-body terms
+
+        Note:
+            Don't call this method directly, instead call,
+            ``module(triples.distances, triples.diff_vectors)``.
+        Args:
+            cos_angles: Cosine of the angle for a triple ijk
+        Returns:
+            A float `torch.Tensor` of shape ``(triples, feats)``. By design
+            this function does *not* sum over atoms.
+        """
+        # The 0.95 is here for consistency with the original implementation,
+        # where it was used to prevent NaNs due to cos_angles outside the [-1, 1] range.
         angles = torch.acos(0.95 * cos_angles)
         angle_deviations = angles - self.sections.view(1, -1)
-        factor1 = ((1 + torch.cos(angle_deviations)) / 2) ** self.zeta
-
-        mean_distance_deviations = tri_distances.sum(0) / 2 - self.shifts.view(-1, 1)
-        factor2 = torch.exp(-self.eta * mean_distance_deviations**2)
-        return (2 * factor1 * factor2).view(-1, self.num_feats)
+        return 2 * ((1 + torch.cos(angle_deviations)) / 2) ** self.zeta
 
     @classmethod
     def cover_linearly(
@@ -361,26 +408,144 @@ class ANIAngular(AngularTerm):
         )
 
 
+# Classes meant for extension by users
+
+
+def _validate_kwargs(
+    clsname: str,
+    names_dict: tp.Dict[str, tp.Sequence[str]],
+    kwargs: tp.Dict[str, tp.Union[tp.Tuple, tp.List, float]],
+    trainable: tp.Sequence[str],
+) -> None:
+    _num_tensors = sum(len(seq) for seq in names_dict.values())
+    kwargs_set: tp.Set[str] = set()
+    for v in names_dict.values():
+        kwargs_set = kwargs_set.union(v)
+
+    if len(kwargs_set) != _num_tensors:
+        raise ValueError("tensor names must be unique")
+
+    if set(kwargs) != kwargs_set:
+        raise ValueError(
+            f"Expected arguments '{', '.join(kwargs_set)}'"
+            f" but got '{', '.join(kwargs.keys())}'"
+            f" Maybe you forgot '*_tensors = [..., 'argname']'"
+            f" when defining the class?"
+        )
+
+    for names, tensors in names_dict.items():
+        _seqs = [
+            v for k, v in kwargs.items() if k in names and isinstance(v, (tuple, list))
+        ]
+        if _seqs and not all(len(s) == len(_seqs[0]) for s in _seqs):
+            raise ValueError(
+                f"Tuples or lists passed to {clsname}"
+                " corresponding to '{tensors}' must have the same len"
+            )
+
+    if not set(trainable).issubset(kwargs_set):
+        raise ValueError(
+            f"trainable={trainable} could not be found in {kwargs_set}"
+        )
+
+
+class Angular(BaseAngular):
+
+    angles_tensors: tp.List[str]
+    radial_tensors: tp.List[str]
+
+    def __init__(
+        self,
+        /,
+        cutoff: float,
+        trainable: tp.Union[str, tp.Sequence[str]] = (),
+        cutoff_fn: CutoffArg = "cosine",
+        **kwargs,
+    ) -> None:
+        super().__init__(cutoff, cutoff_fn)
+        angles_feats = 1
+        radial_feats = 1
+        if isinstance(trainable, str):
+            trainable = [trainable]
+
+        _validate_kwargs(
+            self.__class__.__name__,
+            {
+                "radial_tensors": self.radial_tensors,
+                "angles_tensors": self.angles_tensors,
+            },
+            kwargs,
+            trainable,
+        )
+
+        for k, v in kwargs.items():
+            tensor = torch.tensor(v).view(1, -1)
+            if k in trainable:
+                self.register_parameter(k, torch.nn.Parameter(tensor))
+            else:
+                self.register_buffer(k, tensor)
+
+            if k in self.angles_tensors:
+                angles_feats = max(angles_feats, tensor.shape[1])
+            else:
+                radial_feats = max(radial_feats, tensor.shape[1])
+        self.num_feats = radial_feats * angles_feats
+
+
+class Radial(BaseRadial):
+
+    tensors: tp.List[str]
+
+    def __init__(
+        self,
+        /,
+        cutoff: float,
+        trainable: tp.Union[str, tp.Sequence[str]] = (),
+        cutoff_fn: CutoffArg = "cosine",
+        **kwargs,
+    ) -> None:
+        super().__init__(cutoff, cutoff_fn)
+        self.num_feats = 1
+        if isinstance(trainable, str):
+            trainable = [trainable]
+
+        _validate_kwargs(
+            self.__class__.__name__,
+            {
+                "tensors": self.tensors,
+            },
+            kwargs,
+            trainable,
+        )
+        for k, v in kwargs.items():
+            tensor = torch.tensor(v).view(1, -1)
+            if k in trainable:
+                self.register_parameter(k, torch.nn.Parameter(tensor))
+            else:
+                self.register_buffer(k, tensor)
+            self.num_feats = max(self.num_feats, tensor.shape[1])
+
+
 _Models = tp.Literal["ani1x", "ani2x", "ani1ccx"]
-AngularTermArg = tp.Union[_Models, AngularTerm]
-RadialTermArg = tp.Union[_Models, RadialTerm]
+AngularArg = tp.Union[_Models, BaseAngular]
+RadialArg = tp.Union[_Models, BaseRadial]
 
 
-def _parse_angular_term(angular_term: AngularTermArg) -> AngularTerm:
+def _parse_angular_term(angular_term: AngularArg) -> BaseAngular:
     if angular_term in ["ani1x", "ani1ccx"]:
         angular_term = ANIAngular.like_1x()
     elif angular_term == "ani2x":
         angular_term = ANIAngular.like_2x()
-    elif not isinstance(angular_term, AngularTerm):
+    elif not isinstance(angular_term, BaseAngular):
         raise ValueError(f"Unsupported angular term: {angular_term}")
-    return tp.cast(AngularTerm, angular_term)
+    return tp.cast(BaseAngular, angular_term)
 
 
-def _parse_radial_term(radial_term: RadialTermArg) -> RadialTerm:
+def _parse_radial_term(radial_term: RadialArg) -> BaseRadial:
     if radial_term in ["ani1x", "ani1ccx"]:
         radial_term = ANIRadial.like_1x()
     elif radial_term == "ani2x":
         radial_term = ANIRadial.like_2x()
-    elif not isinstance(radial_term, RadialTerm):
+    elif not isinstance(radial_term, BaseRadial):
         raise ValueError(f"Unsupported radial term: {radial_term}")
-    return tp.cast(RadialTerm, radial_term)
+    return tp.cast(BaseRadial, radial_term)
