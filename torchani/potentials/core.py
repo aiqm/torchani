@@ -224,7 +224,7 @@ class BasePairPotential(Potential):
                 raise ValueError(
                     "ghost_flags and species should have the same number of elements"
                 )
-            ghost12 = ghost_flags.flatten()[neighbors.indices]
+            ghost12 = ghost_flags.view(-1)[neighbors.indices]
             ghost_mask = torch.logical_or(ghost12[0], ghost12[1])
             pair_energies = torch.where(ghost_mask, pair_energies * 0.5, pair_energies)
         return pair_energies

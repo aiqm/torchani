@@ -29,7 +29,7 @@ class FixedCoulomb(BasePairPotential):
         # Clamp distances to prevent singularities when dividing by zero
         # All internal calcs use atomic units, so convert to Bohr
         dists = self.clamp(neighbors.distances) * self.ANGSTROM_TO_BOHR
-        elem_pairs = elem_idxs.flatten()[neighbors.indices]
+        elem_pairs = elem_idxs.view(-1)[neighbors.indices]
         charge_prod = self._charges[elem_pairs[0]] * self._charges[elem_pairs[1]]
         charge_prod /= self._dielectric
         return charge_prod / dists
@@ -69,7 +69,7 @@ class FixedMNOK(BasePairPotential):
         # No need to clamp as long as inv_eta ** 2 is nonzero
         # All internal calcs use atomic units, so convert to Bohr
         dists = neighbors.distances * self.ANGSTROM_TO_BOHR
-        elem_pairs = elem_idxs.flatten()[neighbors.indices]
+        elem_pairs = elem_idxs.view(-1)[neighbors.indices]
         inv_eta = self.combine_inv_eta(elem_pairs)
         charge_prod = self._charges[elem_pairs[0]] * self._charges[elem_pairs[1]]
         return charge_prod / (dists**2 + inv_eta**2).sqrt()

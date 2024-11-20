@@ -66,7 +66,7 @@ class RepulsionXTB(BasePairPotential):
         # Distances has all interaction pairs within a given cutoff, for a
         # molecule or set of molecules and atom_index12 holds all pairs of
         # indices species is of shape (C x Atoms)
-        species12 = element_idxs.flatten()[neighbors.indices]
+        species12 = element_idxs.view(-1)[neighbors.indices]
 
         # Find pre-computed constant multiplications for every species pair
         y_ab = self.y_ab[species12[0], species12[1]]

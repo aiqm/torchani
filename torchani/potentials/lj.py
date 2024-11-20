@@ -116,7 +116,7 @@ class _LJ(BasePairPotential):
 
 class DispersionLJ(_LJ):
     def pair_energies(self, elem_idxs, neighbors: Neighbors):
-        elem_pairs = elem_idxs.flatten()[neighbors.indices]
+        elem_pairs = elem_idxs.view(-1)[neighbors.indices]
         eps = self.combine_eps(elem_pairs)
         sigma = self.combine_sigma(elem_pairs)
         x = sigma / self.clamp(neighbors.distances)
@@ -125,7 +125,7 @@ class DispersionLJ(_LJ):
 
 class RepulsionLJ(_LJ):
     def pair_energies(self, elem_idxs, neighbors: Neighbors):
-        elem_pairs = elem_idxs.flatten()[neighbors.indices]
+        elem_pairs = elem_idxs.view(-1)[neighbors.indices]
         eps = self.combine_eps(elem_pairs)
         sigma = self.combine_sigma(elem_pairs)
         x = sigma / self.clamp(neighbors.distances)
@@ -134,7 +134,7 @@ class RepulsionLJ(_LJ):
 
 class LennardJones(_LJ):
     def pair_energies(self, elem_idxs, neighbors: Neighbors):
-        elem_pairs = elem_idxs.flatten()[neighbors.indices]
+        elem_pairs = elem_idxs.view(-1)[neighbors.indices]
         eps = self.combine_eps(elem_pairs)
         sigma = self.combine_sigma(elem_pairs)
         x = sigma / self.clamp(neighbors.distances)

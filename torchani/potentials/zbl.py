@@ -69,7 +69,7 @@ class RepulsionZBL(BasePairPotential):
         # Clamp distances to prevent singularities when dividing by zero
         # All internal calcs use atomic units, so convert to Bohr
         dists = self.clamp(neighbors.distances) * self.ANGSTROM_TO_BOHR
-        elem_pairs = elem_idxs.flatten()[neighbors.indices]
+        elem_pairs = elem_idxs.view(-1)[neighbors.indices]
         eff_za = self._eff_atomic_nums[elem_pairs[0]]
         eff_zb = self._eff_atomic_nums[elem_pairs[1]]
         eff_coulomb_term = eff_za * eff_zb / dists

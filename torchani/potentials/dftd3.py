@@ -226,13 +226,12 @@ class TwoBodyDispersionD3(BasePairPotential):
         # Internally this module works in AU
         distances = self.ANGSTROM_TO_BOHR * neighbors.distances
 
-        species12 = element_idxs.flatten()[neighbors.indices]
-        num_atoms = element_idxs.shape[1]
-        num_molecules = element_idxs.shape[0]
+        species12 = element_idxs.view(-1)[neighbors.indices]
+        molecs, atoms = element_idxs.shape
 
         # Shape is num_molecules * num_atoms
         coordnums = self._coordnums(
-            num_molecules, num_atoms, species12, neighbors.indices, distances
+            molecs, atoms, species12, neighbors.indices, distances
         )
 
         # Order 6 and 8 coeff
