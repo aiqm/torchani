@@ -63,15 +63,27 @@ class Potential(torch.nn.Module):
     # atomic numbers returns floats
     @torch.jit.unused
     def _validate_elem_seq(
-        self, name: str, seq: tp.Sequence[float], default: tp.Sequence[float] = ()
+        self,
+        name: str,
+        seq: tp.Sequence[float],
+        default: tp.Sequence[float] = (),
+        pair: bool = False,
     ) -> tp.Sequence[float]:
-        if not seq and default:
-            seq = [default[j] for j in self.atomic_numbers]
+        if not pair:
+            if not seq and default:
+                seq = [default[j] for j in self.atomic_numbers]
+
         if not all(isinstance(v, float) for v in seq):
             raise ValueError(f"Some values in {name} are not floats")
         num_elem = len(self.symbols)
-        if not len(seq) == num_elem:
-            raise ValueError(f"{name} and symbols should have the same len")
+        num_expect = num_elem if not pair else num_elem * (num_elem + 1) // 2
+        if not len(seq) == num_expect:
+            if not pair:
+                raise ValueError(f"{name} and symbols should have the same len")
+            else:
+                raise ValueError(
+                    f"{name} should have len (num-symbols * (num-symbols + 1) / 2)"
+                )
         return seq
 
     @property
@@ -241,35 +253,60 @@ class BasePairPotential(Potential):
             energies.index_add_(0, molecs_idxs, pair_energies)
         return energies
 
+    @staticmethod
+    def symm(x: Tensor) -> Tensor:
+        r"""Takes an NxN tensor with 0 lower triangle and returns it symmetrized"""
+        assert x.ndim == 2, "Arg to symm must be an N x N tensor"
+        assert x.shape[0] == x.shape[1], "Arg to symm must be an N x N tensor"
+        assert (x.tril(-1) == 0).all(), "Arg to symm must have 0 low triangle part"
+        return x + x.triu(1).T
+
+    def to_pair_values(self, x: Tensor, elem_idxs: Tensor) -> Tensor:
+        r"""Returns values of elem pairs from a NxN tensor with 0 low triangle"""
+        return self.symm(x)[elem_idxs[0], elem_idxs[1]]  # shape(num-elem, num-elem)
+
 
 class PairPotential(BasePairPotential):
     r"""User friendly, simple class for pairwise potentials
 
     Subclasses must implement ``pair_energies`` and, if they use
-    any paramters or buffers, specify two list of strings:
+    any paramters or buffers, specify three list of strings:
 
-    - 'tensors'
-    - 'elem_tensors'
+    - ``'tensors'``: Vectors (all with the same len) or scalars
+    - ``'elem_tensors'``: With shape ``(num-sym,)``
+    - ``'pair_elem_tensors'``: With shape ``(num-sym * (num-sym + 1) / 2,)``
 
-    An simple example would be:
+    Usage is better understood by an example:
 
     .. code-block:: python
 
-        class Square(PairPotential)
-            tensors = ['bias']  # shape should be (S,) or (1,)
-            elem_tensors = ['k']  # shape should be (num-symbols,)
+        from torchani.potentials import PairPotential
 
-            def pair_energies(self, neighbor_idxs, neighbors):
-                return  self.bias + self.k / 2 * neighbors.distances ** 2
 
-        pot = Square(symbols=("H", "C"), k=(1., 2.), bias=0.1)
+        class Square(PairPotential):
+            tensors = ['bias']  # Vectors (all with the same len) or scalars
+            pair_elem_tensors = ["k", "eq"]  # shape (num-sym * (num-sym + 1) / 2)
+
+            def pair_energies(self, elem_idxs, neighbors):
+                elem_pairs = elem_idxs.view(-1)[neighbors.indices]
+                eq = self.to_pair_values(self.eq, elem_pairs)
+                k = self.to_pair_values(self.k, elem_pairs)
+                return self.bias + k / 2 * (neighbors.distances - eq) ** 2
+
+
+        #  Order for the pair elem tensors is HH, HC, HO, CC, CO, ...
+        #  Values for demonstration purpose only
+        k = (1.,) * (3 * (3 + 1) // 2)
+        eq = (1.5,) * (3 * (3 + 1) // 2)
+        pot = Square(symbols=("H", "C", "O"), k=k, eq=eq, bias=0.1)
 
         # Or if the constants are trainable:
-        pot = Square(symbols=("H", "C"), k=(1., 2.), bias=0.1, trainable="k")
+        pot = Square(symbols=("H", "C", "O"), k=k, bias=0.1, eq=eq, trainable="k")
     """
 
     tensors: tp.List[str] = []
     elem_tensors: tp.List[str] = []
+    pair_elem_tensors: tp.List[str] = []
 
     def __init__(
         self,
@@ -289,21 +326,25 @@ class PairPotential(BasePairPotential):
             {
                 "tensors": self.tensors,
                 "elem_tensors": self.elem_tensors,
+                "pair_elem_tensors": self.pair_elem_tensors,
             },
             kwargs,
             trainable,
         )
+        for k in self.elem_tensors:
+            self._validate_elem_seq(k, kwargs.get(k))
+
+        for k in self.pair_elem_tensors:
+            self._validate_elem_seq(k, kwargs.get(k), pair=True)
+
         for k, v in kwargs.items():
             tensor = torch.tensor(v)
+            if k in self.pair_elem_tensors:
+                shape = (len(symbols),) * 2
+                upper = tensor.new_zeros(shape)
+                upper[torch.triu_indices(*shape).unbind()] = tensor
+                tensor = upper
             if k in trainable:
                 self.register_parameter(k, torch.nn.Parameter(tensor))
             else:
                 self.register_buffer(k, tensor)
-
-        if self.elem_tensors and len(getattr(self, self.elem_tensors[0])) != len(
-            symbols
-        ):
-            raise ValueError(
-                "All tensors registered as elem_tensors"
-                " must have the same length as the passed chemical symbols"
-            )
