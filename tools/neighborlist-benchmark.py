@@ -98,7 +98,7 @@ def run(
                 seed=1234,
             )
             slice_ = slice(None, num_warm_up)
-            for j, (_species, _coordinates) in tqdm(
+            for j, (_species, _coords) in tqdm(
                 enumerate(zip(molecs.atomic_nums[slice_], molecs.coords[slice_])),
                 desc=f"Warm up {n} atoms, cell side length {cell_side}",
                 disable=no_tqdm,
@@ -107,7 +107,7 @@ def run(
             ):
                 _ = nl(
                     _species.unsqueeze(0),
-                    _coordinates.unsqueeze(0),
+                    _coords.unsqueeze(0),
                     cutoff=cutoff,
                     cell=molecs.cell if molecs.pbc.any() else None,
                     pbc=molecs.pbc,
@@ -117,7 +117,7 @@ def run(
             if k != "dummy":
                 timer.start_profiling()
             slice_ = slice(num_warm_up, num_warm_up + num_profile)
-            for j, (_species, _coordinates) in tqdm(
+            for j, (_species, _coords) in tqdm(
                 enumerate(zip(molecs.atomic_nums[slice_], molecs.coords[slice_])),
                 desc=f"Profiling {n} atoms, cell side length {cell_side}",
                 disable=no_tqdm,
@@ -127,7 +127,7 @@ def run(
                 timer.start_range(str(n))
                 _ = nl(
                     _species.unsqueeze(0),
-                    _coordinates.unsqueeze(0),
+                    _coords.unsqueeze(0),
                     cutoff=cutoff,
                     cell=molecs.cell if molecs.pbc.any() else None,
                     pbc=molecs.pbc,

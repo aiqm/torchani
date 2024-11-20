@@ -164,7 +164,7 @@ def cmd(
         else:
             calls = []
         timer = Timer(modules_and_fns=calls, nvtx=nvtx, sync=sync)
-        for j, (_species, _coordinates) in tqdm(
+        for j, (_species, _coords) in tqdm(
             enumerate(zip(species[:num_warm_up], coordinates[:num_warm_up])),
             desc="Warm Up",
             disable=no_tqdm,
@@ -174,10 +174,10 @@ def cmd(
             _, _ = energies_and_forces(
                 model,
                 _species.unsqueeze(0),
-                _coordinates.unsqueeze(0).detach(),
+                _coords.unsqueeze(0).detach(),
             )
         timer.start_profiling()
-        for j, (_species, _coordinates) in tqdm(
+        for j, (_species, _coords) in tqdm(
             enumerate(zip(species[:num_profile], coordinates[:num_profile])),
             desc="Profiling",
             disable=no_tqdm,
@@ -188,7 +188,7 @@ def cmd(
             _, _ = energies_and_forces(
                 model,
                 _species.unsqueeze(0),
-                _coordinates.unsqueeze(0).detach(),
+                _coords.unsqueeze(0).detach(),
             )
             timer.end_range("batch-size-1")
         timer.stop_profiling()

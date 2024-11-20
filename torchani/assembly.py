@@ -359,28 +359,22 @@ class ANI(torch.nn.Module):
     ) -> Tensor:
         r"""This entrypoint supports input from TorchANI neighbors"""
         self._check_inputs(elem_idxs, _coords, total_charge)
-        # Output shape depends on the atomic flag
+        # Output shape depends on the atomic and ensemble_values flags
+        energies = neighbors.distances.new_zeros(elem_idxs.shape[0])
         if atomic:
-            energies = neighbors.distances.new_zeros(elem_idxs.shape)
-        else:
-            energies = neighbors.distances.new_zeros(elem_idxs.shape[0])
-        _values: tp.Optional[Tensor] = None
+            energies = energies.unsqueeze(1)
+        if ensemble_values:
+            energies = energies.unsqueeze(0)
         for pot in self.potentials.values():
             neighbors = discard_outside_cutoff(neighbors, pot.cutoff)
-            # Separate the values of the potential that has ensemble values if requested
-            if ensemble_values and hasattr(pot, "ensemble_values"):
-                _values = pot.ensemble_values(
-                    elem_idxs, neighbors, _coordinates=_coords, atomic=atomic
-                )
-            else:
-                energies += pot(
-                    elem_idxs, neighbors, _coordinates=_coords, atomic=atomic
-                )
-        energies += self.energy_shifter(elem_idxs, atomic=atomic)
-        if ensemble_values:
-            assert _values is not None
-            return _values + energies.unsqueeze(0)
-        return energies
+            energies = energies + pot(
+                elem_idxs,
+                neighbors,
+                _coords=_coords,
+                atomic=atomic,
+                ensemble_values=ensemble_values,
+            )
+        return energies + self.energy_shifter(elem_idxs, atomic=atomic)
 
     @torch.jit.export
     def atomic_energies(
@@ -770,7 +764,7 @@ class ANIq(ANI):
                 output = pot.energies_and_atomic_charges(
                     elem_idxs,
                     neighbors,
-                    _coordinates=coords,
+                    _coords=coords,
                     ghost_flags=None,
                     total_charge=total_charge,
                     atomic=atomic,
@@ -778,7 +772,7 @@ class ANIq(ANI):
                 energies += output.energies
                 atomic_charges += output.atomic_charges
             else:
-                energies += pot(elem_idxs, neighbors, _coordinates=coords)
+                energies += pot(elem_idxs, neighbors, _coords=coords)
         energies += self.energy_shifter(elem_idxs, atomic=atomic)
         return SpeciesEnergiesAtomicCharges(elem_idxs, energies, atomic_charges)
 
@@ -811,7 +805,7 @@ class ANIq(ANI):
                 output = pot.energies_and_atomic_charges(
                     elem_idxs,
                     neighbors,
-                    _coordinates=coords,
+                    _coords=coords,
                     ghost_flags=None,
                     total_charge=total_charge,
                     atomic=atomic,
@@ -819,7 +813,7 @@ class ANIq(ANI):
                 energies += output.energies
                 atomic_charges += output.atomic_charges
             else:
-                energies += pot(elem_idxs, neighbors, _coordinates=coords)
+                energies += pot(elem_idxs, neighbors, _coords=coords)
         energies += self.energy_shifter(elem_idxs)
         return SpeciesEnergiesAtomicCharges(elem_idxs, energies, atomic_charges)
 
