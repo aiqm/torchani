@@ -1,11 +1,15 @@
+import math
 import typing as tp
+import typing_extensions as tpx
 
 import torch
 from torch import Tensor
 
 from torchani.constants import ATOMIC_NUMBER, PERIODIC_TABLE
-from torchani.cutoffs import _parse_cutoff_fn, CutoffArg
-from torchani.neighbors import Neighbors, cell_list, all_pairs
+from torchani.cutoffs import _parse_cutoff_fn, CutoffArg, CutoffDummy
+from torchani.neighbors import Neighbors, adaptive_list, all_pairs
+from torchani.utils import _validate_user_kwargs
+from torchani.units import ANGSTROM_TO_BOHR
 
 
 # TODO: The "_coordinates" input is only required due to a quirk of the
@@ -13,18 +17,20 @@ from torchani.neighbors import Neighbors, cell_list, all_pairs
 class Potential(torch.nn.Module):
     r"""Base class for all atomic potentials
 
-    Potentials may be many-body potentials or 2-body (pair) potentials
-    By default, the base class returns a Tensor of zeros. Subclasses
-    must override forward.
+    Potentials may be many-body (3-body, 4-body, ...) potentials or 2-body (pair)
+    potentials. Subclasses must implement ``compute`` and may override ``__init__``.
     """
 
+    ANGSTROM_TO_BOHR: float
     cutoff: float
     atomic_numbers: Tensor
+    _enabled: bool
 
     def __init__(
         self,
         symbols: tp.Sequence[str],
-        cutoff: float,
+        *,
+        cutoff: float = math.inf,
     ):
         super().__init__()
         self.atomic_numbers = torch.tensor(
@@ -36,6 +42,37 @@ class Potential(torch.nn.Module):
         for i, znum in enumerate(self.atomic_numbers):
             conv_tensor[znum] = i
         self._conv_tensor = conv_tensor
+        self.ANGSTROM_TO_BOHR = ANGSTROM_TO_BOHR
+        self._enabled = True
+
+    @torch.jit.export
+    def set_enabled(self, val: bool = True) -> None:
+        self._enabled = val
+
+    @torch.jit.unused
+    def set_enabled_(self, val: bool = True) -> tpx.Self:
+        self._enabled = val
+        return self
+
+    @torch.jit.export
+    def is_enabled(self, val: bool = True) -> bool:
+        return self._enabled
+
+    # Validate a seqof floats that must have the same len as the provided symbols
+    # default must be a mapping or sequence that when indexed with
+    # atomic numbers returns floats
+    @torch.jit.unused
+    def _validate_elem_seq(
+        self, name: str, seq: tp.Sequence[float], default: tp.Sequence[float] = ()
+    ) -> tp.Sequence[float]:
+        if not seq and default:
+            seq = [default[j] for j in self.atomic_numbers]
+        if not all(isinstance(v, float) for v in seq):
+            raise ValueError(f"Some values in {name} are not floats")
+        num_elem = len(self.symbols)
+        if not len(seq) == num_elem:
+            raise ValueError(f"{name} and symbols should have the same len")
+        return seq
 
     @property
     @torch.jit.unused
@@ -49,7 +86,6 @@ class Potential(torch.nn.Module):
         coordinates: Tensor,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-        neighborlist: str = "all_pairs",
         periodic_table_index: bool = True,
         atomic: bool = False,
     ) -> Tensor:
@@ -68,19 +104,16 @@ class Potential(torch.nn.Module):
         assert coordinates.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
 
         if self.cutoff > 0.0:
-            if neighborlist == "cell_list":
-                neighbors = cell_list(elem_idxs, coordinates, self.cutoff, cell, pbc)
-            elif neighborlist == "all_pairs":
+            if coordinates.shape[0] == 1:
+                neighbors = adaptive_list(
+                    elem_idxs, coordinates, self.cutoff, cell, pbc
+                )
+            else:
                 neighbors = all_pairs(elem_idxs, coordinates, self.cutoff, cell, pbc)
         else:
             neighbors = Neighbors(torch.empty(0), torch.empty(0), torch.empty(0))
-        return self(
-            elem_idxs,
-            neighbors,
-            atomic=atomic,
-        )
+        return self(elem_idxs, neighbors, atomic=atomic)
 
-    # Forward should be modified by subclasses of Potential, but be careful =S
     def forward(
         self,
         elem_idxs: Tensor,
@@ -89,38 +122,73 @@ class Potential(torch.nn.Module):
         ghost_flags: tp.Optional[Tensor] = None,
         atomic: bool = False,
     ) -> Tensor:
-        if atomic:
-            return neighbors.distances.new_zeros(elem_idxs.shape)
-        return neighbors.distances.new_zeros(elem_idxs.shape[0])
+        if not self._enabled:
+            if atomic:
+                return neighbors.distances.new_zeros(elem_idxs.shape)
+            return neighbors.distances.new_zeros(elem_idxs.shape[0])
+        return self.compute(elem_idxs, neighbors, _coordinates, ghost_flags, atomic)
+
+    def compute(
+        self,
+        elem_idxs: Tensor,
+        neighbors: Neighbors,
+        _coordinates: tp.Optional[Tensor] = None,
+        ghost_flags: tp.Optional[Tensor] = None,
+        atomic: bool = False,
+    ) -> Tensor:
+        r"""Compute the energies associated with the potential
+
+        Must be implemented by subclasses
+        """
+        raise NotImplementedError("Must be implemented by subclasses")
 
 
-class PairPotential(Potential):
-    r"""Base class for all pairwise potentials
+class BasePairPotential(Potential):
+    r"""General base class for all pairwise potentials
 
-    Subclasses must override pair_energies
+    Subclasses must implement pair_energies, and override init using this template:
+
+    .. code-block:: python
+
+        def __init__(
+            symbols,
+            ..., # User args go here
+            cutoff: float=math.inf,
+            cutoff_fn="smooth",
+            ..., # User kwargs go here
+        )
+            super().__init__(symbols, cutoff, cutoff_fn)
+            ... # User code goes here
     """
 
     def __init__(
         self,
         symbols: tp.Sequence[str],
-        cutoff: float,
-        cutoff_fn: CutoffArg = "dummy",
+        *,
+        cutoff: float = math.inf,
+        cutoff_fn: CutoffArg = "smooth",
     ):
-        super().__init__(cutoff=cutoff, symbols=symbols)
-        self.cutoff_fn = _parse_cutoff_fn(cutoff_fn)
+        super().__init__(symbols, cutoff=cutoff)
+        if cutoff != math.inf:
+            self.cutoff_fn = _parse_cutoff_fn(cutoff_fn)
+        else:
+            self.cutoff_fn = CutoffDummy()
+
+    @staticmethod
+    def clamp(distances: Tensor) -> Tensor:
+        return distances.clamp(min=1e-7)
 
     def pair_energies(
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
     ) -> Tensor:
-        r"""
-        Return energy of all pairs of neighbors, disregarding the cutoff fn envelope
+        r"""Return energy of all pairs of neighbors
 
         Returns a Tensor of energies, of shape ('pairs',) where 'pairs' is
         the number of neighbor pairs.
         """
-        return torch.zeros_like(neighbors.distances)
+        raise NotImplementedError("Must be overriden by subclasses")
 
     # Modulate pair_energies by wrapping with the cutoff fn envelope,
     # and scale ghost pair energies by 0.5
@@ -149,8 +217,8 @@ class PairPotential(Potential):
             pair_energies = torch.where(ghost_mask, pair_energies * 0.5, pair_energies)
         return pair_energies
 
-    # Forward should not be modified by subclasses of PairPotential
-    def forward(
+    # Compute should not be modified by subclasses of BasePairPotential
+    def compute(
         self,
         elem_idxs: Tensor,
         neighbors: Neighbors,
@@ -172,3 +240,70 @@ class PairPotential(Potential):
             )
             energies.index_add_(0, molecs_idxs, pair_energies)
         return energies
+
+
+class PairPotential(BasePairPotential):
+    r"""User friendly, simple class for pairwise potentials
+
+    Subclasses must implement ``pair_energies`` and, if they use
+    any paramters or buffers, specify two list of strings:
+
+    - 'tensors'
+    - 'elem_tensors'
+
+    An simple example would be:
+
+    .. code-block:: python
+
+        class Square(PairPotential)
+            tensors = ['bias']  # shape should be (S,) or (1,)
+            elem_tensors = ['k']  # shape should be (num-symbols,)
+
+            def pair_energies(self, neighbor_idxs, neighbors):
+                return  self.bias + self.k / 2 * neighbors.distances ** 2
+
+        pot = Square(symbols=("H", "C"), k=(1., 2.), bias=0.1)
+
+        # Or if the constants are trainable:
+        pot = Square(symbols=("H", "C"), k=(1., 2.), bias=0.1, trainable="k")
+    """
+
+    tensors: tp.List[str] = []
+    elem_tensors: tp.List[str] = []
+
+    def __init__(
+        self,
+        symbols: tp.Sequence[str],
+        *,
+        trainable: tp.Union[str, tp.Sequence[str]] = (),
+        cutoff: float = math.inf,
+        cutoff_fn: CutoffArg = "smooth",
+        **kwargs,
+    ) -> None:
+        super().__init__(symbols, cutoff=cutoff, cutoff_fn=cutoff_fn)
+        if isinstance(trainable, str):
+            trainable = [trainable]
+
+        _validate_user_kwargs(
+            self.__class__.__name__,
+            {
+                "tensors": self.tensors,
+                "elem_tensors": self.elem_tensors,
+            },
+            kwargs,
+            trainable,
+        )
+        for k, v in kwargs.items():
+            tensor = torch.tensor(v)
+            if k in trainable:
+                self.register_parameter(k, torch.nn.Parameter(tensor))
+            else:
+                self.register_buffer(k, tensor)
+
+        if self.elem_tensors and len(getattr(self, self.elem_tensors[0])) != len(
+            symbols
+        ):
+            raise ValueError(
+                "All tensors registered as elem_tensors"
+                " must have the same length as the passed chemical symbols"
+            )

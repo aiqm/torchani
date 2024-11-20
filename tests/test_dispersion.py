@@ -7,7 +7,7 @@ from torchani import units
 from torchani.utils import SYMBOLS_1X
 from torchani.aev import AEVComputer
 from torchani.potentials import TwoBodyDispersionD3
-from torchani.potentials.dispersion import _load_c6_constants
+from torchani.potentials.dftd3 import _load_c6_constants
 from torchani._testing import ANITestCase, expand
 from torchani.grad import energies_and_forces
 
@@ -212,9 +212,10 @@ class TestDispersion(ANITestCase):
             self.skipTest("calc is non-jittable")
         disp = self._setup(
             TwoBodyDispersionD3.from_functional(
-                symbols=SYMBOLS_1X,
-                cutoff=8.0,
+                SYMBOLS_1X,
                 functional="wB97X",
+                cutoff=8.0,
+                cutoff_fn="dummy",
             )
         )
         energy = disp.calc(self.atomic_numbers, self.coordinates)
@@ -231,9 +232,10 @@ class TestDispersion(ANITestCase):
             self.skipTest("calc is non-jittable")
         disp = self._setup(
             TwoBodyDispersionD3.from_functional(
-                symbols=SYMBOLS_1X,
-                cutoff=8.0,
+                SYMBOLS_1X,
                 functional="wB97X",
+                cutoff=8.0,
+                cutoff_fn="dummy",
             )
         )
         r = 2

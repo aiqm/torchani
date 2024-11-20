@@ -21,7 +21,7 @@ class Cutoff(torch.nn.Module):
 
     def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
         super().__init__()
-        self.fn_params = args + tuple(kwargs.values())
+        self._fn_params = args + tuple(kwargs.values())
         self._cuaev_name = ""
 
     @torch.jit.unused
@@ -31,7 +31,7 @@ class Cutoff(torch.nn.Module):
             return False
         if type(self) is not type(other):
             return False
-        if not self.fn_params == other.fn_params:
+        if not self._fn_params == other._fn_params:
             return False
         return True
 

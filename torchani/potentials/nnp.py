@@ -15,7 +15,7 @@ from torchani.potentials.core import Potential
 class NNPotential(Potential):
     def __init__(self, aev_computer: AEVComputer, neural_networks: AtomicContainer):
         symbols = tuple(k for k in neural_networks.member(0).atomics)
-        super().__init__(symbols=symbols, cutoff=aev_computer.radial.cutoff)
+        super().__init__(symbols, cutoff=aev_computer.radial.cutoff)
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
 

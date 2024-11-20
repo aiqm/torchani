@@ -6,7 +6,7 @@ from torch import Tensor
 import typing_extensions as tpx
 
 from torchani.cutoffs import _parse_cutoff_fn, CutoffArg
-from torchani.utils import linspace
+from torchani.utils import linspace, _validate_user_kwargs
 
 
 class _Term(torch.nn.Module):
@@ -411,48 +411,10 @@ class ANIAngular(BaseAngular):
 # Classes meant for extension by users
 
 
-def _validate_kwargs(
-    clsname: str,
-    names_dict: tp.Dict[str, tp.Sequence[str]],
-    kwargs: tp.Dict[str, tp.Union[tp.Tuple, tp.List, float]],
-    trainable: tp.Sequence[str],
-) -> None:
-    _num_tensors = sum(len(seq) for seq in names_dict.values())
-    kwargs_set: tp.Set[str] = set()
-    for v in names_dict.values():
-        kwargs_set = kwargs_set.union(v)
-
-    if len(kwargs_set) != _num_tensors:
-        raise ValueError("tensor names must be unique")
-
-    if set(kwargs) != kwargs_set:
-        raise ValueError(
-            f"Expected arguments '{', '.join(kwargs_set)}'"
-            f" but got '{', '.join(kwargs.keys())}'"
-            f" Maybe you forgot '*_tensors = [..., 'argname']'"
-            f" when defining the class?"
-        )
-
-    for names, tensors in names_dict.items():
-        _seqs = [
-            v for k, v in kwargs.items() if k in names and isinstance(v, (tuple, list))
-        ]
-        if _seqs and not all(len(s) == len(_seqs[0]) for s in _seqs):
-            raise ValueError(
-                f"Tuples or lists passed to {clsname}"
-                " corresponding to '{tensors}' must have the same len"
-            )
-
-    if not set(trainable).issubset(kwargs_set):
-        raise ValueError(
-            f"trainable={trainable} could not be found in {kwargs_set}"
-        )
-
-
 class Angular(BaseAngular):
 
-    angles_tensors: tp.List[str]
-    radial_tensors: tp.List[str]
+    angles_tensors: tp.List[str] = []
+    radial_tensors: tp.List[str] = []
 
     def __init__(
         self,
@@ -468,7 +430,7 @@ class Angular(BaseAngular):
         if isinstance(trainable, str):
             trainable = [trainable]
 
-        _validate_kwargs(
+        _validate_user_kwargs(
             self.__class__.__name__,
             {
                 "radial_tensors": self.radial_tensors,
@@ -494,7 +456,7 @@ class Angular(BaseAngular):
 
 class Radial(BaseRadial):
 
-    tensors: tp.List[str]
+    tensors: tp.List[str] = []
 
     def __init__(
         self,
@@ -509,7 +471,7 @@ class Radial(BaseRadial):
         if isinstance(trainable, str):
             trainable = [trainable]
 
-        _validate_kwargs(
+        _validate_user_kwargs(
             self.__class__.__name__,
             {
                 "tensors": self.tensors,

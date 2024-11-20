@@ -323,7 +323,7 @@ def ANIdr(
         name="dispersion_d3",
         cutoff=8.5,
         cutoff_fn=CutoffSmooth(order=4),
-        extra={"functional": "B973c"},
+        kwargs={"functional": "B973c"},
     )
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("b973c-def2mtzvp")

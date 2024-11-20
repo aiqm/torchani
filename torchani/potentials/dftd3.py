@@ -15,13 +15,13 @@ from torchani.constants import (
     COVALENT_RADIUS,
     SQRT_EMPIRICAL_CHARGE,
 )
-from torchani.units import ANGSTROM_TO_BOHR
 from torchani.cutoffs import CutoffArg
 from torchani.neighbors import Neighbors
-from torchani.potentials.core import PairPotential
+from torchani.potentials.core import BasePairPotential
 from torchani.paths import _resources_dir
 
 
+# TODO: trainable?
 # NOTE: Precalculated C6 constants for D3
 # - Precalculated C6 coefficients
 # shape (Elements, Elements, Ref, Ref), where "Ref" is the number of references
@@ -97,7 +97,7 @@ class BeckeJohnsonDamp(torch.nn.Module):
         functional: str,
     ) -> tpx.Self:
         d = FUNCTIONAL_D3BJ_CONSTANTS[functional.lower()]
-        return cls(symbols=symbols, a1=d["a1"], a2=d["a2"])
+        return cls(symbols, a1=d["a1"], a2=d["a2"])
 
     def forward(
         self,
@@ -110,7 +110,7 @@ class BeckeJohnsonDamp(torch.nn.Module):
         return distances.pow(order) + damp_term
 
 
-class TwoBodyDispersionD3(PairPotential):
+class TwoBodyDispersionD3(BasePairPotential):
     r"""Calculates the DFT-D3 dispersion corrections
 
     Only calculates the 2-body part of the dispersion corrections. Requires a
@@ -140,40 +140,31 @@ class TwoBodyDispersionD3(PairPotential):
     def __init__(
         self,
         symbols: tp.Sequence[str],
+        # Potential
         s6: float,
         s8: float,
         damp_a1: float,
         damp_a2: float,
-        cutoff_fn: CutoffArg = "dummy",
-        cutoff: float = math.inf,
         sqrt_empirical_charge: tp.Sequence[float] = (),
         covalent_radii: tp.Sequence[float] = (),
+        *,  # Cutoff
+        cutoff_fn: CutoffArg = "smooth",
+        cutoff: float = math.inf,
     ):
-        super().__init__(
-            symbols=symbols,
-            cutoff=cutoff,
-            cutoff_fn=cutoff_fn,
+        super().__init__(symbols, cutoff=cutoff, cutoff_fn=cutoff_fn)
+        sqrt_empirical_charge = self._validate_elem_seq(
+            "sqrt_empirical_charge", sqrt_empirical_charge, SQRT_EMPIRICAL_CHARGE
         )
-        if not sqrt_empirical_charge:
-            sqrt_empirical_charge = [
-                SQRT_EMPIRICAL_CHARGE[j] for j in self.atomic_numbers
-            ]
-        if not len(sqrt_empirical_charge) == len(symbols):
-            raise ValueError(
-                "len(sqrt_empirical_charge), if provided, must match len(symbols)"
-            )
 
-        if not covalent_radii:
-            covalent_radii = [COVALENT_RADIUS[j] for j in self.atomic_numbers]
-        if not len(covalent_radii) == len(symbols):
-            raise ValueError(
-                "len(covalent_radii), if provided, must match len(symbols)"
-            )
+        covalent_radii = self._validate_elem_seq(
+            "covalent_radii", covalent_radii, COVALENT_RADIUS
+        )
+        # Convert to Bohr since they are expected to be in angstrom
+        covalent_radii = [self.ANGSTROM_TO_BOHR * r for r in covalent_radii]
 
         self._damp_fn = BeckeJohnsonDamp(
             symbols, damp_a1, damp_a2, sqrt_empirical_charge
         )
-        self.ANGSTROM_TO_BOHR = ANGSTROM_TO_BOHR
         self._s6 = s6
         self._s8 = s8
 
@@ -198,7 +189,6 @@ class TwoBodyDispersionD3(PairPotential):
             "precalc_coordnums_b",
             coordnums_b[self.atomic_numbers, :][:, self.atomic_numbers],
         )
-
         # The product of the sqrt of the empirical q's is stored directly
         _sqrt_empirical_charge = torch.tensor(sqrt_empirical_charge)
         self.register_buffer(
@@ -206,19 +196,15 @@ class TwoBodyDispersionD3(PairPotential):
             torch.outer(_sqrt_empirical_charge, _sqrt_empirical_charge),
         )
 
-        # Covalent radii are in angstrom so we first convert to bohr
-        self.register_buffer(
-            "covalent_radii",
-            self.ANGSTROM_TO_BOHR * torch.tensor(covalent_radii),
-        )
+        self.register_buffer("covalent_radii", torch.tensor(covalent_radii))
 
     @classmethod
     def from_functional(
         cls,
         symbols: tp.Sequence[str],
         functional: str,
-        damp_fn: str = "bj",
-        cutoff_fn: CutoffArg = "dummy",
+        *,
+        cutoff_fn: CutoffArg = "smooth",
         cutoff: float = math.inf,
     ) -> tpx.Self:
         d = FUNCTIONAL_D3BJ_CONSTANTS[functional.lower()]

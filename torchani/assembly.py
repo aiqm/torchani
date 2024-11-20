@@ -156,8 +156,12 @@ class ANI(torch.nn.Module):
     def set_active_members(self, idxs: tp.List[int]) -> None:
         self.potentials["nnp"].neural_networks.set_active_members(idxs)
 
-    def shifts_energy(self, enable: bool = True) -> None:
-        self.energy_shifter._is_enabled = enable
+    @torch.jit.unused
+    def set_enabled(self, key: str, val: bool = True) -> None:
+        if key == "energy_shifter":
+            self.energy_shifter.set_enabled(val)
+        else:
+            self.potentials[key].set_enabled(val)
 
     @torch.jit.export
     def set_strategy(self, strategy: str = "pyaev") -> None:
@@ -851,9 +855,9 @@ class _AEVComputerWrapper:
 @dataclass
 class _PotentialWrapper:
     cls: PotentialCls
-    cutoff_fn: CutoffArg = "global"
+    kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None
     cutoff: float = math.inf
-    extra: tp.Optional[tp.Dict[str, tp.Any]] = None
+    cutoff_fn: CutoffArg = "global"
 
 
 class Assembler:
@@ -1010,15 +1014,15 @@ class Assembler:
         name: str,
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "global",
-        extra: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None,
     ) -> None:
         if name in self._potentials:
             raise ValueError("Potential names must be unique")
         self._potentials[name] = _PotentialWrapper(
             pair_cls,
+            kwargs=kwargs,
             cutoff=cutoff,
             cutoff_fn=cutoff_fn,
-            extra=extra,
         )
 
     def _build_atomic_networks(
@@ -1091,8 +1095,8 @@ class Assembler:
         if self._potentials:
             potentials: tp.Dict[str, Potential] = {}
             for pot_name, pot in self._potentials.items():
-                if pot.extra is not None:
-                    pot_kwargs = pot.extra
+                if pot.kwargs is not None:
+                    pot_kwargs = pot.kwargs
                 else:
                     pot_kwargs = {}
                 if hasattr(pot.cls, "from_functional") and "functional" in pot_kwargs:
@@ -1101,9 +1105,9 @@ class Assembler:
                     _ctor = pot.cls
                 potentials[pot_name] = _ctor(
                     symbols=self.symbols,
+                    **pot_kwargs,
                     cutoff=pot.cutoff,
                     cutoff_fn=_parse_cutoff_fn(pot.cutoff_fn, self._global_cutoff_fn),
-                    **pot_kwargs,
                 )
             kwargs.update({"potentials": potentials})
 
@@ -1201,7 +1205,7 @@ def simple_ani(
             TwoBodyDispersionD3,
             name="dispersion_d3",
             cutoff=8.0,
-            extra={"functional": lot.split("-")[0]},
+            kwargs={"functional": lot.split("-")[0]},
         )
     return asm.assemble(ensemble_size)
 
@@ -1304,9 +1308,9 @@ def simple_aniq(
     if repulsion and not dummy_energies:
         asm.add_potential(RepulsionXTB, name="repulsion_xtb", cutoff=radial_cutoff)
     if dispersion and not dummy_energies:
-        extra = {"functional": lot.split("-")[0]}
+        extra_kwargs = {"functional": lot.split("-")[0]}
         asm.add_potential(
-            TwoBodyDispersionD3, name="dispersion_d3", cutoff=8.0, extra=extra
+            TwoBodyDispersionD3, name="dispersion_d3", cutoff=8.0, kwargs=extra_kwargs
         )
     return asm.assemble(ensemble_size)
 

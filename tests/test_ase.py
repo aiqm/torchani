@@ -66,9 +66,9 @@ class TestASE(ANITestCase):
                 energy_shifter=model_cell.energy_shifter,
                 symbols=model_cell.symbols,
                 potentials={
-                    "dummy-0": PairPotential(symbols=symbols, cutoff=6.4),
-                    "dummy-1": PairPotential(symbols=symbols, cutoff=5.2),
-                    "dummy-2": PairPotential(symbols=symbols, cutoff=3.0),
+                    "dummy-0": PairPotential(symbols, cutoff=6.4).set_enabled_(False),
+                    "dummy-1": PairPotential(symbols, cutoff=5.2).set_enabled_(False),
+                    "dummy-2": PairPotential(symbols, cutoff=3.0).set_enabled_(False),
                 },
             ).double()
         )
