@@ -111,6 +111,7 @@ class BmmEnsemble(AtomicContainer):
         elem_idxs: Tensor,
         aevs: Tensor,
         atomic: bool = False,
+        ensemble_values: bool = False,
     ) -> Tensor:
         assert elem_idxs.shape == aevs.shape[:-1]
         assert aevs.shape[0] == 1, "BmmEnsemble only supports single-conformer inputs"
@@ -341,6 +342,7 @@ class MNPNetworks(AtomicContainer):
         elem_idxs: Tensor,
         aevs: Tensor,
         atomic: bool = False,
+        ensemble_values: bool = False,
     ) -> Tensor:
         assert elem_idxs.shape == aevs.shape[:-1]
         assert aevs.shape[0] == 1, "MNPNetworks only supports single-conformer inputs"

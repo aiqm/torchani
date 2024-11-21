@@ -507,7 +507,7 @@ class EnergyShifter(torch.nn.Module):
 
     Deprecated:
         This class is part of the *Legacy API*. Please use
-        `torchani.potentials.SelfEnergy`, which has equivalent functionality, instead.
+        `torchani.sae.SelfEnergy`, which has equivalent functionality, instead.
 
     Args:
         self_energies (list[float]): Sequence of floating

@@ -32,7 +32,7 @@ from torchani.nn import (
 )
 from torchani.cutoffs import CutoffArg
 from torchani.neighbors import NeighborlistArg
-from torchani.potentials import SelfEnergy
+from torchani.sae import SelfEnergy
 from torchani.utils import download_and_extract
 from torchani.annotations import StrPath
 
@@ -161,7 +161,7 @@ def load_aev_constants_and_symbols(
 def load_sae(filename: StrPath) -> SelfEnergy:
     r"""Returns a self-energy calculator, with self energies from NeuroChem sae file
 
-    The constructed object is of class `torchani.potentials.SelfEnergy`, and can
+    The constructed object is of class `torchani.sae.SelfEnergy`, and can
     be used to calculate the self atomic energies of a group of molecules.
     """
     _self_energies = []

@@ -29,9 +29,7 @@ class NNPotential(Potential):
         ensemble_values: bool = False,
     ) -> Tensor:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, neighbors, _coords)
-        if ensemble_values and hasattr(self.neural_networks, "ensemble_values"):
-            return self.neural_networks.ensemble_values(elem_idxs, aevs, atomic=atomic)
-        return self.neural_networks(elem_idxs, aevs, atomic=atomic)
+        return self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
 
 
 # Output of NN is assumed to be of shape (molecules, 2) with

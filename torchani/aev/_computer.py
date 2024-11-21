@@ -222,6 +222,11 @@ class AEVComputer(torch.nn.Module):
                     "If you want the old behavior (discouraged) use"
                     " `_, aevs = aev_computer.call((species, coords), cell, pbc)`."
                 )
+            if pbc is not None and not pbc.any():
+                raise ValueError(
+                    "pbc = torch.tensor([False, False, False]) is not supported anymore"
+                    " please use pbc = None"
+                )
         # Check input shape correctness and validate cutoffs
         assert elem_idxs.dim() == 2
         assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
@@ -236,8 +241,7 @@ class AEVComputer(torch.nn.Module):
             return self.compute_from_neighbors(elem_idxs, neighbors, _coords=coords)
         elif self._strategy == "cuaev-fused":
             if pbc is not None:
-                if pbc.any():
-                    raise ValueError("cuaev-fused strategy doesn't support PBC")
+                raise ValueError("cuaev-fused strategy doesn't support PBC")
             return self._compute_cuaev(elem_idxs, coords)
         raise RuntimeError(f"Invalid compute strategy {self._strategy}")
 

@@ -8,7 +8,7 @@ are:
 - `torchani.SpeciesConverter <torchani.nn.SpeciesConverter>`
 - `torchani.AEVComputer <torchani.aev.AEVComputer>`
 - `torchani.ANINetworks <torchani.nn.ANINetworks>`
-- `torchani.SelfEnergy <torchani.potentials.SelfEnergy>`
+- `torchani.SelfEnergy <torchani.sae.SelfEnergy>`
 """
 
 import os
@@ -32,6 +32,7 @@ from torchani import (
     neighbors,
     cutoffs,
     sae,
+    sae_estimation,
     constants,
     grad,
     io,
@@ -47,7 +48,7 @@ from torchani.nn import ANIModel, Ensemble
 # Dump into global namespace for convenience
 from torchani.aev import AEVComputer
 from torchani.nn import ANINetworks, ANIEnsemble, SpeciesConverter
-from torchani.potentials import SelfEnergy
+from torchani.sae import SelfEnergy
 from torchani.assembly import ANI
 
 # NOTE: ase is an optional dependency so don't import here
@@ -74,6 +75,7 @@ __all__ = [
     "utils",
     "units",
     "sae",
+    "sae_estimation",
     "cli",
     "paths",
     "annotations",

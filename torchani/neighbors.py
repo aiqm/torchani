@@ -54,7 +54,7 @@ def narrow_down(
 ) -> Neighbors:
     r"""Takes a set of potential neighbor idxs and narrows it down to true neighbors"""
     mask = elem_idxs == -1
-    if mask.any():
+    if not torch.compiler.is_compiling() and mask.any():
         # Discard dumy atoms to prevent wasting resources in calculating
         # dummy distances
         mask = mask.view(-1)[neighbor_idxs.view(-1)].view(2, -1)
@@ -175,23 +175,23 @@ def all_pairs(
     cell: tp.Optional[Tensor] = None,
     pbc: tp.Optional[Tensor] = None,
 ) -> Neighbors:
-    cell, pbc = _validate_cell_pbc(species, cell, pbc)
-    if pbc.any():
+    _validate_inputs(species, coords, cutoff, cell, pbc)
+
+    if pbc is not None:
+        assert cell is not None
         neighbor_idxs, shift_idxs = _all_pairs_pbc(species, cutoff, cell, pbc)
         shifts = shift_idxs.to(cell.dtype) @ cell
         # Before screening coords, must map to central cell (not need if no PBC)
         coords = map_to_central(coords, cell, pbc)
         return narrow_down(species, coords, cutoff, neighbor_idxs, shifts)
-    num_molecs, num_atoms = species.shape
+    molecs, atoms = species.shape
     # Create a neighborlist for all molecules and all atoms.
     # Later screen dummy atoms
     device = species.device
-    neighbor_idxs = torch.triu_indices(num_atoms, num_atoms, 1, device=device)
-    if num_molecs > 1:
-        neighbor_idxs = neighbor_idxs.unsqueeze(1).repeat(1, num_molecs, 1)
-        neighbor_idxs += num_atoms * torch.arange(num_molecs, device=device).view(
-            1, -1, 1
-        )
+    neighbor_idxs = torch.triu_indices(atoms, atoms, 1, device=device)
+    if molecs > 1:
+        neighbor_idxs = neighbor_idxs.unsqueeze(1).repeat(1, molecs, 1)
+        neighbor_idxs += atoms * torch.arange(molecs, device=device).view(1, -1, 1)
         neighbor_idxs = neighbor_idxs.view(-1).view(2, -1)
     return narrow_down(species, coords, cutoff, neighbor_idxs)
 
@@ -300,8 +300,7 @@ class AdaptiveList(Neighborlist):
         pbc: tp.Optional[Tensor] = None,
     ) -> Neighbors:
         if pbc is not None:
-            if pbc.any():
-                return adaptive_list(species, coords, cutoff, cell, pbc, self._thresh)
+            return adaptive_list(species, coords, cutoff, cell, pbc, self._thresh)
         return adaptive_list(species, coords, cutoff, cell, pbc, self._thresh_nopbc)
 
 
@@ -313,9 +312,15 @@ def adaptive_list(
     pbc: tp.Optional[Tensor] = None,
     threshold: int = 190,
 ) -> Neighbors:
-    # Cell list check (disallowed for both for consistency)
-    if coords.shape[0] != 1:
-        raise ValueError("Adaptive list doesn't support batches")
+    _validate_inputs(
+        species,
+        coords,
+        cutoff,
+        cell,
+        pbc,
+        supports_batches=False,
+        supports_individual_pbc=False,
+    )
     # Forward directly to all_pairs if below threshold or in the non-pbc case
     if coords.shape[1] < threshold:
         return all_pairs(species, coords, cutoff, cell, pbc)
@@ -330,19 +335,21 @@ def cell_list(
     cell: tp.Optional[Tensor] = None,
     pbc: tp.Optional[Tensor] = None,
 ) -> Neighbors:
-    assert cutoff >= 0.0, "Cutoff must be a positive float"
-    cell, pbc = _validate_cell_pbc(species, cell, pbc)
-
-    # Extra cell-list checks
-    if coords.shape[0] != 1:
-        raise ValueError("Cell list doesn't support batches")
-    if not ((~pbc).all() or pbc.all()):
-        raise ValueError("Cell list only supports PBC in all or no directions")
+    _validate_inputs(
+        species,
+        coords,
+        cutoff,
+        cell,
+        pbc,
+        supports_batches=False,
+        supports_individual_pbc=False,
+    )
 
     # Coordinates are displaced only in the non-pbc case, in which case the
     # displaced coords lie all inside the created cell. otherwise they are
     # the same as the input coords, but "detached"
-    if pbc.any():
+    if pbc is not None:
+        assert cell is not None
         displ_coords = coords.detach()
     else:
         # Make cell large enough to deny PBC interaction (fast, not bottleneck)
@@ -356,7 +363,7 @@ def cell_list(
     #
     # Set up grid shape each step. Cheap and avoids state in the cls
     grid_shape = setup_grid(cell.detach(), cutoff)
-    if pbc.any():
+    if pbc is not None:
         if (grid_shape == 0).any():
             raise RuntimeError("Cell is too small to perform pbc calculations")
     else:
@@ -364,7 +371,7 @@ def cell_list(
 
     # Since coords will be fractionalized they may lie outside the cell before this
     neighbor_idxs, shift_idxs = _cell_list(displ_coords.detach(), grid_shape, cell, pbc)
-    if pbc.any():
+    if pbc is not None:
         shifts = shift_idxs.to(cell.dtype) @ cell
         # Before the screening step we map the coords to the central cell,
         # same as with an all-pairs calculation
@@ -377,7 +384,7 @@ def _cell_list(
     coords: Tensor,  # shape (C, A, 3)
     grid_shape: Tensor,  # shape (3,)
     cell: Tensor,  # shape (3, 3)
-    pbc: Tensor,  # shape (3,)
+    pbc: tp.Optional[Tensor],  # shape (3,)
 ) -> tp.Tuple[Tensor, Tensor]:
     # 1) Get location of each atom in the grid, given by a "grid_idx3" (g3) or by a
     # single flat "grid_idx" (g).
@@ -756,16 +763,18 @@ class VerletCellList(CellList):
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> Neighbors:
-        assert cutoff >= 0.0, "Cutoff must be a positive float"
-        cell, pbc = _validate_cell_pbc(species, cell, pbc)
+        _validate_inputs(
+            species,
+            coords,
+            cutoff,
+            cell,
+            pbc,
+            supports_batches=False,
+            supports_individual_pbc=False,
+        )
 
-        # Cell-list checks
-        if coords.shape[0] != 1:
-            raise ValueError("Cell list doesn't support batches")
-        if not ((~pbc).all() or pbc.all()):
-            raise ValueError("Cell list only supports PBC in all or no directions")
-
-        if pbc.any():
+        if pbc is not None:
+            assert cell is not None
             displ_coords = coords.detach()
         else:
             # Make cell large enough to avoid PBC interaction (fast, not bottleneck)
@@ -776,7 +785,7 @@ class VerletCellList(CellList):
 
         # The grid uses a skin, but the narrowing uses the actual cutoff
         grid_shape = setup_grid(cell.detach(), cutoff + self.skin)
-        if pbc.any():
+        if pbc is not None:
             if (grid_shape == 0).any():
                 raise RuntimeError("Cell is too small to perform pbc calculations")
         else:
@@ -794,7 +803,7 @@ class VerletCellList(CellList):
             self._cache_values(
                 neighbor_idxs, shift_idxs, displ_coords.detach(), cell.detach()
             )
-        if pbc.any():
+        if pbc is not None:
             shifts = shift_idxs.to(cell.dtype) @ cell
             coords = map_to_central(coords, cell.detach(), pbc)
             return narrow_down(species, coords, cutoff, neighbor_idxs, shifts)
@@ -875,18 +884,38 @@ def _parse_neighborlist(neighborlist: NeighborlistArg = "base") -> Neighborlist:
 
 
 # Used to check the correctness of the cell and pbc inputs for fn and met that take them
-def _validate_cell_pbc(
-    species: Tensor, cell: tp.Optional[Tensor], pbc: tp.Optional[Tensor]
-) -> tp.Tuple[Tensor, Tensor]:
-    if cell is None and not (pbc is None or not pbc.any()):
-        raise ValueError("If cell is None, pbc should be None or [False, False, False]")
-    if cell is not None and (pbc is None or not pbc.any()):
-        raise ValueError("If cell is not None, at least one PBC should be enabled")
-    if cell is None:
-        cell = torch.eye(3, dtype=torch.float, device=species.device)
-    if pbc is None:
-        pbc = torch.zeros(3, dtype=torch.bool, device=species.device)
-    return cell, pbc
+def _validate_inputs(
+    species: Tensor,
+    coords: Tensor,
+    cutoff: float,
+    cell: tp.Optional[Tensor],
+    pbc: tp.Optional[Tensor],
+    supports_batches: bool = True,
+    supports_individual_pbc: bool = True,
+):
+    # No validation if compiling or jit-scripting
+    if torch.compiler.is_compiling() or torch.jit.is_scripting():
+        return
+    if cutoff <= 0.0:
+        raise ValueError("Cutoff must be a strictly positive float")
+    if not supports_batches and coords.shape[0] != 1:
+        raise ValueError("This neighborlist doesn't support batches")
+
+    if pbc is not None:
+        if not pbc.any():
+            raise ValueError(
+                "pbc = torch.tensor([False, False, False]) is not supported anymore"
+                " please use pbc = None"
+            )
+        if cell is None:
+            raise ValueError("If pbc is not None, cell should be present")
+        if not supports_individual_pbc and not pbc.all():
+            raise ValueError(
+                "This neighborlist doesn't support PBC only in some directions"
+            )
+    else:
+        if cell is not None:
+            raise ValueError("Cell is not supported if not using pbc")
 
 
 # Wrapper because unique_consecutive doesn't have a dynamic meta kernel asof pytorch 2.5
@@ -909,42 +938,35 @@ def neighbors_to_triples(neighbors: Neighbors) -> Triples:
     r"""Converts output of a neighborlist calculation into triples of atoms"""
     # convert representation from pair to central-others and sort
     sorted_flat_idxs, rev_idxs = neighbors.indices.view(-1).sort()
-    uniqued_central_idx, counts = _unique_and_counts(sorted_flat_idxs)
+    unique_central_idxs, counts = _unique_and_counts(sorted_flat_idxs)
 
     # compute central_idxs
     pair_sizes = (counts * (counts - 1)).div(2, rounding_mode="floor")
     pair_indices = torch.repeat_interleave(pair_sizes)
-    central_idxs = uniqued_central_idx.index_select(0, pair_indices)
+    central_idxs = unique_central_idxs.index_select(0, pair_indices)  # Shape (T,)
 
-    # do local combinations within unique key, assuming sorted
+    # For each center atom, calculate idxs
+    # for all pairs of its 'local, sorted-order' side-atoms
     zcounts = torch.cat((counts.new_zeros(1), counts))
-    m: int = int(zcounts.max())  # Dynamo can't get past this
-    n = pair_sizes.shape[0]
-    intra_pair_indices = (
-        torch.tril_indices(m, m, -1, device=neighbors.indices.device)
-        .unsqueeze(1)
-        .expand(-1, n, -1)
-    )
-    mask = (
-        torch.arange(intra_pair_indices.shape[2], device=neighbors.indices.device)
-        < pair_sizes.unsqueeze(1)
-    ).view(-1)
-    sorted_local_idx12 = intra_pair_indices.flatten(1, 2)[:, mask]
-    sorted_local_idx12 += torch.cumsum(zcounts, dim=0).index_select(0, pair_indices)
+    dev = zcounts.device
+    counts_max: int = int(zcounts.max())  # Dynamo can't get past this
+    max_local_pairs = torch.tril_indices(counts_max, counts_max, -1, device=dev)
+    mask = torch.arange(max_local_pairs.shape[1], device=dev) < pair_sizes.view(-1, 1)
+    sort_local_pairs = max_local_pairs.repeat(1, pair_sizes.shape[0])[:, mask.view(-1)]
+    sort_local_pairs += torch.cumsum(zcounts, dim=0).index_select(0, pair_indices)
 
-    # unsort result from last part
-    local_idx12 = rev_idxs[sorted_local_idx12]
+    # Convert back from sorted-idxs to atom-idxs
+    local_pairs = rev_idxs[sort_local_pairs]
 
     # compute mapping between representation of central-other to pair
-    n = neighbors.indices.shape[1]
-    sign12 = ((local_idx12 < n).to(torch.int8) * 2) - 1
-    side_idxs = local_idx12 % n
+    num_neigh = neighbors.indices.shape[1]
+    # tensor[bool].mul_(2).sub_(1) converts True False -> 1, -1
+    # Casting to int8 seems to make this operation a tiny bit faster (not sure why)
+    sign12 = (local_pairs < num_neigh).to(torch.int8) * 2 - 1
+    side_idxs = local_pairs % num_neigh
 
-    # Shape (2, T, 3)
-    diff_vectors = neighbors.diff_vectors.index_select(0, side_idxs.view(-1)).view(
-        2, -1, 3
-    )
-    diff_vectors = diff_vectors * sign12.view(2, -1, 1)
+    flat_diff_vectors = neighbors.diff_vectors.index_select(0, side_idxs.view(-1))
+    diff_vectors = flat_diff_vectors.view(2, -1, 3) * sign12.view(2, -1, 1)  # (2, T, 3)
     distances = neighbors.distances.index_select(0, side_idxs.view(-1)).view(2, -1)
     return Triples(central_idxs, side_idxs, sign12, distances, diff_vectors)
 

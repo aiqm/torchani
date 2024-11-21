@@ -25,6 +25,7 @@ class AtomicContainer(torch.nn.Module):
         elem_idxs: Tensor,
         aevs: Tensor,
         atomic: bool = False,
+        ensemble_values: bool = False,
     ) -> Tensor:
         if atomic:
             return aevs.new_zeros(elem_idxs.shape)

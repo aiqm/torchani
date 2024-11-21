@@ -208,19 +208,18 @@ which is way easier than it sounds. As an example:
 
     class Model(Module):
         def __init__(self):
+            super().__init__()
             self.converter = torchani.nn.SpeciesConverter(...)
             self.neighborlist = torchani.neighbors.AllPairs(...)
             self.aevc = torchani.aev.AEVComputer(...)
             self.nn = torchani.nn.ANINetworks(...)
-            self.adder = torchani.potentials.SelfEnergy(...)
+            self.shifter = torchani.sae.SelfEnergy(...)
 
         def forward(self, atomic_nums, coords, cell, pbc):
             idxs = self.converter(atomic_nums)
             neighbors = self.neighborlist(idxs, coords, cell, pbc)
-            aevs = self.aevc(idxs, neighbors)
-            energies = self.nn(idxs, aevs)
-            energies += self.adder(idxs)
-            return energies
+            aevs = self.aevc.compute_from_neighbors(idxs, neighbors)
+            return self.nn(idxs, aevs) + self.shifter(idxs)
 
     model = Model()
     energies = model(atomic_nums, coords, cell, pbc)  # forward is automatically called

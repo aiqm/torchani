@@ -4,7 +4,7 @@ import warnings
 
 import torch
 
-from torchani.sae import exact_saes, approx_saes
+from torchani.sae_estimation import exact_saes, approx_saes
 from torchani._testing import TestCase
 from torchani.datasets import create_batched_dataset, ANIBatchedDataset
 

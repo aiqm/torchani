@@ -93,16 +93,20 @@ class Calculator(AseCalculator):
             dtype=self.dtype,
             device=self.device,
         )
-        pbc = torch.tensor(self.atoms.get_pbc(), dtype=torch.bool, device=self.device)
+        pbc: tp.Optional[Tensor] = torch.tensor(
+            self.atoms.get_pbc(), dtype=torch.bool, device=self.device
+        )
+        assert pbc is not None
+        assert cell is not None
 
         if pbc.any() and self.overwrite:
-            assert cell is not None
             warnings.warn("'overwrite' set, info about crossing PBC *will be lost*")
             coords = map_to_central(coords, cell, pbc)
             self.atoms.set_positions(coords.detach().cpu().reshape(-1, 3).numpy())
 
         if not pbc.any():
             cell = None
+            pbc = None
 
         if needs_stress and self.stress_kind == "scaling":
             scaling = torch.eye(

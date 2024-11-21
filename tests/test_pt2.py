@@ -119,6 +119,7 @@ class TestExport(ANITestCasePT2):
             },
         )
 
+    # NOTE: This is top priority to export with compute_from_external_neighbors
     @unittest.skipIf(True, "Fails in pytorch 2.5, due to m: int = int(counts.max())")
     def testNeighborsToTriples(self) -> None:
         neighbors = make_neighbors(10, seed=1234)
@@ -147,7 +148,7 @@ class TestExport(ANITestCasePT2):
         atoms_d = Dim("atoms")
         _ = torch.export.export(
             CellList(),
-            args=(molec.coords, molec.atomic_nums, 5.2, molec.cell, molec.pbc),
+            args=(molec.atomic_nums, molec.coords, 5.2, None, None),
             dynamic_shapes={
                 # specialize to 1 molecule
                 "species": (stat, atoms_d),
@@ -158,23 +159,43 @@ class TestExport(ANITestCasePT2):
             },
         )
 
-    @unittest.skipIf(True, "Currently fails due to pbc.any() control flow")
-    def testAllPairs(self) -> None:
+    def _testAllPairs(self, static: bool = False, pbc: bool = False) -> None:
         molec = make_molec(10, seed=1234)
         stat = Dim.STATIC  # type: ignore
-        atoms_d = torch.export.Dim("atoms")
+        atoms = torch.export.Dim("atoms") if not static else stat
+        if pbc:
+            cell_dim = (stat, stat)
+            pbc_dim = (stat,)
+            cell_ten = molec.cell
+            pbc_ten = molec.pbc
+        else:
+            cell_dim = None
+            pbc_dim = None
+            pbc_ten = None
+            cell_ten = None
         _ = torch.export.export(
             AllPairs(),
-            args=(molec.coords, molec.atomic_nums, 5.2, molec.cell, molec.pbc),
+            args=(molec.atomic_nums, molec.coords, 5.2, cell_ten, pbc_ten),
             dynamic_shapes={
                 # specialize to 1 molecule
-                "species": (stat, atoms_d),
-                "coords": (stat, atoms_d, stat),
-                "cutoff": stat,  # cutoff is fixed on export
-                "cell": (stat, stat),
-                "pbc": (stat,),
+                "species": (stat, atoms),
+                "coords": (stat, atoms, stat),
+                "cutoff": None,  # cutoff is fixed on export
+                "cell": cell_dim,
+                "pbc": pbc_dim,
             },
         )
+
+    def testAllPairsStaticNoPbc(self) -> None:
+        self._testAllPairs(static=True, pbc=False)
+
+    @unittest.skipIf(True, "Currently fails due to cartesian prod")
+    def testAllPairsStaticPbc(self) -> None:
+        self._testAllPairs(static=True, pbc=True)
+
+    @unittest.skipIf(True, "Currently fails due to atoms being inferred to be 10?")
+    def testAllPairsDynamicNoPbc(self) -> None:
+        self._testAllPairs(static=False, pbc=False)
 
 
 if __name__ == "__main__":

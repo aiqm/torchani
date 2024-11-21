@@ -25,7 +25,6 @@ from torchani.potentials.nnp import (
 )
 from torchani.potentials.xtb import RepulsionXTB
 from torchani.potentials.dftd3 import TwoBodyDispersionD3
-from torchani.potentials.shifter import SelfEnergy
 from torchani.potentials.lj import DispersionLJ, RepulsionLJ, LennardJones
 from torchani.potentials.zbl import RepulsionZBL
 from torchani.potentials.fixed_coulomb import FixedCoulomb, FixedMNOK
@@ -35,7 +34,6 @@ __all__ = [
     "Potential",
     "BasePairPotential",
     "PairPotential",
-    "SelfEnergy",
     "RepulsionXTB",
     "TwoBodyDispersionD3",
     "NNPotential",

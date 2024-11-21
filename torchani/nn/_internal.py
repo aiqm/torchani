@@ -1,3 +1,4 @@
+# Legacy classes and hacks
 import typing as tp
 import warnings
 
@@ -11,7 +12,13 @@ from torchani.nn._containers import ANINetworks, ANIEnsemble
 
 # Hack: ANINetworks that return zeros
 class _ZeroANINetworks(ANINetworks):
-    def forward(self, elem_idxs: Tensor, aevs: Tensor, atomic: bool = False) -> Tensor:
+    def forward(
+        self,
+        elem_idxs: Tensor,
+        aevs: Tensor,
+        atomic: bool = False,
+        ensemble_values: bool = False,
+    ) -> Tensor:
         if atomic:
             return aevs.new_zeros(elem_idxs.shape)
         return aevs.new_zeros(elem_idxs.shape[0])
@@ -19,7 +26,13 @@ class _ZeroANINetworks(ANINetworks):
 
 # Hack: Wrapper that Grabs a network with "bad first scalar", and discards it
 class _ANINetworksDiscardFirstScalar(ANINetworks):
-    def forward(self, elem_idxs: Tensor, aevs: Tensor, atomic: bool = False) -> Tensor:
+    def forward(
+        self,
+        elem_idxs: Tensor,
+        aevs: Tensor,
+        atomic: bool = False,
+        ensemble_values: bool = False,
+    ) -> Tensor:
         assert elem_idxs.shape == aevs.shape[:-1]
         flat_elem_idxs = elem_idxs.flatten()
         aev = aevs.flatten(0, 1)
@@ -49,6 +62,7 @@ class Sequential(torch.nn.ModuleList):
         `torchani.assembly.Assembler`, or write a `torch.nn.Module`. For more info
         consult `the migration guide <torchani-migrating>`
     """
+
     def __init__(self, *modules):
         warnings.warn(
             "Use of `torchani.nn.Sequential` is strongly discouraged."
@@ -80,6 +94,7 @@ class ANIModel(ANINetworks):
         Please use `torchani.nn.ANINetworks` instead.
         For more info consult `the migration guide <torchani-migrating>`.
     """
+
     def __init__(self, modules: tp.Any) -> None:
         warnings.warn(
             "`torchani.nn.ANIModel` is deprecated, its use is discouraged."
@@ -107,6 +122,7 @@ class Ensemble(ANIEnsemble):
         Please use `torchani.nn.ANIEnsemble` instead.
         For more info consult `the migration guide <torchani-migrating>`.
     """
+
     def __init__(self, modules: tp.Any) -> None:
         warnings.warn(
             "`torchani.nn.Ensemble` is deprecated, its use is discouraged."

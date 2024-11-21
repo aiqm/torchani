@@ -64,6 +64,7 @@ class ANINetworks(AtomicContainer):
         elem_idxs: Tensor,
         aevs: Tensor,
         atomic: bool = False,
+        ensemble_values: bool = False,
     ) -> Tensor:
         r"""Calculate atomic scalars from the input features
 
@@ -134,7 +135,13 @@ class ANIEnsemble(AtomicContainer):
         if any(m.num_species != self.num_species for m in modules):
             raise ValueError("All modules must support the same number of elements")
 
-    def forward(self, elem_idxs: Tensor, aevs: Tensor, atomic: bool = False) -> Tensor:
+    def forward(
+        self,
+        elem_idxs: Tensor,
+        aevs: Tensor,
+        atomic: bool = False,
+        ensemble_values: bool = False,
+    ) -> Tensor:
         if not torch.jit.is_scripting():
             if isinstance(elem_idxs, tuple):
                 raise ValueError(
@@ -145,6 +152,8 @@ class ANIEnsemble(AtomicContainer):
                     "If you want the old behavior (discouraged) use"
                     " `_, out = networks.call((idxs, aevs), cell, pbc)`."
                 )
+        if ensemble_values:
+            return self._ensemble_values(elem_idxs, aevs, atomic)
         if atomic:
             scalars = aevs.new_zeros(elem_idxs.shape)
         else:
@@ -154,20 +163,9 @@ class ANIEnsemble(AtomicContainer):
                 scalars += nnp(elem_idxs, aevs, atomic=atomic)
         return scalars / self.get_active_members_num()
 
-    def ensemble_values(
+    def _ensemble_values(
         self, elem_idxs: Tensor, aevs: Tensor, atomic: bool = False
     ) -> Tensor:
-        r"""Calculate atomic scalars, but don't reduce result over ensemble members
-
-        Args:
-            elem_idxs: |elem_idxs|
-            aevs: |aevs|
-            atomic: Whether to perform a sum reduction in the ``atoms`` dim.
-                The returned tensor has shape ``(members, molecules, atoms)`` if
-                ``True``, and ``(members, molecules)`` otherwise.
-        Returns:
-            Tensor with the predicted scalars.
-        """
         size = len(self.active_members_idxs)
         if atomic:
             energies = aevs.new_zeros((size, elem_idxs.shape[0], elem_idxs.shape[1]))

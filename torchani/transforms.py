@@ -34,10 +34,10 @@ from torchani.nn import SpeciesConverter
 from torchani.constants import ATOMIC_NUMBER
 from torchani.potentials import (
     Potential,
-    SelfEnergy,
     RepulsionXTB,
     TwoBodyDispersionD3,
 )
+from torchani.sae import SelfEnergy
 
 
 class Transform(torch.nn.Module):
@@ -154,18 +154,18 @@ class SubtractTwoBodyDispersionD3(Transform):
 class SubtractSAE(Transform):
     r"""Subtract self atomic energies.
 
-    Takes same arguments as `torchani.potentials.SelfEnergy`
+    Takes same arguments as `torchani.sae.SelfEnergy`
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, symbols: tp.Sequence[str], self_energies: tp.Sequence[float]):
         super().__init__()
-        self._transform = SubtractEnergyAndForce(
-            SelfEnergy(*args, **kwargs), subtract_force=False
-        )
-        self.atomic_numbers = self._transform.atomic_numbers
+        self._shifter = SelfEnergy(symbols, self_energies)
+        self.atomic_numbers = self._shifter.atomic_numbers
 
     def forward(self, properties: tp.Dict[str, Tensor]) -> tp.Dict[str, Tensor]:
-        return self._transform(properties)
+        elem_idxs = self._shifter._conv_tensor[properties["species"]]
+        properties["energies"] -= self._shifter(elem_idxs)
+        return properties
 
 
 class AtomicNumbersToIndices(Transform):

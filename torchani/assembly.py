@@ -90,8 +90,8 @@ from torchani.potentials import (
     Potential,
     RepulsionXTB,
     TwoBodyDispersionD3,
-    SelfEnergy,
 )
+from torchani.sae import SelfEnergy
 from torchani._grad import (
     forces as _calc_forces,
     forces_and_hessians as _calc_forces_and_hessians,
@@ -307,9 +307,9 @@ class ANI(torch.nn.Module):
                 elem_idxs, coords, cell=cell, pbc=pbc
             )
             energies = self.potentials["nnp"].neural_networks(
-                elem_idxs, aevs, atomic=atomic
+                elem_idxs, aevs, atomic=atomic, ensemble_values=ensemble_values
             )
-            energies += self.energy_shifter(elem_idxs, atomic=atomic)
+            energies = energies + self.energy_shifter(elem_idxs, atomic=atomic)
             return SpeciesEnergies(elem_idxs, energies)
 
         # Branch that goes through internal neighborlist
