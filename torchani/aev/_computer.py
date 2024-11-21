@@ -238,7 +238,7 @@ class AEVComputer(torch.nn.Module):
             neighbors = self.neighborlist(
                 elem_idxs, coords, self.radial.cutoff, cell, pbc
             )
-            return self.compute_from_neighbors(elem_idxs, neighbors, _coords=coords)
+            return self.compute_from_neighbors(elem_idxs, coords, neighbors)
         elif self._strategy == "cuaev-fused":
             if pbc is not None:
                 raise ValueError("cuaev-fused strategy doesn't support PBC")
@@ -248,8 +248,8 @@ class AEVComputer(torch.nn.Module):
     def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
+        coords: Tensor,
         neighbors: Neighbors,
-        _coords: tp.Optional[Tensor] = None,
     ) -> Tensor:
         r"""Compute the AEVs from the result of a neighborlist calculation
 
@@ -263,8 +263,7 @@ class AEVComputer(torch.nn.Module):
         if self._strategy == "pyaev":
             return self._compute_pyaev(elem_idxs, neighbors)
         if self._strategy == "cuaev":
-            assert _coords is not None
-            return self._compute_cuaev_with_half_nbrlist(elem_idxs, _coords, neighbors)
+            return self._compute_cuaev_with_half_nbrlist(elem_idxs, coords, neighbors)
         raise RuntimeError(f"Unsupported compute strategy {self._strategy}")
 
     def _compute_pyaev(self, elem_idxs: Tensor, neighbors: Neighbors) -> Tensor:

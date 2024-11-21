@@ -19,12 +19,13 @@ class TestRepulsion(ANITestCase):
     def testPotential(self):
         element_idxs = torch.tensor([[0, 0]], device=self.device)
         energies = torch.tensor([0.0], device=self.device)
+        coords = torch.tensor([[[0, 0, 0], [3.5, 0, 0]]], device=self.device)
         neighbors = Neighbors(
             indices=torch.tensor([[0], [1]], device=self.device),
             distances=torch.tensor([3.5], device=self.device),
             diff_vectors=torch.tensor([[3.5, 0, 0]], device=self.device),
         )
-        energies = self.rep(element_idxs, neighbors)
+        energies = self.rep(element_idxs, coords, neighbors)
         self.assertEqual(torch.tensor([3.5325e-08], device=self.device), energies)
 
     def testStandalone(self):
@@ -69,12 +70,13 @@ class TestRepulsion(ANITestCase):
     def testLongDistances(self):
         element_idxs = torch.tensor([[0, 0]], device=self.device)
         energies = torch.tensor([0.0], device=self.device)
+        coords = torch.tensor([[[0, 0, 0], [6.0, 0, 0]]], device=self.device)
         neighbors = Neighbors(
             indices=torch.tensor([[0], [1]], device=self.device),
             distances=torch.tensor([6.0], device=self.device),
             diff_vectors=torch.tensor([[6.0, 0, 0]], device=self.device),
         )
-        energies = self.rep(element_idxs, neighbors)
+        energies = self.rep(element_idxs, coords, neighbors)
         self.assertEqual(torch.tensor([0.0], device=self.device), energies)
 
     def testAtomicEnergy(self):

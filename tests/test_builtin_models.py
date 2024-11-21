@@ -68,25 +68,12 @@ class TestExternalNeighborsEntryPoint(ANITestCase):
         if not charges:
             _, e = model((species, coords), cell, pbc)
             e2 = model.compute_from_external_neighbors(
-                species,
-                coords,
-                neighbors.indices,
-                shifts,
-                total_charge=0,
+                species, coords, neighbors.indices, shifts
             )
         else:
-            _, e, q = model.energies_and_atomic_charges(
-                (species, coords),
-                cell=cell,
-                pbc=pbc,
-                total_charge=0,
-            )
+            _, e, q = model.energies_and_atomic_charges((species, coords), cell, pbc)
             _, e2, q2 = model.energies_and_atomic_charges_from_external_neighbors(
-                species,
-                coords,
-                neighbors.indices,
-                shifts,
-                total_charge=0,
+                species, coords, neighbors.indices, shifts
             )
             self.assertEqual(q, q2)
         self.assertEqual(e, e2)
@@ -106,7 +93,7 @@ class TestInternalNeighborsEntryPoint(TestExternalNeighborsEntryPoint):
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         elem_idxs = model.species_converter(species)
         neighbors = model.neighborlist(elem_idxs, coords, model.cutoff, cell, pbc)
-        e2 = model.compute_from_neighbors(elem_idxs, neighbors, coords, total_charge=0)
+        e2 = model.compute_from_neighbors(elem_idxs, coords, neighbors)
         _, e = model((species, coords), cell, pbc)
         self.assertEqual(e, e2)
 

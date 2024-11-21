@@ -26,10 +26,10 @@ class ChargeNormalizer(torch.nn.Module):
     .. code-block::python
 
         normalizer = ChargeNormalizer()
-        total_charge = 0
+        charge = 0
         elem_idxs = torch.tensor([[0, 0, 0, 1, 1]], dtype=torch.long)
         raw_charges = torch.tensor([[0.3, 0.5, -0.5]], dtype=torch.float)
-        norm_charges = normalizer(elem_idxs, raw_charges, total_charge)
+        norm_charges = normalizer(elem_idxs, raw_charges, charge)
         # norm_charges will sum to zero
     """
 
@@ -81,10 +81,10 @@ class ChargeNormalizer(torch.nn.Module):
         return weights / torch.sum(weights, dim=-1, keepdim=True)
 
     def forward(
-        self, elem_idxs: Tensor, raw_charges: Tensor, total_charge: int = 0
+        self, elem_idxs: Tensor, raw_charges: Tensor, charge: int = 0
     ) -> Tensor:
         r"""Normalize charges so that they add up to a total charge"""
-        excess = total_charge - raw_charges.sum(dim=-1, keepdim=True)
+        excess = charge - raw_charges.sum(dim=-1, keepdim=True)
         return raw_charges + excess * self.factor(elem_idxs, raw_charges)
 
 
