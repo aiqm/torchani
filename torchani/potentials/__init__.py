@@ -17,7 +17,12 @@ books. If you use any of these potentials in your work, please include the corre
 citations.
 """
 
-from torchani.potentials.core import Potential, BasePairPotential, PairPotential
+from torchani.potentials.core import (
+    Potential,
+    BasePairPotential,
+    PairPotential,
+    DummyPotential,
+)
 from torchani.potentials.nnp import (
     NNPotential,
     SeparateChargesNNPotential,
@@ -32,6 +37,7 @@ from torchani.potentials.fixed_coulomb import FixedCoulomb, FixedMNOK
 
 __all__ = [
     "Potential",
+    "DummyPotential",
     "BasePairPotential",
     "PairPotential",
     "RepulsionXTB",

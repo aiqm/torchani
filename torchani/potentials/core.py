@@ -1,6 +1,5 @@
 import math
 import typing as tp
-import typing_extensions as tpx
 
 import torch
 from torch import Tensor
@@ -32,23 +31,9 @@ class Potential(_ChemModule):
         super().__init__(symbols)
         self.cutoff = cutoff
         self.ANGSTROM_TO_BOHR = ANGSTROM_TO_BOHR
-        self._enabled = True
+        self._enabled = True  # Currently meant for other classes to access only
 
-    @torch.jit.export
-    def set_enabled(self, val: bool = True) -> None:
-        self._enabled = val
-
-    @torch.jit.unused
-    def set_enabled_(self, val: bool = True) -> tpx.Self:
-        self._enabled = val
-        return self
-
-    @torch.jit.export
-    def is_enabled(self, val: bool = True) -> bool:
-        return self._enabled
-
-    @torch.jit.unused
-    def calc(
+    def forward(
         self,
         species: Tensor,
         coords: Tensor,
@@ -76,23 +61,8 @@ class Potential(_ChemModule):
             neighbors = adaptive_list(elem_idxs, coords, self.cutoff, cell, pbc)
         else:
             neighbors = all_pairs(elem_idxs, coords, self.cutoff, cell, pbc)
-        return self(elem_idxs, coords, neighbors, atomic, ensemble_values)
-
-    def forward(
-        self,
-        elem_idxs: Tensor,
-        coords: Tensor,
-        neighbors: Neighbors,
-        atomic: bool = False,
-        ensemble_values: bool = False,
-        ghost_flags: tp.Optional[Tensor] = None,
-    ) -> Tensor:
-        if not self._enabled:
-            if atomic:
-                return coords.new_zeros(elem_idxs.shape)
-            return coords.new_zeros(elem_idxs.shape[0])
         return self.compute_from_neighbors(
-            elem_idxs, coords, neighbors, atomic, ensemble_values, ghost_flags
+            elem_idxs, coords, neighbors, atomic, ensemble_values
         )
 
     def compute_from_neighbors(
@@ -113,6 +83,21 @@ class Potential(_ChemModule):
         Must be implemented by subclasses
         """
         raise NotImplementedError("Must be implemented by subclasses")
+
+
+class DummyPotential(Potential):
+    def compute_from_neighbors(
+        self,
+        elem_idxs: Tensor,
+        coords: Tensor,
+        neighbors: Neighbors,
+        atomic: bool = False,
+        ensemble_values: bool = False,
+        ghost_flags: tp.Optional[Tensor] = None,
+    ) -> Tensor:
+        if atomic:
+            return coords.new_zeros(elem_idxs.shape)
+        return coords.new_zeros(elem_idxs.shape[0])
 
 
 class BasePairPotential(Potential):

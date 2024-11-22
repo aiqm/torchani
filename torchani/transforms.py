@@ -102,7 +102,7 @@ class SubtractEnergyAndForce(Transform):
             properties["energies"] -= energies
             properties["forces"] -= forces
         else:
-            properties["energies"] -= self.potential.calc(species, coordinates)
+            properties["energies"] -= self.potential(species, coordinates)
         return properties
 
 

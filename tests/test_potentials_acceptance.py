@@ -52,7 +52,7 @@ class TestAcceptEnergies(ANITestCase):
     def _testPotential(self, name: str, pot: BasePairPotential):
         device = tp.cast(tp.Literal["cpu", "cuda"], self.device.type)
         molec = make_molecs(10, 10, seed=1234, device=device)
-        energies = pot.calc(molec.atomic_nums, molec.coords)
+        energies = pot(molec.atomic_nums, molec.coords)
         with open(
             Path(this_dir, "resources", "potentials", f"{name}-energies.pkl"), mode="rb"
         ) as f:
@@ -67,7 +67,7 @@ class TestAcceptForces(ANITestCase):
         device = tp.cast(tp.Literal["cpu", "cuda"], self.device.type)
         molec = make_molecs(10, 10, seed=1234, symbols=self.sym, device=device)
         molec.coords.requires_grad_(True)
-        energies = pot.calc(
+        energies = pot(
             molec.atomic_nums,
             molec.coords,
         )

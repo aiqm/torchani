@@ -25,7 +25,7 @@ class TestRepulsion(ANITestCase):
             distances=torch.tensor([3.5], device=self.device),
             diff_vectors=torch.tensor([[3.5, 0, 0]], device=self.device),
         )
-        energies = self.rep(element_idxs, coords, neighbors)
+        energies = self.rep.compute_from_neighbors(element_idxs, coords, neighbors)
         self.assertEqual(torch.tensor([3.5325e-08], device=self.device), energies)
 
     def testStandalone(self):
@@ -35,7 +35,7 @@ class TestRepulsion(ANITestCase):
             [[0.0, 0.0, 0.0], [3.5, 0.0, 0.0]], device=self.device
         ).unsqueeze(0)
         species = torch.tensor([[1, 1]], device=self.device)
-        energies = self.rep.calc(species, coordinates)
+        energies = self.rep(species, coordinates)
         self.assertEqual(torch.tensor([3.5325e-08], device=self.device), energies)
 
     def testBatches(self):
@@ -59,12 +59,12 @@ class TestRepulsion(ANITestCase):
         coordinates_cat = torch.cat((coordinates1, coordinates2, coordinates3), dim=0)
         species_cat = torch.cat((species1, species2, species3), dim=0)
 
-        energy1 = self.rep.calc(species1, coordinates1)
+        energy1 = self.rep(species1, coordinates1)
         # avoid first atom since it isdummy
-        energy2 = self.rep.calc(species2[:, 1:], coordinates2[:, 1:, :])
-        energy3 = self.rep.calc(species3[:, 1:], coordinates3[:, 1:, :])
+        energy2 = self.rep(species2[:, 1:], coordinates2[:, 1:, :])
+        energy3 = self.rep(species3[:, 1:], coordinates3[:, 1:, :])
         energies_cat = torch.cat((energy1, energy2, energy3))
-        energies = self.rep.calc(species_cat, coordinates_cat)
+        energies = self.rep(species_cat, coordinates_cat)
         self.assertEqual(energies, energies_cat)
 
     def testLongDistances(self):
@@ -76,7 +76,7 @@ class TestRepulsion(ANITestCase):
             distances=torch.tensor([6.0], device=self.device),
             diff_vectors=torch.tensor([[6.0, 0, 0]], device=self.device),
         )
-        energies = self.rep(element_idxs, coords, neighbors)
+        energies = self.rep.compute_from_neighbors(element_idxs, coords, neighbors)
         self.assertEqual(torch.tensor([0.0], device=self.device), energies)
 
     def testAtomicEnergy(self):

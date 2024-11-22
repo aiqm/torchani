@@ -198,7 +198,7 @@ class TestDispersion(ANITestCase):
             self.coordinates,
             disp.cutoff,
         )
-        energy = disp(self.species, self.coordinates, neighbors)
+        energy = disp.compute_from_neighbors(self.species, self.coordinates, neighbors)
         energy = units.hartree2kcalpermol(energy)
         self.assertEqual(
             energy,
@@ -218,7 +218,7 @@ class TestDispersion(ANITestCase):
                 cutoff_fn="dummy",
             )
         )
-        energy = disp.calc(self.atomic_numbers, self.coordinates)
+        energy = disp(self.atomic_numbers, self.coordinates)
         energy = units.hartree2kcalpermol(energy)
         self.assertEqual(
             energy,
@@ -241,7 +241,7 @@ class TestDispersion(ANITestCase):
         r = 2
         coordinates = self.coordinates.repeat(r, 1, 1)
         species = self.atomic_numbers.repeat(r, 1)
-        energy = disp.calc(species, coordinates)
+        energy = disp(species, coordinates)
         energy = units.hartree2kcalpermol(energy)
         self.assertEqual(
             energy,
@@ -280,12 +280,12 @@ class TestDispersion(ANITestCase):
         coordinates_cat = torch.cat((coordinates1, coordinates2, coordinates3), dim=0)
         species_cat = torch.cat((species1, species2, species3), dim=0)
 
-        energy1 = disp.calc(species1, coordinates1)
+        energy1 = disp(species1, coordinates1)
         # avoid first atom since it isdummy
-        energy2 = disp.calc(species2[:, 1:], coordinates2[:, 1:, :])
-        energy3 = disp.calc(species3[:, 1:], coordinates3[:, 1:, :])
+        energy2 = disp(species2[:, 1:], coordinates2[:, 1:, :])
+        energy3 = disp(species3[:, 1:], coordinates3[:, 1:, :])
         energies_cat = torch.cat((energy1, energy2, energy3))
-        energies = disp.calc(species_cat, coordinates_cat)
+        energies = disp(species_cat, coordinates_cat)
         self.assertEqual(energies, energies_cat)
 
     def testForce(self):

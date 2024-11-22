@@ -66,9 +66,9 @@ class TestCUAEVStrategy(ANITestCase):
 
     @skipIfNoCUAEV
     def testModelChangeStrat(self) -> None:
-        m = self._setup(ANIdr(strategy="cuaev"))
+        m = self._setup(ANIdr(strategy="cuaev-interface"))
 
-        m.set_strategy("cuaev")
+        m.set_strategy("cuaev-interface")
         cu = m(self.znum_input)[1]
 
         m.set_strategy("pyaev")
@@ -78,16 +78,16 @@ class TestCUAEVStrategy(ANITestCase):
 
     @skipIfNoCUAEV
     def testInvalidModelStrat(self) -> None:
-        m = self._setup(ANIdr(strategy="cuaev"))
+        m = self._setup(ANIdr(strategy="cuaev-interface"))
         with self.assertRaises(torch.jit.Error if self.jit else RuntimeError):
             m.set_strategy("cuaev-fused")
             _ = m(self.znum_input)[1]
 
     @skipIfNoCUAEV
     def testAEVChangeStrat(self) -> None:
-        m = self._setup(AEVComputer.like_2x(strategy="cuaev"))
+        m = self._setup(AEVComputer.like_2x(strategy="cuaev-interface"))
 
-        m.set_strategy("cuaev")
+        m.set_strategy("cuaev-interface")
         cu = m(*self.input)[1]
 
         m.set_strategy("cuaev-fused")
@@ -185,7 +185,7 @@ class TestCUAEV(TestCase):
             cutoff_fn=self.cutoff_fn, strategy="cuaev-fused"
         ).to(self.device, self.dtype)
         self.cuaev_computer_2x_use_interface = AEVComputer.like_2x(
-            cutoff_fn=self.cutoff_fn, strategy="cuaev"
+            cutoff_fn=self.cutoff_fn, strategy="cuaev-interface"
         ).to(self.device, self.dtype)
         self.converter = SpeciesConverter(SYMBOLS_2X).to(self.device, self.dtype)
         self.cutoff_2x = self.cuaev_computer_2x.radial.cutoff

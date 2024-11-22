@@ -29,7 +29,7 @@ from torchani.io import read_xyz
 from torchani._testing import ANITestCase, expand
 from torchani.assembly import ANI
 from torchani.models import ANI1x, ANIdr
-from torchani.potentials import PairPotential
+from torchani.potentials import DummyPotential
 
 
 def _stress_test_name(fn: tp.Any, idx: int, param: tp.Any) -> str:
@@ -66,9 +66,9 @@ class TestASE(ANITestCase):
                 energy_shifter=model_cell.energy_shifter,
                 symbols=model_cell.symbols,
                 potentials={
-                    "dummy-0": PairPotential(symbols, cutoff=6.4).set_enabled_(False),
-                    "dummy-1": PairPotential(symbols, cutoff=5.2).set_enabled_(False),
-                    "dummy-2": PairPotential(symbols, cutoff=3.0).set_enabled_(False),
+                    "dummy-0": DummyPotential(symbols, cutoff=6.4),
+                    "dummy-1": DummyPotential(symbols, cutoff=5.2),
+                    "dummy-2": DummyPotential(symbols, cutoff=3.0),
                 },
             ).double()
         )

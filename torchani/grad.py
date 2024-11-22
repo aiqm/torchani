@@ -72,7 +72,7 @@ def energies_and_forces(
             "(i.e. must not have been modified prior to being used as an input)."
         )
     if isinstance(model, Potential):
-        energies = model.calc(species, coordinates, cell=cell, pbc=pbc)
+        energies = model(species, coordinates, cell=cell, pbc=pbc)
     else:
         energies = model((species, coordinates), cell=cell, pbc=pbc).energies
     _forces = forces(

@@ -12,7 +12,6 @@ from torchani.neighbors import (
     neighbors_to_triples,
     discard_outside_cutoff,
     NeighborlistArg,
-    AllPairs,
     Neighbors,
 )
 from torchani.cutoffs import CutoffArg
@@ -60,8 +59,7 @@ class AEVComputer(torch.nn.Module):
 
     triu_index: Tensor
     _strategy: str
-    _cuaev_fused_strat_is_avail: bool
-    _cuaev_strat_is_avail: bool
+    _cuaev_is_avail: bool
     _cuaev_computer_is_init: bool
 
     def __init__(
@@ -101,8 +99,7 @@ class AEVComputer(torch.nn.Module):
 
         # Perform init and checks of cuAEV
         # Check if the cuaev and the cuaev fused are available for use
-        self._cuaev_fused_strat_is_avail = self._check_cuaev_fused_strat_avail()
-        self._cuaev_strat_is_avail = self._check_cuaev_strat_avail()
+        self._cuaev_is_avail = self._check_cuaev_avail()
 
         # Do cuAEV dummy init ('registration'), even if not used. Required by JIT
         if CUAEV_IS_INSTALLED:
@@ -112,12 +109,13 @@ class AEVComputer(torch.nn.Module):
         self._cuaev_computer_is_init = False
 
         # Check the requested strategy is available
+        if strategy == "auto":
+            strategy = "cuaev" if self._cuaev_is_avail else "pyaev"
+
         if strategy == "pyaev":
             pass
-        elif strategy == "cuaev":
-            self._check_cuaev_strat_avail(raise_exc=True)
-        elif strategy == "cuaev-fused":
-            self._check_cuaev_fused_strat_avail(raise_exc=True)
+        elif strategy in ["cuaev", "cuaev-fused", "cuaev-interface"]:
+            self._check_cuaev_avail(raise_exc=True)
         else:
             raise ValueError(f"Unsupported strategy {strategy}")
         self._strategy = strategy
@@ -129,21 +127,21 @@ class AEVComputer(torch.nn.Module):
     @torch.jit.export
     def set_strategy(
         self,
-        strat: str = "pyaev",
+        strat: str,
     ) -> None:
+        if strat == "auto":
+            strat = "cuaev" if self._cuaev_is_avail else "pyaev"
         if strat == "pyaev":
             pass
-        elif strat == "cuaev-fused":
-            if not self._cuaev_fused_strat_is_avail:
-                raise ValueError("cuAEV-fused strategy is not available")
-        elif strat == "cuaev":
-            if not self._cuaev_strat_is_avail:
-                raise ValueError("cuAEV strategy is not available")
+        elif strat == "cuaev" or strat == "cuaev-fused" or strat == "cuaev-interface":
+            if not self._cuaev_is_avail:
+                raise ValueError(f"{strat} strategy is not available")
         else:
             raise ValueError("Unknown compute strategy")
         self._strategy = strat
 
-    def _check_cuaev_strat_avail(self, raise_exc: bool = False) -> bool:
+    def _check_cuaev_avail(self, raise_exc: bool = False) -> bool:
+        # The fused cuaev calculates using all pairs, and bypasses the neighborlist
         if not CUAEV_IS_INSTALLED:
             if raise_exc:
                 raise ValueError("cuAEV is not installed")
@@ -158,16 +156,6 @@ class AEVComputer(torch.nn.Module):
                     "cuAEV only supports ANIAngular and ANIAngular terms, "
                     "and CosineCutoff or SmoothCutoff functions (with default args)"
                 )
-            return False
-        return True
-
-    def _check_cuaev_fused_strat_avail(self, raise_exc: bool = False) -> bool:
-        avail = self._check_cuaev_strat_avail(raise_exc=raise_exc)
-        if not avail:
-            return False
-        if not isinstance(self.neighborlist, AllPairs):
-            if raise_exc:
-                raise ValueError("cuAEV-fused only supports the default neighborlist")
             return False
         return True
 
@@ -234,16 +222,23 @@ class AEVComputer(torch.nn.Module):
 
         # IMPORTANT: If a neighborlist is used, the coords that input to neighborlist
         # are **not required** to be mapped to the central cell for pbc calculations.
-        if self._strategy == "pyaev" or self._strategy == "cuaev":
-            neighbors = self.neighborlist(
-                elem_idxs, coords, self.radial.cutoff, cell, pbc
-            )
-            return self.compute_from_neighbors(elem_idxs, coords, neighbors)
-        elif self._strategy == "cuaev-fused":
-            if pbc is not None:
-                raise ValueError("cuaev-fused strategy doesn't support PBC")
-            return self._compute_cuaev(elem_idxs, coords)
-        raise RuntimeError(f"Invalid compute strategy {self._strategy}")
+        cutoff = self.radial.cutoff
+        if self._strategy == "cuaev":  # Dispatch the best cuaev for this situation
+            if pbc is None:
+                return self._cuaev_fused(elem_idxs, coords)
+            neighbors = self.neighborlist(elem_idxs, coords, cutoff, cell, pbc)
+            return self._cuaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+        if self._strategy == "pyaev":
+            neighbors = self.neighborlist(elem_idxs, coords, cutoff, cell, pbc)
+            return self._pyaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+        if self._strategy == "cuaev-interface":
+            neighbors = self.neighborlist(elem_idxs, coords, cutoff, cell, pbc)
+            return self._cuaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+        if self._strategy == "cuaev-fused":
+            if pbc is None:
+                return self._cuaev_fused(elem_idxs, coords)
+            raise ValueError("cuaev-fused strategy doesn't support PBC")
+        raise RuntimeError(f"Invalid strategy {self._strategy}")
 
     def compute_from_neighbors(
         self,
@@ -261,12 +256,14 @@ class AEVComputer(torch.nn.Module):
             |aevs|
         """
         if self._strategy == "pyaev":
-            return self._compute_pyaev(elem_idxs, neighbors)
-        if self._strategy == "cuaev":
-            return self._compute_cuaev_with_half_nbrlist(elem_idxs, coords, neighbors)
-        raise RuntimeError(f"Unsupported compute strategy {self._strategy}")
+            return self._pyaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+        if self._strategy == "cuaev" or self._strategy == "cuaev-interface":
+            return self._cuaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+        raise RuntimeError(f"Invalid strategy {self._strategy}")
 
-    def _compute_pyaev(self, elem_idxs: Tensor, neighbors: Neighbors) -> Tensor:
+    def _pyaev_compute_from_neighbors(
+        self, elem_idxs: Tensor, coords: Tensor, neighbors: Neighbors
+    ) -> Tensor:
         if self._print_aev_branch:
             print("Executing branch: pyAEV")
         terms = self.radial(neighbors.distances)  # (pairs, rad)
@@ -373,14 +370,14 @@ class AEVComputer(torch.nn.Module):
         self._cuaev_computer_is_init = True
 
     @jit_unused_if_no_cuaev()
-    def _compute_cuaev(self, species: Tensor, coordinates: Tensor) -> Tensor:
+    def _cuaev_fused(self, species: Tensor, coordinates: Tensor) -> Tensor:
         self._prepare_cuaev_execution(species, "fused")
         return torch.ops.cuaev.run(
             coordinates, species.to(torch.int32), self.cuaev_computer
         )
 
     @jit_unused_if_no_cuaev()
-    def _compute_cuaev_with_half_nbrlist(
+    def _cuaev_compute_from_neighbors(
         self,
         species: Tensor,
         coordinates: Tensor,
@@ -420,7 +417,7 @@ class AEVComputer(torch.nn.Module):
     ) -> Tensor:
         self._prepare_cuaev_execution(species, "full-neighborlist")
         if coordinates.shape[0] != 1:
-            raise ValueError("cuAEV with full neighborlist only supports single molecs")
+            raise ValueError("cuAEV with full neighborlist doesn't support batches")
         return torch.ops.cuaev.run_with_full_nbrlist(
             coordinates,
             species.to(torch.int32),

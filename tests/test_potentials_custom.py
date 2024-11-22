@@ -28,7 +28,7 @@ class TestCustomPotential(ANITestCase):
 
     def testCustomEnergies(self):
         pot = self._setup(self._makeCustomPot(trainable=("eq",)))
-        energies = pot.calc(self.znums, self.coords)
+        energies = pot(self.znums, self.coords)
         with open(
             Path(this_dir, "resources", "potentials", "custom-energies.pkl"), mode="rb"
         ) as f:
@@ -38,7 +38,7 @@ class TestCustomPotential(ANITestCase):
     def testCustomForces(self):
         pot = self._setup(self._makeCustomPot(trainable=("eq",)))
         self.coords.requires_grad_(True)
-        energies = pot.calc(self.znums, self.coords)
+        energies = pot(self.znums, self.coords)
         forces = -torch.autograd.grad(energies.sum(), self.coords)[0]
         with open(
             Path(this_dir, "resources", "potentials", "custom-energies-forces.pkl"),

@@ -68,7 +68,7 @@ def plot(
         if force:
             r = r.detach().requires_grad_(True)
         coords[:, 0, 0] = r
-        energies = pot.calc(atomic_nums, coords) * efactor
+        energies = pot(atomic_nums, coords) * efactor
         if force:
             forces = -torch.autograd.grad(energies.sum(), r)[0]
             r.detach_()

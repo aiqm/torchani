@@ -4,7 +4,6 @@ You can use `torchani.sae.SelfEnergy` to add a values to all atoms according to 
 atomic numbers (typically these values will be ground state atomic energies, or GSAEs.
 """
 
-import typing_extensions as tpx
 import typing as tp
 
 import torch
@@ -33,19 +32,6 @@ class SelfEnergy(_ChemModule):
         self.register_buffer("self_energies", torch.tensor(self_energies))
         self._enabled = True
 
-    @torch.jit.export
-    def set_enabled(self, val: bool = True) -> None:
-        self._enabled = val
-
-    @torch.jit.unused
-    def set_enabled_(self, val: bool = True) -> tpx.Self:
-        self._enabled = val
-        return self
-
-    @torch.jit.export
-    def is_enabled(self, val: bool = True) -> bool:
-        return self._enabled
-
     # Return a sequence of GSAES sorted by element
     # Example usage:
     # gsaes = sorted_gsaes(('H', 'C', 'S'), 'wB97X', '631Gd')
@@ -70,10 +56,6 @@ class SelfEnergy(_ChemModule):
         elem_idxs: Tensor,
         atomic: bool = False,
     ) -> Tensor:
-        if not self._enabled:
-            if atomic:
-                return self.self_energies.new_zeros(elem_idxs.shape)
-            return self.self_energies.new_zeros(elem_idxs.shape[0])
         # Compute atomic self energies for a set of species.
         self_atomic_energies = self.self_energies[elem_idxs]
         self_atomic_energies = self_atomic_energies.masked_fill(elem_idxs == -1, 0.0)

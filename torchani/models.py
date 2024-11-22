@@ -221,8 +221,6 @@ def ANImbis(
     r"""
     Experimental ANI-2x model with MBIS charges
     """
-    if strategy not in ["pyaev", "cuaev"]:
-        raise ValueError(f"Unavailable strategy for ANImbis: {strategy}")
     asm = Assembler(periodic_table_index=periodic_table_index, model_cls=ANIq)
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("cosine")
@@ -310,8 +308,6 @@ def ANIdr(
     The level of theory is B973c, it is an ensemble of 7 models. It predicts energies on
     HCNOFSCl elements
     """
-    if strategy not in ["pyaev", "cuaev"]:
-        raise ValueError(f"Unavailable strategy for ANImbis: {strategy}")
     asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_2X, auto_sort=False)
     asm.set_global_cutoff_fn("smooth")
