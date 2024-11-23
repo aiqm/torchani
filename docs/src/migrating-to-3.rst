@@ -153,33 +153,30 @@ You should probably stop. This approach is error prone and verbose, and has mult
 gotchas.
 
 The simplest way of creating a model for training, with random initial weights, is using
-the factory functions in `torchani.assembly`, such as `torchani.assembly.simple_ani`:
+the factory functions in `torchani.arch`, such as `torchani.arch.simple_ani`:
 
 .. code-block:: python
 
-    from torchani.assembly import simple_ani
+    from torchani.arch import simple_ani
 
-    # LoT is used for the ground state energies
-    model = simple_ani(lot="wb97x-631gd", symbols=("H", "C", "N", "O", "S"))
-    # The returned model is ready to train
+    # LoT is used for the ground state energies, returned model is ready to train
     # Consult the documentation for the relevant options
+    model = simple_ani(("H", "C", "N", "O", "S"), lot="wb97x-631gd")
 
-These functions are wrappers over `torchani.assembly.Assembler`, which you can also use
+These functions are wrappers over `torchani.arch.Assembler`, which you can also use
 to create your model. For example, to create a model just like `torchani.models.ANI2x`,
 but with random initial weights and the ``cuAEV`` strategy for faster training, do:
 
 .. code-block:: python
 
-    from torchani import assembly
-    from torchani.nn import make_2x_network
-
-    asm = assembly.Assembler()
+    import torchani
+    asm = torchani.arch.Assembler()
     asm.set_symbols(("H", "C", "N", "O"))
     # You can also pass your custom angular or radial terms as arguments
     asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy="cuaev")
     # make_2x_network is a function that, given a symbol, builds an atomic network,
     # you can pass whatever other function you want here.
-    asm.set_atomic_networks(make_2x_network)
+    asm.set_atomic_networks(torchani.nn.make_2x_network)
     asm.set_gsaes_as_self_energies("wb97x-631gd")  # Add ground state atomic energies
     model = asm.assemble()  # The returned model is ready to train
 

@@ -1,6 +1,6 @@
 r"""Provides access to all published ANI models.
 
-Provided models are subclasses of `torchani.assembly.ANI`. Some models have been
+Provided models are subclasses of `torchani.arch.ANI`. Some models have been
 published in previous articles, and some in TorchANI 3. If you use any of these models
 in your work please cite the corresponding article(s).
 
@@ -67,7 +67,7 @@ import typing as tp
 from torchani.cutoffs import CutoffSmooth
 from torchani.utils import SYMBOLS_2X, SYMBOLS_1X
 from torchani.electro import ChargeNormalizer
-from torchani.assembly import Assembler, ANI, ANIq, _fetch_state_dict
+from torchani.arch import Assembler, ANI, ANIq, _fetch_state_dict
 from torchani.neighbors import NeighborlistArg
 from torchani.potentials import TwoBodyDispersionD3, RepulsionXTB
 from torchani.annotations import Device, DType

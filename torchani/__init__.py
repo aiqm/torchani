@@ -4,7 +4,6 @@ Most of the functions and classes of the library are accessible from their speci
 modules. For convenience, some useful classes are accessible *also* from here. These
 are:
 
-- `torchani.ANI <torchani.assembly.ANI>`
 - `torchani.SpeciesConverter <torchani.nn.SpeciesConverter>`
 - `torchani.AEVComputer <torchani.aev.AEVComputer>`
 - `torchani.ANINetworks <torchani.nn.ANINetworks>`
@@ -20,7 +19,7 @@ import torch
 from torchani import (
     nn,
     aev,
-    assembly,
+    arch,
     utils,
     models,
     units,
@@ -49,7 +48,6 @@ from torchani.nn import ANIModel
 from torchani.aev import AEVComputer
 from torchani.nn import ANINetworks, Ensemble, SpeciesConverter
 from torchani.sae import SelfEnergy
-from torchani.assembly import ANI, ANIq
 from torchani.grad import single_point
 
 # NOTE: ase is an optional dependency so don't import here
@@ -71,7 +69,7 @@ __all__ = [
     "transforms",
     "io",
     "electro",
-    "assembly",
+    "arch",
     "constants",
     "utils",
     "units",
@@ -92,8 +90,6 @@ __all__ = [
     "ANINetworks",
     "Ensemble",
     "SelfEnergy",
-    "ANI",
-    "ANIq",
     "single_point",
 ]
 

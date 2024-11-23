@@ -91,7 +91,7 @@ def cmd(
     ] = True,
 ) -> None:
     import torch
-    from torchani.assembly import ANI
+    from torchani.arch import ANI
     from torchani.models import ANI1x
     from torchani.grad import energies_and_forces
     from torchani.io import read_xyz

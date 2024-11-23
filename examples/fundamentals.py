@@ -3,7 +3,7 @@ Fundamentals of TorchANI
 ========================
 
 The TorchANI library provides a set of pre-trained models that can be used directly. All
-provided models are subclasses of class `torchani.assembly.ANI`.
+provided models are subclasses of class `torchani.arch.ANI`.
 
 It also contains classes such as `torchani.aev.AEVComputer`, `torchani.nn.ANINetworks`,
 and `torchani.sae.SelfEnergy` that can be combined to compute molecular energies

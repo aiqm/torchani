@@ -42,7 +42,7 @@ class Calculator(AseCalculator):
         calc = model.ase()  # Convert model into its ASE Calculator form
 
     Arguments:
-        model (`torchani.assembly.ANI`): neural network potential model
+        model (`torchani.arch.ANI`): neural network potential model
             that convert coordinates into energies.
         overwrite (bool): After wrapping atoms into central box, whether
             to replace the original positions stored in `ase.Atoms`

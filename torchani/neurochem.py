@@ -21,7 +21,7 @@ import torch
 import typing_extensions as tpx
 
 from torchani.paths import neurochem_dir
-from torchani.assembly import ANI
+from torchani.arch import ANI
 from torchani.aev import AEVComputer
 from torchani.nn import (
     ANINetworks,

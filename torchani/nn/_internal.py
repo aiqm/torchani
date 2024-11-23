@@ -26,14 +26,14 @@ class Sequential(torch.nn.ModuleList):
 
     Deprecated:
         Use of `torchani.nn.Sequential` is strongly discouraged. Please use
-        `torchani.assembly.Assembler`, or write a `torch.nn.Module`. For more info
+        `torchani.arch.Assembler`, or write a `torch.nn.Module`. For more info
         consult `the migration guide <torchani-migrating>`
     """
 
     def __init__(self, *modules):
         warnings.warn(
             "Use of `torchani.nn.Sequential` is strongly discouraged."
-            "Please use `torchani.assembly.Assembler`, or write a `torch.nn.Module`."
+            "Please use `torchani.arch.Assembler`, or write a `torch.nn.Module`."
             " For more info consult 'Migrating to TorchANI 3' in the user guide."
         )
         super().__init__(modules)

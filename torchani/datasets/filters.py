@@ -10,7 +10,7 @@ from torch import Tensor
 from tqdm import tqdm
 
 from torchani.units import hartree2kcalpermol
-from torchani.assembly import ANI
+from torchani.arch import ANI
 from torchani.annotations import Conformers, Device
 from torchani.datasets.anidataset import ANIDataset
 

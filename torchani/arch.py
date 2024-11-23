@@ -950,8 +950,8 @@ class Assembler:
 
 
 def simple_ani(
-    lot: str,  # method-basis
     symbols: tp.Sequence[str],
+    lot: str,  # method-basis
     ensemble_size: int = 1,
     radial_start: float = 0.9,
     angular_start: float = 0.9,
@@ -969,8 +969,7 @@ def simple_ani(
     network_factory: AtomicMakerArg = "ani2x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
-    strategy: str = "pyaev",
-    use_cuda_ops: bool = False,
+    strategy: str = "auto",
 ) -> ANI:
     r"""Flexible builder to create ANI-style models
 
@@ -982,11 +981,6 @@ def simple_ani(
         - ``angular_start=0.8``
         - ``radial_cutoff=5.1``
     """
-    if strategy not in ["pyaev", "cuaev"]:
-        raise ValueError(f"Unavailable strategy: {strategy}")
-    if use_cuda_ops:
-        warnings.warn("use_cuda_ops is deprecated, please use strategy = 'cuaev'")
-        strategy = "cuaev"
     asm = Assembler()
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
@@ -1032,8 +1026,8 @@ def simple_ani(
 
 
 def simple_aniq(
-    lot: str,  # method-basis
     symbols: tp.Sequence[str],
+    lot: str,  # method-basis
     ensemble_size: int = 1,
     radial_start: float = 0.9,
     angular_start: float = 0.9,
@@ -1051,7 +1045,7 @@ def simple_aniq(
     network_factory: AtomicMakerArg = "ani2x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
-    strategy: str = "pyaev",
+    strategy: str = "auto",
     merge_charge_networks: bool = False,
     scale_charge_normalizer_weights: bool = True,
     dummy_energies: bool = False,
@@ -1067,11 +1061,6 @@ def simple_aniq(
         - ``angular_start=0.8``
         - ``radial_cutoff=5.1``
     """
-    if strategy not in ["pyaev", "cuaev"]:
-        raise ValueError(f"Unavailable strategy: {strategy}")
-    if use_cuda_ops:
-        warnings.warn("use_cuda_ops is deprecated, please use strategy = 'cuaev'")
-        strategy = "cuaev"
     asm = Assembler(model_cls=ANIq)
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)

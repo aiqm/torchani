@@ -13,10 +13,9 @@ import torch.utils.tensorboard
 from tqdm import tqdm
 
 import torchani
-from torchani.assembly import ANI
+from torchani.arch import ANI, simple_ani
 from torchani.datasets import ANIDataset, ANIBatchedDataset, BatchedDataset
 from torchani.units import hartree2kcalpermol
-from torchani.assembly import simple_ani
 from torchani.grad import forces_for_training
 # %%
 # Device and dataset to run the training
@@ -71,11 +70,7 @@ validation = valid_ds.as_dataloader(num_workers=0)
 #
 # Lets generate a model from scratch. For simplicity we use PyTorch's default random
 # initialization for the weights.
-model = simple_ani(
-    lot="wb97x-631gd",
-    symbols=("H", "C", "N", "O"),
-    repulsion=True,
-)
+model = simple_ani(("H", "C", "N", "O"), lot="wb97x-631gd", repulsion=True)
 # %%
 # Set up of optimizer and lr-scheduler
 optimizer = torch.optim.AdamW(

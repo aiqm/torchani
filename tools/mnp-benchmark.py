@@ -11,7 +11,7 @@ from rich.console import Console
 from torchani.annotations import Device
 from torchani.io import read_xyz
 from torchani.csrc import CUAEV_IS_INSTALLED, MNP_IS_INSTALLED
-from torchani.assembly import ANI
+from torchani.arch import ANI
 from torchani.models import ANI2x
 from torchani.grad import energies_and_forces
 

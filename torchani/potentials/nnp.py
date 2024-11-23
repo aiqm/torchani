@@ -47,7 +47,6 @@ class MergedChargesNNPotential(NNPotential):
         if charge_normalizer is None:
             charge_normalizer = ChargeNormalizer(self.symbols)
         self.charge_normalizer = charge_normalizer
-        raise ValueError("This class is currently under development")
 
     def compute_from_neighbors(
         self,
@@ -60,7 +59,14 @@ class MergedChargesNNPotential(NNPotential):
         ghost_flags: tp.Optional[Tensor] = None,
     ) -> EnergiesScalars:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
+        # AtomicContainer is assumed to output a tensor with a final dimension "2"
+        # which holds energies and charges
         energies_qs = self.neural_networks(elem_idxs, aevs, True, ensemble_values)
+        assert energies_qs.shape[1:] == (
+            elem_idxs.shape[0],
+            elem_idxs.shape[2],
+            2,
+        ), "Incorrect shape for merged charge networks"
         energies, qs = energies_qs.unbind(-1)
         if not atomic:
             energies = energies.sum(dim=-1)

@@ -9,7 +9,7 @@ import typing as tp
 from torch import Tensor
 import torch
 
-from torchani.assembly import ANI, ANIq
+from torchani.arch import ANI, ANIq
 from torchani.potentials import Potential
 from torchani.tuples import (
     EnergiesForcesHessians,
