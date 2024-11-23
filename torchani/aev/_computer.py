@@ -49,6 +49,13 @@ class AEVComputer(torch.nn.Module):
         radial: The module used to compute the radial part of the AEVs
         angular: The module used to compute the angular part of the AEVs
         num_species: The number of elements this module supports
+        strategy: The AEV computation strategy. Valid values are:
+            - 'cuaev': Use the hand-coded CUDA cuAEV extension
+            - 'pyaev': Use pytorch exclusively
+            - 'auto': Choose the most performant available option
+        cutoff_fn: Cutoff fn to use for the radial and angular terms
+        neighborlist: Kind of neighborlist for internal computation.
+        Valid values are: 'all_pairs', 'cell_list', 'adaptive'
     """
 
     num_species: Final[int]
