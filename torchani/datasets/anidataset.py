@@ -16,7 +16,7 @@ from numpy.typing import DTypeLike, NDArray
 from tqdm import tqdm
 
 from torchani.constants import ATOMIC_NUMBER, PERIODIC_TABLE
-from torchani.utils import species_to_formula, sort_by_element, PADDING, ATOMIC_KEYS
+from torchani.utils import species_to_formula, sort_by_atomic_num, PADDING, ATOMIC_KEYS
 from torchani.annotations import (
     Conformers,
     Backend,
@@ -421,7 +421,7 @@ class _ANISubdataset(_ANIDatasetBase):
                 group_name, properties=element_key, chem_symbols=True
             )
             present.update(conformers[element_key].ravel())
-        return sort_by_element(present)
+        return sort_by_atomic_num(present)
 
     @property
     def znumbers(self) -> tp.Tuple[int, ...]:
@@ -1110,7 +1110,7 @@ class ANIDataset(_ANIDatasetBase):
 
     @property
     def symbols(self) -> tp.Tuple[str, ...]:
-        return sort_by_element(
+        return sort_by_atomic_num(
             {s for ds in self._datasets.values() for s in ds.symbols}
         )
 

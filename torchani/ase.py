@@ -120,7 +120,7 @@ class Calculator(AseCalculator):
             if self.stress_kind == "scaling":
                 cell = cell @ scaling
             neighbors = self.model.neighborlist(
-                species, coords, self.model.cutoff, cell, pbc
+                self.model.cutoff, species, coords, cell, pbc
             )
             if self.stress_kind == "fdotr":
                 neighbors.diff_vectors.requires_grad_(True)

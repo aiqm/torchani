@@ -9,7 +9,7 @@ import torch
 from torch import Tensor
 import typing_extensions as tpx
 
-from torchani.annotations import Device
+from torchani.annotations import Device, DType
 from torchani.utils import AtomicNumbersToMasses
 from torchani.constants import ELECTRONEGATIVITY, HARDNESS, ATOMIC_NUMBER
 
@@ -102,8 +102,8 @@ class DipoleComputer(torch.nn.Module):
         self,
         masses: tp.Iterable[float] = (),
         reference: Reference = "center_of_mass",
-        device: Device = "cpu",
-        dtype: torch.dtype = torch.float,
+        device: Device = None,
+        dtype: DType = None,
     ) -> None:
         super().__init__()
 

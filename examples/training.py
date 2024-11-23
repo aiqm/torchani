@@ -100,8 +100,7 @@ if latest_training_state_checkpoint_path.exists():
     scheduler.load_state_dict(checkpoint["scheduler"])
     optimizer.load_state_dict(checkpoint["optimizer"])
 
-model = model.to(torch.float)
-model = model.to(device)
+model.to(dtype=torch.float32, device=device)
 # %%
 # During training, we need to validate on validation set and if validation error
 # is better than the best, then save the new best model to a checkpoint

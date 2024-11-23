@@ -15,7 +15,7 @@ import torch
 from torch import Tensor
 import torch.utils.data
 
-from torchani.annotations import Device
+from torchani.annotations import Device, DType
 from torchani.constants import MASS, ATOMIC_NUMBER, PERIODIC_TABLE
 from torchani.tuples import SpeciesEnergies
 
@@ -29,7 +29,7 @@ __all__ = [
     "ChemicalSymbolsToInts",
     "ChemicalSymbolsToAtomicNumbers",
     "AtomicNumbersToMasses",
-    "sort_by_element",
+    "sort_by_atomic_num",
     "EnergyShifter",
     "get_atomic_masses",
     "PERIODIC_TABLE",
@@ -332,7 +332,7 @@ class IntsToChemicalSymbols(_NumbersConvert):
 class _ChemicalSymbolsConvert(torch.nn.Module):
     _dummy: Tensor
 
-    def __init__(self, symbol_dict: tp.Dict[str, int], device: Device = "cpu"):
+    def __init__(self, symbol_dict: tp.Dict[str, int], device: Device = None):
         super().__init__()
         self.symbol_dict = symbol_dict
         self.register_buffer("_dummy", torch.empty(0, device=device), persistent=False)
@@ -365,7 +365,7 @@ class ChemicalSymbolsToAtomicNumbers(_ChemicalSymbolsConvert):
         # atomic_numbers is now torch.tensor([ 6, 16,  8,  9,  1,  1])
     """
 
-    def __init__(self, device: Device = "cpu"):
+    def __init__(self, device: Device = None):
         super().__init__(ATOMIC_NUMBER, device=device)
 
 
@@ -392,7 +392,7 @@ class ChemicalSymbolsToInts(_ChemicalSymbolsConvert):
         symbols: |symbols|
     """
 
-    def __init__(self, symbols: tp.Sequence[str], device: Device = "cpu"):
+    def __init__(self, symbols: tp.Sequence[str], device: Device = None):
         if isinstance(symbols, str):
             raise ValueError("symbols must be a sequence of str, but it can't be a str")
         int_dict = {s: i for i, s in enumerate(symbols)}
@@ -407,8 +407,8 @@ class AtomicNumbersToMasses(torch.nn.Module):
     def __init__(
         self,
         masses: tp.Iterable[float] = (),
-        device: Device = "cpu",
-        dtype: torch.dtype = torch.float,
+        device: Device = None,
+        dtype: DType = None,
     ) -> None:
         super().__init__()
         if not masses:
@@ -456,7 +456,7 @@ def atomic_numbers_to_masses(
 get_atomic_masses = atomic_numbers_to_masses
 
 
-def sort_by_element(it: tp.Iterable[str]) -> tp.Tuple[str, ...]:
+def sort_by_atomic_num(it: tp.Iterable[str]) -> tp.Tuple[str, ...]:
     r"""Sort an iterable of chemical symbols by atomic number
 
     Args:

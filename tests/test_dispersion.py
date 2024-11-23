@@ -51,9 +51,7 @@ class TestDispersion(ANITestCase):
             TwoBodyDispersionD3.from_functional(functional="wB97X", symbols=SYMBOLS_1X)
         )
         neighbors = self.aev_computer.neighborlist(
-            self.species,
-            self.coordinates,
-            disp.cutoff,
+            disp.cutoff, self.species, self.coordinates
         )
 
         distances = neighbors.distances
@@ -152,9 +150,7 @@ class TestDispersion(ANITestCase):
             TwoBodyDispersionD3.from_functional(functional="wB97X", symbols=SYMBOLS_1X)
         )
         neighbors = self.aev_computer.neighborlist(
-            self.species,
-            self.coordinates,
-            disp.cutoff,
+            disp.cutoff, self.species, self.coordinates
         )
 
         distances = neighbors.distances
@@ -194,9 +190,7 @@ class TestDispersion(ANITestCase):
             TwoBodyDispersionD3.from_functional(functional="wB97X", symbols=SYMBOLS_1X)
         )
         neighbors = self.aev_computer.neighborlist(
-            self.species,
-            self.coordinates,
-            disp.cutoff,
+            disp.cutoff, self.species, self.coordinates
         )
         energy = disp.compute_from_neighbors(self.species, self.coordinates, neighbors)
         energy = units.hartree2kcalpermol(energy)

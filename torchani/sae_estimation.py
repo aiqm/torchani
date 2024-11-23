@@ -10,6 +10,7 @@ import math
 import torch
 from torch import Tensor
 
+from torchani.annotations import Device
 from torchani.datasets import BatchedDataset
 from torchani.transforms import AtomicNumbersToIndices
 
@@ -21,7 +22,7 @@ def exact_saes(
     symbols: tp.Sequence[str],
     fraction: float = 1.0,
     fit_intercept: bool = False,
-    device: str = "cpu",
+    device: Device = None,
 ) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
     r"""Calculate SAEs of a dataset
 
@@ -43,7 +44,7 @@ def exact_saes(
     list_true_energies = []
     for j, properties in enumerate(dataset):
         species = properties["species"].to(device)
-        true_energies = properties["energies"].float().to(device)
+        true_energies = properties["energies"].to(dtype=torch.float, device=device)
         species_counts = torch.zeros(
             (species.shape[0], num_species), dtype=torch.float, device=device
         )
@@ -79,7 +80,7 @@ def approx_saes(
     symbols: tp.Sequence[str],
     fraction: float = 1.0,
     fit_intercept: bool = False,
-    device: str = "cpu",
+    device: Device = None,
     max_epochs: int = 1,
     lr: float = 0.01,
 ) -> tp.Tuple[Tensor, tp.Optional[Tensor]]:
@@ -112,7 +113,7 @@ def approx_saes(
             )
             for n in range(num_species):
                 species_counts[:, n] = (species == n).sum(-1).float()
-            true_energies = properties["energies"].float().to(device)
+            true_energies = properties["energies"].to(dtype=torch.float, device=device)
             predicted_energies = model(species_counts)
             loss = (true_energies - predicted_energies).pow(2).mean()
             opt.zero_grad()

@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 from torchani.models import ANI1x, ANI2x, ANI1ccx
-from torchani.ase import Calculator
 from torchani.io import read_xyz
 
 
@@ -278,9 +277,6 @@ if __name__ == "__main__":
                 "neighborlist", model.aev_computer.neighborlist.forward
             )
             model.forward = time_func("forward", model.forward)  # type: ignore
-            Calculator._forces = time_func(  # type: ignore
-                "backward", Calculator._get_ani_forces
-            )
         all_trials = []
         timers_list = []
         raw_trials = []
@@ -294,7 +290,7 @@ if __name__ == "__main__":
                     model.aev_computer.neighborlist.reset_cached_values()
                 except AttributeError:
                     pass
-                species, coordinates, cell = read_xyz(r)
+                species, coordinates, cell, _ = read_xyz(r)
 
                 coordinates.requires_grad_()
                 calc = model.ase()

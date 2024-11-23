@@ -1,10 +1,7 @@
-import warnings
 import typing as tp
 
 import torch
 from torch import Tensor
-
-from torchani.tuples import SpeciesEnergies
 
 
 class AtomicContainer(torch.nn.Module):
@@ -53,18 +50,6 @@ class AtomicContainer(torch.nn.Module):
     @torch.jit.unused
     def to_infer_model(self, use_mnp: bool = False) -> "AtomicContainer":
         return self
-
-    # Legacy API
-    def call(
-        self,
-        species_aevs: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-    ) -> SpeciesEnergies:
-        r""":meta private"""
-        warnings.warn(".call is a deprecated API and will be removed in the future")
-        species, aevs = species_aevs
-        return SpeciesEnergies(species, self(species, aevs))
 
 
 class AtomicNetwork(torch.nn.Module):

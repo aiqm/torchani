@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from torchani.units import hartree2kcalpermol
 from torchani.assembly import ANI
-from torchani.annotations import Conformers
+from torchani.annotations import Conformers, Device
 from torchani.datasets.anidataset import ANIDataset
 
 
@@ -24,8 +24,8 @@ def filter_by_high_force(
     threshold: float = 2.0,  # Ha / Angstrom
     max_split: int = 2560,
     delete_inplace: bool = False,
-    device: str = "cpu",
     verbose: bool = True,
+    device: Device = None,
 ) -> tp.Optional[tp.Tuple[tp.List[Conformers], tp.Dict[str, Tensor]]]:
     r"""
     Filter outlier conformations in a dataset, either by force components or
@@ -65,7 +65,7 @@ def filter_by_high_force(
     if _bad_keys_and_idxs:
         bad_keys_and_idxs = {k: torch.cat(v) for k, v in _bad_keys_and_idxs.items()}
         return _fetch_and_delete_conformations(
-            dataset, bad_keys_and_idxs, device, delete_inplace, verbose
+            dataset, bad_keys_and_idxs, delete_inplace, verbose, device
         )
     return (list(), dict())
 
@@ -75,9 +75,9 @@ def filter_by_high_energy_error(
     model: ANI,
     threshold: float = 100.0,
     max_split: int = 2560,
-    device: str = "cpu",
     delete_inplace: bool = False,
     verbose: bool = True,
+    device: Device = None,
 ) -> tp.Tuple[tp.List[Conformers], tp.Dict[str, Tensor]]:
     r"""
     Filter conformations for which a model has an excessively high absolute
@@ -124,7 +124,7 @@ def filter_by_high_energy_error(
     if _bad_keys_and_idxs:
         bad_keys_and_idxs = {k: torch.cat(v) for k, v in _bad_keys_and_idxs.items()}
         return _fetch_and_delete_conformations(
-            dataset, bad_keys_and_idxs, device, delete_inplace, verbose
+            dataset, bad_keys_and_idxs, delete_inplace, verbose, device
         )
     return (list(), dict())
 
@@ -132,9 +132,9 @@ def filter_by_high_energy_error(
 def _fetch_and_delete_conformations(
     dataset: ANIDataset,
     bad_keys_and_idxs: tp.Dict[str, Tensor],
-    device: str,
     delete_inplace: bool,
     verbose: bool,
+    device: Device = None,
 ) -> tp.Tuple[tp.List[Conformers], tp.Dict[str, Tensor]]:
     bad_conformations: tp.List[Conformers] = []
     for k, idxs in bad_keys_and_idxs.items():

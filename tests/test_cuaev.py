@@ -638,7 +638,7 @@ class TestCUAEV(TestCase):
     def testXYZ(self):
         files = ["small.xyz", "1hz5.xyz", "6W8H.xyz"]
         for file in files:
-            species, coordinates, _ = read_xyz(
+            species, coordinates, _, _ = read_xyz(
                 (Path(__file__).parent / "resources") / file,
                 device=self.device,
                 dtype=self.dtype,
@@ -651,7 +651,7 @@ class TestCUAEV(TestCase):
     def testXYZBackward(self):
         files = ["small.xyz", "1hz5.xyz", "6W8H.xyz"]
         for file in files:
-            species, coordinates, _ = read_xyz(
+            species, coordinates, _, _ = read_xyz(
                 (Path(__file__).parent / "resources") / file,
                 device=self.device,
                 dtype=self.dtype,
@@ -676,7 +676,7 @@ class TestCUAEV(TestCase):
     def testWithHalfNbrList_nopbc(self):
         files = ["small.xyz", "1hz5.xyz", "6W8H.xyz"]
         for file in files:
-            species, coordinates, _ = read_xyz(
+            species, coordinates, _, _ = read_xyz(
                 (Path(__file__).parent / "resources") / file,
                 device=self.device,
                 dtype=self.dtype,
@@ -699,13 +699,12 @@ class TestCUAEV(TestCase):
             )
 
     def testWithHalfNbrList_pbc(self):
-        species, coordinates, cell = read_xyz(
+        species, coordinates, cell, pbc = read_xyz(
             (Path(__file__).parent / "resources") / "water-0.8nm.xyz",
             device=self.device,
             dtype=self.dtype,
         )
         species = self.converter(species)
-        pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         coordinates.requires_grad_(True)
         aev = self.aev_computer_2x(species, coordinates, cell, pbc)
         aev.backward(torch.ones_like(aev))
@@ -722,7 +721,7 @@ class TestCUAEV(TestCase):
     def testWithFullNbrList_nopbc(self):
         files = ["small.xyz", "1hz5.xyz", "6W8H.xyz"]
         for file in files:
-            species, coordinates, _ = read_xyz(
+            species, coordinates, _, _ = read_xyz(
                 (Path(__file__).parent / "resources") / file,
                 device=self.device,
                 dtype=self.dtype,
@@ -737,7 +736,7 @@ class TestCUAEV(TestCase):
             coordinates = coordinates.clone().detach()
             coordinates.requires_grad_()
             atom_index12, _, _ = self.cuaev_computer_2x_use_interface.neighborlist(
-                species, coordinates, self.cutoff_2x
+                self.cutoff_2x, species, coordinates
             )
             assert species.shape[0] == 1
             (
@@ -759,13 +758,12 @@ class TestCUAEV(TestCase):
             )
 
     def testWithFullNbrList_pbc(self):
-        species, coordinates, cell = read_xyz(
+        species, coordinates, cell, pbc = read_xyz(
             (Path(__file__).parent / "resources") / "water-0.8nm.xyz",
             device=self.device,
             dtype=self.dtype,
         )
         species = self.converter(species)
-        pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         coordinates.requires_grad_(True)
         aev = self.aev_computer_2x(species, coordinates, cell, pbc)
         aev.backward(torch.ones_like(aev))
@@ -775,7 +773,7 @@ class TestCUAEV(TestCase):
         coordinates.requires_grad_()
 
         atom_index12, _, _ = self.cuaev_computer_2x_use_interface.neighborlist(
-            species, coordinates, self.cutoff_2x
+            self.cutoff_2x, species, coordinates
         )
         assert species.shape[0] == 1
         (

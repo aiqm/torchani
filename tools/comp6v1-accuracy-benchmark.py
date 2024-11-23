@@ -22,7 +22,7 @@ def main(
     device: Device,
     no_tqdm: bool,
 ) -> int:
-    device = torch.device(device)
+    device = torch.empty(0, device=device).device
     ds = getattr(datasets, "COMP6v1")(verbose=False)
     locations = [
         Path(p)
@@ -31,9 +31,9 @@ def main(
     ]
     if not len(locations) == 1:
         raise ValueError(f"Subset {subset} could not be found")
+    model = ANI1x(device=device)
     console.print(f"Benchmarking on subset {subset} on device {device.type.upper()}")
     ds = ANIDataset(locations=locations)
-    model = ANI1x().to(device)
     count = 0
     energies_rmse = 0.0
     forces_rmse = 0.0

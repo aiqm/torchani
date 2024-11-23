@@ -15,7 +15,7 @@ pre-download the parameters by instantiating the models once before use.
 The models can be used directly once they are instantiated. Alternatively, they can be
 converted to an ASE calculator by calling `torchani.assembly.ANI.ase`.
 
-Some models have an interanl set of neural networks (`torchani.nn.ANIEnsemble`), and
+Some models have an interanl set of neural networks (`torchani.nn.Ensemble`), and
 they output their averaged values. Individual members of these ensembles can be accessed
 by indexing, and ``len(ANI)`` can be used to query the number of networks in it.
 
@@ -116,7 +116,7 @@ def ANI1x(
         https://aip.scitation.org/doi/abs/10.1063/1.5023802
     """
     asm = Assembler(periodic_table_index=periodic_table_index)
-    asm.set_symbols(SYMBOLS_1X, auto_sort=False)
+    asm.set_symbols(SYMBOLS_1X)
     asm.set_atomic_networks(make_1x_network)
     asm.set_global_cutoff_fn("cosine")
     asm.set_aev_computer(angular="ani1x", radial="ani1x", strategy=strategy)
@@ -126,10 +126,7 @@ def ANI1x(
     model.load_state_dict(_fetch_state_dict("ani1x_state_dict.pt", private=False))
     model.requires_grad_(False)
     # TODO: Fix this
-    if device is not None:
-        model = model.to(device)
-    if dtype is not None:
-        model = model.to(dtype)
+    model.to(device=device, dtype=dtype)
     return model if model_index is None else model[model_index]
 
 
@@ -156,7 +153,7 @@ def ANI1ccx(
         https://doi.org/10.26434/chemrxiv.6744440.v1
     """
     asm = Assembler(periodic_table_index=periodic_table_index)
-    asm.set_symbols(SYMBOLS_1X, auto_sort=False)
+    asm.set_symbols(SYMBOLS_1X)
     asm.set_global_cutoff_fn("cosine")
     asm.set_aev_computer(radial="ani1x", angular="ani1x", strategy=strategy)
     asm.set_atomic_networks(make_1x_network)
@@ -165,10 +162,7 @@ def ANI1ccx(
     model = asm.assemble(8)
     model.load_state_dict(_fetch_state_dict("ani1ccx_state_dict.pt", private=False))
     model.requires_grad_(False)
-    if device is not None:
-        model = model.to(device)
-    if dtype is not None:
-        model = model.to(dtype)
+    model.to(device=device, dtype=dtype)
     return model if model_index is None else model[model_index]
 
 
@@ -193,7 +187,7 @@ def ANI2x(
         https://doi.org/10.26434/chemrxiv.11819268.v1
     """
     asm = Assembler(periodic_table_index=periodic_table_index)
-    asm.set_symbols(SYMBOLS_2X, auto_sort=False)
+    asm.set_symbols(SYMBOLS_2X)
     asm.set_global_cutoff_fn("cosine")
     asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
     asm.set_atomic_networks(make_2x_network)
@@ -203,10 +197,7 @@ def ANI2x(
     model = asm.assemble(8)
     model.load_state_dict(_fetch_state_dict("ani2x_state_dict.pt", private=False))
     model.requires_grad_(False)
-    if device is not None:
-        model = model.to(device)
-    if dtype is not None:
-        model = model.to(dtype)
+    model.to(device=device, dtype=dtype)
     return model if model_index is None else model[model_index]
 
 
@@ -222,7 +213,7 @@ def ANImbis(
     Experimental ANI-2x model with MBIS charges
     """
     asm = Assembler(periodic_table_index=periodic_table_index, model_cls=ANIq)
-    asm.set_symbols(SYMBOLS_2X, auto_sort=False)
+    asm.set_symbols(SYMBOLS_2X)
     asm.set_global_cutoff_fn("cosine")
     asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
     asm.set_atomic_networks(make_2x_network)
@@ -259,10 +250,7 @@ def ANImbis(
     model.potentials["nnp"].neural_networks.load_state_dict(energy_nn_state_dict)
     model.potentials["nnp"].charge_networks.load_state_dict(charge_nn_state_dict)
     model.requires_grad_(False)
-    if device is not None:
-        model = model.to(device)
-    if dtype is not None:
-        model = model.to(dtype)
+    model.to(device=device, dtype=dtype)
     return model if model_index is None else model[model_index]
 
 
@@ -278,7 +266,7 @@ def ANIala(
     if model_index is not None:
         raise ValueError("Model index is not supported for ANIala")
     asm = Assembler(periodic_table_index=periodic_table_index)
-    asm.set_symbols(SYMBOLS_2X, auto_sort=False)
+    asm.set_symbols(SYMBOLS_2X)
     asm.set_global_cutoff_fn("cosine")
     asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
     asm.set_atomic_networks(make_ala_network)
@@ -287,10 +275,7 @@ def ANIala(
     model = asm.assemble(1)
     model.load_state_dict(_fetch_state_dict("aniala_state_dict.pt", private=True))
     model.requires_grad_(False)
-    if device is not None:
-        model = model.to(device)
-    if dtype is not None:
-        model = model.to(dtype)
+    model.to(device=device, dtype=dtype)
     return model
 
 
@@ -309,7 +294,7 @@ def ANIdr(
     HCNOFSCl elements
     """
     asm = Assembler(periodic_table_index=periodic_table_index)
-    asm.set_symbols(SYMBOLS_2X, auto_sort=False)
+    asm.set_symbols(SYMBOLS_2X)
     asm.set_global_cutoff_fn("smooth")
     asm.set_aev_computer(angular="ani2x", radial="ani2x", strategy=strategy)
     asm.set_atomic_networks(make_dr_network)
@@ -326,8 +311,5 @@ def ANIdr(
     model = asm.assemble(7)
     model.load_state_dict(_fetch_state_dict("anidr_state_dict.pt", private=True))
     model.requires_grad_(False)
-    if device is not None:
-        model = model.to(device)
-    if dtype is not None:
-        model = model.to(dtype)
+    model.to(device=device, dtype=dtype)
     return model if model_index is None else model[model_index]

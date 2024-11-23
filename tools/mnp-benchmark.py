@@ -28,9 +28,9 @@ def _build_ani2x(
     mnp: bool = False,
     infer: bool = False,
     jit: bool = False,
-    device: Device = "cpu",
+    device: Device = None,
 ):
-    device = torch.device(device)
+    device = torch.empty(0, device=device).device
     if device.type == "cuda" and CUAEV_IS_INSTALLED:
         strat = "cuaev-fused"
     else:
@@ -38,7 +38,7 @@ def _build_ani2x(
     model = ANI2x(model_index=idx, strategy=strat)
     if infer:
         model = model.to_infer_model(mnp)
-    model = model.to(device)
+    model.to(device=device)
     if jit:
         model = tp.cast(ANI, torch.jit.script(model))
     return model
@@ -47,7 +47,7 @@ def _build_ani2x(
 def benchmark(
     table: Table,
     jit: bool = False,
-    device: Device = "cpu",
+    device: Device = None,
     idx: tp.Optional[int] = None,
 ) -> None:
     """
@@ -59,15 +59,15 @@ def benchmark(
         run_ani2x                          : 756.459 ms/step
         run_ani2x_infer                    : 32.482 ms/step
     """
-    device = torch.device(device)
+    device = torch.empty(0, device=device).device
 
     def _run(model, file):
-        species, coordinates, _ = read_xyz(
+        species, coords, _, _ = read_xyz(
             Path(ROOT, "tests", "resources", file),
             device=device,
             dtype=torch.float,
         )
-        _, _ = energies_and_forces(model, species, coordinates)
+        _, _ = energies_and_forces(model, species, coords)
 
     steps = 10 if device.type == "cpu" else 30
 

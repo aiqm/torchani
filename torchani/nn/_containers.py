@@ -1,8 +1,10 @@
+import warnings
 import typing as tp
 
 import torch
 from torch import Tensor
 
+from torchani.tuples import SpeciesEnergies
 from torchani.constants import PERIODIC_TABLE, ATOMIC_NUMBER
 from torchani.nn._core import AtomicContainer, AtomicNetwork
 from torchani.nn._infer import BmmEnsemble, MNPNetworks
@@ -78,16 +80,17 @@ class ANINetworks(AtomicContainer):
         Returns:
             Tensor with the predicted scalars.
         """
-        if not torch.jit.is_scripting():
+        if not (torch.jit.is_scripting() or torch.compiler.is_compiling()):
             if isinstance(elem_idxs, tuple):
-                raise ValueError(
+                warnings.warn(
                     "You seem to be attempting to call "
-                    "`_, out = networks((idxs, aevs), cell, pbc)`. "
-                    "This signature was modified in TorchANI 3. "
-                    "Please use `out = networks(idxs, aevs)` instead."
-                    "If you want the old behavior (discouraged) use"
-                    " `_, out = networks.call((idxs, aevs), cell, pbc)`."
+                    "`_, energies = ani_model((species, aevs), cell, pbc)`. "
+                    "This signature was modified in TorchANI 3, and *will be removed*"
+                    "Use `energies = ani_model(species, aevs)` instead."
                 )
+                energies = self(elem_idxs[0], elem_idxs[1])
+                return SpeciesEnergies(elem_idxs[0], energies)
+
         assert elem_idxs.shape == aevs.shape[:-1]
         flat_elem_idxs = elem_idxs.flatten()
         aev = aevs.flatten(0, 1)
@@ -107,7 +110,7 @@ class ANINetworks(AtomicContainer):
         return MNPNetworks(self, use_mnp=use_mnp)
 
 
-class ANIEnsemble(AtomicContainer):
+class Ensemble(AtomicContainer):
     r"""Calculate output scalars by averaging over many containers of networks
 
     Args:
@@ -142,16 +145,17 @@ class ANIEnsemble(AtomicContainer):
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
-        if not torch.jit.is_scripting():
+        if not (torch.jit.is_scripting() or torch.compiler.is_compiling()):
             if isinstance(elem_idxs, tuple):
-                raise ValueError(
+                warnings.warn(
                     "You seem to be attempting to call "
-                    "`_, out = networks((idxs, aevs), cell, pbc)`. "
-                    "This signature was modified in TorchANI 3. "
-                    "Please use `out = networks(idxs, aevs)` instead."
-                    "If you want the old behavior (discouraged) use"
-                    " `_, out = networks.call((idxs, aevs), cell, pbc)`."
+                    "`_, energies = ensemble((species, aevs), cell, pbc)`. "
+                    "This signature was modified in TorchANI 3, and *will be removed*"
+                    "Use `energies = ensemble(species, aevs)` instead."
                 )
+                energies = self(elem_idxs[0], elem_idxs[1])
+                return SpeciesEnergies(elem_idxs[0], energies)
+
         if ensemble_values:
             return self._ensemble_values(elem_idxs, aevs, atomic)
         if atomic:
@@ -197,8 +201,7 @@ class SpeciesConverter(torch.nn.Module):
     7, 1, 8])`` into a ``tensor([0, 1, 2, 0, 3])``
 
     Args:
-        symbols: |symbols| (it is recommended to order according to atomic number, which
-            you can do with `torchani.utils.sort_by_element`).
+        symbols: |symbols|
     """
 
     conv_tensor: Tensor
@@ -221,7 +224,9 @@ class SpeciesConverter(torch.nn.Module):
             [ATOMIC_NUMBER[e] for e in symbols], dtype=torch.long
         )
 
-    def forward(self, atomic_nums: Tensor, nop: bool = False) -> Tensor:
+    def forward(
+        self, atomic_nums: Tensor, nop: bool = False, _dont_use: bool = False
+    ) -> Tensor:
         r"""Perform the conversion to element indices
 
         Args:
@@ -229,14 +234,18 @@ class SpeciesConverter(torch.nn.Module):
         Returns:
             |elem_idxs|
         """
-        if not torch.jit.is_scripting():
+        if not (torch.jit.is_scripting() or torch.compiler.is_compiling()):
             if isinstance(atomic_nums, tuple):
-                raise ValueError(
-                    "You seem to be calling "
-                    "'_, idxs = converter((atom_nums, aevs), cell, pbc)'. "
-                    "This signature was modified in TorchANI 3. "
-                    "Please use 'idxs = converter(atom_nums)' instead."
+                warnings.warn(
+                    "You seem to be attempting to call "
+                    "`_, idxs = converter((atomic_nums, coords), cell, pbc)`. "
+                    "This signature was modified in TorchANI 3, and *will be removed*"
+                    "Use `idxs = converter(atomic_nums)` instead"
                 )
+                elem_idxs = self(atomic_nums[0])
+                return (elem_idxs, atomic_nums[1])
+            if _dont_use:
+                raise ValueError("Argument only for backwards compat, do not use")
 
         # Consider as element idxs and check that its not too large, otherwise its
         # a no-op TODO: unclear documentation for this, possibly remove
@@ -244,12 +253,15 @@ class SpeciesConverter(torch.nn.Module):
             if atomic_nums.max() >= len(self.atomic_numbers):
                 raise ValueError(f"Unsupported element idx in {atomic_nums}")
             return atomic_nums
+
         # NOTE: Casting is necessary in C++ due to a LibTorch bug
         elem_idxs = self.conv_tensor.to(torch.long)[atomic_nums]
-        if (elem_idxs[atomic_nums != -1] == -1).any():
-            raise ValueError(
-                f"Model doesn't support some elements in input"
-                f" Input elements include: {torch.unique(atomic_nums)}"
-                f" Supported elements are: {self.atomic_numbers}"
-            )
+
+        if not (torch.jit.is_scripting() or torch.compiler.is_compiling()):
+            if (elem_idxs[atomic_nums != -1] == -1).any():
+                raise ValueError(
+                    f"Model doesn't support some elements in input"
+                    f" Input elements include: {torch.unique(atomic_nums)}"
+                    f" Supported elements are: {self.atomic_numbers}"
+                )
         return elem_idxs.to(atomic_nums.device)

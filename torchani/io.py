@@ -7,7 +7,7 @@ from pathlib import Path
 import torch
 from torch import Tensor
 
-from torchani.annotations import StrPath, Device
+from torchani.annotations import StrPath, Device, DType
 from torchani.constants import ATOMIC_NUMBER, PERIODIC_TABLE
 from torchani.utils import pad_atomic_properties
 
@@ -80,11 +80,11 @@ def write_xyz(
 
 def read_xyz(
     path: StrPath,
-    dtype: torch.dtype = torch.float,
-    device: Device = "cpu",
+    dtype: DType = None,
+    device: Device = None,
     detect_padding: bool = True,
     pad_species_value: int = 100,
-) -> tp.Tuple[Tensor, Tensor, tp.Optional[Tensor]]:
+) -> tp.Tuple[Tensor, Tensor, tp.Optional[Tensor], tp.Optional[Tensor]]:
     r"""Read an xyz file with possibly many molecules. Return them in tensor form
 
     Returns a (species, coordinates) tuple of tensors. The shapes of the tensors are (C,
@@ -162,4 +162,5 @@ def read_xyz(
                 }
             )
     pad_properties = pad_atomic_properties(properties)
-    return pad_properties["species"], pad_properties["coordinates"], cell
+    pbc = torch.tensor([True, True, True], device=device) if cell is not None else None
+    return pad_properties["species"], pad_properties["coordinates"], cell, pbc

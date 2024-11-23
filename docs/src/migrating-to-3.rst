@@ -87,26 +87,15 @@ you should now do this instead:
     aevc = torchani.AEVComputer(...)
     # Note that the following classes have different names
     ani_nets = torchani.ANINetworks(...)
-    ensemble = torchani.ANIEnsemble(...)
+    ensemble = torchani.Ensemble(...)
 
     idxs = converter(atomic_nums)
     aevs = aevc(idxs, coords, cell, pbc)
     energies = animodel(idxs, aevs)
     energies = ensemble(ixs, aevs)
 
-.. NOTE The old behavior is also supported directly by using the old class names but we
-   omit to mention this here on purpose.
-
-Note that now the class names are :obj:`~torchani.nn.ANINetworks` instead of
-``ANIModel``, and :obj:`~torchani.nn.ANIEnsemble` instead of ``Ensemble``.
-
-The old signature is still supported by using the ``.call()`` method, but this is
-discouraged. An example:
-
-.. code-block:: python
-
-    aevc = torchani.AEVComputer(...)
-    _, aevs = aevc.call((species, coords), cell, pbc)  # Possible, but not recommended
+Note that ``torchani.nn.ANIModel`` has been renamed to :obj:`~torchani.nn.ANINetworks`.
+The old signature is still supported for now, but it will be removed in the future
 
 Extra notes on the :obj:`~torchani.aev.AEVComputer`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -122,7 +111,8 @@ It is possible now to separate the ``AEVComputer`` and
     converter = torchani.SpeciesConverter(("H", "C", "N", "O"))
 
     idxs = converter(atomic_nums)
-    neighbors = neighborlist(idxs, coords, cell, pbc)
+    cutoff = aevc.radial.cutoff
+    neighbors = neighborlist(cutoff, idxs, coords, cell, pbc)
     aevc = aevc.compute_from_neighbors(idxs, neighbors)
 
 This may be useful if you are want to use the computed neighborlist in more modules
@@ -130,8 +120,7 @@ afterwards (e.g. pair potentials, or other neural networks).
 
 Additionally, :obj:`~torchani.aev.AEVComputer` is now initialized with different inputs.
 If you prefer the old signature you can use the
-:obj:`~torchani.aev.AEVComputer.from_constants` constructor instead (we recommend using
-the new constructors however).
+:obj:`~torchani.aev.AEVComputer.from_constants` constructor instead.
 
 Usage of ``torchani.data``
 --------------------------
@@ -152,9 +141,9 @@ If you were previously doing:
 .. code-block:: python
 
     import torchani
-    aev_computer = torchani.AEVComputer(...)  # Lots of arguments
-    neural_networks = torchani.ANIModel(...)  # Lots of arguments
-    energy_shifter = torchani.EnergyShifter(...)  # More arguments
+    aev_computer = torchani.aev.AEVComputer(...)  # Lots of arguments
+    neural_networks = torchani.nn.ANIModel(...)  # Lots of arguments
+    energy_shifter = torchani.utils.EnergyShifter(...)  # More arguments
     model = torchani.nn.Sequential(aev_computer, neural_networks, energy_shifter)
 
 You should probably stop. This approach is error prone and verbose, and has multiple
@@ -217,7 +206,8 @@ which is way easier than it sounds. As an example:
 
         def forward(self, atomic_nums, coords, cell, pbc):
             idxs = self.converter(atomic_nums)
-            neighbors = self.neighborlist(idxs, coords, cell, pbc)
+            cutoff = self.aevc.radial.cutoff
+            neighbors = self.neighborlist(cutoff, idxs, coords, cell, pbc)
             aevs = self.aevc.compute_from_neighbors(idxs, neighbors)
             return self.nn(idxs, aevs) + self.shifter(idxs)
 

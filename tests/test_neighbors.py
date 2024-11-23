@@ -30,16 +30,17 @@ class TestCellList(TestCase):
         # a cutoff of 5.2 and a bucket length of 5.200001
         # first bucket is 0 - 5.2, in 3 directions, and subsequent buckets
         # are on top of that
-        _, self.coordinates, cell = read_xyz(
+        _, self.coordinates, cell, pbc = read_xyz(
             (Path(__file__).resolve().parent / "resources") / "tight_cell.xyz"
         )
-        assert cell is not None
+        self.pbc = pbc
         self.cell = cell
 
     def testInit(self):
         self.assertTrue(_offset_idx3().shape == (13, 3))
 
     def testSetupGrid(self):
+        assert self.cell is not None
         grid_shape = setup_grid(
             self.cell,
             self.cutoff,
@@ -51,6 +52,7 @@ class TestCellList(TestCase):
 
     def testFractionalize(self):
         # Coordinate fractionalization
+        assert self.cell is not None
         frac = coords_to_fractional(self.coordinates, self.cell)
         self.assertTrue(~torch.isnan(frac).any())
         self.assertTrue(~torch.isinf(frac).any())
@@ -58,6 +60,7 @@ class TestCellList(TestCase):
         self.assertTrue((frac >= 0.0).all())
 
     def testGridIdx3(self):
+        assert self.cell is not None
         grid_shape = setup_grid(
             self.cell,
             self.cutoff,
@@ -67,6 +70,7 @@ class TestCellList(TestCase):
         self.assertEqual(atom_grid_idx3, atom_grid_idx3_expect)
 
     def testGridIdx(self):
+        assert self.cell is not None
         grid_shape = setup_grid(
             self.cell,
             self.cutoff,
@@ -79,6 +83,7 @@ class TestCellList(TestCase):
         self.assertEqual(grid_idx, grid_idx_compare.view(1, -1))
 
     def testCounts(self):
+        assert self.cell is not None
         grid_numel_expect = 27
         grid_shape = setup_grid(
             self.cell,
@@ -97,6 +102,7 @@ class TestCellList(TestCase):
         self.assertEqual(grid_cumcount, torch.arange(0, 54, 2))
 
     def testImagePairsWithinBuckets(self):
+        assert self.cell is not None
         grid_shape = setup_grid(
             self.cell,
             self.cutoff,
@@ -131,13 +137,11 @@ class TestCellListComparison(ANITestCase):
         # a cutoff of 5.2 and a bucket length of 5.200001
         # first bucket is 0 - 5.2, in 3 directions, and subsequent buckets
         # are on top of that
-        self.species, self.coordinates, cell = read_xyz(
+        self.species, self.coordinates, cell, pbc = read_xyz(
             Path(Path(__file__).parent, "resources", "tight_cell.xyz"),
             device=self.device,
         )
-        self.pbc = torch.tensor(
-            [True, True, True], dtype=torch.bool, device=self.device
-        )
+        self.pbc = pbc
         self.cell = cell
         self.clist = self._setup(CellList())
         self.num_to_test = 10
@@ -218,14 +222,12 @@ class TestCellListComparisonNoPBC(TestCellListComparison):
         # a cutoff of 5.2 and a bucket length of 5.200001
         # first bucket is 0 - 5.2, in 3 directions, and subsequent buckets
         # are on top of that
-        self.species, self.coordinates, cell = read_xyz(
+        self.species, self.coordinates, _, _ = read_xyz(
             Path(Path(__file__).parent, "resources", "tight_cell.xyz"),
             device=self.device,
         )
         self.cell = None
-        self.pbc = torch.tensor(
-            [False, False, False], dtype=torch.bool, device=self.device
-        )
+        self.pbc = None
         self.clist = self._setup(CellList())
         self.num_to_test = 10
 

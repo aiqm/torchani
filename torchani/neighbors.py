@@ -46,9 +46,9 @@ def discard_outside_cutoff(
 # passing an infinite cutoff will only work for non pbc conditions
 # (shift values must be None)
 def narrow_down(
+    cutoff: float,
     elem_idxs: Tensor,
     coords: Tensor,
-    cutoff: float,
     neighbor_idxs: Tensor,
     shifts: tp.Optional[Tensor] = None,
 ) -> Neighbors:
@@ -129,19 +129,19 @@ class Neighborlist(torch.nn.Module):
 
     def forward(
         self,
+        cutoff: float,
         species: Tensor,
         coords: Tensor,
-        cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> Neighbors:
         r"""Calculate all pairs of atoms that are neighbors, given a cutoff.
 
         Args:
-            species: |elem_idxs|
-            coords: |coords|
             cutoff: Cutoff value for the neighborlist. Pairs further away than this
                 are not included.
+            species: |elem_idxs|
+            coords: |coords|
             cell: |cell|
             pbc: |pbc|
         Returns:
@@ -159,31 +159,31 @@ class AllPairs(Neighborlist):
 
     def forward(
         self,
+        cutoff: float,
         species: Tensor,
         coords: Tensor,
-        cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> Neighbors:
-        return all_pairs(species, coords, cutoff, cell, pbc)
+        return all_pairs(cutoff, species, coords, cell, pbc)
 
 
 def all_pairs(
+    cutoff: float,
     species: Tensor,
     coords: Tensor,
-    cutoff: float,
     cell: tp.Optional[Tensor] = None,
     pbc: tp.Optional[Tensor] = None,
 ) -> Neighbors:
-    _validate_inputs(species, coords, cutoff, cell, pbc)
+    _validate_inputs(cutoff, species, coords, cell, pbc)
 
     if pbc is not None:
         assert cell is not None
-        neighbor_idxs, shift_idxs = _all_pairs_pbc(species, cutoff, cell, pbc)
+        neighbor_idxs, shift_idxs = _all_pairs_pbc(cutoff, species, cell, pbc)
         shifts = shift_idxs.to(cell.dtype) @ cell
         # Before screening coords, must map to central cell (not need if no PBC)
         coords = map_to_central(coords, cell, pbc)
-        return narrow_down(species, coords, cutoff, neighbor_idxs, shifts)
+        return narrow_down(cutoff, species, coords, neighbor_idxs, shifts)
     molecs, atoms = species.shape
     # Create a neighborlist for all molecules and all atoms.
     # Later screen dummy atoms
@@ -193,12 +193,12 @@ def all_pairs(
         neighbor_idxs = neighbor_idxs.unsqueeze(1).repeat(1, molecs, 1)
         neighbor_idxs += atoms * torch.arange(molecs, device=device).view(1, -1, 1)
         neighbor_idxs = neighbor_idxs.view(-1).view(2, -1)
-    return narrow_down(species, coords, cutoff, neighbor_idxs)
+    return narrow_down(cutoff, species, coords, neighbor_idxs)
 
 
 def _all_pairs_pbc(
-    species: Tensor,
     cutoff: float,
+    species: Tensor,
     cell: Tensor,
     pbc: Tensor,
 ) -> tp.Tuple[Tensor, Tensor]:
@@ -270,13 +270,13 @@ class CellList(Neighborlist):
 
     def forward(
         self,
+        cutoff: float,
         species: Tensor,
         coords: Tensor,
-        cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> Neighbors:
-        return cell_list(species, coords, cutoff, cell, pbc)
+        return cell_list(cutoff, species, coords, cell, pbc)
 
 
 class AdaptiveList(Neighborlist):
@@ -293,29 +293,29 @@ class AdaptiveList(Neighborlist):
 
     def forward(
         self,
+        cutoff: float,
         species: Tensor,
         coords: Tensor,
-        cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> Neighbors:
         if pbc is not None:
-            return adaptive_list(species, coords, cutoff, cell, pbc, self._thresh)
-        return adaptive_list(species, coords, cutoff, cell, pbc, self._thresh_nopbc)
+            return adaptive_list(cutoff, species, coords, cell, pbc, self._thresh)
+        return adaptive_list(cutoff, species, coords, cell, pbc, self._thresh_nopbc)
 
 
 def adaptive_list(
+    cutoff: float,
     species: Tensor,
     coords: Tensor,
-    cutoff: float,
     cell: tp.Optional[Tensor] = None,
     pbc: tp.Optional[Tensor] = None,
     threshold: int = 190,
 ) -> Neighbors:
     _validate_inputs(
+        cutoff,
         species,
         coords,
-        cutoff,
         cell,
         pbc,
         supports_batches=False,
@@ -323,22 +323,22 @@ def adaptive_list(
     )
     # Forward directly to all_pairs if below threshold or in the non-pbc case
     if coords.shape[1] < threshold:
-        return all_pairs(species, coords, cutoff, cell, pbc)
+        return all_pairs(cutoff, species, coords, cell, pbc)
     # NOTE: This disallows pbc with self interactions, which may or may not be desirable
-    return cell_list(species, coords, cutoff, cell, pbc)
+    return cell_list(cutoff, species, coords, cell, pbc)
 
 
 def cell_list(
+    cutoff: float,
     species: Tensor,
     coords: Tensor,
-    cutoff: float,
     cell: tp.Optional[Tensor] = None,
     pbc: tp.Optional[Tensor] = None,
 ) -> Neighbors:
     _validate_inputs(
+        cutoff,
         species,
         coords,
-        cutoff,
         cell,
         pbc,
         supports_batches=False,
@@ -370,19 +370,19 @@ def cell_list(
         grid_shape = torch.max(grid_shape, grid_shape.new_ones(grid_shape.shape))
 
     # Since coords will be fractionalized they may lie outside the cell before this
-    neighbor_idxs, shift_idxs = _cell_list(displ_coords.detach(), grid_shape, cell, pbc)
+    neighbor_idxs, shift_idxs = _cell_list(grid_shape, displ_coords.detach(), cell, pbc)
     if pbc is not None:
         shifts = shift_idxs.to(cell.dtype) @ cell
         # Before the screening step we map the coords to the central cell,
         # same as with an all-pairs calculation
         coords = map_to_central(coords, cell.detach(), pbc)
-        return narrow_down(species, coords, cutoff, neighbor_idxs, shifts)
-    return narrow_down(species, coords, cutoff, neighbor_idxs)
+        return narrow_down(cutoff, species, coords, neighbor_idxs, shifts)
+    return narrow_down(cutoff, species, coords, neighbor_idxs)
 
 
 def _cell_list(
-    coords: Tensor,  # shape (C, A, 3)
     grid_shape: Tensor,  # shape (3,)
+    coords: Tensor,  # shape (C, A, 3)
     cell: Tensor,  # shape (3, 3)
     pbc: tp.Optional[Tensor],  # shape (3,)
 ) -> tp.Tuple[Tensor, Tensor]:
@@ -757,16 +757,16 @@ class VerletCellList(CellList):
 
     def forward(
         self,
+        cutoff: float,
         species: Tensor,
         coords: Tensor,
-        cutoff: float,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> Neighbors:
         _validate_inputs(
+            cutoff,
             species,
             coords,
-            cutoff,
             cell,
             pbc,
             supports_batches=False,
@@ -798,7 +798,7 @@ class VerletCellList(CellList):
             shift_idxs = self._prev_shift_idxs.to(torch.long)
         else:
             neighbor_idxs, shift_idxs = _cell_list(
-                displ_coords.detach(), grid_shape, cell, pbc
+                grid_shape, displ_coords.detach(), cell, pbc
             )
             self._cache_values(
                 neighbor_idxs, shift_idxs, displ_coords.detach(), cell.detach()
@@ -806,8 +806,8 @@ class VerletCellList(CellList):
         if pbc is not None:
             shifts = shift_idxs.to(cell.dtype) @ cell
             coords = map_to_central(coords, cell.detach(), pbc)
-            return narrow_down(species, coords, cutoff, neighbor_idxs, shifts)
-        return narrow_down(species, coords, cutoff, neighbor_idxs)
+            return narrow_down(cutoff, species, coords, neighbor_idxs, shifts)
+        return narrow_down(cutoff, species, coords, neighbor_idxs)
 
     def _cache_values(
         self,
@@ -885,9 +885,9 @@ def _parse_neighborlist(neighborlist: NeighborlistArg = "base") -> Neighborlist:
 
 # Used to check the correctness of the cell and pbc inputs for fn and met that take them
 def _validate_inputs(
+    cutoff: float,
     species: Tensor,
     coords: Tensor,
-    cutoff: float,
     cell: tp.Optional[Tensor],
     pbc: tp.Optional[Tensor],
     supports_batches: bool = True,

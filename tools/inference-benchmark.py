@@ -139,7 +139,7 @@ def cmd(
             models[opt] = tp.cast(ANI, torch.compile(model))
 
     # Loop over molecules and calculate timings
-    species, coordinates, _ = read_xyz(xyz_file_path, device=device)
+    species, coordinates, _, _ = read_xyz(xyz_file_path, device=device)
     for opt, m in models.items():
         console.print(
             "Profiling energy *and* force."

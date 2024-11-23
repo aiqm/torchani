@@ -151,9 +151,9 @@ class TestExport(ANITestCasePT2):
             args=(molec.atomic_nums, molec.coords, 5.2, None, None),
             dynamic_shapes={
                 # specialize to 1 molecule
+                "cutoff": stat,  # cutoff is fixed on export
                 "species": (stat, atoms_d),
                 "coords": (stat, atoms_d, stat),
-                "cutoff": stat,  # cutoff is fixed on export
                 "cell": (stat, stat),
                 "pbc": (stat,),
             },
@@ -175,12 +175,12 @@ class TestExport(ANITestCasePT2):
             cell_ten = None
         _ = torch.export.export(
             AllPairs(),
-            args=(molec.atomic_nums, molec.coords, 5.2, cell_ten, pbc_ten),
+            args=(5.2, molec.atomic_nums, molec.coords, cell_ten, pbc_ten),
             dynamic_shapes={
                 # specialize to 1 molecule
+                "cutoff": None,  # cutoff is fixed on export
                 "species": (stat, atoms),
                 "coords": (stat, atoms, stat),
-                "cutoff": None,  # cutoff is fixed on export
                 "cell": cell_dim,
                 "pbc": pbc_dim,
             },

@@ -5,9 +5,49 @@ import warnings
 import torch
 from torch import Tensor
 
-from torchani.tuples import SpeciesEnergies
 from torchani.nn._core import AtomicContainer
-from torchani.nn._containers import ANINetworks, ANIEnsemble
+from torchani.nn._containers import ANINetworks
+
+
+# Legacy API
+class ANIModel(ANINetworks):
+    def __init__(self, modules: tp.Any) -> None:
+        warnings.warn(
+            "`torchani.nn.ANIModel` is deprecated, its use is discouraged."
+            " Please use `torchani.nn.ANINetworks` instead, which is equivalent."
+        )
+        super().__init__(modules, alias=True)
+
+
+# Legacy API
+# Modified Sequential module that accepts Tuple type as input
+class Sequential(torch.nn.ModuleList):
+    r"""Create a pipeline of modules, like `torch.nn.Sequential`
+
+    Deprecated:
+        Use of `torchani.nn.Sequential` is strongly discouraged. Please use
+        `torchani.assembly.Assembler`, or write a `torch.nn.Module`. For more info
+        consult `the migration guide <torchani-migrating>`
+    """
+
+    def __init__(self, *modules):
+        warnings.warn(
+            "Use of `torchani.nn.Sequential` is strongly discouraged."
+            "Please use `torchani.assembly.Assembler`, or write a `torch.nn.Module`."
+            " For more info consult 'Migrating to TorchANI 3' in the user guide."
+        )
+        super().__init__(modules)
+
+    def forward(
+        self,
+        input_: tp.Tuple[Tensor, Tensor],
+        cell: tp.Optional[Tensor] = None,
+        pbc: tp.Optional[Tensor] = None,
+    ):
+        r"""Return the result of chaining together the calculation of the modules"""
+        for module in self:
+            input_ = module(input_, cell, pbc)
+        return input_
 
 
 # Hack: ANINetworks that return zeros
@@ -50,93 +90,3 @@ class _ANINetworksDiscardFirstScalar(ANINetworks):
     @torch.jit.unused
     def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
         return self
-
-
-# Legacy API
-# Modified Sequential module that accept Tuple type as input
-class Sequential(torch.nn.ModuleList):
-    r"""Create a pipeline of modules, like `torch.nn.Sequential`
-
-    Deprecated:
-        Use of `torchani.nn.Sequential` is strongly discouraged. Please use
-        `torchani.assembly.Assembler`, or write a `torch.nn.Module`. For more info
-        consult `the migration guide <torchani-migrating>`
-    """
-
-    def __init__(self, *modules):
-        warnings.warn(
-            "Use of `torchani.nn.Sequential` is strongly discouraged."
-            "Please use `torchani.assembly.Assembler`, or write a `torch.nn.Module`."
-            " For more info consult 'Migrating to TorchANI 3' in the user guide."
-        )
-        super().__init__(modules)
-
-    def forward(
-        self,
-        input_: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-    ):
-        r"""Return the result of chaining together the calculation of the modules"""
-        for module in self:
-            if hasattr(module, "call"):
-                input_ = module.call(input_, cell=cell, pbc=pbc)
-            else:
-                input_ = module(input_, cell=cell, pbc=pbc)
-        return input_
-
-
-class ANIModel(ANINetworks):
-    r"""Legacy version of `torchani.nn.ANINetworks`
-
-    Deprecated:
-        `torchani.nn.ANIModel` is deprecated, its use is discouraged.
-        Please use `torchani.nn.ANINetworks` instead.
-        For more info consult `the migration guide <torchani-migrating>`.
-    """
-
-    def __init__(self, modules: tp.Any) -> None:
-        warnings.warn(
-            "`torchani.nn.ANIModel` is deprecated, its use is discouraged."
-            " Please use `torchani.nn.ANINetworks` instead."
-            " For more info consult 'Migrating to TorchANI 3' in the user guide."
-        )
-        super().__init__(modules, alias=True)
-
-    # Signature is incompatible since this class is legacy
-    def forward(  # type: ignore
-        self,
-        species_aevs: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-    ) -> SpeciesEnergies:
-        r"""Return a tuple species-energies from a species-aevs tuple"""
-        return self.call(species_aevs, cell, pbc)
-
-
-class Ensemble(ANIEnsemble):
-    r"""Legacy version of `torchani.nn.ANIEnsemble`
-
-    Deprecated:
-        `torchani.nn.Ensemble` is deprecated, its use is discouraged.
-        Please use `torchani.nn.ANIEnsemble` instead.
-        For more info consult `the migration guide <torchani-migrating>`.
-    """
-
-    def __init__(self, modules: tp.Any) -> None:
-        warnings.warn(
-            "`torchani.nn.Ensemble` is deprecated, its use is discouraged."
-            " Please use `torchani.nn.ANIEnsemble` instead."
-            " For more info consult 'Migrating to TorchANI 3' in the user guide."
-        )
-        super().__init__(modules, repeats=True)
-
-    # Signature is incompatible since this class is legacy
-    def forward(  # type: ignore
-        self,
-        species_aevs: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-    ) -> SpeciesEnergies:
-        r"""Return a tuple species-energies from a species-aevs tuple"""
-        return self.call(species_aevs, cell, pbc)

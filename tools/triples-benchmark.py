@@ -109,7 +109,7 @@ def run(
                 n,
                 cell_side,
                 pbc=False,
-                device=tp.cast(tp.Literal["cpu", "cuda"], device.type),
+                device=device,
                 seed=1234,
             )
             slice_ = slice(None, num_warm_up)
@@ -122,13 +122,7 @@ def run(
             ):
                 coords = _coords.unsqueeze(0)
                 elem_idxs = converter(_species.unsqueeze(0))
-                neighbors = nl(
-                    elem_idxs,
-                    coords,
-                    cutoff=cutoff,
-                    cell=None,
-                    pbc=None,
-                )
+                neighbors = nl(cutoff, elem_idxs, coords, cell=None, pbc=None)
                 _ = fn(neighbors)
                 if cuda:
                     torch.cuda.empty_cache()
@@ -144,13 +138,7 @@ def run(
             ):
                 coords = _coords.unsqueeze(0)
                 elem_idxs = converter(_species.unsqueeze(0))
-                neighbors = nl(
-                    elem_idxs,
-                    coords=coords,
-                    cutoff=cutoff,
-                    cell=None,
-                    pbc=None,
-                )
+                neighbors = nl(cutoff, elem_idxs, coords=coords, cell=None, pbc=None)
                 timer.start_range(str(n))
                 _ = fn(neighbors)
                 timer.end_range(str(n))

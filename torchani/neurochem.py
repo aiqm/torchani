@@ -25,7 +25,7 @@ from torchani.assembly import ANI
 from torchani.aev import AEVComputer
 from torchani.nn import (
     ANINetworks,
-    ANIEnsemble,
+    Ensemble,
     AtomicNetwork,
     AtomicContainer,
     TightCELU,
@@ -319,8 +319,8 @@ def load_member(symbols: tp.Sequence[str], model_dir: StrPath) -> ANINetworks:
 
 def load_ensemble(
     symbols: tp.Sequence[str], prefix: StrPath, count: int
-) -> ANIEnsemble:
-    r"""Loads `torchani.nn.ANIEnsemble` from NeuroChem's dirs with a given prefix
+) -> Ensemble:
+    r"""Loads `torchani.nn.Ensemble` from NeuroChem's dirs with a given prefix
 
     Args:
         symbols: |symbols|
@@ -328,7 +328,7 @@ def load_ensemble(
         count: Number of models in the ensemble.
     """
     prefix = Path(prefix)
-    return ANIEnsemble(
+    return Ensemble(
         [load_member(symbols, model_dir_from_prefix(prefix, i)) for i in range(count)]
     )
 

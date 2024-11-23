@@ -39,9 +39,9 @@ class Potential(_ChemModule):
         coords: Tensor,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
-        periodic_table_index: bool = True,
         atomic: bool = False,
         ensemble_values: bool = False,
+        atomic_nums_input: bool = True,
     ) -> Tensor:
         r"""
         Outputs energy, as calculated by the potential
@@ -49,7 +49,7 @@ class Potential(_ChemModule):
         Output shape depends on the value of ``atomic``, it is either
         ``(molecs, atoms)`` or ``(molecs,)``
         """
-        if periodic_table_index:
+        if atomic_nums_input:
             elem_idxs = self._conv_tensor.to(species.device)[species]
         else:
             elem_idxs = species
@@ -58,9 +58,9 @@ class Potential(_ChemModule):
         assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
 
         if coords.shape[0] == 1:
-            neighbors = adaptive_list(elem_idxs, coords, self.cutoff, cell, pbc)
+            neighbors = adaptive_list(self.cutoff, elem_idxs, coords, cell, pbc)
         else:
-            neighbors = all_pairs(elem_idxs, coords, self.cutoff, cell, pbc)
+            neighbors = all_pairs(self.cutoff, elem_idxs, coords, cell, pbc)
         return self.compute_from_neighbors(
             elem_idxs, coords, neighbors, atomic, ensemble_values
         )

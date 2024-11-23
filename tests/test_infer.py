@@ -59,7 +59,7 @@ class TestInfer(ANITestCase):
             # Skip 6W8H.xyz (large, slow) if device is cpu
             if self.device == "cpu" and file.startswith("6W8H"):
                 continue
-            species, coordinates, _ = read_xyz(
+            species, coordinates, _, _ = read_xyz(
                 (Path(__file__).parent / "resources") / file,
                 device=self.device,
                 dtype=torch.float,

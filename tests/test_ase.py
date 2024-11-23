@@ -145,16 +145,17 @@ class TestASE(ANITestCase):
         # absolute difference
         # Note that there are 4 benzene molecules, thus, 48 atoms in
         # Benzene.xyz
-        species, coordinates, cell = read_xyz(
+        species, coordinates, cell, pbc = read_xyz(
             (Path(__file__).parent / "resources") / "benzene.xyz"
         )
+        assert pbc is not None
         assert cell is not None
         benzene = Atoms(
             numbers=species.squeeze(0).numpy(),
             positions=coordinates.squeeze(0).numpy(),
             cell=cell.numpy(),
-            velocities=np.full((48, 3), 1e-15),  # Set velocities to very small value
-            pbc=True,
+            velocities=np.full((species.shape[1], 3), 1e-15),  # Set vels to small value
+            pbc=pbc.numpy(),
         )
         calculator = model.ase(stress_kind="fdotr" if use_fdotr else "scaling")
         benzene.calc = calculator

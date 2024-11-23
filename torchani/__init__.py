@@ -43,11 +43,11 @@ from torchani import (
 
 # Legacy API, don't document
 from torchani.utils import EnergyShifter
-from torchani.nn import ANIModel, Ensemble
+from torchani.nn import ANIModel
 
 # Dump into global namespace for convenience
 from torchani.aev import AEVComputer
-from torchani.nn import ANINetworks, ANIEnsemble, SpeciesConverter
+from torchani.nn import ANINetworks, Ensemble, SpeciesConverter
 from torchani.sae import SelfEnergy
 from torchani.assembly import ANI
 
@@ -89,7 +89,7 @@ __all__ = [
     "SpeciesConverter",
     "AEVComputer",
     "ANINetworks",
-    "ANIEnsemble",
+    "Ensemble",
     "SelfEnergy",
     "ANI",
 ]

@@ -67,7 +67,7 @@ def _make_idx_list(
 
 
 class BmmEnsemble(AtomicContainer):
-    r"""The inference-optimized analogue of an `ANIEnsemble`
+    r"""The inference-optimized analogue of a `torchani.nn.Ensemble`
 
     Combines all networks of an ensemble that correspond to the same element into a
     single `BmmAtomicNetwork`.

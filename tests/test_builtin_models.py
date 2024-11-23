@@ -63,7 +63,7 @@ class TestExternalNeighborsEntryPoint(ANITestCase):
         # Emulate external neighbors:
         # - don't pass diff_vectors or distances.
         # - pass shift values
-        neighbors = model.neighborlist(species, coords, model.cutoff, cell, pbc)
+        neighbors = model.neighborlist(model.cutoff, species, coords, cell, pbc)
         shifts = reconstruct_shifts(coords, neighbors)
         if not charges:
             _, e = model((species, coords), cell, pbc)
@@ -92,7 +92,7 @@ class TestInternalNeighborsEntryPoint(TestExternalNeighborsEntryPoint):
         coords, cell = compute_bounding_cell(coords.detach(), eps=1e-3)
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         elem_idxs = model.species_converter(species)
-        neighbors = model.neighborlist(elem_idxs, coords, model.cutoff, cell, pbc)
+        neighbors = model.neighborlist(model.cutoff, elem_idxs, coords, cell, pbc)
         e2 = model.compute_from_neighbors(elem_idxs, coords, neighbors)
         _, e = model((species, coords), cell, pbc)
         self.assertEqual(e, e2)

@@ -94,7 +94,7 @@ def run(
                 n,
                 cell_side,
                 pbc=pbc,
-                device=tp.cast(tp.Literal["cpu", "cuda"], device.type),
+                device=device,
                 seed=1234,
             )
             slice_ = slice(None, num_warm_up)
@@ -106,10 +106,10 @@ def run(
                 leave=False,
             ):
                 _ = nl(
+                    cutoff,
                     _species.unsqueeze(0),
                     _coords.unsqueeze(0),
-                    cutoff=cutoff,
-                    cell=molecs.cell if molecs.pbc.any() else None,
+                    cell=molecs.cell,
                     pbc=molecs.pbc,
                 )
                 if cuda:
@@ -126,10 +126,10 @@ def run(
             ):
                 timer.start_range(str(n))
                 _ = nl(
+                    cutoff,
                     _species.unsqueeze(0),
                     _coords.unsqueeze(0),
-                    cutoff=cutoff,
-                    cell=molecs.cell if molecs.pbc.any() else None,
+                    cell=molecs.cell,
                     pbc=molecs.pbc,
                 )
                 timer.end_range(str(n))

@@ -1,3 +1,4 @@
+import warnings
 import os
 import typing as tp
 
@@ -200,16 +201,18 @@ class AEVComputer(torch.nn.Module):
         Returns:
             |aevs|
         """
-        if not torch.jit.is_scripting():
+        if not (torch.jit.is_scripting() or torch.compiler.is_compiling()):
             if isinstance(elem_idxs, tuple):
-                raise ValueError(
+                warnings.warn(
                     "You seem to be attempting to call "
                     "`_, aevs = aev_computer((species, coords), cell, pbc)`. "
-                    "This signature was modified in TorchANI 3. "
+                    "This signature was modified in TorchANI 3, and will be removed"
                     "Use `aevs = aev_computer(species, coords, cell, pbc)` instead."
-                    "If you want the old behavior (discouraged) use"
-                    " `_, aevs = aev_computer.call((species, coords), cell, pbc)`."
                 )
+                cell = coords
+                pbc = cell
+                _elem_idxs, coords = elem_idxs
+                return SpeciesAEV(_elem_idxs, self(_elem_idxs, coords, cell, pbc))
             if pbc is not None and not pbc.any():
                 raise ValueError(
                     "pbc = torch.tensor([False, False, False]) is not supported anymore"
@@ -220,24 +223,20 @@ class AEVComputer(torch.nn.Module):
         assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
         assert self.angular.cutoff < self.radial.cutoff
 
+        if self._strategy == "cuaev-fused":
+            if pbc is not None:
+                raise RuntimeError("cuAEV-fused doesn't support PBC")
+            return self._cuaev_fused(elem_idxs, coords)
+        if self._strategy == "cuaev" and pbc is None:
+            return self._cuaev_fused(elem_idxs, coords)
+
         # IMPORTANT: If a neighborlist is used, the coords that input to neighborlist
         # are **not required** to be mapped to the central cell for pbc calculations.
-        cutoff = self.radial.cutoff
-        if self._strategy == "cuaev":  # Dispatch the best cuaev for this situation
-            if pbc is None:
-                return self._cuaev_fused(elem_idxs, coords)
-            neighbors = self.neighborlist(elem_idxs, coords, cutoff, cell, pbc)
+        neighbors = self.neighborlist(self.radial.cutoff, elem_idxs, coords, cell, pbc)
+        if self._strategy == "cuaev" or self._strategy == "cuaev-interface":
             return self._cuaev_compute_from_neighbors(elem_idxs, coords, neighbors)
         if self._strategy == "pyaev":
-            neighbors = self.neighborlist(elem_idxs, coords, cutoff, cell, pbc)
             return self._pyaev_compute_from_neighbors(elem_idxs, coords, neighbors)
-        if self._strategy == "cuaev-interface":
-            neighbors = self.neighborlist(elem_idxs, coords, cutoff, cell, pbc)
-            return self._cuaev_compute_from_neighbors(elem_idxs, coords, neighbors)
-        if self._strategy == "cuaev-fused":
-            if pbc is None:
-                return self._cuaev_fused(elem_idxs, coords)
-            raise ValueError("cuaev-fused strategy doesn't support PBC")
         raise RuntimeError(f"Invalid strategy {self._strategy}")
 
     def compute_from_neighbors(
@@ -259,6 +258,8 @@ class AEVComputer(torch.nn.Module):
             return self._pyaev_compute_from_neighbors(elem_idxs, coords, neighbors)
         if self._strategy == "cuaev" or self._strategy == "cuaev-interface":
             return self._cuaev_compute_from_neighbors(elem_idxs, coords, neighbors)
+        if self._strategy == "cuaev-fused":
+            raise RuntimeError("cuAEV-fused doesn't support `compute_from_neighbors`")
         raise RuntimeError(f"Invalid strategy {self._strategy}")
 
     def _pyaev_compute_from_neighbors(
@@ -654,16 +655,6 @@ class AEVComputer(torch.nn.Module):
             strategy=strategy,
             neighborlist=neighborlist,
         )
-
-    def call(
-        self,
-        input_: tp.Tuple[Tensor, Tensor],
-        cell: tp.Optional[Tensor] = None,
-        pbc: tp.Optional[Tensor] = None,
-    ) -> SpeciesAEV:
-        r""":meta private:"""
-        elem_idxs, coords = input_
-        return SpeciesAEV(elem_idxs, self(elem_idxs, coords, cell, pbc))
 
     # Needed for bw compatibility
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs) -> None:

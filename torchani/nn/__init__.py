@@ -2,13 +2,13 @@ r"""Classes that represent atomic (and groups of element-specific) neural networ
 
 The most important classes in this module are `AtomicNetwork`, which represents a
 callable that computes scalars from local atomic features, `ANINetworks`, and
-`ANIEnsemble`, which collect groups of element-specific neural networks and perform
+`Ensemble`, which collect groups of element-specific neural networks and perform
 different reduction operations over them.
 
 It also contains useful factory methods to instantiate neural networks for different
 elements.
 
-Inference-optimized versions of `ANIEnsemble` and `AtomicNetwork`, recommended for
+Inference-optimized versions of `Ensemble` and `AtomicNetwork`, recommended for
 calculations of single molecules, molecular dynamics and geometry optimizations, are
 also provided.
 """
@@ -28,12 +28,8 @@ from torchani.nn._factories import (
     make_dr_network,
 )
 from torchani.nn._infer import BmmAtomicNetwork, BmmEnsemble, BmmLinear, MNPNetworks
-from torchani.nn._containers import ANINetworks, ANIEnsemble, SpeciesConverter
-from torchani.nn._internal import (
-    ANIModel,
-    Ensemble,
-    Sequential,
-)
+from torchani.nn._containers import ANINetworks, Ensemble, SpeciesConverter
+from torchani.nn._internal import Sequential, ANIModel
 
 __all__ = [
     # Core
@@ -49,7 +45,7 @@ __all__ = [
     "make_dr_network",
     # Containers
     "ANINetworks",
-    "ANIEnsemble",
+    "Ensemble",
     "SpeciesConverter",
     # Inference optimization
     "MNPNetworks",
@@ -60,6 +56,5 @@ __all__ = [
     "TightCELU",
     # Legacy
     "ANIModel",
-    "Ensemble",
     "Sequential",
 ]

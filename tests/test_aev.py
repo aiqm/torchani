@@ -271,7 +271,7 @@ class TestPBCSeeEachOther(TestCase):
 
         for xyz2 in xyz2s:
             coords = torch.stack([xyz1, xyz2]).to(torch.double).unsqueeze(0)
-            atom_index12, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
+            atom_index12, _, _ = self.neighborlist(1.0, species, coords, cell, pbc)
             atom_index1, atom_index2 = atom_index12.unbind(0)
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
@@ -288,7 +288,7 @@ class TestPBCSeeEachOther(TestCase):
             xyz2[i] = 9.9
 
             coords = torch.stack([xyz1, xyz2]).unsqueeze(0)
-            atom_index12, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
+            atom_index12, _, _ = self.neighborlist(1.0, species, coords, cell, pbc)
             atom_index1, atom_index2 = atom_index12.unbind(0)
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
@@ -308,7 +308,7 @@ class TestPBCSeeEachOther(TestCase):
                 xyz2[j] = new_j
 
             coords = torch.stack([xyz1, xyz2]).unsqueeze(0)
-            atom_index12, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
+            atom_index12, _, _ = self.neighborlist(1.0, species, coords, cell, pbc)
             atom_index1, atom_index2 = atom_index12.unbind(0)
             self.assertEqual(atom_index1.tolist(), [0])
             self.assertEqual(atom_index2.tolist(), [1])
@@ -326,7 +326,7 @@ class TestPBCSeeEachOther(TestCase):
         xyz2 = torch.tensor([10.0, 0.1, 0.1], dtype=torch.double)
 
         coords = torch.stack([xyz1, xyz2]).unsqueeze(0)
-        atom_index12, _, _ = self.neighborlist(species, coords, 1.0, cell, pbc)
+        atom_index12, _, _ = self.neighborlist(1.0, species, coords, cell, pbc)
         atom_index1, atom_index2 = atom_index12.unbind(0)
         self.assertEqual(atom_index1.tolist(), [0])
         self.assertEqual(atom_index2.tolist(), [1])
@@ -390,12 +390,13 @@ class TestAEVOnBoundary(TestCase):
 class TestAEVOnBenzenePBC(TestCase):
     def setUp(self):
         self.aev_computer = AEVComputer.like_1x()
-        self.species, self.coords, cell = read_xyz(
+        self.species, self.coords, cell, pbc = read_xyz(
             (Path(__file__).parent / "resources") / "benzene.xyz"
         )
         assert cell is not None
+        assert pbc is not None
         self.cell = cell
-        self.pbc = torch.tensor([True, True, True], dtype=torch.bool)
+        self.pbc = pbc
         self.species = SpeciesConverter(["H", "C", "N", "O"])(self.species)
         self.aev = self.aev_computer(self.species, self.coords, self.cell, self.pbc)
         self.natoms = self.aev.shape[1]
