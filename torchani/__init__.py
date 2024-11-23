@@ -49,7 +49,8 @@ from torchani.nn import ANIModel
 from torchani.aev import AEVComputer
 from torchani.nn import ANINetworks, Ensemble, SpeciesConverter
 from torchani.sae import SelfEnergy
-from torchani.assembly import ANI
+from torchani.assembly import ANI, ANIq
+from torchani._single_point import single_point
 
 # NOTE: ase is an optional dependency so don't import here
 
@@ -92,6 +93,8 @@ __all__ = [
     "Ensemble",
     "SelfEnergy",
     "ANI",
+    "ANIq",
+    "single_point",
 ]
 
 # Disable TF32 since it catastrophically degrades accuracy of ANI models

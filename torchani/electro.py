@@ -77,7 +77,7 @@ class ChargeNormalizer(torch.nn.Module):
         weights = self.weights[elem_idxs]
         weights = weights.masked_fill(elem_idxs == -1, 0.0)
         if self.scale_weights_by_charges_squared:
-            weights *= raw_charges**2
+            weights = weights * raw_charges**2
         return weights / torch.sum(weights, dim=-1, keepdim=True)
 
     def forward(

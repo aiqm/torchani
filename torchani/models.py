@@ -13,7 +13,7 @@ time they are instantiated. If this is an issue for your application we recommen
 pre-download the parameters by instantiating the models once before use.
 
 The models can be used directly once they are instantiated. Alternatively, they can be
-converted to an ASE calculator by calling `torchani.assembly.ANI.ase`.
+converted to an ASE calculator by calling ``ANI.ase``.
 
 Some models have an interanl set of neural networks (`torchani.nn.Ensemble`), and
 they output their averaged values. Individual members of these ensembles can be accessed
@@ -122,7 +122,7 @@ def ANI1x(
     asm.set_aev_computer(angular="ani1x", radial="ani1x", strategy=strategy)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
-    model = asm.assemble(8)
+    model = tp.cast(ANI, asm.assemble(8))
     model.load_state_dict(_fetch_state_dict("ani1x_state_dict.pt", private=False))
     model.requires_grad_(False)
     # TODO: Fix this
@@ -159,7 +159,7 @@ def ANI1ccx(
     asm.set_atomic_networks(make_1x_network)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("ccsd(t)star-cbs")
-    model = asm.assemble(8)
+    model = tp.cast(ANI, asm.assemble(8))
     model.load_state_dict(_fetch_state_dict("ani1ccx_state_dict.pt", private=False))
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
@@ -194,7 +194,7 @@ def ANI2x(
     asm.set_neighborlist(neighborlist)
     # The self energies are overwritten by the state dict
     asm.set_gsaes_as_self_energies("wb97x-631gd")
-    model = asm.assemble(8)
+    model = tp.cast(ANI, asm.assemble(8))
     model.load_state_dict(_fetch_state_dict("ani2x_state_dict.pt", private=False))
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
@@ -208,7 +208,7 @@ def ANImbis(
     periodic_table_index: bool = True,
     device: Device = None,
     dtype: DType = None,
-) -> ANI:
+) -> ANIq:
     r"""
     Experimental ANI-2x model with MBIS charges
     """
@@ -228,7 +228,7 @@ def ANImbis(
     asm.set_neighborlist(neighborlist)
     # The self energies are overwritten by the state dict
     asm.set_gsaes_as_self_energies("wb97x-631gd")
-    model = asm.assemble(8)
+    model = tp.cast(ANIq, asm.assemble(8))
 
     ani2x_state_dict = _fetch_state_dict("ani2x_state_dict.pt")
     energy_nn_state_dict = {
@@ -272,7 +272,7 @@ def ANIala(
     asm.set_atomic_networks(make_ala_network)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
-    model = asm.assemble(1)
+    model = tp.cast(ANI, asm.assemble(1))
     model.load_state_dict(_fetch_state_dict("aniala_state_dict.pt", private=True))
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
@@ -308,7 +308,7 @@ def ANIdr(
     )
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("b973c-def2mtzvp")
-    model = asm.assemble(7)
+    model = tp.cast(ANI, asm.assemble(7))
     model.load_state_dict(_fetch_state_dict("anidr_state_dict.pt", private=True))
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)

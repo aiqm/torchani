@@ -25,7 +25,7 @@ class TestActiveModelsPoints(ANITestCase):
     def testANI2x(self) -> None:
         self._test_model(ANI2x().to(self.device), self._setup(ANI2x()))
 
-    def _test_model(self, model, modifiable_model, charges: bool = False):
+    def _test_model(self, model, modifiable_model):
         properties = next(iter(self.ds))
         species = properties["species"].to(self.device)
         coords = properties["coordinates"].to(self.device, dtype=torch.float)
@@ -52,9 +52,9 @@ class TestExternalNeighborsEntryPoint(ANITestCase):
         self._test_model(self._setup(ANIdr()))
 
     def testANImbis(self) -> None:
-        self._test_model(self._setup(ANImbis()), charges=True)
+        self._test_model(self._setup(ANImbis()))
 
-    def _test_model(self, model, charges: bool = False):
+    def _test_model(self, model):
         properties = next(iter(self.ds))
         species = properties["species"].to(self.device)
         coords = properties["coordinates"].to(self.device, dtype=torch.float)
@@ -65,27 +65,20 @@ class TestExternalNeighborsEntryPoint(ANITestCase):
         # - pass shift values
         neighbors = model.neighborlist(model.cutoff, species, coords, cell, pbc)
         shifts = reconstruct_shifts(coords, neighbors)
-        if not charges:
-            _, e = model((species, coords), cell, pbc)
-            e2 = model.compute_from_external_neighbors(
-                species, coords, neighbors.indices, shifts
-            )
+        result = model.compute_from_external_neighbors(
+            species, coords, neighbors.indices, shifts
+        )
+        out = model((species, coords), cell, pbc)
+        if hasattr(out, "atomic_charges"):
+            self.assertEqual(out.atomic_charges, result.scalars)
         else:
-            _, e, q = model.energies_and_atomic_charges((species, coords), cell, pbc)
-            _, e2, q2 = model.energies_and_atomic_charges_from_external_neighbors(
-                species, coords, neighbors.indices, shifts
-            )
-            self.assertEqual(q, q2)
-        self.assertEqual(e, e2)
+            self.assertEqual(None, result.scalars)
+        self.assertEqual(out.energies, result.energies)
 
 
 @expand()
 class TestInternalNeighborsEntryPoint(TestExternalNeighborsEntryPoint):
-    def testANImbis(self) -> None:
-        self._test_model(self._setup(ANImbis()))
-
-    def _test_model(self, model, charges: bool = False):
-        assert not charges, "Not yet implemented for charges"
+    def _test_model(self, model):
         properties = next(iter(self.ds))
         species = properties["species"].to(self.device)
         coords = properties["coordinates"].to(self.device, dtype=torch.float)
@@ -93,9 +86,13 @@ class TestInternalNeighborsEntryPoint(TestExternalNeighborsEntryPoint):
         pbc = torch.tensor([True, True, True], dtype=torch.bool, device=self.device)
         elem_idxs = model.species_converter(species)
         neighbors = model.neighborlist(model.cutoff, elem_idxs, coords, cell, pbc)
-        e2 = model.compute_from_neighbors(elem_idxs, coords, neighbors)
-        _, e = model((species, coords), cell, pbc)
-        self.assertEqual(e, e2)
+        result = model.compute_from_neighbors(elem_idxs, coords, neighbors)
+        out = model((species, coords), cell, pbc)
+        if hasattr(out, "atomic_charges"):
+            self.assertEqual(out.atomic_charges, result.scalars)
+        else:
+            self.assertEqual(None, result.scalars)
+        self.assertEqual(out.energies, result.energies)
 
 
 @expand(jit=True, device="cpu")
@@ -116,25 +113,11 @@ class TestBuiltinModels(ANITestCase):
             properties["species"].to(self.device),
             properties["coordinates"].to(self.device, dtype=torch.float),
         )
-        _, e = model(input_)
-        _, e2 = torch.jit.script(model)(input_)
-        self.assertEqual(e, e2)
-
-    def _test_ensemble_charges(self, ensemble):
-        self._test_model_charges(ensemble)
-        for m in ensemble:
-            self._test_model_charges(m)
-
-    def _test_model_charges(self, model):
-        properties = next(iter(self.ds))
-        input_ = (
-            properties["species"].to(self.device),
-            properties["coordinates"].to(self.device, dtype=torch.float),
-        )
-        _, e, q = model.energies_and_atomic_charges(input_)
-        _, e2, q2 = torch.jit.script(model).energies_and_atomic_charges(input_)
-        self.assertEqual(e, e2)
-        self.assertEqual(q, q2)
+        result = model(input_)
+        jit_result = torch.jit.script(model)(input_)
+        if hasattr(result, "atomic_charges"):
+            self.assertEqual(result.atomic_charges, jit_result.atomic_charges)
+        self.assertEqual(result.energies, jit_result.energies)
 
     def _test_ensemble(self, ensemble):
         self._test_model(ensemble)
@@ -149,9 +132,6 @@ class TestBuiltinModels(ANITestCase):
 
     def testANImbis(self):
         self._test_ensemble(ANImbis().to(self.device))
-
-    def testANImbis_charges(self):
-        self._test_ensemble_charges(ANImbis().to(self.device))
 
 
 if __name__ == "__main__":

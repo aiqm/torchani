@@ -33,7 +33,7 @@ class Calculator(AseCalculator):
     """TorchANI calculator for ASE
 
     ANI models can be converted to their ASE Calculator form by calling the
-    `torchani.assembly.ANI.ase` method.
+    ``ANI.ase`` method.
 
     .. code-block:: python
 
@@ -129,7 +129,8 @@ class Calculator(AseCalculator):
                     neighbors.diff_vectors.norm(2, -1),
                     neighbors.diff_vectors,
                 )
-            energy = self.model.compute_from_neighbors(elem_idxs, coords, neighbors)
+            result = self.model.compute_from_neighbors(elem_idxs, coords, neighbors)
+            energy = result.energies
         else:
             energy = self.model((species, coords), cell, pbc).energies
         energy = energy * ase.units.Hartree

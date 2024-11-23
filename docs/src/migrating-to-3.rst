@@ -23,6 +23,7 @@ If you were previously calling torchani models as:
 .. code-block:: python
     
     import torchani
+
     species_indices = torch.tensor([[0, 1, 1, 0]])
     coords = torch.tensor(...)
     model = torchani.models.ANI1x()
@@ -31,30 +32,32 @@ If you were previously calling torchani models as:
     # or
     energies = model((species_indices, coords)).energies
 
-you should now do this instead:
+you may prefer to do instead:
 
 .. code-block:: python
     
     import torchani
+    from torchani import single_point
+
     atomic_nums = torch.tensor([[1, 6, 6, 1]])
     coords = torch.tensor(...)
     model = torchani.models.ANI1x()
 
-    result = model.sp(atomic_nums, coords)
+    result = single_point(model, atomic_nums, coords)
     energies = result["energies"]
 
-Here "sp" stands for a "single-point calculation" (typical chemistry jargon). This was
-changed since it allows models to output more than a single scalar value, which is
-necessary e.g. for models that output charges. Additionally, the new version is simpler
-and allows for outputting forces and hessians without any familiarity with torch (no
-need to do anything with `torch.Tensor.requires_grad`). Calling a model directly is
-still possible, but *discouraged*.
+Here "single-point" is typical chemistry jargon for "calculation on fixed molecule
+coords". This was changed since it allows models to output more than a single scalar
+value, which is necessary e.g. for models that output charges. Additionally, the new
+allows for outputting forces and hessians without any familiarity with torch (no need to
+do anything with `torch.Tensor.requires_grad`). Calling a model directly is still
+possible.
 
 To output other quantities of interest use:
 
 .. code-block:: python
     
-    result = model.sp(atomic_nums, coords, forces=True, hessians=True)
+    result = single_point(model, atomic_nums, coords, forces=True, hessians=True)
     atomic_charges = result["atomic_charges"]  # Only for models that support this
     energies = result["energies"]
     forces = result["forces"]

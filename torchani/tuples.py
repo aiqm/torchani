@@ -5,6 +5,11 @@ import typing as tp
 from torch import Tensor
 
 
+class EnergiesScalars(tp.NamedTuple):
+    energies: Tensor
+    scalars: tp.Optional[Tensor] = None
+
+
 class EnergiesForces(tp.NamedTuple):
     energies: Tensor
     forces: Tensor

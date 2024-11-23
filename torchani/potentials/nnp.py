@@ -1,12 +1,11 @@
 import typing as tp
 
-import torch
 from torch import Tensor
 
+from torchani.tuples import EnergiesScalars
 from torchani.nn import AtomicContainer
 from torchani.aev import AEVComputer
 from torchani.electro import ChargeNormalizer
-from torchani.tuples import EnergiesAtomicCharges
 from torchani.neighbors import Neighbors
 from torchani.potentials.core import Potential
 
@@ -24,12 +23,14 @@ class NNPotential(Potential):
         elem_idxs: Tensor,
         coords: Tensor,
         neighbors: Neighbors,
+        charge: int = 0,
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: tp.Optional[Tensor] = None,
-    ) -> Tensor:
+    ) -> EnergiesScalars:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
-        return self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
+        energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
+        return EnergiesScalars(energies)
 
 
 # Output of NN is assumed to be of shape (molecules, 2) with
@@ -48,8 +49,7 @@ class MergedChargesNNPotential(NNPotential):
         self.charge_normalizer = charge_normalizer
         raise ValueError("This class is currently under development")
 
-    @torch.jit.export
-    def energies_and_atomic_charges(
+    def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
         coords: Tensor,
@@ -58,15 +58,13 @@ class MergedChargesNNPotential(NNPotential):
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: tp.Optional[Tensor] = None,
-    ) -> EnergiesAtomicCharges:
-        assert not ensemble_values, "Unsupported"
+    ) -> EnergiesScalars:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
-        energies_qs = self.neural_networks(elem_idxs, aevs, atomic=True)
-        energies = energies_qs[:, :, 0]
+        energies_qs = self.neural_networks(elem_idxs, aevs, True, ensemble_values)
+        energies, qs = energies_qs.unbind(-1)
         if not atomic:
             energies = energies.sum(dim=-1)
-        qs = self.charge_normalizer(elem_idxs, energies_qs[:, :, 1], charge)
-        return EnergiesAtomicCharges(energies, qs)
+        return EnergiesScalars(energies, self.charge_normalizer(elem_idxs, qs, charge))
 
 
 class SeparateChargesNNPotential(NNPotential):
@@ -83,8 +81,7 @@ class SeparateChargesNNPotential(NNPotential):
         self.charge_networks = charge_networks
         self.charge_normalizer = charge_normalizer
 
-    @torch.jit.export
-    def energies_and_atomic_charges(
+    def compute_from_neighbors(
         self,
         elem_idxs: Tensor,
         coords: Tensor,
@@ -93,10 +90,8 @@ class SeparateChargesNNPotential(NNPotential):
         atomic: bool = False,
         ensemble_values: bool = False,
         ghost_flags: tp.Optional[Tensor] = None,
-    ) -> EnergiesAtomicCharges:
-        assert not ensemble_values, "Unsupported"
+    ) -> EnergiesScalars:
         aevs = self.aev_computer.compute_from_neighbors(elem_idxs, coords, neighbors)
-        energies = self.neural_networks(elem_idxs, aevs, atomic=atomic)
+        energies = self.neural_networks(elem_idxs, aevs, atomic, ensemble_values)
         qs = self.charge_networks(elem_idxs, aevs, atomic=True)
-        qs = self.charge_normalizer(elem_idxs, qs, charge)
-        return EnergiesAtomicCharges(energies, qs)
+        return EnergiesScalars(energies, self.charge_normalizer(elem_idxs, qs, charge))
