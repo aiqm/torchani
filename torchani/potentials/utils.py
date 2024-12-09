@@ -77,7 +77,8 @@ def plot(
         else:
             ax.plot(r, energies, label=f"{pair[0]}-{pair[1]}")
     ax.legend()
-    ax.set_title(title)
+    if title != "no":
+        ax.set_title(title)
     runit_sym = {
         "angstrom": r"\AA",
         "bohr": r"a_0",

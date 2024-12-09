@@ -89,14 +89,14 @@ Now you have two options, depending on whether you want to install the torchani
 compiled extensions. To install torchani with no compiled extensions run:
 
 ```bash
-pip install -v .
+pip install --no-deps -v .
 ```
 
 To install torchani with the cuAEV and MNP compiled extensions run instead:
 
 ```bash
 # Use 'ext-all-sms' instead of 'ext' if you want to build for all possible GPUs
-pip install --config-settings=--global-option=ext --no-build-isolation -v .
+pip install --config-settings=--global-option=ext --no-build-isolation --no-deps -v .
 ```
 
 In both cases you can add the editable, `-e`, flag after the verbose, `-v`,
