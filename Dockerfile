@@ -1,5 +1,5 @@
 # This image has ubuntu 22.0, cuda 11.8, cudnn 9, python 3.11.10, pytorch 2.5.1
-FROM pytorch/pytorch:2.5.1-cuda11.8-cudnn9-devel
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
 WORKDIR /repo
 
 # Set cuda env vars
@@ -22,7 +22,7 @@ RUN ./download.sh
 COPY dev_requirements.txt .
 
 # Install optional dependencies
-RUN pip install -r dev_requirements.txt
+RUN pip install --root-user-action ignore -r dev_requirements.txt
 
 # Copy all other necessary repo files
 COPY . /repo
@@ -44,9 +44,10 @@ RUN \
 ARG BUILD_EXT=0
 RUN \
 if [ "$BUILD_EXT" = "0" ]; then \
-    pip install -v . ; \
+    pip install --root-user-action ignore -v . ; \
 else \
     pip install \
+        --root-user-action ignore \
         --no-build-isolation \
         --config-settings=--global-option=ext-"${BUILD_EXT}" \
         -v . ; \

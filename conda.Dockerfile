@@ -1,5 +1,5 @@
 # This image has ubuntu 22.0, cuda 11.8, cudnn 9, python 3.11.10, pytorch 2.5.1
-FROM pytorch/pytorch:2.5.1-cuda11.8-cudnn9-devel
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
 WORKDIR /repo
 
 # Set cuda env vars

@@ -8,7 +8,7 @@ dependencies:
   ## Required dependencies to run TorchANI ##
   - python=3.10
   - pip>=24.0
-  - numpy=1.26
+  - numpy=2.1
   - pytorch::pytorch=2.5  # Modify to 'pytorch::pytorch=2' if installing on macOS
   - typing_extensions>=4.0.0
   - h5py  # HDF5 backend for datasets
@@ -23,7 +23,7 @@ dependencies:
   - ase
 
   ## NVIDIA CUDA GPU support ##
-  - pytorch::pytorch-cuda=11.8  # Comment this line if installing on macOS, or to **disable** CUDA GPU support in any platform
+  - pytorch::pytorch-cuda=12.4  # Comment this line if installing on macOS, or to **disable** CUDA GPU support in any platform
   #- pytorch::cpuonly  # Uncomment this line to **disable** CUDA GPU support in Linux
 
   ## cuAEV and MNP ##
@@ -31,11 +31,11 @@ dependencies:
   # If installing on macOS, or if CUDA GPU support is **disabled**, comment all lines on this block
   - setuptools>=64
   - setuptools-scm>=8
-  - gxx_linux-64=11.4
-  - gcc_linux-64=11.4
-  - nvidia::cuda-libraries-dev=11.8
-  - nvidia::cuda-cccl=11.8
-  - nvidia::cuda-nvcc=11.8
+  - gxx_linux-64=12.2
+  - gcc_linux-64=12.2
+  - nvidia::cuda-libraries-dev=12.4
+  - nvidia::cuda-cccl=12.4
+  - nvidia::cuda-nvcc=12.4
 
   ## Running torchani/tests ##
   - coverage  # code coverage
