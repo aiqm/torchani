@@ -65,9 +65,9 @@ from functools import partial
 import typing as tp
 
 from torchani.cutoffs import CutoffSmooth
-from torchani.utils import SYMBOLS_2X, SYMBOLS_1X
+from torchani.utils import SYMBOLS_2X, SYMBOLS_1X, SYMBOLS_2X_ZNUM_ORDER
 from torchani.electro import ChargeNormalizer
-from torchani.arch import Assembler, ANI, ANIq, _fetch_state_dict
+from torchani.arch import Assembler, ANI, ANIq, _fetch_state_dict, simple_ani
 from torchani.neighbors import NeighborlistArg
 from torchani.potentials import TwoBodyDispersionD3, RepulsionXTB
 from torchani.annotations import Device, DType
@@ -124,10 +124,11 @@ def ANI1x(
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = tp.cast(ANI, asm.assemble(8))
     model.load_state_dict(_fetch_state_dict("ani1x_state_dict.pt", private=False))
+    model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     # TODO: Fix this
     model.to(device=device, dtype=dtype)
-    return model if model_index is None else model[model_index]
+    return model
 
 
 def ANI1ccx(
@@ -161,9 +162,10 @@ def ANI1ccx(
     asm.set_gsaes_as_self_energies("ccsd(t)star-cbs")
     model = tp.cast(ANI, asm.assemble(8))
     model.load_state_dict(_fetch_state_dict("ani1ccx_state_dict.pt", private=False))
+    model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
-    return model if model_index is None else model[model_index]
+    return model
 
 
 def ANI2x(
@@ -196,9 +198,10 @@ def ANI2x(
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = tp.cast(ANI, asm.assemble(8))
     model.load_state_dict(_fetch_state_dict("ani2x_state_dict.pt", private=False))
+    model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
-    return model if model_index is None else model[model_index]
+    return model
 
 
 def ANImbis(
@@ -249,9 +252,10 @@ def ANImbis(
     model.potentials["nnp"].aev_computer.load_state_dict(aev_state_dict)
     model.potentials["nnp"].neural_networks.load_state_dict(energy_nn_state_dict)
     model.potentials["nnp"].charge_networks.load_state_dict(charge_nn_state_dict)
+    model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
-    return model if model_index is None else model[model_index]
+    return model
 
 
 def ANIala(
@@ -310,6 +314,69 @@ def ANIdr(
     asm.set_gsaes_as_self_energies("b973c-def2mtzvp")
     model = tp.cast(ANI, asm.assemble(7))
     model.load_state_dict(_fetch_state_dict("anidr_state_dict.pt", private=True))
+    model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
-    return model if model_index is None else model[model_index]
+    return model
+
+
+def ANI2xr(
+    model_index: tp.Optional[int] = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> ANI:
+    r"""
+    Improved ANI model trained to the 2x dataset
+
+    Trained to the wB97X level of theory with an added repulsion potential, and smoother
+    PES.
+    """
+    model = simple_ani(
+        lot="wb97x-631gd",
+        symbols=SYMBOLS_2X_ZNUM_ORDER,
+        ensemble_size=8,
+        dispersion=False,
+        repulsion=True,
+        strategy=strategy,
+        neighborlist=neighborlist,
+        periodic_table_index=periodic_table_index,
+    )
+    model.load_state_dict(_fetch_state_dict("ani2xr-preview.pt", private=True))
+    model = model if model_index is None else model[model_index]
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model
+
+
+def ANI2dr(
+    model_index: tp.Optional[int] = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> ANI:
+    r"""
+    Improved ANI model trained to the 2x dataset
+
+    Trained to the B973c level of theory with added repulsion and dispersion potentials,
+    and smoother PES.
+    """
+    model = simple_ani(
+        lot="b973c-def2mtzvp",
+        symbols=SYMBOLS_2X_ZNUM_ORDER,
+        ensemble_size=8,
+        dispersion=True,
+        repulsion=True,
+        strategy=strategy,
+        neighborlist=neighborlist,
+        periodic_table_index=periodic_table_index,
+    )
+    model.load_state_dict(_fetch_state_dict("ani2dr-preview.pt", private=True))
+    model = model if model_index is None else model[model_index]
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model

@@ -23,7 +23,6 @@ from ase.optimize import BFGS
 from ase.lattice.cubic import Diamond
 from ase.md.langevin import Langevin
 from ase.md.nptberendsen import NPTBerendsen
-from ase.calculators.test import numeric_force
 
 from torchani.io import read_xyz
 from torchani._testing import ANITestCase, expand
@@ -39,6 +38,31 @@ def _stress_test_name(fn: tp.Any, idx: int, param: tp.Any) -> str:
     elif param.args[2] == "all_pairs":
         nl = "allpairs"
     return f"{fn.__name__}_fdotr_{param.args[0]}_repdisp_{param.args[1]}_{nl}"
+
+
+def numeric_forces(
+    atoms: Atoms,
+    num_atoms: int,
+    eps: float = 1e-6,
+) -> NDArray[np.float64]:
+    r"""
+    Calculate numerical forces on atoms along a specific direction, based
+    on the source code of ase, since this fn is now pvt in their source.
+    """
+    force = np.zeros((num_atoms, 3), dtype=np.float64)
+    p0 = atoms.get_positions()
+    for i in range(num_atoms):
+        for j in range(3):
+            p = p0.copy()
+            p[i, j] = p0[i, j] + eps
+            atoms.set_positions(p, apply_constraint=False)
+            eplus = atoms.get_potential_energy()
+            p[i, j] = p0[i, j] - eps
+            atoms.set_positions(p, apply_constraint=False)
+            eminus = atoms.get_potential_energy()
+            force[i, j] = (eminus - eplus) / (2 * eps)
+    atoms.set_positions(p0, apply_constraint=False)
+    return force
 
 
 @expand(jit=False)
@@ -108,14 +132,7 @@ class TestASE(ANITestCase):
         else:
             num_atoms = len(atoms)
 
-        def _get_numeric_force(atoms, eps, num_atoms):
-            fn = np.zeros((num_atoms, 3), dtype=np.float64)
-            for i in range(num_atoms):
-                for j in range(3):
-                    fn[i, j] = numeric_force(atoms, i, j, eps)
-            return fn
-
-        fn = _get_numeric_force(atoms, 0.001, num_atoms)
+        fn = numeric_forces(atoms, num_atoms, 0.001)
         self.assertEqual(f[:num_atoms, :], fn, rtol=0.1, atol=0.1)
 
     @parameterized.expand(

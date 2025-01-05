@@ -34,6 +34,9 @@ __all__ = [
     "get_atomic_masses",
     "PERIODIC_TABLE",
     "ATOMIC_NUMBER",
+    "SYMBOLS_1X",
+    "SYMBOLS_2X",
+    "SYMBOLS_2X_ZNUM_ORDER",
 ]
 
 # The second dimension of these keys can be assumed to be "number of atoms"
@@ -56,9 +59,10 @@ ATOMIC_KEYS = (
 
 #: Elements used in the ANI-1x and ANI-1ccx models, in order
 SYMBOLS_1X: tp.Tuple[str, ...] = ("H", "C", "N", "O")
-#: Elements used in the ANI-2x model, in order
+#: Elements used in the ANI-2x model, in ani2x-model-order
 SYMBOLS_2X: tp.Tuple[str, ...] = ("H", "C", "N", "O", "S", "F", "Cl")
-
+#: Elements used in the ANI-2x model, in znum order
+SYMBOLS_2X_ZNUM_ORDER: tp.Tuple[str, ...] = ("H", "C", "N", "O", "F", "S", "Cl")
 
 PADDING = {
     "species": -1,

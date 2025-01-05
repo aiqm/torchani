@@ -37,7 +37,6 @@ import typing as tp
 
 import torch
 from torch import Tensor
-from torch.jit import Final
 import typing_extensions as tpx
 
 from torchani.tuples import (
@@ -97,7 +96,7 @@ from torchani.sae import SelfEnergy
 class _ANI(torch.nn.Module):
 
     atomic_numbers: Tensor
-    periodic_table_index: Final[bool]
+    periodic_table_index: bool
 
     def __init__(
         self,
@@ -970,6 +969,8 @@ def simple_ani(
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
     strategy: str = "auto",
+    periodic_table_index: bool = True,
+    neighborlist: NeighborlistArg = "all_pairs",
 ) -> ANI:
     r"""Flexible builder to create ANI-style models
 
@@ -981,7 +982,7 @@ def simple_ani(
         - ``angular_start=0.8``
         - ``radial_cutoff=5.1``
     """
-    asm = Assembler()
+    asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
     asm.set_aev_computer(
@@ -1007,7 +1008,7 @@ def simple_ani(
         bias=bias,
     )
     asm.set_atomic_networks(network_factory)
-    asm.set_neighborlist("all_pairs")
+    asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies(lot)
     if repulsion:
         asm.add_potential(
@@ -1050,6 +1051,8 @@ def simple_aniq(
     scale_charge_normalizer_weights: bool = True,
     dummy_energies: bool = False,
     use_cuda_ops: bool = False,
+    periodic_table_index: bool = True,
+    neighborlist: NeighborlistArg = "all_pairs",
 ) -> ANIq:
     r"""Flexible builder to create ANI-style models that output charges
 
@@ -1061,7 +1064,7 @@ def simple_aniq(
         - ``angular_start=0.8``
         - ``radial_cutoff=5.1``
     """
-    asm = Assembler(model_cls=ANIq)
+    asm = Assembler(model_cls=ANIq, periodic_table_index=periodic_table_index)
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
     asm.set_aev_computer(
@@ -1110,7 +1113,7 @@ def simple_aniq(
         network_factory,
         container_cls=_ZeroANINetworks if dummy_energies else ANINetworks,
     )
-    asm.set_neighborlist("all_pairs")
+    asm.set_neighborlist(neighborlist)
     if not dummy_energies:
         asm.set_gsaes_as_self_energies(lot)
     else:
