@@ -2,11 +2,11 @@
 
 .. currentmodule:: torchani
 
-Migrating to TorchANI 3
+Migrating to TorchANI 2
 =======================
 
 If you were using a previous version of TorchANI you may need to update your code to
-work with TorchANI 3. We strive to keep backwards compatibility, but some minor breaking
+work with TorchANI 2. We strive to keep backwards compatibility, but some minor breaking
 changes were necessary in order to support improvements in the models, dataset
 management, etc. Minor versions changes attempt to be fully backwards compatible, and
 breaking changes are reserved for major releases.

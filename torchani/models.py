@@ -1,7 +1,7 @@
 r"""Provides access to all published ANI models.
 
 Provided models are subclasses of `torchani.arch.ANI`. Some models have been
-published in previous articles, and some in TorchANI 3. If you use any of these models
+published in previous articles, and some in TorchANI 2. If you use any of these models
 in your work please cite the corresponding article(s).
 
 If for a given model you discover a bug, performance problem, or incorrect behavior in

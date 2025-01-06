@@ -27,7 +27,7 @@ TorchANI documentation
 of ANI-style neural network interatomic potentials. It was originally developed and is
 currently maintained by the Roitberg group.
 
-If you were using TorchANI before version 3, your code may need updating to be
+If you were using TorchANI before version 2, your code may need updating to be
 compatible with its new features. Please consult :ref:`the migration guide
 <torchani-migrating>` for more information. If you still have problems, please open an
 issue on the GitHub `issue tracker <https://github.com/aiqm/torchani/issues>`_.

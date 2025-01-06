@@ -213,7 +213,7 @@ class AEVComputer(torch.nn.Module):
                 warnings.warn(
                     "You seem to be attempting to call "
                     "`_, aevs = aev_computer((species, coords), cell, pbc)`. "
-                    "This signature was modified in TorchANI 3, and will be removed"
+                    "This signature was modified in TorchANI 2, and will be removed"
                     "Use `aevs = aev_computer(species, coords, cell, pbc)` instead."
                 )
                 cell = coords

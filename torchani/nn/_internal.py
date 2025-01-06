@@ -34,7 +34,7 @@ class Sequential(torch.nn.ModuleList):
         warnings.warn(
             "Use of `torchani.nn.Sequential` is strongly discouraged."
             "Please use `torchani.arch.Assembler`, or write a `torch.nn.Module`."
-            " For more info consult 'Migrating to TorchANI 3' in the user guide."
+            " For more info consult 'Migrating to TorchANI 2' in the user guide."
         )
         super().__init__(modules)
 

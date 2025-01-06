@@ -145,8 +145,8 @@ html_theme_options = {
     "github_url": "https://github.com/aiqm/torchani",
     "icon_links": [],
     "logo": {
-        "image_light": "_static/torchani3-logo-light.svg",
-        "image_dark": "_static/torchani3-logo-dark.svg",
+        "image_light": "_static/torchani2-logo-light.svg",
+        "image_dark": "_static/torchani2-logo-dark.svg",
     },
     # "logo": {"text": "TorchANI"},
     "show_version_warning_banner": True,

@@ -14,7 +14,7 @@ forces in Hartree/Angstrom.
     :caption: Getting started
 
     examples_autogen/fundamentals.rst
-    migrating-to-3.rst
+    migrating-to-2.rst
 
 .. toctree::
     :maxdepth: 1

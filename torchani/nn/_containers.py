@@ -85,7 +85,7 @@ class ANINetworks(AtomicContainer):
                 warnings.warn(
                     "You seem to be attempting to call "
                     "`_, energies = ani_model((species, aevs), cell, pbc)`. "
-                    "This signature was modified in TorchANI 3, and *will be removed*"
+                    "This signature was modified in TorchANI 2, and *will be removed*"
                     "Use `energies = ani_model(species, aevs)` instead."
                 )
                 energies = self(elem_idxs[0], elem_idxs[1])
@@ -150,7 +150,7 @@ class Ensemble(AtomicContainer):
                 warnings.warn(
                     "You seem to be attempting to call "
                     "`_, energies = ensemble((species, aevs), cell, pbc)`. "
-                    "This signature was modified in TorchANI 3, and *will be removed*"
+                    "This signature was modified in TorchANI 2, and *will be removed*"
                     "Use `energies = ensemble(species, aevs)` instead."
                 )
                 energies = self(elem_idxs[0], elem_idxs[1])
@@ -239,7 +239,7 @@ class SpeciesConverter(torch.nn.Module):
                 warnings.warn(
                     "You seem to be attempting to call "
                     "`_, idxs = converter((atomic_nums, coords), cell, pbc)`. "
-                    "This signature was modified in TorchANI 3, and *will be removed*"
+                    "This signature was modified in TorchANI 2, and *will be removed*"
                     "Use `idxs = converter(atomic_nums)` instead"
                 )
                 elem_idxs = self(atomic_nums[0])
