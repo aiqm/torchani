@@ -4,6 +4,9 @@ The actual implementation of the functions is considered internal. Please don't 
 calling functions inside :mod:`torchani.cli` directly.
 """
 
+from enum import Enum
+import torch
+from copy import deepcopy
 import shutil
 import typer
 import typing as tp
@@ -48,6 +51,92 @@ main = Typer(
 
 data_app = typer.Typer()
 main.add_typer(data_app, name="data", help="Manage TorchANI datasets")
+
+
+class DTypeKind(Enum):
+    F32 = "f32"
+    F64 = "f64"
+
+
+class DeviceKind(Enum):
+    CUDA = "cuda"
+    CPU = "cpu"
+
+
+@main.command()
+def sp(
+    paths: tpx.Annotated[
+        tp.List[Path],
+        Argument(),
+    ],
+    output_path: tpx.Annotated[
+        tp.Optional[Path],
+        Option("-o", "--output", show_default=False),
+    ] = None,
+    model_key: tpx.Annotated[
+        str,
+        Option("-m", "--model"),
+    ] = "ANI2x",
+    device: tpx.Annotated[
+        tp.Optional[DeviceKind],
+        Option("-d", "--device"),
+    ] = None,
+    dtype: tpx.Annotated[
+        tp.Optional[DTypeKind],
+        Option("-t", "--dtype"),
+    ] = None,
+    forces: tpx.Annotated[
+        bool,
+        Option("-f/-F", "--forces/--no-forces"),
+    ] = False,
+    hessians: tpx.Annotated[
+        bool,
+        Option("-s/-S", "--hessians/--no-hessians"),
+    ] = False,
+) -> None:
+
+    model_key = model_key.lower().replace("ani", "ANI")
+
+    import torchani
+    import torchani.models
+    import torchani.io
+
+    if dtype is None:
+        dtype = DTypeKind.F32
+
+    if dtype is DTypeKind.F32:
+        _dtype = torch.float32
+    elif dtype is DTypeKind.F64:
+        _dtype = torch.float64
+
+    if device is DeviceKind.CUDA:
+        _device = "cuda"
+    elif device is DeviceKind.CPU:
+        _device = "cpu"
+    else:
+        _device = None
+
+    model = getattr(torchani.models, model_key)()
+    paths = deepcopy(paths)
+    output: tp.Dict[str, tp.Any] = {"energies": []}
+    if forces:
+        output["forces"] = []
+    if hessians:
+        output["hessians"] = []
+    for p in paths:
+        znums, coords, cell, pbc = torchani.io.read_xyz(p, device=_device, dtype=_dtype)
+        result = torchani.single_point(
+            model, znums, coords, cell, pbc, forces=forces, hessians=hessians
+        )
+        output["energies"].extend(result["energies"].tolist())
+        if forces:
+            output["forces"].extend(result["forces"].tolist())
+        if hessians:
+            output["hessians"].extend(result["hessians"].tolist())
+    if output_path is not None:
+        output_path.write_text(json.dumps(output, indent=4))
+    else:
+        print(json.dumps(output))
 
 
 @data_app.command("pull", help="Download one or more built-in datasets.")

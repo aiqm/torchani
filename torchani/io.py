@@ -84,6 +84,8 @@ def read_xyz(
     device: Device = None,
     detect_padding: bool = True,
     pad_species_value: int = 100,
+    dividing_char: str = ">",
+    comments: str = "discard",
 ) -> tp.Tuple[Tensor, Tensor, tp.Optional[Tensor], tp.Optional[Tensor]]:
     r"""Read an xyz file with possibly many molecules. Return them in tensor form
 
@@ -101,6 +103,9 @@ def read_xyz(
     path = Path(path).resolve()
     cell: tp.Optional[Tensor] = None
     properties: tp.List[tp.Dict[str, Tensor]] = []
+    energies: tp.List[float] = []
+    comments_list: tp.List[str] = []
+    assert comments in ["discard", "energy", "save"]
     with open(path, mode="rt", encoding="utf-8") as f:
         lines = iter(f)
         conformation_num = 0
@@ -108,10 +113,17 @@ def read_xyz(
             species = []
             coordinates = []
             try:
-                num = int(next(lines))
+                molec_num_str = next(lines)
             except StopIteration:
                 break
+            if dividing_char and molec_num_str.strip() == dividing_char:
+                continue
+            num = int(molec_num_str)
             comment = next(lines)
+            if comments == "save":
+                comments_list.append(comment)
+            if comments == "energy":
+                energies.append(float(comment.split()[-1]))
             if "lattice" in comment.lower():
                 if (cell is None) and (conformation_num != 0):
                     raise TorchaniIOError(
@@ -163,4 +175,8 @@ def read_xyz(
             )
     pad_properties = pad_atomic_properties(properties)
     pbc = torch.tensor([True, True, True], device=device) if cell is not None else None
+    if comments == "save":
+        return pad_properties["species"], pad_properties["coordinates"], cell, pbc, comments_list  # type: ignore  # noqa: E501
+    if comments == "energy":
+        return pad_properties["species"], pad_properties["coordinates"], cell, pbc, energies  # type: ignore  # noqa: E501
     return pad_properties["species"], pad_properties["coordinates"], cell, pbc
