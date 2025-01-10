@@ -37,7 +37,7 @@ To install the internal version of TorchANI, hosted in the internal
 roitberg-group servers using conda run:
 
 ```bash
-conda create -n ani python=3.10
+conda create -n ani python=3.11
 conda activate ani
 # The following command is all one line, and channels must be specified in that order
 conda install \

@@ -5,7 +5,7 @@ cxx_compiler_version:
 pytorch:
   - 2.5
 python:
-  - 3.10
+  - 3.11
 cuda:
   - 12.4
 numpy:

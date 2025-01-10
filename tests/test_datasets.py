@@ -720,9 +720,9 @@ class TestANIDatasetZarr(TestANIDataset):
             suffix=".zarr", dir=self.tmp_dir.name
         )
         self.new_store_name = self.tmp_dir.name / Path("new.zarr")
-
-        store1 = zarr.DirectoryStore(self.tmp_store_one_group.name)
-        store3 = zarr.DirectoryStore(self.tmp_store_three_groups.name)
+        # Compat with newer versions of zarr
+        store1 = zarr.storage.DirectoryStore(self.tmp_store_one_group.name)
+        store3 = zarr.storage.DirectoryStore(self.tmp_store_three_groups.name)
         with zarr.hierarchy.open_group(
             store1, mode="w"
         ) as f1, zarr.hierarchy.open_group(store3, mode="w") as f3:

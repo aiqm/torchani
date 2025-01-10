@@ -6,7 +6,7 @@ channels:
   - https://conda.anaconda.org/conda-forge
 dependencies:
   ## Required dependencies to run TorchANI ##
-  - python=3.10
+  - python=3.11
   - pip>=24.0
   - numpy=2.1
   - pytorch::pytorch=2.5  # Modify to 'pytorch::pytorch=2' if installing on macOS
@@ -49,7 +49,7 @@ dependencies:
   # Extra data backends for tests:
   - pandas  # Parquet backend
   - pyarrow  # Parquet backend
-  - zarr  # Zarr backend
+  - zarr<3  # Zarr backend
 
   ## Running scripts in torchani/tools ##
   - matplotlib

@@ -18,7 +18,7 @@ expecttest
 # Tests: Extra data backends (parquet and zarr)
 pandas
 pyarrow
-zarr
+zarr<3
 
 # Docs: Sphinx-related, for building the docs
 sphinx

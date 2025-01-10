@@ -94,6 +94,7 @@ def sp(
         Option("-s/-S", "--hessians/--no-hessians"),
     ] = False,
 ) -> None:
+    r"""Execute a single point calculation using a TorchANI model"""
 
     model_key = model_key.lower().replace("ani", "ANI")
 

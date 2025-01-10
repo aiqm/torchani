@@ -28,11 +28,13 @@ class _ZarrStore(_HierarchicalStore):
 
     @staticmethod
     def init_new(root: Path, grouping: Grouping) -> None:
+        # Compat with newer versions of zarr
         zarr_dir_style_data = zarr.storage.DirectoryStore(str(root))
         with zarr.hierarchy.group(store=zarr_dir_style_data, overwrite=True) as g:
             g.attrs["grouping"] = grouping
 
     def setup(self, root: Path, mode: str) -> None:
+        # Compat with newer versions of zarr
         zarr_dir_style_data = zarr.storage.DirectoryStore(root)
         file = zarr.hierarchy.open_group(zarr_dir_style_data, mode)
         meta = Metadata(

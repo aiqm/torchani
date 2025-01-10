@@ -58,5 +58,5 @@ filterwarnings = "ignore:.*distutils Version classes are deprecated.*:Deprecatio
 
 [project.optional-dependencies]
 ase = ["ase"]
-data = ["zarr", "pandas", "pyarrow"]
-all = ["ase", "zarr", "pandas", "pyarrow"]
+data = ["zarr<3", "pandas", "pyarrow"]
+all = ["ase", "zarr<3", "pandas", "pyarrow"]
