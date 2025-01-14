@@ -6,19 +6,17 @@ calling functions inside :mod:`torchani.cli` directly.
 
 from enum import Enum
 import torch
-from copy import deepcopy
 import shutil
-import typer
 import typing as tp
 import json
 import tarfile
 import csv
-from typer import Argument
+from typer import Argument, Option, Typer, Abort
 from pathlib import Path
 import typing_extensions as tpx
-from typer import Option, Typer
 import re
 
+import torchani
 from torchani.paths import datasets_dir
 import torchani.datasets
 from torchani.datasets._utils import (
@@ -31,6 +29,7 @@ from torchani.datasets._utils import (
     _default_dataset_lot,
 )
 from torchani.datasets.builtin import _DatasetId, _LotId
+from torchani.annotations import Device, DType
 
 
 REPO_BASE_URL = "https://github.com/roitberg-group/torchani_sandbox"
@@ -49,7 +48,7 @@ main = Typer(
     """,
 )
 
-data_app = typer.Typer()
+data_app = Typer()
 main.add_typer(data_app, name="data", help="Manage TorchANI datasets")
 
 
@@ -61,6 +60,92 @@ class DTypeKind(Enum):
 class DeviceKind(Enum):
     CUDA = "cuda"
     CPU = "cpu"
+
+
+def parse_device_and_dtype(
+    device: tp.Optional[DeviceKind] = None,
+    dtype: tp.Optional[DTypeKind] = None,
+) -> tp.Tuple[Device, DType]:
+    if dtype is None:
+        dtype = DTypeKind.F32
+
+    if dtype is DTypeKind.F32:
+        _dtype = torch.float32
+    elif dtype is DTypeKind.F64:
+        _dtype = torch.float64
+
+    if device is DeviceKind.CUDA:
+        _device = "cuda"
+    elif device is DeviceKind.CPU:
+        _device = "cpu"
+    else:
+        _device = "cuda" if torch.cuda.is_available() else "cpu"
+    return _device, _dtype
+
+
+@main.command()
+def opt(
+    paths: tpx.Annotated[
+        tp.List[Path],
+        Argument(),
+    ],
+    output_path: tpx.Annotated[
+        tp.Optional[Path],
+        Option("-o", "--output", show_default=False),
+    ] = None,
+    model_key: tpx.Annotated[
+        str,
+        Option("-m", "--model"),
+    ] = "ANI2x",
+    device: tpx.Annotated[
+        tp.Optional[DeviceKind],
+        Option("-d", "--device"),
+    ] = None,
+    dtype: tpx.Annotated[
+        tp.Optional[DTypeKind],
+        Option("-t", "--dtype"),
+    ] = None,
+    forces: tpx.Annotated[
+        bool,
+        Option("-f/-F", "--forces/--no-forces"),
+    ] = False,
+    hessians: tpx.Annotated[
+        bool,
+        Option("-s/-S", "--hessians/--no-hessians"),
+    ] = False,
+) -> None:
+    r"""Execute a cartesian coords geom opt, using L-BFGS, with a TorchANI model"""
+    model_key = model_key.lower().replace("ani", "ANI")
+    _device, _dtype = parse_device_and_dtype(device, dtype)
+    model = getattr(torchani.models, model_key)(device=_device, dtype=_dtype)
+    output: tp.Dict[str, tp.Any] = {"energies": []}
+    if forces:
+        output["forces"] = []
+    if hessians:
+        output["hessians"] = []
+    print("Sorry. Not implemented yet!")
+    raise Abort()
+    for p in paths:
+        znums, coords, cell, pbc = torchani.io.read_xyz(p, device=_device, dtype=_dtype)
+        for (_znums, _coords) in zip(znums, coords):
+            unpadded = torchani.utils.strip_redundant_padding(
+                {"species": _znums.unsqueeze(0), "coordinates": _coords.unsqueeze(0)}
+            )
+            _znums = unpadded["species"]
+            _coords = unpadded["coordinates"]
+            result = torchani.single_point(
+                model, _znums, _coords, cell, pbc, forces=forces, hessians=hessians
+            )
+            # Optimization should be performed here
+            output["energies"].extend(result["energies"].tolist())
+            if forces:
+                output["forces"].extend(result["forces"].tolist())
+            if hessians:
+                output["hessians"].extend(result["hessians"].tolist())
+    if output_path is not None:
+        output_path.write_text(json.dumps(output, indent=4))
+    else:
+        print(json.dumps(output))
 
 
 @main.command()
@@ -97,28 +182,8 @@ def sp(
     r"""Execute a single point calculation using a TorchANI model"""
 
     model_key = model_key.lower().replace("ani", "ANI")
-
-    import torchani
-    import torchani.models
-    import torchani.io
-
-    if dtype is None:
-        dtype = DTypeKind.F32
-
-    if dtype is DTypeKind.F32:
-        _dtype = torch.float32
-    elif dtype is DTypeKind.F64:
-        _dtype = torch.float64
-
-    if device is DeviceKind.CUDA:
-        _device = "cuda"
-    elif device is DeviceKind.CPU:
-        _device = "cpu"
-    else:
-        _device = None
-
-    model = getattr(torchani.models, model_key)()
-    paths = deepcopy(paths)
+    _device, _dtype = parse_device_and_dtype(device, dtype)
+    model = getattr(torchani.models, model_key)(device=_device, dtype=_dtype)
     output: tp.Dict[str, tp.Any] = {"energies": []}
     if forces:
         output["forces"] = []

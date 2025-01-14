@@ -179,6 +179,14 @@ class _ANIDatasetBase(tp.Mapping[str, Conformers]):
         for k, v in self.numpy_items(**kwargs):
             yield v
 
+    def num_chunks(self, max_size: int = 2500) -> int:
+        chunks = 0
+        for v in self.group_sizes.values():
+            group_chunks, extra = divmod(v, max_size)
+            chunks += group_chunks
+            chunks += bool(extra)
+        return chunks
+
     def chunked_items(
         self, max_size: int = 2500, limit: float = math.inf, **kwargs
     ) -> tp.Iterator[tp.Tuple[str, int, MixedConformers]]:
@@ -1121,6 +1129,10 @@ class ANIDataset(_ANIDatasetBase):
     @property
     def store_locations(self) -> tp.List[str]:
         return [fspath(ds._store.location.root) for ds in self._datasets.values()]
+
+    @property
+    def store_names(self) -> tp.List[str]:
+        return list(self._datasets.keys())
 
     @property
     def num_stores(self) -> int:
