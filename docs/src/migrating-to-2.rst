@@ -174,9 +174,8 @@ but with random initial weights and the ``cuAEV`` strategy for faster training, 
     asm.set_symbols(("H", "C", "N", "O"))
     # You can also pass your custom angular or radial terms as arguments
     asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy="cuaev")
-    # make_2x_network is a function that, given a symbol, builds an atomic network,
-    # you can pass whatever other function you want here.
-    asm.set_atomic_networks(torchani.nn.make_2x_network)
+    # A custom class with a custom constructor is also supported
+    asm.set_atomic_networks(ctor="ani2x")
     asm.set_gsaes_as_self_energies("wb97x-631gd")  # Add ground state atomic energies
     model = asm.assemble()  # The returned model is ready to train
 

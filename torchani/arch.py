@@ -10,10 +10,8 @@ An ANI-style model consists of:
 
 - `torchani.aev.AEVComputer` (or subclass)
 - A container for atomic networks (typically `torchani.nn.ANINetworks` or subclass)
-- An `torchani.nn.AtomicNetwork` mapping for example, this may take the shape
-    ``{"H": AtomicNetwork(...), "C": AtomicNetwork(...), ...}``. Its also possible
-    to pass a function that, given a symbol (e.g. "C") returns an atomic network,
-    such as `torchani.nn.make_2x_network`.
+- If using the traditional ANINetworks, a `torchani.nn.AtomicNetwork` mapping, for
+  example: ``{"H": AtomicNetwork(...), "C": AtomicNetwork(...), ...}``.
 - A self energies `dict` (in Hartree): ``{"H": -12.0, "C": -75.0, ...}``
 
 These pieces are combined when the `Assembler.assemble` method is called.
@@ -29,7 +27,6 @@ cutoff is kept small, 3.5 Ang or less).
 
 from copy import deepcopy
 import warnings
-import functools
 import math
 from dataclasses import dataclass
 from collections import OrderedDict
@@ -64,12 +61,8 @@ from torchani.nn import (
     AtomicContainer,
     ANINetworks,
     Ensemble,
-    AtomicNetwork,
-    AtomicMakerArg,
-    AtomicMaker,
     parse_activation,
 )
-from torchani.nn._factories import _parse_network_maker
 from torchani.neighbors import (
     Neighbors,
     _parse_neighborlist,
@@ -355,7 +348,7 @@ class ANI(_ANI):
             energies = energies + self.energy_shifter(elem_idxs, atomic=atomic)
         return EnergiesScalars(energies)
 
-    # The following functions are superseded by `torchani.sp`
+    # The following functions are superseded by `torchani.single_point`
     @torch.jit.export
     def atomic_energies(
         self,
@@ -648,7 +641,7 @@ class ANIq(_ANI):
 
 AEVComputerCls = tp.Type[AEVComputer]
 PotentialCls = tp.Type[Potential]
-ContainerCls = tp.Type[AtomicContainer]
+AtomicContainerCls = tp.Type[AtomicContainer]
 ModelCls = tp.Union[tp.Type[ANI], tp.Type[ANIq]]
 
 
@@ -675,6 +668,17 @@ class _AEVComputerWrapper:
 
 
 @dataclass
+class _AtomicContainerWrapper:
+    cls: AtomicContainerCls
+    ctor: str = "separate_networks"
+    kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None
+
+    def make(self, symbols: tp.Sequence[str], in_dim: int) -> AtomicContainer:
+        out = getattr(self.cls, self.ctor)(symbols, in_dim, **self.kwargs)
+        return tp.cast(AtomicContainer, out)
+
+
+@dataclass
 class _PotentialWrapper:
     cls: PotentialCls
     kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None
@@ -688,7 +692,7 @@ class Assembler:
     def __init__(
         self,
         symbols: tp.Sequence[str] = (),
-        model_cls: ModelCls = ANI,
+        cls: ModelCls = ANI,
         neighborlist: NeighborlistArg = "all_pairs",
         periodic_table_index: bool = True,
     ) -> None:
@@ -701,15 +705,13 @@ class Assembler:
         # This part of the assembler organizes the self-energies, the
         # symbols and the atomic networks
         self._self_energies: tp.Dict[str, float] = {}
-        self._fn_for_atomics: tp.Optional[AtomicMaker] = None
-        self._fn_for_charges: tp.Optional[AtomicMaker] = None
-        self._container_cls: ContainerCls = ANINetworks
-        self._charge_container_cls: tp.Optional[ContainerCls] = None
+        self._container: tp.Optional[_AtomicContainerWrapper] = None
+        self._charge_container: tp.Optional[_AtomicContainerWrapper] = None
         self._charge_normalizer: tp.Optional[ChargeNormalizer] = None
         self._symbols: tp.Tuple[str, ...] = tuple(symbols)
 
         # The general container for all the parts of the model
-        self._model_cls: ModelCls = model_cls
+        self._cls: ModelCls = cls
 
         # This is a deprecated feature, it should probably not be used
         self.periodic_table_index = periodic_table_index
@@ -720,22 +722,6 @@ class Assembler:
 
     def set_symbols(self, symbols: tp.Sequence[str]) -> None:
         self._symbols = tuple(symbols)
-
-    @property
-    def fn_for_atomics(self) -> AtomicMaker:
-        if self._fn_for_atomics is None:
-            raise RuntimeError(
-                "fn for atomics is not set, please call 'set_atomic_networks'"
-            )
-        return self._fn_for_atomics
-
-    @property
-    def fn_for_charges(self) -> AtomicMaker:
-        if self._fn_for_charges is None:
-            raise RuntimeError(
-                "fn for charges is not set, please call 'set_charge_networks'"
-            )
-        return self._fn_for_charges
 
     @property
     def self_energies(self) -> tp.Dict[str, float]:
@@ -784,23 +770,41 @@ class Assembler:
 
     def set_atomic_networks(
         self,
-        fn: AtomicMaker,
-        container_cls: ContainerCls = ANINetworks,
+        cls: AtomicContainerCls = ANINetworks,
+        ctor: str = "ani2x",
+        kwargs: tp.Dict[str, tp.Any] = {},
     ) -> None:
-        self._container_cls = container_cls
-        self._fn_for_atomics = fn
+        ctor = {
+            "ani1x": "like_1x",
+            "ani2x": "like_2x",
+            "anidr": "like_dr",
+            "aniala": "like_ala",
+        }.get(ctor, ctor)
+        self._container = _AtomicContainerWrapper(cls, ctor, kwargs)
+
+    @property
+    def atomic_networks_container(self) -> _AtomicContainerWrapper:
+        if self._container is None:
+            raise RuntimeError("Call 'set_atomic_networks(...)' before assembly")
+        return self._container
 
     def set_charge_networks(
         self,
-        fn: AtomicMaker,
+        cls: AtomicContainerCls = ANINetworks,
+        ctor: str = "ani2x",
+        kwargs: tp.Dict[str, tp.Any] = {},
         normalizer: tp.Optional[ChargeNormalizer] = None,
-        container_cls: ContainerCls = ANINetworks,
     ) -> None:
-        if not issubclass(self._model_cls, ANIq):
+        ctor = {
+            "ani1x": "like_1x",
+            "ani2x": "like_2x",
+            "anidr": "like_dr",
+            "aniala": "like_ala",
+        }.get(ctor, ctor)
+        if not issubclass(self._cls, ANIq):
             raise ValueError("Model must be a subclass of ANIq to use charge networks")
-        self._charge_container_cls = container_cls
         self._charge_normalizer = normalizer
-        self._fn_for_charges = fn
+        self._charge_container = _AtomicContainerWrapper(cls, ctor, kwargs)
 
     def set_aev_computer(
         self,
@@ -832,7 +836,7 @@ class Assembler:
 
     def add_potential(
         self,
-        pair_cls: PotentialCls,
+        cls: PotentialCls,
         name: str,
         cutoff: float = math.inf,
         cutoff_fn: CutoffArg = "global",
@@ -841,18 +845,11 @@ class Assembler:
         if name in self._potentials:
             raise ValueError("Potential names must be unique")
         self._potentials[name] = _PotentialWrapper(
-            pair_cls,
+            cls,
             kwargs=kwargs,
             cutoff=cutoff,
             cutoff_fn=cutoff_fn,
         )
-
-    def _build_atomic_networks(
-        self,
-        fn_for_networks: AtomicMaker,
-        in_dim: int,
-    ) -> tp.OrderedDict[str, AtomicNetwork]:
-        return OrderedDict([(s, fn_for_networks(s, in_dim)) for s in self.symbols])
 
     def assemble(self, ensemble_size: int = 1) -> tp.Union[ANI, ANIq]:
         r"""Construct an `ANI` model from the passed arguments
@@ -885,28 +882,20 @@ class Assembler:
             num_species=len(self.symbols),
             strategy=self._aevcomp.strategy,
         )
+
         neural_networks: AtomicContainer
-        if ensemble_size > 1:
-            containers = []
-            for j in range(ensemble_size):
-                containers.append(
-                    self._container_cls(
-                        self._build_atomic_networks(
-                            self.fn_for_atomics, aevcomp.out_dim
-                        )
-                    )
-                )
-            neural_networks = Ensemble(containers)
+        containers = [
+            self.atomic_networks_container.make(self.symbols, aevcomp.out_dim)
+            for _ in range(ensemble_size)
+        ]
+        if len(containers) == 1:
+            neural_networks = containers[0]
         else:
-            neural_networks = self._container_cls(
-                self._build_atomic_networks(self.fn_for_atomics, aevcomp.out_dim)
-            )
+            neural_networks = Ensemble(containers)
 
         charge_networks: tp.Optional[AtomicContainer] = None
-        if self._charge_container_cls is not None:
-            charge_networks = self._charge_container_cls(
-                self._build_atomic_networks(self.fn_for_charges, aevcomp.out_dim)
-            )
+        if self._charge_container is not None:
+            charge_networks = self._charge_container.make(self.symbols, aevcomp.out_dim)
 
         self_energies = self.self_energies
         shifter = SelfEnergy(
@@ -937,8 +926,7 @@ class Assembler:
             kwargs["charge_networks"] = charge_networks
         if self._charge_normalizer is not None:
             kwargs["charge_normalizer"] = self._charge_normalizer
-
-        return self._model_cls(
+        return self._cls(
             symbols=self.symbols,
             aev_computer=aevcomp,
             energy_shifter=shifter,
@@ -965,7 +953,7 @@ def simple_ani(
     cutoff_fn: CutoffArg = "smooth",
     dispersion: bool = False,
     repulsion: bool = True,
-    network_factory: AtomicMakerArg = "ani2x",
+    network_factory: str = "ani2x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
     strategy: str = "auto",
@@ -1002,12 +990,10 @@ def simple_ani(
         ),
         strategy=strategy,
     )
-    network_factory = functools.partial(
-        _parse_network_maker(network_factory),
-        activation=parse_activation(activation),
-        bias=bias,
+    asm.set_atomic_networks(
+        ctor=network_factory,
+        kwargs={"bias": bias, "activation": parse_activation(activation)},
     )
-    asm.set_atomic_networks(network_factory)
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies(lot)
     if repulsion:
@@ -1043,7 +1029,7 @@ def simple_aniq(
     cutoff_fn: CutoffArg = "smooth",
     dispersion: bool = False,
     repulsion: bool = True,
-    network_factory: AtomicMakerArg = "ani2x",
+    network_factory: str = "ani2x",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
     strategy: str = "auto",
@@ -1064,7 +1050,7 @@ def simple_aniq(
         - ``angular_start=0.8``
         - ``radial_cutoff=5.1``
     """
-    asm = Assembler(model_cls=ANIq, periodic_table_index=periodic_table_index)
+    asm = Assembler(cls=ANIq, periodic_table_index=periodic_table_index)
     asm.set_symbols(symbols)
     asm.set_global_cutoff_fn(cutoff_fn)
     asm.set_aev_computer(
@@ -1091,28 +1077,27 @@ def simple_aniq(
     if merge_charge_networks:
         if dummy_energies:
             raise ValueError("Can't output dummy energies with merged charge network")
-        network_factory = functools.partial(
-            _parse_network_maker(network_factory),
-            out_dim=2,
-            activation=parse_activation(activation),
-            bias=bias,
+        asm.set_atomic_networks(
+            cls=_ZeroANINetworks if dummy_energies else ANINetworks,
+            ctor=network_factory,
+            kwargs={
+                "bias": bias,
+                "activation": parse_activation(activation),
+                "out_dim": 2,
+            },
         )
     else:
-        network_factory = functools.partial(
-            _parse_network_maker(network_factory),
-            out_dim=1,
-            activation=parse_activation(activation),
-            bias=bias,
+        asm.set_atomic_networks(
+            cls=_ZeroANINetworks if dummy_energies else ANINetworks,
+            ctor=network_factory,
+            kwargs={"bias": bias, "activation": parse_activation(activation)},
         )
         asm.set_charge_networks(
-            network_factory,
+            ctor=network_factory,
             normalizer=normalizer,
+            kwargs={"bias": bias, "activation": parse_activation(activation)},
         )
 
-    asm.set_atomic_networks(
-        network_factory,
-        container_cls=_ZeroANINetworks if dummy_energies else ANINetworks,
-    )
     asm.set_neighborlist(neighborlist)
     if not dummy_energies:
         asm.set_gsaes_as_self_energies(lot)

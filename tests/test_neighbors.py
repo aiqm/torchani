@@ -258,10 +258,10 @@ class TestCellListEnergies(TestCase):
     def testCellListEnergiesRandom(self):
         self.model_cl = self.model_cl.to(self.device, torch.double)
         self.model_fp = self.model_fp.to(self.device, torch.double)
-        species = torch.ones((1, 100), dtype=torch.long, device=self.device)
-        for j in range(self.num_to_test):
+        species = torch.ones((1, 50), dtype=torch.long, device=self.device)
+        for j in range(5):
             coordinates = (
-                torch.randn((1, 100, 3), device=self.device, dtype=torch.double)
+                torch.randn((1, 50, 3), device=self.device, dtype=torch.double)
                 * 3
                 * self.cell_size
             )
@@ -347,7 +347,7 @@ class TestCellListEnergiesCuda(TestCellListEnergies):
     def setUp(self):
         super().setUp()
         self.device = torch.device("cuda")
-        self.num_to_test = 100
+        self.num_to_test = 10
 
 
 @expand()

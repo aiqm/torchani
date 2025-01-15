@@ -61,7 +61,6 @@ For more details consult the examples documentation
     submodel = model[0]
 """
 
-from functools import partial
 import typing as tp
 
 from torchani.cutoffs import CutoffSmooth
@@ -72,12 +71,6 @@ from torchani.neighbors import NeighborlistArg
 from torchani.potentials import TwoBodyDispersionD3, RepulsionXTB
 from torchani.annotations import Device, DType
 from torchani.nn._internal import _ANINetworksDiscardFirstScalar
-from torchani.nn import (
-    make_1x_network,
-    make_2x_network,
-    make_dr_network,
-    make_ala_network,
-)
 
 
 # Protocol used by factory functions that instantiate ani models, here for reference
@@ -117,7 +110,7 @@ def ANI1x(
     """
     asm = Assembler(periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_1X)
-    asm.set_atomic_networks(make_1x_network)
+    asm.set_atomic_networks(ctor="ani1x")
     asm.set_global_cutoff_fn("cosine")
     asm.set_aev_computer(angular="ani1x", radial="ani1x", strategy=strategy)
     asm.set_neighborlist(neighborlist)
@@ -157,7 +150,7 @@ def ANI1ccx(
     asm.set_symbols(SYMBOLS_1X)
     asm.set_global_cutoff_fn("cosine")
     asm.set_aev_computer(radial="ani1x", angular="ani1x", strategy=strategy)
-    asm.set_atomic_networks(make_1x_network)
+    asm.set_atomic_networks(ctor="ani1x")
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("ccsd(t)star-cbs")
     model = tp.cast(ANI, asm.assemble(8))
@@ -192,7 +185,7 @@ def ANI2x(
     asm.set_symbols(SYMBOLS_2X)
     asm.set_global_cutoff_fn("cosine")
     asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
-    asm.set_atomic_networks(make_2x_network)
+    asm.set_atomic_networks(ctor="ani2x")
     asm.set_neighborlist(neighborlist)
     # The self energies are overwritten by the state dict
     asm.set_gsaes_as_self_energies("wb97x-631gd")
@@ -215,18 +208,18 @@ def ANImbis(
     r"""
     Experimental ANI-2x model with MBIS charges
     """
-    asm = Assembler(periodic_table_index=periodic_table_index, model_cls=ANIq)
+    asm = Assembler(cls=ANIq, periodic_table_index=periodic_table_index)
     asm.set_symbols(SYMBOLS_2X)
     asm.set_global_cutoff_fn("cosine")
     asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
-    asm.set_atomic_networks(make_2x_network)
-
+    asm.set_atomic_networks(ctor="ani2x")
     asm.set_charge_networks(
-        partial(make_2x_network, out_dim=2, bias=False, activation="gelu"),
+        cls=_ANINetworksDiscardFirstScalar,
+        ctor="ani2x",
+        kwargs={"out_dim": 2, "bias": False, "activation": "gelu"},
         normalizer=ChargeNormalizer.from_electronegativity_and_hardness(
             asm.symbols, scale_weights_by_charges_squared=True
         ),
-        container_cls=_ANINetworksDiscardFirstScalar,
     )
     asm.set_neighborlist(neighborlist)
     # The self energies are overwritten by the state dict
@@ -273,7 +266,7 @@ def ANIala(
     asm.set_symbols(SYMBOLS_2X)
     asm.set_global_cutoff_fn("cosine")
     asm.set_aev_computer(radial="ani2x", angular="ani2x", strategy=strategy)
-    asm.set_atomic_networks(make_ala_network)
+    asm.set_atomic_networks(ctor="aniala")
     asm.set_neighborlist(neighborlist)
     asm.set_gsaes_as_self_energies("wb97x-631gd")
     model = tp.cast(ANI, asm.assemble(1))
@@ -301,7 +294,7 @@ def ANIdr(
     asm.set_symbols(SYMBOLS_2X)
     asm.set_global_cutoff_fn("smooth")
     asm.set_aev_computer(angular="ani2x", radial="ani2x", strategy=strategy)
-    asm.set_atomic_networks(make_dr_network)
+    asm.set_atomic_networks(ctor="anidr")
     asm.add_potential(RepulsionXTB, name="repulsion_xtb", cutoff=5.3)
     asm.add_potential(
         TwoBodyDispersionD3,

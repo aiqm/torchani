@@ -1,3 +1,4 @@
+import typing_extensions as tpx
 import warnings
 import typing as tp
 
@@ -108,6 +109,140 @@ class ANINetworks(AtomicContainer):
     @torch.jit.unused
     def to_infer_model(self, use_mnp: bool = False) -> AtomicContainer:
         return MNPNetworks(self, use_mnp=use_mnp)
+
+    @classmethod
+    def separate_networks(
+        cls,
+        symbols: tp.Sequence[str],
+        in_dim: int,
+        dims: tp.Dict[str, tp.Tuple[int, ...]],
+        out_dim: int = 1,
+        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        bias: bool = False,
+        default_dims: tp.Tuple[int, ...] = (),
+    ) -> tpx.Self:
+        modules: tp.Dict[str, AtomicNetwork] = {}
+        for s in symbols:
+            layer_dims = (in_dim,) + dims.get(s, default_dims) + (out_dim,)
+            modules[s] = AtomicNetwork(
+                layer_dims=layer_dims,
+                activation=activation,
+                bias=bias
+            )
+        return cls(modules)
+
+    @classmethod
+    def like_dr(
+        cls,
+        symbols: tp.Sequence[str] = ("H", "C", "N", "O", "S", "F", "Cl"),
+        in_dim: int = 1008,
+        out_dim: int = 1,
+        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        bias: bool = False,
+    ) -> tpx.Self:
+        default_dims = (160, 128, 96)
+        dims: tp.Dict[str, tp.Tuple[int, ...]] = {
+            "H": (256, 192, 160),
+            "C": (256, 192, 160),
+            "N": (192, 160, 128),
+            "O": (192, 160, 128),
+            "S": (160, 128, 96),
+            "F": (160, 128, 96),
+            "Cl": (160, 128, 96),
+        }
+        return cls.separate_networks(
+            symbols,
+            in_dim,
+            dims,
+            out_dim=out_dim,
+            bias=bias,
+            activation=activation,
+            default_dims=default_dims,
+        )
+
+    @classmethod
+    def like_ala(
+        cls,
+        symbols: tp.Sequence[str] = ("H", "C", "N", "O", "S", "F", "Cl"),
+        in_dim: int = 1008,
+        out_dim: int = 1,
+        activation: tp.Union[str, torch.nn.Module] = "celu",
+        bias: bool = True,
+    ) -> tpx.Self:
+        default_dims = (160, 128, 96)
+        dims: tp.Dict[str, tp.Tuple[int, ...]] = {
+            "H": (256, 192, 160),
+            "C": (224, 196, 160),
+            "N": (192, 160, 128),
+            "O": (192, 160, 128),
+            "S": (160, 128, 96),
+            "F": (160, 128, 96),
+            "Cl": (160, 128, 96),
+        }
+        return cls.separate_networks(
+            symbols,
+            in_dim,
+            dims,
+            out_dim=out_dim,
+            bias=bias,
+            activation=activation,
+            default_dims=default_dims,
+        )
+
+    @classmethod
+    def like_2x(
+        cls,
+        symbols: tp.Sequence[str] = ("H", "C", "N", "O", "S", "F", "Cl"),
+        in_dim: int = 1008,
+        out_dim: int = 1,
+        activation: tp.Union[str, torch.nn.Module] = "celu",
+        bias: bool = True,
+    ) -> tpx.Self:
+        default_dims = (160, 128, 96)
+        dims: tp.Dict[str, tp.Tuple[int, ...]] = {
+            "H": (256, 192, 160),
+            "C": (224, 192, 160),
+            "N": (192, 160, 128),
+            "O": (192, 160, 128),
+            "S": (160, 128, 96),
+            "F": (160, 128, 96),
+            "Cl": (160, 128, 96),
+        }
+        return cls.separate_networks(
+            symbols,
+            in_dim,
+            dims,
+            out_dim=out_dim,
+            bias=bias,
+            activation=activation,
+            default_dims=default_dims,
+        )
+
+    @classmethod
+    def like_1x(
+        cls,
+        symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
+        in_dim: int = 384,
+        out_dim: int = 1,
+        activation: tp.Union[str, torch.nn.Module] = "celu",
+        bias: bool = True,
+    ) -> tpx.Self:
+        default_dims = (128, 112, 96)
+        dims: tp.Dict[str, tp.Tuple[int, ...]] = {
+            "H": (160, 128, 96),
+            "C": (144, 112, 96),
+            "N": (128, 112, 96),
+            "O": (128, 112, 96),
+        }
+        return cls.separate_networks(
+            symbols,
+            in_dim,
+            dims,
+            out_dim=out_dim,
+            bias=bias,
+            activation=activation,
+            default_dims=default_dims,
+        )
 
 
 class Ensemble(AtomicContainer):

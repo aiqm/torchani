@@ -19,16 +19,12 @@ from torchani.nn._core import (
     parse_activation,
     TightCELU,
 )
-from torchani.nn._factories import (
-    AtomicMaker,
-    AtomicMakerArg,
-    make_1x_network,
-    make_2x_network,
-    make_ala_network,
-    make_dr_network,
-)
 from torchani.nn._infer import BmmAtomicNetwork, BmmEnsemble, BmmLinear, MNPNetworks
-from torchani.nn._containers import ANINetworks, Ensemble, SpeciesConverter
+from torchani.nn._containers import (
+    ANINetworks,
+    Ensemble,
+    SpeciesConverter,
+)
 from torchani.nn._internal import Sequential, ANIModel
 
 __all__ = [
@@ -36,13 +32,6 @@ __all__ = [
     "AtomicContainer",
     "AtomicNetwork",
     "parse_activation",
-    # Factories
-    "AtomicMaker",
-    "AtomicMakerArg",
-    "make_1x_network",
-    "make_2x_network",
-    "make_ala_network",
-    "make_dr_network",
     # Containers
     "ANINetworks",
     "Ensemble",

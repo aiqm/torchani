@@ -7,8 +7,7 @@ from torch.export import Dim
 import unittest
 
 from torchani._testing import ANITestCase, make_neighbors, make_molec
-from torchani.utils import SYMBOLS_2X
-from torchani.nn import ANINetworks, make_2x_network
+from torchani.nn import ANINetworks
 from torchani.neighbors import (
     discard_outside_cutoff,
     neighbors_to_triples,
@@ -58,11 +57,8 @@ class TestCompile(ANITestCasePT2):
     def testAEVComputer(self) -> None:
         _ = torch.compile(AEVComputer.like_2x().compute_from_neighbors, fullgraph=True)
 
-    def testAtomicNetwork(self) -> None:
-        _ = make_2x_network("H").compile(fullgraph=True)
-
     def testANINetworks(self) -> None:
-        ANINetworks({s: make_2x_network(s) for s in SYMBOLS_2X}).compile(fullgraph=True)
+        ANINetworks.like_2x().compile(fullgraph=True)
 
     def tearDown(self) -> None:
         torch.compiler.reset()
