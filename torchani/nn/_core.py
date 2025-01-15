@@ -2,6 +2,68 @@ import typing as tp
 
 import torch
 from torch import Tensor
+from torchani._core import _ChemModule
+
+
+class _Embedding(_ChemModule):
+    def forward(self, elem_idxs: Tensor) -> Tensor:
+        raise NotImplementedError()
+
+
+class _AtomicDummyEmbedding(_Embedding):
+    r"""Dummy embedding that always returns an empty tensor"""
+    def __init__(self, symbols: tp.Sequence[str]) -> None:
+        super().__init__(symbols)
+        self.register_buffer("_dummy", torch.empty(0))
+
+    def forward(self, elem_idxs: Tensor) -> Tensor:
+        return self._dummy.new_empty(0)
+
+
+class AtomicOneHot(_Embedding):
+    r"""Embed a sequence of atoms into one-hot vectors
+
+    As an example:
+
+    .. code-block:: python
+
+        symbols = ("H", "C", "N")
+        one_hot = AtomicOneHot(symbols)
+        encoded = one_hot(torch.tensor([1, 0, 2]))
+        assert (encoded == torch.tensor([[0, 1, 0], [1, 0, 0], [0, 0, 1]])).all()
+
+    """
+    def __init__(self, symbols: tp.Sequence[str]) -> None:
+        super().__init__(symbols)
+        num = len(self.symbols)
+        one_hot = torch.zeros(num, num)
+        one_hot[torch.arange(num), torch.arange(num)] = 1
+        self.register_buffer("one_hot", one_hot)
+
+    def forward(self, elem_idxs: Tensor) -> Tensor:
+        return self.one_hot[elem_idxs]
+
+
+class AtomicEmbedding(_Embedding):
+    r"""Embed a sequence of atoms into a continuous vector space
+
+    This module is a thin wrapper over `torch.nn.Embedding`. As an example:
+
+    .. code-block:: python
+
+        symbols = ("H", "C", "N")
+        embed = AtomicEmbedding(symbols)
+        encoded = embed(torch.tensor([1, 0, 2]))
+        # For example encoded could be
+        # torch.tensor([[1.2, 0.1, -0.1], [0.5, 0.8, 0.3], [0.3, -0.4, 1.2]])
+    """
+    def __init__(self, symbols: tp.Sequence[str], dim: int = 10) -> None:
+        super().__init__(symbols)
+        num = len(self.symbols)
+        self.embed = torch.nn.Embedding(num, dim)
+
+    def forward(self, elem_idxs: Tensor) -> Tensor:
+        return self.embed(elem_idxs)
 
 
 class AtomicContainer(torch.nn.Module):
@@ -13,8 +75,8 @@ class AtomicContainer(torch.nn.Module):
 
     def __init__(self, *args: tp.Any, **kwargs: tp.Any) -> None:
         super().__init__()
-        self.total_members_num = 0
-        self.active_members_idxs = []
+        self.total_members_num = 1
+        self.active_members_idxs = [0]
         self.num_species = 0
 
     def forward(

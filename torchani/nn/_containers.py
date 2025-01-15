@@ -7,8 +7,264 @@ from torch import Tensor
 
 from torchani.tuples import SpeciesEnergies
 from torchani.constants import PERIODIC_TABLE, ATOMIC_NUMBER
-from torchani.nn._core import AtomicContainer, AtomicNetwork
+from torchani.nn._core import (
+    AtomicContainer,
+    AtomicNetwork,
+    AtomicOneHot,
+    AtomicEmbedding,
+    _AtomicDummyEmbedding,
+    _Embedding,
+)
 from torchani.nn._infer import BmmEnsemble, MNPNetworks
+
+
+class SingleNN(AtomicContainer):
+    r"""Predict molecular or atomic scalars form fully shared networks
+
+    Arguments:
+        network: Atomic network to wrap, output dimension should be equal
+            to the number of supported elements
+    """
+    embed: _Embedding
+
+    def __init__(
+        self,
+        symbols: tp.Sequence[str],
+        network: AtomicNetwork,
+        embed_kind: str = "continuous",
+        embed_dims: int = 10,
+    ):
+        super().__init__()
+        self.num_species = len(symbols)
+        if not network.final_layer.weight.shape[0] == self.num_species:
+            raise ValueError(
+                "Output of final layer must be equal to the species num for SingleNN"
+            )
+        if embed_kind == "one-hot":
+            self.embed = AtomicOneHot(symbols)
+            if embed_dims != 10:
+                raise ValueError("embed_dims is incompatible with 'one-hot'")
+        elif embed_kind == "continuous":
+            self.embed = AtomicEmbedding(symbols, embed_dims)
+        elif embed_kind == "none":
+            if embed_dims != 10:
+                raise ValueError("embed_dims is incompatible with embed_kind='none'")
+            self.embed = _AtomicDummyEmbedding(symbols)
+        else:
+            raise ValueError(f"Unsupported embedding kind {embed_kind}")
+        self.network = network
+
+    def forward(
+        self,
+        elem_idxs: Tensor,
+        aevs: Tensor,
+        atomic: bool = False,
+        ensemble_values: bool = False,
+    ) -> Tensor:
+        r"""Calculate atomic scalars from the input features
+
+        Args:
+            elem_idxs: |elem_idxs|
+            aevs: |aevs|
+            atomic: Whether to perform a sum reduction in the ``atoms`` dim. If
+                ``True``, the returned tensor has shape ``(molecules, atoms)``,
+                otherwise it has shape ``(molecules,)``
+
+        Returns:
+            Tensor with the predicted scalars.
+        """
+        assert elem_idxs.shape == aevs.shape[:-1]
+        flat_elem_idxs = elem_idxs.flatten()
+        aev = aevs.flatten(0, 1)
+        embedding = self.embed(flat_elem_idxs)
+        aev = torch.cat((aev, embedding), dim=-1)
+        output = self.network(aev)
+        scalars = torch.gather(output, 1, flat_elem_idxs.unsqueeze(1))
+        scalars = scalars.view_as(elem_idxs)
+        if atomic:
+            return scalars
+        return scalars.sum(dim=1)
+
+    # TODO: Currently out-dim must be 1 for this network
+    @classmethod
+    def build(
+        cls,
+        symbols: tp.Sequence[str],
+        in_dim: int,
+        dims: tp.Tuple[int, ...],
+        out_dim: int = 1,
+        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        bias: bool = False,
+        embed_kind: str = "continuous",
+        embed_dim: int = 10,
+    ) -> tpx.Self:
+        if out_dim != 1:
+            raise ValueError("out_dim != 1 is not implemented for SingleNN")
+        final_dim = len(symbols)
+        if embed_kind == "continuous":
+            _extra = embed_dim
+        elif embed_kind == "one-hot":
+            _extra = len(symbols)
+        else:
+            _extra = 0
+        network = AtomicNetwork(layer_dims=(in_dim + _extra,) + dims + (final_dim,))
+        return cls(symbols, network, embed_kind, embed_dim)
+
+    @classmethod
+    def no_embed(
+        cls,
+        symbols: tp.Sequence[str],
+        in_dim: int,
+        out_dim: int = 1,
+        bias: bool = False,
+        activation: tp.Union[str, torch.nn.Module] = "gelu",
+    ) -> tpx.Self:
+        dims = (256, 192, 160)
+        return cls.build(
+            symbols, in_dim, dims, out_dim, activation, bias, embed_kind="none"
+        )
+
+    @classmethod
+    def one_hot(
+        cls,
+        symbols: tp.Sequence[str],
+        in_dim: int,
+        out_dim: int = 1,
+        bias: bool = False,
+        activation: tp.Union[str, torch.nn.Module] = "gelu",
+    ) -> tpx.Self:
+        dims = (256, 192, 160)
+        return cls.build(
+            symbols, in_dim, dims, out_dim, activation, bias, embed_kind="one-hot"
+        )
+
+    @classmethod
+    def default(
+        cls,
+        symbols: tp.Sequence[str],
+        in_dim: int,
+        out_dim: int = 1,
+        bias: bool = False,
+        activation: tp.Union[str, torch.nn.Module] = "gelu",
+    ) -> tpx.Self:
+        dims = (256, 192, 160)
+        return cls.build(symbols, in_dim, dims, out_dim, activation, bias)
+
+
+class ANISharedNetworks(AtomicContainer):
+    r"""Predict molecular or atomic scalars form (possibly partially shared) networks
+
+    This model is similar to `torchani.nn.ANINetworks` with the caveat that
+    it allows for partially sharing layers
+
+    Arguments:
+        shared: Shared layers for all elements
+        modules: symbol-network mapping for each supported element. Different elements
+            will share networks if the same ref is used for different keys
+        alias: Allow the class to map different elements to the same atomic network.
+    """
+    def __init__(
+        self,
+        shared: AtomicNetwork,
+        modules: tp.Dict[str, AtomicNetwork],
+        alias: bool = False,
+    ):
+        super().__init__()
+        if any(s not in PERIODIC_TABLE for s in modules):
+            raise ValueError("All modules should be mapped to valid chemical symbols")
+        if not alias and len(set(id(m) for m in modules.values())) != len(modules):
+            raise ValueError("Symbols map to same module. If intended use `alias=True`")
+        self.shared = shared
+        self.atomics = torch.nn.ModuleDict(modules)
+        self.num_species = len(self.atomics)
+
+    def forward(
+        self,
+        elem_idxs: Tensor,
+        aevs: Tensor,
+        atomic: bool = False,
+        ensemble_values: bool = False,
+    ) -> Tensor:
+        r"""Calculate atomic scalars from the input features
+
+        Args:
+            elem_idxs: |elem_idxs|
+            aevs: |aevs|
+            atomic: Whether to perform a sum reduction in the ``atoms`` dim. If
+                ``True``, the returned tensor has shape ``(molecules, atoms)``,
+                otherwise it has shape ``(molecules,)``
+
+        Returns:
+            Tensor with the predicted scalars.
+        """
+        assert elem_idxs.shape == aevs.shape[:-1]
+        flat_elem_idxs = elem_idxs.flatten()
+        aev = aevs.flatten(0, 1)
+        aev = self.shared.activation(self.shared(aev))
+        scalars = aev.new_zeros(flat_elem_idxs.shape)
+        for i, m in enumerate(self.atomics.values()):
+            selected_idxs = (flat_elem_idxs == i).nonzero().view(-1)
+            if selected_idxs.shape[0] > 0:
+                input_ = aev.index_select(0, selected_idxs)
+                scalars.index_add_(0, selected_idxs, m(input_).view(-1))
+        scalars = scalars.view_as(elem_idxs)
+        if atomic:
+            return scalars
+        return scalars.sum(dim=1)
+
+    @classmethod
+    def build(
+        cls,
+        symbols: tp.Sequence[str],
+        in_dim: int,
+        shared_dims: tp.Tuple[int, ...],
+        dims: tp.Dict[str, tp.Tuple[int, ...]],
+        out_dim: int = 1,
+        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        bias: bool = False,
+        default_dims: tp.Tuple[int, ...] = (),
+    ) -> tpx.Self:
+        modules: tp.Dict[str, AtomicNetwork] = {}
+
+        shared = AtomicNetwork(layer_dims=(in_dim,) + shared_dims)
+        out_shared = shared_dims[-1]
+        for s in symbols:
+            layer_dims = (out_shared,) + dims.get(s, default_dims) + (out_dim,)
+            modules[s] = AtomicNetwork(
+                layer_dims=layer_dims,
+                activation=activation,
+                bias=bias
+            )
+        return cls(shared, modules)
+
+    @classmethod
+    def default(
+        cls,
+        symbols: tp.Sequence[str],
+        in_dim: int,
+        out_dim: int = 1,
+        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        bias: bool = False,
+    ) -> tpx.Self:
+        default_dims = (128, 96)
+        shared_dims = (256,)
+        dims: tp.Dict[str, tp.Tuple[int, ...]] = {
+            "H": (192, 160),
+            "C": (192, 160),
+            "N": (160, 128),
+            "O": (160, 128),
+            "S": (128, 96),
+            "F": (128, 96),
+            "Cl": (128, 96),
+        }
+        return cls.build(
+            symbols,
+            in_dim,
+            shared_dims=shared_dims,
+            activation=activation,
+            dims=dims,
+            default_dims=default_dims,
+        )
 
 
 class ANINetworks(AtomicContainer):
@@ -59,8 +315,6 @@ class ANINetworks(AtomicContainer):
             raise ValueError("Symbols map to same module. If intended use `alias=True`")
         self.atomics = torch.nn.ModuleDict(modules)
         self.num_species = len(self.atomics)
-        self.total_members_num = 1
-        self.active_members_idxs = [0]
 
     def forward(
         self,
@@ -111,7 +365,7 @@ class ANINetworks(AtomicContainer):
         return MNPNetworks(self, use_mnp=use_mnp)
 
     @classmethod
-    def separate_networks(
+    def build(
         cls,
         symbols: tp.Sequence[str],
         in_dim: int,
@@ -150,7 +404,7 @@ class ANINetworks(AtomicContainer):
             "F": (160, 128, 96),
             "Cl": (160, 128, 96),
         }
-        return cls.separate_networks(
+        return cls.build(
             symbols,
             in_dim,
             dims,
@@ -179,7 +433,7 @@ class ANINetworks(AtomicContainer):
             "F": (160, 128, 96),
             "Cl": (160, 128, 96),
         }
-        return cls.separate_networks(
+        return cls.build(
             symbols,
             in_dim,
             dims,
@@ -208,7 +462,7 @@ class ANINetworks(AtomicContainer):
             "F": (160, 128, 96),
             "Cl": (160, 128, 96),
         }
-        return cls.separate_networks(
+        return cls.build(
             symbols,
             in_dim,
             dims,
@@ -217,6 +471,17 @@ class ANINetworks(AtomicContainer):
             activation=activation,
             default_dims=default_dims,
         )
+
+    @classmethod
+    def default(
+        cls,
+        symbols: tp.Sequence[str],
+        in_dim: int,
+        out_dim: int = 1,
+        activation: tp.Union[str, torch.nn.Module] = "gelu",
+        bias: bool = False,
+    ) -> tpx.Self:
+        return cls.like_2x(symbols, in_dim, out_dim, activation, bias)
 
     @classmethod
     def like_1x(
@@ -234,7 +499,7 @@ class ANINetworks(AtomicContainer):
             "N": (128, 112, 96),
             "O": (128, 112, 96),
         }
-        return cls.separate_networks(
+        return cls.build(
             symbols,
             in_dim,
             dims,

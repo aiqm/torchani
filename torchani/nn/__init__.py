@@ -16,12 +16,16 @@ also provided.
 from torchani.nn._core import (
     AtomicNetwork,
     AtomicContainer,
+    AtomicOneHot,
+    AtomicEmbedding,
     parse_activation,
     TightCELU,
 )
 from torchani.nn._infer import BmmAtomicNetwork, BmmEnsemble, BmmLinear, MNPNetworks
 from torchani.nn._containers import (
     ANINetworks,
+    ANISharedNetworks,
+    SingleNN,
     Ensemble,
     SpeciesConverter,
 )
@@ -29,11 +33,15 @@ from torchani.nn._internal import Sequential, ANIModel
 
 __all__ = [
     # Core
+    "AtomicOneHot",
+    "AtomicEmbedding",
     "AtomicContainer",
     "AtomicNetwork",
     "parse_activation",
     # Containers
     "ANINetworks",
+    "ANISharedNetworks",
+    "SingleNN",
     "Ensemble",
     "SpeciesConverter",
     # Inference optimization

@@ -56,6 +56,7 @@ from torchani.aev import (
     AngularArg,
 )
 from torchani.aev._terms import _parse_radial_term, _parse_angular_term
+import torchani.nn as torchani_nn
 from torchani.nn import (
     SpeciesConverter,
     AtomicContainer,
@@ -953,7 +954,8 @@ def simple_ani(
     cutoff_fn: CutoffArg = "smooth",
     dispersion: bool = False,
     repulsion: bool = True,
-    network_factory: str = "ani2x",
+    container_ctor: str = "default",
+    container: str = "ANINetworks",  # Supports also SingleNN and ANISharedNetworks
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
     strategy: str = "auto",
@@ -991,7 +993,8 @@ def simple_ani(
         strategy=strategy,
     )
     asm.set_atomic_networks(
-        ctor=network_factory,
+        cls=getattr(torchani_nn, container),
+        ctor=container_ctor,
         kwargs={"bias": bias, "activation": parse_activation(activation)},
     )
     asm.set_neighborlist(neighborlist)
@@ -1029,7 +1032,10 @@ def simple_aniq(
     cutoff_fn: CutoffArg = "smooth",
     dispersion: bool = False,
     repulsion: bool = True,
-    network_factory: str = "ani2x",
+    container_ctor: str = "default",
+    charge_container_ctor: str = "default",
+    container: str = "ANINetworks",  # Supports also SingleNN and ANISharedNetworks
+    charge_container: str = "ANINetworks",
     activation: tp.Union[str, torch.nn.Module] = "gelu",
     bias: bool = False,
     strategy: str = "auto",
@@ -1078,8 +1084,8 @@ def simple_aniq(
         if dummy_energies:
             raise ValueError("Can't output dummy energies with merged charge network")
         asm.set_atomic_networks(
-            cls=_ZeroANINetworks if dummy_energies else ANINetworks,
-            ctor=network_factory,
+            cls=getattr(torchani_nn, container),
+            ctor=container_ctor,
             kwargs={
                 "bias": bias,
                 "activation": parse_activation(activation),
@@ -1087,13 +1093,18 @@ def simple_aniq(
             },
         )
     else:
+        if dummy_energies and container != "ANINetworks":
+            raise ValueError(
+                "Custom energy module not supported if outputting dummy energies"
+            )
         asm.set_atomic_networks(
-            cls=_ZeroANINetworks if dummy_energies else ANINetworks,
-            ctor=network_factory,
+            cls=_ZeroANINetworks if dummy_energies else getattr(torchani_nn, container),
+            ctor=container_ctor,
             kwargs={"bias": bias, "activation": parse_activation(activation)},
         )
         asm.set_charge_networks(
-            ctor=network_factory,
+            cls=getattr(torchani_nn, charge_container),
+            ctor=charge_container_ctor,
             normalizer=normalizer,
             kwargs={"bias": bias, "activation": parse_activation(activation)},
         )
