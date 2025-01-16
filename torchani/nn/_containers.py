@@ -161,6 +161,32 @@ class SingleNN(AtomicContainer):
         dims = (256, 160, 128, 512)
         return cls.build(symbols, in_dim, dims, out_dim, activation, bias)
 
+    @classmethod
+    def one_hot_large(
+        cls,
+        symbols: tp.Sequence[str],
+        in_dim: int,
+        out_dim: int = 1,
+        bias: bool = False,
+        activation: tp.Union[str, torch.nn.Module] = "gelu",
+    ) -> tpx.Self:
+        dims = (320, 256, 256, 512)
+        return cls.build(
+            symbols, in_dim, dims, out_dim, activation, bias, embed_kind="one-hot"
+        )
+
+    @classmethod
+    def large(
+        cls,
+        symbols: tp.Sequence[str],
+        in_dim: int,
+        out_dim: int = 1,
+        bias: bool = False,
+        activation: tp.Union[str, torch.nn.Module] = "gelu",
+    ) -> tpx.Self:
+        dims = (320, 256, 256, 512)
+        return cls.build(symbols, in_dim, dims, out_dim, activation, bias)
+
 
 class ANISharedNetworks(AtomicContainer):
     r"""Predict molecular or atomic scalars form (possibly partially shared) networks
