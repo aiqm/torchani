@@ -107,19 +107,19 @@ class SingleNN(AtomicContainer):
         activation: tp.Union[str, torch.nn.Module] = "gelu",
         bias: bool = False,
         embed_kind: str = "continuous",
-        embed_dim: int = 10,
+        embed_dims: tp.Optional[int] = None,
     ) -> tpx.Self:
         if out_dim != 1:
             raise ValueError("out_dim != 1 is not implemented for SingleNN")
         final_dim = len(symbols)
         if embed_kind == "continuous":
-            _extra = embed_dim
+            _extra = 10 if embed_dims is None else embed_dims
         elif embed_kind == "one-hot":
             _extra = len(symbols)
         else:
             _extra = 0
         network = AtomicNetwork(layer_dims=(in_dim + _extra,) + dims + (final_dim,))
-        return cls(symbols, network, embed_kind, embed_dim)
+        return cls(symbols, network, embed_kind, embed_dims)
 
     @classmethod
     def no_embed(
