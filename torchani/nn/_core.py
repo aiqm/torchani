@@ -7,17 +7,7 @@ from torchani._core import _ChemModule
 
 class _Embedding(_ChemModule):
     def forward(self, elem_idxs: Tensor) -> Tensor:
-        raise NotImplementedError()
-
-
-class _AtomicDummyEmbedding(_Embedding):
-    r"""Dummy embedding that always returns an empty tensor"""
-    def __init__(self, symbols: tp.Sequence[str]) -> None:
-        super().__init__(symbols)
-        self.register_buffer("_dummy", torch.empty(0))
-
-    def forward(self, elem_idxs: Tensor) -> Tensor:
-        return self._dummy.new_empty(0)
+        raise NotImplementedError("Must be implemented by subclasses")
 
 
 class AtomicOneHot(_Embedding):
@@ -66,8 +56,9 @@ class AtomicEmbedding(_Embedding):
     def forward(self, elem_idxs: Tensor) -> Tensor:
         padding_idx = self.embed.padding_idx
         assert padding_idx is not None  # mypy
-        elem_idxs[elem_idxs == -1] = padding_idx
-        return self.embed(elem_idxs)
+        _elem_idxs = elem_idxs.clone()
+        _elem_idxs[elem_idxs == -1] = padding_idx
+        return self.embed(_elem_idxs)
 
 
 class AtomicContainer(torch.nn.Module):
