@@ -130,7 +130,7 @@ class SingleNN(AtomicContainer):
         bias: bool = False,
         activation: tp.Union[str, torch.nn.Module] = "gelu",
     ) -> tpx.Self:
-        dims = (256, 192, 160)
+        dims = (256, 160, 128, 512)
         return cls.build(
             symbols, in_dim, dims, out_dim, activation, bias, embed_kind="none"
         )
@@ -144,7 +144,7 @@ class SingleNN(AtomicContainer):
         bias: bool = False,
         activation: tp.Union[str, torch.nn.Module] = "gelu",
     ) -> tpx.Self:
-        dims = (256, 192, 160)
+        dims = (256, 160, 128, 512)
         return cls.build(
             symbols, in_dim, dims, out_dim, activation, bias, embed_kind="one-hot"
         )
@@ -158,7 +158,7 @@ class SingleNN(AtomicContainer):
         bias: bool = False,
         activation: tp.Union[str, torch.nn.Module] = "gelu",
     ) -> tpx.Self:
-        dims = (256, 192, 160)
+        dims = (256, 160, 128, 512)
         return cls.build(symbols, in_dim, dims, out_dim, activation, bias)
 
 
