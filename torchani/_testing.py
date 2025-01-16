@@ -91,6 +91,27 @@ class Molecs(tp.NamedTuple):
     pbc: tp.Optional[Tensor]
 
 
+def make_elem_idxs(
+    molecs_num: int,
+    atoms_num: int,
+    symbols: tp.Sequence[str] = ("H", "C", "N", "O"),
+    seed: tp.Optional[int] = None,
+    device: Device = None,
+) -> Tensor:
+    rng = torch.Generator(device="cpu")
+    rng.manual_seed(seed) if seed is not None else rng.seed()
+    if seed is not None:
+        torch.manual_seed(seed)
+    return torch.randint(
+        low=0,
+        high=len(symbols),
+        size=(molecs_num, atoms_num,),
+        generator=rng,
+        device="cpu",
+        dtype=torch.long,
+    )
+
+
 def make_molecs(
     molecs_num: int,
     atoms_num: int,

@@ -23,20 +23,20 @@ class _AtomicDummyEmbedding(_Embedding):
 class AtomicOneHot(_Embedding):
     r"""Embed a sequence of atoms into one-hot vectors
 
-    As an example:
+    Padding atoms are set to zeros. As an example:
 
     .. code-block:: python
 
         symbols = ("H", "C", "N")
         one_hot = AtomicOneHot(symbols)
-        encoded = one_hot(torch.tensor([1, 0, 2]))
-        assert (encoded == torch.tensor([[0, 1, 0], [1, 0, 0], [0, 0, 1]])).all()
+        encoded = one_hot(torch.tensor([1, 0, 2, -1]))
+        # encoded == torch.tensor([[0, 1, 0], [1, 0, 0], [0, 0, 1], [0, 0, 0]])
 
     """
     def __init__(self, symbols: tp.Sequence[str]) -> None:
         super().__init__(symbols)
         num = len(self.symbols)
-        one_hot = torch.zeros(num, num)
+        one_hot = torch.zeros(num + 1, num)
         one_hot[torch.arange(num), torch.arange(num)] = 1
         self.register_buffer("one_hot", one_hot)
 
@@ -47,22 +47,26 @@ class AtomicOneHot(_Embedding):
 class AtomicEmbedding(_Embedding):
     r"""Embed a sequence of atoms into a continuous vector space
 
-    This module is a thin wrapper over `torch.nn.Embedding`. As an example:
+    This module is a thin wrapper over `torch.nn.Embedding`. Padding
+    atoms are set to zero. As an example:
 
     .. code-block:: python
 
         symbols = ("H", "C", "N")
-        embed = AtomicEmbedding(symbols)
-        encoded = embed(torch.tensor([1, 0, 2]))
-        # For example encoded could be
-        # torch.tensor([[1.2, 0.1, -0.1], [0.5, 0.8, 0.3], [0.3, -0.4, 1.2]])
+        embed = AtomicEmbedding(symbols, 2)
+        encoded = embed(torch.tensor([1, 0, 2, -1]))
+        # `encoded` depends on the random init, but it could be for instance:
+        # torch.tensor([[1.2, .1], [-.5, .8], [.3, -.4], [0, 0]])
     """
     def __init__(self, symbols: tp.Sequence[str], dim: int = 10) -> None:
         super().__init__(symbols)
         num = len(self.symbols)
-        self.embed = torch.nn.Embedding(num, dim)
+        self.embed = torch.nn.Embedding(num + 1, dim, padding_idx=num)
 
     def forward(self, elem_idxs: Tensor) -> Tensor:
+        padding_idx = self.embed.padding_idx
+        assert padding_idx is not None  # mypy
+        elem_idxs[elem_idxs == -1] = padding_idx
         return self.embed(elem_idxs)
 
 
