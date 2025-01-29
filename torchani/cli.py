@@ -119,10 +119,11 @@ def opt(
     _device, _dtype = parse_device_and_dtype(device, dtype)
     model = getattr(torchani.models, model_key)(device=_device, dtype=_dtype)
     output: tp.Dict[str, tp.Any] = {"energies": []}
+    if hessians:
+        forces = True  # It is free to get the forces if you ask for the hessians
+        output["hessians"] = []
     if forces:
         output["forces"] = []
-    if hessians:
-        output["hessians"] = []
     print("Sorry. Not implemented yet!")
     raise Abort()
     for p in paths:
