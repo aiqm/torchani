@@ -3,7 +3,10 @@ import unittest
 import torch
 
 from torchani._testing import ANITestCase, expand
-from torchani.models import ANI1x, ANI2x, ANIdr, ANImbis, ANI2xr, ANI2dr
+from torchani.models import (
+    ANI1x, ANI2x, ANIdr, ANImbis,
+    ANI2xr, ANI2dr, ANIr2s
+)
 from torchani.datasets import batch_all_in_ram, TestData
 from torchani.neighbors import compute_bounding_cell, reconstruct_shifts
 
@@ -135,6 +138,12 @@ class TestBuiltinModels(ANITestCase):
 
     def testANI2dr(self):
         self._test_ensemble(ANI2dr().to(self.device))
+
+    def testANIr2s(self):
+        self._test_ensemble(ANIr2s().to(self.device))
+
+    def testANIr2s_water(self):
+        self._test_ensemble(ANIr2s(solvent="water").to(self.device))
 
     def testANImbis(self):
         self._test_ensemble(ANImbis().to(self.device))

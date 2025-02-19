@@ -373,3 +373,101 @@ def ANI2dr(
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
     return model
+
+
+def ANIr2s(
+    model_index: tp.Optional[int] = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+    solvent: tp.Optional[str] = None,
+) -> ANI:
+    r"""The ANI-r2s model, trained to the R2SCAN-3c level of theory
+
+    R2SCAN models are trained with the def2-mTZVPP basis set, on the ANI-2x-R2SCAN
+    dataset. There are different R2SCAN models trained using different SMD implicit
+    solvents that can be accessed with ``solvent='water'``, ``solvent='chcl3'``,
+    or ``solvent='ch3cn'``. Alternatively, the models ``ANIr2s_water``,
+    ``ANIr2s_ch3cn`` and ``ANIr2s_chcl3`` can also be instantiated directly. By default
+    the vacuum model is returned.
+    """
+    suffix = f"{'_' + solvent if solvent is not None else ''}"
+    # These models were trained with _AltSmoothCutoff, but difference is negligible
+    model = simple_ani(
+        lot=f"r2scan3c{suffix}-def2mtzvpp",
+        symbols=SYMBOLS_2X,
+        ensemble_size=8,
+        dispersion=False,
+        repulsion=True,
+        strategy=strategy,
+        neighborlist=neighborlist,
+        periodic_table_index=periodic_table_index,
+        repulsion_cutoff=False,
+        cutoff_fn="smooth",
+    )
+    model.load_state_dict(
+        _fetch_state_dict(f"anir2s{suffix}_state_dict.pt", private=True)
+    )
+    model = model if model_index is None else model[model_index]
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model
+
+
+def ANIr2s_ch3cn(
+    model_index: tp.Optional[int] = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> ANI:
+    return ANIr2s(
+        model_index,
+        neighborlist,
+        strategy,
+        periodic_table_index,
+        device,
+        dtype,
+        solvent="ch3cn"
+    )
+
+
+def ANIr2s_chcl3(
+    model_index: tp.Optional[int] = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> ANI:
+    return ANIr2s(
+        model_index,
+        neighborlist,
+        strategy,
+        periodic_table_index,
+        device,
+        dtype,
+        solvent="chcl3"
+    )
+
+
+def ANIr2s_water(
+    model_index: tp.Optional[int] = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> ANI:
+    return ANIr2s(
+        model_index,
+        neighborlist,
+        strategy,
+        periodic_table_index,
+        device,
+        dtype,
+        solvent="water"
+    )

@@ -961,6 +961,7 @@ def simple_ani(
     strategy: str = "auto",
     periodic_table_index: bool = True,
     neighborlist: NeighborlistArg = "all_pairs",
+    repulsion_cutoff: bool = True,
 ) -> ANI:
     r"""Flexible builder to create ANI-style models
 
@@ -1003,7 +1004,7 @@ def simple_ani(
         asm.add_potential(
             RepulsionXTB,
             name="repulsion_xtb",
-            cutoff=radial_cutoff,
+            cutoff=radial_cutoff if repulsion_cutoff else math.inf,
         )
     if dispersion:
         asm.add_potential(
