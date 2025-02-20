@@ -406,6 +406,10 @@ def ANIr2s(
         periodic_table_index=periodic_table_index,
         repulsion_cutoff=False,
         cutoff_fn="smooth",
+        # Exact reproduction of 2x aev
+        radial_start=0.8,
+        angular_start=0.8,
+        radial_cutoff=5.1,
     )
     model.load_state_dict(
         _fetch_state_dict(f"anir2s{suffix}_state_dict.pt", private=True)
