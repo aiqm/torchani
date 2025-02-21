@@ -27,6 +27,21 @@ class Triples(tp.NamedTuple):
     diff_vectors: Tensor  #: Similar to `Neighbors`, for triples. ``(2, triples, 3)``
 
 
+def discard_inter_molecule_pairs(
+    neighbors: Neighbors,
+    molecule_idxs: Tensor,
+) -> Neighbors:
+    r"""Discard neighbors that don't belong to the same molecule"""
+    molecule_neighbor_idxs = molecule_idxs[neighbors.indices]
+    internal_idxs = (
+        molecule_neighbor_idxs[0, :] == molecule_neighbor_idxs[1, :]
+    ).nonzero().view(-1)
+    indices = neighbors.indices.index_select(1, internal_idxs)
+    distances = neighbors.distances.index_select(0, internal_idxs)
+    diff_vectors = neighbors.diff_vectors.index_select(0, internal_idxs)
+    return Neighbors(indices, distances, diff_vectors)
+
+
 def discard_outside_cutoff(
     neighbors: Neighbors,
     cutoff: float,
