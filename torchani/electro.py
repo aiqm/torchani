@@ -19,7 +19,14 @@ __all__ = ["DipoleComputer", "compute_dipole", "ChargeNormalizer"]
 Reference = tp.Literal["center_of_mass", "center_of_geometry", "origin"]
 
 
-class ChargeNormalizer(torch.nn.Module):
+class BaseChargeNormalizer(torch.nn.Module):
+    def forward(
+        self, elem_idxs: Tensor, raw_charges: Tensor, charge: int = 0
+    ) -> Tensor:
+        return raw_charges
+
+
+class ChargeNormalizer(BaseChargeNormalizer):
     r"""
     Usage:
 

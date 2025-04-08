@@ -5,7 +5,7 @@ from torch import Tensor
 from torchani.tuples import EnergiesScalars
 from torchani.nn import AtomicContainer
 from torchani.aev import AEVComputer
-from torchani.electro import ChargeNormalizer
+from torchani.electro import ChargeNormalizer, BaseChargeNormalizer
 from torchani.neighbors import Neighbors
 from torchani.potentials.core import Potential
 
@@ -44,7 +44,7 @@ class MergedChargesNNPotential(NNPotential):
         self,
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
-        charge_normalizer: tp.Optional[ChargeNormalizer] = None,
+        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
     ):
         super().__init__(aev_computer, neural_networks)
         if charge_normalizer is None:
@@ -82,7 +82,7 @@ class SeparateChargesNNPotential(NNPotential):
         aev_computer: AEVComputer,
         neural_networks: AtomicContainer,
         charge_networks: AtomicContainer,
-        charge_normalizer: tp.Optional[ChargeNormalizer] = None,
+        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
     ):
         super().__init__(aev_computer, neural_networks)
         if charge_normalizer is None:

@@ -72,7 +72,7 @@ from torchani.neighbors import (
     discard_outside_cutoff,
     discard_inter_molecule_pairs,
 )
-from torchani.electro import ChargeNormalizer
+from torchani.electro import ChargeNormalizer, BaseChargeNormalizer
 from torchani.nn._internal import _ZeroANINetworks
 from torchani.constants import GSAES
 from torchani.paths import state_dicts_dir
@@ -579,7 +579,7 @@ class ANIq(_ANI):
         potentials: tp.Optional[tp.Dict[str, Potential]] = None,
         periodic_table_index: bool = True,
         charge_networks: tp.Optional[AtomicContainer] = None,
-        charge_normalizer: tp.Optional[ChargeNormalizer] = None,
+        charge_normalizer: tp.Optional[BaseChargeNormalizer] = None,
     ):
         super().__init__(
             symbols=symbols,
@@ -745,7 +745,7 @@ class Assembler:
         self._self_energies: tp.Dict[str, float] = {}
         self._container: tp.Optional[_AtomicContainerWrapper] = None
         self._charge_container: tp.Optional[_AtomicContainerWrapper] = None
-        self._charge_normalizer: tp.Optional[ChargeNormalizer] = None
+        self._charge_normalizer: tp.Optional[BaseChargeNormalizer] = None
         self._symbols: tp.Tuple[str, ...] = tuple(symbols)
 
         # The general container for all the parts of the model
@@ -831,7 +831,7 @@ class Assembler:
         cls: AtomicContainerCls = ANINetworks,
         ctor: str = "ani2x",
         kwargs: tp.Dict[str, tp.Any] = {},
-        normalizer: tp.Optional[ChargeNormalizer] = None,
+        normalizer: tp.Optional[BaseChargeNormalizer] = None,
     ) -> None:
         ctor = {
             "ani1x": "like_1x",
@@ -1083,6 +1083,7 @@ def simple_aniq(
     use_cuda_ops: bool = False,
     periodic_table_index: bool = True,
     neighborlist: NeighborlistArg = "all_pairs",
+    normalize: bool = True,
 ) -> ANIq:
     r"""Flexible builder to create ANI-style models that output charges
 
@@ -1114,10 +1115,14 @@ def simple_aniq(
         ),
         strategy=strategy,
     )
-    normalizer = ChargeNormalizer.from_electronegativity_and_hardness(
-        asm.symbols,
-        scale_weights_by_charges_squared=scale_charge_normalizer_weights,
-    )
+    if not normalize:
+        normalizer = BaseChargeNormalizer()
+    else:
+        normalizer = ChargeNormalizer.from_electronegativity_and_hardness(
+            asm.symbols,
+            scale_weights_by_charges_squared=scale_charge_normalizer_weights,
+        )
+
     if merge_charge_networks:
         if dummy_energies:
             raise ValueError("Can't output dummy energies with merged charge network")
