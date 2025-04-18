@@ -1,7 +1,7 @@
 c_compiler_version:
   - 12.2
 cxx_compiler_version:
-  - 11.2
+  - 12.2
 pytorch:
   - 2.5
 python:
