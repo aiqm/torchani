@@ -223,7 +223,7 @@ class PairPotential(BasePairPotential):
     r"""User friendly, simple class for pairwise potentials
 
     Subclasses must implement ``pair_energies`` and, if they use
-    any paramters or buffers, specify three list of strings:
+    any parameters or buffers, specify three list of strings:
 
     - ``'tensors'``: Vectors (all with the same len) or scalars
     - ``'elem_tensors'``: With shape ``(num-sym,)``

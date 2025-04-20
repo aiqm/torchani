@@ -594,7 +594,6 @@ class ANIq(_ANI):
         _nn = self.potentials["nnp"].neural_networks
         _aev_computer = self.potentials["nnp"].aev_computer
         if charge_networks is None:
-            warnings.warn("Merged charges potential is experimental")
             self.potentials["nnp"] = MergedChargesNNPotential(
                 _aev_computer, _nn, charge_normalizer
             )

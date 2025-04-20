@@ -369,6 +369,7 @@ class ANINetworks(AtomicContainer):
             [ATOMIC_NUMBER[e] for e in modules], dtype=torch.long
         )
         self.register_buffer("atomic_numbers", atomic_numbers, persistent=False)
+        self.out_dim: int = next(iter(self.atomics.values())).final_layer.out_features
 
     def __getitem__(self, idx: str) -> AtomicNetwork:
         return self.atomics[idx]
@@ -407,13 +408,14 @@ class ANINetworks(AtomicContainer):
         assert elem_idxs.shape == aevs.shape[:-1]
         flat_elem_idxs = elem_idxs.flatten()
         aev = aevs.flatten(0, 1)
-        scalars = aev.new_zeros(flat_elem_idxs.shape)
+        scalars = aev.new_zeros(flat_elem_idxs.shape + (self.out_dim,))
         for i, m in enumerate(self.atomics.values()):
             selected_idxs = (flat_elem_idxs == i).nonzero().view(-1)
             if selected_idxs.shape[0] > 0:
                 input_ = aev.index_select(0, selected_idxs)
-                scalars.index_add_(0, selected_idxs, m(input_).view(-1))
-        scalars = scalars.view_as(elem_idxs)
+                scalars.index_add_(0, selected_idxs, m(input_).view(-1, self.out_dim))
+        scalars = scalars.view(elem_idxs.shape[0], elem_idxs.shape[1], self.out_dim)
+        scalars = scalars.squeeze(-1)
         if atomic:
             return scalars
         return scalars.sum(dim=1)
