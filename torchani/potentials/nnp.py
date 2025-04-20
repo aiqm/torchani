@@ -13,11 +13,7 @@ from torchani.potentials.core import Potential
 # Adaptor to use the aev computer as a three body potential
 class NNPotential(Potential):
     def __init__(self, aev_computer: AEVComputer, neural_networks: AtomicContainer):
-        try:
-            symbols = tuple(k for k in neural_networks.member(0).atomics)
-        except AttributeError:
-            symbols = neural_networks.member(0).embed.symbols
-        super().__init__(symbols, cutoff=aev_computer.radial.cutoff)
+        super().__init__(neural_networks.symbols, cutoff=aev_computer.radial.cutoff)
         self.aev_computer = aev_computer
         self.neural_networks = neural_networks
 

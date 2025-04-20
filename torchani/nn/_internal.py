@@ -55,10 +55,11 @@ class _ZeroANINetworks(ANINetworks):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: Tensor,
+        aevs: tp.Optional[Tensor] = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
+        assert aevs is not None
         if atomic:
             return aevs.new_zeros(elem_idxs.shape)
         return aevs.new_zeros(elem_idxs.shape[0])
@@ -69,10 +70,11 @@ class _ANINetworksDiscardFirstScalar(ANINetworks):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: Tensor,
+        aevs: tp.Optional[Tensor] = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
+        assert aevs is not None
         assert elem_idxs.shape == aevs.shape[:-1]
         flat_elem_idxs = elem_idxs.flatten()
         aev = aevs.flatten(0, 1)

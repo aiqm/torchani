@@ -238,10 +238,12 @@ class _ANI(torch.nn.Module):
     # TODO This is confusing, it may be a good idea to deprecate it, or at least warn?
     def __getitem__(self, idx: int) -> tpx.Self:
         _nn = self.potentials["nnp"].neural_networks
+        if not hasattr(_nn, "members"):
+            raise ValueError("Can only fetch submodel from an ensemble")
         self.potentials["nnp"].neural_networks = None  # type: ignore
         model = deepcopy(self)
         self.potentials["nnp"].neural_networks = _nn
-        model.potentials["nnp"].neural_networks = deepcopy(_nn.member(idx))
+        model.potentials["nnp"].neural_networks = deepcopy(_nn[idx])
         return model
 
     # Needed for client classes that depend on accessing aev_computer directly

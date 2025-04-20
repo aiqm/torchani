@@ -92,12 +92,11 @@ class BmmEnsemble(AtomicContainer):
         self.num_species = ensemble.num_species
         if not hasattr(ensemble, "members"):
             raise TypeError("BmmEnsemble can only take an Ensemble as an input")
-        symbols = tuple(ensemble.member(0).atomics.keys())
-        self.atomics = torch.nn.ModuleList(
-            [
-                BmmAtomicNetwork([m.atomics[s] for m in ensemble.members])
-                for s in symbols
-            ]
+        self.atomics = torch.nn.ModuleDict(
+            {
+                s: BmmAtomicNetwork([m.atomics[s] for m in ensemble.members])
+                for s in ensemble.symbols
+            }
         )
 
         # bookkeeping for optimization
@@ -109,10 +108,11 @@ class BmmEnsemble(AtomicContainer):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: Tensor,
+        aevs: tp.Optional[Tensor] = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
+        assert aevs is not None
         assert elem_idxs.shape == aevs.shape[:-1]
         assert aevs.shape[0] == 1, "BmmEnsemble only supports single-conformer inputs"
 
@@ -128,7 +128,7 @@ class BmmEnsemble(AtomicContainer):
 
         aevs = aevs.flatten(0, 1)
         energies = aevs.new_zeros(aevs.shape[0])
-        for i, bmm_atomic in enumerate(self.atomics):
+        for i, bmm_atomic in enumerate(self.atomics.values()):
             if self._idx_list[i].shape[0] > 0:
                 if not torch.jit.is_scripting():
                     torch.cuda.nvtx.range_push(f"bmm-species-{i}")
@@ -255,15 +255,14 @@ class MNPNetworks(AtomicContainer):
         # Detect "ensemble" case via duck typing
         self._is_bmm = hasattr(module, "members")
         if self._is_bmm:
-            symbols = tuple(module.member(0).atomics.keys())
-            self.atomics = torch.nn.ModuleList(
-                [
-                    BmmAtomicNetwork([m.atomics[s] for m in module.members])
-                    for s in symbols
-                ]
+            self.atomics = torch.nn.ModuleDict(
+                {
+                    s: BmmAtomicNetwork([m.atomics[s] for m in module.members])
+                    for s in module.symbols
+                }
             )
         else:
-            self.atomics = torch.nn.ModuleList(list(module.atomics.values()))
+            self.atomics = module.atomics
         self._use_mnp = use_mnp
 
         # Bookkeeping for optimization
@@ -312,7 +311,7 @@ class MNPNetworks(AtomicContainer):
     def _copy_weights_and_biases(
         self,
     ) -> tp.Tuple[tp.List[Tensor], tp.List[Tensor], tp.List[int]]:
-        activation = self.atomics[0].activation
+        activation = next(iter(self.atomics.values())).activation
         if not isinstance(activation, TightCELU):
             raise ValueError(
                 f"Unsupported activation {type(activation)},"
@@ -321,7 +320,7 @@ class MNPNetworks(AtomicContainer):
         num_layers: tp.List[int] = []  # len: num_species
         weights: tp.List[Tensor] = []  # len: sum(num_species * num_layers[j])
         biases: tp.List[Tensor] = []  # len: sum(num_species * num_layers[j])
-        for atomic in self.atomics:
+        for atomic in self.atomics.values():
             if not isinstance(atomic.activation, type(activation)):
                 raise ValueError("All atomic networks must have the same activation fn")
             num_layers.append(len(atomic.layers) + 1)
@@ -340,10 +339,11 @@ class MNPNetworks(AtomicContainer):
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: Tensor,
+        aevs: tp.Optional[Tensor] = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
+        assert aevs is not None
         assert elem_idxs.shape == aevs.shape[:-1]
         assert aevs.shape[0] == 1, "MNPNetworks only supports single-conformer inputs"
         assert not atomic, "MNPNetworks doesn't support atomic energies"
@@ -363,7 +363,7 @@ class MNPNetworks(AtomicContainer):
             if torch.jit.is_scripting():
                 raise RuntimeError("JIT-MNPNetworks only supported with use_mnp=True")
             return PythonMNP.apply(
-                aevs, self._idx_list, self.atomics, self._stream_list
+                aevs, self._idx_list, self.atomics.values(), self._stream_list
             )
         # cppMNP
         return self._cpp_mnp(aevs)

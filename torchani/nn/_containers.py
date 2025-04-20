@@ -55,11 +55,15 @@ class SingleNN(AtomicContainer):
         else:
             raise ValueError(f"Unsupported embedding kind {embed_kind}")
         self.network = network
+        atomic_numbers = torch.tensor(
+            [ATOMIC_NUMBER[e] for e in symbols], dtype=torch.long
+        )
+        self.register_buffer("atomic_numbers", atomic_numbers, persistent=False)
 
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: Tensor,
+        aevs: tp.Optional[Tensor] = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -75,6 +79,7 @@ class SingleNN(AtomicContainer):
         Returns:
             Tensor with the predicted scalars.
         """
+        assert aevs is not None
         assert elem_idxs.shape == aevs.shape[:-1]
         molecs, atoms = elem_idxs.shape
         flat_elem_idxs = elem_idxs.flatten()
@@ -214,11 +219,18 @@ class ANISharedNetworks(AtomicContainer):
         self.shared = shared
         self.atomics = torch.nn.ModuleDict(modules)
         self.num_species = len(self.atomics)
+        atomic_numbers = torch.tensor(
+            [ATOMIC_NUMBER[e] for e in modules], dtype=torch.long
+        )
+        self.register_buffer("atomic_numbers", atomic_numbers, persistent=False)
+
+    def __getitem__(self, idx: str) -> AtomicNetwork:
+        return self.atomics[idx]
 
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: Tensor,
+        aevs: tp.Optional[Tensor] = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -234,6 +246,7 @@ class ANISharedNetworks(AtomicContainer):
         Returns:
             Tensor with the predicted scalars.
         """
+        assert aevs is not None
         assert elem_idxs.shape == aevs.shape[:-1]
         flat_elem_idxs = elem_idxs.flatten()
         aev = aevs.flatten(0, 1)
@@ -352,11 +365,18 @@ class ANINetworks(AtomicContainer):
             raise ValueError("Symbols map to same module. If intended use `alias=True`")
         self.atomics = torch.nn.ModuleDict(modules)
         self.num_species = len(self.atomics)
+        atomic_numbers = torch.tensor(
+            [ATOMIC_NUMBER[e] for e in modules], dtype=torch.long
+        )
+        self.register_buffer("atomic_numbers", atomic_numbers, persistent=False)
+
+    def __getitem__(self, idx: str) -> AtomicNetwork:
+        return self.atomics[idx]
 
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: Tensor,
+        aevs: tp.Optional[Tensor] = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -383,6 +403,7 @@ class ANINetworks(AtomicContainer):
                 energies = self(elem_idxs[0], elem_idxs[1])
                 return SpeciesEnergies(elem_idxs[0], energies)
 
+        assert aevs is not None
         assert elem_idxs.shape == aevs.shape[:-1]
         flat_elem_idxs = elem_idxs.flatten()
         aev = aevs.flatten(0, 1)
@@ -575,10 +596,13 @@ class Ensemble(AtomicContainer):
         if any(m.num_species != self.num_species for m in modules):
             raise ValueError("All modules must support the same number of elements")
 
+        self.register_buffer(
+            "atomic_numbers", next(iter(modules)).atomic_numbers, persistent=False)
+
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: Tensor,
+        aevs: tp.Optional[Tensor] = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
@@ -593,6 +617,7 @@ class Ensemble(AtomicContainer):
                 energies = self(elem_idxs[0], elem_idxs[1])
                 return SpeciesEnergies(elem_idxs[0], energies)
 
+        assert aevs is not None
         if ensemble_values:
             return self._ensemble_values(elem_idxs, aevs, atomic)
         if atomic:
@@ -619,8 +644,7 @@ class Ensemble(AtomicContainer):
                 idx += 1
         return energies
 
-    @torch.jit.unused
-    def member(self, idx: int) -> AtomicContainer:
+    def __getitem__(self, idx: int) -> AtomicContainer:
         return tp.cast(AtomicContainer, self.members[idx])
 
     @torch.jit.unused

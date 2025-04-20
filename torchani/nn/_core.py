@@ -3,6 +3,7 @@ import typing as tp
 import torch
 from torch import Tensor
 from torchani._core import _ChemModule
+from torchani.utils import PERIODIC_TABLE
 
 
 class _Embedding(_ChemModule):
@@ -73,17 +74,25 @@ class AtomicContainer(torch.nn.Module):
         self.total_members_num = 1
         self.active_members_idxs = [0]
         self.num_species = 0
+        atomic_numbers = torch.tensor([0], dtype=torch.long)
+        self.register_buffer("atomic_numbers", atomic_numbers, persistent=False)
 
     def forward(
         self,
         elem_idxs: Tensor,
-        aevs: Tensor,
+        aevs: tp.Optional[Tensor] = None,
         atomic: bool = False,
         ensemble_values: bool = False,
     ) -> Tensor:
+        assert aevs is not None
         if atomic:
             return aevs.new_zeros(elem_idxs.shape)
         return aevs.new_zeros(elem_idxs.shape[0])
+
+    @property
+    @torch.jit.unused
+    def symbols(self) -> tp.Tuple[str, ...]:
+        return tuple(PERIODIC_TABLE[z] for z in self.atomic_numbers)
 
     @torch.jit.export
     def get_active_members_num(self) -> int:
@@ -97,12 +106,6 @@ class AtomicContainer(torch.nn.Module):
                     f"Idx {idx} should be 0 <= idx < {self.total_members_num}"
                 )
         self.active_members_idxs = idxs
-
-    @torch.jit.unused
-    def member(self, idx: int) -> "AtomicContainer":
-        if idx == 0:
-            return self
-        raise IndexError("Only idx=0 supported")
 
     @torch.jit.unused
     def to_infer_model(self, use_mnp: bool = False) -> "AtomicContainer":
@@ -130,6 +133,13 @@ class AtomicNetwork(torch.nn.Module):
         self.final_layer = torch.nn.Linear(dims[-2], dims[-1], bias=bias)
         self.activation = parse_activation(activation)
         self.has_biases = bias
+
+    def __getitem__(self, idx: int) -> torch.nn.Module:
+        if idx in [-1, len(self.layers)]:
+            return self.final_layer
+        if idx < -1:
+            idx += 1
+        return self.layers[idx]
 
     def forward(self, features: Tensor) -> Tensor:
         for layer in self.layers:

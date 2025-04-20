@@ -193,7 +193,7 @@ class AEVComputer(torch.nn.Module):
     def forward(
         self,
         elem_idxs: Tensor,
-        coords: Tensor,
+        coords: tp.Optional[Tensor] = None,
         cell: tp.Optional[Tensor] = None,
         pbc: tp.Optional[Tensor] = None,
     ) -> Tensor:
@@ -225,6 +225,8 @@ class AEVComputer(torch.nn.Module):
                     "pbc = torch.tensor([False, False, False]) is not supported anymore"
                     " please use pbc = None"
                 )
+
+        assert coords is not None
         # Check input shape correctness and validate cutoffs
         assert elem_idxs.dim() == 2
         assert coords.shape == (elem_idxs.shape[0], elem_idxs.shape[1], 3)
