@@ -479,6 +479,34 @@ def ANIr2s_water(
     )
 
 
+def SnnANI2xr(
+    model_index: tp.Optional[int] = None,
+    neighborlist: NeighborlistArg = "all_pairs",
+    strategy: str = "pyaev",
+    periodic_table_index: bool = True,
+    device: Device = None,
+    dtype: DType = None,
+) -> ANI:
+    r"""Custom ANI model"""
+    model = simple_ani(
+        lot="wb97x-631gd",
+        symbols=['H', 'C', 'N', 'O', 'F', 'S', 'Cl'],
+        ensemble_size=8,
+        neighborlist=neighborlist,
+        periodic_table_index=periodic_table_index,
+        strategy=strategy,
+        container="SingleNN",
+        container_ctor="large",
+        repulsion=True,
+        sections=6,
+    )
+    model.load_state_dict(_fetch_state_dict("snn-ani2xr-preview.pt", private=True))
+    model = model if model_index is None else model[model_index]
+    model.requires_grad_(False)
+    model.to(device=device, dtype=dtype)
+    return model
+
+
 # Custom models
 def __getattr__(name: str):
     if name == "__path__":
