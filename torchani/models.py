@@ -62,6 +62,7 @@ For more details consult the examples documentation
 """
 
 import typing as tp
+import importlib
 
 from torchani.cutoffs import CutoffSmooth
 from torchani.utils import SYMBOLS_2X, SYMBOLS_1X, SYMBOLS_2X_ZNUM_ORDER
@@ -71,6 +72,7 @@ from torchani.neighbors import NeighborlistArg
 from torchani.potentials import TwoBodyDispersionD3, RepulsionXTB
 from torchani.annotations import Device, DType
 from torchani.nn._internal import _ANINetworksDiscardFirstScalar
+from torchani.paths import custom_models_dir
 
 
 # Protocol used by factory functions that instantiate ani models, here for reference
@@ -475,3 +477,20 @@ def ANIr2s_water(
         dtype,
         solvent="water"
     )
+
+
+# Custom models
+def __getattr__(name: str):
+    if name == "__path__":
+        # This module is not a package
+        raise AttributeError
+    for p in sorted(custom_models_dir().iterdir()):
+        if p.name.startswith(name):
+            spec = importlib.util.spec_from_file_location("model", p / "model.py")
+            if spec is None:
+                raise ImportError(f"{p} / model.py could not be found")
+            module = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None  # mypy
+            spec.loader.exec_module(module)
+            return getattr(module, name)
+    raise ImportError(f"Could not find custom model {name}")

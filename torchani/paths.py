@@ -16,6 +16,13 @@ def set_data_dir(data_dir: tp.Optional[StrPath] = None) -> None:
         os.environ["TORCHANI_DATA_DIR"] = str(data_dir)
 
 
+def custom_models_dir() -> Path:
+    r"""Directory where custom models are stored"""
+    dir = data_dir() / "Models"
+    dir.mkdir(exist_ok=True, parents=True)
+    return dir
+
+
 def datasets_dir() -> Path:
     r"""Directory where datasets are stored"""
     dir = data_dir() / "Datasets"
