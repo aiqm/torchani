@@ -115,6 +115,7 @@ def opt(
     ] = False,
 ) -> None:
     r"""Execute a cartesian coords geom opt, using L-BFGS, with a TorchANI model"""
+    raise NotImplementedError()
     model_key = model_key.lower().replace("ani", "ANI")
     _device, _dtype = parse_device_and_dtype(device, dtype)
     model = getattr(torchani.models, model_key)(device=_device, dtype=_dtype)
@@ -128,7 +129,7 @@ def opt(
     raise Abort()
     for p in paths:
         znums, coords, cell, pbc = torchani.io.read_xyz(p, device=_device, dtype=_dtype)
-        for (_znums, _coords) in zip(znums, coords):
+        for _znums, _coords in zip(znums, coords):
             unpadded = torchani.utils.strip_redundant_padding(
                 {"species": _znums.unsqueeze(0), "coordinates": _coords.unsqueeze(0)}
             )
@@ -171,6 +172,10 @@ def sp(
         tp.Optional[DTypeKind],
         Option("-t", "--dtype"),
     ] = None,
+    atomic_charges: tpx.Annotated[
+        bool,
+        Option("-q/-Q", "--charges/--no-charges"),
+    ] = False,
     forces: tpx.Annotated[
         bool,
         Option("-f/-F", "--forces/--no-forces"),
@@ -191,16 +196,28 @@ def sp(
         output["hessians"] = []
     if forces:
         output["forces"] = []
+    if atomic_charges:
+        output["atomic_charges"] = []
     for p in paths:
         znums, coords, cell, pbc = torchani.io.read_xyz(p, device=_device, dtype=_dtype)
         result = torchani.single_point(
-            model, znums, coords, cell, pbc, forces=forces, hessians=hessians
+            model,
+            znums,
+            coords,
+            cell,
+            pbc,
+            forces=forces,
+            hessians=hessians,
+            atomic_charges=atomic_charges,
         )
         output["energies"].extend(result["energies"].tolist())
         if forces:
             output["forces"].extend(result["forces"].tolist())
         if hessians:
             output["hessians"].extend(result["hessians"].tolist())
+        if atomic_charges:
+            output["atomic_charges"].extend(result["atomic_charges"].tolist())
+
     if output_path is not None:
         output_path.write_text(json.dumps(output, indent=4))
     else:
