@@ -42,8 +42,17 @@ main = Typer(
     A PyTorch library for training, development and research of
     ANI-style neural networks, maintained by the *Roitberg Group*.
 
+    To execute single point calculations run `ani sp <path-to-xyz-file> -m <model>`
+    For example `ani sp methane.xyz -m ani2x`.
+
+    To download a dataset run `ani data pull <dataset-name> --lot <lot>`, where `<lot>`
+    is the level of theory.
+    For example, `ani data pull ANI1x --lot wb97x-631gd`.
+    To display available datasets `ani data ls`.
+    To remove a downloaded dataset `ani data rm <dataset-name> --lot <lot>`.
+
     Datasets and Models are saved in ``$TORCHANI_DATA_DIR/Datasets`` and
-    ``$TORCHANI_DATA_DIR/StateDicts`` respectively. By default
+    ``$TORCHANI_DATA_DIR/Models`` respectively. By default
     ``TORCHANI_DATA_DIR=~/.local/share/Torchani``.
     """,
 )
@@ -370,7 +379,7 @@ def data_ls(
             except DatasetIntegrityError:
                 print(f"{d.name}, status: Error!")
         else:
-            print(f"{d.name}, status: Not checked")
+            print(d.name)
 
 
 @data_app.command("info", help="Display info regarding downloaded built-in datasets")
