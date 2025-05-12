@@ -1,4 +1,6 @@
 from pathlib import Path
+from huggingface_hub import hf_hub_download
+import tarfile
 import json
 import typing as tp
 import hashlib
@@ -72,12 +74,45 @@ def _fetch_and_create_builtin_dataset(
     dest_dir = (root / archive.replace(".tar.gz", "")).resolve()
     # If the dataset is not found we download it
     if download and ((not dest_dir.is_dir()) or (not any(dest_dir.glob(f"*{suffix}")))):
-        download_and_extract(
-            url=f"{_BASE_URL}{archive}",
-            file_name=archive,
-            dest_dir=dest_dir,
-            verbose=verbose,
-        )
+        if ds_name in [
+            "ANI1x",
+            "ANI1ccx",
+            "ANI2x",
+            "ANI1q",
+            "ANI1e",
+            "COMP6v1",
+            "COMP6v2",
+            "TestData",
+        ]:
+            repo_name = (
+                ds_name.lower().replace("ANI1q", "ani1x").replace("ANI1e", "ani1x")
+            )
+            repo_id = f"roitberg-group/{repo_name}"
+            try:
+                file_path = hf_hub_download(
+                    repo_id=repo_id,
+                    filename=archive,
+                    local_dir=dest_dir,
+                    repo_type="dataset",
+                )
+                with tarfile.open(file_path, "r:gz") as f:
+                    f.extractall(dest_dir)
+                Path(file_path).unlink()
+            except Exception:
+                # Fall back to internal server if huggingface_hub is not available
+                download_and_extract(
+                    url=f"{_BASE_URL}{archive}",
+                    file_name=archive,
+                    dest_dir=dest_dir,
+                    verbose=verbose,
+                )
+        else:
+            download_and_extract(
+                url=f"{_BASE_URL}{archive}",
+                file_name=archive,
+                dest_dir=dest_dir,
+                verbose=verbose,
+            )
 
     # Check for corruption and missing files
     _check_files_integrity(
@@ -90,9 +125,7 @@ def _fetch_and_create_builtin_dataset(
     )
 
     # Order dataset paths using the order given in "files and md5s"
-    filenames_order = {
-        Path(k).stem: j for j, k in enumerate(files_and_md5s.keys())
-    }
+    filenames_order = {Path(k).stem: j for j, k in enumerate(files_and_md5s.keys())}
     filenames_and_paths = sorted(
         [(p.stem, p) for p in sorted(dest_dir.glob(f"*{suffix}"))],
         key=lambda tup: filenames_order[tup[0]],

@@ -35,6 +35,7 @@ requirements:
     - conda-forge::h5py
     - conda-forge::tqdm
     - conda-forge::rich
+    - conda-forge::huggingface_hub
     - conda-forge::typer
     - pytorch::pytorch={{ pytorch }}
     - pytorch::pytorch-cuda={{ cuda }}

@@ -15,6 +15,7 @@ dependencies:
   - tqdm  # progress bar util
   - typer  # CLI support
   - rich  # CLI support
+  - huggingface_hub  # Datasets
 
   # Optional dependencies follow:
 

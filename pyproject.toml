@@ -25,6 +25,11 @@ dependencies = [
     "tqdm",
     "typer",
     "rich",
+    "ase",
+    "pandas",
+    "pyarrow",
+    "zarr<3",
+    "huggingface_hub",
 ]
 dynamic = ["version"]
 
@@ -55,8 +60,3 @@ exclude = "(build/.*|tests/.*|tools/.*|docs/src/examples_autogen/.*|docs/build/.
 
 [tool.pytest.ini_options]
 filterwarnings = "ignore:.*distutils Version classes are deprecated.*:DeprecationWarning"
-
-[project.optional-dependencies]
-ase = ["ase"]
-data = ["zarr<3", "pandas", "pyarrow"]
-all = ["ase", "zarr<3", "pandas", "pyarrow"]
