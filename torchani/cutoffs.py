@@ -47,8 +47,31 @@ class CutoffDummy(Cutoff):
         return torch.ones_like(distances)
 
 
+class CutoffBiweight(Cutoff):
+    r"""Use a bi-weight function as a cutoff
+
+    The functional expression is: $(1 - (r/r_{cut})^2)^2$
+    """
+
+    def forward(self, distances: Tensor, cutoff: float) -> Tensor:
+        return (1 - (distances / cutoff) ** 2) ** 2
+
+
+class CutoffTriweight(Cutoff):
+    r"""Use a tri-weight function as a cutoff
+
+    The functional expression is: $(1 - (r/r_{cut})^2)^3$
+    """
+
+    def forward(self, distances: Tensor, cutoff: float) -> Tensor:
+        return (1 - (distances / cutoff) ** 2) ** 3
+
+
 class CutoffCosine(Cutoff):
-    r"""Use a cosine function as a cutoff"""
+    r"""Use a cosine function as a cutoff
+
+    The functional expression is: $0.5 cos(\pi r/r_{cut})) + 0.5$
+    """
 
     def __init__(self) -> None:
         super().__init__()
@@ -59,7 +82,12 @@ class CutoffCosine(Cutoff):
 
 
 class CutoffSmooth(Cutoff):
-    r"""Use an infinitely differentiable exponential cutoff"""
+    r"""Use an infinitely differentiable exponential cutoff
+
+
+    The functional expression is: $exp(1 - 1 / max(\epsilon, (1 - (r/r_{cut})^n))$
+    where *n* is the order.
+    """
 
     def __init__(self, order: int = 2, eps: float = 1.0e-10) -> None:
         super().__init__(order, eps)
@@ -81,6 +109,7 @@ class CutoffSmooth(Cutoff):
 # Not meant for users
 class _AltCutoffSmooth(Cutoff):
     r""":meta private:"""
+
     def forward(self, distances: Tensor, cutoff: float) -> Tensor:
         e = -1.0 / (1.0 - (distances / cutoff).clamp(0, 1.0 - 1e-4).pow(2))
         return torch.exp(e) / 0.3678794411714423
@@ -103,6 +132,10 @@ def _parse_cutoff_fn(
         cutoff_fn = CutoffDummy()
     elif cutoff_fn == "cosine":
         cutoff_fn = CutoffCosine()
+    elif cutoff_fn == "triweight":
+        cutoff_fn = CutoffTriweight()
+    elif cutoff_fn == "biweight":
+        cutoff_fn = CutoffBiweight()
     elif cutoff_fn == "smooth":
         cutoff_fn = CutoffSmooth()
     elif not isinstance(cutoff_fn, Cutoff):
