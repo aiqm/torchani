@@ -6,10 +6,12 @@ from torch import Tensor
 
 import torchani
 from torchani.io import read_xyz
-from torchani._testing import TestCase, expand, ANITestCase
+from torchani._testing import TestCase, expand, ANITestCase, make_molec
 from torchani.aev import AEVComputer
+from torchani.csrc import CLIST_IS_INSTALLED
 from torchani.neighbors import (
     CellList,
+    FastCellList,
     setup_grid,
     coords_to_fractional,
     coords_to_grid_idx3,
@@ -18,6 +20,47 @@ from torchani.neighbors import (
     count_atoms_in_buckets,
     _offset_idx3,
 )
+
+
+@expand()
+class TestCellListGrad(ANITestCase):
+    def setUp(self):
+        if not CLIST_IS_INSTALLED:
+            raise unittest.SkipTest("Fast Cell List is not installed")
+        self.clist = self._setup(CellList())
+        self.flist = self._setup(FastCellList())
+        self.mc = make_molec(100, 10.0, pbc=True, seed=1234, device=self.device)
+        self.mf = make_molec(100, 10.0, pbc=True, seed=1234, device=self.device)
+        self.cutoff = 5.2
+
+    def testGradEqualDistances(self):
+        coordsc = self.mc.coords.requires_grad_(True)
+        coordsf = self.mf.coords.requires_grad_(True)
+        self.clist(self.cutoff, self.mc.atomic_nums, coordsc).distances.sum().backward()
+        self.flist(self.cutoff, self.mf.atomic_nums, coordsf).distances.sum().backward()
+        self.assertEqual(coordsc.grad, coordsf.grad)
+
+    def testGradEqualDiffVectors(self):
+        coordsc = self.mc.coords.requires_grad_(True)
+        coordsf = self.mf.coords.requires_grad_(True)
+        self.clist(
+            self.cutoff, self.mc.atomic_nums, coordsc
+        ).diff_vectors.sum().backward()
+        self.flist(
+            self.cutoff, self.mf.atomic_nums, coordsf
+        ).diff_vectors.sum().backward()
+        self.assertEqual(coordsc.grad, coordsf.grad)
+
+    def testGradEqualCombined(self):
+        # Note that this fails with small differences for floats, probably
+        # due to different impl of backward in pytorch and FastCellList being different
+        coordsc = self.mc.coords.double().requires_grad_(True)
+        coordsf = self.mf.coords.double().requires_grad_(True)
+        outc = self.clist(self.cutoff, self.mc.atomic_nums, coordsc)
+        (2 * outc.distances.unsqueeze(-1) ** 2 + outc.diff_vectors).sum().backward()
+        outf = self.flist(self.cutoff, self.mf.atomic_nums, coordsf)
+        (2 * outf.distances.unsqueeze(-1) ** 2 + outf.diff_vectors).sum().backward()
+        self.assertEqual(coordsc.grad, coordsf.grad)
 
 
 class TestCellList(TestCase):
@@ -127,28 +170,22 @@ class TestCellList(TestCase):
         AEVComputer.like_1x(neighborlist="cell_list")
 
 
-@expand()
-class TestCellListComparison(ANITestCase):
+class TestCellListComparison_cpu_nojit(ANITestCase):
     def setUp(self):
         self.cutoff = 5.2
         self.cell_size = self.cutoff * 3 + 0.1
-        # The length of the box is ~ (3 * 5.2 + 0.1) this so that
-        # 3 buckets in each direction are needed to cover it, if one uses
-        # a cutoff of 5.2 and a bucket length of 5.200001
-        # first bucket is 0 - 5.2, in 3 directions, and subsequent buckets
-        # are on top of that
         self.species, self.coordinates, cell, pbc = read_xyz(
             Path(Path(__file__).parent, "resources", "tight_cell.xyz"),
             device=self.device,
         )
+        self._list_kind = "cell_list"
         self.pbc = pbc
         self.cell = cell
-        self.clist = self._setup(CellList())
         self.num_to_test = 10
 
     def _check_neighborlists_match(self, coords: Tensor):
         species = torch.ones(coords.shape[:-1], dtype=torch.long, device=self.device)
-        aev_cl = self._setup(AEVComputer.like_1x(neighborlist="cell_list"))
+        aev_cl = self._setup(AEVComputer.like_1x(neighborlist=self._list_kind))  # type: ignore  # noqa
         aev_fp = self._setup(AEVComputer.like_1x(neighborlist="all_pairs"))
         aevs_cl = aev_cl(species, coords, cell=self.cell, pbc=self.pbc)
         aevs_fp = aev_fp(species, coords, cell=self.cell, pbc=self.pbc)
@@ -212,24 +249,44 @@ class TestCellListComparison(ANITestCase):
             self._check_neighborlists_match(coordinates)
 
 
-@expand()
-class TestCellListComparisonNoPBC(TestCellListComparison):
+class TestCellListComparison_cpu_jit(TestCellListComparison_cpu_nojit):
     def setUp(self):
-        self.cutoff = 5.2
-        self.cell_size = self.cutoff * 3 + 0.1
-        # The length of the box is ~ (3 * 5.2 + 0.1) this so that
-        # 3 buckets in each direction are needed to cover it, if one uses
-        # a cutoff of 5.2 and a bucket length of 5.200001
-        # first bucket is 0 - 5.2, in 3 directions, and subsequent buckets
-        # are on top of that
-        self.species, self.coordinates, _, _ = read_xyz(
-            Path(Path(__file__).parent, "resources", "tight_cell.xyz"),
-            device=self.device,
-        )
+        self._jit = True
+        super().setUp()
+
+
+# Workaround since base class can't be decorated
+@expand(device="cuda")
+class TestCellListComparison(TestCellListComparison_cpu_nojit):
+    pass
+
+
+@expand()
+class TestCellListComparisonNoPBC(TestCellListComparison_cpu_nojit):
+    def setUp(self):
+        super().setUp()
         self.cell = None
         self.pbc = None
-        self.clist = self._setup(CellList())
-        self.num_to_test = 10
+
+
+@expand()
+class TestFastCellListComparison(TestCellListComparison_cpu_nojit):
+    def setUp(self):
+        super().setUp()
+        if not CLIST_IS_INSTALLED:
+            raise unittest.SkipTest("Fast Cell List is not installed")
+        self._list_kind = "fast_cell_list"
+
+
+@expand()
+class TestFastCellListComparisonNoPBC(TestCellListComparison_cpu_nojit):
+    def setUp(self):
+        super().setUp()
+        if not CLIST_IS_INSTALLED:
+            raise unittest.SkipTest("Fast Cell List is not installed")
+        self._list_kind = "fast_cell_list"
+        self.cell = None
+        self.pbc = None
 
 
 class TestCellListEnergies(TestCase):

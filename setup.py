@@ -92,6 +92,24 @@ def mnp_extension_kwargs(debug: bool) -> tp.Dict[str, tp.Any]:
     )
 
 
+def clist_extension_kwargs(debug: bool) -> tp.Dict[str, tp.Any]:
+    print("-" * 75)
+    print("Will build Cell List")
+
+    cxx_args = ["-std=c++17", "-fopenmp"]
+    if debug:
+        cxx_args.append("-DTORCHANI_DEBUG")
+
+    print("C++ compiler args:")
+    for arg in cxx_args:
+        print(f"    {arg}")
+    return dict(
+        name="torchani.cell_list",
+        sources=["torchani/csrc/cell_list.cpp"],
+        extra_compile_args={"cxx": cxx_args},
+    )
+
+
 def will_not_build_extensions_warning(torch_import_error: bool = False) -> None:
     print("-" * 75)
     if torch_import_error:
@@ -223,6 +241,7 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
 
     cuaev_kwargs = cuaev_extension_kwargs(sms, debug, opt)
     mnp_kwargs = mnp_extension_kwargs(debug=debug)
+    clist_kwargs = clist_extension_kwargs(debug=debug)
 
     # CUB needed to build the cuAEV, download it if not found bundled with Torch
     torch_include_dirs = torch.utils.cpp_extension.include_paths(cuda=True)
@@ -234,7 +253,11 @@ def setup_kwargs() -> tp.Dict[str, tp.Any]:
     # CUDA libraries, so CUDAExtension is needed
     print("-" * 75)
     return {
-        "ext_modules": [CUDAExtension(**cuaev_kwargs), CUDAExtension(**mnp_kwargs)],
+        "ext_modules": [
+            CUDAExtension(**cuaev_kwargs),
+            CUDAExtension(**mnp_kwargs),
+            CUDAExtension(**clist_kwargs),
+        ],
         "cmdclass": {
             "build_ext": BuildExtension.with_options(
                 no_python_abi_suffix=True,

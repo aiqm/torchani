@@ -72,6 +72,17 @@ target_link_libraries(mnp PRIVATE ${TORCH_LIBRARIES} ${Python_LIBRARIES} OpenMP:
 target_compile_definitions(mnp PRIVATE  ${TORCH_CXX_FLAGS})
 target_include_directories(mnp PRIVATE ${Python_INCLUDE_DIRS})
 
+add_library(
+    cell_list
+    SHARED
+    cell_list.cpp
+)
+set_property(TARGET cell_list PROPERTY PREFIX "")
+target_compile_features(cell_list PRIVATE cxx_std_17)
+target_link_libraries(cell_list PRIVATE ${TORCH_LIBRARIES} ${Python_LIBRARIES})
+target_compile_definitions(cell_list PRIVATE  ${TORCH_CXX_FLAGS})
+target_include_directories(cell_list PRIVATE ${Python_INCLUDE_DIRS})
+
 list(APPEND CMAKE_PREFIX_PATH $ENV{CONDA_PREFIX})
 
 # By default install to the torchani repo src directory, "repo-name/torchani/"
@@ -85,6 +96,7 @@ endif()
 install(
     TARGETS
         mnp
+        cell_list
         cuaev
     LIBRARY
         DESTINATION "torchani/"
