@@ -35,6 +35,7 @@ import typing as tp
 import torch
 from torch import Tensor
 import typing_extensions as tpx
+from huggingface_hub import hf_hub_download
 
 from torchani.tuples import (
     SpeciesEnergies,
@@ -1177,16 +1178,27 @@ def _fetch_state_dict(
     if local:
         dict_ = torch.load(state_dict_file, map_location=torch.device("cpu"))
         return OrderedDict(dict_)
-    PUBLIC_ZOO_URL = (
-        "https://github.com/roitberg-group/torchani_model_zoo/releases/download/v0.1/"
-    )
-    if private:
-        url = "http://moria.chem.ufl.edu/animodel/private/"
-    else:
-        url = PUBLIC_ZOO_URL
-    dict_ = torch.hub.load_state_dict_from_url(
-        f"{url}/{state_dict_file}",
-        model_dir=str(state_dicts_dir()),
-        map_location=torch.device("cpu"),
-    )
+    try:
+        repo_id = "roitberg-group"
+        if state_dict_file == "charge_nn_state_dict.pt":
+            model_name = "animbis"
+        model_name = state_dict_file.replace("-", "_").split("_")[0]
+        path = hf_hub_download(
+            repo_id=f"{repo_id}/{model_name}",
+            filename=state_dict_file,
+            repo_type="model",
+            local_dir=str(state_dicts_dir()),
+            token=True if private else None,
+        )
+        dict_ = torch.load(path, map_location=torch.device("cpu"))
+    except Exception:
+        if private:
+            url = "http://moria.chem.ufl.edu/animodel/private/"
+        else:
+            url = "https://github.com/roitberg-group/torchani_model_zoo/releases/download/v0.1/"  # noqa: E501
+        dict_ = torch.hub.load_state_dict_from_url(
+            f"{url}/{state_dict_file}",
+            model_dir=str(state_dicts_dir()),
+            map_location=torch.device("cpu"),
+        )
     return OrderedDict(dict_)
