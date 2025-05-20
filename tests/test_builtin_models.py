@@ -4,8 +4,8 @@ import torch
 
 from torchani._testing import ANITestCase, expand
 from torchani.models import (
-    ANI1x, ANI2x, ANIdr, ANImbis,
-    ANI2xr, ANI2dr, ANIr2s
+    ANI1x, ANI2x, ANI2dr, ANImbis,
+    ANI2xr, ANIr2s
 )
 from torchani.datasets import batch_all_in_ram, TestData
 from torchani.neighbors import compute_bounding_cell, reconstruct_shifts
@@ -51,8 +51,8 @@ class TestExternalNeighborsEntryPoint(ANITestCase):
     def testANI1x(self) -> None:
         self._test_model(self._setup(ANI1x()))
 
-    def testANIdr(self) -> None:
-        self._test_model(self._setup(ANIdr()))
+    def testANI2dr(self) -> None:
+        self._test_model(self._setup(ANI2dr()))
 
     def testANImbis(self) -> None:
         self._test_model(self._setup(ANImbis()))

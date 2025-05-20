@@ -27,7 +27,7 @@ from ase.md.nptberendsen import NPTBerendsen
 from torchani.io import read_xyz
 from torchani._testing import ANITestCase, expand
 from torchani.arch import ANI
-from torchani.models import ANI1x, ANIdr
+from torchani.models import ANI1x, ANI2dr
 from torchani.potentials import DummyPotential
 
 
@@ -151,7 +151,7 @@ class TestASE(ANITestCase):
                     "Cell used in this test is too small for dispersion potential"
                 )
             model = self._setup(
-                ANIdr(model_index=0, neighborlist=neighborlist, dtype=torch.double)
+                ANI2dr(model_index=0, neighborlist=neighborlist, dtype=torch.double)
             )
         else:
             model = self._setup(

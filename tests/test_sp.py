@@ -4,7 +4,7 @@ import torch
 
 from torchani import single_point
 from torchani._testing import ANITestCase, expand
-from torchani.models import ANI1x, ANIdr, ANImbis
+from torchani.models import ANI1x, ANI2dr, ANImbis
 from torchani.datasets import batch_all_in_ram, TestData
 
 
@@ -20,8 +20,8 @@ class TestSinglePointEntry(ANITestCase):
     def testANI1x(self) -> None:
         self._test_model(self._setup(ANI1x()))
 
-    def testANIdr(self) -> None:
-        self._test_model(self._setup(ANIdr()))
+    def testANI2dr(self) -> None:
+        self._test_model(self._setup(ANI2dr()))
 
     def testANImbis(self) -> None:
         self._test_model(self._setup(ANImbis()))

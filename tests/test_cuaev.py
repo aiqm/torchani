@@ -12,7 +12,7 @@ from torchani._testing import ANITestCase, expand
 from torchani.utils import SYMBOLS_2X
 from torchani.nn import SpeciesConverter
 from torchani.aev import AEVComputer
-from torchani.models import ANIdr
+from torchani.models import ANI2dr
 from torchani.io import read_xyz
 from torchani._testing import TestCase, make_tensor
 from torchani.csrc import CUAEV_IS_INSTALLED
@@ -66,7 +66,7 @@ class TestCUAEVStrategy(ANITestCase):
 
     @skipIfNoCUAEV
     def testModelChangeStrat(self) -> None:
-        m = self._setup(ANIdr(strategy="cuaev-interface"))
+        m = self._setup(ANI2dr(strategy="cuaev-interface"))
 
         m.set_strategy("cuaev-interface")
         cu = m(self.znum_input)[1]
@@ -78,7 +78,7 @@ class TestCUAEVStrategy(ANITestCase):
 
     @skipIfNoCUAEV
     def testInvalidModelStrat(self) -> None:
-        m = self._setup(ANIdr(strategy="cuaev-interface"))
+        m = self._setup(ANI2dr(strategy="cuaev-interface"))
         with self.assertRaises(torch.jit.Error if self.jit else RuntimeError):
             m.set_strategy("cuaev-fused")
             _ = m(self.znum_input)[1]
