@@ -38,11 +38,11 @@ def run(
     num_warm_up: tpx.Annotated[
         int,
         Option("-n", "--num-warm-up", help="Num of warm up steps"),
-    ] = 50,
+    ] = 100,
     num_profile: tpx.Annotated[
         int,
         Option("-n", "--num-profile", help="Num of profiling steps"),
-    ] = 100,
+    ] = 200,
     pbc: tpx.Annotated[
         bool,
         Option("-p/-P", "--pbc/--no-pbc", help="Benchmark for the PBC case"),
@@ -174,7 +174,7 @@ def plot() -> None:
         ax.set_xlabel("Num. atoms")
         ax.set_ylabel("Median walltime per call, CUDA (ms)")
         # ax.set_title("PBC benchmark")
-        ax.legend()
+        ax.legend(markerscale=2.5)
     # plt.savefig("/home/ipickering/Figures/pbc-neighborlist")
 
     fig, ax = plt.subplots()
@@ -199,7 +199,7 @@ def plot() -> None:
         ax.set_xlabel("Num. atoms")
         ax.set_ylabel("Median walltime per call, CUDA (ms)")
         # ax.set_title("No-PBC benchmark")
-        ax.legend()
+        ax.legend(markerscale=2.5)
     # plt.savefig("/home/ipickering/Figures/no-pbc-neighborlist")
     plt.show()
 
