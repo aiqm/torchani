@@ -35,7 +35,7 @@ class ChargeNormalizer(BaseChargeNormalizer):
         normalizer = ChargeNormalizer()
         charge = 0
         elem_idxs = torch.tensor([[0, 0, 0, 1, 1]], dtype=torch.long)
-        raw_charges = torch.tensor([[0.3, 0.5, -0.5]], dtype=torch.float)
+        raw_charges = torch.tensor([[0.3, 0.5, -0.5]])
         norm_charges = normalizer(elem_idxs, raw_charges, charge)
         # norm_charges will sum to zero
     """
@@ -57,9 +57,7 @@ class ChargeNormalizer(BaseChargeNormalizer):
             weights = [1.0] * len(symbols)
 
         self.register_buffer(
-            "weights",
-            torch.tensor(weights, dtype=torch.float, device=torch.device("cpu")),
-            persistent=False,
+            "weights", torch.tensor(weights, dtype=torch.float), persistent=False
         )
         self.scale_weights_by_charges_squared = scale_weights_by_charges_squared
 

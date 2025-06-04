@@ -24,6 +24,7 @@ class AtomicOneHot(_Embedding):
         # encoded == torch.tensor([[0, 1, 0], [1, 0, 0], [0, 0, 1], [0, 0, 0]])
 
     """
+
     def __init__(self, symbols: tp.Sequence[str]) -> None:
         super().__init__(symbols)
         num = len(self.symbols)
@@ -49,6 +50,7 @@ class AtomicEmbedding(_Embedding):
         # `encoded` depends on the random init, but it could be for instance:
         # torch.tensor([[1.2, .1], [-.5, .8], [.3, -.4], [0, 0]])
     """
+
     def __init__(self, symbols: tp.Sequence[str], dim: int = 10) -> None:
         super().__init__(symbols)
         num = len(self.symbols)
@@ -126,7 +128,7 @@ class AtomicNetwork(torch.nn.Module):
         dims = tuple(layer_dims)
         self.layers = torch.nn.ModuleList(
             [
-                torch.nn.Linear(_in, _out, bias=bias, dtype=torch.float)
+                torch.nn.Linear(_in, _out, bias=bias)
                 for _in, _out in zip(dims[:-2], dims[1:-1])
             ]
         )
@@ -160,6 +162,7 @@ class AtomicNetwork(torch.nn.Module):
 
 class TightCELU(torch.nn.Module):
     r"""CELU activation function with alpha=0.1"""
+
     def forward(self, x: Tensor) -> Tensor:
         return torch.nn.functional.celu(x, alpha=0.1)
 

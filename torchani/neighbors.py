@@ -127,10 +127,10 @@ def compute_bounding_cell(
     largest_dist = max_ - min_
     if square:
         cell = (
-            torch.eye(3, dtype=torch.float, device=coords.device) * largest_dist.max()
+            torch.eye(3, dtype=coords.dtype, device=coords.device) * largest_dist.max()
         )
     else:
-        cell = torch.eye(3, dtype=torch.float, device=coords.device) * largest_dist
+        cell = torch.eye(3, dtype=coords.dtype, device=coords.device) * largest_dist
     if displace:
         # Benchmarks show that these assert coords > 0.0 slows things down a bit
         return coords - min_, cell
@@ -644,7 +644,7 @@ def setup_grid(
     # it is only a lower bound used to calculate the grid size, it is the minimum
     # size that spawns a new bucket in the grid.
     spherical_factor = torch.tensor(
-        [1.0, 1.0, 1.0], dtype=torch.float, device=cell.device
+        [1.0, 1.0, 1.0], dtype=cell.dtype, device=cell.device
     )  # TODO: calculate correctly
     bucket_length_lower_bound = (
         spherical_factor * cutoff / buckets_per_cutoff
