@@ -1182,7 +1182,10 @@ def _fetch_state_dict(
         repo_id = "roitberg-group"
         if state_dict_file == "charge_nn_state_dict.pt":
             model_name = "animbis"
-        model_name = state_dict_file.replace("-", "_").split("_")[0]
+        else:
+            model_name = state_dict_file.replace("_state_dict.pt", "").replace(
+                ".pt", ""
+            )
         path = hf_hub_download(
             repo_id=f"{repo_id}/{model_name}",
             filename=state_dict_file,

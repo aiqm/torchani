@@ -240,7 +240,7 @@ def ANImbis(
     shifter_state_dict = {
         "self_energies": ani2x_state_dict["energy_shifter.self_energies"]
     }
-    charge_nn_state_dict = _fetch_state_dict("charge_nn_state_dict.pt", private=True)
+    charge_nn_state_dict = _fetch_state_dict("charge_nn_state_dict.pt", private=False)
     model.energy_shifter.load_state_dict(shifter_state_dict)
     model.potentials["nnp"].aev_computer.load_state_dict(aev_state_dict)
     model.potentials["nnp"].neural_networks.load_state_dict(energy_nn_state_dict)
@@ -300,7 +300,7 @@ def ANI2xr(
         neighborlist=neighborlist,
         periodic_table_index=periodic_table_index,
     )
-    model.load_state_dict(_fetch_state_dict("ani2xr-preview.pt", private=True))
+    model.load_state_dict(_fetch_state_dict("ani2xr.pt", private=False))
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
@@ -331,7 +331,7 @@ def ANI2dr(
         neighborlist=neighborlist,
         periodic_table_index=periodic_table_index,
     )
-    model.load_state_dict(_fetch_state_dict("ani2dr-preview.pt", private=True))
+    model.load_state_dict(_fetch_state_dict("ani2dr.pt", private=False))
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
@@ -461,7 +461,7 @@ def SnnANI2xr(
         repulsion=True,
         sections=6,
     )
-    model.load_state_dict(_fetch_state_dict("snn-ani2xr-preview.pt", private=True))
+    model.load_state_dict(_fetch_state_dict("snn-ani2xr.pt", private=False))
     model = model if model_index is None else model[model_index]
     model.requires_grad_(False)
     model.to(device=device, dtype=dtype)
