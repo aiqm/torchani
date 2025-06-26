@@ -1,0 +1,57 @@
+name: ani-blackwell
+channels:
+  - nodefaults
+  - https://conda.anaconda.org/conda-forge
+dependencies:
+  ## Required dependencies to run TorchANI ##
+  - python=3.11
+  - pip>=24.0
+  - numpy=2.1
+  - typing_extensions>=4.0.0
+  - h5py  # HDF5 backend for datasets
+  - tqdm  # progress bar util
+  - typer  # CLI support
+  - rich  # CLI support
+  - huggingface_hub  # Datasets
+
+  # Optional dependencies follow:
+
+  ## ASE interface ##
+  # Used for molecular dynamics and for tests/tools/docs
+  - ase
+
+  ## cuAEV and MNP ##
+  - setuptools>=64
+  - setuptools-scm>=8
+  - gxx_linux-64=12.2
+  - gcc_linux-64=12.2
+  # CUDA Toolkit must be present in host!
+
+  ## Running torchani/tests ##
+  - coverage  # code coverage
+  - black  # formatter
+  - flake8  # linter
+  - mypy  # type checking
+  - pytest  # tests runner
+  - pre_commit  # run pre commit hooks
+  - parameterized  # parametrize test classes
+  - expecttest  # indirect dependency of torch.testing
+  # Extra data backends for tests:
+  - pandas  # Parquet backend
+  - pyarrow  # Parquet backend
+  - zarr<3  # Zarr backend
+
+  ## Running scripts in torchani/tools ##
+  - matplotlib
+  - pynvml
+  - jinja2  # Templating engine to build generated code and docs
+
+  ## Building torchani/docs ##
+  - sphinx
+  - sphinx-design
+  - sphinx-gallery
+  - pydata-sphinx-theme
+  - tensorboard
+  - pip:
+    - torch==2.7.1
+    - --index-url https://download.pytorch.org/whl/cu128
