@@ -1,4 +1,3 @@
-import typing as tp
 import time
 import argparse
 import gc
@@ -11,7 +10,7 @@ from tqdm import tqdm
 from torchani.models import ANI1x
 from torchani.units import hartree2kcalpermol
 from torchani.datasets import batch_all_in_ram
-from tool_utils import time_functions
+from torchani import datasets
 
 summary = ""
 runcounter = 0
@@ -38,7 +37,7 @@ def checkgpu(device=None):
     _name = pynvml.nvmlDeviceGetName(h)
     print(
         "   GPU Memory Used (nvidia-smi): {:7.1f}MB / {:.1f}MB ({})".format(
-            info.used / 1024 / 1024, info.total / 1024 / 1024, _name.decode()
+            info.used / 1024 / 1024, info.total / 1024 / 1024, _name
         )
     )
     return f"{(info.used / 1024 / 1024):.1f}MB"
@@ -54,7 +53,7 @@ def sync_cuda(sync):
 
 
 def print_timer(label, t):
-    if t < 1:
+    if abs(t) < 1:
         t = f"{t * 1000:.1f} ms"
     else:
         t = f"{t:.3f} sec"
@@ -76,37 +75,25 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
     if args.nsight and runcounter >= 0:
         torch.cuda.nvtx.range_push(args.runname)
     synchronize = True
-    _model = ANI1x(model_index=0, strategy=strat)
+    _model = ANI1x(model_index=0, strategy=strat).to(args.device)
     aev_computer = _model.aev_computer
     nn = _model.neural_networks
     model = torch.nn.Sequential(aev_computer, nn).to(args.device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.000001)
     mse = torch.nn.MSELoss(reduction="none")
 
+    # unfreeze the parameters
+    for param in model.parameters():
+        param.requires_grad_(True)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+
     # enable timers
-    timers: tp.Dict[str, float] = {}
-    _aev_fns = (
-        "_collect_radial",
-        "_collect_angular",
-        "angular",
-        "radial",
-        "_compute_pyaev",
-        "forward",
-    )
-    time_functions(
-        [
-            ("forward", model),
-            ("forward", aev_computer.neighborlist),
-            ("step", optimizer),  # type: ignore
-            (_aev_fns, aev_computer),
-            ("forward", nn),
-        ],
-        timers,
-        synchronize,
-    )
 
     print("=> start training")
+    torch.cuda.synchronize()
     start = time.time()
+    aev_time = 0.0
+    nn_time = 0.0
     loss_time = 0.0
     force_time = 0.0
 
@@ -116,6 +103,7 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
 
         for i, properties in enumerate(dataset):
             species = properties["species"].to(args.device)
+            species = _model.species_converter(species)
             coordinates = (
                 properties["coordinates"]
                 .to(args.device)
@@ -124,9 +112,17 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
             )
             true_energies = properties["energies"].to(args.device).float()
             num_atoms = (species >= 0).sum(dim=1, dtype=true_energies.dtype)
-            _, predicted_energies = model((species, coordinates))
-            # TODO add sync after aev is done
+            # Run AEV
             sync_cuda(synchronize)
+            aev_start = time.time()
+            aev = aev_computer(species, coordinates)
+            sync_cuda(synchronize)
+            aev_time += time.time() - aev_start
+            # Run NN
+            nn_start = time.time()
+            _, predicted_energies = nn((species, aev))
+            sync_cuda(synchronize)
+            nn_time += time.time() - nn_start
             energy_loss = (
                 mse(predicted_energies, true_energies) / num_atoms.sqrt()
             ).mean()
@@ -152,7 +148,6 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
                     mse(true_forces, forces).sum(dim=(1, 2)) / num_atoms
                 ).mean()
                 loss = energy_loss + force_coefficient * force_loss
-                sync_cuda(synchronize)
             else:
                 loss = energy_loss
             rmse = (
@@ -163,14 +158,16 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
             )
             pbar.update()
             pbar.set_description(f"rmse: {rmse}")
+            optimizer.zero_grad()
+
+            # Run backward
             sync_cuda(synchronize)
             loss_start = time.time()
             loss.backward()
             sync_cuda(synchronize)
-            loss_stop = time.time()
-            loss_time += loss_stop - loss_start
+            loss_time += time.time() - loss_start
+
             optimizer.step()
-            sync_cuda(synchronize)
 
         gpumem = checkgpu()
     sync_cuda(synchronize)
@@ -182,17 +179,13 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
     total_time = (stop - start) / args.num_epochs
     loss_time = loss_time / args.num_epochs
     force_time = force_time / args.num_epochs
-    opti_time = timers["Adam.step"] / args.num_epochs
-    nn_time = timers["ANINetworks.forward"] / args.num_epochs
-    aev_time = timers["AEVComputer.forward"] / args.num_epochs
-    model_time = timers["Sequential.forward"] / args.num_epochs
-    print_timer("   Full Model forward", model_time)
+    nn_time = nn_time / args.num_epochs
+    aev_time = aev_time / args.num_epochs
     print_timer("   AEV forward", aev_time)
     print_timer("   NN forward", nn_time)
     print_timer("   Backward", loss_time)
     print_timer("   Force", force_time)
-    print_timer("   Optimizer", opti_time)
-    others_time = total_time - loss_time - aev_time - nn_time - opti_time - force_time
+    others_time = total_time - loss_time - aev_time - nn_time - force_time
     print_timer("   Others", others_time)
     print_timer("   Epoch time", total_time)
 
@@ -204,7 +197,6 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
             + "NN Forward".ljust(13)
             + "Backward".ljust(13)
             + "Force".ljust(13)
-            + "Optimizer".ljust(13)
             + "Others".ljust(13)
             + "Epoch time".ljust(13)
             + "GPU".ljust(13)
@@ -217,7 +209,6 @@ def benchmark(args, dataset, strat: str = "pyaev", force_train=False):
             + f"{format_time(nn_time)}".ljust(13)
             + f"{format_time(loss_time)}".ljust(13)
             + f"{format_time(force_time)}".ljust(13)
-            + f"{format_time(opti_time)}".ljust(13)
             + f"{format_time(others_time)}".ljust(13)
             + f"{format_time(total_time)}".ljust(13)
             + f"{gpumem}".ljust(13)
@@ -230,9 +221,10 @@ if __name__ == "__main__":
     # parse command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "dataset_path",
-        help="Path of the dataset, can a hdf5 file \
-                            or a directory containing hdf5 files",
+        "dataset",
+        help="Name of builtin dataset to train on, TestDataForcesDipoles or ANI1x",
+        nargs="?",
+        default="TestDataForcesDipoles",
     )
     parser.add_argument(
         "-d",
@@ -255,9 +247,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print("=> loading dataset...")
+    ds = getattr(datasets, args.dataset)(verbose=False)
     dataset = batch_all_in_ram(
-        args.dataset_path,
-        properties=("species", "coordinates", "forces"),
+        ds,
+        properties=("species", "coordinates", "energies", "forces"),
         batch_size=args.batch_size,
     )
 
@@ -270,14 +263,14 @@ if __name__ == "__main__":
         print("   {}".format(torch.cuda.get_device_properties(i)))
         checkgpu(i)
 
-    # Warming UP
-    if len(dataset) < 100:
+    # Always warmup
+    if True:
         runcounter = -1
         args.runname = "Warning UP"
         print(f"\n\n=> Test 0: {args.runname}")
         torch.cuda.empty_cache()
         gc.collect()
-        benchmark(args, dataset, strat="cuaev-fused", force_train=False)
+        benchmark(args, dataset, strat="pyaev", force_train=False)
 
     if args.nsight:
         torch.cuda.profiler.start()
@@ -292,7 +285,7 @@ if __name__ == "__main__":
     print(f"\n\n=> Test 2: {args.runname}")
     torch.cuda.empty_cache()
     gc.collect()
-    benchmark(args, dataset, strat="cuaev-fused", force_train=False)
+    benchmark(args, dataset, strat="pyaev", force_train=False)
     try:
         args.runname = "cu Energy + Force train"
         print(f"\n\n=> Test 3: {args.runname}")
@@ -304,7 +297,7 @@ if __name__ == "__main__":
         print(f"\n\n=> Test 4: {args.runname}")
         torch.cuda.empty_cache()
         gc.collect()
-        benchmark(args, dataset, strat="cuaev-fused", force_train=True)
+        benchmark(args, dataset, strat="pyaev", force_train=True)
     except AttributeError:
         print(
             "Skipping force training benchmark. A dataset without forces was provided"

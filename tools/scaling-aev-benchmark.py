@@ -130,7 +130,13 @@ def addSummaryEmptyLine():
 
 
 def benchmark(
-    speciesPositions, aev_comp, runbackward=False, mol_info=None, verbose=True
+    speciesPositions,
+    aev_comp,
+    nn_single_model,
+    nn_neural_networks,
+    runbackward=False,
+    mol_info=None,
+    verbose=True,
 ):
     global runcounter
     global last_py_speed
@@ -170,12 +176,10 @@ def benchmark(
             if args.run_energy:
                 torch.cuda.nvtx.range_push("Network")
                 if args.single_nn:
-                    species_energies = single_model((species, aev))
+                    energies = nn_single_model(species, aev)
                 else:
-                    species_energies = neural_networks((species, aev))
+                    energies = nn_neural_networks(species, aev)
                 torch.cuda.nvtx.range_pop()
-                # energies = energy_shifter(species_energies[0])
-                energies = species_energies[1]
         except Exception as e:
             alert(f"  AEV faild: {str(e)[:50]}...")
             addSummaryLine(items)
@@ -304,7 +308,12 @@ def run(file, nnp_ref, nnp_cuaev, runbackward, maxatoms=10000):
     if not args.nsight:
         print("Original TorchANI:")
         aev_ref, delta_ref, force_ref = benchmark(
-            speciesPositions, nnp_ref.aev_computer, runbackward, mol_info
+            speciesPositions,
+            nnp_ref.aev_computer,
+            single_model_ref,
+            neural_networks_ref,
+            runbackward,
+            mol_info,
         )
         print()
     else:
@@ -313,11 +322,22 @@ def run(file, nnp_ref, nnp_cuaev, runbackward, maxatoms=10000):
     print("CUaev:")
     # warm up
     _, _, _ = benchmark(
-        speciesPositions, nnp_cuaev.aev_computer, runbackward, mol_info, verbose=False
+        speciesPositions,
+        nnp_cuaev.aev_computer,
+        single_model,
+        neural_networks,
+        runbackward,
+        mol_info,
+        verbose=False,
     )
     # run
     aev, delta, force_cuaev = benchmark(
-        speciesPositions, nnp_cuaev.aev_computer, runbackward, mol_info
+        speciesPositions,
+        nnp_cuaev.aev_computer,
+        single_model,
+        neural_networks,
+        runbackward,
+        mol_info,
     )
 
     if args.nsight:
@@ -516,7 +536,7 @@ if __name__ == "__main__":
         "--ref-strategy",
         help="Reference compute strategy, possible values are 'cuaev' and 'pyaev'",
         type=str,
-        default="cuaev-fused",
+        default="pyaev",
     )
     parser.set_defaults(backward=0)
     parser.set_defaults(run_energy=0)
@@ -535,7 +555,7 @@ if __name__ == "__main__":
     nnp_ref = torchani.models.ANI2x(
         model_index=None,
         neighborlist="cell_list" if args.use_cell_list else "all_pairs",
-        strategy=args.reference_strategy,
+        strategy=args.ref_strategy,
     ).to(device)
 
     nnp_cuaev = torchani.models.ANI2x(
@@ -548,18 +568,25 @@ if __name__ == "__main__":
         torch.cuda.profiler.start()
         maxatoms = [10000]
 
-    neural_networks = nnp_ref.neural_networks
-    num_models = len(neural_networks)
-    single_model = neural_networks.member(0)
+    neural_networks_ref = nnp_ref.neural_networks
+    num_models = neural_networks_ref.total_members_num
+    single_model_ref = neural_networks_ref.members[0]
     if args.infer_model:
-        neural_networks = neural_networks.to_infer_model(use_mnp=args.mnp).to(device)
-        single_model = single_model.to_infer_model(use_mnp=args.mnp).to(device)
+        neural_networks = neural_networks_ref.to_infer_model(use_mnp=args.mnp).to(
+            device
+        )
+        single_model = single_model_ref.to_infer_model(use_mnp=args.mnp).to(device)
     energy_shifter = nnp_ref.energy_shifter
 
     # if run for plots
     if args.plot:
         maxatoms_arr = np.concatenate(
-            [[100, 3000, 5000, 6000, 8000], np.arange(10000, 31000, 5000)]
+            [
+                [
+                    300,
+                ],
+                [3000],
+            ]
         )
         file = "6ZDH.pdb"
         run_for_plot(file, maxatoms_arr, nnp_ref, nnp_cuaev)
