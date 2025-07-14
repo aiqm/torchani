@@ -601,6 +601,10 @@ class Ensemble(AtomicContainer):
         self.register_buffer(
             "atomic_numbers", next(iter(modules)).atomic_numbers, persistent=False)
 
+    def __len__(self) -> int:
+        # for bw compat
+        return self.total_members_num
+
     def forward(
         self,
         elem_idxs: Tensor,
