@@ -880,7 +880,8 @@ class VerletCellList(CellList):
             - map_to_central(self._prev_coords, self._prev_cell, pbc) * scaling
         )
         dist_squared = delta.pow(2).sum(-1)
-        return bool((dist_squared > (self.skin / 2) ** 2).all())
+        half_skin_squared = (self.skin / 2) ** 2
+        return bool((dist_squared < half_skin_squared).all())
 
 
 NeighborlistArg = tp.Union[
