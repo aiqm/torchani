@@ -45,13 +45,11 @@ class BatchedDataset(torch.utils.data.Dataset[Conformers]):
 
     def as_dataloader(
         self,
-        num_workers: tp.Optional[int] = None,
+        num_workers: tp.Optional[int] = 0,
         pin_memory: tp.Optional[bool] = None,
         prefetch_factor: tp.Optional[int] = None,
         shuffle: bool = True,
     ) -> torch.utils.data.DataLoader:
-        if prefetch_factor is None:
-            prefetch_factor = 2
         if num_workers is None:
             num_workers = len(os.sched_getaffinity(0)) - 1
         if pin_memory is None:
@@ -112,7 +110,7 @@ class ANIBatchedInMemoryDataset(BatchedDataset):
 
     def as_dataloader(
         self,
-        num_workers: tp.Optional[int] = None,
+        num_workers: tp.Optional[int] = 0,
         pin_memory: tp.Optional[bool] = None,
         prefetch_factor: tp.Optional[int] = None,
         shuffle: bool = True,
