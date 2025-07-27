@@ -324,8 +324,8 @@ def run(file, nnp_ref, nnp_cuaev, runbackward, maxatoms=10000):
     _, _, _ = benchmark(
         speciesPositions,
         nnp_cuaev.aev_computer,
-        single_model,
-        neural_networks,
+        single_model_ref,
+        neural_networks_ref,
         runbackward,
         mol_info,
         verbose=False,
@@ -334,8 +334,8 @@ def run(file, nnp_ref, nnp_cuaev, runbackward, maxatoms=10000):
     aev, delta, force_cuaev = benchmark(
         speciesPositions,
         nnp_cuaev.aev_computer,
-        single_model,
-        neural_networks,
+        single_model_ref,
+        neural_networks_ref,
         runbackward,
         mol_info,
     )
@@ -553,13 +553,13 @@ if __name__ == "__main__":
     files = ["small.pdb", "1hz5.pdb", "6W8H.pdb"]
 
     nnp_ref = torchani.models.ANI2x(
-        model_index=None,
         neighborlist="cell_list" if args.use_cell_list else "all_pairs",
         strategy=args.ref_strategy,
-    ).to(device)
+        device=device
+    )
 
     nnp_cuaev = torchani.models.ANI2x(
-        model_index=None, strategy="cuaev-fused", device=device
+        strategy="cuaev-fused", device=device
     )
     maxatoms = [6000, 10000]
 
@@ -568,25 +568,20 @@ if __name__ == "__main__":
         torch.cuda.profiler.start()
         maxatoms = [10000]
 
+    energy_shifter = nnp_ref.energy_shifter
     neural_networks_ref = nnp_ref.neural_networks
     num_models = neural_networks_ref.total_members_num
     single_model_ref = neural_networks_ref.members[0]
     if args.infer_model:
-        neural_networks = neural_networks_ref.to_infer_model(use_mnp=args.mnp).to(
+        neural_networks_ref = neural_networks_ref.to_infer_model(use_mnp=args.mnp).to(
             device
         )
-        single_model = single_model_ref.to_infer_model(use_mnp=args.mnp).to(device)
-    energy_shifter = nnp_ref.energy_shifter
+        single_model_ref = single_model_ref.to_infer_model(use_mnp=args.mnp).to(device)
 
     # if run for plots
     if args.plot:
         maxatoms_arr = np.concatenate(
-            [
-                [
-                    300,
-                ],
-                [3000],
-            ]
+            [[100, 3000, 5000, 6000, 8000], np.arange(10000, 31000, 5000)]
         )
         file = "6ZDH.pdb"
         run_for_plot(file, maxatoms_arr, nnp_ref, nnp_cuaev)

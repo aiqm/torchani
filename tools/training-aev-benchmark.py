@@ -224,7 +224,7 @@ if __name__ == "__main__":
         "dataset",
         help="Name of builtin dataset to train on, TestDataForcesDipoles or ANI1x",
         nargs="?",
-        default="TestDataForcesDipoles",
+        default="ANI1x",
     )
     parser.add_argument(
         "-d",
