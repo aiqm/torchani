@@ -239,12 +239,11 @@ class MNPNetworks(AtomicContainer):
         if use_mnp:
             warnings.warn(
                 "MNPNetworks with MNP C++ extension is experimental."
-                " It has a complex implementation, and may be removed in the future."
             )
         else:
             warnings.warn(
                 "MNPNetworks with no MNP C++ extension is not optimized."
-                " It is meant as a proof of concept and may be removed in the future."
+                " It is meant only for testing purposes"
             )
 
         self._MNP_IS_INSTALLED = MNP_IS_INSTALLED
