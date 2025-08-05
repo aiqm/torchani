@@ -9,9 +9,6 @@
 ![PyPI](https://img.shields.io/pypi/v/torchani.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchani.svg)
 [![conda page](https://img.shields.io/badge/conda--package-page-blue)](https://roitberg.chem.ufl.edu/projects/conda-packages-uf-gainesville)
-
-CI:
-
 [![ci workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/ci.yaml)
 [![conda workflow](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml/badge.svg)](https://github.com/roitberg-group/torchani_sandbox/actions/workflows/build-conda-pkg.yaml)
 
