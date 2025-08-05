@@ -449,13 +449,13 @@ torchani/dataset, which can be downloaded by running the download.sh script</p>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 22it [00:00, 2738.37it/s]
-/home/ipickering/Repos/ani/torchani/datasets/anidataset.py:351: UserWarning: {&#39;coordinatesHE&#39;, &#39;energiesHE&#39;, &#39;smiles&#39;} found in legacy dataset, this will generate unpredictable issues.
+Verifying format correctness: 22it [00:00, 2586.83it/s]
+/home/ipickering/Repos/ani/torchani/datasets/anidataset.py:351: UserWarning: {&#39;energiesHE&#39;, &#39;smiles&#39;, &#39;coordinatesHE&#39;} found in legacy dataset, this will generate unpredictable issues.
  Probably .items() and .values() will work but not much else. It is highly  recommended that you backup these properties (if needed) and *delete them* using dataset.delete_properties
   warnings.warn(
 
 Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 92it [00:00, 2714.00it/s]
+Verifying format correctness: 92it [00:00, 2725.44it/s]
 </pre></div>
 </div>
 <p>ANIDatasets have properties they can access. All conformers in the dataset
@@ -464,7 +464,7 @@ holds</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">properties</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;, &#39;energies&#39;, &#39;coordinatesHE&#39;, &#39;energiesHE&#39;, &#39;smiles&#39;, &#39;species&#39;}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energiesHE&#39;, &#39;energies&#39;, &#39;species&#39;, &#39;coordinates&#39;, &#39;smiles&#39;, &#39;coordinatesHE&#39;}
 </pre></div>
 </div>
 <p>When opening these files we see that we get a warning because they have some
@@ -477,14 +477,14 @@ unsupported legacy properties, so the first thing we will do is delete them</p>
 
 
 Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 13it [00:00, 4490.32it/s]
+Verifying format correctness: 13it [00:00, 4314.10it/s]
 
 Deleting properties:   0%|                                                                                                                                            | 0/13 [00:00&lt;?, ?it/s]
 
 
 Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 53it [00:00, 4393.50it/s]
-{&#39;coordinates&#39;, &#39;energies&#39;, &#39;species&#39;}
+Verifying format correctness: 53it [00:00, 4343.29it/s]
+{&#39;energies&#39;, &#39;species&#39;, &#39;coordinates&#39;}
 </pre></div>
 </div>
 <section id="conformer-groups">
@@ -495,7 +495,14 @@ dictionary</p>
 <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">group</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;: tensor([[[ 0.697,  0.092,  0.100],
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energies&#39;: tensor([-111.728, -111.746, -111.752,  ..., -111.602, -111.791, -111.720],
+       dtype=torch.float64), &#39;species&#39;: tensor([[7, 7, 1, 1, 1, 1],
+        [7, 7, 1, 1, 1, 1],
+        [7, 7, 1, 1, 1, 1],
+        ...,
+        [7, 7, 1, 1, 1, 1],
+        [7, 7, 1, 1, 1, 1],
+        [7, 7, 1, 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[ 0.697,  0.092,  0.100],
          [-0.702,  0.075, -0.092],
          [ 1.195, -0.880,  0.527],
          [ 1.080,  0.211, -0.925],
@@ -537,14 +544,7 @@ dictionary</p>
          [ 1.337, -0.843,  0.466],
          [ 1.128,  0.253, -0.906],
          [-1.032,  0.308,  0.567],
-         [-1.224, -0.803, -0.315]]]), &#39;energies&#39;: tensor([-111.728, -111.746, -111.752,  ..., -111.602, -111.791, -111.720],
-       dtype=torch.float64), &#39;species&#39;: tensor([[7, 7, 1, 1, 1, 1],
-        [7, 7, 1, 1, 1, 1],
-        [7, 7, 1, 1, 1, 1],
-        ...,
-        [7, 7, 1, 1, 1, 1],
-        [7, 7, 1, 1, 1, 1],
-        [7, 7, 1, 1, 1, 1]])}
+         [-1.224, -0.803, -0.315]]])}
 </pre></div>
 </div>
 <p>We see that we get some tensors with properties, but this access is not very
@@ -574,9 +574,9 @@ standarized format</p>
 
 
 Regrouping by formulas:   0%|                                                                                                                                         | 0/13 [00:00&lt;?, ?it/s]
-Regrouping by formulas:  15%|███████████████████▊                                                                                                             | 2/13 [00:00&lt;00:00, 13.15it/s]
-Regrouping by formulas:  46%|███████████████████████████████████████████████████████████▌                                                                     | 6/13 [00:00&lt;00:00, 25.64it/s]
-Regrouping by formulas:  85%|████████████████████████████████████████████████████████████████████████████████████████████████████████████▎                   | 11/13 [00:00&lt;00:00, 33.03it/s]
+Regrouping by formulas:  15%|███████████████████▊                                                                                                             | 2/13 [00:00&lt;00:00, 13.23it/s]
+Regrouping by formulas:  46%|███████████████████████████████████████████████████████████▌                                                                     | 6/13 [00:00&lt;00:00, 25.82it/s]
+Regrouping by formulas:  85%|████████████████████████████████████████████████████████████████████████████████████████████████████████████▎                   | 11/13 [00:00&lt;00:00, 33.15it/s]
 
 [&#39;file1/CH4&#39;, &#39;file1/H2O&#39;, &#39;file1/H3N&#39;, &#39;file2/C2H2&#39;, &#39;file2/C2H4&#39;, &#39;file2/C2H6&#39;, &#39;file2/CH2O&#39;, &#39;file2/CH4O&#39;, &#39;file2/CH5N&#39;, &#39;file2/H2N2&#39;, &#39;file2/H2O2&#39;, &#39;file2/H3NO&#39;, &#39;file2/H4N2&#39;, &#39;file2/HNO&#39;, &#39;file2/N2&#39;, &#39;file2/O2&#39;]
 </pre></div>
@@ -604,7 +604,14 @@ here we print only the first 100 as a sample</p>
         <span class="k">break</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>file1/CH4 {&#39;coordinates&#39;: tensor([[[-0.003,  0.010,  0.019],
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>file1/CH4 {&#39;energies&#39;: tensor([-40.481, -40.483, -40.485,  ..., -40.496, -40.456, -40.465],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1],
+        ...,
+        [6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[-0.003,  0.010,  0.019],
          [-0.795,  0.577, -0.547],
          [-0.394, -0.980,  0.272],
          [ 0.634,  0.447,  0.936],
@@ -640,15 +647,15 @@ here we print only the first 100 as a sample</p>
          [-0.954,  0.572, -0.159],
          [-0.633, -0.924,  0.224],
          [ 0.454,  0.590,  0.751],
-         [ 0.711, -0.216, -0.720]]]), &#39;energies&#39;: tensor([-40.481, -40.483, -40.485,  ..., -40.496, -40.456, -40.465],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1],
+         [ 0.711, -0.216, -0.720]]])}
+file1/H2O {&#39;energies&#39;: tensor([-76.353, -76.362, -76.387,  ..., -76.361, -76.374, -76.387],
+       dtype=torch.float64), &#39;species&#39;: tensor([[8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
         ...,
-        [6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1]])}
-file1/H2O {&#39;coordinates&#39;: tensor([[[    -0.000,     -0.006,      0.107],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1]]), &#39;coordinates&#39;: tensor([[[    -0.000,     -0.006,      0.107],
          [     0.000,      0.777,     -0.421],
          [     0.000,     -0.678,     -0.343]],
 
@@ -672,15 +679,15 @@ file1/H2O {&#39;coordinates&#39;: tensor([[[    -0.000,     -0.006,      0.107],
 
         [[     0.000,      0.001,      0.122],
          [    -0.000,      0.743,     -0.495],
-         [    -0.000,     -0.764,     -0.512]]]), &#39;energies&#39;: tensor([-76.353, -76.362, -76.387,  ..., -76.361, -76.374, -76.387],
-       dtype=torch.float64), &#39;species&#39;: tensor([[8, 1, 1],
-        [8, 1, 1],
-        [8, 1, 1],
+         [    -0.000,     -0.764,     -0.512]]])}
+file1/H3N {&#39;energies&#39;: tensor([-56.510, -56.502, -56.507,  ..., -56.508, -56.518, -56.521],
+       dtype=torch.float64), &#39;species&#39;: tensor([[7, 1, 1, 1],
+        [7, 1, 1, 1],
+        [7, 1, 1, 1],
         ...,
-        [8, 1, 1],
-        [8, 1, 1],
-        [8, 1, 1]])}
-file1/H3N {&#39;coordinates&#39;: tensor([[[ 0.020,  0.006, -0.078],
+        [7, 1, 1, 1],
+        [7, 1, 1, 1],
+        [7, 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[ 0.020,  0.006, -0.078],
          [ 0.385, -0.882,  0.067],
          [ 0.318,  0.931,  0.038],
          [-0.979, -0.132,  0.169]],
@@ -710,15 +717,15 @@ file1/H3N {&#39;coordinates&#39;: tensor([[[ 0.020,  0.006, -0.078],
         [[ 0.003, -0.003, -0.135],
          [ 0.538, -0.818,  0.344],
          [ 0.344,  0.872,  0.365],
-         [-0.919, -0.014,  0.368]]]), &#39;energies&#39;: tensor([-56.510, -56.502, -56.507,  ..., -56.508, -56.518, -56.521],
-       dtype=torch.float64), &#39;species&#39;: tensor([[7, 1, 1, 1],
-        [7, 1, 1, 1],
-        [7, 1, 1, 1],
+         [-0.919, -0.014,  0.368]]])}
+file2/C2H2 {&#39;energies&#39;: tensor([-77.281, -77.286, -77.283,  ..., -77.295, -77.286, -77.294],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 6, 1, 1],
+        [6, 6, 1, 1],
+        [6, 6, 1, 1],
         ...,
-        [7, 1, 1, 1],
-        [7, 1, 1, 1],
-        [7, 1, 1, 1]])}
-file2/C2H2 {&#39;coordinates&#39;: tensor([[[     0.001,      0.026,      0.628],
+        [6, 6, 1, 1],
+        [6, 6, 1, 1],
+        [6, 6, 1, 1]]), &#39;coordinates&#39;: tensor([[[     0.001,      0.026,      0.628],
          [    -0.017,     -0.055,     -0.625],
          [     0.058,     -0.004,      1.644],
          [     0.134,      0.347,     -1.687]],
@@ -748,15 +755,15 @@ file2/C2H2 {&#39;coordinates&#39;: tensor([[[     0.001,      0.026,      0.628]
         [[     0.002,      0.011,      0.609],
          [     0.004,     -0.010,     -0.611],
          [    -0.031,     -0.056,      1.658],
-         [    -0.039,      0.036,     -1.632]]]), &#39;energies&#39;: tensor([-77.281, -77.286, -77.283,  ..., -77.295, -77.286, -77.294],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 6, 1, 1],
-        [6, 6, 1, 1],
-        [6, 6, 1, 1],
+         [    -0.039,      0.036,     -1.632]]])}
+file2/C2H4 {&#39;energies&#39;: tensor([-78.555, -78.554, -78.528,  ..., -78.548, -78.544, -78.533],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 6, 1, 1, 1, 1],
+        [6, 6, 1, 1, 1, 1],
+        [6, 6, 1, 1, 1, 1],
         ...,
-        [6, 6, 1, 1],
-        [6, 6, 1, 1],
-        [6, 6, 1, 1]])}
-file2/C2H4 {&#39;coordinates&#39;: tensor([[[-0.657,  0.071, -0.040],
+        [6, 6, 1, 1, 1, 1],
+        [6, 6, 1, 1, 1, 1],
+        [6, 6, 1, 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[-0.657,  0.071, -0.040],
          [ 0.653, -0.061,  0.045],
          [-1.287, -0.857,  0.017],
          [-1.173,  1.006, -0.253],
@@ -798,15 +805,15 @@ file2/C2H4 {&#39;coordinates&#39;: tensor([[[-0.657,  0.071, -0.040],
          [-1.524, -0.691, -0.098],
          [-1.163,  0.924, -0.422],
          [ 1.144, -1.035,  0.132],
-         [ 1.373,  0.911, -0.027]]]), &#39;energies&#39;: tensor([-78.555, -78.554, -78.528,  ..., -78.548, -78.544, -78.533],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 6, 1, 1, 1, 1],
-        [6, 6, 1, 1, 1, 1],
-        [6, 6, 1, 1, 1, 1],
+         [ 1.373,  0.911, -0.027]]])}
+file2/C2H6 {&#39;energies&#39;: tensor([-79.764, -79.783, -79.655,  ..., -79.781, -79.745, -79.745],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 6, 1,  ..., 1, 1, 1],
+        [6, 6, 1,  ..., 1, 1, 1],
+        [6, 6, 1,  ..., 1, 1, 1],
         ...,
-        [6, 6, 1, 1, 1, 1],
-        [6, 6, 1, 1, 1, 1],
-        [6, 6, 1, 1, 1, 1]])}
-file2/C2H6 {&#39;coordinates&#39;: tensor([[[     0.759,     -0.034,      0.022],
+        [6, 6, 1,  ..., 1, 1, 1],
+        [6, 6, 1,  ..., 1, 1, 1],
+        [6, 6, 1,  ..., 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[     0.759,     -0.034,      0.022],
          [    -0.740,      0.007,     -0.027],
          [     1.183,      0.953,     -0.303],
          ...,
@@ -854,15 +861,15 @@ file2/C2H6 {&#39;coordinates&#39;: tensor([[[     0.759,     -0.034,      0.022]
          ...,
          [    -1.246,      0.707,      0.636],
          [    -1.167,     -1.070,      0.509],
-         [    -1.014,      0.365,     -1.068]]]), &#39;energies&#39;: tensor([-79.764, -79.783, -79.655,  ..., -79.781, -79.745, -79.745],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 6, 1,  ..., 1, 1, 1],
-        [6, 6, 1,  ..., 1, 1, 1],
-        [6, 6, 1,  ..., 1, 1, 1],
+         [    -1.014,      0.365,     -1.068]]])}
+file2/CH2O {&#39;energies&#39;: tensor([-114.457, -114.452, -114.453,  ..., -114.452, -114.452, -114.450],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 8, 1, 1],
+        [6, 8, 1, 1],
+        [6, 8, 1, 1],
         ...,
-        [6, 6, 1,  ..., 1, 1, 1],
-        [6, 6, 1,  ..., 1, 1, 1],
-        [6, 6, 1,  ..., 1, 1, 1]])}
-file2/CH2O {&#39;coordinates&#39;: tensor([[[    -0.515,      0.011,      0.019],
+        [6, 8, 1, 1],
+        [6, 8, 1, 1],
+        [6, 8, 1, 1]]), &#39;coordinates&#39;: tensor([[[    -0.515,      0.011,      0.019],
          [     0.666,     -0.003,     -0.005],
          [    -1.117,      0.960,     -0.079],
          [    -1.121,     -1.050,     -0.079]],
@@ -892,15 +899,15 @@ file2/CH2O {&#39;coordinates&#39;: tensor([[[    -0.515,      0.011,      0.019]
         [[    -0.548,     -0.006,     -0.036],
          [     0.689,      0.008,      0.008],
          [    -1.008,      0.969,      0.147],
-         [    -1.204,     -1.027,      0.147]]]), &#39;energies&#39;: tensor([-114.457, -114.452, -114.453,  ..., -114.452, -114.452, -114.450],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 8, 1, 1],
-        [6, 8, 1, 1],
-        [6, 8, 1, 1],
+         [    -1.204,     -1.027,      0.147]]])}
+file2/CH4O {&#39;energies&#39;: tensor([-115.604, -115.672, -115.631,  ..., -115.627, -115.663, -115.598],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 8, 1, 1, 1, 1],
+        [6, 8, 1, 1, 1, 1],
+        [6, 8, 1, 1, 1, 1],
         ...,
-        [6, 8, 1, 1],
-        [6, 8, 1, 1],
-        [6, 8, 1, 1]])}
-file2/CH4O {&#39;coordinates&#39;: tensor([[[ 0.631, -0.033,  0.018],
+        [6, 8, 1, 1, 1, 1],
+        [6, 8, 1, 1, 1, 1],
+        [6, 8, 1, 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[ 0.631, -0.033,  0.018],
          [-0.718,  0.126, -0.050],
          [ 1.036,  1.003,  0.231],
          [ 0.961, -0.630, -0.938],
@@ -942,15 +949,15 @@ file2/CH4O {&#39;coordinates&#39;: tensor([[[ 0.631, -0.033,  0.018],
          [ 0.987,  0.969,  0.247],
          [ 1.040, -0.608, -0.971],
          [ 0.715, -0.399,  0.911],
-         [-1.192, -0.829,  0.545]]]), &#39;energies&#39;: tensor([-115.604, -115.672, -115.631,  ..., -115.627, -115.663, -115.598],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 8, 1, 1, 1, 1],
-        [6, 8, 1, 1, 1, 1],
-        [6, 8, 1, 1, 1, 1],
+         [-1.192, -0.829,  0.545]]])}
+file2/CH5N {&#39;energies&#39;: tensor([-95.805, -95.715, -95.634,  ..., -95.776, -95.779, -95.716],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 7, 1,  ..., 1, 1, 1],
+        [6, 7, 1,  ..., 1, 1, 1],
+        [6, 7, 1,  ..., 1, 1, 1],
         ...,
-        [6, 8, 1, 1, 1, 1],
-        [6, 8, 1, 1, 1, 1],
-        [6, 8, 1, 1, 1, 1]])}
-file2/CH5N {&#39;coordinates&#39;: tensor([[[     0.712,      0.008,      0.032],
+        [6, 7, 1,  ..., 1, 1, 1],
+        [6, 7, 1,  ..., 1, 1, 1],
+        [6, 7, 1,  ..., 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[     0.712,      0.008,      0.032],
          [    -0.749,     -0.008,     -0.127],
          [     1.198,     -0.838,     -0.455],
          ...,
@@ -998,15 +1005,15 @@ file2/CH5N {&#39;coordinates&#39;: tensor([[[     0.712,      0.008,      0.032]
          ...,
          [     1.169,      0.166,      1.057],
          [    -1.105,     -0.946,      0.663],
-         [    -1.181,      0.741,      0.092]]]), &#39;energies&#39;: tensor([-95.805, -95.715, -95.634,  ..., -95.776, -95.779, -95.716],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 7, 1,  ..., 1, 1, 1],
-        [6, 7, 1,  ..., 1, 1, 1],
-        [6, 7, 1,  ..., 1, 1, 1],
+         [    -1.181,      0.741,      0.092]]])}
+file2/H2N2 {&#39;energies&#39;: tensor([-110.583, -110.586, -110.583,  ..., -110.590, -110.588, -110.583],
+       dtype=torch.float64), &#39;species&#39;: tensor([[7, 7, 1, 1],
+        [7, 7, 1, 1],
+        [7, 7, 1, 1],
         ...,
-        [6, 7, 1,  ..., 1, 1, 1],
-        [6, 7, 1,  ..., 1, 1, 1],
-        [6, 7, 1,  ..., 1, 1, 1]])}
-file2/H2N2 {&#39;coordinates&#39;: tensor([[[ 0.593, -0.108,  0.008],
+        [7, 7, 1, 1],
+        [7, 7, 1, 1],
+        [7, 7, 1, 1]]), &#39;coordinates&#39;: tensor([[[ 0.593, -0.108,  0.008],
          [-0.600, -0.117, -0.008],
          [ 1.157,  0.750, -0.073],
          [-1.065,  0.738,  0.073]],
@@ -1036,15 +1043,15 @@ file2/H2N2 {&#39;coordinates&#39;: tensor([[[ 0.593, -0.108,  0.008],
         [[ 0.643, -0.133,  0.013],
          [-0.627, -0.109, -0.013],
          [ 0.989,  0.850, -0.110],
-         [-1.205,  0.852,  0.110]]]), &#39;energies&#39;: tensor([-110.583, -110.586, -110.583,  ..., -110.590, -110.588, -110.583],
-       dtype=torch.float64), &#39;species&#39;: tensor([[7, 7, 1, 1],
-        [7, 7, 1, 1],
-        [7, 7, 1, 1],
+         [-1.205,  0.852,  0.110]]])}
+file2/H2O2 {&#39;energies&#39;: tensor([-151.357, -151.426, -151.385,  ..., -151.464, -151.387, -151.416],
+       dtype=torch.float64), &#39;species&#39;: tensor([[8, 8, 1, 1],
+        [8, 8, 1, 1],
+        [8, 8, 1, 1],
         ...,
-        [7, 7, 1, 1],
-        [7, 7, 1, 1],
-        [7, 7, 1, 1]])}
-file2/H2O2 {&#39;coordinates&#39;: tensor([[[ 0.717,  0.125, -0.052],
+        [8, 8, 1, 1],
+        [8, 8, 1, 1],
+        [8, 8, 1, 1]]), &#39;coordinates&#39;: tensor([[[ 0.717,  0.125, -0.052],
          [-0.715, -0.139, -0.039],
          [ 0.939, -0.450,  0.285],
          [-0.937,  0.693,  0.285]],
@@ -1074,14 +1081,7 @@ file2/H2O2 {&#39;coordinates&#39;: tensor([[[ 0.717,  0.125, -0.052],
         [[ 0.712,  0.094, -0.037],
          [-0.714, -0.083, -0.048],
          [ 0.884, -0.779,  0.251],
-         [-0.869,  0.587,  0.262]]]), &#39;energies&#39;: tensor([-151.357, -151.426, -151.385,  ..., -151.464, -151.387, -151.416],
-       dtype=torch.float64), &#39;species&#39;: tensor([[8, 8, 1, 1],
-        [8, 8, 1, 1],
-        [8, 8, 1, 1],
-        ...,
-        [8, 8, 1, 1],
-        [8, 8, 1, 1],
-        [8, 8, 1, 1]])}
+         [-0.869,  0.587,  0.262]]])}
 file1/CH4
 file1/H2O
 file1/H3N
@@ -1093,7 +1093,14 @@ file2/CH4O
 file2/CH5N
 file2/H2N2
 file2/H2O2
-{&#39;coordinates&#39;: tensor([[[-0.003,  0.010,  0.019],
+{&#39;energies&#39;: tensor([-40.481, -40.483, -40.485,  ..., -40.496, -40.456, -40.465],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1],
+        ...,
+        [6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[-0.003,  0.010,  0.019],
          [-0.795,  0.577, -0.547],
          [-0.394, -0.980,  0.272],
          [ 0.634,  0.447,  0.936],
@@ -1129,15 +1136,15 @@ file2/H2O2
          [-0.954,  0.572, -0.159],
          [-0.633, -0.924,  0.224],
          [ 0.454,  0.590,  0.751],
-         [ 0.711, -0.216, -0.720]]]), &#39;energies&#39;: tensor([-40.481, -40.483, -40.485,  ..., -40.496, -40.456, -40.465],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1],
+         [ 0.711, -0.216, -0.720]]])}
+{&#39;energies&#39;: tensor([-76.353, -76.362, -76.387,  ..., -76.361, -76.374, -76.387],
+       dtype=torch.float64), &#39;species&#39;: tensor([[8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1],
         ...,
-        [6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1]])}
-{&#39;coordinates&#39;: tensor([[[    -0.000,     -0.006,      0.107],
+        [8, 1, 1],
+        [8, 1, 1],
+        [8, 1, 1]]), &#39;coordinates&#39;: tensor([[[    -0.000,     -0.006,      0.107],
          [     0.000,      0.777,     -0.421],
          [     0.000,     -0.678,     -0.343]],
 
@@ -1161,15 +1168,15 @@ file2/H2O2
 
         [[     0.000,      0.001,      0.122],
          [    -0.000,      0.743,     -0.495],
-         [    -0.000,     -0.764,     -0.512]]]), &#39;energies&#39;: tensor([-76.353, -76.362, -76.387,  ..., -76.361, -76.374, -76.387],
-       dtype=torch.float64), &#39;species&#39;: tensor([[8, 1, 1],
-        [8, 1, 1],
-        [8, 1, 1],
+         [    -0.000,     -0.764,     -0.512]]])}
+{&#39;energies&#39;: tensor([-56.510, -56.502, -56.507,  ..., -56.508, -56.518, -56.521],
+       dtype=torch.float64), &#39;species&#39;: tensor([[7, 1, 1, 1],
+        [7, 1, 1, 1],
+        [7, 1, 1, 1],
         ...,
-        [8, 1, 1],
-        [8, 1, 1],
-        [8, 1, 1]])}
-{&#39;coordinates&#39;: tensor([[[ 0.020,  0.006, -0.078],
+        [7, 1, 1, 1],
+        [7, 1, 1, 1],
+        [7, 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[ 0.020,  0.006, -0.078],
          [ 0.385, -0.882,  0.067],
          [ 0.318,  0.931,  0.038],
          [-0.979, -0.132,  0.169]],
@@ -1199,15 +1206,15 @@ file2/H2O2
         [[ 0.003, -0.003, -0.135],
          [ 0.538, -0.818,  0.344],
          [ 0.344,  0.872,  0.365],
-         [-0.919, -0.014,  0.368]]]), &#39;energies&#39;: tensor([-56.510, -56.502, -56.507,  ..., -56.508, -56.518, -56.521],
-       dtype=torch.float64), &#39;species&#39;: tensor([[7, 1, 1, 1],
-        [7, 1, 1, 1],
-        [7, 1, 1, 1],
+         [-0.919, -0.014,  0.368]]])}
+{&#39;energies&#39;: tensor([-77.281, -77.286, -77.283,  ..., -77.295, -77.286, -77.294],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 6, 1, 1],
+        [6, 6, 1, 1],
+        [6, 6, 1, 1],
         ...,
-        [7, 1, 1, 1],
-        [7, 1, 1, 1],
-        [7, 1, 1, 1]])}
-{&#39;coordinates&#39;: tensor([[[     0.001,      0.026,      0.628],
+        [6, 6, 1, 1],
+        [6, 6, 1, 1],
+        [6, 6, 1, 1]]), &#39;coordinates&#39;: tensor([[[     0.001,      0.026,      0.628],
          [    -0.017,     -0.055,     -0.625],
          [     0.058,     -0.004,      1.644],
          [     0.134,      0.347,     -1.687]],
@@ -1237,15 +1244,15 @@ file2/H2O2
         [[     0.002,      0.011,      0.609],
          [     0.004,     -0.010,     -0.611],
          [    -0.031,     -0.056,      1.658],
-         [    -0.039,      0.036,     -1.632]]]), &#39;energies&#39;: tensor([-77.281, -77.286, -77.283,  ..., -77.295, -77.286, -77.294],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 6, 1, 1],
-        [6, 6, 1, 1],
-        [6, 6, 1, 1],
+         [    -0.039,      0.036,     -1.632]]])}
+{&#39;energies&#39;: tensor([-78.555, -78.554, -78.528,  ..., -78.548, -78.544, -78.533],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 6, 1, 1, 1, 1],
+        [6, 6, 1, 1, 1, 1],
+        [6, 6, 1, 1, 1, 1],
         ...,
-        [6, 6, 1, 1],
-        [6, 6, 1, 1],
-        [6, 6, 1, 1]])}
-{&#39;coordinates&#39;: tensor([[[-0.657,  0.071, -0.040],
+        [6, 6, 1, 1, 1, 1],
+        [6, 6, 1, 1, 1, 1],
+        [6, 6, 1, 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[-0.657,  0.071, -0.040],
          [ 0.653, -0.061,  0.045],
          [-1.287, -0.857,  0.017],
          [-1.173,  1.006, -0.253],
@@ -1287,15 +1294,15 @@ file2/H2O2
          [-1.524, -0.691, -0.098],
          [-1.163,  0.924, -0.422],
          [ 1.144, -1.035,  0.132],
-         [ 1.373,  0.911, -0.027]]]), &#39;energies&#39;: tensor([-78.555, -78.554, -78.528,  ..., -78.548, -78.544, -78.533],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 6, 1, 1, 1, 1],
-        [6, 6, 1, 1, 1, 1],
-        [6, 6, 1, 1, 1, 1],
+         [ 1.373,  0.911, -0.027]]])}
+{&#39;energies&#39;: tensor([-79.764, -79.783, -79.655,  ..., -79.781, -79.745, -79.745],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 6, 1,  ..., 1, 1, 1],
+        [6, 6, 1,  ..., 1, 1, 1],
+        [6, 6, 1,  ..., 1, 1, 1],
         ...,
-        [6, 6, 1, 1, 1, 1],
-        [6, 6, 1, 1, 1, 1],
-        [6, 6, 1, 1, 1, 1]])}
-{&#39;coordinates&#39;: tensor([[[     0.759,     -0.034,      0.022],
+        [6, 6, 1,  ..., 1, 1, 1],
+        [6, 6, 1,  ..., 1, 1, 1],
+        [6, 6, 1,  ..., 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[     0.759,     -0.034,      0.022],
          [    -0.740,      0.007,     -0.027],
          [     1.183,      0.953,     -0.303],
          ...,
@@ -1343,15 +1350,15 @@ file2/H2O2
          ...,
          [    -1.246,      0.707,      0.636],
          [    -1.167,     -1.070,      0.509],
-         [    -1.014,      0.365,     -1.068]]]), &#39;energies&#39;: tensor([-79.764, -79.783, -79.655,  ..., -79.781, -79.745, -79.745],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 6, 1,  ..., 1, 1, 1],
-        [6, 6, 1,  ..., 1, 1, 1],
-        [6, 6, 1,  ..., 1, 1, 1],
+         [    -1.014,      0.365,     -1.068]]])}
+{&#39;energies&#39;: tensor([-114.457, -114.452, -114.453,  ..., -114.452, -114.452, -114.450],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 8, 1, 1],
+        [6, 8, 1, 1],
+        [6, 8, 1, 1],
         ...,
-        [6, 6, 1,  ..., 1, 1, 1],
-        [6, 6, 1,  ..., 1, 1, 1],
-        [6, 6, 1,  ..., 1, 1, 1]])}
-{&#39;coordinates&#39;: tensor([[[    -0.515,      0.011,      0.019],
+        [6, 8, 1, 1],
+        [6, 8, 1, 1],
+        [6, 8, 1, 1]]), &#39;coordinates&#39;: tensor([[[    -0.515,      0.011,      0.019],
          [     0.666,     -0.003,     -0.005],
          [    -1.117,      0.960,     -0.079],
          [    -1.121,     -1.050,     -0.079]],
@@ -1381,15 +1388,15 @@ file2/H2O2
         [[    -0.548,     -0.006,     -0.036],
          [     0.689,      0.008,      0.008],
          [    -1.008,      0.969,      0.147],
-         [    -1.204,     -1.027,      0.147]]]), &#39;energies&#39;: tensor([-114.457, -114.452, -114.453,  ..., -114.452, -114.452, -114.450],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 8, 1, 1],
-        [6, 8, 1, 1],
-        [6, 8, 1, 1],
+         [    -1.204,     -1.027,      0.147]]])}
+{&#39;energies&#39;: tensor([-115.604, -115.672, -115.631,  ..., -115.627, -115.663, -115.598],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 8, 1, 1, 1, 1],
+        [6, 8, 1, 1, 1, 1],
+        [6, 8, 1, 1, 1, 1],
         ...,
-        [6, 8, 1, 1],
-        [6, 8, 1, 1],
-        [6, 8, 1, 1]])}
-{&#39;coordinates&#39;: tensor([[[ 0.631, -0.033,  0.018],
+        [6, 8, 1, 1, 1, 1],
+        [6, 8, 1, 1, 1, 1],
+        [6, 8, 1, 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[ 0.631, -0.033,  0.018],
          [-0.718,  0.126, -0.050],
          [ 1.036,  1.003,  0.231],
          [ 0.961, -0.630, -0.938],
@@ -1431,15 +1438,15 @@ file2/H2O2
          [ 0.987,  0.969,  0.247],
          [ 1.040, -0.608, -0.971],
          [ 0.715, -0.399,  0.911],
-         [-1.192, -0.829,  0.545]]]), &#39;energies&#39;: tensor([-115.604, -115.672, -115.631,  ..., -115.627, -115.663, -115.598],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 8, 1, 1, 1, 1],
-        [6, 8, 1, 1, 1, 1],
-        [6, 8, 1, 1, 1, 1],
+         [-1.192, -0.829,  0.545]]])}
+{&#39;energies&#39;: tensor([-95.805, -95.715, -95.634,  ..., -95.776, -95.779, -95.716],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 7, 1,  ..., 1, 1, 1],
+        [6, 7, 1,  ..., 1, 1, 1],
+        [6, 7, 1,  ..., 1, 1, 1],
         ...,
-        [6, 8, 1, 1, 1, 1],
-        [6, 8, 1, 1, 1, 1],
-        [6, 8, 1, 1, 1, 1]])}
-{&#39;coordinates&#39;: tensor([[[     0.712,      0.008,      0.032],
+        [6, 7, 1,  ..., 1, 1, 1],
+        [6, 7, 1,  ..., 1, 1, 1],
+        [6, 7, 1,  ..., 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[     0.712,      0.008,      0.032],
          [    -0.749,     -0.008,     -0.127],
          [     1.198,     -0.838,     -0.455],
          ...,
@@ -1487,15 +1494,15 @@ file2/H2O2
          ...,
          [     1.169,      0.166,      1.057],
          [    -1.105,     -0.946,      0.663],
-         [    -1.181,      0.741,      0.092]]]), &#39;energies&#39;: tensor([-95.805, -95.715, -95.634,  ..., -95.776, -95.779, -95.716],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 7, 1,  ..., 1, 1, 1],
-        [6, 7, 1,  ..., 1, 1, 1],
-        [6, 7, 1,  ..., 1, 1, 1],
+         [    -1.181,      0.741,      0.092]]])}
+{&#39;energies&#39;: tensor([-110.583, -110.586, -110.583,  ..., -110.590, -110.588, -110.583],
+       dtype=torch.float64), &#39;species&#39;: tensor([[7, 7, 1, 1],
+        [7, 7, 1, 1],
+        [7, 7, 1, 1],
         ...,
-        [6, 7, 1,  ..., 1, 1, 1],
-        [6, 7, 1,  ..., 1, 1, 1],
-        [6, 7, 1,  ..., 1, 1, 1]])}
-{&#39;coordinates&#39;: tensor([[[ 0.593, -0.108,  0.008],
+        [7, 7, 1, 1],
+        [7, 7, 1, 1],
+        [7, 7, 1, 1]]), &#39;coordinates&#39;: tensor([[[ 0.593, -0.108,  0.008],
          [-0.600, -0.117, -0.008],
          [ 1.157,  0.750, -0.073],
          [-1.065,  0.738,  0.073]],
@@ -1525,15 +1532,15 @@ file2/H2O2
         [[ 0.643, -0.133,  0.013],
          [-0.627, -0.109, -0.013],
          [ 0.989,  0.850, -0.110],
-         [-1.205,  0.852,  0.110]]]), &#39;energies&#39;: tensor([-110.583, -110.586, -110.583,  ..., -110.590, -110.588, -110.583],
-       dtype=torch.float64), &#39;species&#39;: tensor([[7, 7, 1, 1],
-        [7, 7, 1, 1],
-        [7, 7, 1, 1],
+         [-1.205,  0.852,  0.110]]])}
+{&#39;energies&#39;: tensor([-151.357, -151.426, -151.385,  ..., -151.464, -151.387, -151.416],
+       dtype=torch.float64), &#39;species&#39;: tensor([[8, 8, 1, 1],
+        [8, 8, 1, 1],
+        [8, 8, 1, 1],
         ...,
-        [7, 7, 1, 1],
-        [7, 7, 1, 1],
-        [7, 7, 1, 1]])}
-{&#39;coordinates&#39;: tensor([[[ 0.717,  0.125, -0.052],
+        [8, 8, 1, 1],
+        [8, 8, 1, 1],
+        [8, 8, 1, 1]]), &#39;coordinates&#39;: tensor([[[ 0.717,  0.125, -0.052],
          [-0.715, -0.139, -0.039],
          [ 0.939, -0.450,  0.285],
          [-0.937,  0.693,  0.285]],
@@ -1563,14 +1570,7 @@ file2/H2O2
         [[ 0.712,  0.094, -0.037],
          [-0.714, -0.083, -0.048],
          [ 0.884, -0.779,  0.251],
-         [-0.869,  0.587,  0.262]]]), &#39;energies&#39;: tensor([-151.357, -151.426, -151.385,  ..., -151.464, -151.387, -151.416],
-       dtype=torch.float64), &#39;species&#39;: tensor([[8, 8, 1, 1],
-        [8, 8, 1, 1],
-        [8, 8, 1, 1],
-        ...,
-        [8, 8, 1, 1],
-        [8, 8, 1, 1],
-        [8, 8, 1, 1]])}
+         [-0.869,  0.587,  0.262]]])}
 </pre></div>
 </div>
 <p>To get the number of groups of conformers we can use len(), or also
@@ -1601,16 +1601,16 @@ methods, get_conformers and iter_conformers</p>
 <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">conformer</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;: tensor([[-0.003,  0.010,  0.019],
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energies&#39;: tensor(-40.481, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.003,  0.010,  0.019],
         [-0.795,  0.577, -0.547],
         [-0.394, -0.980,  0.272],
         [ 0.634,  0.447,  0.936],
-        [ 0.596, -0.165, -0.892]]), &#39;energies&#39;: tensor(-40.481, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.003, -0.020,  0.003],
+        [ 0.596, -0.165, -0.892]])}
+{&#39;energies&#39;: tensor(-40.483, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.003, -0.020,  0.003],
         [-0.783,  0.792, -0.260],
         [-0.454, -1.030,  0.312],
         [ 0.447,  0.636,  0.768],
-        [ 0.753, -0.159, -0.853]]), &#39;energies&#39;: tensor(-40.483, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
+        [ 0.753, -0.159, -0.853]])}
 </pre></div>
 </div>
 <p>A tensor / list / array can also be passed for indexing, to fetch multiple
@@ -1621,7 +1621,8 @@ using h5py for example does not).</p>
 <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">conformers</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;: tensor([[[-0.003,  0.010,  0.019],
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energies&#39;: tensor([-40.481, -40.483], dtype=torch.float64), &#39;species&#39;: tensor([[6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[-0.003,  0.010,  0.019],
          [-0.795,  0.577, -0.547],
          [-0.394, -0.980,  0.272],
          [ 0.634,  0.447,  0.936],
@@ -1631,8 +1632,7 @@ using h5py for example does not).</p>
          [-0.783,  0.792, -0.260],
          [-0.454, -1.030,  0.312],
          [ 0.447,  0.636,  0.768],
-         [ 0.753, -0.159, -0.853]]]), &#39;energies&#39;: tensor([-40.481, -40.483], dtype=torch.float64), &#39;species&#39;: tensor([[6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1]])}
+         [ 0.753, -0.159, -0.853]]])}
 </pre></div>
 </div>
 <p>We can also access all the group if we don’t pass an index, same as normal indexing</p>
@@ -1640,7 +1640,14 @@ using h5py for example does not).</p>
 <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">conformer</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;: tensor([[[-0.003,  0.010,  0.019],
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energies&#39;: tensor([-40.481, -40.483, -40.485,  ..., -40.496, -40.456, -40.465],
+       dtype=torch.float64), &#39;species&#39;: tensor([[6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1],
+        ...,
+        [6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1],
+        [6, 1, 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[-0.003,  0.010,  0.019],
          [-0.795,  0.577, -0.547],
          [-0.394, -0.980,  0.272],
          [ 0.634,  0.447,  0.936],
@@ -1676,14 +1683,7 @@ using h5py for example does not).</p>
          [-0.954,  0.572, -0.159],
          [-0.633, -0.924,  0.224],
          [ 0.454,  0.590,  0.751],
-         [ 0.711, -0.216, -0.720]]]), &#39;energies&#39;: tensor([-40.481, -40.483, -40.485,  ..., -40.496, -40.456, -40.465],
-       dtype=torch.float64), &#39;species&#39;: tensor([[6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1],
-        ...,
-        [6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1],
-        [6, 1, 1, 1, 1]])}
+         [ 0.711, -0.216, -0.720]]])}
 </pre></div>
 </div>
 <p>Finally, it is possible to also specify which properties we want using ‘properties’</p>
@@ -1702,7 +1702,8 @@ specified “True” will output the elements as strings (‘C’, ‘H’, ‘H
 <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">conformer</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;: array([[[-0.0034502 ,  0.01017081,  0.01938033],
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energies&#39;: array([-40.48058817, -40.48311923]), &#39;species&#39;: array([[&#39;C&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;],
+       [&#39;C&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;]], dtype=&#39;&lt;U1&#39;), &#39;coordinates&#39;: array([[[-0.0034502 ,  0.01017081,  0.01938033],
         [-0.7954868 ,  0.5766599 , -0.5472012 ],
         [-0.39378393, -0.97992676,  0.2722862 ],
         [ 0.6344988 ,  0.4473651 ,  0.93568736],
@@ -1712,8 +1713,7 @@ specified “True” will output the elements as strings (‘C’, ‘H’, ‘H
         [-0.78331304,  0.7921426 , -0.26027855],
         [-0.45410746, -1.0295471 ,  0.31240797],
         [ 0.44713658,  0.63571125,  0.76770777],
-        [ 0.7531731 , -0.1592813 , -0.85348135]]], dtype=float32), &#39;energies&#39;: array([-40.48058817, -40.48311923]), &#39;species&#39;: array([[&#39;C&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;],
-       [&#39;C&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;, &#39;H&#39;]], dtype=&#39;&lt;U1&#39;)}
+        [ 0.7531731 , -0.1592813 , -0.85348135]]], dtype=float32)}
 </pre></div>
 </div>
 <p>We can iterate over all conformers sequentially by calling iter_conformer,
@@ -1723,506 +1723,506 @@ previous to starting the iteration), here we print the first 100 as a sample</p>
     <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;: tensor([[-0.003,  0.010,  0.019],
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energies&#39;: tensor(-40.481, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.003,  0.010,  0.019],
         [-0.795,  0.577, -0.547],
         [-0.394, -0.980,  0.272],
         [ 0.634,  0.447,  0.936],
-        [ 0.596, -0.165, -0.892]]), &#39;energies&#39;: tensor(-40.481, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.003, -0.020,  0.003],
+        [ 0.596, -0.165, -0.892]])}
+{&#39;energies&#39;: tensor(-40.483, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.003, -0.020,  0.003],
         [-0.783,  0.792, -0.260],
         [-0.454, -1.030,  0.312],
         [ 0.447,  0.636,  0.768],
-        [ 0.753, -0.159, -0.853]]), &#39;energies&#39;: tensor(-40.483, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.018, -0.022, -0.011],
+        [ 0.753, -0.159, -0.853]])}
+{&#39;energies&#39;: tensor(-40.485, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.018, -0.022, -0.011],
         [-0.730,  0.682, -0.308],
         [-0.382, -0.868,  0.382],
         [ 0.569,  0.505,  0.804],
-        [ 0.755, -0.059, -0.744]]), &#39;energies&#39;: tensor(-40.485, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.007,  0.013,  0.015],
+        [ 0.755, -0.059, -0.744]])}
+{&#39;energies&#39;: tensor(-40.492, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.007,  0.013,  0.015],
         [-0.828,  0.624, -0.399],
         [-0.413, -1.013,  0.289],
         [ 0.574,  0.438,  0.783],
-        [ 0.754, -0.207, -0.848]]), &#39;energies&#39;: tensor(-40.492, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.007,  0.035,  0.028],
+        [ 0.754, -0.207, -0.848]])}
+{&#39;energies&#39;: tensor(-40.456, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.007,  0.035,  0.028],
         [-1.012,  0.457, -0.554],
         [-0.519, -0.962,  0.271],
         [ 0.698,  0.285,  0.818],
-        [ 0.749, -0.196, -0.868]]), &#39;energies&#39;: tensor(-40.456, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.010, -0.012,  0.011],
+        [ 0.749, -0.196, -0.868]])}
+{&#39;energies&#39;: tensor(-40.489, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.010, -0.012,  0.011],
         [-0.788,  0.640, -0.412],
         [-0.475, -0.980,  0.279],
         [ 0.656,  0.565,  0.809],
-        [ 0.726, -0.079, -0.805]]), &#39;energies&#39;: tensor(-40.489, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.006, -0.011, -0.013],
+        [ 0.726, -0.079, -0.805]])}
+{&#39;energies&#39;: tensor(-40.488, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.006, -0.011, -0.013],
         [-0.731,  0.733, -0.327],
         [-0.307, -0.918,  0.387],
         [ 0.459,  0.476,  0.874],
-        [ 0.648, -0.160, -0.784]]), &#39;energies&#39;: tensor(-40.488, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.003,  0.004, -0.004],
+        [ 0.648, -0.160, -0.784]])}
+{&#39;energies&#39;: tensor(-40.497, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.003,  0.004, -0.004],
         [-0.828,  0.666, -0.301],
         [-0.377, -0.942,  0.322],
         [ 0.501,  0.455,  0.816],
-        [ 0.734, -0.224, -0.786]]), &#39;energies&#39;: tensor(-40.497, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.009,  0.009, -0.019],
+        [ 0.734, -0.224, -0.786]])}
+{&#39;energies&#39;: tensor(-40.479, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.009,  0.009, -0.019],
         [-0.728,  0.646, -0.245],
         [-0.289, -0.919,  0.351],
         [ 0.447,  0.431,  0.867],
-        [ 0.673, -0.264, -0.744]]), &#39;energies&#39;: tensor(-40.479, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[    -0.007,     -0.000,     -0.002],
+        [ 0.673, -0.264, -0.744]])}
+{&#39;energies&#39;: tensor(-40.498, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[    -0.007,     -0.000,     -0.002],
         [    -0.817,      0.676,     -0.322],
         [    -0.381,     -0.955,      0.314],
         [     0.537,      0.487,      0.830],
-        [     0.742,     -0.205,     -0.800]]), &#39;energies&#39;: tensor(-40.498, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[     0.007,      0.000,      0.008],
+        [     0.742,     -0.205,     -0.800]])}
+{&#39;energies&#39;: tensor(-40.491, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[     0.007,      0.000,      0.008],
         [    -0.754,      0.594,     -0.402],
         [    -0.461,     -0.930,      0.376],
         [     0.472,      0.443,      0.852],
-        [     0.665,     -0.110,     -0.927]]), &#39;energies&#39;: tensor(-40.491, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.023,  0.010, -0.011],
+        [     0.665,     -0.110,     -0.927]])}
+{&#39;energies&#39;: tensor(-40.465, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.023,  0.010, -0.011],
         [-0.944,  0.498, -0.285],
         [-0.569, -0.812,  0.429],
         [ 0.463,  0.318,  0.791],
-        [ 0.772, -0.119, -0.807]]), &#39;energies&#39;: tensor(-40.465, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.021,  0.015, -0.014],
+        [ 0.772, -0.119, -0.807]])}
+{&#39;energies&#39;: tensor(-40.452, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.021,  0.015, -0.014],
         [-0.753,  0.591, -0.193],
         [-0.397, -1.036,  0.242],
         [ 0.623,  0.506,  0.684],
-        [ 0.781, -0.235, -0.569]]), &#39;energies&#39;: tensor(-40.452, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.011, -0.028, -0.016],
+        [ 0.781, -0.235, -0.569]])}
+{&#39;energies&#39;: tensor(-40.481, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.011, -0.028, -0.016],
         [-0.733,  0.780, -0.205],
         [-0.393, -0.955,  0.329],
         [ 0.500,  0.659,  0.838],
-        [ 0.760, -0.149, -0.774]]), &#39;energies&#39;: tensor(-40.481, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.010,  0.013, -0.012],
+        [ 0.760, -0.149, -0.774]])}
+{&#39;energies&#39;: tensor(-40.484, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.010,  0.013, -0.012],
         [-0.928,  0.628, -0.352],
         [-0.370, -0.867,  0.397],
         [ 0.474,  0.348,  0.957],
-        [ 0.710, -0.258, -0.856]]), &#39;energies&#39;: tensor(-40.484, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.002, -0.011,  0.001],
+        [ 0.710, -0.258, -0.856]])}
+{&#39;energies&#39;: tensor(-40.496, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.002, -0.011,  0.001],
         [-0.752,  0.659, -0.377],
         [-0.448, -0.946,  0.374],
         [ 0.505,  0.492,  0.817],
-        [ 0.667, -0.075, -0.831]]), &#39;energies&#39;: tensor(-40.496, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.033, -0.008, -0.018],
+        [ 0.667, -0.075, -0.831]])}
+{&#39;energies&#39;: tensor(-40.472, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.033, -0.008, -0.018],
         [-0.818,  0.590, -0.315],
         [-0.534, -0.821,  0.527],
         [ 0.330,  0.378,  0.906],
-        [ 0.627, -0.049, -0.904]]), &#39;energies&#39;: tensor(-40.472, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.005, -0.008, -0.010],
+        [ 0.627, -0.049, -0.904]])}
+{&#39;energies&#39;: tensor(-40.458, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.005, -0.008, -0.010],
         [-0.738,  0.838, -0.357],
         [-0.189, -0.964,  0.352],
         [ 0.415,  0.458,  0.849],
-        [ 0.574, -0.233, -0.729]]), &#39;energies&#39;: tensor(-40.458, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.018, -0.003, -0.004],
+        [ 0.574, -0.233, -0.729]])}
+{&#39;energies&#39;: tensor(-40.484, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.018, -0.003, -0.004],
         [-0.759,  0.817, -0.357],
         [-0.251, -1.011,  0.409],
         [ 0.478,  0.425,  0.798],
-        [ 0.742, -0.194, -0.798]]), &#39;energies&#39;: tensor(-40.484, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.012, -0.034,  0.015],
+        [ 0.742, -0.194, -0.798]])}
+{&#39;energies&#39;: tensor(-40.452, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.012, -0.034,  0.015],
         [-0.687,  0.752, -0.402],
         [-0.472, -0.930,  0.471],
         [ 0.496,  0.477,  0.636],
-        [ 0.807,  0.104, -0.886]]), &#39;energies&#39;: tensor(-40.452, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.044, -0.007, -0.033],
+        [ 0.807,  0.104, -0.886]])}
+{&#39;energies&#39;: tensor(-40.462, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.044, -0.007, -0.033],
         [-0.781,  0.766, -0.347],
         [-0.228, -0.925,  0.542],
         [ 0.650,  0.368,  0.949],
-        [ 0.879, -0.127, -0.753]]), &#39;energies&#39;: tensor(-40.462, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.023, -0.015,  0.004],
+        [ 0.879, -0.127, -0.753]])}
+{&#39;energies&#39;: tensor(-40.480, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.023, -0.015,  0.004],
         [-0.686,  0.702, -0.419],
         [-0.406, -0.990,  0.449],
         [ 0.581,  0.483,  0.825],
-        [ 0.783, -0.018, -0.899]]), &#39;energies&#39;: tensor(-40.480, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.003,  0.002,  0.023],
+        [ 0.783, -0.018, -0.899]])}
+{&#39;energies&#39;: tensor(-40.489, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.003,  0.002,  0.023],
         [-0.745,  0.626, -0.414],
         [-0.379, -0.947,  0.234],
         [ 0.517,  0.477,  0.754],
-        [ 0.644, -0.176, -0.841]]), &#39;energies&#39;: tensor(-40.489, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.002,  0.024, -0.015],
+        [ 0.644, -0.176, -0.841]])}
+{&#39;energies&#39;: tensor(-40.473, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.002,  0.024, -0.015],
         [-0.825,  0.526, -0.225],
         [-0.462, -0.978,  0.329],
         [ 0.522,  0.470,  0.928],
-        [ 0.788, -0.298, -0.855]]), &#39;energies&#39;: tensor(-40.473, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.010, -0.014, -0.004],
+        [ 0.788, -0.298, -0.855]])}
+{&#39;energies&#39;: tensor(-40.492, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.010, -0.014, -0.004],
         [-0.818,  0.746, -0.280],
         [-0.374, -0.938,  0.312],
         [ 0.526,  0.540,  0.788],
-        [ 0.781, -0.181, -0.777]]), &#39;energies&#39;: tensor(-40.492, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.002,  0.014,  0.004],
+        [ 0.781, -0.181, -0.777]])}
+{&#39;energies&#39;: tensor(-40.489, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.002,  0.014,  0.004],
         [-0.821,  0.646, -0.290],
         [-0.415, -1.055,  0.232],
         [ 0.528,  0.543,  0.829],
-        [ 0.728, -0.300, -0.819]]), &#39;energies&#39;: tensor(-40.489, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.017, -0.006, -0.034],
+        [ 0.728, -0.300, -0.819]])}
+{&#39;energies&#39;: tensor(-40.453, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.017, -0.006, -0.034],
         [-0.691,  0.708, -0.166],
         [-0.373, -0.949,  0.426],
         [ 0.294,  0.524,  0.910],
-        [ 0.571, -0.210, -0.761]]), &#39;energies&#39;: tensor(-40.453, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.029, -0.014,  0.035],
+        [ 0.571, -0.210, -0.761]])}
+{&#39;energies&#39;: tensor(-40.468, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.029, -0.014,  0.035],
         [-0.875,  0.561, -0.464],
         [-0.652, -0.928,  0.219],
         [ 0.535,  0.598,  0.819],
-        [ 0.642, -0.066, -0.994]]), &#39;energies&#39;: tensor(-40.468, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.007, -0.024, -0.010],
+        [ 0.642, -0.066, -0.994]])}
+{&#39;energies&#39;: tensor(-40.464, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.007, -0.024, -0.010],
         [-0.667,  0.865, -0.327],
         [-0.316, -1.064,  0.382],
         [ 0.440,  0.656,  0.955],
-        [ 0.631, -0.166, -0.886]]), &#39;energies&#39;: tensor(-40.464, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.024, -0.009,  0.007],
+        [ 0.631, -0.166, -0.886]])}
+{&#39;energies&#39;: tensor(-40.479, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.024, -0.009,  0.007],
         [-0.917,  0.537, -0.344],
         [-0.563, -0.782,  0.313],
         [ 0.490,  0.449,  0.812],
-        [ 0.704, -0.102, -0.859]]), &#39;energies&#39;: tensor(-40.479, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[     0.001,     -0.005,      0.003],
+        [ 0.704, -0.102, -0.859]])}
+{&#39;energies&#39;: tensor(-40.495, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[     0.001,     -0.005,      0.003],
         [    -0.812,      0.604,     -0.376],
         [    -0.462,     -0.917,      0.309],
         [     0.575,      0.483,      0.804],
-        [     0.689,     -0.108,     -0.778]]), &#39;energies&#39;: tensor(-40.495, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.008,  0.010,  0.013],
+        [     0.689,     -0.108,     -0.778]])}
+{&#39;energies&#39;: tensor(-40.491, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.008,  0.010,  0.013],
         [-0.743,  0.659, -0.416],
         [-0.320, -1.019,  0.248],
         [ 0.537,  0.469,  0.808],
-        [ 0.619, -0.232, -0.795]]), &#39;energies&#39;: tensor(-40.491, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.019,  0.001, -0.036],
+        [ 0.619, -0.232, -0.795]])}
+{&#39;energies&#39;: tensor(-40.460, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.019,  0.001, -0.036],
         [-0.764,  0.663, -0.319],
         [-0.389, -0.903,  0.590],
         [ 0.339,  0.340,  0.998],
-        [ 0.585, -0.116, -0.838]]), &#39;energies&#39;: tensor(-40.460, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.011,  0.004,  0.004],
+        [ 0.585, -0.116, -0.838]])}
+{&#39;energies&#39;: tensor(-40.494, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.011,  0.004,  0.004],
         [-0.788,  0.630, -0.317],
         [-0.463, -0.981,  0.323],
         [ 0.441,  0.508,  0.849],
-        [ 0.684, -0.201, -0.901]]), &#39;energies&#39;: tensor(-40.494, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.035, -0.020, -0.004],
+        [ 0.684, -0.201, -0.901]])}
+{&#39;energies&#39;: tensor(-40.460, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.035, -0.020, -0.004],
         [-0.741,  0.608, -0.192],
         [-0.605, -0.947,  0.237],
         [ 0.367,  0.730,  0.869],
-        [ 0.564, -0.155, -0.861]]), &#39;energies&#39;: tensor(-40.460, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[     0.000,      0.003,      0.011],
+        [ 0.564, -0.155, -0.861]])}
+{&#39;energies&#39;: tensor(-40.494, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[     0.000,      0.003,      0.011],
         [    -0.852,      0.660,     -0.378],
         [    -0.395,     -0.968,      0.231],
         [     0.560,      0.499,      0.800],
-        [     0.683,     -0.223,     -0.782]]), &#39;energies&#39;: tensor(-40.494, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.001, -0.008,  0.002],
+        [     0.683,     -0.223,     -0.782]])}
+{&#39;energies&#39;: tensor(-40.490, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.001, -0.008,  0.002],
         [-0.792,  0.710, -0.395],
         [-0.409, -1.003,  0.321],
         [ 0.534,  0.554,  0.910],
-        [ 0.654, -0.165, -0.864]]), &#39;energies&#39;: tensor(-40.490, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.005, -0.021, -0.001],
+        [ 0.654, -0.165, -0.864]])}
+{&#39;energies&#39;: tensor(-40.470, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.005, -0.021, -0.001],
         [-0.661,  0.607, -0.302],
         [-0.501, -0.897,  0.381],
         [ 0.508,  0.526,  0.719],
-        [ 0.708,  0.018, -0.782]]), &#39;energies&#39;: tensor(-40.470, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.003,  0.004, -0.003],
+        [ 0.708,  0.018, -0.782]])}
+{&#39;energies&#39;: tensor(-40.497, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.003,  0.004, -0.003],
         [-0.813,  0.689, -0.321],
         [-0.350, -0.956,  0.330],
         [ 0.486,  0.455,  0.837],
-        [ 0.709, -0.232, -0.805]]), &#39;energies&#39;: tensor(-40.497, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.001,  0.002, -0.005],
+        [ 0.709, -0.232, -0.805]])}
+{&#39;energies&#39;: tensor(-40.498, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.001,  0.002, -0.005],
         [-0.828,  0.663, -0.320],
         [-0.398, -0.945,  0.353],
         [ 0.502,  0.455,  0.848],
-        [ 0.736, -0.200, -0.824]]), &#39;energies&#39;: tensor(-40.498, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.006, -0.013,  0.006],
+        [ 0.736, -0.200, -0.824]])}
+{&#39;energies&#39;: tensor(-40.471, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.006, -0.013,  0.006],
         [-0.760,  0.628, -0.404],
         [-0.570, -0.985,  0.447],
         [ 0.529,  0.457,  0.712],
-        [ 0.724,  0.053, -0.833]]), &#39;energies&#39;: tensor(-40.471, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[     0.003,     -0.000,     -0.014],
+        [ 0.724,  0.053, -0.833]])}
+{&#39;energies&#39;: tensor(-40.494, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[     0.003,     -0.000,     -0.014],
         [    -0.856,      0.668,     -0.352],
         [    -0.398,     -0.922,      0.410],
         [     0.516,      0.417,      0.895],
-        [     0.698,     -0.160,     -0.787]]), &#39;energies&#39;: tensor(-40.494, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[     0.010,     -0.000,     -0.004],
+        [     0.698,     -0.160,     -0.787]])}
+{&#39;energies&#39;: tensor(-40.495, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[     0.010,     -0.000,     -0.004],
         [    -0.828,      0.591,     -0.349],
         [    -0.500,     -0.946,      0.346],
         [     0.530,      0.499,      0.895],
-        [     0.681,     -0.144,     -0.847]]), &#39;energies&#39;: tensor(-40.495, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.025,  0.010,  0.018],
+        [     0.681,     -0.144,     -0.847]])}
+{&#39;energies&#39;: tensor(-40.468, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.025,  0.010,  0.018],
         [-0.864,  0.565, -0.491],
         [-0.406, -0.989,  0.193],
         [ 0.806,  0.489,  0.854],
-        [ 0.762, -0.186, -0.775]]), &#39;energies&#39;: tensor(-40.468, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.011,  0.030,  0.034],
+        [ 0.762, -0.186, -0.775]])}
+{&#39;energies&#39;: tensor(-40.459, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.011,  0.030,  0.034],
         [-0.835,  0.530, -0.524],
         [-0.369, -0.970,  0.177],
         [ 0.506,  0.431,  0.989],
-        [ 0.562, -0.351, -1.042]]), &#39;energies&#39;: tensor(-40.459, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.027, -0.032, -0.021],
+        [ 0.562, -0.351, -1.042]])}
+{&#39;energies&#39;: tensor(-40.455, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.027, -0.032, -0.021],
         [-0.623,  0.815, -0.305],
         [-0.416, -1.043,  0.573],
         [ 0.524,  0.562,  0.844],
-        [ 0.831,  0.043, -0.867]]), &#39;energies&#39;: tensor(-40.455, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.019,  0.020, -0.007],
+        [ 0.831,  0.043, -0.867]])}
+{&#39;energies&#39;: tensor(-40.486, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.019,  0.020, -0.007],
         [-0.796,  0.600, -0.372],
         [-0.292, -0.964,  0.306],
         [ 0.612,  0.393,  0.896],
-        [ 0.700, -0.268, -0.741]]), &#39;energies&#39;: tensor(-40.486, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.008,  0.021, -0.015],
+        [ 0.700, -0.268, -0.741]])}
+{&#39;energies&#39;: tensor(-40.481, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.008,  0.021, -0.015],
         [-0.896,  0.692, -0.265],
         [-0.291, -0.970,  0.345],
         [ 0.492,  0.397,  0.909],
-        [ 0.794, -0.367, -0.808]]), &#39;energies&#39;: tensor(-40.481, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.013,  0.016,  0.006],
+        [ 0.794, -0.367, -0.808]])}
+{&#39;energies&#39;: tensor(-40.474, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.013,  0.016,  0.006],
         [-0.839,  0.612, -0.504],
         [-0.393, -0.980,  0.464],
         [ 0.620,  0.260,  0.789],
-        [ 0.771, -0.080, -0.819]]), &#39;energies&#39;: tensor(-40.474, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.007,  0.032, -0.005],
+        [ 0.771, -0.080, -0.819]])}
+{&#39;energies&#39;: tensor(-40.485, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.007,  0.032, -0.005],
         [-0.869,  0.537, -0.327],
         [-0.431, -0.981,  0.349],
         [ 0.499,  0.331,  0.823],
-        [ 0.713, -0.264, -0.788]]), &#39;energies&#39;: tensor(-40.485, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.007, -0.023,  0.011],
+        [ 0.713, -0.264, -0.788]])}
+{&#39;energies&#39;: tensor(-40.456, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.007, -0.023,  0.011],
         [-0.745,  0.668, -0.201],
         [-0.606, -1.059,  0.157],
         [ 0.538,  0.775,  0.652],
-        [ 0.728, -0.114, -0.744]]), &#39;energies&#39;: tensor(-40.456, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.012,  0.016,  0.020],
+        [ 0.728, -0.114, -0.744]])}
+{&#39;energies&#39;: tensor(-40.486, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.012,  0.016,  0.020],
         [-0.767,  0.588, -0.518],
         [-0.380, -1.012,  0.320],
         [ 0.613,  0.402,  0.874],
-        [ 0.675, -0.164, -0.910]]), &#39;energies&#39;: tensor(-40.486, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.013, -0.022, -0.005],
+        [ 0.675, -0.164, -0.910]])}
+{&#39;energies&#39;: tensor(-40.488, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.013, -0.022, -0.005],
         [-0.728,  0.730, -0.387],
         [-0.362, -0.915,  0.403],
         [ 0.548,  0.515,  0.883],
-        [ 0.699, -0.066, -0.833]]), &#39;energies&#39;: tensor(-40.488, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.002, -0.003,  0.016],
+        [ 0.699, -0.066, -0.833]])}
+{&#39;energies&#39;: tensor(-40.474, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.002, -0.003,  0.016],
         [-0.832,  0.586, -0.464],
         [-0.418, -0.865,  0.270],
         [ 0.592,  0.404,  0.745],
-        [ 0.638, -0.094, -0.748]]), &#39;energies&#39;: tensor(-40.474, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[     0.001,      0.018,      0.013],
+        [ 0.638, -0.094, -0.748]])}
+{&#39;energies&#39;: tensor(-40.487, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[     0.001,      0.018,      0.013],
         [    -0.845,      0.558,     -0.356],
         [    -0.482,     -1.030,      0.225],
         [     0.584,      0.506,      0.829],
-        [     0.731,     -0.254,     -0.855]]), &#39;energies&#39;: tensor(-40.487, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.005, -0.011, -0.022],
+        [     0.731,     -0.254,     -0.855]])}
+{&#39;energies&#39;: tensor(-40.481, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.005, -0.011, -0.022],
         [-0.874,  0.795, -0.202],
         [-0.356, -0.914,  0.410],
         [ 0.392,  0.491,  0.864],
-        [ 0.778, -0.240, -0.806]]), &#39;energies&#39;: tensor(-40.481, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.009,  0.033, -0.042],
+        [ 0.778, -0.240, -0.806]])}
+{&#39;energies&#39;: tensor(-40.458, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.009,  0.033, -0.042],
         [-0.901,  0.694, -0.158],
         [-0.275, -0.965,  0.488],
         [ 0.315,  0.293,  0.965],
-        [ 0.758, -0.421, -0.798]]), &#39;energies&#39;: tensor(-40.458, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.041, -0.003,  0.001],
+        [ 0.758, -0.421, -0.798]])}
+{&#39;energies&#39;: tensor(-40.454, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.041, -0.003,  0.001],
         [-0.949,  0.623, -0.154],
         [-0.637, -1.004,  0.136],
         [ 0.427,  0.700,  0.767],
-        [ 0.667, -0.283, -0.763]]), &#39;energies&#39;: tensor(-40.454, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[    -0.000,      0.003,     -0.016],
+        [ 0.667, -0.283, -0.763]])}
+{&#39;energies&#39;: tensor(-40.495, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[    -0.000,      0.003,     -0.016],
         [    -0.829,      0.638,     -0.250],
         [    -0.437,     -0.958,      0.362],
         [     0.516,      0.473,      0.825],
-        [     0.751,     -0.191,     -0.741]]), &#39;energies&#39;: tensor(-40.495, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.018, -0.013,  0.019],
+        [     0.751,     -0.191,     -0.741]])}
+{&#39;energies&#39;: tensor(-40.484, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.018, -0.013,  0.019],
         [-0.683,  0.645, -0.442],
         [-0.388, -0.923,  0.312],
         [ 0.574,  0.512,  0.813],
-        [ 0.707, -0.074, -0.909]]), &#39;energies&#39;: tensor(-40.484, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[     0.014,     -0.012,      0.000],
+        [ 0.707, -0.074, -0.909]])}
+{&#39;energies&#39;: tensor(-40.481, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[     0.014,     -0.012,      0.000],
         [    -0.877,      0.591,     -0.324],
         [    -0.568,     -0.858,      0.373],
         [     0.503,      0.514,      0.889],
-        [     0.773,     -0.098,     -0.944]]), &#39;energies&#39;: tensor(-40.481, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.002,  0.007, -0.023],
+        [     0.773,     -0.098,     -0.944]])}
+{&#39;energies&#39;: tensor(-40.487, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.002,  0.007, -0.023],
         [-0.893,  0.640, -0.267],
         [-0.467, -0.990,  0.393],
         [ 0.568,  0.449,  0.839],
-        [ 0.771, -0.178, -0.695]]), &#39;energies&#39;: tensor(-40.487, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.006, -0.001,  0.002],
+        [ 0.771, -0.178, -0.695]])}
+{&#39;energies&#39;: tensor(-40.493, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.006, -0.001,  0.002],
         [-0.871,  0.702, -0.361],
         [-0.389, -0.955,  0.296],
         [ 0.505,  0.499,  0.876],
-        [ 0.681, -0.230, -0.832]]), &#39;energies&#39;: tensor(-40.493, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.038,  0.005, -0.030],
+        [ 0.681, -0.230, -0.832]])}
+{&#39;energies&#39;: tensor(-40.459, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.038,  0.005, -0.030],
         [-0.687,  0.647, -0.295],
         [-0.289, -0.922,  0.553],
         [ 0.578,  0.307,  0.827],
-        [ 0.856, -0.089, -0.729]]), &#39;energies&#39;: tensor(-40.459, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.042,  0.013, -0.008],
+        [ 0.856, -0.089, -0.729]])}
+{&#39;energies&#39;: tensor(-40.451, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.042,  0.013, -0.008],
         [-0.613,  0.735, -0.329],
         [-0.145, -0.996,  0.432],
         [ 0.489,  0.321,  0.741],
-        [ 0.767, -0.210, -0.747]]), &#39;energies&#39;: tensor(-40.451, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.002, -0.018,  0.013],
+        [ 0.767, -0.210, -0.747]])}
+{&#39;energies&#39;: tensor(-40.480, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.002, -0.018,  0.013],
         [-0.728,  0.784, -0.341],
         [-0.441, -1.051,  0.330],
         [ 0.435,  0.618,  0.794],
-        [ 0.708, -0.132, -0.936]]), &#39;energies&#39;: tensor(-40.480, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.023, -0.009, -0.015],
+        [ 0.708, -0.132, -0.936]])}
+{&#39;energies&#39;: tensor(-40.475, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.023, -0.009, -0.015],
         [-0.858,  0.822, -0.278],
         [-0.280, -1.003,  0.311],
         [ 0.601,  0.540,  0.836],
-        [ 0.811, -0.252, -0.692]]), &#39;energies&#39;: tensor(-40.475, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.017, -0.003, -0.011],
+        [ 0.811, -0.252, -0.692]])}
+{&#39;energies&#39;: tensor(-40.464, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.017, -0.003, -0.011],
         [-0.907,  0.507, -0.165],
         [-0.681, -0.884,  0.355],
         [ 0.515,  0.527,  0.768],
-        [ 0.874, -0.111, -0.824]]), &#39;energies&#39;: tensor(-40.464, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.011, -0.019,  0.032],
+        [ 0.874, -0.111, -0.824]])}
+{&#39;energies&#39;: tensor(-40.461, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.011, -0.019,  0.032],
         [-0.627,  0.678, -0.520],
         [-0.492, -1.077,  0.330],
         [ 0.602,  0.544,  0.647],
-        [ 0.647,  0.076, -0.840]]), &#39;energies&#39;: tensor(-40.461, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[     0.035,     -0.008,      0.000],
+        [ 0.647,  0.076, -0.840]])}
+{&#39;energies&#39;: tensor(-40.460, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[     0.035,     -0.008,      0.000],
         [    -0.904,      0.724,     -0.371],
         [    -0.406,     -0.927,      0.239],
         [     0.404,      0.575,      0.984],
-        [     0.494,     -0.275,     -0.853]]), &#39;energies&#39;: tensor(-40.460, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[     0.001,     -0.002,      0.004],
+        [     0.494,     -0.275,     -0.853]])}
+{&#39;energies&#39;: tensor(-40.499, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[     0.001,     -0.002,      0.004],
         [    -0.773,      0.661,     -0.371],
         [    -0.414,     -0.976,      0.328],
         [     0.508,      0.497,      0.839],
-        [     0.670,     -0.157,     -0.842]]), &#39;energies&#39;: tensor(-40.499, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.020, -0.013,  0.010],
+        [     0.670,     -0.157,     -0.842]])}
+{&#39;energies&#39;: tensor(-40.486, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.020, -0.013,  0.010],
         [-0.796,  0.650, -0.342],
         [-0.490, -0.903,  0.298],
         [ 0.408,  0.576,  0.900],
-        [ 0.638, -0.164, -0.977]]), &#39;energies&#39;: tensor(-40.486, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.008, -0.005, -0.008],
+        [ 0.638, -0.164, -0.977]])}
+{&#39;energies&#39;: tensor(-40.497, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.008, -0.005, -0.008],
         [-0.791,  0.712, -0.333],
         [-0.364, -0.965,  0.367],
         [ 0.525,  0.492,  0.871],
-        [ 0.723, -0.176, -0.808]]), &#39;energies&#39;: tensor(-40.497, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[    -0.010,     -0.000,      0.005],
+        [ 0.723, -0.176, -0.808]])}
+{&#39;energies&#39;: tensor(-40.489, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[    -0.010,     -0.000,      0.005],
         [    -0.792,      0.642,     -0.432],
         [    -0.410,     -0.950,      0.405],
         [     0.578,      0.376,      0.759],
-        [     0.740,     -0.067,     -0.795]]), &#39;energies&#39;: tensor(-40.489, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.014,  0.006, -0.006],
+        [     0.740,     -0.067,     -0.795]])}
+{&#39;energies&#39;: tensor(-40.493, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.014,  0.006, -0.006],
         [-0.772,  0.667, -0.268],
         [-0.356, -0.978,  0.317],
         [ 0.518,  0.488,  0.819],
-        [ 0.772, -0.242, -0.796]]), &#39;energies&#39;: tensor(-40.493, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.010, -0.021,  0.011],
+        [ 0.772, -0.242, -0.796]])}
+{&#39;energies&#39;: tensor(-40.466, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.010, -0.021,  0.011],
         [-0.712,  0.803, -0.432],
         [-0.325, -0.930,  0.468],
         [ 0.422,  0.427,  0.792],
-        [ 0.733, -0.055, -0.958]]), &#39;energies&#39;: tensor(-40.466, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.003,  0.002,  0.018],
+        [ 0.733, -0.055, -0.958]])}
+{&#39;energies&#39;: tensor(-40.494, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.003,  0.002,  0.018],
         [-0.819,  0.639, -0.398],
         [-0.396, -0.966,  0.201],
         [ 0.579,  0.512,  0.778],
-        [ 0.673, -0.208, -0.790]]), &#39;energies&#39;: tensor(-40.494, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.014,  0.021, -0.031],
+        [ 0.673, -0.208, -0.790]])}
+{&#39;energies&#39;: tensor(-40.466, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.014,  0.021, -0.031],
         [-0.942,  0.565, -0.053],
         [-0.456, -0.897,  0.275],
         [ 0.421,  0.500,  0.906],
-        [ 0.809, -0.417, -0.759]]), &#39;energies&#39;: tensor(-40.466, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[    -0.018,      0.011,     -0.001],
+        [ 0.809, -0.417, -0.759]])}
+{&#39;energies&#39;: tensor(-40.491, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[    -0.018,      0.011,     -0.001],
         [    -0.753,      0.608,     -0.404],
         [    -0.336,     -0.969,      0.331],
         [     0.609,      0.412,      0.851],
-        [     0.693,     -0.178,     -0.767]]), &#39;energies&#39;: tensor(-40.491, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[    -0.033,     -0.008,      0.000],
+        [     0.693,     -0.178,     -0.767]])}
+{&#39;energies&#39;: tensor(-40.465, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[    -0.033,     -0.008,      0.000],
         [    -0.701,      0.769,     -0.538],
         [    -0.260,     -1.031,      0.457],
         [     0.653,      0.432,      0.941],
-        [     0.702,     -0.070,     -0.862]]), &#39;energies&#39;: tensor(-40.465, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[     0.000,      0.006,     -0.004],
+        [     0.702,     -0.070,     -0.862]])}
+{&#39;energies&#39;: tensor(-40.492, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[     0.000,      0.006,     -0.004],
         [    -0.856,      0.675,     -0.374],
         [    -0.371,     -0.941,      0.391],
         [     0.499,      0.408,      0.910],
-        [     0.725,     -0.212,     -0.873]]), &#39;energies&#39;: tensor(-40.492, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.002,  0.003, -0.003],
+        [     0.725,     -0.212,     -0.873]])}
+{&#39;energies&#39;: tensor(-40.498, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.002,  0.003, -0.003],
         [-0.792,  0.652, -0.318],
         [-0.415, -0.970,  0.347],
         [ 0.485,  0.470,  0.826],
-        [ 0.701, -0.185, -0.814]]), &#39;energies&#39;: tensor(-40.498, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.049,  0.011,  0.006],
+        [ 0.701, -0.185, -0.814]])}
+{&#39;energies&#39;: tensor(-40.464, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.049,  0.011,  0.006],
         [-0.828,  0.487, -0.376],
         [-0.607, -0.899,  0.390],
         [ 0.318,  0.410,  0.901],
-        [ 0.534, -0.132, -0.987]]), &#39;energies&#39;: tensor(-40.464, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.002, -0.009,  0.006],
+        [ 0.534, -0.132, -0.987]])}
+{&#39;energies&#39;: tensor(-40.498, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.002, -0.009,  0.006],
         [-0.804,  0.697, -0.365],
         [-0.419, -0.960,  0.310],
         [ 0.512,  0.522,  0.817],
-        [ 0.690, -0.151, -0.835]]), &#39;energies&#39;: tensor(-40.498, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[    -0.028,     -0.000,      0.026],
+        [ 0.690, -0.151, -0.835]])}
+{&#39;energies&#39;: tensor(-40.472, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[    -0.028,     -0.000,      0.026],
         [    -0.789,      0.736,     -0.546],
         [    -0.347,     -1.089,      0.307],
         [     0.710,      0.462,      0.759],
-        [     0.765,     -0.105,     -0.828]]), &#39;energies&#39;: tensor(-40.472, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.009,  0.002,  0.012],
+        [     0.765,     -0.105,     -0.828]])}
+{&#39;energies&#39;: tensor(-40.477, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.009,  0.002,  0.012],
         [-0.919,  0.622, -0.505],
         [-0.458, -0.935,  0.337],
         [ 0.593,  0.436,  0.952],
-        [ 0.672, -0.152, -0.923]]), &#39;energies&#39;: tensor(-40.477, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.014,  0.007, -0.004],
+        [ 0.672, -0.152, -0.923]])}
+{&#39;energies&#39;: tensor(-40.494, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.014,  0.007, -0.004],
         [-0.845,  0.621, -0.360],
         [-0.411, -0.921,  0.340],
         [ 0.465,  0.424,  0.879],
-        [ 0.624, -0.205, -0.813]]), &#39;energies&#39;: tensor(-40.494, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.022, -0.016,  0.014],
+        [ 0.624, -0.205, -0.813]])}
+{&#39;energies&#39;: tensor(-40.468, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.022, -0.016,  0.014],
         [-0.770,  0.650, -0.235],
         [-0.596, -1.021,  0.187],
         [ 0.431,  0.743,  0.797],
-        [ 0.674, -0.183, -0.920]]), &#39;energies&#39;: tensor(-40.468, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[     0.015,     -0.001,      0.004],
+        [ 0.674, -0.183, -0.920]])}
+{&#39;energies&#39;: tensor(-40.487, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[     0.015,     -0.001,      0.004],
         [    -0.842,      0.545,     -0.340],
         [    -0.586,     -0.966,      0.285],
         [     0.567,      0.545,      0.822],
-        [     0.683,     -0.114,     -0.811]]), &#39;energies&#39;: tensor(-40.487, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.018, -0.005, -0.030],
+        [     0.683,     -0.114,     -0.811]])}
+{&#39;energies&#39;: tensor(-40.477, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.018, -0.005, -0.030],
         [-0.806,  0.703, -0.206],
         [-0.454, -0.985,  0.427],
         [ 0.383,  0.558,  0.987],
-        [ 0.663, -0.220, -0.847]]), &#39;energies&#39;: tensor(-40.477, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.004, -0.032, -0.004],
+        [ 0.663, -0.220, -0.847]])}
+{&#39;energies&#39;: tensor(-40.459, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.004, -0.032, -0.004],
         [-0.905,  0.691, -0.244],
         [-0.559, -0.842,  0.363],
         [ 0.595,  0.524,  0.624],
-        [ 0.912,  0.009, -0.696]]), &#39;energies&#39;: tensor(-40.459, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.030,  0.006, -0.020],
+        [ 0.912,  0.009, -0.696]])}
+{&#39;energies&#39;: tensor(-40.480, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.030,  0.006, -0.020],
         [-0.740,  0.771, -0.289],
         [-0.246, -1.051,  0.408],
         [ 0.549,  0.469,  0.899],
-        [ 0.790, -0.255, -0.774]]), &#39;energies&#39;: tensor(-40.480, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.005, -0.009,  0.026],
+        [ 0.790, -0.255, -0.774]])}
+{&#39;energies&#39;: tensor(-40.465, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.005, -0.009,  0.026],
         [-0.729,  0.655, -0.554],
         [-0.540, -1.099,  0.360],
         [ 0.594,  0.527,  0.789],
-        [ 0.610,  0.024, -0.905]]), &#39;energies&#39;: tensor(-40.465, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.022,  0.012, -0.015],
+        [ 0.610,  0.024, -0.905]])}
+{&#39;energies&#39;: tensor(-40.471, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.022,  0.012, -0.015],
         [-0.758,  0.777, -0.303],
         [-0.270, -1.118,  0.385],
         [ 0.544,  0.425,  0.749],
-        [ 0.746, -0.231, -0.649]]), &#39;energies&#39;: tensor(-40.471, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.015, -0.014, -0.018],
+        [ 0.746, -0.231, -0.649]])}
+{&#39;energies&#39;: tensor(-40.463, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.015, -0.014, -0.018],
         [-0.851,  0.659, -0.343],
         [-0.397, -0.738,  0.520],
         [ 0.381,  0.319,  0.892],
-        [ 0.688, -0.075, -0.861]]), &#39;energies&#39;: tensor(-40.463, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.014, -0.003, -0.018],
+        [ 0.688, -0.075, -0.861]])}
+{&#39;energies&#39;: tensor(-40.491, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.014, -0.003, -0.018],
         [-0.848,  0.576, -0.271],
         [-0.519, -0.885,  0.383],
         [ 0.499,  0.484,  0.893],
-        [ 0.700, -0.133, -0.792]]), &#39;energies&#39;: tensor(-40.491, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.008,  0.021,  0.011],
+        [ 0.700, -0.133, -0.792]])}
+{&#39;energies&#39;: tensor(-40.488, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.008,  0.021,  0.011],
         [-0.857,  0.564, -0.374],
         [-0.370, -0.952,  0.216],
         [ 0.595,  0.439,  0.865],
-        [ 0.731, -0.306, -0.837]]), &#39;energies&#39;: tensor(-40.488, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[     0.000,      0.024,      0.002],
+        [ 0.731, -0.306, -0.837]])}
+{&#39;energies&#39;: tensor(-40.468, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[     0.000,      0.024,      0.002],
         [    -0.870,      0.541,     -0.504],
         [    -0.367,     -0.960,      0.298],
         [     0.631,      0.396,      1.054],
-        [     0.600,     -0.263,     -0.873]]), &#39;energies&#39;: tensor(-40.468, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[-0.015, -0.020,  0.001],
+        [     0.600,     -0.263,     -0.873]])}
+{&#39;energies&#39;: tensor(-40.478, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[-0.015, -0.020,  0.001],
         [-0.687,  0.684, -0.421],
         [-0.412, -0.939,  0.422],
         [ 0.585,  0.454,  0.722],
-        [ 0.697,  0.045, -0.738]]), &#39;energies&#39;: tensor(-40.478, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
-{&#39;coordinates&#39;: tensor([[ 0.005, -0.002, -0.020],
+        [ 0.697,  0.045, -0.738]])}
+{&#39;energies&#39;: tensor(-40.491, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1]), &#39;coordinates&#39;: tensor([[ 0.005, -0.002, -0.020],
         [-0.809,  0.667, -0.308],
         [-0.444, -0.966,  0.452],
         [ 0.486,  0.465,  0.925],
-        [ 0.711, -0.140, -0.828]]), &#39;energies&#39;: tensor(-40.491, dtype=torch.float64), &#39;species&#39;: tensor([6, 1, 1, 1, 1])}
+        [ 0.711, -0.140, -0.828]])}
 </pre></div>
 </div>
 <p>We will now delete the files we copied for cleanup purposes</p>

@@ -429,7 +429,7 @@ to download the full example code.</p>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 36it [00:00, 3249.65it/s]
+Verifying format correctness: 36it [00:00, 3180.58it/s]
 </pre></div>
 </div>
 <p>We prebatch the dataset to train with memory efficiency, keeping a good
@@ -531,7 +531,7 @@ ANI(
         #  radial_len=64 (16.67% of feats)
         #  angular_len=320 (83.33% of feats)
         num_species=4,
-        strategy=cuaev,
+        strategy=pyaev,
         (radial): ANIRadial(
           #  num_feats=16
           #  num_shifts=16

@@ -435,13 +435,13 @@ script.</p>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 22it [00:00, 3006.87it/s]
-/home/ipickering/Repos/ani/torchani/datasets/anidataset.py:351: UserWarning: {&#39;coordinatesHE&#39;, &#39;energiesHE&#39;, &#39;smiles&#39;} found in legacy dataset, this will generate unpredictable issues.
+Verifying format correctness: 22it [00:00, 2864.43it/s]
+/home/ipickering/Repos/ani/torchani/datasets/anidataset.py:351: UserWarning: {&#39;energiesHE&#39;, &#39;smiles&#39;, &#39;coordinatesHE&#39;} found in legacy dataset, this will generate unpredictable issues.
  Probably .items() and .values() will work but not much else. It is highly  recommended that you backup these properties (if needed) and *delete them* using dataset.delete_properties
   warnings.warn(
 
 Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 92it [00:00, 2786.03it/s]
+Verifying format correctness: 92it [00:00, 2737.93it/s]
 </pre></div>
 </div>
 <section id="property-deletion-renaming">
@@ -451,7 +451,7 @@ coordinates, etc. You can query which are these.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">properties</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;, &#39;energies&#39;, &#39;coordinatesHE&#39;, &#39;energiesHE&#39;, &#39;smiles&#39;, &#39;species&#39;}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energiesHE&#39;, &#39;energies&#39;, &#39;species&#39;, &#39;coordinates&#39;, &#39;smiles&#39;, &#39;coordinatesHE&#39;}
 </pre></div>
 </div>
 <p>It is possible to delete unwanted / unnedded properties.</p>
@@ -463,15 +463,15 @@ coordinates, etc. You can query which are these.</p>
 
 
 Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 13it [00:00, 4817.21it/s]
+Verifying format correctness: 13it [00:00, 4782.98it/s]
 
 Deleting properties:   0%|                                                                                                                                            | 0/13 [00:00&lt;?, ?it/s]
 
 
 Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 53it [00:00, 4707.51it/s]
+Verifying format correctness: 53it [00:00, 4736.70it/s]
 
-{&#39;coordinates&#39;, &#39;energies&#39;, &#39;species&#39;}
+{&#39;energies&#39;, &#39;species&#39;, &#39;coordinates&#39;}
 </pre></div>
 </div>
 <p>It is also possible to rename the properties by passing a dict of old-new names (the
@@ -482,12 +482,12 @@ rename those).</p>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 13it [00:00, 4870.56it/s]
+Verifying format correctness: 13it [00:00, 4789.70it/s]
 
 Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 53it [00:00, 4661.71it/s]
+Verifying format correctness: 53it [00:00, 4699.75it/s]
 
-{&#39;coord&#39;, &#39;molecular_energies&#39;, &#39;species&#39;}
+{&#39;species&#39;, &#39;coord&#39;, &#39;molecular_energies&#39;}
 </pre></div>
 </div>
 <p>Lets rename them back to their original values:</p>
@@ -496,12 +496,12 @@ Verifying format correctness: 53it [00:00, 4661.71it/s]
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 13it [00:00, 4738.09it/s]
+Verifying format correctness: 13it [00:00, 4866.22it/s]
 
 Verifying format correctness: 0it [00:00, ?it/s]
-Verifying format correctness: 53it [00:00, 4693.60it/s]
+Verifying format correctness: 53it [00:00, 4762.27it/s]
 
-{&#39;coordinates&#39;, &#39;energies&#39;, &#39;species&#39;}
+{&#39;energies&#39;, &#39;species&#39;, &#39;coordinates&#39;}
 </pre></div>
 </div>
 </section>
@@ -531,9 +531,9 @@ means, it basically means this is difficult to deal with)</p>
 
 
 Regrouping by formulas:   0%|                                                                                                                                         | 0/13 [00:00&lt;?, ?it/s]
-Regrouping by formulas:  15%|███████████████████▊                                                                                                             | 2/13 [00:00&lt;00:00, 13.07it/s]
-Regrouping by formulas:  46%|███████████████████████████████████████████████████████████▌                                                                     | 6/13 [00:00&lt;00:00, 25.80it/s]
-Regrouping by formulas:  85%|████████████████████████████████████████████████████████████████████████████████████████████████████████████▎                   | 11/13 [00:00&lt;00:00, 33.35it/s]
+Regrouping by formulas:  15%|███████████████████▊                                                                                                             | 2/13 [00:00&lt;00:00, 13.14it/s]
+Regrouping by formulas:  46%|███████████████████████████████████████████████████████████▌                                                                     | 6/13 [00:00&lt;00:00, 25.57it/s]
+Regrouping by formulas:  85%|████████████████████████████████████████████████████████████████████████████████████████████████████████████▎                   | 11/13 [00:00&lt;00:00, 32.72it/s]
 
 &#39;by_formula&#39;
 </pre></div>
@@ -958,7 +958,7 @@ docstring of the function.</p>
 <span class="n">ds</span><span class="o">.</span><span class="n">properties</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;, &#39;new_property&#39;, &#39;energies&#39;, &#39;species&#39;}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energies&#39;, &#39;species&#39;, &#39;coordinates&#39;, &#39;new_property&#39;}
 </pre></div>
 </div>
 <p>We now delete the created property for cleanup</p>
@@ -966,7 +966,7 @@ docstring of the function.</p>
 <span class="n">ds</span><span class="o">.</span><span class="n">properties</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;, &#39;energies&#39;, &#39;species&#39;}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energies&#39;, &#39;species&#39;, &#39;coordinates&#39;}
 </pre></div>
 </div>
 </section>
@@ -985,7 +985,7 @@ something that makes sense, if you have only one store you can pass
 <span class="n">ds</span><span class="o">.</span><span class="n">append_conformers</span><span class="p">(</span><span class="s2">&quot;file1/004&quot;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">conformers</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.datasets.anidataset.ANIDataset object at 0x77c8fdff17d0&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.datasets.anidataset.ANIDataset object at 0x748741a51150&gt;
 </pre></div>
 </div>
 <p>It is also possible to append conformers as numpy arrays, in this case
@@ -1001,7 +1001,7 @@ will be converted to atomic numbers.</p>
 <span class="n">ds</span><span class="o">.</span><span class="n">append_conformers</span><span class="p">(</span><span class="s2">&quot;file1/004&quot;</span><span class="p">,</span> <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">numpy_conformers</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.datasets.anidataset.ANIDataset object at 0x77c8fdff17d0&gt;
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;torchani.datasets.anidataset.ANIDataset object at 0x748741a51150&gt;
 </pre></div>
 </div>
 <p>Conformers can also be deleted from the dataset. Passing an index will delete
@@ -1010,7 +1010,13 @@ a series of conformers, not passing anything deletes the whole group</p>
 <a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">molecules</span></a>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;: tensor([[[ 0.020,  0.006, -0.078],
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energies&#39;: tensor([-56.510, -56.502, -56.507,  ...,  -0.344,  -0.234,  -1.103], dtype=torch.float64), &#39;species&#39;: tensor([[7, 1, 1, 1],
+        [7, 1, 1, 1],
+        [7, 1, 1, 1],
+        ...,
+        [1, 1, 6, 7],
+        [1, 1, 7, 8],
+        [1, 1, 1, 1]]), &#39;coordinates&#39;: tensor([[[ 0.020,  0.006, -0.078],
          [ 0.385, -0.882,  0.067],
          [ 0.318,  0.931,  0.038],
          [-0.979, -0.132,  0.169]],
@@ -1027,26 +1033,20 @@ a series of conformers, not passing anything deletes the whole group</p>
 
         ...,
 
-        [[-1.085, -1.394,  1.733],
-         [ 1.458,  1.045,  1.105],
-         [-0.762, -0.927,  1.413],
-         [ 2.445,  0.477,  0.374]],
+        [[-0.249, -1.770, -0.611],
+         [-0.699,  0.256,  0.080],
+         [-0.676,  0.035,  1.758],
+         [-1.738,  1.049, -1.507]],
 
-        [[ 0.404, -0.482,  1.349],
-         [-0.418, -1.193, -1.064],
-         [-1.062, -0.213, -1.173],
-         [ 0.953,  0.415,  1.292]],
+        [[-1.254, -0.362, -0.504],
+         [ 0.921, -1.425,  0.982],
+         [-1.476,  0.247,  0.733],
+         [-0.273, -0.026,  0.927]],
 
-        [[ 0.089, -0.831, -0.574],
-         [ 2.249,  0.328,  1.063],
-         [ 2.075, -1.790, -1.010],
-         [-0.703,  0.882,  0.188]]]), &#39;energies&#39;: tensor([-56.510, -56.502, -56.507,  ...,   0.194,  -0.844,   0.196], dtype=torch.float64), &#39;species&#39;: tensor([[7, 1, 1, 1],
-        [7, 1, 1, 1],
-        [7, 1, 1, 1],
-        ...,
-        [1, 1, 6, 7],
-        [1, 1, 7, 8],
-        [1, 1, 1, 1]])}
+        [[-1.082,  1.456,  2.530],
+         [-0.351,  0.657,  1.429],
+         [ 0.563,  0.227, -0.162],
+         [-0.424,  1.179,  1.632]]])}
 </pre></div>
 </div>
 <p>Lets delete some conformers and try again</p>
@@ -1093,10 +1093,10 @@ original h5 files if the concatenation is successful.</p>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Concatenating datasets:   0%|                                                                                                                                          | 0/9 [00:00&lt;?, ?it/s]
-Concatenating datasets: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 9/9 [00:00&lt;00:00, 213.56it/s]
+Concatenating datasets: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 9/9 [00:00&lt;00:00, 213.58it/s]
 
 Deleting original stores:   0%|                                                                                                                                        | 0/2 [00:00&lt;?, ?it/s]
-Deleting original stores: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00&lt;00:00, 41323.19it/s]
+Deleting original stores: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00&lt;00:00, 42366.71it/s]
 </pre></div>
 </div>
 </section>
@@ -1110,26 +1110,26 @@ be useful to keep all the underlying stores open, you can do this by using a
         <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.527],
-        [ 0.000,  0.000, -0.527]]), &#39;energies&#39;: tensor(-109.491, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
-{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.528],
-        [ 0.000,  0.000, -0.528]]), &#39;energies&#39;: tensor(-109.492, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
-{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.571],
-        [ 0.000,  0.000, -0.571]]), &#39;energies&#39;: tensor(-109.494, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
-{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.576],
-        [ 0.000,  0.000, -0.576]]), &#39;energies&#39;: tensor(-109.492, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
-{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.574],
-        [ 0.000,  0.000, -0.574]]), &#39;energies&#39;: tensor(-109.493, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
-{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.524],
-        [ 0.000,  0.000, -0.524]]), &#39;energies&#39;: tensor(-109.489, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
-{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.578],
-        [ 0.000,  0.000, -0.578]]), &#39;energies&#39;: tensor(-109.491, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
-{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.564],
-        [ 0.000,  0.000, -0.564]]), &#39;energies&#39;: tensor(-109.497, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
-{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.541],
-        [ 0.000,  0.000, -0.541]]), &#39;energies&#39;: tensor(-109.497, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
-{&#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.524],
-        [ 0.000,  0.000, -0.524]]), &#39;energies&#39;: tensor(-109.488, dtype=torch.float64), &#39;species&#39;: tensor([7, 7])}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energies&#39;: tensor(-109.491, dtype=torch.float64), &#39;species&#39;: tensor([7, 7]), &#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.527],
+        [ 0.000,  0.000, -0.527]])}
+{&#39;energies&#39;: tensor(-109.492, dtype=torch.float64), &#39;species&#39;: tensor([7, 7]), &#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.528],
+        [ 0.000,  0.000, -0.528]])}
+{&#39;energies&#39;: tensor(-109.494, dtype=torch.float64), &#39;species&#39;: tensor([7, 7]), &#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.571],
+        [ 0.000,  0.000, -0.571]])}
+{&#39;energies&#39;: tensor(-109.492, dtype=torch.float64), &#39;species&#39;: tensor([7, 7]), &#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.576],
+        [ 0.000,  0.000, -0.576]])}
+{&#39;energies&#39;: tensor(-109.493, dtype=torch.float64), &#39;species&#39;: tensor([7, 7]), &#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.574],
+        [ 0.000,  0.000, -0.574]])}
+{&#39;energies&#39;: tensor(-109.489, dtype=torch.float64), &#39;species&#39;: tensor([7, 7]), &#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.524],
+        [ 0.000,  0.000, -0.524]])}
+{&#39;energies&#39;: tensor(-109.491, dtype=torch.float64), &#39;species&#39;: tensor([7, 7]), &#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.578],
+        [ 0.000,  0.000, -0.578]])}
+{&#39;energies&#39;: tensor(-109.497, dtype=torch.float64), &#39;species&#39;: tensor([7, 7]), &#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.564],
+        [ 0.000,  0.000, -0.564]])}
+{&#39;energies&#39;: tensor(-109.497, dtype=torch.float64), &#39;species&#39;: tensor([7, 7]), &#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.541],
+        [ 0.000,  0.000, -0.541]])}
+{&#39;energies&#39;: tensor(-109.488, dtype=torch.float64), &#39;species&#39;: tensor([7, 7]), &#39;coordinates&#39;: tensor([[ 0.000,  0.000,  0.524],
+        [ 0.000,  0.000, -0.524]])}
 </pre></div>
 </div>
 </section>
@@ -1153,21 +1153,21 @@ determine what properties this dataset will support.</p>
     <span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">c</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;coordinates&#39;, &#39;energies&#39;, &#39;dipoles&#39;, &#39;forces&#39;, &#39;species&#39;}
-{&#39;coordinates&#39;: tensor([[ 1.613, -0.334,  0.351],
-        [ 0.500, -0.269,  0.011],
-        [-0.085, -0.051, -0.760],
-        [ 0.700, -0.938,  0.440]], dtype=torch.float64), &#39;energies&#39;: tensor(0.036, dtype=torch.float64), &#39;dipoles&#39;: tensor([ 1.084, -2.262,  1.254], dtype=torch.float64), &#39;species&#39;: tensor([1, 1, 6, 6]), &#39;forces&#39;: tensor([[-0.002,  0.033, -0.156],
-        [ 0.076,  0.062, -0.060],
-        [ 0.015,  0.036, -0.042],
-        [-0.053, -0.160, -0.014]], dtype=torch.float64)}
-{&#39;coordinates&#39;: tensor([[ 0.980, -0.380, -0.262],
-        [ 0.979,  0.503,  0.248],
-        [-0.417,  0.189,  0.136],
-        [ 2.500,  0.698, -0.506]], dtype=torch.float64), &#39;energies&#39;: tensor(-1.366, dtype=torch.float64), &#39;dipoles&#39;: tensor([ 1.980, -0.217, -0.262], dtype=torch.float64), &#39;species&#39;: tensor([1, 6, 1, 6]), &#39;forces&#39;: tensor([[ 0.002,  0.184, -0.066],
-        [ 0.018, -0.130,  0.019],
-        [-0.121,  0.059,  0.056],
-        [ 0.050, -0.076,  0.170]], dtype=torch.float64)}
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{&#39;energies&#39;, &#39;species&#39;, &#39;dipoles&#39;, &#39;coordinates&#39;, &#39;forces&#39;}
+{&#39;coordinates&#39;: tensor([[-0.240,  0.366,  1.269],
+        [-0.020,  0.736,  0.480],
+        [ 1.023, -0.101,  0.159],
+        [ 0.813, -2.349,  0.546]], dtype=torch.float64), &#39;forces&#39;: tensor([[ 0.037,  0.015,  0.110],
+        [ 0.018,  0.030,  0.025],
+        [-0.060,  0.027,  0.098],
+        [ 0.194,  0.153, -0.117]], dtype=torch.float64), &#39;energies&#39;: tensor(0.020, dtype=torch.float64), &#39;species&#39;: tensor([1, 1, 6, 6]), &#39;dipoles&#39;: tensor([ 0.685,  0.322, -1.340], dtype=torch.float64)}
+{&#39;coordinates&#39;: tensor([[-0.785,  2.048, -0.692],
+        [-0.190, -1.196,  0.397],
+        [ 0.304, -1.361, -1.391],
+        [ 1.604, -1.926,  0.719]], dtype=torch.float64), &#39;forces&#39;: tensor([[ 0.210, -0.244,  0.032],
+        [ 0.125,  0.006,  0.030],
+        [ 0.121, -0.104, -0.078],
+        [ 0.258,  0.015,  0.127]], dtype=torch.float64), &#39;energies&#39;: tensor(0.355, dtype=torch.float64), &#39;species&#39;: tensor([1, 6, 1, 6]), &#39;dipoles&#39;: tensor([-0.356,  0.847, -1.759], dtype=torch.float64)}
 </pre></div>
 </div>
 <p>Another useful feature is deleting inplace all conformers with force
@@ -1186,31 +1186,31 @@ conformers with extremely large forces</p>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Filtering where any atomic force magnitude &gt; 2.0 Ha / Angstrom: 0it [00:00, ?it/s]
-Filtering where any atomic force magnitude &gt; 2.0 Ha / Angstrom: 1it [00:00, 1993.49it/s]
+Filtering where any atomic force magnitude &gt; 2.0 Ha / Angstrom: 1it [00:00, 2016.49it/s]
 
 Deleting filtered conformers:   0%|                                                                                                                                    | 0/1 [00:00&lt;?, ?it/s]
-Deleting filtered conformers: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00&lt;00:00, 361.86it/s]
+Deleting filtered conformers: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00&lt;00:00, 368.12it/s]
 Deleted 2 bad conformations
 
-([{&#39;coordinates&#39;: tensor([[[-0.254,  0.803, -0.765],
-         [ 0.174, -0.832, -1.266],
-         [ 0.106, -0.148,  0.035],
-         [ 1.969, -1.141, -0.629]],
+([{&#39;coordinates&#39;: tensor([[[ 2.164, -0.270,  0.224],
+         [-0.737, -1.179, -0.011],
+         [ 0.772, -0.575,  0.743],
+         [-1.377,  0.540,  0.136]],
 
-        [[ 0.411, -0.884, -0.969],
-         [ 1.215,  0.733,  0.362],
-         [ 0.392,  0.086, -0.813],
-         [ 0.709,  0.235, -1.265]]], dtype=torch.float64), &#39;energies&#39;: tensor([-0.298,  1.358], dtype=torch.float64), &#39;dipoles&#39;: tensor([[ 0.046,  1.332,  1.425],
-        [-1.385, -0.658, -1.458]], dtype=torch.float64), &#39;species&#39;: tensor([[1, 1, 7, 7],
-        [1, 1, 7, 7]]), &#39;forces&#39;: tensor([[[  64.383,  -37.125,  -83.464],
-         [ -19.223,  140.810,  -48.995],
-         [   7.744,  -23.233,   18.535],
-         [  83.574,  -35.931,  -26.507]],
+        [[ 0.266, -0.662,  1.464],
+         [ 0.074,  0.960, -1.011],
+         [-0.203,  1.394, -0.449],
+         [-0.222,  2.537, -0.832]]], dtype=torch.float64), &#39;forces&#39;: tensor([[[  -5.237,   50.387,   10.226],
+         [ 252.357, -101.943,  -36.191],
+         [ -24.163,  -34.409,   81.134],
+         [  65.504,    7.206,   43.761]],
 
-        [[  79.934,   37.432,   58.834],
-         [   7.975,   99.776,  -84.915],
-         [   8.767,   40.437,   46.467],
-         [ 126.185, -141.392,  111.507]]], dtype=torch.float64)}], {&#39;C2H2&#39;: tensor([2, 3])})
+        [[  40.129,  -96.685,  -15.076],
+         [ 209.119, -207.160,  -41.174],
+         [  12.339,   95.208,   26.201],
+         [  -7.040,   53.899,  -83.423]]], dtype=torch.float64), &#39;energies&#39;: tensor([0.645, 2.477], dtype=torch.float64), &#39;species&#39;: tensor([[1, 1, 7, 7],
+        [1, 1, 7, 7]]), &#39;dipoles&#39;: tensor([[ 0.573, -1.388, -0.481],
+        [ 0.847,  0.166, -0.318]], dtype=torch.float64)}], {&#39;C2H2&#39;: tensor([2, 3])})
 </pre></div>
 </div>
 <p>Finally, lets delete the files we used for cleanup</p>
