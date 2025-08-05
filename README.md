@@ -1,8 +1,10 @@
+<div style="text-align: center;">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/aiqm/torchani/main/front-logo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/aiqm/torchani/main/front-logo-light.svg">
   <img alt="TorchANI 2 logo" src="https://raw.githubusercontent.com/aiqm/torchani/main/torchani-logo-light.svg">
 </picture>
+</div>
 
 ![PyPI](https://img.shields.io/pypi/v/torchani.svg)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchani.svg)
