@@ -1,7 +1,7 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/roitberg-group/torchani_model_zoo/master/logos/torchani-2-logo-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/roitberg-group/torchani_model_zoo/master/logos/torchani-2-logo-light.svg">
-  <img alt="TorchANI 2 logo" src="https://raw.githubusercontent.com/roitberg-group/torchani_model_zoo/master/logos/torchani-2-logo-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/aiqm/torchani/main/front-logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/aiqm/torchani/main/front-logo-light.svg">
+  <img alt="TorchANI 2 logo" src="https://raw.githubusercontent.com/aiqm/torchani/main/torchani-logo-light.svg">
 </picture>
 
 ![PyPI](https://img.shields.io/pypi/v/torchani.svg)
